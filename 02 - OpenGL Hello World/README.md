@@ -1,12 +1,13 @@
 ## OpenGL Hello World
 
-I was very surprised at how smooth it was to get started with OpenGL.
+I was surprised how easy it was to get started with OpenGL.
 
-I just copied `main.cc` from the examples at https://cs.lmu.edu/~ray/notes/openglexamples/, then compiled with
+I just copied `main.cc` from one of the examples at https://cs.lmu.edu/~ray/notes/openglexamples/, then compiled with
 
-    gcc -framework OpenGL -framework GLUT -o myprogram myprogram.c
+    gcc -framework OpenGL -framework GLUT -o main main.cc
+    
+And that was it!
 
-as instructed in https://cs.lmu.edu/~ray/notes/opengl/.
+![A Simple Triangle](https://github.com/slackwing/feathers/blob/master/02%20-%20OpenGL%20Hello%20World/sample.png?raw=true "A Simple Triangle")
 
-It might have helped that I already had xcode installed on this computer.
-
+(It might have helped that I already had xcode installed on this computer.)
