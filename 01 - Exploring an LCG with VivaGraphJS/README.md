@@ -1,4 +1,4 @@
-## Performing Preliminary Layouts in VivaGraphJS
+## Preliminary Layouts in VivaGraphJS
 
 - Even with today's computing power, drawing a graph of 65,000 nodes can take minutes or crash the browser. 
 - As of 2019, Andrei Kashcha's VivaGraphJS seemed the fastest library for drawing large graphs. [His video](https://www.youtube.com/watch?v=Ax7KSQZ0_hk) (2014) has a nice comparison of 12 libraries.
