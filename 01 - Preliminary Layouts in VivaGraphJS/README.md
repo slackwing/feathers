@@ -6,3 +6,4 @@
 - [Here's](#todo) the same running on the entire graph of [5xa273c](#todo). It seems like it'll practically never settle, and may not even reach an optimal settlement.
 - I believe being able to specify my own preliminary layout before force-direction would greatly help.
 - Attempts were made but there were many problems. _Todo: Describe attempts, check in code._
+- Another route is to implement [Yifan Hu's multilevel approach](http://yifanhu.net/PUB/graph_draw_small.pdf), which is what _Mathematica_ uses to successfully draw [5xa273c], albeit in the range of minutes as well.
