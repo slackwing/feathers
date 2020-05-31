@@ -1,4 +1,4 @@
-# Exploring an LCG with VivaGraphJS
+## Exploring an LCG with VivaGraphJS
 
 Given today's computing power, I didn't imagine that drawing a graph of 65,000 nodes could take minutes or crash the browser. I was wrong.
 
