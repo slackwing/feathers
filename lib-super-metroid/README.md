@@ -1,4 +1,4 @@
-# lib-super-metroid
+## lib-super-metroid
 
 **Javascript utils and resources for the 1994 Super Nintendo game, _Super Metroid_.**
 
