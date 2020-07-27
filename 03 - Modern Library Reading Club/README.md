@@ -4,9 +4,9 @@ Past books: [https://mlrc.nyc](https://mlrc.nyc).
 
 #### Contents
 
-1. [The "Modern Library Reading Club"](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#what-it-is-and-what-this-is)
-1. [Hosting a Book Club](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#hosting-a-book-club)
-1. [Hacking a Book Club](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#hacking-a-book-club)
+1. [What it is and what this is](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#what-it-is-and-what-this-is)
+1. [Hosting a book club](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#hosting-a-book-club)
+1. [Hacking a book club](https://github.com/slackwing/feathers/tree/master/03%20-%20Modern%20Library%20Reading%20Club#hacking-a-book-club)
 
 #### What it is and what this is
 
