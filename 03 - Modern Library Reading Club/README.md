@@ -1,6 +1,8 @@
 ### Modern Library Reading Club
 
-Kind of a knowledge-dump about hosting / hacking book clubs. Past reading list: [https://mlrc.nyc](https://mlrc.nyc).
+#### tl;dr
+
+Co-founded and hosted a book club out of my apartment for several years. Knowledge-dump about hosting and hacking book clubs. Past reading list: [https://mlrc.nyc](https://mlrc.nyc).
 
 #### Contents
 
