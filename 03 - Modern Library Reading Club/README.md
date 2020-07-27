@@ -1,6 +1,6 @@
 ### Modern Library Reading Club
 
-Past books: [https://mlrc.nyc](https://mlrc.nyc).
+Kind of a knowledge-dump about hosting / hacking book clubs. Past reading list: [https://mlrc.nyc](https://mlrc.nyc).
 
 #### Contents
 
