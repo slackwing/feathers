@@ -8,6 +8,6 @@ IMHO though, the reason to read has never been for reading itself, even when we 
 
 ### Hosting an IRL Book Club
 
-Once Brad and I were in the same city, we began to meet IRL at a [barbeque joint](https://www.yelp.com/biz/john-brown-smokehouse-long-island-city-3), sometimes a hostel lobby. But since our sixth member and until I passed the reins a few years later, _i.e._ from 2016 to 2019, we met at my apartment every Tuesday.
+Once Brad and I were in the same city, we began to meet IRL at a [barbeque joint](https://www.yelp.com/biz/john-brown-smokehouse-long-island-city-3), sometimes a hostel lobby. But once we had 4 or 5 regulars and until I passed the reins a few years later, _i.e._ from 2016 to 2019, we met at my apartment every Tuesday.
 
 _TODO_
