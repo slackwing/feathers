@@ -12,6 +12,7 @@ _TODO_
 | Tooling | SFT004 | Consolidate all tooling environment variables somewhere. | L | M | |
 | Tooling | SFT005 | Tmp file cleanup. | L |L | |
 | Tooling | SFT006 | Global switch to redirect output for tooling functions, i.e. disable "puts" by switch. | L | L | |
+| Tooling | SFT007 | Output for tooling functions to have indent levels. | L | L | |
 
 #### Patterns
 
