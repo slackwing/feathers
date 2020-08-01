@@ -1,5 +1,64 @@
 #!/usr/bin/tclsh
 
+proc ________safe_overwrite {file_path file_content confirm_diff} {
+    if {[file exists $file_path]} {
+        if {$confirm_diff} {
+            # TODO(SFT003)
+        } else {
+            set file_dir [file dirname $file_path]
+            set file_name [file tail $file_path]
+            file copy -- $file_path "${file_dir}/.${file_name}.[________timestamp]"
+            ________unsafe_overwrite $file_path $file_content
+        }
+    } else {
+        ________unsafe_overwrite $file_path $file_content
+    }
+}
+
+proc ________unsafe_overwrite {file_path file_content} {
+    set file_handle [open $file_path w]
+    puts -nonewline $file_handle $file_content
+    close $file_handle
+}
+
+# UNUSED
+proc ________get_tmp_file {} {
+    # TODO(SFT004)
+    set ________SLACKWING_TMP_FILE_PREFIX "slackwing.tmp."
+    return "${________SLACKWING_TMP_FILE_PREFIX}[________timestamp_us]"
+    # TODO(SFT005)
+}
+
+proc ________timestamp {} {
+    return [clock format [clock seconds] -gmt True -format {%Y%m%d-%T}]
+}
+
+# UNUSED
+proc ________timestamp_us {} {
+    return "[________timestamp].[expr {[clock microseconds] % 1000000}]"
+}
+
+proc ________prereqs {file_path_list} {
+    set not_found_list [list]
+    foreach file_path $file_path_list {
+        if {![file exists $file_path]} {
+            lappend not_found_list $file_path
+        }
+    }
+    if {[llength $not_found_list] > 0} {
+        puts "Failed to meet prereqs. The following files were not found:"
+        foreach not_found $not_found_list {
+            puts "\t$not_found"
+        }
+        exit
+    }
+}
+
+________prereqs {
+    ~/.config/karabiner/assets/complex_modifications/feathers.json
+    ~/.config/karabiner/karabiner.json
+}
+
 set output ""
 
 append output "{"
@@ -125,4 +184,5 @@ foreach key {left_arrow right_arrow up_arrow down_arrow} {
 
 append output "\n  ]\n}"
 
-puts $output
+________safe_overwrite ~/.config/karabiner/assets/complex_modifications/feathers.json $output False
+
