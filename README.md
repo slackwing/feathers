@@ -8,6 +8,7 @@ _TODO_
 | - | -: | - | -: | -: | -: |
 | Tooling | SFT001 | Roughly write a first installer in install-karabiner-settings.tcl. | M | M | |
 | Tooling | SFT002 | Factor out installer utils from install-karabiner-settings.tcl. | M | M | |
+| Tooling | SFT003 | Add confirm-diff logic to installer. (Write to /tmp first before backing up. Then diff and confirm. Then backup and move. Don't bother to reuse the non-confirm path for backup-and-write.) | M | M | |
 
 
 #### Patterns
