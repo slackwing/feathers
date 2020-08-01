@@ -8,7 +8,11 @@ _TODO_
 | - | -: | - | -: | -: | -: |
 | Tooling | SFT001 | Roughly write a first installer in install-karabiner-settings.tcl. | M | M | |
 | Tooling | SFT002 | Factor out installer utils from install-karabiner-settings.tcl. | M | M | |
-
+| Tooling | SFT003 | Add confirm-diff logic to installer. (Write to /tmp first before backing up. Then diff and confirm. Then backup and move. Don't bother to reuse the non-confirm path for backup-and-write.) | M | M | |
+| Tooling | SFT004 | Consolidate all tooling environment variables somewhere. | L | M | |
+| Tooling | SFT005 | Tmp file cleanup. | L |L | |
+| Tooling | SFT006 | Global switch to redirect output for tooling functions, i.e. disable "puts" by switch. | L | L | |
+| Tooling | SFT007 | Output for tooling functions to have indent levels. | L | L | |
 
 #### Patterns
 

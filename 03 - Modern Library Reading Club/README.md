@@ -1,6 +1,8 @@
 ### Modern Library Reading Club
 
-Kind of a knowledge-dump about hosting / hacking book clubs. Past reading list: [https://mlrc.nyc](https://mlrc.nyc).
+#### tl;dr
+
+Co-founded and hosted a book club out of my apartment for several years. Knowledge-dump about hosting and hacking book clubs. Past reading list: [https://mlrc.nyc](https://mlrc.nyc).
 
 #### Contents
 
@@ -18,7 +20,7 @@ IMHO though, the reason to read has never been for reading itself, even when we 
 
 #### Hosting a book club
 
-Once Brad and I were in the same city, we began to meet IRL at a [barbeque joint](https://www.yelp.com/biz/john-brown-smokehouse-long-island-city-3), sometimes a hostel lobby. But once we had 4 or 5 regulars and until I passed the reins a few years later, _i.e._ from 2016 to 2019, we met at my apartment every Tuesday.
+Once Brad and I were in the same city, we began to meet IRL at a [barbeque joint](https://www.yelp.com/biz/john-brown-smokehouse-long-island-city-3), sometimes a hostel lobby. But once we had 4 or 5 regular members and until I handed over the reins a few years later, _i.e._ from 2016 to 2019, we met at my apartment every Tuesday.
 
 _TODO_
 
