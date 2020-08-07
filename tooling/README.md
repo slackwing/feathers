@@ -1,4 +1,4 @@
-### Tooling
+## Tooling
 
 1. Install `zsh`:
     - https://github.com/ohmyzsh/ohmyzsh#basic-installation
@@ -6,6 +6,7 @@
     - https://github.com/romkatv/powerlevel10k#meslo-nerd-font-patched-for-powerlevel10k
     - `ln -f ~/.zshrc ~/src/feathers/tooling/`
     - Only modify `.zshrc` locally (not from GitHub or other machines), or pulling will overwrite the hardlink. (If it happens though, pull, `cp ~/src/feathers/tooling/.zshrc ~/.zshrc`, and `ln -f ~/.zshrc ~/src/feathers/tooling/`.)
+    - For IntelliJ, update _Shell path_ to _/bin/zsh_, update _Console Font_ to _MesloLGC NF_, and restart.
 
 ### Log
 
