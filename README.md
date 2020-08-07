@@ -13,6 +13,8 @@ _TODO_
 | Tooling | SFT005 | Tmp file cleanup. | L |L | |
 | Tooling | SFT006 | Global switch to redirect output for tooling functions, i.e. disable "puts" by switch. | L | L | |
 | Tooling | SFT007 | Output for tooling functions to have indent levels. | L | L | |
+| Tooling | SFT008 | Fix zsh instructions to start with the `cp`; then refer back to it in case of changes outside the local machine. Also hardlink and check in _~/.oh-my-zsh/*_ and _~/.p10k.zsh_ and leave similar guidance. | L | L | |
+| Tooling | SFT009 | Port bash aliases and test them. | L | L | |
 
 #### Patterns
 
