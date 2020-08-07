@@ -4,8 +4,10 @@
     - https://github.com/ohmyzsh/ohmyzsh#basic-installation
     - https://github.com/romkatv/powerlevel10k
     - https://github.com/romkatv/powerlevel10k#meslo-nerd-font-patched-for-powerlevel10k
-    - `rm tooling/.zshrc; ln ~/.zshrc tooling/`
+    - `ln -f ~/.zshrc ~/src/feathers/tooling/`
     - Only modify `.zshrc` locally (not GitHub or other machines), or pulling will overwrite the hardlink.
+
+### Log
 
 _**2020 Aug 07.** Let's give zsh a shot. There's no reason not to. I can always develop shell scripts in and for bash if I wanted to._
 
