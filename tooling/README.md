@@ -5,7 +5,7 @@
     - https://github.com/romkatv/powerlevel10k
     - https://github.com/romkatv/powerlevel10k#meslo-nerd-font-patched-for-powerlevel10k
     - `ln -f ~/.zshrc ~/src/feathers/tooling/`
-    - Only modify `.zshrc` locally (not from GitHub or other machines), or pulling will overwrite the hardlink. (If it happens though, pull, `cp ~/src/feathers/tooling/.zshrc ~/.zshrc`, and `ln -f ~/.zshrc ~/src/feathers/tooling/`.
+    - Only modify `.zshrc` locally (not from GitHub or other machines), or pulling will overwrite the hardlink. (If it happens though, pull, `cp ~/src/feathers/tooling/.zshrc ~/.zshrc`, and `ln -f ~/.zshrc ~/src/feathers/tooling/`.)
 
 ### Log
 
