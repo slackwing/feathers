@@ -1,8 +1,8 @@
 
 
-### Explorations
+## Explorations
 
-#### Delay-Convolver Kick
+### Delay-Convolver Kick
 
 | Delay | Convolver |
 | --- | --- |
@@ -10,7 +10,8 @@
 
 Delaying a kick by a dotted eighth then running just the wet through far and wide convolver presets, seems to be a reliable way to create galloping, "industrial" hall kicks, with hat-like elements by side-effect. From this exploration I'd like to deliver a 5-minute demo of 10 different sounds I can make this way.
 
-Demo
+[Demo](https://soundcloud.com/slackwing/delay-convolver-kick-demo)
+
 1. 00:00 - Low, 40 Hz kick w/ default convolver.
 1. 00:32 - [707-ey](https://www.youtube.com/watch?v=zSDCXzcO5qM) kick w/ St. Paul's Cathedral.
 1. 01:04 - Punchy kick w/ Bunker (B) crossfaded into Bunker (C).
@@ -24,12 +25,7 @@ Notes
 - Try all the variations of a set of convolver presets, because certain ones can bring out a certain tone that sounds very nice. I favor the church presets.
 - There was a very, very specific convolver stretch % (like 116% for VMH2 Bassdrum 01) where the kick became completely different, gaining bass somehow.
 
-### MIDI Helper Ideas
-
-- Permamap next / previous preset. (It does exist!)
-- Quickmap common effect knobs like delay LP CF & resonance.
-
-### General Tips
+## General Tips
 
 - "Silence"
 
@@ -39,7 +35,7 @@ Notes
 
     - Send to some noise-generating effect like a phaser, then reverse-snipe frequency with Parametric EQ 2.
 
-### FL Studio Tips
+## FL Studio Tips
 
 - Workflow
 
@@ -58,7 +54,7 @@ Notes
 
     - Convolver > View > Display > Temperature
 
-### Log
+## Log
 
 2020 Aug 21. 6 hours.
 - Minor fixes to Foundation 1.
