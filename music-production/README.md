@@ -10,7 +10,13 @@
 
 Delaying a kick by a dotted eighth then running just the wet through far and wide convolver presets, seems to be a reliable way to create galloping, "industrial" hall kicks, with hat-like elements by side-effect. From this exploration I'd like to deliver a 5-minute demo of 10 different sounds I can make this way.
 
-[Demo](https://soundcloud.com/slackwing/delay-convolver-kick-demo)
+#### Completed Demo
+
+![image](https://user-images.githubusercontent.com/50495866/90958062-ccf73300-e45f-11ea-9578-7321eb0d26a6.png)
+
+[Download .flp](https://github.com/slackwing/feathers/edit/master/music-production/#)
+
+[Listen on Soundcloud](https://soundcloud.com/slackwing/delay-convolver-kick-demo)
 
 1. 00:00 - Low, 40 Hz kick w/ default convolver.
 1. 00:32 - [707-ey](https://www.youtube.com/watch?v=zSDCXzcO5qM) kick w/ St. Paul's Cathedral.
