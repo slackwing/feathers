@@ -65,3 +65,6 @@ Notes
 2020 Aug 21. 6 hours.
 - Minor fixes to Foundation 1.
 - Created 3 kicks for delay-convolver-kick-demo.flp.
+
+2020 Aug 22. 6 hours.
+- Created 3 more kicks, published demo.
