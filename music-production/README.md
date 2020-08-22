@@ -12,17 +12,32 @@ Delaying a kick by a dotted eighth then running just the wet through far and wid
 
 Demo
 1. 00:00 - Low, 40 Hz kick w/ default convolver.
-1. 00:32 - [707-ey](https://www.youtube.com/watch?v=zSDCXzcO5qM) kick w/ St. Paul's Cathedral (distant rear).
-1. 01:04 - Standard, punchy kick w/ Bunker (B) crossfaded into Bunker (C).
+1. 00:32 - [707-ey](https://www.youtube.com/watch?v=zSDCXzcO5qM) kick w/ St. Paul's Cathedral.
+1. 01:04 - Punchy kick w/ Bunker (B) crossfaded into Bunker (C).
+1. 01:36 - Resonating LP evolved over 8 minutes, sniping out unpleasant frequencies. (Hearing only last 30 seconds.)
+1. 01:54 - Retaining resonation and starting again, St. Paul's Cathedral again.
+1. 02:15 - Placing a phaser before the delay.
+1. 02:47 - Flipping LP to HP.
+1. 03:19 - Some other cathedral, reverse-sniping the woodblock tone, and some EQ.
 
 Notes
 - Try all the variations of a set of convolver presets, because certain ones can bring out a certain tone that sounds very nice. I favor the church presets.
-- Can entire songs be created just from "grafting" this sound over and over again?
+- There was a very, very specific convolver stretch % (like 116% for VMH2 Bassdrum 01) where the kick became completely different, gaining bass somehow.
 
 ### MIDI Helper Ideas
 
 - Permamap next / previous preset. (It does exist!)
 - Quickmap common effect knobs like delay LP CF & resonance.
+
+### General Tips
+
+- "Silence"
+
+    - Flip an LP to HP.
+    
+- Background Tone
+
+    - Send to some noise-generating effect like a phaser, then reverse-snipe frequency with Parametric EQ 2.
 
 ### FL Studio Tips
 
@@ -30,6 +45,10 @@ Notes
 
     - Automation Clip > Articulator Tools > Copy | Paste State. Copy automation drawings to unrelated clips.
     - Patcher to create sound templates!
+    - Edison in Insert to record generation.
+    - Snipe frequencies using Parametric EQ 2 with precision frequency killer at narrowest width.
+      ![image](https://user-images.githubusercontent.com/50495866/90955069-3703de00-e448-11ea-94c5-388587555ba9.png)
+    - Extend selection with Ctrl.
 
 - UI
 
