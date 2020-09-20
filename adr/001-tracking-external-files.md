@@ -56,6 +56,8 @@ We'll go with that, supplemented with a git hook that detects broken links:
  1. If broken link and diff, warn and confirm to continue operation.
  1. If broken link and no diff, warn and confirm to force softlink.
 
+This way, we're nagged until the two files match, and only then given the option to force a symlink.
+
 To generalize this for many files, we'll work from an array in the hook. (Oddly, the array should contain the file containing it, since hooks are not pushed.)
 
 ### Accepted Tradeoffs
