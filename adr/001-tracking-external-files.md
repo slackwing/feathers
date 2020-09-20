@@ -2,7 +2,7 @@
 
 ### Status
 
-Draft
+Decided; awaiting implementation.
 
 ### Context
 
