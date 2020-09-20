@@ -45,7 +45,7 @@ In fact, #3 is weak to this issue as well—in other words, hardlinks break when
 
     ln ~/repo/some/path/.bashrc ~/.bashrc
 
-But now we know that hardlinks are brittle, so this is the worst of both #3 and #4.
+But now we know that hardlinks are brittle. This is the worst of both #3 and #4.
 
 ### Decision
 
