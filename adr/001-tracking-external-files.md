@@ -29,13 +29,13 @@ This won't commit the file's contents, only the literal bytes of the softlink.
     
 This works, mostly. Opening and editing the file from either location affects the target, as we want. Therefore changes by us or programs show up as unstaged changes in `git status`.
 
-But there's a problem. If a remote change is made, like Github's web interface or from another computer, the `git pull` will overwrite the symlink with an actual file. As a result, external changes to ~/.bashrc stop showing up as unstaged changes, giving us no hint that something's changed. The files may then diverge, meaning we can't blindly recreate the hardlink (`ln -f`). We'd have to do a manual diff and merge first.
+But there's a problem. If a remote change is made, like through Github's web interface or from another computer, the `git pull` will overwrite the symlink with a new copy of the file. As a result, external changes to ~/.bashrc stop showing up as unstaged changes, leaving us without a hint that anything's changed. The files may then diverge, meaning we can't just blindly recreate the hardlink (`ln -f`)—we'd always have to diff and manually merge first.
 
 #### 4. Softlink system to repo file
 
     ln -s ~/repo/some/path/.bashrc ~/.bashrc
     
-This averts the `git pull` issue, since a softlink will point to the repo's file by path, even if overwritten.
+This averts the `git pull` issue, since a softlink will point to the repo's file by path.
 
 But, much like the `git pull` issue, only translated to the other side, ~/.bashrc can be overwritten as well, destroying the symlink. For example, programs—maybe even some editors—commonly do an "atomic write" by writing contents to a temporary file then copying that file over. Then here too, the files may diverge.
 
