@@ -1,8 +1,8 @@
-## Tracking External Files
+## Tracking External Files <sub>ADR-001</sub>
 
 ### Status
 
-Decided. Awaiting implementation.
+ - 2020 Sep 20 - ADR completed.
 
 ### Context
 
@@ -62,4 +62,8 @@ To generalize this for many files, we'll work from an array in the hook. (Oddly,
 
 ### Accepted Tradeoffs
 
-None.
+None
+
+### Retrospective
+
+TBD
