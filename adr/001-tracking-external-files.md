@@ -2,8 +2,7 @@
 
 ### Status
 
- - ADR completed Sep 20, 2020.
- - Implementation TBD.
+Accepted.
 
 ### Context
 
