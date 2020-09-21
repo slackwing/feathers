@@ -2,7 +2,7 @@
 
 ### Status
 
-Decided; awaiting implementation.
+Decided. Awaiting implementation.
 
 ### Context
 
