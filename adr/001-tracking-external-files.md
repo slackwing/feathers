@@ -2,7 +2,7 @@
 
 ### Status
 
-Accepted.
+_Accepted_
 
 ### Context
 
@@ -62,8 +62,8 @@ To generalize this for many files, we'll work from an array in the hook. (Oddly,
 
 ### Accepted Tradeoffs
 
-None
+None known.
 
 ### Retrospective
 
-TBD
+_TBD_
