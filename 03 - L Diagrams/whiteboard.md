@@ -10,4 +10,6 @@ I think it'll be a waste of time trying to explain what these are, since I don't
 ![image](https://user-images.githubusercontent.com/50495866/94227901-9af74780-fec9-11ea-9904-a1e96d145331.png)
 
 
+### Thoughts
 
+Emotions are the shadows of lower-level facts about the world.
