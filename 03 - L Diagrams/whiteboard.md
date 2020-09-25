@@ -14,4 +14,4 @@ I think it'll be a waste of time trying to explain what these are, since I don't
 
 - Emotions are the shadows of lower-level facts about the world.
 - Elusiveness of a fact contributes to fear (of non-communicatability), which manifests different strategies according to personality.
-- What I call "fact" is a "subjective fact," which seems like an oxymoron, but it's my belief that we think in terms of "facts," not "maybes." Even when we don't consider something an "objective fact," we put ourselves in a subjunctive world—"Suppose it _were_ so..."—in which it _is_ an "objective fact."
+- What I call "fact" is a "subjective fact," which seems like an oxymoron, but it's my belief that we almost always think in terms of facts, not "maybes." Even when we don't consider something an "objective fact," we put ourselves in a subjunctive world supposing it _were_. I'd like to take the risk of calling all thoughts "facts" for the possible benefit of drawing discussions closer to the way we truly think.
