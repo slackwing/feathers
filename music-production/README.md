@@ -39,6 +39,7 @@ Notes
  1. Resonance wasn't adding much but annoying frequencies.
  1. Tone could be used to soften it, but higher tones removed the effect altogether.
  1. Now use the time parameter to play different notes. Find the standing waves. Interplay with cutoff.
+ 1. Play with sampling rate and bits.
 
 ## General Tips
 
