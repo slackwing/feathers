@@ -31,6 +31,15 @@ Notes
 - Try all the variations of a set of convolver presets, because certain ones can bring out a certain tone that sounds very nice. I favor the church presets.
 - There was a very, very specific convolver stretch % (like 116% for VMH2 Bassdrum 01) where the kick became completely different, gaining bass somehow.
 
+### Drone-Theramin
+
+ 1. Pick something noisy and multi-pitched like GMS's Harsh Five.
+ 1. Run it through Fruity Delay 3, turning off tempo sync.
+ 1. Higher cutoff sounds more like DJ set closer rises; lower cutoff is what we want here.
+ 1. Resonance wasn't adding much but annoying frequencies.
+ 1. Tone could be used to soften it, but higher tones removed the effect altogether.
+ 1. Now use the time parameter to play different notes. Find the standing waves. Interplay with cutoff.
+
 ## General Tips
 
 - "Silence"
