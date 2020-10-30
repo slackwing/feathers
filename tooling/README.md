@@ -5,6 +5,11 @@
     - https://github.com/romkatv/powerlevel10k#manual
     - https://github.com/romkatv/powerlevel10k#meslo-nerd-font-patched-for-powerlevel10k
     - For IntelliJ, update _Shell path_ to _/bin/zsh_, update _Console Font_ to _MesloLGC NF_, and restart.
+1. `brew install watch`
+1. `brew install gnu-sed`
+    - OSX `sed` can't do `| sed 's/\\n/\n/g'`.
+    - `yo() { $@ 2>&1 | gsed 's/\\n/\n/g' | gsed 's/\\t/\t/g' }`
+    - `yo !!`
 
 ### Log
 
