@@ -120,40 +120,10 @@ append output [format {
       ]
     }}]
 
-foreach key {z n} {
-    append output [format {,
-    {
-      "description": "Emulate command+control+%s for Evernote with control+option+%s.",
-      "manipulators": [
-        {
-          "type": "basic",
-          "from": {
-            "key_code": "%s",
-            "modifiers": {
-              "mandatory": [
-                "left_control",
-                "left_option"
-              ]
-            }
-          },
-          "to": [
-            {
-              "key_code": "%s",
-              "modifiers": [
-                "left_command",
-                "left_control"
-              ]
-            }
-          ]
-        }
-      ]
-    }} $key $key $key $key]
-}
-
 foreach key {left_arrow right_arrow up_arrow down_arrow} {
     append output [format {,
     {
-      "description": "Passthrough hyper+%s to command+option+%s.",
+      "description": "Demote hyper+%s to command+option+%s in the presence of arrow keys, to make space for an additional modifier for quarter-window-snapping.",
       "manipulators": [
         {
           "type": "basic",
@@ -180,6 +150,66 @@ foreach key {left_arrow right_arrow up_arrow down_arrow} {
         }
       ]
     }} $key $key $key $key]
+}
+
+foreach {key_mapping} {{h left_arrow} {j down_arrow} {k up_arrow} {l right_arrow}} {
+    set ikey [lindex $key_mapping 0]
+    set okey [lindex $key_mapping 1]
+    append output [format {,
+    {
+      "description": "Change hyper+%s to %s, for global vim-like movement.",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "%s",
+            "modifiers": {
+              "mandatory": [
+                "left_shift",
+                "left_command",
+                "left_control",
+                "left_option"
+              ]
+            }
+          },
+          "to": [
+            {
+              "key_code": "%s"
+            }
+          ]
+        }
+      ]
+    }} $ikey $okey $ikey $okey]
+}
+
+foreach {key_mapping} {{b delete_or_backspace}} {
+    set ikey [lindex $key_mapping 0]
+    set okey [lindex $key_mapping 1]
+    append output [format {,
+    {
+      "description": "Change hyper+%s to %s.",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "%s",
+            "modifiers": {
+              "mandatory": [
+                "left_shift",
+                "left_command",
+                "left_control",
+                "left_option"
+              ]
+            }
+          },
+          "to": [
+            {
+              "key_code": "%s"
+            }
+          ]
+        }
+      ]
+    }} $ikey $okey $ikey $okey]
 }
 
 append output "\n  ]\n}"
