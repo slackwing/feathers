@@ -4,7 +4,8 @@
     - https://github.com/ohmyzsh/ohmyzsh#basic-installation
     - https://github.com/romkatv/powerlevel10k#manual
     - https://github.com/romkatv/powerlevel10k#meslo-nerd-font-patched-for-powerlevel10k
-    - For IntelliJ, update _Shell path_ to _/bin/zsh_, update _Console Font_ to _MesloLGC NF_, and restart.
+1. `echo setopt no_hist_verify >> ~/.zshrc`
+1. `git config --global diff.context 0`.
 1. `brew install watch`
 1. `brew install gnu-sed`
     - OSX `sed` can't do `| sed 's/\\n/\n/g'`.
