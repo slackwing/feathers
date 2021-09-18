@@ -55,8 +55,8 @@ proc ________prereqs {file_path_list} {
 }
 
 ________prereqs {
-    ~/.config/karabiner/assets/complex_modifications/feathers.json
-    ~/.config/karabiner/karabiner.json
+    ~/.config/karabiner/assets/complex_modifications/
+    ~/.config/karabiner/
 }
 
 set output ""
