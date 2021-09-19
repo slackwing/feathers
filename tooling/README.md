@@ -12,6 +12,24 @@
     - `yo() { $@ 2>&1 | gsed 's/\\n/\n/g' | gsed 's/\\t/\t/g' }`
     - `yo !!`
 
+### .myrc
+
+    alias x='vim ~/.myrc'
+    alias y='source ~/.myrc'
+    alias z='cat ~/.myrc'
+    
+    alias h='history'
+    alias hg='history | grep'
+    alias ll='ls -alohF'
+    alias lt='ls -lt | head -n 10'
+    
+    alias gq='git add . ; git diff --staged ; git commit -m"fix"'
+    alias greset='git checkout -- .' # as opposed to stashing
+    
+    alias cc='mvn clean compile test-compile'
+    alias mi='mvn install -DskipTests'
+    alias mip='mvn install package -DskipTests'
+
 ### Log
 
 _**2020 Aug 07.** Let's give zsh a shot. There's no reason not to. I can always develop shell scripts in and for bash if I wanted to._
