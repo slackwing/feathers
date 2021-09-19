@@ -1,13 +1,13 @@
 " See Vundle installation guide regarding this section:
 
-    set nocompatible              " be iMproved, required
-    filetype off                  " required
-    set rtp+=~/.vim/bundle/Vundle.vim
-    call vundle#begin()
-    Plugin 'VundleVim/Vundle.vim'
-    Plugin 'leafgarland/typescript-vim'
-    call vundle#end()            " required
-    filetype plugin indent on    " required
+"    set nocompatible              " be iMproved, required
+"    filetype off                  " required
+"    set rtp+=~/.vim/bundle/Vundle.vim
+"    call vundle#begin()
+"    Plugin 'VundleVim/Vundle.vim'
+"    Plugin 'leafgarland/typescript-vim'
+"    call vundle#end()            " required
+"    filetype plugin indent on    " required
 
 "
 "     Title   : andrew.cheong .vimrc
