@@ -2,7 +2,9 @@
 
 ### Status
 
-_Accepted_
+_<s>Accepted</s>_
+
+_Superseded by [ADR-003](https://github.com/slackwing/feathers/blob/master/adr/003-tracking-external-files-revisited.md)_
 
 ### Context
 
@@ -66,4 +68,4 @@ None known.
 
 ### Retrospective
 
-_TBD_
+See [ADR-003](https://github.com/slackwing/feathers/blob/master/adr/003-tracking-external-files-revisited.md).
