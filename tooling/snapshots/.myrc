@@ -1,0 +1,17 @@
+#!/bin/bash
+alias x='vim ~/.myrc'
+alias y='source ~/.myrc'
+alias z='cat ~/.myrc'
+
+alias h='history'
+alias hg='history | grep'
+alias ll='ls -alohF'
+alias lt='ls -lt | head -n 10'
+
+alias gq='git add . ; git diff --staged ; git commit -m"fix"'
+alias greset='git checkout -- .' # as opposed to stashing
+
+alias cc='mvn clean compile test-compile'
+alias mi='mvn install -DskipTests'
+alias mip='mvn install package -DskipTests'
+
