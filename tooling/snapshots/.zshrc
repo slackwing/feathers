@@ -115,5 +115,4 @@ eval "$(jenv init -)"
 source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
 source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
 setopt no_hist_verify
-source ~/.bashrc
 source ~/.myrc
