@@ -1,4 +1,4 @@
-## Tracking External Files <sub>ADR-003</sub>
+## Tracking External Files (Revisited) <sub>ADR-003</sub>
 
 ### Status
 
