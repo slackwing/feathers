@@ -17,18 +17,57 @@
     alias x='vim ~/.myrc'
     alias y='source ~/.myrc'
     alias z='cat ~/.myrc'
-    
+
     alias h='history'
     alias hg='history | grep'
     alias ll='ls -alohF'
     alias lt='ls -lt | head -n 10'
-    
+
     alias gq='git add . ; git diff --staged ; git commit -m"fix"'
     alias greset='git checkout -- .' # as opposed to stashing
-    
+
     alias cc='mvn clean compile test-compile'
     alias mi='mvn install -DskipTests'
     alias mip='mvn install package -DskipTests'
+
+### .vimrc
+
+    set expandtab               " et    converts tabs to spaces
+    set shiftwidth=4            " sw    shift width to four spaces
+    set tabstop=4               " ts    tab width to four spaces
+    set softtabstop=4           " sts   backspace through tabs
+    set backspace=2             " bs    backspace through all buffers
+    set autoindent              " ai    automatic indentation
+    set smartindent             " si    smart indentation
+    set nocompatible            " nocp
+    set ruler                   " ru    line and column report
+    set showcmd                 " sc    partial command report
+    set scrolloff=4             " so    threshold of scrolling
+    set hlsearch                " hls   search highlighting
+    set showmatch               " sm    briefly highlight matching parentheses
+
+    syntax on                   "       syntax highlighting
+    set bg=dark
+    set t_Co=256
+
+    map qq :'a,'f
+    map qT :set ai^M:set si " Re-insert ^M if copy-pasting.
+    map qF :set noai^M:set nosi " Re-insert ^M if copy-pasting.
+
+### styles.less
+
+    .markdown-preview.markdown-preview {
+      background-color: #fff;
+      font-family: Lora,'Palatino Linotype','Book Antiqua','New York','DejaVu serif',serif;
+      line-height: 1.5;
+      word-wrap: break-word;
+      font-size: 1.2em;
+      color: #111;
+
+      h1, h2, h3, h4, h5, h6 {
+        color: #111;
+      }
+    }
 
 ### Log
 
