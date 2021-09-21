@@ -43,7 +43,7 @@
 
 - Follow the rest of [tooling](https://github.com/slackwing/feathers/tree/master/tooling).
 
-- Download [configuration snapshots](https://github.com/slackwing/feathers/tree/master/tooling/snapshots).
+- Incorporate .*rc from [tooling](https://github.com/slackwing/feathers/tree/master/tooling) or [snapshots](https://github.com/slackwing/feathers/tree/master/tooling/snapshots).
 
 ### Display
 
@@ -61,6 +61,8 @@
 - Install Atom.
 
     - Install Command Line Developer Tools.
+
+    - Atom > Stylesheet... and incorporate styles.less from [tooling](https://github.com/slackwing/feathers/tree/master/tooling) or [snapshots](https://github.com/slackwing/feathers/tree/master/tooling/snapshots).
 
 
 - Install Evernote.
