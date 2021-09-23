@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript">
+        function main () {
+          const mapNoteToNum = new Map();
+          mapNoteToNum.set('A', 0);
+          mapNoteToNum.set('A#', 1);
+          mapNoteToNum.set('Bb', 1);
+          mapNoteToNum.set('B', 2);
+          mapNoteToNum.set('C', 3);
+          mapNoteToNum.set('C#', 4);
+          mapNoteToNum.set('Db', 4);
+          mapNoteToNum.set('D', 5);
+          mapNoteToNum.set('D#', 6);
+          mapNoteToNum.set('Eb', 6);
+          mapNoteToNum.set('E', 7);
+          mapNoteToNum.set('F', 8);
+          mapNoteToNum.set('F#', 9);
+          mapNoteToNum.set('Gb', 9);
+          mapNoteToNum.set('G', 10);
+          mapNoteToNum.set('G#', 11);
+          mapNoteToNum.set('Ab', 11);
+          const mapNumToNote = new Map();
+          mapNumToNote.set(0, 'A');
+          mapNumToNote.set(1, 'A#');
+          mapNumToNote.set(2, 'B');
+          mapNumToNote.set(3, 'C');
+          mapNumToNote.set(4, 'C#');
+          mapNumToNote.set(5, 'D');
+          mapNumToNote.set(6, 'D#');
+          mapNumToNote.set(7, 'E');
+          mapNumToNote.set(8, 'F');
+          mapNumToNote.set(9, 'F#');
+          mapNumToNote.set(10, 'G');
+          mapNumToNote.set(11, 'G#');
+          var input = document.getElementById('input');
+          input.onkeyup = e => {
+            var text = e.target.value;
+            text = text.trim();
+            text = text.replace(/\s+/g, ' ');
+            if (text.match(/^([ABCDEFG](|#|b))( [ABCDEFG](|#|b))*$/)) {
+              var matches = [];
+              var notes = text.split(' ');
+              var numbers = [];
+              notes.forEach(e => {
+                numbers.push(mapNoteToNum.get(e));
+              });
+              for (var i = 0; i < 12; i++) {
+                var keyToNotes = new Map();
+                keyToNotes.set(i, true);
+                keyToNotes.set((i+2)%12, true);
+                keyToNotes.set((i+3)%12, true);
+                keyToNotes.set((i+5)%12, true);
+                keyToNotes.set((i+7)%12, true);
+                keyToNotes.set((i+8)%12, true);
+                keyToNotes.set((i+10)%12, true);
+                var match = true;
+                numbers.forEach(f => {
+                  if (!keyToNotes.has(f)) match = false;
+                });
+                if (match) {
+                  matches.push(mapNumToNote.get(i));
+                }
+              }
+              document.getElementById('output').innerHTML = matches.join(' ');
+            } else {
+              document.getElementById('output').innerHTML = 'Awaiting valid data ^-^, take your time!';
+            }
+          }
+        }
+    </script>
+</head>
+<body onload='main()'>
+  <p>This is Keyper. It eliminates keys it couldn't be.</p>
+  <p><input id='input' placeholder="C G F#"/></p>
+  <p>Keys it <i>can</i> be: <b><span id='output'></span></b></p>
+</body>
+</html>
