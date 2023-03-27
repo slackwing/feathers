@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+      .links line {
+        stroke-opacity: 0.6;
+        stroke-width: 1px;
+        fill: none;
+      }
+
+      .nodes circle {
+        stroke: #333;
+        stroke-width: 1.5px;
+      }
+    </style>
+    <script>
+      function write(str) {
+        document.getElementById("output").value += str + "\n";
+      }
+
+      function main() {
+
+        function range(size) {
+          return [...Array(size).keys()]
+        }
+
+        function LBYTE(x) {
+          return x & 0b11111111;
+        }
+
+        function HBYTE(x) {
+          return (x & (0b11111111 << 8)) >> 8;
+        }
+
+        // TODO: Learn how to namespace things.
+        function sm_prng(x) {
+          var L5 = LBYTE(x) * 5;
+          var H5 = HBYTE(x) * 5;
+          var v1 = LBYTE(H5) + HBYTE(L5) + 1;
+          var carry = HBYTE(v1) > 0 ? 1 : 0;
+          var v2 = (LBYTE(v1) << 8) + LBYTE(L5);
+          var ans = v2 + 0x11 + carry;
+          return ans % 65536; // TODO: Patch the original algo with this line!
+        }
+
+        let junctions = [];
+
+        // Using pre-allocated array where all 2^16 values will be computed.
+        let next = Array(65536);
+        // Using object (as map) where not all 2^16 values will be computed.
+        let prev = new Map();
+        for (let i of range(65536)) {
+          let next_i = sm_prng(i);
+          next[i] = next_i;
+          if (!prev.has(next_i)) {
+            prev.set(next_i, [i]);
+          } else {
+            prev.set(next_i, prev.get(next_i).push(i));
+            junctions.push(next_i);
+          }
+        }
+
+        let visited_global = Array(65536).fill(false);
+        let to_cycle = new Map();
+        let cycles = [];
+        let cycle_sizes = new Map();
+
+        // First just detect the cycles. Handle tails later.
+
+        label_continue_scanning: for (let i = 0; i < 65536; i++) {
+          let j = i;
+          if (visited_global[j] == true) continue;
+          let visited_local = new Map();
+          while (true) {
+            visited_local.set(j, true);
+            visited_global[j] = true;
+            j = next[j];
+            if (visited_local.has(j)) {
+              break;
+            }
+            if (visited_global[j] == true) {
+              continue label_continue_scanning;
+            }
+          }
+          let cycle_id = j;
+          let cycle_size = 0;
+          while (!to_cycle.has(j)) {
+            to_cycle.set(j, cycle_id);
+            cycle_size++;
+            j = next[j];
+          }
+          cycles.push(cycle_id);
+          cycle_sizes.set(cycle_id, cycle_size);
+        }
+
+        write("Found " + cycles.length + " cycles.");
+        for (c of cycles) {
+            write("  - 'C" + c + "' with " + cycle_sizes.get(c) + " nodes.");
+        }
+
+        let cycle_junctions = [];
+        let non_cycle_junctions = [];
+        let leafs = [];
+        let special_nodes = [97];
+
+        for (j of junctions) {
+          if (to_cycle.has(j)) {
+            cycle_junctions.push(j);
+          } else {
+            non_cycle_junctions.push(j);
+          }
+        }
+
+        write("Nodes that are junctions: " + junctions.length);
+        write("Nodes that are junctions in a cycle: " + cycle_junctions.length);
+        write("Nodes that are junctions not in a cycle: " + non_cycle_junctions.length);
+
+        for (let i of range(65536)) {
+          if (!prev.has(i)) {
+            leafs.push(Number(i));
+          }
+        }
+
+        let key_nodes = junctions.concat(leafs).concat(special_nodes);
+        let key_nodes_map = new Map();
+        for (j of key_nodes) key_nodes_map.set(j, true);
+
+        write("Nodes that are leafs: " + leafs.length);
+        write("Nodes that are special nodes: " + special_nodes.length);
+        write("Nodes that are key nodes: " + key_nodes.length);
+
+        let edges = [];
+        let edge_nodes = new Map();
+        let edge_sizes = new Map();
+
+        for (j of key_nodes) {
+          let nodes = [j];
+          let i = j;
+          do {
+            i = next[i];
+            nodes.push[i];
+          } while (!key_nodes_map.has(i));
+          edges.push(j + "-" + i);
+          edge_nodes.set(j + "-" + i, nodes);
+          edge_sizes.set(j + "-" + i, nodes.length);
+        }
+
+        write("Edges: " + edges.length);
+        write("Edges:\n" + edges.join(", "));
+
+        //console.log(key_nodes.sort());
+
+        //console.log(edges);
+
+        /* let node = cycles[2];
+            let tmp = node;
+            let odd = 0;
+            let even = 0;
+            let octet = [0, 0, 0, 0, 0, 0, 0, 0];
+            do {
+            tmp = sm_prng(tmp);
+            let bin = tmp.toString(2);
+            console.log(bin.padStart(16, '0'))
+            if (bin.substring(bin.length-1) == "0") {
+                even++;
+            } else {
+                odd++;
+            }
+            switch (bin.substring(bin.length-3)) {
+            case "000":
+                octet[0] = octet[0] + 1;
+                break;
+            case "001":
+                octet[1] = octet[1] + 1;
+                break;
+            case "010":
+                octet[2] = octet[2] + 1;
+                break;
+            case "011":
+                octet[3] = octet[3] + 1;
+                break;
+            case "100":
+                octet[4] = octet[4] + 1;
+                break;
+            case "101":
+                octet[5] = octet[5] + 1;
+                break;
+            case "110":
+                octet[6] = octet[6] + 1;
+                break;
+            case "111":
+                octet[7] = octet[7] + 1;
+                break;
+            }
+            } while (tmp != node);
+            console.log(even + " EVENS");
+            console.log(odd + " ODDS");
+            console.log(octet); */
+
+        
+        let cycle_junctions_map = new Map();
+        for (j of cycle_junctions) cycle_junctions_map.set(j, true);
+
+        let d3nodes = key_nodes.map((node) => {
+          let type = 1;
+          if (cycle_junctions_map.has(node)) type = 2;
+          return {
+            id: node.toString(),
+            type: type,
+          };
+        });
+
+        let d3links = edges.map((edge) => {
+          let source = Number(edge.split("-")[0]);
+          let target = Number(edge.split("-")[1]);
+          let type = 1;
+          if (cycle_junctions_map.has(source) && cycle_junctions_map.has(target)) type = 3;
+          return {
+            id: edge,
+            source: source,
+            target: target,
+            type: type,
+          };
+        });
+
+        // Check that every source and target is a real node.
+        let stop = false;
+        let i = 0;
+        for (link of d3links) {
+          if (!key_nodes_map.has(link.source)) {
+            // console.log("Missing node: " + link.source);
+            i++;
+            stop = true;
+          }
+          if (!key_nodes_map.has(link.target)) {
+            // console.log("Missing node: " + link.target);
+            i++;
+            stop = true;
+          }
+        }
+        if (stop) {
+          throw new Error("Missing " + i + " nodes.");
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        var svg = d3.select("svg");
+
+        var width = svg.attr("width");
+        var height = svg.attr("height");
+
+        svg = svg.call(d3.zoom().on("zoom", zoomed)).append("g");
+
+        svg
+          .append("defs")
+          .append("marker")
+          .attr("id", "arrow")
+          .attr("viewBox", "0 -5 10 10")
+          .attr("refX", 20)
+          .attr("refY", 0)
+          .attr("markerWidth", 8)
+          .attr("markerHeight", 8)
+          .attr("orient", "auto")
+          .append("svg:path")
+          .attr("d", "M0,-5L10,0L0,5");
+
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        var simulation = d3
+          .forceSimulation()
+          .force(
+            "link",
+            d3.forceLink().id(function (d) {
+              return d.id;
+            })
+          )
+          //.force("charge", d3.forceManyBody().strength(-30))
+          .force("link", d3.forceLink().id(d => d.id).distance(10).strength(1))
+          .force("charge", d3.forceManyBody())
+          //.force("link", d3.forceLink().links(d3links))
+          .force("collide",d3.forceCollide(50))
+          .force("center", d3.forceCenter(width / 2, height / 2));
+
+        //d3.json("data.json", createGraph );
+
+        function createGraph(error, graph) {
+          if (error) throw error;
+
+          var link = svg
+            .append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graph.links)
+            .enter()
+            .append("line")
+            .attr("stroke", function (d) {
+              return color(d.type);
+            })
+            .attr("marker-end", "url(#arrow)");
+
+          var node = svg
+            .append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graph.nodes)
+            .enter()
+            .append("circle")
+            .attr("r", 10)
+            .attr("fill", function (d) {
+              if (d.root == "true") return color(d.root);
+              return color(d.type);
+            })
+            .call(
+              d3
+                .drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended)
+            );
+
+          var text = svg
+            .append("g")
+            .attr("class", "labels")
+            .selectAll("g")
+            .data(graph.nodes)
+            .enter()
+            .append("g");
+
+          text
+            .append("text")
+            .attr("x", 14)
+            .attr("y", ".31em")
+            .style("font-family", "sans-serif")
+            .style("font-size", "0.7em")
+            .text(function (d) {
+              return d.id;
+            });
+
+          node.on("click", function (d) {
+            console.log("clicked", d.id);
+          });
+
+          node.append("title").text(function (d) {
+            return d.id;
+          });
+
+          simulation.nodes(graph.nodes).on("tick", ticked);
+
+          simulation.force("link").links(graph.links);
+          /*   simulation.force("link").links(
+                [
+                {
+                    source: 333,
+                    target: 308,
+                    type: 1,
+                },
+                {
+                    source: 373,
+                    target: 308,
+                    type: 1,
+                },
+                ]
+            ); */
+          //simulation.force("link").links(graph.links.slice(0, 1));
+          console.log(graph.links.slice(0, 1));
+
+          function ticked() {
+            link
+              .attr("x1", function (d) {
+                return d.source.x;
+              })
+              .attr("y1", function (d) {
+                return d.source.y;
+              })
+              .attr("x2", function (d) {
+                return d.target.x;
+              })
+              .attr("y2", function (d) {
+                return d.target.y;
+              });
+
+            node
+              .attr("cx", function (d) {
+                return d.x;
+              })
+              .attr("cy", function (d) {
+                return d.y;
+              });
+
+            text.attr("transform", function (d) {
+              return "translate(" + d.x + "," + d.y + ")";
+            });
+          }
+        }
+
+        function dragstarted(d) {
+          if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        }
+
+        function dragged(d) {
+          d.fx = d3.event.x;
+          d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+          if (!d3.event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }
+
+        function zoomed() {
+          svg.attr(
+            "transform",
+            "translate(" +
+              d3.event.transform.x +
+              "," +
+              d3.event.transform.y +
+              ")" +
+              " scale(" +
+              d3.event.transform.k +
+              ")"
+          );
+        }
+
+        /////////////////////////////////////////////////////////////////
+
+        createGraph(false, {
+          nodes: d3nodes,
+          links: d3links,
+        });
+
+        /* createGraph(false, {
+            nodes: [
+            {id: 0}, {id: 273}, {id: 1}, {id: 278}],
+            links: [
+            {
+                source: 0,
+                target: 273,
+                type: 1
+            },
+            {
+            source: 1,
+            target: 278,
+            type: 1
+            }
+            ],
+            }); */
+      }
+    </script>
+  </head>
+  <body onload="main()">
+    <svg id="graph" width="1024" height="764" style="border:solid 1px black"></svg>
+    <textarea id="output" cols="100" rows="49"></textarea>
+  </body>
+</html>
