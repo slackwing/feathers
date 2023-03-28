@@ -102,7 +102,8 @@
         let cycle_junctions = [];
         let non_cycle_junctions = [];
         let leafs = [];
-        let special_nodes = [97];
+        let special_nodes = [0x61, 0x11, 0x25, 0x17];
+        let special_nodes_map = new Map();
 
         for (j of junctions) {
           if (to_cycle.has(j)) {
@@ -111,6 +112,8 @@
             non_cycle_junctions.push(j);
           }
         }
+
+        for (j of special_nodes) special_nodes_map.set(j, true);
 
         write("Nodes that are junctions: "
             + junctions.length
@@ -291,10 +294,10 @@
         // v2
           .force("link", d3.forceLink()
                 .id(d => d.id)
-                .distance(d => edge_nodes.get(d.id).length / 40)
+                .distance(d => edge_nodes.get(d.id).length / 30)
                 .strength(2))
           .force("charge", d3.forceManyBody())
-          .force("collide",d3.forceCollide(20))
+          .force("collide",d3.forceCollide(10))
           .force("center", d3.forceCenter(width / 2, height / 2));
 
         //d3.json("data.json", createGraph );
@@ -353,7 +356,10 @@
             .data(graph.nodes)
             .enter()
             .append("circle")
-            .attr("r", 10)
+            .attr("r", function (d) {
+                if (special_nodes_map.has(Number(d.id))) return 10;
+                return 5;
+            })
             .attr("fill", function (d) {
               if (d.root == "true") return color(d.root);
               return color(d.type);
