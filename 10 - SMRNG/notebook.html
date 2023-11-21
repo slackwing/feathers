@@ -2,6 +2,8 @@
 <html>
   <head>
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="assembly.js"></script>
+    <script src="analyze_lcg.js"></script>
     <style>
       .links line {
         stroke-opacity: 0.6;
@@ -13,150 +15,129 @@
         stroke: #333;
         stroke-width: 1.5px;
       }
+
+      /* colored by timer */
+      .acheong87-fast { color: red; }
+      .acheong87-mid { color: green; }
+      .acheong87-slow { color: blue; }
+
+      /* colored by pattern */
+      .acheong87-left-fast { color: red; }
+      .acheong87-left-mid { color: purple; }
+      .acheong87-left-slow { color: blue; }
+      .acheong87-right-fast { color: purple; }
+      .acheong87-right-mid { color: green; }
+      .acheong87-right-slow { color: blue; }
+
+      /* colored by island */
+      .acheong87-C0 { color: white; }
+      .acheong87-C1153 { color: grey; }
+      .acheong87-C511 { color: black; }
+
     </style>
     <script>
+
+
       function write(str) {
         document.getElementById("output").value += str + "\n";
       }
 
+
       function main() {
 
-        function range(size) {
-          return [...Array(size).keys()]
-        }
+        let LCG = analyze_lcg(SM_RNG);
 
-        function LBYTE(x) {
-          return x & 0b11111111;
-        }
+        let XCG = analyze_lcg(SM_RNG_XBA);
 
-        function HBYTE(x) {
-          return (x & (0b11111111 << 8)) >> 8;
-        }
+        // console.log(sm_prng_xba(46215));
 
-        // TODO: Learn how to namespace things.
-        function sm_prng(x) {
-          var L5 = LBYTE(x) * 5;
-          var H5 = HBYTE(x) * 5;
-          var v1 = LBYTE(H5) + HBYTE(L5) + 1;
-          var carry = HBYTE(v1) > 0 ? 1 : 0;
-          var v2 = (LBYTE(v1) << 8) + LBYTE(L5);
-          var ans = v2 + 0x11 + carry;
-          return ans % 65536; // TODO: Patch the original algo with this line!
-        }
-
-        let junctions = [];
-
-        // Using pre-allocated array where all 2^16 values will be computed.
-        let next = Array(65536);
-        // Using object (as map) where not all 2^16 values will be computed.
-        let prev = new Map();
-        for (let i of range(65536)) {
-          let next_i = sm_prng(i);
-          next[i] = next_i;
-          if (!prev.has(next_i)) {
-            prev.set(next_i, [i]);
-          } else {
-            prev.set(next_i, prev.get(next_i).push(i));
-            junctions.push(next_i);
-          }
-        }
-
-        let visited_global = Array(65536).fill(false);
-        let to_cycle = new Map();
-        let cycles = [];
-        let cycle_sizes = new Map();
-
-        // First just detect the cycles. Handle tails later.
-
-        label_continue_scanning: for (let i = 0; i < 65536; i++) {
-          let j = i;
-          if (visited_global[j] == true) continue;
-          let visited_local = new Map();
-          while (true) {
-            visited_local.set(j, true);
-            visited_global[j] = true;
-            j = next[j];
-            if (visited_local.has(j)) {
-              break;
+        let edge_nodes_colored_by_timer = new Map();
+        for ([edge, nodes] of LCG.edge_nodes) {
+          edge_nodes_colored_by_timer.set(edge, nodes.map(node => {
+            const node_as_binary = node.toString(2).padStart(16, '0');
+            const last_three_digits = node_as_binary.slice(-3);
+            switch (last_three_digits) {
+              case "000":
+              case "011":
+              case "111":
+                return "<span class='acheong87-slow'>" + node + "</span>";
+              case "010":
+              case "100":
+              case "110":
+                return "<span class='acheong87-mid'>" + node + "</span>";
+              case "001":
+              case "101":
+                return "<span class='acheong87-fast'>" + node + "</span>";
+              default:
+                console.log("impossible pattern wtf");
+                exit();
             }
-            if (visited_global[j] == true) {
-              continue label_continue_scanning;
+          }));
+        }
+
+        let edge_nodes_colored_by_pattern = new Map();
+        for ([edge, nodes] of LCG.edge_nodes) {
+          edge_nodes_colored_by_pattern.set(edge, nodes.map(node => {
+            let placement = "";
+            let node_as_binary = node.toString(2).padStart(16, '0');
+            let last_digit = node_as_binary.slice(-1);
+            if (last_digit == "0") {
+              placement = "left"
+            } else {
+              placement = "right"
             }
-          }
-          let cycle_id = j;
-          let cycle_size = 0;
-          while (!to_cycle.has(j)) {
-            to_cycle.set(j, cycle_id);
-            cycle_size++;
-            j = next[j];
-          }
-          cycles.push(cycle_id);
-          cycle_sizes.set(cycle_id, cycle_size);
+            node = LCG.next.get(node);
+            node_as_binary = node.toString(2).padStart(16, '0');
+            last_three_digits = node_as_binary.slice(-3);
+            switch (last_three_digits) {
+              case "000":
+              case "011":
+              case "111":
+                return "<span class='acheong87-" + placement + "-slow'>" + node + "</span>";
+              case "010":
+              case "100":
+              case "110":
+                return "<span class='acheong87-" + placement + "-mid'>" + node + "</span>";
+              case "001":
+              case "101":
+                return "<span class='acheong87-" + placement + "-fast'>" + node + "</span>";
+              default:
+                console.log("impossible pattern wtf");
+                exit();
+            }
+          }));
         }
 
-        write("Found " + cycles.length + " cycles.");
-        for (c of cycles) {
-            write("  - 'C" + c + "' with " + cycle_sizes.get(c) + " nodes.");
+        // let edge_nodes_colored_by_cycle = new Map();
+        // for ([edge, nodes] of XCG.edge_nodes) {
+        //   edge_nodes_colored_by_cycle.set(edge, nodes.map(node => {
+        //     switch (LCG.node_to_cycle(node)) {
+
+        //     }
+        //   }));
+        // }
+
+        let xba_edge_nodes_colored_by_cycle = new Map();
+        for ([edge, nodes] of XCG.edge_nodes) {
+          xba_edge_nodes_colored_by_cycle.set(edge, nodes.map(node => {
+            console.log(node);
+            console.log(LCG.node_to_cycle);
+            let cycle = LCG.node_to_cycle.get(node);
+            console.log(cycle);
+            switch (cycle) {
+              case "C0":
+                return "<span class='acheong87-C0'>" + node + "</span>";
+              case "C1153":
+                return "<span class='acheong87-C1153'>" + node + "</span>";
+              case "C511":
+                return "<span class='acheong87-C511'>" + node + "</span>";
+              default:
+                console.log("impossible island wtf");
+                exit();
+            }
+          }));
         }
 
-        let cycle_junctions = [];
-        let non_cycle_junctions = [];
-        let leafs = [];
-        let special_nodes = [0x61, 0x11, 0x25, 0x17];
-        let special_nodes_map = new Map();
-
-        for (j of junctions) {
-          if (to_cycle.has(j)) {
-            cycle_junctions.push(j);
-          } else {
-            non_cycle_junctions.push(j);
-          }
-        }
-
-        for (j of special_nodes) special_nodes_map.set(j, true);
-
-        write("Nodes that are junctions: "
-            + junctions.length
-            + " ("
-            + cycle_junctions.length
-            + " in cycles, "
-            + non_cycle_junctions.length
-            + " not in cycles)");
-
-        for (let i of range(65536)) {
-          if (!prev.has(i)) {
-            leafs.push(Number(i));
-          }
-        }
-
-        let key_nodes = junctions.concat(leafs).concat(special_nodes).concat(cycles);
-        key_nodes = Array.from(new Set(key_nodes)); // Only unique nodes.
-        let key_nodes_map = new Map();
-        for (j of key_nodes) key_nodes_map.set(j, true);
-
-        write("Nodes that are leafs: " + leafs.length);
-        write("Nodes that are special nodes: " + special_nodes.length);
-        write("Nodes that are cycle start nodes: " + cycles.length);
-        write("Nodes that are key nodes: " + key_nodes.length);
-
-        let edges = [];
-        let edge_nodes = new Map();
-        let edge_sizes = new Map();
-
-        for (j of key_nodes) {
-          let nodes = [j];
-          let i = j;
-          do {
-            i = next[i];
-            nodes.push(i);
-          } while (!key_nodes_map.has(i));
-          edges.push(j + "-" + i);
-          edge_nodes.set(j + "-" + i, nodes);
-          edge_sizes.set(j + "-" + i, nodes.length);
-        }
-
-        write("Edges: " + edges.length);
-        write("Edges:\n" + edges.join(", "));
 
         //console.log(key_nodes.sort());
 
@@ -207,24 +188,25 @@
             console.log(odd + " ODDS");
             console.log(octet); */
 
-        
-        let cycle_junctions_map = new Map();
-        for (j of cycle_junctions) cycle_junctions_map.set(j, true);
+        focused_LCG = XCG;
 
-        let d3nodes = key_nodes.map((node) => {
+        let d3nodes = focused_LCG.key_nodes.map((node) => {
           let type = 1;
-          if (cycle_junctions_map.has(node)) type = 2;
+          if (focused_LCG.is_cycle_junction.has(node)) type = 2;
           return {
             id: node.toString(),
             type: type,
           };
         });
 
-        let d3links = edges.map((edge) => {
+        let d3links = focused_LCG.edges.map((edge) => {
           let source = Number(edge.split("-")[0]);
           let target = Number(edge.split("-")[1]);
           let type = 1;
-          if (cycle_junctions_map.has(source) && cycle_junctions_map.has(target)) type = 3;
+          if (focused_LCG.is_cycle_junction.has(source) &&
+              focused_LCG.is_cycle_junction.has(target)) {
+            type = 3;
+          }
           return {
             id: edge,
             source: source,
@@ -237,12 +219,12 @@
         let stop = false;
         let i = 0;
         for (link of d3links) {
-          if (!key_nodes_map.has(link.source)) {
+          if (!focused_LCG.is_key_node.has(link.source)) {
             // console.log("Missing node: " + link.source);
             i++;
             stop = true;
           }
-          if (!key_nodes_map.has(link.target)) {
+          if (!focused_LCG.is_key_node.has(link.target)) {
             // console.log("Missing node: " + link.target);
             i++;
             stop = true;
@@ -294,9 +276,9 @@
         // v2
           .force("link", d3.forceLink()
                 .id(d => d.id)
-                .distance(d => edge_nodes.get(d.id).length / 30)
+                .distance(d => focused_LCG.edge_nodes.get(d.id).length / 2)
                 .strength(2))
-          .force("charge", d3.forceManyBody())
+          .force("charge", d3.forceManyBody().strength(-100))
           .force("collide",d3.forceCollide(10))
           .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -310,7 +292,9 @@
             .style("position", "absolute")
             .style("z-index", "10")
             .style("visibility", "hidden")
-            .text("asdf");
+            .style("width", "512px")
+            .style("padding", "8px")
+            .style("background-color", "rgba(208, 208, 208, 0.7)");
 
           var link = svg
             .append("g")
@@ -337,10 +321,10 @@
             .style("stroke-width", 20)
             .on("mouseover", function(d){
                 document.querySelector("#edge-" + d.id).setAttribute("style", "stroke-width: 5");
-                let nodes = edge_nodes.get(d.id);
+                let nodes_colored = edge_nodes_colored_by_pattern.get(d.id);
                 return tooltip
                     .style("visibility", "visible")
-                    .text(nodes.length.toString() + " nodes:<br/>" + nodes.join(', '));
+                    .html("<p>" + nodes.length.toString() + " nodes:</p><p>" + nodes_colored.join(' ➔ ') + "</p>");
             })
             .on("mousemove", function(){return tooltip.style("top",
                 (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
@@ -357,8 +341,8 @@
             .enter()
             .append("circle")
             .attr("r", function (d) {
-                if (special_nodes_map.has(Number(d.id))) return 10;
-                return 5;
+                if (focused_LCG.is_special_node.has(Number(d.id))) return 20;
+                return 10;
             })
             .attr("fill", function (d) {
               if (d.root == "true") return color(d.root);
@@ -382,10 +366,12 @@
 
           text
             .append("text")
-            .attr("x", 14)
-            .attr("y", ".31em")
+            .attr("x", 0)
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
             .style("font-family", "sans-serif")
-            .style("font-size", "0.7em")
+            .style("font-size", "0.5em")
+            .style("pointer-events", "none")
             .text(function (d) {
               return d.id;
             });
@@ -503,7 +489,9 @@
     </script>
   </head>
   <body onload="main()">
-    <svg id="graph" width="1024" height="764" style="border:solid 1px black"></svg>
-    <textarea id="output" cols="100" rows="49"></textarea>
+    <div>
+        <svg id="graph" width="1280" height="1280" style="border:solid 1px black"></svg>
+        <textarea id="output" cols="56" rows="85"></textarea>
+    </div>
   </body>
 </html>
