@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="assembly.js"></script>
+    <script src="analyze_lcg.js"></script>
+    <style>
+      .links line {
+        stroke-opacity: 0.6;
+        stroke-width: 1px;
+        fill: none;
+      }
+
+      .nodes circle {
+        stroke: #333;
+        stroke-width: 1.5px;
+      }
+
+      /* colored by timer */
+      .acheong87-fast { color: red; }
+      .acheong87-mid { color: green; }
+      .acheong87-slow { color: blue; }
+
+      /* colored by pattern */
+      .acheong87-left-fast { color: red; }
+      .acheong87-left-mid { color: purple; }
+      .acheong87-left-slow { color: blue; }
+      .acheong87-right-fast { color: purple; }
+      .acheong87-right-mid { color: green; }
+      .acheong87-right-slow { color: blue; }
+
+      /* colored by island */
+      .acheong87-C0 { color: white; }
+      .acheong87-C1153 { color: grey; }
+      .acheong87-C511 { color: black; }
+
+    </style>
+    <script>
+
+
+      function write(str) {
+        document.getElementById("output").value += str + "\n";
+      }
+
+
+      function main() {
+
+        let LCG = analyze_lcg(SM_RNG);
+
+        let XCG = analyze_lcg(SM_RNG_XBA);
+
+        // console.log(sm_prng_xba(46215));
+
+        let edge_nodes_colored_by_timer = new Map();
+        for ([edge, nodes] of LCG.edge_nodes) {
+          edge_nodes_colored_by_timer.set(edge, nodes.map(node => {
+            const node_as_binary = node.toString(2).padStart(16, '0');
+            const last_three_digits = node_as_binary.slice(-3);
+            switch (last_three_digits) {
+              case "000":
+              case "011":
+              case "111":
+                return "<span class='acheong87-slow'>" + node + "</span>";
+              case "010":
+              case "100":
+              case "110":
+                return "<span class='acheong87-mid'>" + node + "</span>";
+              case "001":
+              case "101":
+                return "<span class='acheong87-fast'>" + node + "</span>";
+              default:
+                console.log("impossible pattern wtf");
+                exit();
+            }
+          }));
+        }
+
+        let edge_nodes_colored_by_pattern = new Map();
+        for ([edge, nodes] of LCG.edge_nodes) {
+          edge_nodes_colored_by_pattern.set(edge, nodes.map(node => {
+            let placement = "";
+            let node_as_binary = node.toString(2).padStart(16, '0');
+            let last_digit = node_as_binary.slice(-1);
+            if (last_digit == "0") {
+              placement = "left"
+            } else {
+              placement = "right"
+            }
+            node = LCG.next.get(node);
+            node_as_binary = node.toString(2).padStart(16, '0');
+            last_three_digits = node_as_binary.slice(-3);
+            switch (last_three_digits) {
+              case "000":
+              case "011":
+              case "111":
+                return "<span class='acheong87-" + placement + "-slow'>" + node + "</span>";
+              case "010":
+              case "100":
+              case "110":
+                return "<span class='acheong87-" + placement + "-mid'>" + node + "</span>";
+              case "001":
+              case "101":
+                return "<span class='acheong87-" + placement + "-fast'>" + node + "</span>";
+              default:
+                console.log("impossible pattern wtf");
+                exit();
+            }
+          }));
+        }
+
+        // let edge_nodes_colored_by_cycle = new Map();
+        // for ([edge, nodes] of XCG.edge_nodes) {
+        //   edge_nodes_colored_by_cycle.set(edge, nodes.map(node => {
+        //     switch (LCG.node_to_cycle(node)) {
+
+        //     }
+        //   }));
+        // }
+
+        let xba_edge_nodes_colored_by_cycle = new Map();
+        for ([edge, nodes] of XCG.edge_nodes) {
+          xba_edge_nodes_colored_by_cycle.set(edge, nodes.map(node => {
+            console.log(node);
+            console.log(LCG.node_to_cycle);
+            let cycle = LCG.node_to_cycle.get(node);
+            console.log(cycle);
+            switch (cycle) {
+              case "C0":
+                return "<span class='acheong87-C0'>" + node + "</span>";
+              case "C1153":
+                return "<span class='acheong87-C1153'>" + node + "</span>";
+              case "C511":
+                return "<span class='acheong87-C511'>" + node + "</span>";
+              default:
+                console.log("impossible island wtf");
+                exit();
+            }
+          }));
+        }
+
+
+        //console.log(key_nodes.sort());
+
+        //console.log(edges);
+
+        /* let node = cycles[2];
+            let tmp = node;
+            let odd = 0;
+            let even = 0;
+            let octet = [0, 0, 0, 0, 0, 0, 0, 0];
+            do {
+            tmp = sm_prng(tmp);
+            let bin = tmp.toString(2);
+            console.log(bin.padStart(16, '0'))
+            if (bin.substring(bin.length-1) == "0") {
+                even++;
+            } else {
+                odd++;
+            }
+            switch (bin.substring(bin.length-3)) {
+            case "000":
+                octet[0] = octet[0] + 1;
+                break;
+            case "001":
+                octet[1] = octet[1] + 1;
+                break;
+            case "010":
+                octet[2] = octet[2] + 1;
+                break;
+            case "011":
+                octet[3] = octet[3] + 1;
+                break;
+            case "100":
+                octet[4] = octet[4] + 1;
+                break;
+            case "101":
+                octet[5] = octet[5] + 1;
+                break;
+            case "110":
+                octet[6] = octet[6] + 1;
+                break;
+            case "111":
+                octet[7] = octet[7] + 1;
+                break;
+            }
+            } while (tmp != node);
+            console.log(even + " EVENS");
+            console.log(odd + " ODDS");
+            console.log(octet); */
+
+        focused_LCG = XCG;
+
+        let d3nodes = focused_LCG.key_nodes.map((node) => {
+          let type = 1;
+          if (focused_LCG.is_cycle_junction.has(node)) type = 2;
+          return {
+            id: node.toString(),
+            type: type,
+          };
+        });
+
+        let d3links = focused_LCG.edges.map((edge) => {
+          let source = Number(edge.split("-")[0]);
+          let target = Number(edge.split("-")[1]);
+          let type = 1;
+          if (focused_LCG.is_cycle_junction.has(source) &&
+              focused_LCG.is_cycle_junction.has(target)) {
+            type = 3;
+          }
+          return {
+            id: edge,
+            source: source,
+            target: target,
+            type: type,
+          };
+        });
+
+        // Check that every source and target is a real node.
+        let stop = false;
+        let i = 0;
+        for (link of d3links) {
+          if (!focused_LCG.is_key_node.has(link.source)) {
+            // console.log("Missing node: " + link.source);
+            i++;
+            stop = true;
+          }
+          if (!focused_LCG.is_key_node.has(link.target)) {
+            // console.log("Missing node: " + link.target);
+            i++;
+            stop = true;
+          }
+        }
+        if (stop) {
+          throw new Error("Missing " + i + " nodes.");
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        var svg = d3.select("svg");
+
+        var width = svg.attr("width");
+        var height = svg.attr("height");
+
+        svg = svg.call(d3.zoom().on("zoom", zoomed)).append("g");
+
+        svg
+          .append("defs")
+          .append("marker")
+          .attr("id", "arrow")
+          .attr("viewBox", "0 -5 10 10")
+          .attr("refX", 20)
+          .attr("refY", 0)
+          .attr("markerWidth", 8)
+          .attr("markerHeight", 8)
+          .attr("orient", "auto")
+          .append("svg:path")
+          .attr("d", "M0,-5L10,0L0,5");
+
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        var simulation = d3
+          .forceSimulation()
+          .force(
+            "link",
+            d3.forceLink().id(function (d) {
+              return d.id;
+            })
+          )
+
+        // v1
+        //   .force("link", d3.forceLink().id(d => d.id).distance(10).strength(1))
+        //   .force("charge", d3.forceManyBody())
+        //   .force("collide",d3.forceCollide(10))
+        //   .force("center", d3.forceCenter(width / 2, height / 2));
+
+        // v2
+          .force("link", d3.forceLink()
+                .id(d => d.id)
+                .distance(d => focused_LCG.edge_nodes.get(d.id).length / 2)
+                .strength(2))
+          .force("charge", d3.forceManyBody().strength(-100))
+          .force("collide",d3.forceCollide(10))
+          .force("center", d3.forceCenter(width / 2, height / 2));
+
+        //d3.json("data.json", createGraph );
+
+        function createGraph(error, graph) {
+          if (error) throw error;
+
+          var tooltip = d3.select("body")
+            .append("div")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+            .style("width", "512px")
+            .style("padding", "8px")
+            .style("background-color", "rgba(208, 208, 208, 0.7)");
+
+          var link = svg
+            .append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graph.links)
+            .enter()
+            .append("line")
+            .attr("id", function(d) {return "edge-" + d.id;})
+            .attr("stroke", function (d) {
+              return color(d.type);
+            })
+            .attr("marker-end", "url(#arrow)");
+
+          var linkEffects = svg
+            .append("g")
+            .attr("class", "linkEffects")
+            .selectAll("line")
+            .data(graph.links)
+            .enter()
+            .append("line")
+            .attr("stroke", "none")
+            .attr("pointer-events", "all")
+            .style("stroke-width", 20)
+            .on("mouseover", function(d){
+                document.querySelector("#edge-" + d.id).setAttribute("style", "stroke-width: 5");
+                let nodes_colored = edge_nodes_colored_by_pattern.get(d.id);
+                return tooltip
+                    .style("visibility", "visible")
+                    .html("<p>" + nodes.length.toString() + " nodes:</p><p>" + nodes_colored.join(' ➔ ') + "</p>");
+            })
+            .on("mousemove", function(){return tooltip.style("top",
+                (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+            .on("mouseout", function(d){
+                document.querySelector("#edge-" + d.id).setAttribute("style", "stroke-width: 1");
+                return tooltip.style("visibility", "hidden");
+            });
+
+          var node = svg
+            .append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graph.nodes)
+            .enter()
+            .append("circle")
+            .attr("r", function (d) {
+                if (focused_LCG.is_special_node.has(Number(d.id))) return 20;
+                return 10;
+            })
+            .attr("fill", function (d) {
+              if (d.root == "true") return color(d.root);
+              return color(d.type);
+            })
+            .call(
+              d3
+                .drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended)
+            );
+
+          var text = svg
+            .append("g")
+            .attr("class", "labels")
+            .selectAll("g")
+            .data(graph.nodes)
+            .enter()
+            .append("g");
+
+          text
+            .append("text")
+            .attr("x", 0)
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .style("font-family", "sans-serif")
+            .style("font-size", "0.5em")
+            .style("pointer-events", "none")
+            .text(function (d) {
+              return d.id;
+            });
+
+          node.on("click", function (d) {
+            console.log("clicked", d.id);
+          });
+
+          node.append("title").text(function (d) {
+            return d.id;
+          });
+
+          simulation.nodes(graph.nodes).on("tick", ticked);
+
+          simulation.force("link").links(graph.links);
+
+          function ticked() {
+            link
+              .attr("x1", function (d) {
+                return d.source.x;
+              })
+              .attr("y1", function (d) {
+                return d.source.y;
+              })
+              .attr("x2", function (d) {
+                return d.target.x;
+              })
+              .attr("y2", function (d) {
+                return d.target.y;
+              });
+
+            linkEffects
+              .attr("x1", function (d) {
+                return d.source.x;
+              })
+              .attr("y1", function (d) {
+                return d.source.y;
+              })
+              .attr("x2", function (d) {
+                return d.target.x;
+              })
+              .attr("y2", function (d) {
+                return d.target.y;
+              });
+
+            node
+              .attr("cx", function (d) {
+                return d.x;
+              })
+              .attr("cy", function (d) {
+                return d.y;
+              });
+
+            text.attr("transform", function (d) {
+              return "translate(" + d.x + "," + d.y + ")";
+            });
+          }
+        }
+
+        function dragstarted(d) {
+          if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        }
+
+        function dragged(d) {
+          d.fx = d3.event.x;
+          d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+          if (!d3.event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }
+
+        function zoomed() {
+          svg.attr(
+            "transform",
+            "translate(" +
+              d3.event.transform.x +
+              "," +
+              d3.event.transform.y +
+              ")" +
+              " scale(" +
+              d3.event.transform.k +
+              ")"
+          );
+        }
+
+        /////////////////////////////////////////////////////////////////
+
+        createGraph(false, {
+          nodes: d3nodes,
+          links: d3links,
+        });
+
+        /* createGraph(false, {
+            nodes: [
+            {id: 0}, {id: 273}, {id: 1}, {id: 278}],
+            links: [
+            {
+                source: 0,
+                target: 273,
+                type: 1
+            },
+            {
+            source: 1,
+            target: 278,
+            type: 1
+            }
+            ],
+            }); */
+      }
+    </script>
+  </head>
+  <body onload="main()">
+    <div>
+        <svg id="graph" width="1280" height="1280" style="border:solid 1px black"></svg>
+        <textarea id="output" cols="56" rows="85"></textarea>
+    </div>
+  </body>
+</html>
