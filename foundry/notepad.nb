@@ -1,0 +1,366 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     13342,        358]
+NotebookOptionsPosition[     12075,        327]
+NotebookOutlinePosition[     12499,        344]
+CellTagsIndexPosition[     12456,        341]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"MyPrint", "[", 
+    RowBox[{"msg_", ",", "arg1_"}], "]"}], ":=", 
+   RowBox[{"Print", "[", 
+    RowBox[{
+     RowBox[{"StringForm", "[", 
+      RowBox[{"msg", ",", "arg1"}], "]"}], "~", "Style", "~", "Blue"}], 
+    "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.909569047549279*^9, 3.9095691435751963`*^9}, {
+  3.909570611385632*^9, 3.909570611954915*^9}, {3.909570732834592*^9, 
+  3.909570733188716*^9}, {3.9095708517245007`*^9, 3.90957085255916*^9}, {
+  3.9095737629827967`*^9, 3.90957376335903*^9}},
+ CellLabel->
+  "In[155]:=",ExpressionUUID->"a3119d92-5407-4df3-ac03-0f4f3592423b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"u", "=", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"d", "=", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"allPossiblePairsOfCoefficients", "=", 
+    RowBox[{"Tuples", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"1", "/", "2"}], ",", 
+        RowBox[{
+         RowBox[{"-", "1"}], "/", "2"}], ",", 
+        RowBox[{"I", "/", "2"}], ",", 
+        RowBox[{
+         RowBox[{"-", "I"}], "/", "2"}]}], "}"}], ",", "2"}], "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"allPossibleChoicesOfPairsForRLOI", "=", 
+   RowBox[{"Tuples", "[", 
+    RowBox[{"allPossiblePairsOfCoefficients", ",", "4"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"MyPrint", "[", "\[IndentingNewLine]", 
+   RowBox[{
+   "\"\<`1` possible combinations of pairs of coefficients for |r>, |l>, |o>, \
+and |i>.\>\"", ",", "\[IndentingNewLine]", 
+    RowBox[{"Length", "[", "allPossibleChoicesOfPairsForRLOI", "]"}]}], "]"}],
+   ";"}]}], "Input",
+ CellChangeTimes->{{3.909439577266397*^9, 3.9094396124984617`*^9}, {
+   3.909439781369944*^9, 3.909439793917947*^9}, {3.909439904645534*^9, 
+   3.909439924337619*^9}, {3.909440784632551*^9, 3.909440789035384*^9}, 
+   3.909440819553053*^9, {3.909440884578471*^9, 3.9094408851649942`*^9}, {
+   3.909508218416431*^9, 3.9095082528521557`*^9}, {3.909508288211873*^9, 
+   3.909508440657112*^9}, {3.9095085301713333`*^9, 3.909508562214876*^9}, {
+   3.909508721461356*^9, 3.909508842149983*^9}, {3.909508904520047*^9, 
+   3.909508965968873*^9}, {3.909509012838868*^9, 3.90950901840469*^9}, {
+   3.909509064976552*^9, 3.909509112712413*^9}, {3.909509180957333*^9, 
+   3.9095092495729094`*^9}, {3.90950931338783*^9, 3.909509361438794*^9}, {
+   3.9095094706686563`*^9, 3.90950947840831*^9}, {3.909568567798245*^9, 
+   3.909568570955011*^9}, {3.909568711914222*^9, 3.909568739544952*^9}, {
+   3.909568870796125*^9, 3.9095689178884563`*^9}, {3.9095689500705023`*^9, 
+   3.9095690003242273`*^9}, {3.909569152573715*^9, 3.9095692261829*^9}, {
+   3.909570924199622*^9, 3.909570958024693*^9}, {3.909571424233468*^9, 
+   3.909571441776663*^9}, {3.909572000160988*^9, 3.909572012849188*^9}},
+ CellLabel->
+  "In[156]:=",ExpressionUUID->"387d09a7-af1f-471d-94a9-15fc3de10445"],
+
+Cell[BoxData[
+ StyleBox[
+  InterpretationBox["\<\"\\!\\(\\*RowBox[{\\\"65536\\\"}]\\) possible \
+combinations of pairs of coefficients for |r>, |l>, |o>, and |i>.\"\>",
+   StringForm[
+   "`1` possible combinations of pairs of coefficients for |r>, |l>, |o>, and \
+|i>.", 65536],
+   Editable->False],
+  StripOnInput->False,
+  LineColor->RGBColor[0, 0, 1],
+  FrontFaceColor->RGBColor[0, 0, 1],
+  BackFaceColor->RGBColor[0, 0, 1],
+  GraphicsColor->RGBColor[0, 0, 1],
+  FontColor->RGBColor[0, 0, 1]]], "Print",
+ CellChangeTimes->{
+  3.909569226863811*^9, 3.909570740107141*^9, 3.909570964543769*^9, 
+   3.909571443807055*^9, 3.909572204057335*^9, {3.909573759385087*^9, 
+   3.9095737662365294`*^9}},
+ CellLabel->
+  "During evaluation of \
+In[156]:=",ExpressionUUID->"64d54501-70e3-4d6d-b283-f80f291ad98f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"withOrthogonality", "=", 
+   RowBox[{"Cases", "[", "\[IndentingNewLine]", 
+    RowBox[{"allPossibleChoicesOfPairsForRLOI", ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"r_", ",", "l_", ",", "o_", ",", "i_"}], "}"}], "/;", 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Dot", "[", 
+         RowBox[{"r", ",", 
+          RowBox[{"Transpose", "[", "l", "]"}]}], "]"}], "==", "0"}], "&&", 
+       RowBox[{
+        RowBox[{"Dot", "[", 
+         RowBox[{"o", ",", 
+          RowBox[{"Transpose", "[", "i", "]"}]}], "]"}], "==", "0"}]}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"MyPrint", "[", "\[IndentingNewLine]", 
+   RowBox[{
+   "\"\<`1` possible combinations where <r|l>=0 and <o|i>=0.\>\"", ",", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Length", "[", "withOrthogonality", "]"}]}], "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{3.9098758816585093`*^9},
+ CellLabel->
+  "In[173]:=",ExpressionUUID->"b44bf6bf-b5e2-4598-a3fe-00919bfa2f8b"],
+
+Cell[BoxData[
+ StyleBox[
+  InterpretationBox["\<\"\\!\\(\\*RowBox[{\\\"4096\\\"}]\\) possible \
+combinations where <r|l>=0 and <o|i>=0.\"\>",
+   StringForm["`1` possible combinations where <r|l>=0 and <o|i>=0.", 4096],
+   Editable->False],
+  StripOnInput->False,
+  LineColor->RGBColor[0, 0, 1],
+  FrontFaceColor->RGBColor[0, 0, 1],
+  BackFaceColor->RGBColor[0, 0, 1],
+  GraphicsColor->RGBColor[0, 0, 1],
+  FontColor->RGBColor[0, 0, 1]]], "Print",
+ CellChangeTimes->{3.909875883579206*^9},
+ CellLabel->
+  "During evaluation of \
+In[173]:=",ExpressionUUID->"1a3d02f7-85f0-4622-9582-d532bd551f17"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"withPerpendicularity", "=", 
+   RowBox[{"Cases", "[", "\[IndentingNewLine]", 
+    RowBox[{"withOrthogonality", ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"r_", ",", "l_", ",", "o_", ",", "i_"}], "}"}], "/;", 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"u", ",", 
+           RowBox[{"Transpose", "[", "r", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"u", ",", 
+           RowBox[{"Transpose", "[", "l", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"u", ",", 
+           RowBox[{"Transpose", "[", "o", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"u", ",", 
+           RowBox[{"Transpose", "[", "i", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"d", ",", 
+           RowBox[{"Transpose", "[", "r", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"d", ",", 
+           RowBox[{"Transpose", "[", "l", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"d", ",", 
+           RowBox[{"Transpose", "[", "o", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"d", ",", 
+           RowBox[{"Transpose", "[", "i", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"r", ",", 
+           RowBox[{"Transpose", "[", "o", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"r", ",", 
+           RowBox[{"Transpose", "[", "i", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"l", ",", 
+           RowBox[{"Transpose", "[", "o", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}], "&&", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Abs", "[", 
+         RowBox[{"Dot", "[", 
+          RowBox[{"l", ",", 
+           RowBox[{"Transpose", "[", "i", "]"}]}], "]"}], "]"}], "==", 
+        RowBox[{"1", "/", "2"}]}]}]}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"MyPrint", "[", "\[IndentingNewLine]", 
+   RowBox[{
+   "\"\<`1` possible combinations where all perpendicular <X|Y> are 1/2.\>\"",
+     ",", "\[IndentingNewLine]", 
+    RowBox[{"Length", "[", "withPerpendicularity", "]"}]}], "]"}], 
+  ";"}]}], "Input",
+ CellLabel->
+  "In[175]:=",ExpressionUUID->"d5174b68-d073-43df-a0d0-5c73f9269595"],
+
+Cell[BoxData[
+ StyleBox[
+  InterpretationBox["\<\"\\!\\(\\*RowBox[{\\\"512\\\"}]\\) possible \
+combinations where all perpendicular <X|Y> are 1/2.\"\>",
+   StringForm[
+   "`1` possible combinations where all perpendicular <X|Y> are 1/2.", 512],
+   Editable->False],
+  StripOnInput->False,
+  LineColor->RGBColor[0, 0, 1],
+  FrontFaceColor->RGBColor[0, 0, 1],
+  BackFaceColor->RGBColor[0, 0, 1],
+  GraphicsColor->RGBColor[0, 0, 1],
+  FontColor->RGBColor[0, 0, 1]]], "Print",
+ CellChangeTimes->{3.909877524432947*^9},
+ CellLabel->
+  "During evaluation of \
+In[175]:=",ExpressionUUID->"7e68da5c-1415-434b-a70b-915bb986d828"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"withoutDuplicates", "=", 
+   RowBox[{"Cases", "[", "\[IndentingNewLine]", 
+    RowBox[{"withPerpendicularity", ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"r_", ",", "l_", ",", "o_", ",", "i_"}], "}"}], "/;", 
+      "\[IndentingNewLine]", 
+      RowBox[{"DuplicateFreeQ", "[", 
+       RowBox[{"{", 
+        RowBox[{"r", ",", "l", ",", "o", ",", "i"}], "}"}], "]"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"MyPrint", "[", "\[IndentingNewLine]", 
+   RowBox[{
+   "\"\<`1` possible combinations without duplicates.\>\"", ",", 
+    "\[IndentingNewLine]", " ", 
+    RowBox[{"Length", "[", "withoutDuplicates", "]"}]}], "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.909568587967535*^9, 3.9095685894570093`*^9}, 
+   3.909568741090329*^9, {3.90957076703295*^9, 3.909570769462726*^9}, 
+   3.909572076095214*^9, {3.909573777138802*^9, 3.909573778031454*^9}, 
+   3.909878139821269*^9},
+ CellLabel->
+  "In[179]:=",ExpressionUUID->"64c1c0a4-2de0-4de3-a0c8-602e395d4cd6"],
+
+Cell[BoxData[
+ StyleBox[
+  InterpretationBox["\<\"\\!\\(\\*RowBox[{\\\"288\\\"}]\\) possible \
+combinations without duplicates.\"\>",
+   StringForm["`1` possible combinations without duplicates.", 288],
+   Editable->False],
+  StripOnInput->False,
+  LineColor->RGBColor[0, 0, 1],
+  FrontFaceColor->RGBColor[0, 0, 1],
+  BackFaceColor->RGBColor[0, 0, 1],
+  GraphicsColor->RGBColor[0, 0, 1],
+  FontColor->RGBColor[0, 0, 1]]], "Print",
+ CellChangeTimes->{3.909878182971706*^9},
+ CellLabel->
+  "During evaluation of \
+In[179]:=",ExpressionUUID->"59501c18-7260-47a6-8271-4194f2f0490a"]
+}, Open  ]]
+},
+WindowSize->{1120, 1387},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+Magnification:>1.25 Inherited,
+FrontEndVersion->"13.3 for Mac OS X x86 (64-bit) (July 24, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"de0b3b19-3118-440a-a96b-f4b35584a42b"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 633, 15, 37, "Input",ExpressionUUID->"a3119d92-5407-4df3-ac03-0f4f3592423b"],
+Cell[CellGroupData[{
+Cell[1216, 39, 2411, 52, 194, "Input",ExpressionUUID->"387d09a7-af1f-471d-94a9-15fc3de10445"],
+Cell[3630, 93, 801, 20, 29, "Print",ExpressionUUID->"64d54501-70e3-4d6d-b283-f80f291ad98f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4468, 118, 1065, 28, 194, "Input",ExpressionUUID->"b44bf6bf-b5e2-4598-a3fe-00919bfa2f8b"],
+Cell[5536, 148, 594, 15, 29, "Print",ExpressionUUID->"1a3d02f7-85f0-4622-9582-d532bd551f17"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6167, 168, 3591, 91, 480, "Input",ExpressionUUID->"d5174b68-d073-43df-a0d0-5c73f9269595"],
+Cell[9761, 261, 620, 16, 29, "Print",ExpressionUUID->"7e68da5c-1415-434b-a70b-915bb986d828"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10418, 282, 1060, 25, 194, "Input",ExpressionUUID->"64c1c0a4-2de0-4de3-a0c8-602e395d4cd6"],
+Cell[11481, 309, 578, 15, 29, "Print",ExpressionUUID->"59501c18-7260-47a6-8271-4194f2f0490a"]
+}, Open  ]]
+}
+]
+*)
+
