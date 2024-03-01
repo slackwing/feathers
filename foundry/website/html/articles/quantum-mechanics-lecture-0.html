@@ -1,0 +1,274 @@
+<?php
+
+$id = 1;
+$version = '0.1';
+$published = 'Oct 9, 2023';
+$updated = 'N/A';
+$title = 'Quantum Mechanics: Lecture 0, a prereq on symbols, rules, and strange rules';
+$article = <<<'HEREDOC'
+
+$\require{unicode}$
+
+_This article is part of a series on **Quantum Mechanics: The Theoretical Minimum** by Leonard Susskind._
+
+### Why
+
+I struggle to imagine why the layperson clicked that title. But don't go just yet. _Foundations_ sounds like a first day of class—introductions, a syllabus, a review of prerequisite knowledge—but why bother if you have no intention of going further? And _Quantum Mechanics_ has more or less come to mean _a subject no one understands_, accessible only to an exclusive group of serious or weird people. But this article is not either.
+
+This article is about something profound, not only to quantum mechanics but to any mechanism of perception, including the mind.
+
+
+
+As usual, there are many ways to write this article.
+
+
+This article 
+
+
+symbols 
+
+
+
+I happen to be writing this article to support some other articles on quantum mechanics. However it's not 
+
+I'm writing this article to supplement some other articles on quantum mechanics, but it stands on its own.
+
+boring, introductory lecture on a subject, not worth knowing on its own. "Quantum Mechanics" sounds like nothing you could hope to meaningfully understand, 
+
+You've either been directed here from one of my other articles, or, I don't know why you're here.
+
+I struggle to imagine why any layperson is reading 
+
+
+There's a part relatively early in the book that begins,
+
+<blockquote><i>"Please read this section carefully. Believe me, it will pay off."</i></blockquote>
+
+The author means to mentor, but raising the bar for what "counts" as understanding may end up discouraging some learners, or even stop them dead in their tracks. And that's because not everything in this lecture _can_ be completely understood. What a student considers "complete" varies, but there are several things in this lecture that have to be taken on faith, and at least a few arbitrary operations that the student is expected to use and get used to _sans_ explanation.
+
+Would it do good to inspect things a bit more closely than usual? Sure. But it wouldn't do any good to rack one's brains asking _"Why?"_ when it's not possible to know. You may not have been introduced to concepts needed to answer why. Or it may even be that _no one_ knows—science hasn't gotten there yet. But how do you _know_ when to ask why and when to continue forward without?
+
+Well, there so happens to be a kind of knowledge that can help. It doesn't directly answer when to ask and when to not. But like the outline of a missing puzzle piece <s>created by the pieces surrounding it</s>, it helps you picture what exactly you're looking to understand _from_ the why—where and how the answer would fit into the bigger picture. This has the immense power of _organizing_ what you do not know. Which in turn gains you the confidence to move forward without all the answers, because you'll have a sense for knowing when you'll actually need them.
+
+<!-- Illustration: Imagining black and white and newspaper cartoonish, even cartoonish characters (not serious), but actually open to any style, colored or not. Left and right comparison. 2 essential points to get across. One, unstructured versus structured walking path. Two, fumbling with papers (cartographing), dropping some, getting lost, versus one piece of paper with a grid. Wait, but really need to decide if want to say more in words. (Because then, can pull away from picture. Maybe consult Abi.) -->
+
+This knowledge is commonly taught in universities as **Foundations of mathematics**—a subject that IMO should be a prerequisite in physics curricula but almost never is—and therefore a subject that's easy to miss even for formal students of physics, let alone physics enthusiasts or the layperson reading QMTTM. One article can't possibly cover all of Foundations, but this article is an original attempt to teach _one_ aspect of Foundations, namely **the reality and unreality of symbols, and their relation to world we inhabit**. It requires no knowledge of math or physics—in fact we will ask you to forget everything you know, demolition familiar structures and clear the rubble away, so we can start with a new Foundation.
+
+### We invent the symbols
+
+<blockquote><i>"Our goal is to build a representation that captures everything we know about the behavior of spins."</i></blockquote>
+
+Forget physics. Forget math. Forget all their symbols and rules. Imagine you're in a lab, with chemical compounds and machines you know how to handle (let's just say), running experiments out of curiosity. When you follow a certain set of steps X, you're able to observe certain results Y. When you do X a slightly different way, you observe different results, Z. You write down your X, Y, and Z's—let's call them **statements**—in some language like English, so you won't forget things. But as you get into more complex experiments involving more steps and varied observations, you find you need an increasingly burdensome amount of words to write everything down.
+
+So, you take some shortcuts. You make up abbreviations or symbols. At first just for the most repetitive words, but imagine eventually you come up with shorthand for all the words. Here's a made-up example:
+
+$$
+\begin{array}{|l|l|}
+\hline \textnormal{Experiment} & \textnormal{Outcome} \\\\
+\hline \unicode{0x25CB}\~\large\vartriangle & \heartsuit \\\\
+\hline \unicode{0x25CB}\~\large\vartriangle\~\unicode{0x29C7} & \spadesuit \\\\
+\hline \unicode{0x25CB}\~\large\vartriangle\~\unicode{0x29C7}\~\unicode{0x29C7} & \heartsuit \\\\
+\hline \unicode{0x25CB}\~\large\vartriangle\~\unicode{0x29C7}\~\unicode{0x29C7}\~\unicode{0x29C7} & \spadesuit \\\\
+\hline \large\vartriangle\~\unicode{0x25CB} & \heartsuit \\\\
+\hline \large\vartriangle\~\unicode{0x29C7}\~\unicode{0x29C7}\~\unicode{0x25CB} & \heartsuit \\\\
+\hline
+\end{array}
+$$
+
+Maybe ◯ (circle) and △ (triangle) are different chemical compounds to mix. Maybe ⧇ (circle in a square) is a button on some machine. The ♡ (heart) and ♠ (spade) may be readings on the machine, or even a new chemical compound. Here is the only time in this article we'll ask you to do an exercise. It will take less than a minute and make the next section much easier to grasp. Read aloud each of the table's rows, given the meanings we've suggested:
+
+1. Mixing ◯ and △ results in ♡.
+1. Mixing ◯ and △ then pressing $\unicode{0x29C7}$ results in ♠.
+1. Mixing ◯ and △ then pressing ⧇ twice results in...
+
+...and so on. When you've read all of the table's statements, you'll have already internalized a bit of the world it describes, whether you know it or not. Before we continue, remember that you can always pick whatever symbols you like. You'd have to come up with more symbols as new chemical compounds or new machines entered the picture. Same with new outcomes.
+
+### We discover the rules
+
+Sooner or later, you begin to notice some patterns. Did you notice a pattern in the statements above?
+
+Spoilers ahead:
+
+One pattern seems to be that whenever there are two ⧇ side by side, the same statement _without_ them seems to produce the same outcome. At first you run experiments both ways to be sure, but the pattern seems to hold, so you record your first "rule":
+
+> Pairs of ⧇ seem to have the same outcome as having no ⧇.
+
+This is called a **conjecture**. Maybe one day you'd discover a scenario in which this conjecture is wrong. But being pragmatic, for now you decide not to spend additional time repeating ⧇ in your experiments.
+
+### We borrow some symbols
+
+Some time later, you grow tired of drawing ⧇. You decide to replace it with another symbol. Two of something "cancelling out" reminds you of multiplying negative numbers in mathematics.
+
+![](https://i.snap.as/lHFgjMFa.png)
+
+So you decide to try the negative sign from now on. Helpfully, you find yourself unconsciously dropping double negatives because you practiced that in grade school. Here's the same table from before, now using the negative sign instead of ⧇, and dropping the rows that are duplicates as a result of dropping double negatives:
+
+![](https://i.snap.as/jsVtR3tp.png)
+
+Now wait. Did _math_ enter the picture? Is this technically math now?
+
+No, of course not.<sup>*</sup> All we did was borrow a symbol we happened to know from math, but we could have chosen any symbol.
+
+<sup>* Although, there's a nuance we'll cover later.
+
+Let's return to this symbol's behavior of "cancelling out" though. How did we know it does that? Recall: It was a pattern that emerged—visually—as our recordings of experiments grew. That's why we say **we _invent_ the symbols**, while **we _discover_ the rules**.
+
+Is it possible to _invent_ rules? Sort of, but not really. You can make up a rule such as,
+
+> Pairs of triangles also cancel out just like pairs of  ⧇.
+
+But you have to run an experiment—two experiments actually—to see: Is the outcome really the same whether you keep pairs of triangles or cancel them out? If no, then you just made up an invalid rule. If yes, then see, you may have "invented" the rule, but you still had to _discover_ that it works.
+
+This may all feel like semantics. It is. But as it turns out, semantics is at the heart of the difficulty we aim to dispel.
+
+### We also discover _strange_ rules
+
+Now we can take a step into the part of foundations that has more to do with quantum mechanics and this particular lecture.
+
+In our experiments, _why_ did ⧇ (now &ndash;) cancel out? Notice how we never asked, and never really needed to know. Yet without knowing why, we somehow can still apply rules to experiments and get predictable outcomes. This is the point we want to get across in this subsection. And right now you're thinking, _"Yeah, sure, that seems conceivable."_ But by the end of this subsection you will think, _"No, this is madness. Something is wrong."_
+
+Let's get there.
+
+Sometimes the _why_ is intuitive. For example, say the ⧇ meant,
+
+> _Turn the machine's magnet 180°._
+
+It's pretty simple then to understand why ⧇⧇ would cancel out. Or, say it meant,
+
+> _Blend the mixture until it is uniform._<sup>*<sup>
+
+Also easy to understand why ⧇ would cancel out.
+
+<sup>* Extra credit: Can you tell why this interpretation _can't_ actually be true, based on our experiments and outcomes?</sup>
+
+Other times though, the _why_ is not only unintuitive, it's downright inconceivable. Take this new made-up example:
+
+![](https://i.snap.as/9n9lx1fT.png)
+
+Let's say the shapes ◯●△▲ are different chemical compounds just as before. But in this experiment you've come up with a sort of brackets ⟨ ... ⟩ to mean something. Maybe ⟨ means opening a lid and ⟩ means closing it. Or maybe it's just a way to group things, like parentheses in math. In your experiment, it would be up to you. However for the point we want to illustrate it helps to have a particular interpretation; we'll say that ⟨○⟘△⟩ means:
+
+> _Start the machine. Pour ◯ in the left chamber. Pour △ in the right chamber. Press the ⟘ button. Stop the machine._
+
+So to run the full experiment, you run ⟨◯⟘△⟩ on the machine, then ⟨▲⊢●⟩, then mix the results together to get the outcome you've labeled ♢.
+
+Imagine now that you're actually well-known for this experiment. Your system of symbols had been published and adopted by the scientific community. Then one day your colleague draws your attention to a paper published by a scientist neither of you've ever heard of, boldly declaring:
+
+> 1. _You can take any ⟨X⟘Y⟩ and write it in reverse, if you also use the button on the machine that does the opposite thing, e.g. ⟩Y⟙X⟨._
+> 1. _You can take any X ⟨⟩ Y and replace it with a chemical compound that is neither X nor Y but exhibits properties<sup>*</sup> of both X and Y._
+> 1. _Consider ⟨X⟘Y⟘Z⟘...⟩ to be shorthand for running the machine with 2 chemical compounds at a time from left to right, e.g. first ⟨X⟘Y⟩, then the result of that with ⟨...⟘Z⟩, and so on._
+
+Now, this is equally as cryptic to you as it is to us. What does it even mean to start a statement with ⟩, a bracket pointing the wrong way? (If we took the earlier interpretation where brackets meant opening and closing a lid, what would it mean to start by closing a lid?) From the second declaration by this unknown scientist, what could ⟨⟩ mean? Start and stop the machine without any chemical compounds? What would that achieve? In short, these new rules seem to produce nonsense experiments—and therefore unrunnable experiments.
+
+<sup>* We left the meaning of "exhibiting properties" vague as the specifics don't matter in this made-up example. But in case picturing something specific helps you: A simple example might be if ◯ readily reacts with oxygen in the atmosphere, and △ with nitrogen; then ◯ ⟨⟩ △ might be a chemical compound that reacts with both (and you could give it a new symbol, such as a triangle inside a circle). A more complex example might be if ◯ and △ were **ligands**, _i.e._ molecules that bind to other molecules, such as dopamine and serotonin to their respective receptors in our brains; then ◯ ⟨⟩ △ might be a _single_ ligand that binds to _both_ ◯- and △-receptors.</sup>
+
+But okay, if those rules are all nonsense, how did this paper pass review and get published? You can't help but try the rules. So you apply the first nonsense-generating rule to your well-known statement:
+
+![](https://i.snap.as/jVJcCcSz.png)
+
+You already know you cannot run this experiment. But you see a ⟨⟩ in there, which you know is mentioned in the second nonsense-generating rule. (It's advisable to go back up and look at the rule.) To apply that, you're going to convert the ◯ ⟨⟩ ● to a new chemical compound that "exhibits properties" of both ◯ and ●; you decide to use the symbol ◑ to represent this new chemical compound. So now you get:
+
+![](https://i.snap.as/Slf6UyY0.png)
+
+Still not an experiment you can run. Your machine only has a left chamber and right chamber, not a middle chamber. You recall that the third rule defines these situations as shorthand for running the machine on two chemical compounds at a time. But if you look carefully at the third rule (again, it's advisable that you do), you'll see it requires starting with a statement with normal brackets, ⟨ ... ⟩, which is not the case for our current statement. What rule can flip those brackets back?
+
+Of course, the first rule:
+
+![](https://i.snap.as/SW0q7Ior.png)
+
+Now this is finally beginning to look like an experiment you can run. Let's say you also happen to have ◑, the chemical compound exhibiting both the properties of ◯ and ●, in your inventory. Putting it all together with the third rule, you first run the machine for the two chemical compounds: ⟨▲ ⊢◑⟩. Then you take the result of that and △ and run the machine again: ⟨ ... ⊥△⟩.
+
+You're not sure whether to be surprised. The outcome is indeed ♢. What does this mean? How can manipulating symbols in nonsensical ways lead to any truth? Here's a table summarizing what just happened; the intermediate steps have no outcome since those experiments were not possible to run:
+
+![](https://i.snap.as/0Z7ECBbR.png)
+
+Now it's time to recall something we've said before:
+
+> _"Yet without knowing why, we somehow can still apply rules to experiments and get predictable outcomes."_
+
+It's true that these rules are more complicated than our very original example where symbols merely cancelled out. But if we were content before to say that, regardless of _why_, a rule was valid as long as the experimental outcome stayed the same, then we should be suspect of our discontent now.
+
+An obvious protest is that the intermediate experiments can't be run. But this argument turns out to be void, because consider this: The unknown scientist could have just kept the intermediate rules secret and published this:
+
+> 1. _Here's a new rule that works:_
+>
+>     ![](https://i.snap.as/VspdNnHb.png)
+>
+>     _where Z represents a chemical compound that exhibits both the properties of X and B._
+
+By using brackets inside brackets, even the shorthand of the third rule isn't needed. That is, if you replace _X_, _Y_, _A_, _B_, and _Z_ with ◯, △, ▲, ●, and ◑, the rule above produces the same final experiment and outcome, yet without mentioning the "problematic" intermediate steps. In other words, the entire table is:
+
+![](https://i.snap.as/Ew9A30JZ.png)
+
+Now, this "rule" is quite a jump, and isn't as easy to say out loud as rules like, _"Write it in reverse."_ But it would be a mistake to discriminate on grounds of complexity. It's a rule discovered just like any other, upheld by running the resulting experiment and verifying the outcome. But getting back to the point: This is why we can't say nonsense in intermediate steps invalidates a set of rules. Those steps can be hidden. Why should some random person's choice to keep or not keep secrets have any bearing on the validity of rules?
+
+We can give on one point though. It _would_ be fair to say that those intermediate rules _themselves_ aren't "real" rules and should be called something else. That's perfectly reasonable. So we can keep calling them _intermediate_ rules as we have been, or try _meta_-rules, _quasi_-rules, _faux_-rules, _strange_ rules, or whatever you like. We'll go with _strange_ rules.
+
+### We invent symbols, we discover rules, we borrow some symbols and discover strange rules
+
+You may have guessed already where we're taking this: **Learning quantum physics involves learning strange rules.** As you may have experienced not so long ago, it's easy to fixate on the nonsensical part of strange rules. Reading any of the lectures, how can you say you understand—or that you _"read this section carefully"_—when you can't explain why it's valid to do one thing or another?
+
+<!-- ABOVE THIS LINE, BESIDES PUZZLE ILLUSTRATION, FAIRLY SATISFIED AS OF SEP 20 -->
+
+---
+
+# (work in progress)
+
+If this article did its job though, you now have the wider perspective to liberate yourself from that impasse. These strange rules don't exist because _we_ understand why. They exist because _for some reason_, they lead to statements we have verified experimentally. Think of them as "true" in the sense that they are _consistent_, not in the sense that a satisfying explanation exists from the point of view of humans. _Can_ such explanations be discovered? Absolutely. But sometimes the prevailing set of symbols and rules aren't expressive enough, and the entire subject must be reconstructed with a novel set of symbols and rules, _e.g._ [Feynman diagrams](https://en.wikipedia.org/wiki/Feynman_diagram). On the other end, it's also possible we'll _never_ be able to explain some rules. The hardware of our brains may limit what we can perceive. And even if we tried to get around that using abstractions, we may be limited in what _kinds_ of abstractions we can even comprehend.
+
+But we digress. Here's what you need to remember to have a better time learning quantum physics:
+
+
+ structure of our brains may even limit the kinds of systems and rules and abstractions in general that we can come up with. To believe
+
+And that's good enough for science.
+
+It would be nice if we _could_ find intuitive explanations for strange rules—but then they'd no longer be strange. 
+
+This is quantum physics. You are not here as a student of philosophy. You are here as a student of science. 
+
+Feynman diagrams
+
+hope is not lost
+armed with
+ If this article did its job though, you 
+
+But being able to identify strange rules avoids fixating on questions that don't yet have answers. That time is better spent, in the learning stage, thinking about where the rules _get_ you—the experiments that _can_ be run. This focus grounds you in reality—it's the _experiments and outcomes that give rise to rules_, not the other way around. And now you're able to understand what we mean when we say: Symbols are _chosen_—to make expressions succinct—to help patterns "pop out"—to associate with one's past memories of the glyph—and if nothing else, for their aesthetics and for the pleasure of scribing them. If you've come recently from a land where symbols appeared to speak truths you couldn't understand, you've come a long way, to understand now that it's the universe who speaks, and the symbols that are mere personal constructions in an attempt to echo the universal truths.
+
+### Intermission
+
+You may now like to try reading the lecture again, to see if something here has unblocked your path. When you have questions about symbols, remember they are invented (not real). When you have questions about rules, remember there can be _strange_ rules (also not real by themselves), which can't be understood no matter how hard you try. Save your questions for the real rules.
+
+This doesn't mean, _"Don't ask questions."_ It means, _"Don't get stuck waiting for answers that don't exist."_ Absolutely do _wonder_ about everything—the symbols, strange rules, real rules. Why? Because 
+
+That said though, _do_ wonder about it all—symbols, strange rules, real rules, etc. The 
+
+Congratulations, your education here is complete. We _will_ re-tell the lecture here, but you can also skip the rest and re-read the lecture yourself, and see if your path has been unblocked.
+
+weak points
+- symbols really include syntax, but didn't wanna make it too hard to read
+
+* the nuance to cover later
+
+Now, _that's_ actually the thing to remember when "mathematics" enters—or _appears_ to enter—the picture. The symbols and rules you're being given aren't "facts". Our predecessors invented some and borrowed the rest, and collectively, their choice proved to be productive and entered wide use—that's all. **It's entirely possible that a different set of symbols and rules could express certain experiments and results this one could not.** This, the "serious enthusiast" accepts easily. The thing they usually get hung up on though, is this...
+
+### Not all statements have to make sense
+
+Recall why symbols entered the picture in the first place: It saves writing.
+Recall the original reason we turned from, say, English, to symbols.
+
+- bra and ket being meaningless by themselves
+
+typographics
+
+For one example, it turns out that in certain descriptions of our understanding of spins, we can safely apply rules that resemble the associative, commutative, and distributive properties from arithmetic. For another example, it turns out that the properties of the imaginary number _i_ can be rather useful in the way that we keep track of _dimensionality_ (more on that later).
+
+In fact _because_ so many rules can be imported, it's easy to lose sight of the fact that _it was always just an arbitrary system_. If one expects to grasp the "meaning" or "physical counterpart" to every combination of symbols, they'll end up perplexed and disappointed. Because there was never a mandate that all the intermediate symbolic forms of our arbitrary system _had_ to map back to our language. We only said that the statements that _do_ map back, say things about spins that we agree with. Those intermediate forms are just cogs in the overall machinery for producing statements that we can confirm experimentally.
+
+
+
+The question does matter to some though: mathematicians, and the subject is known as **abstract algebra**.
+
+imaginary numbers
+transforms
+
+HEREDOC; include '_template.html'; ?>
