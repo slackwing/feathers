@@ -94,7 +94,7 @@ debating
 asdf
 - "we imprecisely say" <-- reiterate! oh i did. add more context!
 
-seems important to distinguish **functiontal** vs. **non-functional** clouds, _i.e._ 
+seems important to distinguish **functiontal** vs. **non-functional** clouds, _i.e._
 
 I seem to be stuck here. I feel a subtle difference between "possible" and "potential," leaning toward the latter for some reason related to time. And similar between "locations," "events," and "configurations." Consider these in conjunction:
 
@@ -102,7 +102,7 @@ I seem to be stuck here. I feel a subtle difference between "possible" and "pote
 - A $\textrm{2c/2s-1t}$ depicts a 2-cloud of ... ?
 
 path - a d-cloud that stays function wrt time dimension(s)
-point-particle - 
+point-particle -
 area = rigid surface
 line = rigid curve
 volume = rigid space (because non-rigid space would look like separate volumes i think)
@@ -263,7 +263,7 @@ There was more said here, but I am reorganizing them in a future post.
 <!--
   I can think of a strategy that might help me avoid this pitfall: I should draw curves now on using dotted lines, and maybe emphasize a specific position on the curve using a bold point.
 -->
- 
+
  <!-- The 1-dimensional $s$ doesn't lend itself to 360 degrees of directions, at least not in a way I understand. So I would prefer to do my thinking with at least a 2-dimensional $s$. But how do I visualize $(s_x, s_y, t, u)$? I think a traditional technique is to use colors. Which dimension becomes colors then? -->
 
 <!-- This might be some of the most important thinking I've done in my life. I'm (over)excited to clarify aspects of dimensional analogizing that I've always been confused by. Next let's kick it up a dimension.
@@ -280,7 +280,7 @@ Okay, but how did we get here from talking about colors?
 
 <div class="declaration">
   <p>
-    For a <em>point particle</em> in $(x, y)$, adding a colored spatial dimension $z$ can show the "elevation" of that particle; adding a colored temporal dimension $t$ can show whether its position was in a relative past or relative future. These aren't useful to us at all of course, since a 3-dimensional $(x, y, z)$ or $(x, y, t)$ are far easier to see the same thing with. 
+    For a <em>point particle</em> in $(x, y)$, adding a colored spatial dimension $z$ can show the "elevation" of that particle; adding a colored temporal dimension $t$ can show whether its position was in a relative past or relative future. These aren't useful to us at all of course, since a 3-dimensional $(x, y, z)$ or $(x, y, t)$ are far easier to see the same thing with.
   </p>
   <p>
     For a <em>representational curve</em> in $(x, y)$, adding a colored <em>temporal</em> dimension $t$, is very difficult to imagine conceptually; adding a colored <em>spatial</em> dimension $y$ to $(x, t)$ is much easier. This style of representation highlights <em>motion</em> in a primary spatial dimension while backgrounding a secondary spatial dimension.
@@ -288,13 +288,13 @@ Okay, but how did we get here from talking about colors?
   <p>
     It's also possible to plot a <em>surface</em> in $(x, y)$ using color to indicate elevation again (creating a topographic map) or to indicate time (but this is quite difficult to imagine conceptually as well). But note that now we're talking about bodies of particles
   <p>
-    For a <em>point particle</em> in $(x, y)$, adding a colored spatial dimension $z$ can show the "elevation" 
+    For a <em>point particle</em> in $(x, y)$, adding a colored spatial dimension $z$ can show the "elevation"
   </p>
 </div>
 
 why time different
 time & animation
-  
+
 
  duration
  dimensionality of an object
@@ -319,7 +319,7 @@ Notice in the 1-dimensional representation of $s$, only 2 directions are possibl
  1. which means $(s, t)$-slices of $(s, t, u)$ _can_ exist as duplicates—there's no uniqueness constraint—and
 
  1. which also means not all possible $(s, t)$-slices _have_ to exist!
- 
+
 This means my so-far-persistent imagination that in 2,3-space $\Delta u$ must cover all $\Delta\theta$ and $\Delta\phi$, was unnecessary! The _only_ constraint is that $\Delta s$ is continuous over $\Delta u$, whichever potential direction it goes within its dimension(s).
 
 <!-- By the way, a minor thing to point out about that drawing. It wasn't necessary either for the displacement in $s$ to be the same across $u$. They would almost always be varied. -->
@@ -365,7 +365,7 @@ Exercises
 
 **Monday.** _"Take your credit and sit down!"_ 🤣
 
-Yesterday, we quickly found that no solution exists for 
+Yesterday, we quickly found that no solution exists for
 $$\begin{alignat}{3}
 \begin{bmatrix*}[r]50\\% \\\\ 100\\% \\\\ 50\\%\end{bmatrix*}&=\alpha_u\begin{bmatrix*}[r]100\\% \\\\ 50\\% \\\\ 50\\%\end{bmatrix*}&&+\alpha_d\begin{bmatrix*}[r]0\\% \\\\ 50\\% \\\\ 50\\%\end{bmatrix*}
 \end{alignat}$$
@@ -506,24 +506,24 @@ $\mathcal{P}_1$ is the one used in QMTTM. My guess about there being 4 variants 
 
 <div id="modal-20231130-mathematica" class="modal">
 <div class="modal-content">
-  
+
   <!-- IMPORTANT: (1) Keep above line blank to prevent marked.js from interpreting below. (2) Indent <pre><code> ... </pre></code> at 2 spaces. (3) Indent actual code at 2 spaces. -->
   <pre><code class="language-mathematica">
   #!/usr/bin/env wolframscript
 
   SetOptions[$Output, FormatType -> OutputForm];
   MyPrint[msg_, arg1_] := Print[StringForm[msg, arg1]];
-  
+
   u = {1, 0};
   d = {0, 1};
-  allPossiblePairsOfCoefficients = Tuples[{1/Sqrt[2], -1/Sqrt[2], I/Sqrt[2], -I/Sqrt[2]}, 2]; 
+  allPossiblePairsOfCoefficients = Tuples[{1/Sqrt[2], -1/Sqrt[2], I/Sqrt[2], -I/Sqrt[2]}, 2];
   allPossibleChoicesOfPairsForRLOI = Tuples[allPossiblePairsOfCoefficients, 4];
-  
+
   MyPrint[
     "`1` possible combinations of pairs of coefficients for |r>, |l>, |o>, and |i>.",
     Length[allPossibleChoicesOfPairsForRLOI]
   ];
-  
+
   withOrthogonality = Cases[
     allPossibleChoicesOfPairsForRLOI,
     {r_, l_, o_, i_} /;
@@ -532,12 +532,12 @@ $\mathcal{P}_1$ is the one used in QMTTM. My guess about there being 4 variants 
       Dot[Conjugate[o], i] == 0 &&
       Dot[Conjugate[i], o] == 0
   ];
-  
+
   MyPrint[
     "`1` possible combinations where <r|l> = 0, <o|i> = 0, <l|r> = 0, and <i|o> = 0.",
     Length[withOrthogonality]
   ];
-  
+
   withPerpendicularity = Cases[
     withOrthogonality,
     {r_, l_, o_, i_}/;
@@ -554,46 +554,46 @@ $\mathcal{P}_1$ is the one used in QMTTM. My guess about there being 4 variants 
       Dot[Conjugate[l], o]Dot[Conjugate[o], l] == 1/2 &&
       Dot[Conjugate[l], i]Dot[Conjugate[i], l] == 1/2
   ];
-  
+
   MyPrint[
     "`1` possible combinations where all perpendicular <X|Y> are 1/Sqrt[2].",
     Length[withPerpendicularity]
   ];
-  
+
   withoutScalarMultiples = Cases[
     withPerpendicularity,
     {r_, l_, o_, i_} /;
       MatrixRank[{r, l}] != 1 && MatrixRank[{o, i}] != 1
   ];
-  
+
   MyPrint[
     "`1` possible combinations where |r> and |l>, and |o> and |i>, are not parallel.",
     Length[withoutScalarMultiples]
   ];
-  
+
   getSpinOperators[r_, l_, o_, i_] :=
     Module[{sx, sy, sz},
-  
+
       sx = {{sx11, sx12}, {sx21, sx22}};
       sxSolved = Solve[sx.r == r && sx.l == -l, Flatten[sx]];
       sxSolvedMatrix = ArrayReshape[sxSolved[[1, All, 2]], {2, 2}];
-  
+
       sy = {{sy11, sy12}, {sy21, sy22}};
       sySolved = Solve[sy.o == o && sy.i == -i, Flatten[sy]];
       sySolvedMatrix = ArrayReshape[sySolved[[1, All, 2]], {2, 2}];
-  
+
       sz = {{sz11, sz12}, {sz21, sz22}};
       szSolved = Solve[sz.u == u && sz.d == -d, Flatten[sz]];
       szSolvedMatrix = ArrayReshape[szSolved[[1, All, 2]], {2, 2}];
-  
+
       {sxSolvedMatrix, sySolvedMatrix, szSolvedMatrix}
     ];
-  
+
   withoutDuplicates = DeleteDuplicates[
     getSpinOperators @@@ withoutScalarMultiples,
     (Sort[#]===Sort[#2])&
   ];
-  
+
   Print[TableForm@withoutDuplicates];
   </code></pre>
 
@@ -705,7 +705,7 @@ It's actually fortunate that I made the simple squaring mistake. If I had gotten
 
 <div id="modal-20231126-mathematica" class="modal">
 <div class="modal-content">
-  
+
   <!-- IMPORTANT: (1) Keep above line blank to prevent marked.js from interpreting below. (2) Indent <pre><code> ... </pre></code> at 2 spaces. (3) Indent actual code at 2 spaces. -->
   <pre><code class="language-mathematica">
   #!/usr/bin/env wolframscript
@@ -715,7 +715,7 @@ It's actually fortunate that I made the simple squaring mistake. If I had gotten
 
   u = {1, 0};
   d = {0, 1};
-  allPossiblePairsOfCoefficients = Tuples[{1/Sqrt[2], -1/Sqrt[2], I/Sqrt[2], -I/Sqrt[2]}, 2]; 
+  allPossiblePairsOfCoefficients = Tuples[{1/Sqrt[2], -1/Sqrt[2], I/Sqrt[2], -I/Sqrt[2]}, 2];
   allPossibleChoicesOfPairsForRLOI = Tuples[allPossiblePairsOfCoefficients, 4];
 
   MyPrint[
@@ -790,10 +790,10 @@ $$\begin{alignat}{2}
 In column vector form:
 
 $$\begin{alignat}{3}
-\ket{r}&=\begin{bmatrix}\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix} \hspace{2em} 
+\ket{r}&=\begin{bmatrix}\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix} \hspace{2em}
 &\ket{l}&=\begin{bmatrix}\frac{i}{2} \\\\ -\frac{1}{2}\end{bmatrix} \\\\
-\ket{o}&=\begin{bmatrix}\frac{1}{2} \\\\ -\frac{i}{2}\end{bmatrix} \hspace{2em} 
-&\ket{i}&=\begin{bmatrix}\frac{i}{2} \\\\ \frac{1}{2}\end{bmatrix} 
+\ket{o}&=\begin{bmatrix}\frac{1}{2} \\\\ -\frac{i}{2}\end{bmatrix} \hspace{2em}
+&\ket{i}&=\begin{bmatrix}\frac{i}{2} \\\\ \frac{1}{2}\end{bmatrix}
 \end{alignat}$$
 
 We want to solve for $\sigma_x$:
@@ -817,14 +817,14 @@ Wait, something's wrong with this one too.
 
 $$\begin{alignat}{2}
 \frac{1}{2}(\sigma_x)\_{11}&+\frac{i}{2}(\sigma_x)\_{12}&&=&\frac{1}{2} \\\\
-\frac{i}{2}(\sigma_x)\_{11}&-\frac{1}{2}(\sigma_x)\_{12}&&=&-\frac{i}{2} 
+\frac{i}{2}(\sigma_x)\_{11}&-\frac{1}{2}(\sigma_x)\_{12}&&=&-\frac{i}{2}
 \end{alignat}$$
 
 Multiply the second equation by $i$ to get:
 
 $$\begin{alignat}{2}
 \frac{1}{2}(\sigma_x)\_{11}&+\frac{i}{2}(\sigma_x)\_{12}&&=\frac{1}{2} \\\\
--\frac{1}{2}(\sigma_x)\_{11}&-\frac{i}{2}(\sigma_x)\_{12}&&=\frac{1}{2} 
+-\frac{1}{2}(\sigma_x)\_{11}&-\frac{i}{2}(\sigma_x)\_{12}&&=\frac{1}{2}
 \end{alignat}$$
 
 Then add the two equations:
@@ -877,10 +877,10 @@ $$\begin{alignat}{2}
 I'm looking for a reason to invalidate that choice of coefficients, because I didn't expect the absolute value function to yield even 1 working possibility, let alone 288. Let's skip ahead to deriving **spin operators**. We rewrite the situations in column vector form:
 
 $$\begin{alignat}{3}
-\ket{r}&=\begin{bmatrix}\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix} \hspace{2em} 
+\ket{r}&=\begin{bmatrix}\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix} \hspace{2em}
 &\ket{l}&=\begin{bmatrix}-\frac{1}{2} \\\\ -\frac{i}{2}\end{bmatrix} \\\\
-\ket{o}&=\begin{bmatrix}\frac{1}{2} \\\\ -\frac{i}{2}\end{bmatrix} \hspace{2em} 
-&\ket{i}&=\begin{bmatrix}-\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix} 
+\ket{o}&=\begin{bmatrix}\frac{1}{2} \\\\ -\frac{i}{2}\end{bmatrix} \hspace{2em}
+&\ket{i}&=\begin{bmatrix}-\frac{1}{2} \\\\ \frac{i}{2}\end{bmatrix}
 \end{alignat}$$
 
 Let's start with $\ket{r}$ and $\ket{l}$. We want to solve for $\sigma_x$:
@@ -904,7 +904,7 @@ Take just the top rows:
 
 $$\begin{alignat}{2}
 \frac{1}{2}(\sigma_x)\_{11}&+\frac{i}{2}(\sigma_x)\_{12}&=\frac{1}{2} \\\\
--\frac{1}{2}(\sigma_x)\_{11}&-\frac{i}{2}(\sigma_x)\_{12}&=\frac{1}{2} 
+-\frac{1}{2}(\sigma_x)\_{11}&-\frac{i}{2}(\sigma_x)\_{12}&=\frac{1}{2}
 \end{alignat}$$
 
 Summing these equations lead to:
@@ -969,7 +969,7 @@ I was quite surprised by this number. I was hoping for **0**—that way I could 
 
   u = {1, 0};
   d = {0, 1};
-  allPossiblePairsOfCoefficients = Tuples[{1/2, -1/2, I/2, -I/2}, 2]; 
+  allPossiblePairsOfCoefficients = Tuples[{1/2, -1/2, I/2, -I/2}, 2];
   allPossibleChoicesOfPairsForRLOI = Tuples[allPossiblePairsOfCoefficients, 4];
 
   MyPrint[
