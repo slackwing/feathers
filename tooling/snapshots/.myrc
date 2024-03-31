@@ -8,8 +8,247 @@ alias hg='history | grep'
 alias ll='ls -alohF'
 alias lt='ls -lt | head -n 10'
 
+alias gl='git log --pretty=format:"%h %an %ar - %s" | head -n 10'
+alias gm='git checkout master'
+alias g-='git checkout -'
 alias gq='git add . ; git diff --staged ; git commit -m"fix"'
-alias greset='git checkout -- .' # as opposed to stashing
+alias gw='git add . ; git diff --staged ; git commit -m"wip"'
+alias gd='git diff'
+alias gs='git status'
+alias gdrop='git checkout -- .' # as opposed to stashing
+alias guncommit='git reset --soft HEAD~1'
+alias grestore='git checkout <deleting_commit>^ -- <path>'
+
+alias b64d='base64 --decode'
+alias b64e='base64 --encode'
+
+alias fmt='mvn com.spotify.fmt:fmt-maven-plugin:format'
+
+alias acssh='ssh -i ~/.ssh/id_rsa_gcp_acheong87 acheong87@35.243.192.242'
+alias acstop='gcloud compute instances stop andrew-cheong-com-vm'
+alias acstart='gcloud compute instances start andrew-cheong-com-vm'
+acstage() {
+    echo "\nStaging...\n"
+    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/.staging/
+}
+acpub() {
+    echo "\nExecuting dry run...\n"
+    rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
+    echo "\nPress any key to continue, or ^C to exit.\n"
+    echo "\nPublishing...\n"
+    read -s -n 1
+    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
+}
+acgit() {
+    cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
+    git status
+    read -s -n 1
+    git diff
+    read -s -n 1
+    git add .
+    git commit -m"acgit on $(date '+%Y-%m-%d %H:%M:%S')"
+    git push
+}
+# alias acwww='open -a "Google Chrome" https://andrewcheong.com/~andre305/'
+# alias acwwwbyip='open -a "Google Chrome" http://209.182.199.238/~andre305/'
+# alias cpanel='open -a "Google Chrome" https://andrewcheong.com/cpanel/'
+# alias cpanelbyip='open -a "Google Chrome" http://209.182.199.238/cpanel/'
+# alias cpanel_help='echo andre305 \$xxfxxTxx000'
+
+alias jazz0='mpv "https://www.youtube.com/watch?v=IRyJe-0Uie0" -vo null'
+alias jazz1='mpv "https://www.youtube.com/watch?v=e-2TaN77gD4" -vo null'
+alias jazz1v='mpv "https://www.youtube.com/watch?v=e-2TaN77gD4" -vo tct'
+alias hack0='mpv "https://www.youtube.com/watch?v=mW304P9EHgg" -vo null'
+alias hack0v='mpv "https://www.youtube.com/watch?v=mW304P9EHgg" -vo tct'
+alias rain0='mpv "https://www.youtube.com/watch?v=DXT9dF-WK-I" -vo null'
+alias rain0v='mpv "https://www.youtube.com/watch?v=DXT9dF-WK-I" -vo tct'
+alias late0v='mpv "https://www.youtube.com/watch?v=QYpDQxHfTPk" -vo tct'
+function gamba() { termdown -c 20 -v Yuna $((60*$1)) }
+
+function sandbox() {
+  echo "git checkout sandbox"
+  echo "git merge --no-ff (master|origin/acheong-patch-4|acheong/fix-something)"
+  echo "git push -f origin sandbox"
+}
+
+# Experimental aliases; promote when commonly relied on.
+alias rk="sudo pkill karabiner_console_user_server"
+alias crypto='cd ~/src/slackwing/feathers/05\ -\ X1_2'
+alias build='/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build cmake-build-debug --target 05___X1_2'
+alias aasproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:adaccountdb=tcp:3401,adstudio-sandbox1:us-central1:adaccountdb-sandbox=tcp:3402'
+alias amsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-east1:measurementsdb=tcp:3501,adstudio-sandbox1:us-east1:measurementsdb-sandbox=tcp:3502'
+alias beamproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:beamdb=tcp:3601,adstudio-sandbox1:us-central1:beamdb-sandbox=tcp:3602'
+alias draftsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:europe-west1:adstudio-draftsdb=tcp:3403,adstudio-sandbox1:europe-west1:adstudio-drafts-sandboxdb=tcp:3404'
+alias abletonlog='tail -f ~/Library/Preferences/Ableton/Live\ 11.0.12/Log.txt'
+alias lint='yarn lint:js --fix'
+alias core='cd /Users/acheong/src/spotify/client-web/desktop/shell/core'
+alias coreaudio='cd /Users/acheong/src/spotify/client-web/desktop/shell/core/spotify/audio/playback/cpp/src'
+alias corebuild='cd /Users/acheong/src/spotify/client-web/desktop/shell/build'
+alias hack_build='corebuild; xcodebuild -project spotify.xcodeproj -target Spotify -configuration Debug'
+alias hack_run='corebuild; ./desktop/Debug/Spotify.app/Contents/MacOS/Spotify'
+alias hack_run_logf='hack_run 2>&1 | grep acheong:hack'
+summon() {
+    echo ''
+    if [ $# -eq 0 ]; then
+        echo 'usage: summon <# of test users (default: 1)> <prefix (default: "spuser")> <country (default: "us")>'
+        echo ''
+        echo 'anyway, creating a single test user for you...'
+        echo ''
+    fi
+    for i in {1..${1:-1}}
+    do
+        curl --no-progress-meter -d "{\"prefix\": \"${2:-spuser}\", \"country\": \"${3:-us}\", \"username\": \"${2:-spuser}\", \"name\": \"${2:-spuser}\", \"receiveEmail\": false}" http://foreigner.services.gew1.spotify.net/user/v2/create | jq --raw-output .username
+    done
+}
+invoice() {
+    echo ''
+    if [ $# -eq 0 ]; then
+        echo 'usage: invoice <ad account id>'
+        echo ''
+        echo 'hint: you can grab an ad account id from the url (after /account/)'
+        echo ''
+    else
+        echo -e "{\"adAccountId\": \"$1\"}" | jhurl hm://adsgtm/internal/v1/ad-account/invoice -s services.guc3 -X POST
+        echo ''
+        echo "check for errors ^ and don't forget to hard-refresh the app!"
+    fi
+}
+name2id() {
+   echo "{\"username\": \"$1\"}" | jhurl --authenticate --service-account 'adstudio-bff-sandbox@gke-accounts.iam.gserviceaccount.com' -s services.gew1 -X GET -p hm://userdata/attributes  | jq .
+}
+id2name() {
+   echo "{\"user_id\": \"$1\"}" | jhurl --authenticate --service-account 'adstudio-bff-sandbox@gke-accounts.iam.gserviceaccount.com' -s services.gew1 -X GET -p hm://userdata/attributes  | jq .
+}
+email2name() {
+   echo "{\"email\": \"$1\"}" | jhurl --authenticate --service-account 'adstudio-bff-sandbox@gke-accounts.iam.gserviceaccount.com' -s services.gew1 -X GET -p hm://userdata/attributes | jq .
+}
+#id2name() {
+#    jhurl -s services.guc3 "hm://userdata/account?user_id=$1" --service-account 'adstudio-bff-sandbox@gke-accounts.iam.gserviceaccount.com' -p </dev/null | jq -r '.[0].username'
+#}
+#name2id() {
+#    jhurl -s services.guc3 "hm://userdata/account?username=$1" --service-account 'adstudio-bff-sandbox@gke-accounts.iam.gserviceaccount.com' -p </dev/null | jq -r '.[0].user_id'
+#}
+clone() {
+    git clone git@ghe.spotify.net:ads/$1.git
+}
+killall() {
+    ps -ef | grep $1 | awk '{print $2}' | xargs sudo kill -9
+}
+
+# Doesn't really work because sometimes "(managed)" is not on the last line.
+alias mvn-conflicts='mvn dependency:analyze | tee ~/tmp | sed "s/^.* <-- //" | sort -h | uniq'
+
+alias kcontexts='kubectl config get-contexts'
+alias kdeps='k get deployments'
+kiam() {
+    echo "--context=$KCONTEXT --namespace=$KNAMESPACE"
+}
+ghe() {
+    service=$1
+    if [ "$1" = "aas" ]; then
+        service=ad-account-service
+    fi
+    if [ "$1" = "bff" ]; then
+        service=adstudio-bff
+    fi
+    open -a "Google Chrome" https://ghe.spotify.net/ads/$service/pulls
+}
+
+#
+# some of andrew's alias; try then modify/rename/delete as it suits you
+#
+khelp() {
+    echo ''
+    echo 'Real-time logs for services on Kubernetes:'
+    echo ''
+    echo ' 1. ktail <service>'
+    echo ''
+    echo '    (If not working, check that you are on the VPN, and also run `kauth`.)'
+    echo ''
+    echo 'Work with kubectl more easily, e.g. to open a shell into a pod:'
+    echo ''
+    echo ' 1. run `backstage <service>`, go to Active Versions, click icon next to desired cluster'
+    echo ' 2. run `kswitch <context> <service>`; now alias `k` is ready to use'
+    echo ' 3. run `kpods` to get pods'
+    echo ' 4. run `kshell <number>` to open a terminal into the <number>th pod'
+    echo ''
+}
+function kauth() {
+    gcloud container clusters list \
+        --project=gke-xpn-1 \
+        --filter="resourceLabels[env]=production" \
+        --format="value[delimiter=' '](name,zone)" \
+        | xargs -n 2 sh -c 'gcloud container clusters get-credentials $1 --region=$2 --project=gke-xpn-1' sh;
+}
+function ktail {
+    klogs $1 --follow
+}
+backstage() {
+    service=$1
+    if [ "$1" = "aas" ]; then
+        service=ad-account-service
+    fi
+    if [ "$1" = "bff" ]; then
+        service=adstudio-bff
+    fi
+    if [ "$1" = "voltron" ]; then
+        service=voltron-ui-production
+    fi
+    open -a "Google Chrome" https://backstage.spotify.net/services/$service/deployment
+}
+kswitch() {
+    KCONTEXT=$1
+    KNAMESPACE=$2
+    eval "k() { kubectl --context=$1 --namespace=$2 \$@ }"
+}
+alias kpods='k get pods'
+kshell() {
+    pod=$(k get pods | grep -v NAME | awk '{print $1}' | sed "$1q;d")
+    echo "k exec --stdin --tty $pod -- /bin/bash"
+    k exec --stdin --tty $pod -- /bin/bash
+}
+klogs() {
+    pod=$(k get pods | grep -v NAME | awk '{print $1}' | sed "$1q;d")
+    echo "k logs --follow $pod"
+    k logs --follow $pod 
+}
+#
+# other potentially useful aliases (create your own too!)
+#
+alias kdeployments='k get deployments'
+ksecrets() {
+    k get secret $1 -o yaml
+}
+kdescribe() {
+    k describe pods
+}
+
+# PGP
+alias gpglist='gpg --list-keys'
+# Supply file containing public key of recipient.
+alias gpgimport='gpg --import'
+# Supply "real name" of imported recipient, and file to encrypt.
+function gpgencrypt() {
+    gpg --encrypt --armor --recipient $1 $2
+}
+# Supply file to decrypt; no reference to own private key necessary.
+alias gpgdecrypt='gpg --decrypt'
+
+function ksignups() {
+    klogs ad-account-service --follow | grep -i "signUp\>" # "\>" is a word boundary, like "\b" in regex.
+}
+
+# Occasionally call these 2 to clean up remote branches.
+gcleanuptest() {
+    git branch -r | awk -Forigin/ '/\/acheong/{print $2}'
+}
+alias gcleanupeverything='gcleanuptest | xargs -I {} git push origin :{}'
+alias gcleanupsomethings='gcleanuptest | grep PATTERN | grep -v PATTERN | xargs -I {} git push origin :{}'
+# Try this next time to delete local branches that have been deleted remotely (above).
+alias glocalcleanupsafe='git remote prune origin'
+# If that doesn't work, resort to manually deleting each local branch:
+alias glocalcleanuplist='git branch'
+alias glocalcleanupmanual='git branch -d'
 
 alias cc='mvn clean compile test-compile'
 alias mi='mvn install -DskipTests'
@@ -17,15 +256,21 @@ alias mip='mvn install package -DskipTests'
 
 # Unorgnized below this line.
 
+test_token() {
+    echo '{ "filters": {"iamDomains":[ "org/def7fbb4-41e3-4ca5-ba65-5da0ed49cc22/91506214-d4ba-456f-b1b3-d5f5cffce5ea" ] }}' | jhurl -XPOST -s services.guc3 "hm://campaign-service-sandbox/proto/CampaignService/v3/getFlights?json=true" --user-header "Accept=application/json" --user-header "Portcullis-Token=$1" -p
+}
+test_token2() {
+    echo '{ "filters": {"iamDomains":[ "org/3b51719b-1568-4e6c-920f-4f94d9330841/9c938613-1993-46e2-8c88-37d74f2ca264" ] }}' | jhurl -XPOST -s services.guc3 "hm://campaign-service-sandbox/proto/CampaignService/v3/getFlights?json=true" --user-header "Accept=application/json" --user-header "Portcullis-Token=$1" -p
+}
+alias gpg="/usr/local/gnupg-2.2/bin/gpg"
 alias yay="xargs printf '%b\n'"
 alias s='vim ~/.sed'
 alias silt='sed -f ~/.sed'
 alias siff='git diff `git merge-base master HEAD`'
 alias mdaw='mvn dependency:analyze | tee /dev/tty | wc'
 alias pretty='tail -n 1 | sed s/[\\]x0a//g | sed s/^..// | sed s/..$// | python -m json.tool'
-alias k='kubectl'
 alias lg='grpcurl -plaintext localhost:5990'
-alias killlforceit='s -ef | grep -i forticlient | awk '{print $2}' | xargs sudo kill -9'
+alias killforti="ps -ef | grep -i forticlient | awk '{print $2}' | xargs sudo kill -9"
 alias clientsrc='cd ~/hack/2021/client-web/node_modules/open/web-player/src'
 yo() {
     $@ 2>&1 | gsed 's/\\n/\n/g' | gsed 's/\\t/\t/g'
