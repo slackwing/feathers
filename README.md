@@ -10,11 +10,12 @@ _TODO_
 | Tooling | SFT002 | Factor out installer utils from install-karabiner-settings.tcl. | M | M | |
 | Tooling | SFT003 | Add confirm-diff logic to installer. (Write to /tmp first before backing up. Then diff and confirm. Then backup and move. Don't bother to reuse the non-confirm path for backup-and-write.) | M | M | |
 | Tooling | SFT004 | Consolidate all tooling environment variables somewhere. | L | M | |
-| Tooling | SFT005 | Tmp file cleanup. | L |L | |
+| Tooling | SFT005 | Tmp file cleanup. | L | L | |
 | Tooling | SFT006 | Global switch to redirect output for tooling functions, i.e. disable "puts" by switch. | L | L | |
 | Tooling | SFT007 | Output for tooling functions to have indent levels. | L | L | |
 | Tooling | SFT008 | Fix zsh instructions to start with the `cp`; then refer back to it in case of changes outside the local machine. Also hardlink and check in _~/.oh-my-zsh/*_ and _~/.p10k.zsh_ and leave similar guidance. | M | L | |
 | Tooling | SFT009 | Port bash aliases and test them. | H | L | |
+| Tooling | SFT010 | Karabiner-Elements now recognizes CapsLock as a modifier. Might be able to undo complicated steps taken to create a hyperkey and such. | L | M | |
 
 #### Patterns
 
