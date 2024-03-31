@@ -118,7 +118,58 @@ append output [format {
           ]
         }
       ]
-    }}]
+    },
+    {
+      "description": "Open or focus Arc.",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "right_command",
+            "modifiers": {
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_command",
+              "lazy": true
+            }
+          ],
+          "to_if_alone": [
+            {
+              "shell_command": "open -a Arc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Open or focus Warp.",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "right_option",
+            "modifiers": {
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_option",
+              "lazy": true
+            }
+          ],
+          "to_if_alone": [
+            {
+              "shell_command": "open -a Warp"
+            }
+          ]
+        }
+      ]
+    }
+}]
 
 foreach key {left_arrow right_arrow up_arrow down_arrow} {
     append output [format {,
