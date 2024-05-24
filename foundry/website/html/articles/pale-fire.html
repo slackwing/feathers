@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+  <head>
+    <style type="text/css" media="screen">
+      html,
+      body,
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      class Node {
+        constructor(id, page, text, lineStart, lineEnd) {
+          this.id = id;
+          // F = Foreword
+          // L1-L999 = poem, node per line
+          // G1-G1000 = poem, node per group of lines
+          // C1-C4 = poem, node per cantos
+          // N1-N1000 = commentary, node per note, by starting line
+          this.page = page;
+          this.text = text;
+          this.wordcount = text.split(/\s+/).length;
+          // Only applies to commentary nodes.
+          this.lineStart = lineStart;
+          this.lineEnd = lineEnd;
+        }
+      }
+
+      function escape(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
+      function sanitize_canto(canto) {
+        canto = canto.map((page) =>
+          page
+            // Remove line numbers in the cantos.
+            .replace(/(^|\n)\d+(?= [a-zA-Z0-9-()"])/g, "$1")
+            // Consolidate line-wrapped lines with their previous line.
+            .replace(/((^|\n) .+)\n(?=[^ ])(.+)/g, "$1$3")
+            // Remove double linebreaks.
+            .replace(/(^|\n)\s*\n/g, "$1")
+            // Remove trailing whitespace.
+            .replace(/\s*$/, ""),
+        );
+
+        // Consolidate line-wrapped lines from the previous page.
+        for (var i = 0; i < canto.length - 1; i++) {
+          var match = canto[i + 1].match(/^(?=[^ ])(.*)\n/);
+          if (match !== null) {
+            canto[i] += match[1];
+            canto[i + 1] = canto[i + 1].replace(/(?=[^ ])(.*)\n/, "");
+          }
+        }
+
+        return canto;
+      }
+
+      fetch("./pale-fire.json")
+        .then((response) => response.json())
+        .then((book) => {
+          var title = book["title"];
+          var foreword = book["foreword"];
+          var cantoOne = book["cantoOne"];
+          var cantoTwo = book["cantoTwo"];
+          var cantoThree = book["cantoThree"];
+          var cantoFour = book["cantoFour"];
+          var commentary = book["commentary"];
+          var index = book["index"];
+
+          foreword = foreword.map((page) => page.replace(/^\d+\s+(FOREWORD\s+)?/, ""));
+
+          cantoOne = sanitize_canto(
+            cantoOne.map((page) => page.replace(/^\d+\n(CANTO xxx\n)?/, "")),
+          );
+
+          cantoTwo = sanitize_canto(
+            cantoTwo.map((page) => page.replace(/^\d+\n(Canto xxx\n)?/, "")),
+          );
+
+          cantoThree = sanitize_canto(
+            cantoThree.map((page) => page.replace(/^\d+\n(CANTO xxxxx\n)?/, "")),
+          );
+
+          cantoFour = sanitize_canto(
+            cantoFour.map((page) => page.replace(/^\d+\n(CANTO xxxx\n)?/, "")),
+          );
+
+          commentary = commentary.map((page) =>
+            page.replace(/^(\d+\s+)?(COMMENTARY|PALE FIRE)(\n\d+)?\s+/, ""),
+          );
+
+          var pageNumber;
+          var nodeMap = new Map();
+          var poemLines = new Array();
+          var poemLineNodes = new Array();
+          poemLines.push(null); // Make 1-indexed.
+          poemLineNodes.push(null); // Make 1-indexed.
+          var poemGroupNodes = new Array();
+          var poemCantosNodes = new Array();
+          var nonPoemNodes = new Array();
+          var commentaryNodes = new Array();
+          var node;
+
+          // Foreword.
+
+          pageNumber = 7;
+          node = new Node("F", pageNumber, foreword.join("\n\n"), null, null);
+          nodeMap.set(node.id, node);
+          nonPoemNodes.push(node);
+
+          // Poem, line-by-line. (Grouping by notes later.)
+
+          var pageNumber = 22;
+          var lineNumber = 1;
+          for (canto of [cantoOne, cantoTwo, cantoThree, cantoFour]) {
+            for (page of canto) {
+              for (line of page.split(/\s*\n\s*/)) {
+                poemLines.push(line); // Useful later.
+                // For debugging; uncomment to see every line, numbered.
+                // console.log(lineNumber + " " + line);
+                node = new Node(`L${lineNumber}`, pageNumber, line, lineNumber, null);
+                poemLineNodes.push(node);
+                lineNumber++;
+              }
+              pageNumber++;
+            }
+          }
+          console.assert(lineNumber - 1 == 999);
+          console.log("Found " + (lineNumber - 1) + " lines in the poem.");
+
+          // Commentary.
+
+          var page = 56;
+          var lineOrLinesRegex = "(?:Line (\\d+)|Lines (\\d+)-(\\d+)):.*";
+          var between_lines_regex = new RegExp(
+            lineOrLinesRegex + "([\\s\\S]*?)(" + lineOrLinesRegex + "[\\s\\S]*)",
+          );
+          var scrollingBuffer = "";
+          var lastPageProcessed = page;
+          for (var i = 0; i < commentary.length; ) {
+            var matches = scrollingBuffer.match(between_lines_regex);
+            if (matches === null) {
+              scrollingBuffer += commentary[i++];
+              page++;
+            } else {
+              var lineStart;
+              var lineEnd;
+              if (matches[1] !== undefined) {
+                // If reference to a single line, set lineEnd = lineStart.
+                lineStart = matches[1];
+                lineEnd = matches[1];
+              } else if (matches[2] !== undefined && matches[3] !== undefined) {
+                lineStart = matches[2];
+                lineEnd = matches[3];
+              }
+              if (lineStart == 502 || lineStart == 949) {
+                // Ugh, some lines have 2 notes; append a 'b' to the second of each.
+                if (nodeMap.get("N" + lineStart) !== undefined) {
+                  lineEnd += "b";
+                }
+              }
+              node = new Node(`N${lineStart}`, lastPageProcessed, matches[4], lineStart, lineEnd);
+              nodeMap.set(node.id, node);
+              nonPoemNodes.push(node);
+              commentaryNodes.push(node);
+              // Debugging:
+              console.log("Created " + node.id + ".");
+              scrollingBuffer = matches[5];
+              lastPageProcessed = page;
+            }
+          }
+
+          // TODO(P2): Assert number of notes; manually count in book.
+
+          // Poem, this time grouped by ranges with or without commentary.
+
+          var currentLine = 1;
+          for (var node of commentaryNodes) {
+            var lineStart = node.lineStart;
+            var lineEnd = node.lineEnd;
+            if (lineEnd.substr(-1) == "b") {
+              console.log("AFDDFJLSLFLSDFJDLSJ");
+              // TODO(P0) - but actually we don't wanna skip, just need to handle
+              continue;
+            }
+            lineStart = Number(lineStart);
+            lineEnd = Number(lineEnd);
+            if (lineStart > currentLine) {
+              // Next note is beyond current line; create node for non-commentary group.
+              node = new Node(
+                `G${currentLine}`,
+                poemLineNodes[currentLine].page,
+                poemLines.splice(currentLine, lineStart).join("\n"),
+                currentLine,
+                lineStart - 1,
+              );
+              nodeMap.set(node.id, node);
+              poemGroupNodes.push(node);
+              // Debugging:
+              console.log("Created " + node.id + ".");
+            }
+            // Create node for commentary group.
+            node = new Node(
+              `G${lineStart}`,
+              poemLineNodes[lineStart].page,
+              poemLines.splice(lineStart, lineEnd + 1).join("\n"),
+              lineStart,
+              lineEnd,
+            );
+            nodeMap.set(node.id, node);
+            poemGroupNodes.push(node);
+            console.log("Created " + node.id + ".");
+            currentLine = lineEnd + 1;
+          }
+
+          // Poem, this time by cantos. Do manually; easiest.
+
+          node = new Node(`C1`, poemLineNodes[1].page, poemLines.splice(1, 167).join("\n"), 1, 166);
+          nodeMap.set(node.id, node);
+          poemGroupNodes.push(node);
+
+          node = new Node(
+            `C1`,
+            poemLineNodes[1].page,
+            poemLines.splice(167, 501).join("\n"),
+            167,
+            166,
+          );
+          nodeMap.set(node.id, node);
+          poemGroupNodes.push(node);
+
+          node = new Node(
+            `C1`,
+            poemLineNodes[1].page,
+            poemLines.splice(501, 886).join("\n"),
+            501,
+            885,
+          );
+          nodeMap.set(node.id, node);
+          poemGroupNodes.push(node);
+
+          node = new Node(
+            `C1`,
+            poemLineNodes[1].page,
+            poemLines.splice(885, 1001).join("\n"),
+            885,
+            1000,
+          );
+          nodeMap.set(node.id, node);
+          poemGroupNodes.push(node);
+
+          for (cantoStartLine of [1, 167, 501, 885]) {
+          }
+
+          // For debugging; uncomment and change regex to find a page.
+          // for (canto of [cantoOne, cantoTwo, cantoThree, cantoFour]) {
+          //   for (page of canto) {
+          //     if (/headlights/.test(page)) {
+          //       console.log(page);
+          //     }
+          //   }
+          // }
+
+          // console.log(lastPageProcessed);
+
+          // console.log(commentary[0]);
+          // console.log(commentary[1]);
+          // console.log(commentary[2]);
+          // console.log(commentary[3]);
+          // console.log(commentary[4]);
+          // console.log(commentary[5]);
+        });
+    </script>
+  </body>
+</html>
