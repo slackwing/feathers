@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@arction/lcjs@5.2.0/dist/lcjs.iife.js"></script>
+  </head>
+  <body>
+    <script>
+      var sid = "1cDpQtHGIcXykOXMwC3SFtX-clxUGdrCeVk7GuKY3H90";
+      var tab = "Time Bank";
+      // Created in Google Cloud Console > Credentials
+      var api_key = "AIzaSyCg0GOAFvvOmAS1FWXfWUr2MZY6LWrkGfY";
+      var url =
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        sid +
+        "/values/" +
+        tab +
+        "?alt=json&key=" +
+        api_key;
+      var date_column_index = 0;
+      var daily_hobby_total_index = 35;
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((json) => {
+          console.log(json["values"][1][0]);
+          var data = json["values"]
+            .filter((row) => row[date_column_index] !== undefined)
+            .filter((row) => /^\d{4} \w\w\w \d\d?$/.test(row[date_column_index]))
+            .filter((row) => row.length >= daily_hobby_total_index)
+            .map((row) => [row[date_column_index], row[daily_hobby_total_index]]);
+          console.log(data);
+          var lc = lightningChart({
+            license:
+              "0002-n6m7qpJbHJrjdKg3bdmg3TN3F3XAKwCou5OGQxuf92yvMrVheNja4z8Aqpu0C4xWMkxozm04ykIY2MsVaMj+aY2P-MEQCIE6g4qI20CFmC5rPoQ1x9TqrgAvYvduIKGjuqjFjWyfFAiBclNV6oHAmxlbtHuP3aRHL0zd6t7kO7NxpKCKJrNJFUQ==",
+            licenseInformation: {
+              appTitle: "LightningChart JS Trial",
+              company: "LightningChart Ltd.",
+            },
+          });
+          const chart = lc.ChartXY();
+        });
+    </script>
+  </body>
+</html>
