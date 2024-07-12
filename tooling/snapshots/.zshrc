@@ -1,3 +1,54 @@
+export PATH="$HOME/.jenv/bin:$PATH"
+eval "$(jenv init -)"
+
+source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
+source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+setopt no_hist_verify
+source ~/.myrc
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# From pyenv guide
+
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+export PIPENV_PYTHON="$PYENV_ROOT/shims/python"
+
+plugin=(
+  pyenv
+)
+
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/acheong/google-cloud-sdk/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/acheong/google-cloud-sdk/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/acheong/google-cloud-sdk/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/acheong/google-cloud-sdk/google-cloud-sdk/completion.zsh.inc'; fi
+export PATH="/Users/acheong/Library/Python/3.7/bin:$PATH"
+export PATH="/Library/Frameworks/Python.framework/Versions/3.7/bin:$PATH"
+
+export PATH="/usr/local/opt/ruby/bin:$PATH"
+
+export DATASOURCE_PASSWORD='LN0d1{Rq_\bm+:hR'
+export SPOTIFY_DOMAIN='gew1.spotify.net'
+
+export PATH="/Users/acheong/src/etc/chatGPT-shell-cli/chatgpt.sh:$PATH"
+export OPENAI_KEY='<redacted>'
+
+export set UUID_REGEX="([a-z0-9]{8})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{12})"
+function psid() { perl -ne 's/.*'$UUID_REGEX'.*/\1\2\3\n\4\5/g && print' \
+  | perl -ple 's/-//g' | while read -r hi && read -r lo ; do \
+    python -c "print('{\"mostSigBits\":\"%d\",\"leastSigBits\":\"%d\"}' % (int('$hi',16),int('$lo',16)))"; done ; }
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+export PATH=$PATH:/usr/local/bin
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -109,54 +160,5 @@ source $ZSH/oh-my-zsh.sh
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-export PATH="$HOME/.jenv/bin:$PATH"
-eval "$(jenv init -)"
 
-source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
-setopt no_hist_verify
-source ~/.myrc
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# From pyenv guide
-
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-export PIPENV_PYTHON="$PYENV_ROOT/shims/python"
-
-plugin=(
-  pyenv
-)
-
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/acheong/google-cloud-sdk/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/acheong/google-cloud-sdk/google-cloud-sdk/path.zsh.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/Users/acheong/google-cloud-sdk/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/acheong/google-cloud-sdk/google-cloud-sdk/completion.zsh.inc'; fi
-export PATH="/Users/acheong/Library/Python/3.7/bin:$PATH"
-export PATH="/Library/Frameworks/Python.framework/Versions/3.7/bin:$PATH"
-
-export PATH="/usr/local/opt/ruby/bin:$PATH"
-
-export DATASOURCE_PASSWORD='LN0d1{Rq_\bm+:hR'
-export SPOTIFY_DOMAIN='gew1.spotify.net'
-
-export PATH="/Users/acheong/src/etc/chatGPT-shell-cli/chatgpt.sh:$PATH"
-export OPENAI_KEY='<redacted>'
-
-export set UUID_REGEX="([a-z0-9]{8})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{12})"
-function psid() { perl -ne 's/.*'$UUID_REGEX'.*/\1\2\3\n\4\5/g && print' \
-  | perl -ple 's/-//g' | while read -r hi && read -r lo ; do \
-    python -c "print('{\"mostSigBits\":\"%d\",\"leastSigBits\":\"%d\"}' % (int('$hi',16),int('$lo',16)))"; done ; }
-
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-export PATH=$PATH:/usr/local/bin
 export PATH=/opt/spotify-devex/bin:$PATH
