@@ -9,15 +9,21 @@ alias ll='ls -alohF'
 alias lt='ls -lt | head -n 10'
 
 alias gl='git log --pretty=format:"%h %an %ar - %s" | head -n 10'
-alias gm='git checkout master'
-alias g-='git checkout -'
+alias gcm='git checkout master'
+alias gc-='git checkout -'
 alias gq='git add . ; git diff --staged ; git commit -m"fix"'
 alias gw='git add . ; git diff --staged ; git commit -m"wip"'
+alias gf='git add . ; git diff --staged ; git commit -m"formatting"'
 alias gd='git diff'
 alias gs='git status'
 alias gdrop='git checkout -- .' # as opposed to stashing
 alias guncommit='git reset --soft HEAD~1'
-alias grestore='git checkout <deleting_commit>^ -- <path>'
+# These don't work of course. Just examples/reminders.
+alias grestore1='git checkout -- <path>'
+alias grestore2='git checkout <deleting_commit>^ -- <path>'
+alias gbranches='git fetch ; git branch -v -a'
+# Creates a local branch from a remote branch listed via `gbranches`. Don't include "remotes/origin/".
+alias gswitch='git switch'
 
 alias b64d='base64 --decode'
 alias b64e='base64 --encode'
@@ -58,11 +64,15 @@ acgit() {
 alias jazz0='mpv "https://www.youtube.com/watch?v=IRyJe-0Uie0" -vo null'
 alias jazz1='mpv "https://www.youtube.com/watch?v=e-2TaN77gD4" -vo null'
 alias jazz1v='mpv "https://www.youtube.com/watch?v=e-2TaN77gD4" -vo tct'
+alias jazz2='mpv "https://www.youtube.com/watch?v=8cN7LWGO-gE" -vo null'
 alias hack0='mpv "https://www.youtube.com/watch?v=mW304P9EHgg" -vo null'
 alias hack0v='mpv "https://www.youtube.com/watch?v=mW304P9EHgg" -vo tct'
 alias rain0='mpv "https://www.youtube.com/watch?v=DXT9dF-WK-I" -vo null'
 alias rain0v='mpv "https://www.youtube.com/watch?v=DXT9dF-WK-I" -vo tct'
+alias late0='mpv "https://www.youtube.com/watch?v=QYpDQxHfTPk" -vo null'
 alias late0v='mpv "https://www.youtube.com/watch?v=QYpDQxHfTPk" -vo tct'
+alias lofi0='mpv "https://www.youtube.com/watch?v=HU_6C9b5i6k" -vo null'
+alias lofi0v='mpv "https://www.youtube.com/watch?v=HU_6C9b5i6k" -vo tct'
 function gamba() { termdown -c 20 -v Yuna $((60*$1)) }
 
 function sandbox() {
@@ -79,6 +89,7 @@ alias aasproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central
 alias amsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-east1:measurementsdb=tcp:3501,adstudio-sandbox1:us-east1:measurementsdb-sandbox=tcp:3502'
 alias beamproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:beamdb=tcp:3601,adstudio-sandbox1:us-central1:beamdb-sandbox=tcp:3602'
 alias draftsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:europe-west1:adstudio-draftsdb=tcp:3403,adstudio-sandbox1:europe-west1:adstudio-drafts-sandboxdb=tcp:3404'
+alias csproxy='~/src/spotify/cloud_sql_proxy -instances=spotify-ad-serving:europe-west1:campaign-service-sandbox=tcp:5432'
 alias abletonlog='tail -f ~/Library/Preferences/Ableton/Live\ 11.0.12/Log.txt'
 alias lint='yarn lint:js --fix'
 alias core='cd /Users/acheong/src/spotify/client-web/desktop/shell/core'
