@@ -145,7 +145,7 @@ append output [format {
       ]
     },
     {
-      "description": "Open or focus Warp.",
+      "description": "Open or focus iTerm.",
       "manipulators": [
         {
           "type": "basic",
@@ -163,7 +163,7 @@ append output [format {
           ],
           "to_if_alone": [
             {
-              "shell_command": "open -a Warp"
+              "shell_command": "open -a iTerm"
             }
           ]
         }
