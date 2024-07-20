@@ -1,0 +1,218 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      7666,        208]
+NotebookOptionsPosition[      6901,        188]
+NotebookOutlinePosition[      7300,        204]
+CellTagsIndexPosition[      7257,        201]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"rate", "=", "100"}], ";"}], " ", 
+  RowBox[{"(*", " ", 
+   RowBox[{"per", " ", "second"}], " ", "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"estimatedAgeOfFirstPrimate", "=", "65000000"}], ";"}], " ", 
+  RowBox[{"(*", " ", "years", " ", "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"uuidsSinceFirstPrimate", "=", 
+   RowBox[{
+   "estimatedAgeOfFirstPrimate", "*", "365.25", "*", "24", "*", "60", "*", 
+    "60", "*", "rate"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"BirthdayParadox", "[", 
+    RowBox[{"d_", ",", "n_"}], "]"}], ":=", 
+   RowBox[{"1", "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"d", "-", "1"}], ")"}], "/", "d"}], ")"}], "^", 
+     RowBox[{"(", 
+      RowBox[{"n", "*", 
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{"n", "-", "1"}], ")"}], "/", "2"}]}], ")"}]}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"possibleUuids", "=", 
+    RowBox[{"16", "^", "32"}]}], ";"}], " ", 
+  RowBox[{"(*", " ", 
+   RowBox[{"well", ",", " ", 
+    RowBox[{
+    "technically", " ", "some", " ", "ranges", " ", "are", " ", "probably", 
+     " ", "reserved"}]}], " ", "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"probabilityOfCollision", "=", 
+   RowBox[{"BirthdayParadox", "[", 
+    RowBox[{"possibleUuids", ",", "uuidsSinceFirstPrimate"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"ScientificForm", "[", 
+  RowBox[{"N", "@", "uuidsSinceFirstPrimate"}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ScientificForm", "[", 
+  RowBox[{"N", "@", "possibleUuids"}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ScientificForm", "[", 
+   RowBox[{"N", "@", "probabilityOfCollision"}], "]"}], "\[IndentingNewLine]", 
+  RowBox[{"(*", " ", 
+   RowBox[{"actually", " ", "this", " ", "code", " ", 
+    RowBox[{"isn", "'"}], "t", " ", "working", " ", "because", " ", "of", " ", 
+    RowBox[{"\[AliasDelimiter]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{"underflow", " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{"for", " ", 
+          RowBox[{"n", "^", "2"}], " ", 
+          RowBox[{"<<", " ", "d"}], " ", "an", " ", "approximation", " ", 
+          RowBox[{"exists", ":", " ", 
+           RowBox[{
+            RowBox[{"n", "^", "2"}], "/", 
+            RowBox[{"(", 
+             RowBox[{"2", "d"}], ")"}]}]}]}], " ", "*)"}], 
+        "\[IndentingNewLine]", "approximatedProbabilityOfCollision"}], "=", 
+       RowBox[{
+        RowBox[{"uuidsSinceFirstPrimate", "^", "2"}], "/", 
+        "possibleUuids"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"ScientificForm", "[", 
+       RowBox[{"N", "@", "approximatedProbabilityOfCollision"}], 
+       "]"}]}]}]}]}]}]}], "Input",
+ CellChangeTimes->{{3.9212325798244467`*^9, 3.921232888371482*^9}, {
+   3.921232933712187*^9, 3.921232995172091*^9}, {3.9212331768298492`*^9, 
+   3.921233192240987*^9}, {3.9212332328677797`*^9, 3.921233289221634*^9}, {
+   3.921233355215487*^9, 3.92123341027997*^9}, {3.921233475758059*^9, 
+   3.921233476546627*^9}, {3.921233547553877*^9, 3.921233688208817*^9}, 
+   3.921233745031124*^9, {3.9212339611745663`*^9, 3.921234086469776*^9}, {
+   3.921234155059423*^9, 3.921234156326098*^9}, 
+   3.921330995838436*^9},ExpressionUUID->"4e19bddd-a0f1-4fa6-bc33-\
+42e0cbcb31af"],
+
+Cell[BoxData[
+ TagBox[
+  InterpretationBox[
+   StyleBox[
+    RowBox[{"\<\"2.05124\"\>", "\[Times]", 
+     SuperscriptBox["10", "\<\"17\"\>"]}],
+    ShowStringCharacters->False],
+   2.051244*^17,
+   AutoDelete->True],
+  ScientificForm]], "Output",
+ CellChangeTimes->{{3.9212328769571867`*^9, 3.9212328892925777`*^9}, {
+   3.9212329872015963`*^9, 3.9212329961427917`*^9}, {3.921233181483983*^9, 
+   3.921233192721981*^9}, {3.921233237390493*^9, 3.921233289787961*^9}, {
+   3.921233361458951*^9, 3.921233410713643*^9}, 3.921233476872987*^9, 
+   3.921233689303495*^9, 3.921233748117958*^9, {3.921234070498475*^9, 
+   3.921234086866878*^9}},
+ CellLabel->
+  "Out[2410]//ScientificForm=",ExpressionUUID->"9c7e3bb2-15fd-4ec9-ae0f-\
+a5a1078e3e56"],
+
+Cell[BoxData[
+ TagBox[
+  InterpretationBox[
+   StyleBox[
+    RowBox[{"\<\"3.40282\"\>", "\[Times]", 
+     SuperscriptBox["10", "\<\"38\"\>"]}],
+    ShowStringCharacters->False],
+   3.402823669209385*^38,
+   AutoDelete->True],
+  ScientificForm]], "Output",
+ CellChangeTimes->{{3.9212328769571867`*^9, 3.9212328892925777`*^9}, {
+   3.9212329872015963`*^9, 3.9212329961427917`*^9}, {3.921233181483983*^9, 
+   3.921233192721981*^9}, {3.921233237390493*^9, 3.921233289787961*^9}, {
+   3.921233361458951*^9, 3.921233410713643*^9}, 3.921233476872987*^9, 
+   3.921233689303495*^9, 3.921233748117958*^9, {3.921234070498475*^9, 
+   3.921234086868989*^9}},
+ CellLabel->
+  "Out[2411]//ScientificForm=",ExpressionUUID->"701e35b1-6e4b-4b31-a7fb-\
+e3d4d0ccfac5"],
+
+Cell[BoxData[
+ TagBox[
+  InterpretationBox[
+   StyleBox["\<\"0.\"\>",
+    ShowStringCharacters->False],
+   0.,
+   AutoDelete->True],
+  ScientificForm]], "Output",
+ CellChangeTimes->{{3.9212328769571867`*^9, 3.9212328892925777`*^9}, {
+   3.9212329872015963`*^9, 3.9212329961427917`*^9}, {3.921233181483983*^9, 
+   3.921233192721981*^9}, {3.921233237390493*^9, 3.921233289787961*^9}, {
+   3.921233361458951*^9, 3.921233410713643*^9}, 3.921233476872987*^9, 
+   3.921233689303495*^9, 3.921233748117958*^9, {3.921234070498475*^9, 
+   3.921234086872388*^9}},
+ CellLabel->
+  "Out[2412]//ScientificForm=",ExpressionUUID->"4d4ebc64-1f99-4936-8717-\
+98b08fca1ae9"],
+
+Cell[BoxData[
+ TagBox[
+  InterpretationBox[
+   StyleBox[
+    RowBox[{"\<\"1.2365\"\>", "\[Times]", 
+     SuperscriptBox["10", "\<\"-4\"\>"]}],
+    ShowStringCharacters->False],
+   0.00012365030799593558`,
+   AutoDelete->True],
+  ScientificForm]], "Output",
+ CellChangeTimes->{{3.9212328769571867`*^9, 3.9212328892925777`*^9}, {
+   3.9212329872015963`*^9, 3.9212329961427917`*^9}, {3.921233181483983*^9, 
+   3.921233192721981*^9}, {3.921233237390493*^9, 3.921233289787961*^9}, {
+   3.921233361458951*^9, 3.921233410713643*^9}, 3.921233476872987*^9, 
+   3.921233689303495*^9, 3.921233748117958*^9, {3.921234070498475*^9, 
+   3.921234086874449*^9}},
+ CellLabel->
+  "Out[2414]//ScientificForm=",ExpressionUUID->"98c60e26-e1c5-4cff-b550-\
+698a512925c2"]
+}, Open  ]]
+},
+WindowSize->{1264, 911},
+WindowMargins->{{Automatic, -571}, {Automatic, -1949}},
+FrontEndVersion->"13.3 for Mac OS X x86 (64-bit) (July 24, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"5f7065fc-c564-48c9-8c93-79aaffaa0631"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 3406, 85, 283, "Input",ExpressionUUID->"4e19bddd-a0f1-4fa6-bc33-42e0cbcb31af"],
+Cell[3989, 109, 738, 18, 48, "Output",ExpressionUUID->"9c7e3bb2-15fd-4ec9-ae0f-a5a1078e3e56"],
+Cell[4730, 129, 747, 18, 48, "Output",ExpressionUUID->"701e35b1-6e4b-4b31-a7fb-e3d4d0ccfac5"],
+Cell[5480, 149, 654, 16, 48, "Output",ExpressionUUID->"4d4ebc64-1f99-4936-8717-98b08fca1ae9"],
+Cell[6137, 167, 748, 18, 48, "Output",ExpressionUUID->"98c60e26-e1c5-4cff-b550-698a512925c2"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

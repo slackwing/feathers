@@ -1,0 +1,973 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     46160,        965]
+NotebookOptionsPosition[     44560,        934]
+NotebookOutlinePosition[     44983,        951]
+CellTagsIndexPosition[     44940,        948]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"PAGES", "=", "306"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"pages", "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Import", "[", 
+      RowBox[{"\"\</Users/acheong/pale-fire.pdf\>\"", ",", " ", 
+       RowBox[{"{", 
+        RowBox[{"\"\<Plaintext\>\"", ",", " ", "#"}], "}"}]}], "]"}], "&"}], "/@", 
+    RowBox[{"Range", "[", "PAGES", "]"}]}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.92467483120722*^9, 3.9246749023294363`*^9}, {
+   3.924676340766736*^9, 3.9246763432449827`*^9}, {3.924676472527381*^9, 
+   3.924676507254733*^9}, {3.924676621251954*^9, 3.924676692702613*^9}, {
+   3.924676909066226*^9, 3.924676956495351*^9}, {3.924678314923361*^9, 
+   3.924678393871614*^9}, {3.924678472603705*^9, 3.924678535948513*^9}, {
+   3.92467856883405*^9, 3.924678580455387*^9}, {3.924679101258624*^9, 
+   3.924679107247469*^9}, {3.92467955179601*^9, 3.9246795678079567`*^9}, {
+   3.924685040603475*^9, 3.924685100983096*^9}, {3.924806398384344*^9, 
+   3.9248064088154917`*^9}, {3.924806471916917*^9, 3.924806474866804*^9}, {
+   3.925109847413437*^9, 3.9251098693733788`*^9}, {3.925110710712611*^9, 
+   3.925110712044099*^9}, {3.925111633190338*^9, 3.925111659708035*^9}, {
+   3.925111741546042*^9, 3.925111741792066*^9}, 3.925477160527034*^9, 
+   3.9254797747119617`*^9, 3.925481309280335*^9},
+ CellLabel->
+  "In[557]:=",ExpressionUUID->"2a78eda3-c36e-429e-83f3-a68972d572e7"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"In", " ", "18", " ", "places"}], ",", " ", 
+    RowBox[{
+    "a", " ", "line", " ", "is", " ", "broken", " ", "up", " ", "into", " ", 
+     "2", " ", "lines", " ", "but", " ", "count", " ", "as", " ", 
+     RowBox[{"one", ".", " ", "Merge"}], " ", 
+     RowBox[{"them", "."}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"brokenLines", "=", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Bicycle tires.\>\"", ",", "\"\<A thread of subtle pain,\>\""}], 
+        "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Anonymous.\>\"", ",", "\"\<Espied on a pine's bark,\>\""}], 
+        "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<A gum-logged ant.\>\"", ",", 
+         "\"\<That Englishman in Nice,\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Fed the poor sea gulls!\>\"", ",", 
+         "\"\<Lafontaine was wrong:\>\""}], "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Mother, what's grimpen?\\\" \\\"What is what?\\\"\>\"", ",", 
+         "\"\<\\\"Grim Pen.\\\"\>\""}], "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<And music welled.\>\"", ",", 
+         "\"\<He took one look at her,\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<(one oozy footstep) Frost.\>\"", ",", 
+         "\"\<\\\"Sure you don't mind?\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Of corporate desire.\>\"", ",", 
+         "\"\<\\\"I think,\\\" she said,\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Infinity.\>\"", ",", "\"\<Out of his lakeside shack\>\""}], 
+        "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{"\"\<The grand potato.\>\"", ",", "\"\<I.P.H., a lay\>\""}], 
+        "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Wrote President McAber).\>\"", ",", "\"\<You and I,\>\""}], 
+        "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{"\"\<It might assist assimilation.\>\"", ",", "\"\<Iph\>\""}],
+         "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Stored in its strongholds through the years.\>\"", ",", 
+         "\"\<Instead\>\""}], "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Your full attention.\>\"", ",", "\"\<I can't tell you how\>\""}],
+         "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<No, Mr. Shade.\\\"\>\"", ",", 
+         "\"\<But, Doctor, I was dead!\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<It's getting late...\\\"\>\"", ",", 
+         "\"\<I also called on Coates.\>\""}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Shaved in his bath, here goes:\>\"", ",", 
+         "\"\<\\\"He'd fixed a sort\>\""}], "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{
+        "\"\<Richly rhymed life.\>\"", ",", "\"\<I feel I understand\>\""}], 
+        "}"}]}], "\[IndentingNewLine]", "}"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"mergePairs", "[", 
+      RowBox[{"page_String", ",", 
+       RowBox[{"{", 
+        RowBox[{"line1_", ",", "line2_"}], "}"}]}], "]"}], ":=", 
+     "\[IndentingNewLine]", 
+     RowBox[{"StringReplace", "[", 
+      RowBox[{"page", ",", 
+       RowBox[{
+        RowBox[{"line1", "~~", "__", "~~", "line2"}], ":>", 
+        RowBox[{"StringJoin", "[", 
+         RowBox[{"line1", ",", "\"\< \>\"", ",", "line2"}], "]"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"mergeAllPairs", "[", 
+      RowBox[{"page_String", ",", "pairs_"}], "]"}], ":=", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Fold", "[", 
+      RowBox[{"mergePairs", ",", "page", ",", "brokenLines"}], "]"}]}], ";"}],
+    "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"mergeAllPairs", "[", 
+        RowBox[{"#", ",", "brokenLines"}], "]"}], "&"}], "/@", "pages"}]}], 
+    ";"}]}]}]], "Input",
+ CellChangeTimes->{{3.925478417185861*^9, 3.925478462159466*^9}, {
+   3.9254788466921177`*^9, 3.9254789141893663`*^9}, {3.9254790504086103`*^9, 
+   3.9254790726310873`*^9}, {3.925479107863002*^9, 3.925479124296064*^9}, {
+   3.925479245228135*^9, 3.925479444561184*^9}, {3.925479575310975*^9, 
+   3.925479687163003*^9}, {3.925479814555779*^9, 3.925479876935474*^9}, {
+   3.92548004926689*^9, 3.925480049590269*^9}, {3.925480098984846*^9, 
+   3.9254801087319527`*^9}, {3.925480221581573*^9, 3.925480231250505*^9}, {
+   3.925480807673237*^9, 3.925480835857848*^9}, 3.925480921711158*^9, {
+   3.925481182819572*^9, 3.925481215713963*^9}},
+ CellLabel->
+  "In[559]:=",ExpressionUUID->"4e3b6e6a-8761-4411-acb8-17a52bb93dec"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "The", " ", "PDF", " ", "is", " ", "missing", " ", "lines", " ", "444", 
+    " ", "and", " ", "614.", " ", "Insert", " ", 
+    RowBox[{"them", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", 
+        RowBox[{"#", ",", "\[IndentingNewLine]", 
+         RowBox[{
+         "\"\<You listened at the door.\>\"", "->", "\[IndentingNewLine]", 
+          "\"\<You listened at the door.\\n Picked up the program from the \
+floor.\>\""}]}], "\[IndentingNewLine]", "]"}], "&"}], "/@", "pages"}]}], 
+    ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", 
+        RowBox[{"#", ",", "\[IndentingNewLine]", 
+         RowBox[{
+         "\"\<like dark hands from the past\>\"", "->", 
+          "\[IndentingNewLine]", 
+          "\"\<like dark hands from the past\\n Offering gems; and death is \
+coming fast.\>\""}]}], "\[IndentingNewLine]", "]"}], "&"}], "/@", "pages"}]}],
+     ";"}], "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "Also", " ", "add", " ", "line", " ", "1000", " ", "since", " ", "there", 
+     " ", "are", " ", "notes", " ", "for", " ", "that", " ", 
+     RowBox[{"line", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", 
+        RowBox[{"#", ",", "\[IndentingNewLine]", 
+         RowBox[{
+         "\"\<an empty barrow up the lane.\>\"", "->", "\[IndentingNewLine]", 
+          "\"\<an empty barrow up the lane.\\n I was the shadow of the \
+waxwing slain.\>\""}]}], "\[IndentingNewLine]", "]"}], "&"}], "/@", 
+      "pages"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "Redact", " ", "dates", " ", "so", " ", "their", " ", "numbers", " ", 
+     RowBox[{"don", "'"}], "t", " ", "get", " ", "confused", " ", "for", " ", 
+     "line", " ", 
+     RowBox[{"numbers", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"redactor", "=", 
+     RowBox[{
+      RowBox[{"StringReplace", "[", 
+       RowBox[{"#", ",", 
+        RowBox[{
+         RowBox[{"RegularExpression", "[", "\"\<(?i)[a-z0-9]\>\"", "]"}], 
+         "->", "\"\<x\>\""}]}], "]"}], "&"}]}], ";"}], "\[IndentingNewLine]", 
+   
+   RowBox[{
+    RowBox[{"months", "=", 
+     RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{
+      "\"\<January\>\"", ",", "\[IndentingNewLine]", "\"\<February\>\"", ",", 
+       "\[IndentingNewLine]", "\"\<March\>\"", ",", "\[IndentingNewLine]", 
+       "\"\<April\>\"", ",", "\[IndentingNewLine]", "\"\<May\>\"", ",", 
+       "\[IndentingNewLine]", "\"\<June\>\"", ",", "\[IndentingNewLine]", 
+       "\"\<July\>\"", ",", "\[IndentingNewLine]", "\"\<August\>\"", ",", 
+       "\[IndentingNewLine]", "\"\<September\>\"", ",", 
+       "\[IndentingNewLine]", "\"\<October\>\"", ",", "\[IndentingNewLine]", 
+       "\"\<November\>\"", ",", "\[IndentingNewLine]", "\"\<December\>\""}], 
+      "\[IndentingNewLine]", "}"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"dateRegex", "=", 
+     RowBox[{"RegularExpression", "[", "\[IndentingNewLine]", 
+      RowBox[{"\"\<(\>\"", "<>", 
+       RowBox[{"StringRiffle", "[", 
+        RowBox[{"months", ",", "\"\<|\>\""}], "]"}], "<>", 
+       "\"\<)\\\\s+\\\\d{1,2}(,\\\\s+\\\\d{4})?\>\""}], "\[IndentingNewLine]",
+       "]"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", "\[IndentingNewLine]", 
+        RowBox[{"#", ",", 
+         RowBox[{"dateRegex", ":>", 
+          RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}]}], 
+        "\[IndentingNewLine]", "]"}], "&"}], "/@", "pages"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{"Redact", " ", "other", " ", "numbers", " ", "that", " ", 
+     RowBox[{"don", "'"}], "t", " ", "represent", " ", "line", " ", 
+     RowBox[{"numbers", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", "\[IndentingNewLine]", 
+        RowBox[{"#", ",", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{"(*", " ", 
+           RowBox[{"Counts", " ", "and", " ", "other", " ", 
+            RowBox[{"units", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<\\\\d+ lines\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<p[.] \\\\d+\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<card \\\\d+\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<\\\\d+ ounces\>\"", "]"}], 
+            ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<page[s]? \\\\d+(-\\\\d+)?\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<\\\\d+\[Degree]\>\"", "]"}], ":>", 
+            
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<\\\\d+ meters\>\"", "]"}], 
+            ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{"Unusual", " ", "date", " ", 
+             RowBox[{"formats", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<July. 2\>\"", "]"}], ":>", 
+            
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<Oct. 19, 1959\>\"", "]"}], 
+            ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<Oct. 17, 1958\>\"", "]"}], 
+            ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{
+             RowBox[{
+             "Any", " ", "number", " ", "greater", " ", "than", " ", "1"}], 
+             ",", "000."}], " ", "*)"}], "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<\\\\b(?!1,000)\\\\d{1,3},(\\\\d{3},)*\\\\d{3}\\\\b\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{"Time", "."}], " ", "*)"}], "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<\\\\d{1,2}:\\\\d{2}\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<\\\\d{1,2}(:\\\\d{2})? (A|P)[.]?M[.]?\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{"Quoted", " ", 
+             RowBox[{"lines", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<39 ........... and home\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<40 The sun with stolen ice\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<812 Some kind of link-and-bobolink\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<813 Of correlated pattern\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<417 I fled upstairs\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<609 Nor can one help the exile\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<662 Who r\[IAcute]des so l\[AAcute]te in the \
+n\[IAcute]ght\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<663 ...........................................\>\"", "]"}],
+             ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<664 .... \[CapitalIAcute]t is the f\[AAcute]ther with his \
+ch\[IAcute]ld\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<895 I have a certain liking\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<899 Yes, reader, Pope\>\"", "]"}], 
+            ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{"Other", " ", 
+             RowBox[{"numbers", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<Lit. 202\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<(Alphina|Betty|Candida|Dee)\\\\s+\\\\(\\\\d+\\\\)\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<480 can be \\ndivided by 300\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"RegularExpression", "[", "\"\<Scene 3\>\"", "]"}], ":>", 
+            
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<1000-\\\\s*line\>\"", "]"}], ":>", 
+            
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<(Alphina|Betty|Candida|Dee)\\\\s+\\\\(\\\\d+\\\\)\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", 
+             "\"\<\\\\(lines 2-3\\\\) is fortunate in finding\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<rhymes \\\\n\\\\(1 - 4\\\\)\>\"", 
+             "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "RegularExpression", "[", "\"\<555 South Street\>\"", "]"}], ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}]}], "]"}], "&"}], "/@", "pages"}]}], 
+    ";"}], "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+     RowBox[{"Standardize", " ", "non"}], "-", 
+     RowBox[{"standard", " ", "mentions", " ", "of", " ", 
+      RowBox[{"lines", "."}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", "\[IndentingNewLine]", 
+        RowBox[{"#", ",", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<verse 1000\>\"", "->", "\"\<line 1000\>\""}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+           "\"\<(605, 822, and 894)\>\"", "->", 
+            "\"\<(lines 605, 822, and 894)\>\""}], ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<fine 132\>\"", "->", "\"\<line 132\>\""}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"\"\<square 209\>\"", "->", "\"\<line 209\>\""}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"\"\<Line 403-404:\>\"", "->", "\"\<Lines 403-404:\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<(406-407)\>\"", "->", "\"\<(lines 406-407)\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<(426-428)\>\"", "->", "\"\<(lines 426-428)\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{
+           "\"\<(445-447 and 457-460)\>\"", "->", 
+            "\"\<(lines 445-447 and lines 457-459)\>\""}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"\"\<(474-477)\>\"", "->", "\"\<(lines 475-477)\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Line 417-421:\>\"", "->", "\"\<Lines 417-421\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{
+           "\"\<the 698-746 section\>\"", "->", "\"\<lines 698-746\>\""}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{
+           "\"\<797 (second part of line)-809\>\"", "->", 
+            "\"\<lines 797-809\>\""}], ",", "\[IndentingNewLine]", 
+           RowBox[{
+           "\"\<lines (say, \\n797-847)\>\"", "->", "\"\<lines 797-847\>\""}],
+            ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<in 925-930\>\"", "->", "\"\<lines 925-930\>\""}]}], 
+          "\[IndentingNewLine]", "}"}]}], "\[IndentingNewLine]", "]"}], "&"}],
+       "/@", "pages"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{"Miscellaneous", "."}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"pages", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringReplace", "[", "\[IndentingNewLine]", 
+        RowBox[{"#", ",", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<CONTENTS\\nForeword\>\"", ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"\"\<in a foreword?\>\"", ":>", 
+            RowBox[{"redactor", "[", "\"\<$0\>\"", "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}]}], "]"}], "&"}], "/@", "pages"}]}], 
+    ";"}]}]}]], "Input",
+ CellChangeTimes->{{3.925480944071682*^9, 3.9254809643564587`*^9}, {
+   3.925481030117034*^9, 3.925481111360179*^9}, {3.925481146349443*^9, 
+   3.925481150992353*^9}, {3.9254812204578753`*^9, 3.925481258030583*^9}, {
+   3.925483904662417*^9, 3.925483920034206*^9}, {3.925505400450039*^9, 
+   3.9255054148244257`*^9}, 3.9261131422950153`*^9, {3.926113188647327*^9, 
+   3.926113189062199*^9}, {3.9261132691594887`*^9, 3.926113280020953*^9}, {
+   3.9261135808534737`*^9, 3.9261135961391697`*^9}, {3.926113665947928*^9, 
+   3.926113683606319*^9}, {3.9261137266846113`*^9, 3.9261137307831297`*^9}, {
+   3.926114537186427*^9, 3.9261145453927517`*^9}, {3.926114615157954*^9, 
+   3.926114621315092*^9}, {3.926114654636629*^9, 3.926114703403914*^9}, {
+   3.926114742400619*^9, 3.926114786578128*^9}, {3.9261148329681187`*^9, 
+   3.9261148365997353`*^9}, {3.9261148747863007`*^9, 3.926114879662723*^9}, 
+   3.926115126640728*^9, {3.9261151711019783`*^9, 3.926115211529538*^9}, {
+   3.926115247073799*^9, 3.926115340472274*^9}, {3.926115443033403*^9, 
+   3.9261154430775337`*^9}, {3.926116044376885*^9, 3.926116044599999*^9}, {
+   3.9261160765087423`*^9, 3.926116093029316*^9}, {3.926116637593416*^9, 
+   3.926116658494258*^9}, {3.926116715955217*^9, 3.926116757715547*^9}, {
+   3.92611678898499*^9, 3.926116789142623*^9}, {3.926117519549837*^9, 
+   3.92611752514892*^9}, {3.926117697630713*^9, 3.9261177721454372`*^9}, {
+   3.926117938984087*^9, 3.926117966885988*^9}, {3.92611870202946*^9, 
+   3.926118702646903*^9}, {3.926195501643124*^9, 3.926195538126566*^9}, {
+   3.9261957371155977`*^9, 3.92619580761207*^9}, {3.926195864645743*^9, 
+   3.926195889823186*^9}, {3.9261959712500553`*^9, 3.926195976071257*^9}, {
+   3.9261960991353807`*^9, 3.926196107033544*^9}, {3.9261961406271553`*^9, 
+   3.9261961787553387`*^9}, {3.926196385836331*^9, 3.9261963914927588`*^9}, {
+   3.926197011985948*^9, 3.9261970861662207`*^9}, {3.926197131342243*^9, 
+   3.926197137043702*^9}, {3.926197225534445*^9, 3.9261972754601593`*^9}, {
+   3.9261973091309013`*^9, 3.926197346617963*^9}, {3.9261974486972837`*^9, 
+   3.926197460275836*^9}, {3.9261975354506693`*^9, 3.9261976060349703`*^9}, {
+   3.926197826628418*^9, 3.926197846453313*^9}, {3.926197904304431*^9, 
+   3.926197910048828*^9}, {3.926198539265213*^9, 3.92619862740053*^9}, {
+   3.9261986634512653`*^9, 3.926198671537277*^9}, 3.9261987568119717`*^9, {
+   3.926198800971595*^9, 3.92619882612068*^9}, {3.926198934834573*^9, 
+   3.926198962282373*^9}, {3.926199004269638*^9, 3.9261990291884527`*^9}, {
+   3.926199079115718*^9, 3.9261990906104307`*^9}, {3.926199452425099*^9, 
+   3.926199458622163*^9}, {3.926199571120763*^9, 3.926199574235158*^9}, {
+   3.9261996289752283`*^9, 3.926199636213563*^9}, {3.926199720041133*^9, 
+   3.926199870021146*^9}, {3.926199908838908*^9, 3.926199924856873*^9}, {
+   3.9261999716776733`*^9, 3.926200019970655*^9}, 3.9262001357569857`*^9, {
+   3.92620022804716*^9, 3.926200247328919*^9}, {3.926200338662265*^9, 
+   3.926200343699798*^9}, {3.9262005544169827`*^9, 3.9262005781453247`*^9}, {
+   3.926200611640831*^9, 3.926200625220297*^9}, {3.926200684016137*^9, 
+   3.926200702431633*^9}, {3.926201194563723*^9, 3.9262012210964746`*^9}, {
+   3.926201251267005*^9, 3.926201255098123*^9}, {3.9262260956375923`*^9, 
+   3.926226201138001*^9}, {3.9262262486072607`*^9, 3.9262263015354643`*^9}, {
+   3.92622711278725*^9, 3.926227153811479*^9}, {3.926227212042328*^9, 
+   3.926227225985989*^9}, {3.92622755142581*^9, 3.926227554346796*^9}, {
+   3.926227585572703*^9, 3.926227599509261*^9}, {3.926227673312892*^9, 
+   3.926227767855435*^9}, {3.9262285989393682`*^9, 3.92622865039598*^9}, {
+   3.9262286812059593`*^9, 3.926228706445505*^9}, {3.926228783122519*^9, 
+   3.926228805770894*^9}, {3.92622905616884*^9, 3.926229142881778*^9}, {
+   3.926229178086091*^9, 3.926229234519084*^9}, {3.926229312770236*^9, 
+   3.9262293173814163`*^9}, {3.926229669629919*^9, 3.926229688095805*^9}, {
+   3.926229889678193*^9, 3.926229890970716*^9}, {3.9262299398461943`*^9, 
+   3.9262299586023283`*^9}, {3.9262302525142927`*^9, 3.926230252566545*^9}, {
+   3.926230317954866*^9, 3.926230318284753*^9}, {3.926230350387738*^9, 
+   3.926230350931666*^9}, {3.926230382213725*^9, 3.926230382616086*^9}, {
+   3.926230810606483*^9, 3.926230815220656*^9}, {3.9262308746317787`*^9, 
+   3.9262308749346437`*^9}, 3.926230989195568*^9, {3.9262310938140583`*^9, 
+   3.926231114592897*^9}, {3.926242143371498*^9, 3.926242175618772*^9}, {
+   3.926243635847486*^9, 3.926243643909492*^9}},
+ CellLabel->
+  "In[563]:=",ExpressionUUID->"281e098b-b2bb-44b7-9a35-3c6ddc4b7917"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"pagesCopy", "=", "pages"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"pagesCopy", "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"StringReplace", "[", "\[IndentingNewLine]", 
+      RowBox[{"#", ",", 
+       RowBox[{"{", "\[IndentingNewLine]", "\[IndentingNewLine]", "}"}]}], 
+      "\[IndentingNewLine]", "]"}], "&"}], "/@", "pagesCopy"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"pagesCopy", "[", 
+  RowBox[{"[", "14", "]"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.9261161305469933`*^9, 3.926116130678421*^9}, {
+   3.926116172883235*^9, 3.926116219330346*^9}, 3.926116249488905*^9, {
+   3.9261163705435743`*^9, 3.926116401229993*^9}, {3.9261164742082567`*^9, 
+   3.926116584787073*^9}, {3.926116617275321*^9, 3.9261166359136143`*^9}, {
+   3.926117619498825*^9, 3.926117628872957*^9}, 3.926117717384523*^9, {
+   3.9261177810937634`*^9, 3.926117793183536*^9}, {3.926117833794978*^9, 
+   3.926117875368182*^9}, {3.92611797938529*^9, 3.9261179796825666`*^9}, {
+   3.9261182986935673`*^9, 3.926118312357972*^9}, {3.926118358593213*^9, 
+   3.926118360751143*^9}, {3.926118542858904*^9, 3.92611855146786*^9}, {
+   3.926118682655753*^9, 3.926118705791498*^9}, 
+   3.9261955368775187`*^9},ExpressionUUID->"ad09a681-7591-4a7b-b619-\
+5bbb7c5c2939"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"exemptFromRedaction", "=", 
+   RowBox[{"{", "\[IndentingNewLine]", 
+    RowBox[{
+    "\"\<pale\\\\s+fire\>\"", ",", "\[IndentingNewLine]", "\"\<foreword\>\"", 
+     ",", "\[IndentingNewLine]", "\"\<canto\>\"", ",", "\[IndentingNewLine]", 
+     "\"\<commentary\>\"", ",", "\[IndentingNewLine]", "\"\<index\>\"", ",", 
+     "\[IndentingNewLine]", "\"\<see\>\"", ",", "\[IndentingNewLine]", 
+     "\"\<also\>\"", ",", "\[IndentingNewLine]", "\"\<note\\\\s+to\>\"", ",", 
+     "\[IndentingNewLine]", "\"\<notes\\\\s+to\>\"", ",", 
+     "\[IndentingNewLine]", "\"\<line\>\"", ",", "\[IndentingNewLine]", 
+     "\"\<lines\>\"", ",", "\[IndentingNewLine]", "\"\<verse\>\"", ",", 
+     "\[IndentingNewLine]", "\"\<and\>\"", ",", "\[IndentingNewLine]", 
+     "\"\<my\>\"", ",", "\[IndentingNewLine]", "\"\<in\\\\s+the\>\"", ",", 
+     "\[IndentingNewLine]", "\"\<in\\\\s+a\>\""}], "\[IndentingNewLine]", 
+    "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"exemptionRegex", "=", 
+   RowBox[{"StringRiffle", "[", 
+    RowBox[{"exemptFromRedaction", ",", "\"\<|\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"redactionRegex", "=", 
+   RowBox[{"RegularExpression", "[", 
+    RowBox[{
+    "\"\<(?i)\\\\b(\>\"", "<>", "exemptionRegex", "<>", 
+     "\"\<)\\\\b|[a-z]\>\""}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"redactionFunction", "=", 
+   RowBox[{"(", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"StringMatchQ", "[", 
+        RowBox[{"#", ",", 
+         RowBox[{"RegularExpression", "[", 
+          RowBox[{"\"\<(?i)\>\"", "<>", "exemptionRegex"}], "]"}]}], "]"}], 
+       ",", "\[IndentingNewLine]", "#", ",", "\[IndentingNewLine]", 
+       "\"\<x\>\""}], "\[IndentingNewLine]", "]"}], "&"}], ")"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"redactedPages", "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"StringReplace", "[", 
+      RowBox[{"#", ",", 
+       RowBox[{"redactionRegex", ":>", 
+        RowBox[{"redactionFunction", "[", "\"\<$0\>\"", "]"}]}]}], "]"}], 
+     "&"}], "/@", "pages"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.9254809363497477`*^9, 3.925480937260499*^9}, {
+  3.9254813207045383`*^9, 3.9254813931867037`*^9}, {3.92548142589738*^9, 
+  3.925481489745844*^9}, {3.925481554476226*^9, 3.925481631703569*^9}, {
+  3.925481762738083*^9, 3.92548177550528*^9}, {3.9254818653321743`*^9, 
+  3.925481865536381*^9}, {3.925481910893425*^9, 3.925482020660715*^9}, {
+  3.925482067382903*^9, 3.9254820690779943`*^9}, {3.925482304084722*^9, 
+  3.925482373399022*^9}, {3.9254824504425983`*^9, 3.925482481986149*^9}, {
+  3.925482513443748*^9, 3.925482608376547*^9}, {3.92548265721589*^9, 
+  3.9254826586663723`*^9}, {3.925482987022807*^9, 3.925482991523184*^9}, {
+  3.9256379120361032`*^9, 3.925637927387155*^9}, {3.9261145304593277`*^9, 
+  3.926114532082898*^9}, {3.926195588175626*^9, 3.9261955894333687`*^9}, {
+  3.926243034488845*^9, 3.9262430676719646`*^9}, {3.92624366082883*^9, 
+  3.926243663592573*^9}},
+ CellLabel->
+  "In[573]:=",ExpressionUUID->"ba688b11-2a50-445f-8085-e1df45204a20"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"redactedBook", "=", 
+   RowBox[{"{", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"\"\<title\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"1", ";;", "6"}], "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
+     
+     RowBox[{"\"\<foreword\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"7", ";;", "20"}], "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"\"\<cantoOne\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"22", ";;", "27"}], "]"}], "]"}]}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<cantoTwo\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"28", ";;", "38"}], "]"}], "]"}]}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<cantoThree\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"39", ";;", "49"}], "]"}], "]"}]}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<cantoFour\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"50", ";;", "55"}], "]"}], "]"}]}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<commentary\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"56", ";;", "290"}], "]"}], "]"}]}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<index\>\"", "->", 
+      RowBox[{"redactedPages", "[", 
+       RowBox[{"[", 
+        RowBox[{"291", ";;", "306"}], "]"}], "]"}]}]}], "\[IndentingNewLine]",
+     "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{"\"\</Users/acheong/pale-fire.json\>\"", ",", "redactedBook"}], 
+   "]"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.925482999373199*^9, 3.925483044195118*^9}},
+ CellLabel->
+  "In[580]:=",ExpressionUUID->"e0081d2d-270f-4e50-af95-391a0738fc3e"],
+
+Cell[BoxData["\[IndentingNewLine]"], "Input",
+ CellChangeTimes->{
+  3.925482986379221*^9},ExpressionUUID->"4d2ba976-1856-4f74-b808-\
+30c517d805d2"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"redactedPages", "[", 
+  RowBox[{"[", "76", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.925482682910677*^9, 3.92548268394991*^9}, 
+   3.925483191926461*^9, {3.925483429935061*^9, 3.925483430347136*^9}, {
+   3.926227485511557*^9, 3.926227501578702*^9}, {3.9262423387013617`*^9, 
+   3.926242364692087*^9}, {3.9262424121146297`*^9, 3.926242435445902*^9}},
+ CellLabel->
+  "In[528]:=",ExpressionUUID->"f7c7271b-e816-40c5-ab4c-b2a024867d61"],
+
+Cell[BoxData["\<\"COMMENTARY\\n70 \\nxx xx xxxxxxxxxxx xxxxxxxx xxxxxxxxxxx \
+and \\nxxxxxxxxxxx xxxxxxxxx). xx xxx xxxxxxxx xxxx xx xxx \\nxxxx xxxxxxx \
+xxxx xxxxx xxx xxxxxxx xxxxxxx xx \\nxxxxxxxxx xxxxxxxxxx xx xxxxx x xxxxx \
+xxxxxx xxxx \\nxxxx x xxx xxxxx xxxxxx xxxxxxx xxx xxxxx xx \\nxxxxxxxxxxx \
+xxxxxxxx xxxxxx xx xxxxxxxxx xx xxx xxxxxx \\nxx xxxxxxx xx xxx xxxxxxxxxx'x \
+xxxxxxxxx xxxxxx, xxx \\nxxxxxx xxxxxxx x xxxx xx xxxxxx, xx xxxxxx xxxx \
+\\nxxxxxxxxx xx xxxxxxxxx xxxxxxx xxxx xxx xxxxx xx xxx \\nxxxxxxxxxx and \
+xxxxx xxxxxx, xxx xxxx xxxx xxx \\nxxxxxxx xxx xxxxxxxxxxxx xxxxxxx xxxx xxxx \
+xxxx xxxx \\nxxxx xxxx xxx xxxxxxx. xx xx xxxxxxxx xxx xxxxx xxxx \\nxxxx xxx \
+xxxx xxxx xx xxxxxxxx xx xxxxxxxx xxxxxxx xx \\nxxxxxx xx xxxxx and xxxx x \
+xxxxxxxxxxxxx xxxx xxxxx xxx \\nxxxxxx xxxxxxxxxx xx x xxxxxx xx \
+xxxxxxxxxxxxx \\nxxxxxxxxx. \\nxxxxx xxxxxxx xxx xxxxx xxxx xxxxx xx x \
+xxxxxxx xxxxxxx \\nxxxxxxxxx xxxxxxx x xxxxxxxxxxx xxxxxxx and xxxxxxxxx \
+\\nxxxxxxxxxxx xxxxxxx xxxx xxxxxxxxx xxxxxx xxxxx \\nxxxxxxx xxxx xx xxxx \
+xxxxx, xxx xxxxxxx xxxxxxxxxx: \\nxxx xxxxxx xxxx xxxx xx xxx xxx and xxx \
+xxxxxxxxx \\nxxxxxxxx; xxx xxxxx xxxxxxxxx xx xxx xxxxxx. xxxx xxx \\nxxx \
+xxxxx xxxxxxxx xx xxxxxxx, xxx xxxxxxxxxx \\nxxxxxxx xxxxxxxxxxx - xxxxxxx xx \
+xxxxxx xxxxx - xxx \\nxxxxxxxxxxx xxxxxx xx xxx xxxxxxxxxxxxxx, xxx xxxxx \
+\\nxxxxx, xxx xxxxxxxx, xxx xxxxxxxxxxx xxxxxxx xxx xx \\nxxxxxx xxxxx and \
+xxxxxxxxxxx, xxxxxxx xxxxx and xxx \\nxxxx xxxx, xxx xxxxxx, xxx xxxxxxx \
+xxxx, xxx xxxxxxx, \\nxxx xxxxxxxxxx xxxxxxx xxxxxxxxxx xxx xxxxxxxxxx and \
+\\nxxxxxxx (xx xx xxxxxx xxxx xxx xx xxxxx xxxx), xxx \\nxxxxxx xxxxxx xx xxx \
+xxx xxxxx xxxxxxxxx xx \\nxxxxxxxxxxx, x xxxxxxx xxxxxxx xxxxx, xxx xxxx xx x \
+\\nxxxx, xxx xxxxxxxxx xxxx xx xxx xxxxxxxxxxx, xxxxx \\nand xxxx xxxxxx xx \
+xxxxxx, and xxx xxxxxx-xxxxxxxxx \"\>"], "Output",
+ CellChangeTimes->{
+  3.9254826843926077`*^9, {3.925483168759907*^9, 3.925483192445753*^9}, 
+   3.925483430636606*^9, {3.926227485862687*^9, 3.926227501876761*^9}, {
+   3.926242339140974*^9, 3.926242364949152*^9}, {3.9262424131056013`*^9, 
+   3.9262424357741547`*^9}},
+ CellLabel->
+  "Out[528]=",ExpressionUUID->"abe56896-e4d1-40a9-8d9b-d962201a2eef"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Select", "[", 
+  RowBox[{"pages", ",", 
+   RowBox[{
+    RowBox[{"StringContainsQ", "[", 
+     RowBox[{"#", ",", "\"\<The first name refers\>\"", ",", 
+      RowBox[{"IgnoreCase", "->", "False"}]}], "]"}], "&"}]}], "]"}]], "Input",\
+
+ CellChangeTimes->{{3.925480327857799*^9, 3.9254803573205757`*^9}, {
+   3.9254804030288973`*^9, 3.92548042787884*^9}, {3.9254804607080193`*^9, 
+   3.925480514470621*^9}, {3.9254805506962967`*^9, 3.925480585399479*^9}, {
+   3.925480686549897*^9, 3.925480704086331*^9}, {3.92548074200786*^9, 
+   3.925480743375802*^9}, {3.9254807946916227`*^9, 3.925480796107541*^9}, {
+   3.925480973964664*^9, 3.925480993899085*^9}, {3.92548111986716*^9, 
+   3.9254811201456213`*^9}, {3.92548386031898*^9, 3.925483861355434*^9}, {
+   3.926118259494886*^9, 3.926118260296674*^9}, {3.926118325071046*^9, 
+   3.926118381166018*^9}, {3.9261968897722397`*^9, 3.926196890640325*^9}, {
+   3.926196928788209*^9, 3.926196930523643*^9}, {3.926197289540043*^9, 
+   3.926197289775172*^9}, {3.926197431925747*^9, 3.9261974322480392`*^9}, 
+   3.926197646300671*^9, {3.926197800506238*^9, 3.926197815553293*^9}, {
+   3.926199425589501*^9, 3.926199425745037*^9}, {3.9261996900327263`*^9, 
+   3.92619969093587*^9}, {3.926200460419422*^9, 3.926200460978175*^9}, {
+   3.9262011332901506`*^9, 3.9262011525707903`*^9}, {3.926225985064084*^9, 
+   3.926225986426176*^9}, {3.926227060234295*^9, 3.926227061706669*^9}, {
+   3.926227201464847*^9, 3.926227204311138*^9}, {3.9262273431770983`*^9, 
+   3.926227344719408*^9}, {3.926227410982329*^9, 3.926227411283835*^9}, {
+   3.926227650244173*^9, 3.926227656383911*^9}, {3.926228724990149*^9, 
+   3.9262287482840843`*^9}, {3.9262296048216743`*^9, 3.926229605456567*^9}, {
+   3.926229912474931*^9, 3.926229912648849*^9}, {3.926230222938931*^9, 
+   3.926230223932568*^9}, {3.926230364109664*^9, 3.926230364277347*^9}, {
+   3.926230787148471*^9, 3.926230787632784*^9}, {3.9262308208604097`*^9, 
+   3.926230821340972*^9}, {3.926231048908485*^9, 3.9262310826419687`*^9}, {
+   3.926231454321803*^9, 3.9262314562450333`*^9}, {3.9262315045471354`*^9, 
+   3.926231504969295*^9}, {3.926231650619947*^9, 3.926231651689652*^9}, {
+   3.926237572528071*^9, 3.926237573152382*^9}, {3.926242061361416*^9, 
+   3.926242062916469*^9}, {3.9262421971742907`*^9, 3.926242199746231*^9}, {
+   3.926242249583025*^9, 3.926242254087308*^9}, {3.926242325011685*^9, 
+   3.926242327217513*^9}},
+ CellLabel->
+  "In[513]:=",ExpressionUUID->"26b4a8e3-e123-4745-92b9-2ddbeab15051"],
+
+Cell[BoxData[
+ RowBox[{"{", "\<\"PALE FIRE\\n59\\nPopian \\\"Zembla\\\" in line 937, we may \
+conclude that \\nthe final text of Pale Fire has been deliberately and \
+\\ndrastically drained of every trace of the material I \\ncontributed; but \
+we also find that despite the control \\nexercised upon my poet by a domestic \
+censor and God \\nknows whom else, he has given the royal fugitive a \
+\\nrefuge in the vaults of the variants he has preserved; \\nfor in his draft \
+as many as thirteen verses, superb \\nsinging verses (given by me in note to \
+lines 70, 79, and \\n130, all in Canto One, which he obviously worked at \
+\\nwith a greater degree of creative freedom than he \\nenjoyed afterwards) \
+bear the specific imprint of my \\ntheme, a minute but genuine star ghost of \
+my \\ndiscourse on Zembla and her unfortunate king. \\nLines 47-48: the frame \
+house between Goldsworth \\nand Wordsmith \\nThe first name refers to the \
+house in Dulwich Road \\nthat I rented from Hugh Warren Goldsworth, \
+\\nauthority on Roman Law and distinguished judge. I \\nnever had the \
+pleasure of meeting my landlord but I \\ncame to know his handwriting almost \
+as well as I do \\nShade's. The second name denotes, of course, \\nWordsmith \
+University. In seeming to suggest a \\nmidway situation between the two \
+places, our poet is \\nless concerned with spatial exactitude than with a \
+\\nwitty exchange of syllables invoking the two masters \\nof the heroic \
+couplet, between whom he embowers his \\nown muse. Actually, the \\\"frame \
+house on its square of \\ngreen\\\" was five miles west of the Wordsmith \
+campus \\nbut only fifty yards or so distant from my east \\nwindows. \"\>", 
+  "}"}]], "Output",
+ CellChangeTimes->{
+  3.9261969538686657`*^9, 3.926197290325485*^9, 3.926197432980674*^9, {
+   3.926197637889954*^9, 3.926197646551787*^9}, {3.926197801549176*^9, 
+   3.9261978160411367`*^9}, 3.9261994266656857`*^9, 3.9261996914794188`*^9, 
+   3.926200461226527*^9, {3.926201134995647*^9, 3.9262011529265223`*^9}, 
+   3.9262259869994497`*^9, 3.926227062105542*^9, 3.926227204782446*^9, 
+   3.926227345011568*^9, 3.92622741200663*^9, 3.9262276567009478`*^9, {
+   3.926228725891021*^9, 3.926228734192588*^9}, 3.926229605877788*^9, 
+   3.926229912949786*^9, 3.926229993791897*^9, 3.926230224176235*^9, {
+   3.926230364948701*^9, 3.9262303875210648`*^9}, 3.926230787862852*^9, 
+   3.926230821601137*^9, 3.926230952676894*^9, {3.926231049492631*^9, 
+   3.926231082956706*^9}, 3.926231456528864*^9, 3.9262315053074217`*^9, 
+   3.9262316521625957`*^9, 3.9262375735974817`*^9, 3.926242063250931*^9, 
+   3.9262422003159227`*^9, 3.9262422548247766`*^9, 3.926242327480351*^9},
+ CellLabel->
+  "Out[513]=",ExpressionUUID->"2309cc20-46b3-4328-911e-b517b6377f69"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.926231078694891*^9, 
+  3.926231079929193*^9}},ExpressionUUID->"6e083143-6f42-45d9-97d7-\
+8b8ff31c9f6c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  "\"\<PALE FIRE\\\\n57\\\\ \\\\n40 The sun with stolen ice, the moon with \
+leaves\\\\nOne cannot help recalling a passage in Timon of \\\\nAthens (Act \
+IV, Scene 3) where the misanthrope talks \\\\nto the three marauders. Having \
+no library in the \\\\ndesolate log cabin where I live like Timon in his \
+cave, I \\\\nam compelled for the purpose of quick citation to \
+\\\\nretranslate this passage into English prose from a \\\\nZemblan poetical \
+version of Timon which, I hope, \\\\nsufficiently approximates the text, or \
+is at least \\\\nfaithful to its spirit: \\\\n \\\\n The sun is a thief: she \
+lures the sea \\\\n and robs it. The moon is a thief: \\\\n he steals his \
+silvery light from the sun.\\\\n The sea is a thief: it dissolves the moon.\\\
+\\nFor a prudent appraisal of Conmal's translations of \\\\nShakespeare's \
+works, see note to line 962. \\\\nLine 42: I could make out \\\\nBy the end \
+of May I could make out the outlines of \\\\nsome of my images in the shape \
+his genius might give \\\\nthem; by mid-June I felt sure at last that he \
+would \\\\nrecreate in a poem the dazzling Zembla burning in my \\\\nbrain. I \
+mesmerized him with it, I saturated him with \\\\nmy vision, I pressed upon \
+him, with a drunkard's wild \\\\ngenerosity, all that I was helpless myself \
+to put into \\\\nverse. Surely, it would not be easy to discover in the \
+\\\\nhistory of poetry a similar case - that of two men, \\\\ndifferent in \
+origin, upbringing, thought associations, \\\\nspiritual intonation and \
+mental mode, one a \>\"", "}"}]], "Input",
+ CellChangeTimes->{{3.926196942550866*^9, 
+  3.926196944875102*^9}},ExpressionUUID->"1eb11c9c-f8fb-4db7-8ebb-\
+c304df33b4bd"]
+},
+WindowSize->{1312, 1627},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+Magnification:>1.5 Inherited,
+FrontEndVersion->"13.3 for Mac OS X x86 (64-bit) (July 24, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"740b9fa5-5a81-494d-944c-a813b8d4a059"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 1419, 26, 78, "Input",ExpressionUUID->"2a78eda3-c36e-429e-83f3-a68972d572e7"],
+Cell[1980, 48, 5247, 130, 822, "Input",ExpressionUUID->"4e3b6e6a-8761-4411-acb8-17a52bb93dec"],
+Cell[7230, 180, 20879, 439, 3253, "Input",ExpressionUUID->"281e098b-b2bb-44b7-9a35-3c6ddc4b7917"],
+Cell[28112, 621, 1287, 25, 233, "Input",ExpressionUUID->"ad09a681-7591-4a7b-b619-5bbb7c5c2939"],
+Cell[29402, 648, 3147, 64, 822, "Input",ExpressionUUID->"ba688b11-2a50-445f-8085-e1df45204a20"],
+Cell[32552, 714, 1906, 50, 357, "Input",ExpressionUUID->"e0081d2d-270f-4e50-af95-391a0738fc3e"],
+Cell[34461, 766, 147, 3, 78, "Input",ExpressionUUID->"4d2ba976-1856-4f74-b808-30c517d805d2"],
+Cell[CellGroupData[{
+Cell[34633, 773, 460, 8, 46, "Input",ExpressionUUID->"f7c7271b-e816-40c5-ab4c-b2a024867d61"],
+Cell[35096, 783, 2245, 31, 1155, "Output",ExpressionUUID->"abe56896-e4d1-40a9-8d9b-d962201a2eef"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[37378, 819, 2508, 39, 46, "Input",ExpressionUUID->"26b4a8e3-e123-4745-92b9-2ddbeab15051"],
+Cell[39889, 860, 2766, 39, 1045, "Output",ExpressionUUID->"2309cc20-46b3-4328-911e-b517b6377f69"]
+}, Open  ]],
+Cell[42670, 902, 152, 3, 46, "Input",ExpressionUUID->"6e083143-6f42-45d9-97d7-8b8ff31c9f6c"],
+Cell[42825, 907, 1731, 25, 574, "Input",ExpressionUUID->"1eb11c9c-f8fb-4db7-8ebb-c304df33b4bd"]
+}
+]
+*)
+
