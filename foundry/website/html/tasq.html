@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      #table {
+      }
+
+      th {
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <ul>
+      <li>
+        <strong>Important:</strong> You must order dependencies before their depender manually. To
+        handle it automatically I would have had to add a graph and cycle detection; not worth the
+        effort for this quick tool.
+      </li>
+    </ul>
+    <textarea id="input" cols="120" rows="30"></textarea>
+    <textarea id="console" cols="120" rows="10"></textarea>
+    <table id="table" border="1">
+      <tr>
+        <th>Temporary ID</th>
+        <th>JIRA Ticket</th>
+        <th>Title</th>
+        <th>Story Points</th>
+      </tr>
+    </table>
+    <script>
+      class Tasq {
+        constructor(id, ticket, title, min_points, max_points, dependencies) {
+          this.id = id;
+          this.ticket = ticket;
+          this.title = title;
+          this.min_points = min_points;
+          this.max_points = max_points;
+          this.dependencies = dependencies;
+        }
+      }
+
+      const SETTINGS_KEYS = [
+        "jira_project_code",
+        "sprint_length_days",
+        "individual_points_per_sprint",
+        "max_individuals",
+      ];
+      const SETTINGS_REGEX = new RegExp("^(" + SETTINGS_KEYS.join("|") + ")\\s*=\\s*([\\w\\d]+)$");
+      let settings = {};
+      let textarea = document.getElementById("input");
+      let textarea_out = document.getElementById("console");
+      let tbody = document.getElementById("table").getElementsByTagName("tbody")[0];
+
+      function log(str) {
+        textarea_out.value += str + "\n";
+      }
+
+      let matches;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        textarea.addEventListener("change", function () {
+          let tasqs = [];
+          let tasq_by_id = new Map();
+          let tasq_by_ticket = new Map();
+
+          let lines = textarea.value.split(/\n/);
+          let leftover_lines;
+
+          // Remove comments and trim lines and drop empty strings.
+
+          lines = lines
+            .map((line) =>
+              line
+                .replace(/\/\/.*$/, "")
+                .replace(/\/\*(.*?)\*\//g, "")
+                .trim(),
+            )
+            .filter((line) => line != "");
+
+          // Parse settings.
+
+          leftover_lines = [];
+          lines.forEach(function (line, index, object) {
+            let matches = SETTINGS_REGEX.exec(line);
+            if (matches !== null) {
+              log(`Processing setting ${matches[1]}: ${matches[2]}.`);
+              settings[matches[1]] = matches[2];
+            } else {
+              leftover_lines.push(line);
+            }
+          });
+          lines = leftover_lines;
+          if (!settings.hasOwnProperty("jira_project_code")) {
+            // handle error
+            return;
+          }
+
+          // Remove unknown settings.
+
+          leftover_lines = [];
+          lines.forEach(function (line, index, object) {
+            if ((matches = line.match(/^([\w\d]+)\s*=\s*([\w\d]+)$/)) !== null) {
+              log(`Skipping unknown setting ${matches[1]}: ${matches[2]}.`);
+              object.splice(index, 1);
+              return;
+            } else {
+              leftover_lines.push(line);
+            }
+          });
+          lines = leftover_lines;
+
+          // Process actual data lines.
+
+          const JIRA_TICKET_REGEX = settings["jira_project_code"] + "-\\d+";
+          const JIRA_TICKET_REGEXP = new RegExp("^" + JIRA_TICKET_REGEX + "$");
+          const UNKNOWN_TICKET_REGEX = settings["jira_project_code"] + "-X+\\d*";
+          const UNKNOWN_TICKET_REGEXP = new RegExp("^" + UNKNOWN_TICKET_REGEX + "$");
+          const DEPENDENCIES_REGEXP = new RegExp("^!(" + JIRA_TICKET_REGEX + "|\\d+)$");
+          const POINT_RANGE_REGEXP = new RegExp("^(\\d+)(?:-(\\d+))?p$");
+
+          let i = -1;
+          for (let line of lines) {
+            i++;
+
+            let parts = line.split(/\s*;;\s*/);
+            if (parts.length != 4) {
+              log(`Error (Line ${i}): Expected 1 or 2 ;;-separated parts if not a setting:`);
+              log("                 :   " + line);
+              continue;
+            }
+
+            let ref = parts[0];
+            if ((matches = JIRA_TICKET_REGEXP.exec(ref)) === null) {
+              if ((matches = UNKNOWN_TICKET_REGEXP.exec(ref)) !== null) {
+              } else {
+                log(`ERROR: "${ref}" not a valid JIRA (or placeholder) ticket format.`);
+                continue;
+              }
+            }
+
+            let title = parts[1];
+
+            let min_points = null;
+            let max_points = null;
+            let dependencies = [];
+
+            let attributes = parts[2].split(/\s+/);
+            for (let attribute of attributes) {
+              if ((matches = POINT_RANGE_REGEXP.exec(attribute)) !== null) {
+                min_points = matches[1];
+                max_points = matches[1];
+                if (matches[2] !== undefined) {
+                  max_points = matches[2];
+                }
+              } else if ((matches = DEPENDENCIES_REGEXP.exec(attribute)) !== null) {
+                dependencies.push(matches[1]);
+              }
+            }
+
+
+
+
+            console.log(
+              `Row:\n  id=${id}\n  ticket=${ticket}\n  min_points=${min_points}\n  max_points=${max_points}\n  dependencies=${dependencies}`,
+            );
+            let tasq = new Tasq(id, ticket, title, min_points, max_points, dependencies);
+            tasqs.push(tasq);
+            tasq_by_id.set(id, tasq);
+            tasq_by_ticket.set(ticket, tasq);
+          });
+
+          tbody.replaceChildren();
+          for (let tasq of tasqs) {
+            let row = tbody.insertRow();
+            let col0 = row.insertCell(0);
+            let col1 = row.insertCell(1);
+            let col2 = row.insertCell(2);
+            let col3 = row.insertCell(3);
+            col0.textContent = tasq["id"];
+            col1.textContent = tasq["ticket"];
+            col2.textContent = tasq["title"];
+            let points = tasq["min_points"];
+            if (tasq["max_points"] != tasq["min_points"]) {
+              points += "-" + tasq["max_points"];
+            }
+            col3.textContent = points;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

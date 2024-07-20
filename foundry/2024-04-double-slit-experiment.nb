@@ -1,0 +1,259 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9372,        251]
+NotebookOptionsPosition[      8542,        228]
+NotebookOutlinePosition[      8971,        245]
+CellTagsIndexPosition[      8928,        242]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{
+   "Andrew`DoubleSlitIncidentRayLengths", "[", "\[IndentingNewLine]", 
+    RowBox[{"d_", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Distance", " ", "between", " ", 
+       RowBox[{"apertures", "."}]}], " ", "*)"}], ",", "\[IndentingNewLine]", 
+     "\[Theta]_", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "Angle", " ", "from", "  ", "center", " ", "to", " ", "incident", " ", 
+       RowBox[{"point", "."}]}], " ", "*)"}], ",", "\[IndentingNewLine]", 
+     "L_"}], 
+    RowBox[{"(*", " ", 
+     RowBox[{"Distance", " ", "between", " ", "apertures", " ", "and", " ", 
+      RowBox[{"detector", "."}]}], " ", "*)"}], "\[IndentingNewLine]", "]"}], 
+   ":=", "\[IndentingNewLine]", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"BinaryPlusMinus", ",", "ans"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"Assert", "/@", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"d", ">", "0"}], ",", 
+         RowBox[{"0", "<=", "\[Theta]", "<", 
+          RowBox[{"90", "Degree"}]}], ",", 
+         RowBox[{"L", ">", "0"}]}], "}"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"BinaryPlusMinus", "[", 
+        RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"x", "+", "y"}], ",", 
+         RowBox[{"x", "-", "y"}]}], "}"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"ans", "=", 
+       RowBox[{"Sqrt", "[", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{"d", "/", "2"}], ")"}], "^", "2"}], "+", 
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{"L", "/", 
+              RowBox[{"Cos", "[", "\[Theta]", "]"}]}], ")"}], "^", "2"}]}], 
+          ")"}], "~", "BinaryPlusMinus", "~", 
+         RowBox[{"(", 
+          RowBox[{"d", "*", "L", "*", 
+           RowBox[{"Tan", "[", "\[Theta]", "]"}]}], ")"}]}], "]"}]}]}]}], 
+    "\[IndentingNewLine]", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Andrew`DoubleSlitWavelength", "[", "\[IndentingNewLine]", 
+    RowBox[{"d_", " ", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Distance", " ", "between", " ", 
+       RowBox[{"apertures", "."}]}], " ", "*)"}], ",", "\[IndentingNewLine]", 
+     "\[Theta]_", " ", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "Angle", " ", "from", "  ", "center", " ", "to", " ", "incident", " ", 
+       RowBox[{"point", "."}]}], " ", "*)"}], ",", "\[IndentingNewLine]", 
+     "L_", " ", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Distance", " ", "between", " ", "apertures", " ", "and", " ", 
+       RowBox[{"detector", "."}]}], " ", "*)"}], ",", "\[IndentingNewLine]", 
+     "n_"}], " ", 
+    RowBox[{"(*", " ", 
+     RowBox[{"Given", " ", "nth", " ", "order", " ", "constructive", " ", 
+      RowBox[{"interference", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+    "]"}], ":=", "\[IndentingNewLine]", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "IntegerQ", ",", "rayLengths", ",", "deltaRayLengths", ",", "ans"}], 
+      "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"rayLengths", "=", 
+       RowBox[{"Andrew`DoubleSlitIncidentRayLengths", "[", 
+        RowBox[{"d", ",", "\[Theta]", ",", "L"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"IntegerQ", "[", "x_", "]"}], ":=", 
+       RowBox[{"(", 
+        RowBox[{"x", "==", 
+         RowBox[{"Round", "[", "x", "]"}]}], ")"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"Assert", "/@", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"IntegerQ", "[", "n", "]"}], ",", 
+         RowBox[{"n", ">", "0"}]}], "}"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"deltaRayLengths", "=", 
+       RowBox[{"First", "@", 
+        RowBox[{"Abs", "@", 
+         RowBox[{"Differences", "[", "rayLengths", "]"}]}]}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ans", "=", 
+       RowBox[{"UnitConvert", "[", 
+        RowBox[{
+         RowBox[{"deltaRayLengths", "/", "n"}], ",", "\"\<Nanometers\>\""}], 
+        "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"Quantity", "[", 
+          RowBox[{"380", ",", "\"\<Nanometers\>\""}], "]"}], "<", "ans", "<", 
+         
+         RowBox[{"Quantity", "[", 
+          RowBox[{"750", ",", "\"\<Nanometers\>\""}], "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"ans", ",", 
+          RowBox[{"Graphics", "[", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"ColorData", "[", "\"\<VisibleSpectrum\>\"", "]"}], "[",
+               "ans", "]"}], ",", 
+             RowBox[{"Disk", "[", "]"}]}], "}"}], "]"}]}], "}"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"ans", ",", 
+          RowBox[{"Graphics", "[", 
+           RowBox[{"{", 
+            RowBox[{"Black", ",", 
+             RowBox[{"Disk", "[", "]"}]}], "}"}], "]"}]}], "}"}]}], 
+       "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+  ";"}]}], "Input",
+ CellChangeTimes->CompressedData["
+1:eJxTTMoPSmViYGAQBmIQPftESSuz1VvHS6vvdIBo+d2f+0F0eKXuRBDt9Fd1
+B4iOO7oXTPc0bj4EonnuCRwF0Xbd706A6KRz1x6B6LLO5A8gelPy7R8g+oTJ
+pT8g2m3GH24WIO3+LF4LRJ9SEdcG0Re/xi4B0dt0V5wB0Z8S/C+CaIcg7fsg
+2iip8xWI/nVV5QeILnB6ysAKUrfAlBFEmz+o5wHRb6p3gOkvGSrCILqO6bYW
+iA7SOmoHoncIn3cB0fWG3Z4gmuNDdBaIPsSiUACiOzlYC0G0Q+CzUhC95NxL
+MO0Vot4HohenzZoIogEU94W+
+  "],
+ CellLabel->"In[63]:=",ExpressionUUID->"c6fef8e2-d05f-47db-932a-5837e13fb391"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Andrew`DoubleSlitIncidentRayLengths", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Quantity", "[", 
+    RowBox[{"0.01", ",", "\"\<Millimeters\>\""}], "]"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"10.95", "Degree"}], ",", "\[IndentingNewLine]", 
+   RowBox[{"Quantity", "[", 
+    RowBox[{"10", ",", " ", "\"\<Meters\>\""}], "]"}]}], 
+  "\[IndentingNewLine]", "]"}]], "Input",
+ CellChangeTimes->{3.922733090091511*^9, 3.922733457658239*^9},
+ CellLabel->"In[65]:=",ExpressionUUID->"199f3733-dcf2-4eea-9e5d-9d50dbce2f61"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   TemplateBox[{
+    "10185.444033173944`", "\"mm\"", "millimeters", "\"Millimeters\""},
+    "Quantity"], ",", 
+   TemplateBox[{
+    "10185.44213365103`", "\"mm\"", "millimeters", "\"Millimeters\""},
+    "Quantity"]}], "}"}]], "Output",
+ CellChangeTimes->{3.922733090567217*^9, 3.922733407436552*^9, 
+  3.922733458692754*^9, 3.922734229533349*^9},
+ CellLabel->"Out[65]=",ExpressionUUID->"7658b32b-5c35-40e7-8b14-95ba61ca882b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Andrew`DoubleSlitWavelength", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Quantity", "[", 
+    RowBox[{"0.01", ",", "\"\<Millimeters\>\""}], "]"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"10.95", "Degree"}], ",", "\[IndentingNewLine]", 
+   RowBox[{"Quantity", "[", 
+    RowBox[{"10", ",", " ", "\"\<Meters\>\""}], "]"}], ",", 
+   "\[IndentingNewLine]", "3"}], "\[IndentingNewLine]", "]"}]], "Input",
+ CellChangeTimes->{{3.9227330934565697`*^9, 3.9227331095376043`*^9}, {
+  3.922733445548709*^9, 3.922733456838963*^9}},
+ CellLabel->"In[66]:=",ExpressionUUID->"8a1ca911-d3bf-4d5c-aefb-f641c50b433d"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   TemplateBox[{
+    "633.1743049183084`", "\"nm\"", "nanometers", "\"Nanometers\""},
+    "Quantity"], ",", 
+   GraphicsBox[{Blend["VisibleSpectrum", 
+      Quantity[633.1743049183084, "Nanometers"]], DiskBox[{0, 0}]}]}], 
+  "}"}]], "Output",
+ CellChangeTimes->{
+  3.922733110747401*^9, 3.922733160253358*^9, 3.922733409066575*^9, {
+   3.9227334488538094`*^9, 3.922733460504751*^9}, {3.9227337045623913`*^9, 
+   3.922733760368476*^9}, {3.922733875400763*^9, 3.922733909733116*^9}, 
+   3.922734230822029*^9},
+ CellLabel->"Out[66]=",ExpressionUUID->"c720c7f6-67bd-4b37-a983-d300044041c5"]
+}, Open  ]]
+},
+WindowSize->{1920, 2107},
+WindowMargins->{{Automatic, -895}, {1680, Automatic}},
+Magnification:>1.5 Inherited,
+FrontEndVersion->"13.3 for Mac OS X x86 (64-bit) (July 24, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"6f020cac-0653-402a-8301-309f263adfa9"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 5621, 144, 853, "Input",ExpressionUUID->"c6fef8e2-d05f-47db-932a-5837e13fb391"],
+Cell[CellGroupData[{
+Cell[6204, 168, 553, 11, 171, "Input",ExpressionUUID->"199f3733-dcf2-4eea-9e5d-9d50dbce2f61"],
+Cell[6760, 181, 466, 11, 55, "Output",ExpressionUUID->"7658b32b-5c35-40e7-8b14-95ba61ca882b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7263, 197, 634, 12, 202, "Input",ExpressionUUID->"8a1ca911-d3bf-4d5c-aefb-f641c50b433d"],
+Cell[7900, 211, 626, 14, 298, "Output",ExpressionUUID->"c720c7f6-67bd-4b37-a983-d300044041c5"]
+}, Open  ]]
+}
+]
+*)
+
