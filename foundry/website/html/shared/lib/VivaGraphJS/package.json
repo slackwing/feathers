@@ -21,7 +21,7 @@
   "author": "Andrei Kashcha",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "browserify": "^8.0.3",
+    "browserify": "^17.0.0",
     "del": "^1.1.1",
     "gulp": "^3.9.0",
     "gulp-rename": "^1.2.0",
