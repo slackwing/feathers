@@ -1,0 +1,6 @@
+[user]
+	name = Andrew Cheong
+	useConfigOnly = true
+	email = acheong@spotify.com
+[push]
+	autoSetupRemote = true
