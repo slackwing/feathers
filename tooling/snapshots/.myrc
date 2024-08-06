@@ -33,6 +33,9 @@ alias fmt='mvn com.spotify.fmt:fmt-maven-plugin:format'
 alias acssh='ssh -i ~/.ssh/id_rsa_gcp_acheong87 acheong87@35.243.192.242'
 alias acstop='gcloud compute instances stop andrew-cheong-com-vm'
 alias acstart='gcloud compute instances start andrew-cheong-com-vm'
+html() {
+    cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
+}
 acstage() {
     echo "\nStaging...\n"
     rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/.staging/
@@ -41,9 +44,17 @@ acpub() {
     echo "\nExecuting dry run...\n"
     rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
     echo "\nPress any key to continue, or ^C to exit.\n"
-    echo "\nPublishing...\n"
     read -s -n 1
+    echo "\nPublishing...\n"
     rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
+}
+acpubdir() {
+    echo "\nExecuting dry run...\n"
+    rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
+    echo "\nPress any key to continue, or ^C to exit.\n"
+    read -s -n 1
+    echo "\nPublishing...\n"
+    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
 }
 acgit() {
     cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
@@ -85,8 +96,9 @@ function sandbox() {
 alias rk="sudo pkill karabiner_console_user_server"
 alias crypto='cd ~/src/slackwing/feathers/05\ -\ X1_2'
 alias build='/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build cmake-build-debug --target 05___X1_2'
+alias amsproxy='~/src/spotify/cloud-sql-proxy --port 3501 ad-selfserve:us-east1:measurementsdb adstudio-sandbox1:us-east1:measurementsdb-sandbox'
 alias aasproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:adaccountdb=tcp:3401,adstudio-sandbox1:us-central1:adaccountdb-sandbox=tcp:3402'
-alias amsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-east1:measurementsdb=tcp:3501,adstudio-sandbox1:us-east1:measurementsdb-sandbox=tcp:3502'
+# alias amsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-east1:measurementsdb=tcp:3501,adstudio-sandbox1:us-east1:measurementsdb-sandbox=tcp:3502'
 alias beamproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:beamdb=tcp:3601,adstudio-sandbox1:us-central1:beamdb-sandbox=tcp:3602'
 alias draftsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:europe-west1:adstudio-draftsdb=tcp:3403,adstudio-sandbox1:europe-west1:adstudio-drafts-sandboxdb=tcp:3404'
 alias csproxy='~/src/spotify/cloud_sql_proxy -instances=spotify-ad-serving:europe-west1:campaign-service-sandbox=tcp:5432'

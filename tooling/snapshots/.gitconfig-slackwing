@@ -1,0 +1,6 @@
+[user]
+	name = Andrew Cheong
+	useConfigOnly = true
+	email = slackwing@gmail.com
+[push]
+	autoSetupRemote = true

@@ -1,0 +1,6 @@
+[includeIf "gitdir:~/src/spotify/"]
+    path = .gitconfig-spotify
+[includeIf "gitdir:~/src/slackwing/"]
+    path = .gitconfig-slackwing
+[includeIf "gitdir:~/src/etc/"]
+    path = .gitconfig-slackwing
