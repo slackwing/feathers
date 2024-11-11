@@ -1,0 +1,877 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      textarea#input {
+        padding: 20px;
+      }
+
+      textarea#errors {
+        background-color: #cccccc;
+        padding: 20px;
+      }
+
+      div#output {
+        border: solid 1px black;
+        padding: 20px;
+      }
+
+      th {
+        text-align: left;
+      }
+
+      span.red {
+        color: #990000;
+      }
+
+      span.green {
+        color: #009900;
+      }
+
+      span.blue {
+        color: #0000cc;
+      }
+
+      span.orange {
+        color: #dd8500;
+      }
+
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="input" cols="120" rows="10">
+      {focus: [sp/rfc], [abi]}
+      09:56 - [sp/rfc] go ~[10] - [abi] date ~[3] --- 10:16 (-4=-4)
+	10:12 - [sp/rfc] go ~[6] - [abi] date ~[3] <-- 10:33 (-9,+1a,+2c=-10)
+      ;;;
+      {superfocus: [sp/rfc]}
+      x10:48 - [...] skip [3] - [sp/rfc] go ~[3] --- 11:05 (-5=-15)
+	11:00 - [sp/rfc] go ~[6] - [err...] some dishes [3] --- 11:19 (-7,+2a,+2c=-18)
+      x11:12 - [...] fent tests [3] - [sp/rfc] go ~[3] --- 11:28 (-4,+10s=-12)
+	,,, (d)
+	11:24 - [sp/rfc] go ~--- 11:41 (-5,+3a,+3c=-11)
+      ;;;
+      13:24 - [...] skip [3] - [sp/rfc] go ~[6] --- 13:38 (-2=-13)
+      !!!forgo-4
+      !!!decrement-grounded
+	13:36 - [sp/rfc] go ~--- 13:48 (+4a,+3c=-6)
+	13:48 - [sp/rfc] go ~--- 14:00 (+5a,+6c=5)
+	14:00 - [sp/rfc] go ~[3] - [...] f [6] +
+	14:12 + [...] ice cream break w/ abi ~--- 14:23 (+6a,+7c,+10s=28)
+	,,, (d)
+	14:24 - [sp/rfc] go ~--- 14:38 (-2,+7a,+10c=43)
+	14:36 - [sp/rfc] go ~--- 14:53 (-5,+8a,+13c=59)
+	14:48 - [...] water [3] - [sp/rfc] go ~[6] +
+	15:00 + [sp/rfc] go ~[6] - [sp/rfc] go ~[3] --- 15:14 (-2,+9a,+5c=71)
+	15:12 - [sp/rfc] go ~--- 15:24 (+10a,+8c=89)
+	15:24 - [sp/rfc] go {38} ~--- 15:37 (-1,+11a,+11c=110)
+	,,, (m)
+      ;;;
+      16:24 - [sp/rfc] go ~--- 16:44 (-8,+12a=114)
+      x16:36 - [sp/rfc] go ~[6] --- 16:50 (-2=112)
+	16:48 - [sp/rfc] go ~--- 17:00 (+13a,+3c=128)
+	17:00 - [sp/rfc] go ~--- 17:14 (-2,+14a,+6c=146)
+	17:12 - [sp/rfc] go ~--- 17:25 (-1,+15a,+9c=169)
+	,,, (m)
+	17:24 - [sp/rfc] go ~--- 17:42 (-6,+16a,+12c=191)
+      x17:36 - [sp/rfc] go ~[6] --- 17:48 (=191)
+	17:48 - [sp/rfc] go ~--- 17:59 (+17a,+3c=211)
+      ;;;
+      19:00 - [sp/rfc] go ~--- 19:10 (+18a=229)
+      ;;;
+      19:48 - [sp/rfc] go ~[6] - [...] f [3] --- 20:15 (-15,+19a,+10s=243)
+      ,,, (d)
+      ;;;
+      22:12 - [...] skip [3] - [sp/rfc] go ~[6] --- 22:26 (-2,+20a=261)
+	22:24 - [sp/rfc] go ~--- 22:38 (-2,+10a,+3c=272)
+	22:36 - [sp/rfc] go ~--- 22:54 (-6,+11a,+6c=183)
+      x22:48 - [...] f, c [3] - [sp/rfc] go ~[6] +
+      x23:00 + [sp/rfc] go ~+
+      x23:12 + [sp/rfc] go ~--- 23:32 (-8=175)
+      x23:24 - [sp/rfc] go ~[6] --- 23:41 (-5=170)
+      ,,, (m)
+	23:36 - [sp/rfc] go ~[6] - [...] f, c [3] --- 23:55 (-7,+12a,+2c=177)
+      x23:48 - [sp/rfc] go ~[6] --- 00:03 (-3=174)
+	00:00 - [sp/rfc] go ~--- 00:16 (-4,+13a,+3c=186)
+	00:12 - [sp/rfc] go ~--- 00:26 (-2,+14a,+6c=204)
+	00:24 - [sp/rfc] go ~--- 00:39 (-3,+15a,+9c=225)
+	,,, (m)
+	00:36 - [...] f, c, heat bread [6] - [sp/rfc] go ~[3] --- 00:54 (
+	00:48 - [...] eat [3] - [sp/rfc] go ~[6] --- 01:02 (
+	01:00 - [...] eat [3] - [sp/rfc] go ~[6] --- 01:09 (
+    </textarea>
+    <textarea id="errors" cols="120" rows="10"></textarea>
+    <div id="output"></div>
+    <script>
+      let matches;
+
+      let textarea = document.getElementById("input");
+      let errors = document.getElementById("errors");
+      let output = document.getElementById("output");
+      let indent = false;
+
+      let exit = false;
+
+      function log(...args) {
+        if (args.length === 1) {
+          errors.value += args[0] + "\n";
+        } else {
+          errors.value += `Line ${args[0]}: ${args[1]}\n`;
+        }
+        errors.scrollTop = errors.scrollHeight;
+      }
+
+      function fatal(...args) {
+        log.apply(null, args);
+        log("Exiting program...");
+        exit = true;
+      }
+
+      function write(str) {
+        if (indent) {
+          output.innerHTML += "&nbsp;&nbsp;&nbsp;&nbsp;";
+        }
+        output.innerHTML += str + "<br/>";
+      }
+
+      function minute(str) {
+        if (str === undefined || str === null) return str;
+        // e.g. 04:36, 12:57
+        let [h, m] = str.split(":");
+        return Number(h) * 60 + Number(m);
+      }
+
+      function elapsed(minute_a, minute_b) {
+        let elapsed = minute_b - minute_a;
+        if (elapsed < 0) {
+          // For time wrapping past midnight.
+          elapsed += 24 * 60;
+        }
+      }
+
+      function minute_to_blicks(minutes) {
+        switch (Number(minutes)) {
+          case 3:
+            return 1;
+          case 6:
+            return 2;
+          case 9: // This may be needed for sums of blicks, e.g. [3]+[6]==[9], ==[10].
+          case 10:
+            return 3;
+          case 12: // This may be needed for sums of blicks, e.g. [3]+[6]==[9], ==[10].
+          case 13:
+            return 4;
+          default:
+            fatal(`Too large of a value for minutes (${minutes}); extend switch statement.`);
+        }
+      }
+
+      function blicks_to_minutes(blicks) {
+        switch (Number(blicks)) {
+          case 1:
+            return 3;
+          case 2:
+            return 6;
+          case 3:
+            return 10;
+          case 4:
+            return 13;
+          // Additional cases are needed for continuations.
+          case 5:
+            return 16;
+          case 6:
+            return 20;
+          case 7:
+            return 23;
+          case 8:
+            return 26;
+          case 9:
+            return 30;
+          case 10:
+            return 33;
+          default:
+            fatal(`Too large of a value for blicks (${blicks}); extend switch statement.`);
+        }
+      }
+
+      const RE_TAG = "\\[[\\w|\\/]+\\]"; // e.g. [sp/a]
+      const RE_TAGS = `${RE_TAG}(?:=[=>]${RE_TAG})*`; // e.g. [err]==[fin]=>[sys]
+      const RE_BLICK_TAG = `(?:${RE_TAG}|\\[(?:[\\w|\\/]+)?[.]{3}\\])`; // e.g. [...], [sp/o...]
+      const RE_BLICK = `(%)?(${RE_BLICK_TAG}) [^\\[\\]]+ ~?\\[(3|6|10|13)\\]`;
+      const RE_TIME = "\\d\\d:\\d\\d"; // e.g. 04:36, 12:57
+      const RE_ENDERS = "(?:---|>--|-<-|->-|<--|--<)";
+      const RE_INLINE_MACRO = "(?: !!!([\\w-]+))?"; // e.g. for suppressing certain errors (new).
+      const CR_MACRO = new RegExp("^!!!([\\w-]+)$");
+      const CR_LOG_LINE = new RegExp(
+        `^(x)?(${RE_TIME}) ([+-]) (.*)(?:${RE_ENDERS} (${RE_TIME})(?:| \\(| \\((.*)\\))?|(\\+))$`,
+      );
+      const CR_BLOCK = new RegExp(
+        `^${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK})?)?)?`,
+      );
+      const CR_FOCUS_TAGS = new RegExp(
+        `^\\{((?:hyper|super|)focus): (${RE_TAGS})(?:, (${RE_TAGS})(?:, (${RE_TAGS}))?)?\\}$`,
+      );
+      const CR_GROUP = new RegExp(`^,,,(?:| \\(([md])\\))${RE_INLINE_MACRO}$`);
+      const CR_BREAK = new RegExp("^;;;$");
+      const CR_PAUSE = new RegExp("^\\[...\\].*\\((\\d\\d)\\)$");
+
+      const NON_TIMEBANK_TAGS = new Set(["[abi]", "[err]", "[hh]", "[sys]"]);
+
+      function parseFocusTags(matches) {
+        let focus_a = new Map();
+        let focus_b = new Map();
+        let focus_c = new Map();
+        if (matches !== null) {
+          for (let focus of matches[2].split(/=[=>]/)) {
+            focus_a.set(focus, true);
+          }
+          if (matches[3] !== undefined) {
+            for (let focus of matches[3].split(/=[=>]/)) {
+              focus_b.set(focus, true);
+            }
+            if (matches[4] !== undefined) {
+              for (let focus of matches[4].split(/=[=>]/)) {
+                focus_c.set(focus, true);
+              }
+            }
+          }
+        }
+        return [focus_a, focus_b, focus_c];
+      }
+
+      let main = function () {
+        errors.value = "";
+        output.innerHTML = "";
+
+        let current_time = null;
+        let current_block = 0; // a.k.a. "log line"
+        let current_is_continuation = false;
+        let current_is_handicapped = false;
+        let points = 0;
+        let next_block_handicap = 0;
+        let next_block_continue = false;
+        let grounded_bonus_eligible = false;
+        let grounded_bonus = 0;
+        let focus_mode = "";
+        let focus_a = new Map();
+        let focus_b = new Map();
+        let focus_c = new Map();
+        let focus_continuation_bonus_eligible = false; // Must meet criteria once without bonus.
+        let focus_continuation_bonus = 0;
+        let previous_end_minute = null; // For continuations while handicapped.
+        let end_of_day_penalties = [];
+        let timebank = new Map();
+        let lowest_point = 0; // For completion rewarding; points at lowest point.
+        let latest_point = 0; // For completion rewarding; points at the end of the latest group.
+
+        // These are used for continuations.
+        let continued_blocks_count = 0;
+        let continued_blicks_found = []; // Not sure why I made this an array and the other a map.
+        let continued_non_focus_blicks = new Map(); // But whatever works.
+        let continued_handicap_mode = false;
+
+        let lines = textarea.value.split(/\n/);
+
+        lines.forEach(function (line, index, object) {
+          if (exit) {
+            return;
+          }
+          current_is_continuation = false;
+          current_is_handicapped = false;
+          // Can't rely on consistent indenting after copy-paste; just trim.
+          let trimmed = line.trim();
+          if (trimmed == "") return;
+          log(index, trimmed);
+          if ((matches = CR_LOG_LINE.exec(trimmed)) !== null) {
+            // console.log(matches); // TODO: Comment; for debugging only.
+
+            current_block++;
+
+            //////// Assign matched parts to variables. ////////////////////////////////////////////
+
+            let marked_as_handicapped_block = matches[1] == "x";
+            let block_start_time = matches[2];
+            let block_start_minute = minute(matches[2]);
+            let marked_as_continuation_block = matches[3] == "+";
+            let body = matches[4];
+            let block_end_time = matches[5];
+            let block_end_minute = minute(matches[5]);
+            let manual_calculation = matches[6]; // If calculation already exists, aims to verify.
+
+            //////// Process previous block's next_block_continue and reset for this block. ////////
+
+            if (next_block_continue) {
+              if (!marked_as_continuation_block) {
+                fatal(
+                  index,
+                  "Previous block '+'-continued but this block is not a '+'-continuation.",
+                );
+                return;
+              }
+              current_is_continuation = true;
+            } else {
+              if (marked_as_continuation_block) {
+                fatal(
+                  index,
+                  "Previous block didn't '+'-continue but this block is a '+'-continuation.",
+                );
+                return;
+              }
+            }
+            next_block_continue = matches[7] == "+";
+
+            //////// Process previous block's next_block_handicap and reset for this block. ////////
+
+            if (next_block_handicap > 0 || continued_handicap_mode) {
+              // continued_handicap_mode is necessary because next_block_handicap can legitimately
+              // fall to 0 but continuations of handicapped blocks remain handicapped.
+              if (!marked_as_handicapped_block) {
+                fatal(
+                  index,
+                  "Previous block went overtime (or was handicapped and continued into this block) but this block isn't handicapped.",
+                );
+                return;
+              }
+              current_is_handicapped = true;
+              focus_continuation_bonus = 0;
+              indent = false;
+            } else {
+              if (marked_as_handicapped_block) {
+                fatal(index, "Previous block didn't go overtime but this block is handicapped.");
+                return;
+              }
+              // e.g. '+1a'; doesn't count on the first block of the day.
+              if (grounded_bonus_eligible == true && !next_block_continue) {
+                grounded_bonus++;
+              } else {
+                grounded_bonus_eligible = true;
+              }
+            }
+            let expected_blicks = 3 - next_block_handicap;
+            // Handicap from previous block processed; reset. Simplify in future after tests.
+            next_block_handicap = 0;
+
+            //////// Validate starting time. ///////////////////////////////////////////////////////
+
+            if (current_time === null) {
+              // Beginning of day or after ';;;'.
+              if (block_start_minute % 12 == 8) {
+                // Sometimes we start 4 minutes earlier than the next upcoming block.
+                log(index, "Early block detected.");
+                // Normalize; only difference is an additional blick.
+                expected_blicks++;
+                block_start_minute += 4;
+              }
+              if (block_start_minute % 12 != 0) {
+                fatal(index, `Invalid block start time: ${block_start_time}.`);
+                return;
+              }
+              current_time = block_start_minute;
+            } else {
+              // Typical log line following another log line.
+              if (block_start_minute % 12 != 0) {
+                fatal(index, `Invalid block start time: ${block_start_time}.`);
+                return;
+              }
+              current_time += 12;
+              if (current_time == 24 * 60) {
+                current_time = 0;
+              }
+              if (block_start_minute != current_time) {
+                fatal(index, `Incorrect block start time: ${block_start_time}.`);
+                return;
+              }
+            }
+
+            //////// Hack: Normalize the standard-full-block shorthand. ////////////////////////////
+
+            if (body.at(-2) !== "]") {
+              body += "[10] ";
+              // e.g. "[err] dishes ---" => "[err] dishes [10] ---"
+              // e.g. "[sp/a] think ~---" => "[sp/a] think ~[10] ---"
+            }
+            // Important! Exists because of the normalization hack above.
+            body = body.trim();
+
+            ////////////////////////////////////////////////////////////////////////////////////////
+
+            if ((matches = CR_BLOCK.exec(body)) === null) {
+              log(index, "Some trouble parsing blicks; perhaps incomplete; skipping:\n    " + body);
+              return;
+            }
+
+            let blicks_found = [];
+            let non_focus_blicks = new Map();
+            let completed_focus_tags = []; // The % sign indicates we're done with that focus.
+            blicks_found.push([matches[2], matches[3]]);
+            if (matches[5] !== undefined) {
+              blicks_found.push([matches[5], matches[6]]);
+            }
+            if (matches[8] !== undefined) {
+              blicks_found.push([matches[8], matches[9]]);
+            }
+            if (matches[11] !== undefined) {
+              blicks_found.push([matches[11], matches[12]]);
+            }
+            if (matches[1] !== undefined) {
+              completed_focus_tags.push(matches[2]);
+            }
+            if (matches[4] !== undefined) {
+              completed_focus_tags.push(matches[5]);
+            }
+            if (matches[7] !== undefined) {
+              completed_focus_tags.push(matches[8]);
+            }
+            if (matches[10] !== undefined) {
+              completed_focus_tags.push(matches[11]);
+            }
+            // completed_focus_tags will be processed after processing the focus tags.
+
+            //////// Check the block has the expected number of blicks. //////////////////////////
+
+            let sum_blicks = 0;
+            for (let blick of blicks_found) {
+              sum_blicks += minute_to_blicks(blick[1]);
+            }
+            if (sum_blicks != expected_blicks) {
+              fatal(`Expected ${expected_blicks} but found ${sum_blicks}.`);
+              return;
+            }
+
+            //////// Count blicks for the timebank. ////////////////////////////////////////////////
+
+            for (let blick of blicks_found) {
+              let tag = blick[0];
+              let len = minute_to_blicks(blick[1]);
+              if (tag == "[...]") continue;
+              tag = tag.replace(/\.\.\./, ""); // Remove trailing "..." in tags.
+              tag = tag.replace(/\/[^\]]+/, ""); // Ignore tag part after slash to consolidate.
+              if (NON_TIMEBANK_TAGS.has(tag)) continue;
+              if (!timebank.has(tag)) {
+                timebank.set(tag, len);
+              } else {
+                timebank.set(tag, timebank.get(tag) + len);
+              }
+            }
+
+            //////// Count the focus tags present to increment the +Xc bonus. //////////////////////
+            let focus_a_completed_len = 0;
+            let focus_b_completed_len = 0;
+            let focus_c_completed_len = 0;
+            let interrupted_len = 0; // e.g. "..." indiciating there was no choice.
+            let interrupted_pos = 0;
+            let defer_incrementing_bonuses = false;
+            let idx = 0;
+            for (let blick of blicks_found) {
+              let tag = blick[0];
+              let len = minute_to_blicks(blick[1]);
+              if (focus_a.has(tag)) {
+                focus_a_completed_len += len;
+              } else if (focus_b.has(tag)) {
+                focus_b_completed_len += len;
+              } else if (focus_c.has(tag)) {
+                focus_c_completed_len += len;
+              } else {
+                if (!non_focus_blicks.has(tag)) {
+                  non_focus_blicks.set(tag, len);
+                } else {
+                  non_focus_blicks.set(tag, non_focus_blicks.get(tag) + len);
+                }
+              }
+              if (tag.includes("...")) {
+                interrupted_len++;
+                interrupted_pos = idx;
+              }
+              idx++;
+            }
+            if (current_is_handicapped) {
+              // In handicapped mode, _any_ amount of time on a focus tag enables the bonus.
+              if (focus_a_completed_len + focus_b_completed_len + focus_c_completed_len > 0) {
+                focus_continuation_bonus_eligible = true;
+              }
+            } else if (interrupted_len >= expected_blicks) {
+              // If the whole block is an interruption, signal for a "++0a,++0c".
+              defer_incrementing_bonuses = true;
+              log(index, "Deferring incrementing bonuses.");
+              // Partial interruptions are handled based on the focus mode, below.
+            } else {
+              let focus_continuation_bonus_delta = 0;
+              if (focus_mode === "focus") {
+                if (focus_a_completed_len > 0) focus_continuation_bonus_delta++;
+                if (focus_b_completed_len > 0) focus_continuation_bonus_delta++;
+                if (focus_c_completed_len > 0) focus_continuation_bonus_delta++;
+              } else if (focus_mode === "hyperfocus") {
+                // In "hyperfocus" mode, there should only be one focus tag, and the bonus counts as
+                // long as no single non-focus tag exceeds the focus tag.
+                let valid = true;
+                let non_focus_len = 0;
+                for (let key of non_focus_blicks.keys()) {
+                  if (non_focus_blicks.get(key) > focus_a_completed_len) {
+                    valid = false;
+                    non_focus_len += non_focus_blicks.get(key);
+                  }
+                }
+                if (valid) {
+                  focus_continuation_bonus_delta += 2;
+                } else if (interrupted_len > 0) {
+                  // It's possible this is invalid due to an unavoidable interruption. Interruptions
+                  // in "hyperfocus" mode are complicated because they depend on the order, i.e. if
+                  // the interruption happened in a block at a position that robbed us of an
+                  // opportunity to focus, then we shouldn't invalidate. But if we still had the
+                  // opportunity and didn't focus, then we _should_ invalidate.
+                  if (interrupted_len == 1 && interrupted_pos >= 2 && non_focus_len < 2) {
+                    // The only way this could have been valid with a 1-blick interruption is the
+                    // interruption happened at the last blick, and the first 2 blicks weren't a
+                    // 2-blick non-focus blick.
+                    valid = true;
+                  } else if (interrupted_len == 2 && interrupted_pos >= 1) {
+                    // The only way this could have been valid with a 2-blick interruption is the
+                    // interruption came second.
+                    valid = true;
+                  }
+                  // There are other cases possible for non-3-blick blocks but, unhandled for now.
+                }
+              } else if (focus_mode === "superfocus") {
+                // In "superfocus" mode, there should be no non-focus tags at all. If it's a
+                // single-focus "superfocus", then all non-interrupted blicks should be the focus.
+                // If it's a double-focus "superfocus", then, actually, again, all non-interrupted
+                // blicks should be the first focus.
+                log(index, `${expected_blicks} ${interrupted_len}`);
+                if (focus_b.size == 0) {
+                  if (focus_a_completed_len >= expected_blicks - interrupted_len) {
+                    focus_continuation_bonus_delta += expected_blicks - interrupted_len;
+                  }
+                } else if (focus_b.size > 0 && interrupted_len == 0) {
+                  if (
+                    focus_a_completed_len > focus_b_completed_len &&
+                    focus_a_completed_len + focus_b_completed_len == expected_blicks
+                  ) {
+                    focus_continuation_bonus_delta += 3;
+                  }
+                } else if (focus_b.size > 0 && interrupted_len > 0) {
+                  if (focus_a_completed_len >= expected_blicks - interrupted_len) {
+                    focus_continuation_bonus_delta += expected_blicks - interrupted_len;
+                  }
+                }
+              }
+              if (focus_continuation_bonus_delta == 0) {
+                focus_continuation_bonus = 0;
+                focus_continuation_bonus_eligible = false;
+                indent = false;
+              } else if (focus_continuation_bonus_eligible) {
+                focus_continuation_bonus += focus_continuation_bonus_delta;
+                indent = true;
+              } else if (focus_continuation_bonus_delta > 0) {
+                // Must meet criteria without bonus once.
+                focus_continuation_bonus_eligible = true;
+              }
+            }
+
+            //////// Handle completed focus tags. //////////////////////////////////////////////////
+
+            // '%' has so far been used to mark completion of a particular focus tag, even if the
+            // focus group contains other focus tags. In hindsight, it should have always meant the
+            // completion of that focus _group_. That is what we implement.
+            for (let tag of completed_focus_tags) {
+              if (focus_a.has(tag)) {
+                focus_a = new Map(); // Clear all tags; that's what we mean by clearing the group.
+              }
+              // Shouldn't be present in more than one but, can't hurt to just clear all.
+              if (focus_b.has(tag)) {
+                focus_b = new Map();
+              }
+              if (focus_c.has(tag)) {
+                focus_c = new Map();
+              }
+            }
+            // Shift focus groups.
+            if (focus_a.size == 0) {
+              if (focus_b.size > 0) {
+                focus_a = focus_b;
+                if (focus_c.size > 0) {
+                  focus_b = focus_c;
+                  focus_c = new Map();
+                }
+              } else if (focus_c.size > 0) {
+                focus_a = focus_c;
+                focus_c = new Map();
+              }
+            }
+            // Didn't think through what would happen with hyperfocus and superfocus but, we'll see.
+
+            //////// Handle a continuation (skip calculations). ////////////////////////////////////
+
+            if (next_block_continue) {
+              if (current_is_handicapped) {
+                continued_handicap_mode = true;
+                // Special case: When there's a continuation in a handicapped block, since there's
+                // no end time it's unclear if we've "caught up" or continue to need the handicap.
+                // For this case we use an implied end time that is the previous end time plus the
+                // total minutes of the blicks in that block, e.g.
+                //
+                //    10:12 - [sp/e] foo ~[6] - [sys] org 7 [3] --- 10:31 (
+                //    x10:24 - [sp/e] foo ~[3] - [sys] calc [3] +
+                //
+                // would have an implied end time of 10:37 and therefore the next block, although
+                // marked "x" as a result of continuing from a handicap, would have a normal
+                // expected blicks of 3. In contrast,
+                //
+                //    10:12 - [sp/e] foo ~[6] - [sys] org 7 [3] --- 10:39 (
+                //    x10:24 - [sp/e] foo ~[3] - [sys] calc [3] +
+                //
+                // would have an implied end time of 10:45 and therefore the next block would have
+                // a reduced expected blicks of 2, i.e. would be handicapped as well.
+                if (previous_end_minute === undefined || previous_end_minute === null) {
+                  // If this is the first block of the day or after a break, use the start time as
+                  // the "previous block's" end time.
+                  previous_end_minute = block_start_minute;
+                }
+                let implied_end_minute = previous_end_minute + blicks_to_minutes(sum_blicks);
+                if (
+                  implied_end_minute >= block_start_minute + 18 &&
+                  implied_end_minute < block_start_minute + 24
+                ) {
+                  next_block_handicap = 1;
+                } else if (implied_end_minute >= block_start_minute + 24) {
+                  next_block_handicap = 2;
+                }
+              }
+              // Append blicks_found and non_focus_blicks to their continuation versions.
+              continued_blicks_found.push(...blicks_found);
+              non_focus_blicks.forEach((value, key) => {
+                if (continued_non_focus_blicks.has(key)) {
+                  continued_non_focus_blicks.set(key, continued_non_focus_blicks.get(key) + value);
+                } else {
+                  continued_non_focus_blicks.set(key, value);
+                }
+              });
+              continued_blocks_count++;
+              current_block--; // Keep the current_block count the same through continuations.
+              write(`<span class="orange">${trimmed}</span>`);
+              return;
+            } else {
+              // The last end minute before a series of continuations.
+              previous_end_minute = block_end_minute;
+              continued_handicap_mode = false;
+            }
+
+            //////// Calculate and write the block calculation! ////////////////////////////////////
+
+            let block_points = 0;
+            let calculation_parts = []; // e.g. [-4, "+1a", "+3c"]
+
+            // This could be hard to understand. For each continuation, the reward threshold moves
+            // by 10 minutes, e.g. for 2 continuations, the reward threshold is +30 minutes from
+            // the _first_ block's start time, e.g. if that were 10:24, the reward threshold on the
+            // second continuation hence is 10:54 (whereas the penalty threshold is what it normally
+            // is, 11:00). But the code below isn't based on the _first_ block's start time. That
+            // _can_ be calculated from continued_blocks_count; or we could just store it for ease;
+            // but there's another way: Simply think of the threshold as slipping by 2 minutes for
+            // each additional continuation, e.g. 10:48 + (10 - 2 * 2) = 10:54.
+            let reward_threshold = 10 - continued_blocks_count * 2;
+            // Reset as soon as done using here.
+            continued_blocks_count = 0;
+
+            if (block_end_minute < block_start_minute + reward_threshold) {
+              // Reward completion of block under 10 minutes past.
+              block_points = block_start_minute + reward_threshold - block_end_minute;
+              calculation_parts.push(`+${block_points}`);
+            } else if (block_end_minute > block_start_minute + 12) {
+              // Penalize completion of block over 12 minutes past.
+              block_points = block_start_minute + 12 - block_end_minute;
+              calculation_parts.push(block_points);
+              if (
+                block_end_minute >= block_start_minute + 18 &&
+                block_end_minute < block_start_minute + 24
+              ) {
+                next_block_handicap = 1;
+              } else if (block_end_minute >= block_start_minute + 24) {
+                next_block_handicap = 2;
+              }
+            }
+            if (defer_incrementing_bonuses) {
+              caculation_parts.push("++0a,++0c");
+            } else {
+              // The !current_is_handicapped here is necessary because grounded_bonus can be
+              // positive while not applying and persist to continue incrementing.
+              if (grounded_bonus > 0 && !current_is_handicapped) {
+                block_points += grounded_bonus;
+                calculation_parts.push(`+${grounded_bonus}a`);
+                if (grounded_bonus >= 20) {
+                  grounded_bonus = 9; // Gets incremented to 10 before next use.
+                }
+              }
+              // Whereas focus_continuation_bonus can only exist in the first place if
+              // current_is_handicapped is false; so no need to check.
+              if (focus_continuation_bonus > 0) {
+                block_points += focus_continuation_bonus;
+                calculation_parts.push(`+${focus_continuation_bonus}c`);
+                if (focus_continuation_bonus > 10) {
+                  focus_continuation_bonus -= 10; // e.g. +3c=12 => +3c=5.
+                }
+              }
+            }
+            if (current_block % 5 == 0) {
+              // We make an exception to the design of this script and peek into the future, because
+              // we need to see a "(d)" to know the five-block bonus "+10s" can be awarded. But
+              // there's actually another novel thing we have to do here. The "(d)" was not
+              // necessary if we had done the manual calculation at the intended time to do manual
+              // calculations. To check for this we check that (1) a manual calculation exists, (2)
+              // there's a "+10s" in that manual calculation, and (3) the separator has no "(d)" (or
+              // "(m)" or anything else.
+              let timely_manual_calculation = false;
+              if (
+                index + 1 < lines.length &&
+                (matches = CR_GROUP.exec(lines[index + 1])) !== null
+              ) {
+                // 'd' originally stood for "deferred", i.e. I am intentionally not calculating now.
+                // But it definitely got abused and that's why we're here, writing this program.
+                if (matches[1] !== undefined && matches[1] == "d") {
+                  timely_manual_calculation = true;
+                }
+              } else {
+                if (
+                  manual_calculation !== undefined &&
+                  manual_calculation.match(/\+10s/) !== null
+                ) {
+                  timely_manual_calculation = true;
+                }
+              }
+              if (timely_manual_calculation) {
+                block_points += 10;
+                calculation_parts.push("+10s");
+              }
+            }
+            points += block_points;
+            if (points < lowest_point) {
+              lowest_point = points;
+            }
+            if (current_block % 5 == 0) {
+              latest_point = points;
+            }
+            let calculation = calculation_parts.join(",");
+            calculation += `=${points}`;
+            // Produce formatted output; highlight manual calculation green if matched; append
+            // this script's calculation in red if manual calculation doesn't match; append this
+            // script's calculation in blue if there was no manual calculation.
+            let formatted_output;
+            if (manual_calculation === undefined) {
+              formatted_output = trimmed.replace(
+                /\($/, // The hanging last open-parenthesis.
+                `<span class="blue">(${calculation})</span>`,
+              );
+            } else if (manual_calculation == calculation) {
+              formatted_output = trimmed.replace(
+                `(${manual_calculation})`,
+                `<span class="green">(${calculation})</span>`,
+              );
+            } else {
+              formatted_output = `${trimmed} <span class="red">(${calculation})</span>`;
+            }
+            write(formatted_output);
+          } else if ((matches = CR_FOCUS_TAGS.exec(trimmed)) !== null) {
+            focus_mode = matches[1];
+            [focus_a, focus_b, focus_c] = parseFocusTags(matches);
+            if (focus_mode === "hyperfocus") {
+              if (focus_b.size != 0 || focus_c.size != 0) {
+                // TODO: warn
+              }
+            }
+            if (focus_mode === "superfocus") {
+              if (focus_c.size != 0) {
+                // TODO: warn
+              }
+            }
+            write(`<span class="orange">${trimmed}</span>`);
+          } else if ((matches = CR_GROUP.exec(trimmed)) !== null) {
+            if (current_block % 5 != 0) {
+              if (matches[2] !== undefined && matches[2] == "suppress-group-misalignment") {
+                // Sometimes I make a mistake and do manual calculation in the wrong place. This
+                // messes up the entire rest of the day. Do ",,, (d) !!!suppress-group-misalignment"
+                // to force re-alignment, and let's penalize with a "-20p" at the end.
+                current_block = Math.round(current_block / 5) * 5;
+                points += 10;
+                end_of_day_penalties.push(-20);
+              } else {
+                fatal(index, "Grouped at non-multiple of 5.");
+                return;
+              }
+            }
+            write(`<span class="orange">${trimmed}</span>`);
+          } else if ((matches = CR_BREAK.exec(trimmed)) !== null) {
+            current_time = null;
+            focus_continuation_bonus = 0;
+            focus_continuation_bonus_eligible = false;
+            indent = false;
+            previous_end_minute = null;
+            write(`<span class="orange">${trimmed}</span>`);
+          } else if ((matches = CR_PAUSE.exec(trimmed)) !== null) {
+            let pause = Number(matches[1]);
+            if (pause % 12 != 0) {
+              // TODO: error
+            } else {
+              current_time += pause;
+            }
+          } else if ((matches = CR_MACRO.exec(trimmed)) !== null) {
+            let submatches;
+            if ((submatches = matches[1].match(/^forgo-(\d+)$/)) !== null) {
+              // Sacrifice points to re-align manual calculations more easily.
+              points -= submatches[1];
+            } else if (matches[1] == "decrement-grounded") {
+              grounded_bonus--;
+            } else {
+              log(index, "Unknown macro: " + trimmed);
+            }
+          } else {
+            log(index, "Failed to parse line (skipping): " + trimmed);
+          }
+        });
+
+        indent = false;
+
+        let formatted_output = "";
+        let latest_point_after_penalties = latest_point;
+        for (let penalty of end_of_day_penalties) {
+          latest_point_after_penalties += penalty;
+          formatted_output += `,${penalty}p`;
+        }
+        formatted_output = formatted_output.substring(1);
+        write("");
+        write(
+          `<span class="blue">Final: (${latest_point};${formatted_output}=${latest_point_after_penalties})</span>`,
+        );
+        latest_point = latest_point_after_penalties;
+
+        write("");
+        let timebank_str = "";
+        for (const [tag, blicks] of timebank.entries()) {
+          timebank_str += `, ${tag}x${blicks}=${blicks * 4}m`;
+        }
+        if (latest_point >= 100) {
+          let completion_reward = Math.floor((latest_point - lowest_point) / 10);
+          write(
+            `<b>Auto-Completion! (${latest_point}-(${lowest_point})). $${completion_reward}.</b>`,
+          );
+        } else {
+          write("<b>No completion.</b>");
+        }
+        write(`<b>Auto-Timebank: ${timebank_str.substring(2)}</b>`);
+        let time_saved = (Math.floor(current_block / 5) / 2) * 3 + 3;
+        write(`Time saved on manual calculations by this program: ${time_saved} minutes.`);
+
+        log("Done!");
+
+        exit = false; // Important to reset! Or no more changes will be processed.
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        textarea.addEventListener("change", main);
+        main();
+      });
+    </script>
+  </body>
+</html>
