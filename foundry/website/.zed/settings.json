@@ -4,5 +4,9 @@
 // see the documentation: https://zed.dev/docs/configuring-zed#folder-specific-settings
 {
   "tab_size": 2,
-  "format_on_save": "on"
+  "format_on_save": "on",
+  "experimental.theme_overrides": {
+    "editor.highlighted_line.background": "#ffffffff"
+  },
+  "vim_mode": true
 }
