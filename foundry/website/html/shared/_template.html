@@ -331,6 +331,22 @@
     <!-- Hand-written Modals -->
     <script>
       window.onload = function () {
+        /* quick hack to enable markdown coloring; break out to own package */
+        let elements = Array.prototype.slice.call(
+          document.querySelectorAll("p, h1, h2, h3, h4, h5, h6"),
+        );
+        elements.forEach(function (el) {
+          el.innerHTML = el.innerHTML.replace(/%%(.*?)%%/g, '<span style="color: red">$1</span>');
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[(?![=])(.*?)\]\]/g,
+            '<center><img src="../shared/assets/placeholder.png" style="width:300px"/><p style="width:500px"><span style="color: green">[Image: $1]</span></p></center>',
+          );
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[=(.*?):(\d+)\]\]/g,
+            '<center><img src="../shared/assets/$1" style="width:$2px"/></center>',
+          );
+        });
+
         var openers = document.getElementsByClassName("modal-opener");
         for (var i = 0; i < openers.length; i++) {
           var opener = openers[i];
