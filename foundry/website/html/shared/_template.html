@@ -1,3 +1,6 @@
+<?php
+  if (!isset($style)) $style = 0;
+?>
 <html lang="en" style="visibility: hidden">
   <head>
     <meta charset="utf-8" />
@@ -38,15 +41,21 @@
     <style type="text/less">
       body {
         color: rgb(36, 36, 36);
-        /*
-        font-family: 'Lora', serif;
+        <?php if ($style == 0) { ?>
+        font-family: Helvetica, Arial, sans-serif;
+        font-weight: 300;
         font-size: 21px;
-        line-height: 1.58;
-        */
+        line-height: 1.75;
+        <?php } else if ($style == 1) { ?>
         font-family: "Cormorant", serif;
         font-weight: 300;
         font-size: 23px;
         line-height: 1.75;
+        <?php } else if ($style == 2) { ?>
+        font-family: 'Lora', serif;
+        font-size: 21px;
+        line-height: 1.58;
+        <?php } ?>
 
         #container {
           max-width: 740px;
