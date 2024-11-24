@@ -1,0 +1,48 @@
+  {focus: [sys], [sp/e], [acc]}
+  09:08 - [sys] update exercise [3] - [sp/e] who [3] - [acc] go ~[6] --- 09:27 (-3=-3)
+	{focus: [sys], [sp/e], [agi]}
+	09:24 - [sys] update activities ~[3] - [sp/e] find jason notes ~[3] - [agi] go ~[3] <-- 09:40 (-4,+1a,+3c=-3)
+	09:36 - [sys] update activities ~[3] - [sp/e] jason ~[3] - [agi] go ~[3] --- 09:52 (-4,+2a,+6c=1)
+	[...] (abi) (12)
+	10:00 - [sys] timebank ~[3] - [sp/e] jason ~[3] - [agi] go ~[3] --- 10:18 (-6,+3a,+9c=7)
+      x10:12 - [sp/e] jason ~[3] - [agi] go ~[3] <-- 10:32 (-8=-1)
+      ,,, (m)
+      x10:24 - [sp/e] jason ~[3] - [agi] go ~[3] +
+      x10:36 + %[sp/e] amy, form ~[6] - [agi] go ~[3] --- 10:56 (-8=-9)
+      {focus: [agi]}
+      x10:48 - [...] f [3] - [agi] go ~[3] --- 11:08 (-8=-17)
+      x11:00 - [...] eat [3] - [agi] go ~[3] --- 11:13 (-1=-18)
+	11:12 - [sys] today ~[6] - [agi] go ~[3] --- 11:25 (-1,+4a,+1c,+10s=-4)
+	,,, (d) !!!suppress-group-misalignment
+	11:24 - [agi] go ~--- 11:39 (-3,+5a,+2c=0)
+	11:36 - [agi] go ~[6] ... [sp/e...] check workday [3] --- 11:53 (-5,+6a,+3c=4)
+      ;;;
+      14:00 - [agi] go ~--- 14:19 (-7,+7a=4)
+      x14:12 - [agi] go ~[6] --- 14:25 (-1=3)
+      ;;;
+      14:48 - [agi] go ~--- 15:04 (-4,+8a=7)
+      ,,, (m)
+	15:00 - [agi] go ~--- 15:18 (-6,+9a,+1c=11)
+      x15:12 - [agi] go ~[6] --- 15:28 (-4=7)
+      15:24 - [...] what do [3] ... [err] collect laundry [6] --- 15:38 (-2,+10a=15)
+      15:36 - [err] start laundry ~[6] - [sp/e] nikki ~[3] --- 15:48 (+11a=26)
+      15:48 - [sp/e] nikki [3] - [agi] go ~[6] --- 16:00 (+12a,+10s=48)
+	,,, (d)
+	16:00 - [agi] go ~--- 16:11 (+13a,+1c=62)
+	{hyperfocus: [err]}
+	16:12 - [err] write out cat plan ~[6] - [err] welldyne ~[3] --- 16:24 (+14a,+3c=79)
+      ;;;
+      16:36 - [err] hang laundry [3] - [abi] think [3] - [err] pack for dr ~[3] --- 16:57 (-9,+15a=85)
+      x16:48 - [err] pack for hg ~[6] --- 17:06 (-6=79)
+      x17:00 - [err] plan tmr timing ~[6] --- 17:16 (-4,+10s=85)
+      ,,, (d)
+	17:12 - [err] mail, packages, amy, get laundry --- 17:29 (-5,+16a,+2c=98)
+	17:24 - [err] clear sign-up, amy, dr outfits ~--- 17:43 (-7,+17a,+4c=112)
+      x17:36 - [err] pack for DR ~[6] --- 17:53 (-5=107)
+	17:48 - [err] pack for DR ~--- 18:03 (-3,+18a,+2c=124)
+	18:00 - [err] pack for hg & dr ~--- 18:13 (-1,+19a,+4c=146)
+	,,, (m)
+	18:12 - [err] pack for hg & dr ~--- 18:23 (
+	18:24 - [err] go ~+
+	18:36 + [err] go ~--- 18:55 (
+      x18:48 - [err]

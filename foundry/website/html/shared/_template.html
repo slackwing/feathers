@@ -1,3 +1,6 @@
+<?php
+  if (!isset($style)) $style = 0;
+?>
 <html lang="en" style="visibility: hidden">
   <head>
     <meta charset="utf-8" />
@@ -38,15 +41,21 @@
     <style type="text/less">
       body {
         color: rgb(36, 36, 36);
-        /*
-        font-family: 'Lora', serif;
+        <?php if ($style == 0) { ?>
+        font-family: Helvetica, Arial, sans-serif;
+        font-weight: 300;
         font-size: 21px;
-        line-height: 1.58;
-        */
+        line-height: 1.75;
+        <?php } else if ($style == 1) { ?>
         font-family: "Cormorant", serif;
         font-weight: 300;
         font-size: 23px;
         line-height: 1.75;
+        <?php } else if ($style == 2) { ?>
+        font-family: 'Lora', serif;
+        font-size: 21px;
+        line-height: 1.58;
+        <?php } ?>
 
         #container {
           max-width: 740px;
@@ -331,6 +340,22 @@
     <!-- Hand-written Modals -->
     <script>
       window.onload = function () {
+        /* quick hack to enable markdown coloring; break out to own package */
+        let elements = Array.prototype.slice.call(
+          document.querySelectorAll("p, h1, h2, h3, h4, h5, h6"),
+        );
+        elements.forEach(function (el) {
+          el.innerHTML = el.innerHTML.replace(/%%(.*?)%%/g, '<span style="color: red">$1</span>');
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[(?![=])(.*?)\]\]/g,
+            '<center><img src="../shared/assets/placeholder.png" style="width:300px"/><p style="width:500px"><span style="color: green">[Image: $1]</span></p></center>',
+          );
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[=(.*?):(\d+)\]\]/g,
+            '<center><img src="../shared/assets/$1" style="width:$2px"/></center>',
+          );
+        });
+
         var openers = document.getElementsByClassName("modal-opener");
         for (var i = 0; i < openers.length; i++) {
           var opener = openers[i];
