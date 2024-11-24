@@ -1,0 +1,25 @@
+<?php
+
+$id = 0;
+$version = '0.1';
+$published = 'N/A';
+$updated = 'N/A';
+$style = 0;
+$title = 'Linux kernel development setup on an Apple silicon (M series) Mac (2025)';
+$content = <<<'HEREDOC'
+
+This is a guide for setting up a Linux kernel development environment on Apple silicon a.k.a. M-series chip Macs, based on [this 2021 article by Jacob James](https://medium.com/@depressedcoder/m1-mac-linux-kernel-development-environment-setup-748637131f92). **This does mean development _only_ for the arm64 architecture.** Thanks to virtualization and emulation technologies like UTM and Qemu, we are able to develop for any architecture including x86 without possessing the actual hardware. The original article was written in the era of the M1 but still holds up well. This 2025 refresh just provides a few adjustments for more recent versions of software (for example a changed Linux kernel configuration menu), and then continues on to a guide on [making your first Linux kernel driver change](#).
+
+## Introduction
+
+Linux kernel development has become easier than ever with virtualization and emulation technologies like **UTM** and **Qemu**. Setting up for development on an Apple silicon Mac takes no longer than {} minutes. Let's dive in.
+
+## Install UTM
+
+
+unorg
+- mention https://lkft.linaro.org/
+
+
+
+HEREDOC; include '_article.html'; ?>
