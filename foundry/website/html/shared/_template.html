@@ -1,5 +1,14 @@
 <?php
   if (!isset($style)) $style = 0;
+  
+  function isStaging() {
+    return strpos(
+        realpath(__DIR__),
+        DIRECTORY_SEPARATOR . '.staging' . DIRECTORY_SEPARATOR
+    ) !== false;
+  }
+
+  $ROOT_DIR = isStaging() ? '/.staging/' : '/';
 ?>
 <html lang="en" style="visibility: hidden">
   <head>
@@ -262,16 +271,17 @@
         display: block;
         margin-left: auto;
         margin-right: auto;
+      }
+
+      img.border {
         border: solid 1px #eeeeee;
       }
 
       img.mma {
-        border: none;
         padding: 16px;
       }
 
       img.mma50 {
-        border: none;
         padding: 16px;
         width: 40%;
       }
@@ -337,25 +347,66 @@
         document.getElementsByTagName("html")[0].style.visibility = "visible";
       });
     </script>
-    <!-- Hand-written Modals -->
     <script>
       window.onload = function () {
-        /* quick hack to enable markdown coloring; break out to own package */
+
         let elements = Array.prototype.slice.call(
           document.querySelectorAll("p, h1, h2, h3, h4, h5, h6"),
         );
         elements.forEach(function (el) {
+
+          /* Custom quick-coloring syntax. */
           el.innerHTML = el.innerHTML.replace(/%%(.*?)%%/g, '<span style="color: red">$1</span>');
+
+          /* Custom quick-image syntax. */
           el.innerHTML = el.innerHTML.replace(
             /\[\[(?![=])(.*?)\]\]/g,
-            '<center><img src="../shared/assets/placeholder.png" style="width:300px"/><p style="width:500px"><span style="color: green">[Image: $1]</span></p></center>',
+            '<center><img src="<?=$ROOT_DIR?>shared/assets/placeholder.png" style="width:300px"/><p style="width:500px"><span style="color: green">[Image: $1]</span></p></center>',
           );
           el.innerHTML = el.innerHTML.replace(
-            /\[\[=(.*?):(\d+)\]\]/g,
-            '<center><img src="../shared/assets/$1" style="width:$2px"/></center>',
+            /\[\[=(.*?):(\d+)(;border)?\]\]/g,
+            function(match, c1, c2, c3) {
+              return '<center><img src="<?=$ROOT_DIR?>shared/assets/'
+                  + c1
+                  + '" style="width:'
+                  + c2
+                  + 'px;"'
+                  + (c3 ? ' class="border"' : '')
+                  + '/></center>';
+            }
           );
+
+          /* Custom Markdown admonitions syntax. */
+          /* Reference: https://github.com/sinsukehlab/NOTE-test/blob/main/NOTE.md. */
+          el.innerHTML = el.innerHTML.replace(
+            /!!!\s*(Note|Tip|Important|Caution|Warning)\s+([^\n]+)\n/g,
+            function(match, type, content) {
+              let color;
+              switch (type) {
+                case "Note":
+                  color = "blue";
+                  break;
+                case "Tip":
+                  color = "green";
+                  break;
+                case "Important":
+                  color = "orange";
+                  break;
+                case "Caution":
+                  color = "red";
+                  break;
+                case "Warning":
+                  color = "red";
+                  break;
+              }
+              return '<div class="admonition-block admonition-block-' + color + '">'
+                + '<p class="admonition-type">' + type + '</p>'
+                + '<p class="admonition-content">' + content + '</p>'
+                + '</div>';
+            }
         });
 
+        <!-- Hand-written Modals -->
         var openers = document.getElementsByClassName("modal-opener");
         for (var i = 0; i < openers.length; i++) {
           var opener = openers[i];
