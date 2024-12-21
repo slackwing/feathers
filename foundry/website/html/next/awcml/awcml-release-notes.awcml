@@ -1,0 +1,12 @@
+
+
+
+
+
+0.4.0
+> Support for <<>> includes using ^^ for recall.
+> Support for $$ config interpolations.
+> Fix async replacement to pseudo-async.
+> Had brunch.
+* Refactor triple-underscore prefixes to double-underscore.
+
