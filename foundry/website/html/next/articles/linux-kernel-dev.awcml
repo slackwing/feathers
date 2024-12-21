@@ -1,0 +1,156 @@
+{{
+  __active_macro: image,
+  type: ARTICLE,
+  style: MANUAL,
+  published: "2025-01-01",
+  updated: null,
+  title: "Linux kernel development setup on an Apple silicon (M series) Mac",
+  subtitle: "a.k.a. Linux on an emulator in a Linux VM in an emulator on a Mac 🥴",
+  tags: ["linux", "c"],
+  audience: ENTHUSIAST,
+  prerequisites: ["shell"],
+  willingness: [MULTIPLE_SESSIONS, ADAPTIVENESS],
+  reward: [ACCOMPLISHMENT, PROCESS, FOUNDATIONAL_BREADTH],
+}}
+
+This is a guide for setting up a Linux kernel development environment on Apple silicon a.k.a. M-series chip Macs, based on [a 2021 article by Jacob James](https://medium.com/@depressedcoder/m1-mac-linux-kernel-development-environment-setup-748637131f92). **This does NOT mean development _only_ for the arm64 architecture.** Thanks to virtualization and emulation technologies like UTM and Qemu, we are able to develop for any architecture including x86 and x86_64 without possessing the actual hardware. This 2025 refresh includes
+
+- updated instructions for more recent versions of software (for example changed Linux kernel configuration menu options), 
+- updated screenshots, original illustrations, and some new sidenotes, and
+- one additional step that simultaneously prepares you for [making your first, "Hello, world" Linux kernel driver change](#) in the Linux `staging` branch.
+
+Let's get started.
+
+## Introduction
+
+With today's virtualization and emulation technologies, Linux kernel development has become easier than ever. It should take no longer than {} minutes to get set up. If you like diagrams, here's an overview of what this guide will set up, but otherwise you can skip ahead.
+
+[[ 20241127-linux-dev-setup.png ;; 740 ]]
+
+## Installing UTM
+
+**UTM** is a free app for macOS that can run **virtual machines**. We'll be downloading an Ubuntu 22.04 **image** to boot up in UTM, and doing all our development within this virtual machine.
+
+1. Download and install UTM from [https://mac.getutm.app/](https://mac.getutm.app/).
+1. On the same site, download the Ubuntu 22.04 ARM64 image from the [gallery](https://mac.getutm.app/gallery/).
+
+[[ 20241127-utm-gallery.png ;; 740 ]]
+
+!!! Why not our own machine?
+By using a virtual machine, we can keep our personal files and configurations separate from that of our development environment. For example, packages we've installed via `brew`, `npm`, `pip`, etc. for personal and other use, or environment variables in our `~/.zshrc` or `~/.bashrc`. We'll be less likely to run into problems from mismatched versions of software and dependencies.
+
+!!! Why Ubuntu?
+It doesn't have to be Ubuntu—or even a Linux distro for that matter—but developing Linux on Linux is the most straightforward (especially when it comes to **cross-compilation**), and Ubuntu is just a popular choice of Linux distros for its ease of use and large community (and therefore support).
+
+## Running Ubuntu
+
+The "Guide" on the UTM website as of today is outdated, as it references an ISO file. What we've downloaded should be a zipped .utm file.
+
+1. Unarchive the .zip file but also keep the .zip file around because you may need it later.
+1. Either open the .utm file directly, or open UTM and find a way to open an existing virtual machine, and select the .utm file. Hit the play button to start the virtual machine if it doesn't start automatically.
+
+The following screen is _normal_. The Ubuntu login screen should appear in a minute.
+
+[[ 20241127-utm-boot-screen.png ;; 740 ]]
+
+!!! Troubleshooting
+Occasionally it does hang indefinitely. In that case, force a shutdown and try again. I was convinced once that my virtual machine was unrecoverable, but it booted up on the fourth attempt.
+
+3. Log in with the username `ubuntu` and password `ubuntu`.
+
+[[ 20241127-ubuntu.png ;; 740 ]]
+
+Great. Now we have an isolated development environment that we can also take snapshots of, if making risky or uncertain changes.
+
+## Extending the disk space
+
+The virtual machine we downloaded has a predefined amount of disk space—64 GB at the time of this writing. This is {barely} enough to build and run the **main branch** of the Linux kernel, but not enough to _also_ build and run the **staging branch** in the next guide when we create our first Linux kernel driver patch. So let's resize our disk to 128 GB.
+
+!!! Why not later when we actually need more space?
+Things can go wrong when extending disk space, potentially leaving our virtual machine in an unbootable state and forcing us to start from scratch. To avoid this happening _after_ you've already gone through this entire guide, it'd be smart to try extending the disk space now. Because if things go wrong at this point, all you need to do is delete this virtual machine, unzip the .zip file again, boot up the fresh virtual machine, and you're right back to where we are now, so you can try again or try looking up a different method for extending the disk space.
+
+The following instructions come from [the University of Birmingham's hacking club](https://linux.afnom.net/install_apple/apple_silicon.html) but was adapted to the minimalist style of [Albert Wang's notes (2022)](https://www.albertyw.com/note/resizing-ubuntu-utm), which no longer work as printed because, for example, `parted` no longer supports the `resize` subcommand.
+
+1. First, open the Terminal app and run
+    ```
+    lsblk /dev/vda
+    ```
+   We'll use this command to check our progress. First we 
+
+1. First, we need to _safely_ shut down the virtual machine. Do so using Ubuntu's "Power Off" option, not UTM's power button.
+1. In the main UTM app window, find the option to edit the virtual machine.
+
+[[ 20241127-utm-edit-vm.png ;; 740 ]]
+
+3. In the "VirtIO Drive" section, find the "Resize..." option and increase the size to 128 GB, confirm, and save.
+1. Start up the virtual machine again. Remember that boot errors are normal and you may need to wait a minute. It _does_ happen though that start up seems to hang, in which case try a forced shutdown and booting up again. One time it took me 4 tries to boot, but it did boot. Log in.
+1. Open the Terminal app and run
+    ```
+    sudo fdisk -l
+    ```
+   It is normal to see a "GPT PMBR size mismatch" warning.
+
+[[ 20241127-ubuntu-fdisk.png ;; 740 ]]
+
+6. Now run
+    ```
+    sudo parted -l
+    ```
+   and choose to Fix the size mismatch. If you are not asked or the resizing fails, then run the following manually:
+    ```
+    # Only if the above fails!
+    parted /dev/vda resize 3 100%
+    ```
+1. Next, run
+    ```
+    sudo pvresize /dev/vda3
+    ```
+1. Then
+    ```
+    sudo lvm
+    ```
+    to enter an `lvm` console.
+1. Here, run
+    ```
+    lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+    ```
+   and you should see a message saying that the logical volume has been successfully resized.
+
+[[ 20241127-ubuntu-lvm.png ;; 740 ]]
+
+10. Type `exit` to leave the `lvm` console.
+
+11. Run
+    ```
+    sudo resize2fs /dev/ubuntu-vg/ubuntu-lv
+    ```
+    to expand the ext4 file system to fill the new space. If you see a message like "Filesystem at /dev/ubuntu-vg/ubuntu-lv is mounted on /; on-line resizing required," 
+
+
+
+```
+ubuntu@ubuntu:~$ df -h
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              392M  1.8M  390M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   60G  9.5G   48G  17% /
+tmpfs                              2.0G     0  2.0G   0% /dev/shm
+tmpfs                              5.0M  4.0K  5.0M   1% /run/lock
+/dev/vda2                          2.0G  134M  1.7G   8% /boot
+/dev/vda1                          1.1G  6.4M  1.1G   1% /boot/efi
+tmpfs                              392M   96K  391M   1% /run/user/1000
+```
+
+
+
+{Admonishment: "Sparse Disk Files: The .utm file on your host is a sparse file that grows as data is written inside the VM. The physical size on the host (24.94 GB) reflects actual data stored, not the maximum allocated size."}
+
+
+
+
+
+
+unorg
+- mention https://lkft.linaro.org/
+
+
+
