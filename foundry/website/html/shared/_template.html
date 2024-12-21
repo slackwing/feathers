@@ -50,25 +50,43 @@
     <style type="text/less">
       body {
         color: rgb(36, 36, 36);
+
         <?php if ($style == 0) { ?>
-        font-family: Helvetica, Arial, sans-serif;
-        font-weight: 300;
-        font-size: 21px;
-        line-height: 1.75;
-        b, strong {
-          color: rgb(0, 0, 0);
-          font-weight: 500;
-        }
+        
+          font-family: Helvetica, Arial, sans-serif;
+          font-weight: 300;
+          font-size: 21px;
+          line-height: 1.75;
+          b, strong {
+            color: rgb(0, 0, 0);
+            font-weight: 500;
+          }
+          
         <?php } else if ($style == 1) { ?>
-        font-family: "Cormorant", serif;
-        font-weight: 300;
-        font-size: 23px;
-        line-height: 1.75;
+
+          font-family: "Cormorant", serif;
+          font-weight: 300;
+          font-size: 23px;
+          line-height: 1.75;
+
+          @font-face {
+            font-family: 'Korean Custom';
+            src: local('나눔명조'), local('NanumMyeongjo'), local('Nanum Myeongjo');
+            unicode-range: U+3131-314E, U+AC00-D7A3;
+          }
+
         <?php } else if ($style == 2) { ?>
-        font-family: 'Lora', serif;
-        font-size: 21px;
-        line-height: 1.58;
+
+          font-family: 'Lora', serif;
+          font-size: 21px;
+          line-height: 1.58;
+
         <?php } ?>
+
+        span[lang="ko"] {
+          font-family: 'Korean Custom';
+          font-size: 0.8em;
+        }
 
         #container {
           max-width: 740px;
