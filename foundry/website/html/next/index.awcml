@@ -1,0 +1,15 @@
+{{
+  type: INDEX,
+  ___active_macro: index_item,
+}}
+
+[[>> articles/kernel-driver-hello-world ;; instructions ]]
+
+[[>> articles/linux-kernel-dev ;; instructions ]]
+
+[[>> articles/geb ;; course ]]
+
+# Test
+
+This is a _test_.
+
