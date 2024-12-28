@@ -35,7 +35,7 @@
   define("INCLUDE_HEAD", '
     <base href="' . dirname($_SERVER['SCRIPT_NAME']) . '/" />
     <script type="text/awcml">
-      {{ __page : ' . $page . ' }}
+      {{ __page : "' . $page . '" }}
     </script>
   ');
 
