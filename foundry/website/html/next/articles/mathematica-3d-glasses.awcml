@@ -1,0 +1,60 @@
+{{
+  __active_macro: image,
+  type: ARTICLE,
+  style: TEXTBOOK,
+  author: Andrew,
+  created: "2024-12-21",
+  updated: null,
+  location: "Bushwick\, Brooklyn",
+  title: "Improved methods for red-blue stereoscopic anaglyphs in Mathematica (2004)",
+  subtitle: "",
+  tags: ["mathematica"],
+  audience: ENTHUSIAST,
+  prerequisites: [],
+  willingness: [],
+  reward: [],
+}}
+
+[[ placeholder.png ;; 360 ;; 2 panes: Riemann zeta and Mandelbrot. ]]
+
+This article 
+
+## 1. Graphs of paths
+
+<blockquote>There ain't no sin and there ain't no cos. There's just stuff graphs do.</blockquote>
+
+Graphs do different things in different places. They are depictions of relationships between quantities, like the population of rabbits and foxes. They become a kind of visual "language," expressing abstract concepts like _orthogonality_ in simplifying ways, where words only seem to proliferate technicalities. Graphs shown above are like maps of realms we don't fully understand, and want to explore and wonder about. These kinds, while all important, don't have much to do with this article.
+
+The graphs relevant to this article are the ones that are <strong>representations of physical reality</strong>, like the trajectory of a thrown ball. This feels boring in comparison. But the techniques in this article were developed for an interesting turn on "representations of reality": visualizations of 4D and 5D trajectories.
+
+<strong>This article is about improving 3D graphs of 1D paths by introducing ways to realize depth that don't depend entirely on implicit rules of vision in our brains.</strong> This is unnecessary if you're just needing some pretty pictures for an article or textbook. It's also unnecessary for depictions of anything intuitive and familiar (like actual reality), because you can likely just choose a perspective that accentuates depth, and it'll make enough sense to viewers (since, again, it's intuitive and familiar). But if you're wanting to use a graph to _augment_ intuition that humans don't naturally have, then relying on the familiar to fill in an entire dimension might be a handicap if not misleading.
+
+To be honest though, I don't know. I was wanting to visualize the 3D "imprint" of electrons orbiting nuclei in 4 or 5 dimensions, especially if one or both were time dimensions (vastly complicating the role of intuition). I didn't get far enough to say whether these techniques are actually helpful or not. But in the process I developed one technique for creating interactive and animated "stereoscopic anaglyphs" (which are just those images that become 3D through red-blue glasses) in _Mathematica_ that I didn't see elsewhere. So I use that as a destination to talk about other findings and insights along the way.
+
+## 2. Common methods {...}
+
+
+
+
+<!--
+graveyard
+- Graphs are really just visual aids for humans—for the human intuition. But there are different degrees and purposes of aid. 
+This article is about 2 yet other kinds of graphs. Some graphs are illustrations of physical _realities_, such as the trajectory of a ball. Some graphs are _tools_ to arrive at a visual "answer"
+This article is about graphs that are at least 2 other things. 
+They're even sometimes simply to explore and wonder (wander) _about_, like the graphs shown above. But the kind of graph 
+They might depict a relationship between 2 things, like time versus the number of foxes and rabbits, somehow making a subject easier to digest and reason about.
+Latereven become their own visual "language," able to express abstracts concepts such as orthogonality in ways that 
+endow abstract concepts such as orthogonality, 
+In grade school they try to impart a visual intuition of relationships between 2 factors, such as time and the number of trees in a forest.
+have different degrees and purposes as visual aids. 
+trajectory, model reality
+abstract concept, such as orthogonality
+map
+illustration, recall
+algebra, intersection, tool
+Graphs are often visual _aids_. They can help—in some cases _greatly_ help—someone {...} but 
+but when you're trying to do research
+When you're plotting a path—a line—in 3D, 
+But I share the techniques I've come across or developed, culminating in interactive and animated "stereoscopic anaglyphs"—which are just those images that become 3D through red-blue glasses.
+-->
+

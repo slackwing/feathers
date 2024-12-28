@@ -1,0 +1,13 @@
+{{
+  type: ARTICLE,
+  style: MANUAL,
+  published: "2025-02-01",
+  updated: null,
+  title: "Making your first Linux kernel driver patch",
+  subtitle: "The \"Hello World\" of Linux Kernel development",
+  tags: ["linux", "c"],
+  audience: ENTHUSIAST,
+  prerequisites: ["shell"],
+  willingness: [ADAPTIVENESS],
+  reward: [ACCOMPLISHMENT, BRAGGING_RIGHTS],
+}}
