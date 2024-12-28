@@ -39,19 +39,20 @@ body {
       margin-left: auto;
       margin-right: auto;
       max-width: 48rem;
+      border-bottom: 1px solid #cccccc;
 
       div.header-subcontainer {
 
         display: flex; align-items: center; justify-content: space-between;
 
         width: 100%;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
+        padding: 1rem;
 
         position: relative;
 
         a.header-link {
-          font-size: 2rem;
+          font-size: 4rem;
+          color: #e0e0e0;
         }
 
         nav {
@@ -97,25 +98,6 @@ body {
       h1 {
         font-size: 2.75rem;
         font-weight: 100;
-      }
-
-      h2 {
-        font-size: 2rem;
-        font-weight: 100;
-      }
-
-      address {
-        color: rgb(140, 140, 140);
-        font-family: 'Cute Font', sans-serif;
-        font-size: 1.5rem;
-        text-align: right;
-        font-style: normal;
-        line-height: 0.6rem;
-        margin-top: -1em;
-        margin-bottom: 3em;
-        span:after { content: "\A"; }
-        span:last-child:after { content: ""; }
-        white-space: pre-wrap;
       }
 
       /** TODO **/
@@ -208,11 +190,6 @@ main {
       <section class="awcml">
 <<$$__page>>
 <h1>$$title</h1>
-<address>
-  <span>$$author &lt;</span>
-  <span>[[ date_fmt :: $$created ]] &lt;</span>
-  <span>$$location &lt;</span>
-</address>
 ^^
       </section>
     </main>
