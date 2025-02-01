@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+    </style>
+  </head>
+  <body>
+    <pre class="tab"></pre>
+    <script>
+
+      var source = "";
+
+      var lines = [];
+
+      function setup(num_strings, tuning) {
+        // TODO: Validate num_strings.
+        // TODO: Validate tuning, e.g. EBGDAE, BAbEBGbDb.
+        for (let i = 0; i < num_strings; i++) {
+          lines.push("");
+        }
+      }
+
+      function setup_default_guitar() {
+        lines.push("");
+        lines.push("");
+        lines.push("");
+        lines.push("");
+        lines.push("");
+        lines.push("");
+      }
+
+      function render() {
+        let view = document.querySelector(".tab");
+
+        tab.innerHTML = source;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        textarea.addEventListener("keypress", (e) => {
+          if (e.key === " 
+        });
+      });
+    </script>
+  </body>
+</html>
