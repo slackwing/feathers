@@ -221,25 +221,25 @@
       const RE_TAG = "\\[[\\w|\\/]+\\]"; // e.g. [sp/a]
       const RE_TAGS = `${RE_TAG}(?:=[=>]${RE_TAG})*`; // e.g. [err]==[fin]=>[sys]
       const RE_BLICK_TAG = `(?:${RE_TAG}|\\[(?:[\\w|\\/]+)?[.]{3}\\])`; // e.g. [...], [sp/o...]
-      const RE_BLICK = `(%)?(${RE_BLICK_TAG}) +[^\\[\\]]+ +~?\\[(3|6|10|13)\\]`;
+      const RE_BLICK = `(%)?(${RE_BLICK_TAG}) [^\\[\\]]+ ~?\\[(3|6|10|13)\\]`;
       const RE_TIME = "\\d\\d:\\d\\d"; // e.g. 04:36, 12:57
       const RE_ENDERS = "(?:---|>--|-<-|->-|<--|--<)";
-      const RE_INLINE_MACRO = "(?: +!!!([\\w-]+))?"; // e.g. for suppressing certain errors (new).
+      const RE_INLINE_MACRO = "(?: !!!([\\w-]+))?"; // e.g. for suppressing certain errors (new).
       const CR_MACRO = new RegExp("^!!!([\\w-]+)$");
       const CR_LOG_LINE = new RegExp(
-        `^(x)?(${RE_TIME}) +([+-]) +(.*)(?:${RE_ENDERS} +(${RE_TIME})(?:| +\\(| +\\((.*)\\))?|(\\+))$`,
+        `^(x)?(${RE_TIME}) ([+-]) (.*)(?:${RE_ENDERS} (${RE_TIME})(?:| \\(| \\((.*)\\))?|(\\+))$`,
       );
       const CR_BLOCK = new RegExp(
-        `^${RE_BLICK}(?: +(?:-|[.]{3}) +${RE_BLICK}(?: +(?:-|[.]{3}) +${RE_BLICK}(?: +(?:-|[.]{3}) +${RE_BLICK})?)?)?`,
+        `^${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK}(?: (?:-|[.]{3}) ${RE_BLICK})?)?)?`,
       );
       const CR_FOCUS_TAGS = new RegExp(
-        `^\\{((?:hyper|super|)focus): +(${RE_TAGS})(?:, +(${RE_TAGS})(?:, +(${RE_TAGS}))?)?\\}$`,
+        `^\\{((?:hyper|super|)focus): (${RE_TAGS})(?:, (${RE_TAGS})(?:, (${RE_TAGS}))?)?\\}$`,
       );
-      const CR_GROUP = new RegExp(`^,,,(?:| +\\(([md])\\))${RE_INLINE_MACRO}$`);
+      const CR_GROUP = new RegExp(`^,,,(?:| \\(([md])\\))${RE_INLINE_MACRO}$`);
       const CR_BREAK = new RegExp("^;;;$");
       const CR_PAUSE = new RegExp("^\\[...\\].*\\((\\d\\d)\\)$");
 
-      const NON_TIMEBANK_TAGS = new Set(["[abi]", "[err]", "[hh]", "[rel]", "[sys]", "[fin]"]);
+      const NON_TIMEBANK_TAGS = new Set(["[abi]", "[err]", "[hh]", "[rel]", "[sys]"]);
 
       function parseFocusTags(matches) {
         let focus_a = new Map();
