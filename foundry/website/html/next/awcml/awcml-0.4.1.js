@@ -1,12 +1,13 @@
 /**
   * Logging
   */
-let ___DEBUG = true;
+let ___DEBUG = false;
 let ___indent = 0;
 function indent() { ___indent++; }
 function dedent() { if (--___indent < 0) ___indent = 0; }
 function debug(msg) { if (___DEBUG) log(msg, "*"); }
 function error(msg) { log(msg, "!"); }
+function hint(msg) { log(msg, "~"); }
 function log(msg, indicator = ">") {
   let indent = " ".repeat(___indent * 2);
   console.log(indent + `${indicator}${indicator}  ` + msg.replace(/\n/g, `\n${indent}    `));
@@ -193,12 +194,13 @@ function parseConfig(config, input) {
   const skipChars = "\\s0-9";
   const captureGroupLeft = `(\\s*[${jsonChars}\\s]*)`;
   const captureGroupMid = `([^${jsonChars}${quoteChars}${skipChars}]+)`;
+  // Additionally avoids escaped jsonChars.
   const captureGroupRight = `(\\s*(?=(?<!\\\\)[${jsonChars}]))`;
   input = input.replace(
       new RegExp(captureGroupLeft + captureGroupMid + captureGroupRight, "g"),
       "$1\"$2\"$3"
   );
-  // Process jsonChars escape.
+  // Process escaped jsonChars.
   input = input.replace(
       new RegExp(`\\\\([${jsonChars}])`, "g"),
       "$1"
@@ -213,6 +215,12 @@ function parseConfig(config, input) {
     copyByReference(merged, config);
   } catch (e) {
     error("error parsing input:\n" + input);
+    if (e instanceof SyntaxError) {
+      if (e.message.startsWith("Expected") &&
+          e.message.includes("after property")) {
+        hint(`jsonChars like "{}[]:," and double-quotes need to be escaped with a backslash`);
+      }
+    }
     throw e;
   }
   dedent();
