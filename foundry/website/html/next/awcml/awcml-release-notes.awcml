@@ -2,6 +2,7 @@
 > Support escaped jsonChars in configs.
 > Support numbers in informal JSON. *TODO*
 > Support $$ in [[]] macros.
+* Added hint().
 
 0.4.0
 > Support for <<>> includes using ^^ for recall.
