@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" style="visibility: hidden;">
+  <head>
+    <?=AWCML_HEAD_CONTENT?>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cute+Font&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    >
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant:wght@300;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style "text/less">
+
+body {
+
+  display: flex; flex-direction: column;
+  
+  color: rgb(36, 36, 36);
+
+  a { color: inherit; text-decoration: none; }
+
+  header {
+
+    font-family: 'Cute Font', sans-serif;
+
+    div.header-container {
+
+      display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 48rem;
+      border-bottom: 1px solid #cccccc;
+
+      div.header-subcontainer {
+
+        display: flex; align-items: center; justify-content: space-between;
+
+        width: 100%;
+        padding: 1rem;
+
+        position: relative;
+
+        a.header-link {
+          font-size: 4rem;
+          color: #e0e0e0;
+        }
+
+        nav {
+
+          display: flex; flex-direction: row; align-items: center; justify-content: flex-end;
+
+          ul {
+
+            display: flex;
+
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+
+            li {
+
+              display: flex; align-items: center; justify-content: center;
+
+              margin-block-end: 0.5rem;
+              margin-block-start: 0.5rem;
+              padding-inline-start: 2rem;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  main {
+
+    display: block;
+
+    section {
+
+      display: block;
+
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 48rem;
+      padding-top: 2rem;
+      padding-bottom: 1rem;
+
+      /** TODO **/
+      blockquote {
+        color: rgb(108, 108, 108);
+        font-size: 21px;
+        padding-left: 23px;
+        box-shadow: inset 3px 0 0 -1px rgb(108, 108, 108);
+      }
+    }
+  }
+}
+
+main {
+
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  font-size: 1.3rem;
+  line-height: 1.75;
+
+  a { color: #3366cc; }
+  b, strong { color: rgb(0, 0, 0); font-weight: 500; }
+  code { color: #993333; font-size: 18px; }
+
+  div.admonition-block {
+    padding: 0.5rem 2rem;
+    margin-left: 4rem;
+    margin-bottom: 1rem;
+    border-left: 0.25em solid;
+  }
+
+  div.admonition-block-blue {
+    border-left-color: #0969da;
+    p.admonition-type { color: #0969da; }
+  }
+
+  div.admonition-block-green {
+    border-left-color: #1a7f37;
+    p.admonition-type { color: #1a7f37; }
+  }
+
+  div.admonition-block-purple {
+    border-left-color: #8250df;
+    p.admonition-type { color: #8250df; }
+  }
+
+  div.admonition-block-red {
+    border-left-color: #d12f24;
+    p.admonition-type { color: #d12f24; }
+  }
+
+  div.admonition-block-yellow {
+    border-left-color: #9a6700;
+    p.admonition-type { color: #9a6700; }
+  }
+
+  p.admonition-type {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: 0;
+  }
+
+  p.admonition-content {
+    font-size: 0.85em;
+  }
+}
+    </style>
+    <script type="text/awcml">
+      // Page types for this theme.
+      PAGE_TYPE @@ INDEX ;; ARTICLE
+    </script>
+  </head>
+  <body>
+
+    <header>
+      <div class="header-container">
+        <div class="header-subcontainer">
+          <a href="/" class="header-link">A<span style="position: relative; top: -0.25rem;">C</span></a>
+          <nav>
+            <ul>
+              <li><span class="material-icons icon-shuffle" style="font-size: 1.3em">shuffle</span></li>
+              <li><span class="material-icons">search</span></li>
+              <li><span class="material-icons" style="font-size: 1.2em;">bedtime</span></li>
+            </ul>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="awcml">
+<?=AWCML_PAGE_CONTENT?>
+      </section>
+    </main>
+
+    <footer>
+    </footer>
+
+    <!-- AWCML -->
+    <script src="awcml/awcml-latest.js"></script>
+    <!-- CSS/LESS -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/less.js/4.2.1/less.min.js"
+      integrity="sha512-Sd9bkuRWrLvdJvYFD2hGxUatm0HxJy8At4kbkCgr+u4BOz35aZBlGuUrRsx13cRGKWdt8QmoJEfTlxqy9Vv4Vw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <!-- Hides unstyled page until Markdown and LESS finishes processing. -->
+    <script>
+      window.addEventListener("load", function () {
+        document.getElementsByTagName("html")[0].style.visibility = "visible";
+      });
+    </script>
+    <!-- Other. -->
+    <script>
+      <!-- TODO: Turn into extension. -->
+      window.addEventListener("load", function () {
+        const chameleon = document.querySelector(".icon-shuffle");
+        chameleon.style.transition = "color 1000ms ease";
+        setInterval(() => {
+          const r = Math.random() * 255;
+          const g = Math.random() * 255;
+          const b = Math.random() * 255;
+          chameleon.style.color = `rgb(${r}, ${g}, ${b})`;
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>
