@@ -79,7 +79,7 @@ async function executeAwcml(config, text, configOnly = true) {
 
   // Process AWCML syntax.
 
-  const reComment1 = String.raw`^\s*\/\/[^\r\n]*[\r\n]`;
+  const reComment1 = String.raw`^\/\/[^\r\n]*[\r\n]`;
   const reComment2 = String.raw`\/\*.*?\*\/`;
   const reOperator1 = String.raw`([A-Z0-9_]+)\s*\@\@((?:\s*[A-Z0-9_]+\s*(?:\;\;|$))+)`;
   const reOperator2 = String.raw`\{\{(.*?)\}\}`;
@@ -88,7 +88,9 @@ async function executeAwcml(config, text, configOnly = true) {
   const reOperator5 = String.raw`\~\~(.*?)\~\~`;
   const reOperator6 = String.raw`(\$\$[a-zA-Z0-9_]+)`;
   const reOperator7 = String.raw`(\^\^)`;
-  const re = new RegExp(
+  const reOperator8 = String.raw`\?\?[ \t]*([a-zA-Z0-9_]+)[ \t]*\=\=[ \t]*(\S+)$(.*?)[ \t]*\?\?\=\=`;
+
+  const reAwcml = new RegExp(
     reComment1 + "|" +
     reComment2 + "|" +
     reOperator1 + "|" +
@@ -105,8 +107,8 @@ async function executeAwcml(config, text, configOnly = true) {
 
   text = await replacePseudoAsync(
       text,
-      re,
-      async function (match, op1, args1, op2, op3, op4, op5, op6, op7) {
+      reAwcml,
+      async function (match, op1, args1, op2, op3, op4, op5, op6, op7, op8, op9, op10) {
         if (op1 !== undefined) {
           log("processing @@");
           parseEnum(config, op1, args1);
@@ -135,6 +137,28 @@ async function executeAwcml(config, text, configOnly = true) {
         }
         return "";
       }
+  );
+
+  const reAwcmlSwitch = new RegExp(reOperator8, "smg");
+
+  // TODO: Do this in a `while` loop until no more switches are found, for nested switches.
+  text = await replacePseudoAsync(
+    text,
+    reAwcmlSwitch,
+    async function (match, op8, op9, op10) {
+      if (op8 !== undefined) {
+        log("processing ??==");
+        if (config[op8] === undefined) {
+          error("??== cannot find \"" + op8 + "\"");
+        } else {
+          log("??== testing \"" + config[op8] + "\" against \"" + op9 + "\"");
+          if (config[op8] == op9) {
+            return op10;
+          }
+        }
+      }
+      return "";
+    }
   );
 
   // Unescape.
@@ -371,6 +395,13 @@ function exportConfig() {
 async function awcml() {
   try {
     await dynamicallyLoadJs("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
+    // Disable processing indents as code blocks; use ``` instead.
+    marked.use({
+      tokenizer: {
+        code() {
+        }
+      }
+    });
     for (const element of document.querySelectorAll(".awcml, script[type='text/awcml']")) {
       log("awcml <" + element.tagName.toLowerCase() + "> element");
       element.innerHTML =
