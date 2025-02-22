@@ -1,14 +1,14 @@
 {{
   __active_macro: image,
   type: ARTICLE,
-  style: TEXTBOOK,
+  style: SUBSTACK,
   author: Andrew,
-  created: "2024-12-28",
+  created: "2024-02-17",
   updated: null,
   location: "Bushwick\, Brooklyn",
-  title: "Creating depth in low-dimensional plots\, and animated anaglyphs in Mathematica (2024)",
+  title: "True depth in low-dimensional plots (2025)",
   subtitle: "",
-  summary: "I was stuck <!--trying to grasp--> on an abstract concept and thought <!--maybe--> creating a 3D visualization might help<!-- me visualize things-->. Weirdly though it didn't<!-- help-->. It turns out 3D only looks 3D when you already have an idea of what you're looking at. Our brains hallucinate \"depth\" in a 2D screen\, using familiar forms like repeated intervals and relative figures\, lighting and shading\, a common vanishing point<!--. But-->; meanwhile I was looking at something expressly unfamiliar and untethered to reality. So what techniques can bring out depth in abstract 3D forms? I came up with one and asked around online too. Someone suggested stereograms—like those Magic Eye illusions<!--. I suck at those but they-->—which in turn reminded me of those red-blue images for 3D glasses\, apparently called \"anaglyphs.\" They're surprisingly easy to generate from scratch. When a pair of red-blue glasses arrived in the mail<!--the next week-->\, it only took an hour of <!--playing-->messing around in Mathematica before Abi and I were sitting on the couch generating random 3D parametric B-splines to look at. Some of them really jumped out of the screen\, nearly touching our noses. The next challenge was to infuse the best 2D techniques I'd come across\, and then generalize from splines to surfaces. This required a completely new approach due to a rendering capability I couldn't find or emulate in Mathematica; but <!-->in the end<!--> I got there.",
+  summary: "",
   tags: ["mathematica"],
   audience: ENTHUSIAST,
   prerequisites: [],
@@ -16,18 +16,84 @@
   reward: [],
 }}
 
-[[ placeholder.png ;; 360 ]]
-
-
 ## 1. Graphs of paths
 
-<blockquote>There ain't no sin and there ain't no cos. There's just stuff graphs do.</blockquote>
+<blockquote>"There ain't no sin and there ain't no cos. There's just stuff graphs do."</blockquote>
+
+What’s a “low-dimensional” plot? I just mean 1D and 2D forms like lines and surfaces in 3D space. If you look at the curvy line below, there’s no indication that it’s even in a 3D world—it could be a scribble on paper. TODO `Dimensional` and `( ... & )`.
+
+```
+ParametricPlot3D[
+   BSplineFunction[samplePoints][t],
+   {t, 0, 1},
+   AxesOrigin -> {0, 0, 0},
+   Boxed -> False,
+   ColorFunction -> Function[{x, y, z}, Opacity[1 - y]],
+   TODO
+   PlotStyle -> Directive[Black, Dashed],
+   Ticks -> False
+]
+```
+
+[[ caption :: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica ]]
+
+## Appendix
+
+### Sample points
+
+[[ 20250209-low-dimensional-plots-010.png ]]
+
+So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica:
+
+[[ 20250209-low-dimensional-plots-020.png ]]
+
+Is it better? It seems so at first, but it’s not really. If you stare at this for a bit, you’ll find different ways this curve can “be.” For example, pretend one line is front of another. Now pretend it’s behind. This happens because there’s still no depth information. Still, the hint of a 3D world is nice, so we’ll keep at least one face grid going forward:
+
+[[ 20250209-low-dimensional-plots-030.png ]]
+
+[[ 20250209-low-dimensional-plots-040.png ]]
+
+[[ 20250209-low-dimensional-plots-050.png ]]
+
+[[ 20250209-low-dimensional-plots-060.png ]]
+
+[[ 20250209-low-dimensional-plots-070.png ]]
+
+Now we have the best of both worlds, while remaining stylistically minimal. Let’s call this the *dashed-fog* method. Here’s its code in full:
+
+[[ 20250209-low-dimensional-plots-080.png ]]
+
+[[ 20250209-low-dimensional-plots-110.gif ]]
+
+[[ 20250209-low-dimensional-plots-120.png ]]
+
+[[ 20250209-low-dimensional-plots-150.png ]]
+
+[[ 20250209-low-dimensional-plots-160.gif ]]
+
+[[ 20250209-low-dimensional-plots-170.png ]]
+
+[[ 20250209-low-dimensional-plots-180.png ]]
+
+[[ 20250209-low-dimensional-plots-190.png ]]
+
+[[ 20250209-low-dimensional-plots-200.png ]]
+
+[[ 20250209-low-dimensional-plots-210-annotated.png ]]
+
+[[ 20250209-low-dimensional-plots-220.gif ]]
+
+[[ 20250209-low-dimensional-plots-240.gif ]]
+
+
 
 
 
 
 <!--
 graveyard
+[[ placeholder.png ;; 360 ]]
+
 Graphs do different things in different places. They are depictions of relationships between quantities, like the population of rabbits and foxes. They become a kind of visual "language," expressing abstract concepts like _orthogonality_ in simplifying ways, where words only seem to proliferate technicalities. Graphs shown above are like maps of realms we don't fully understand, and want to explore and wonder about. These kinds, while all important, don't have much to do with this article.
 
 The graphs relevant to this article are the ones that are <strong>representations of physical reality</strong>, like the trajectory of a thrown ball. This feels boring in comparison. But the techniques in this article were developed for an interesting turn on "representations of reality": visualizations of 4D and 5D trajectories.
