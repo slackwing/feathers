@@ -9,5 +9,5 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 RewriteCond %{REQUEST_FILENAME}.awcml -f
-RewriteCond %{REQUEST_URI} ^(/\.staging/next|/\.staging|)/(.*)$
+RewriteCond %{REQUEST_URI} ^(/\.staging/dev|/\.staging|)/(.*)$
 RewriteRule ^ %1/index.html?page=%2 [QSA,L]
