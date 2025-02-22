@@ -153,7 +153,7 @@ body {
   }
 }
 
-main {
+main div {
 
   &.theme-first-DEFAULT {
     font-family: Times New Roman, serif;
@@ -267,11 +267,13 @@ main {
     <script type="text/awcml">
       // Page types for this theme.
       PAGE_TYPE @@ INDEX ;; ARTICLE
+      <<$$__page>>
     </script>
   </head>
   <body>
 
-    <header>
+    <header class="awcml">
+      ??type==ARTICLE
       <div class="header-container">
         <div class="header-subcontainer">
           <a href="/" class="header-link">A<span style="position: relative; top: -0.25rem;">C</span></a>
@@ -283,22 +285,24 @@ main {
             </ul>
         </div>
       </div>
+      ??==
     </header>
 
-    <main>
-      <section class="awcml">
-<<$$__page>>
-<div class="">
-  <h1>$$title</h1>
-  <blockquote class="summary">$$summary</blockquote>
-  <address>
-    <span>$$author &lt;</span>
-    <span>[[ date_fmt :: $$created ]] &lt;</span>
-    <span>$$location &lt;</span>
-  </address>
-</div>
-^^
-      </section>
+    <main class="awcml">
+      <div class="theme-first-$$style">
+        <section>
+          ??type==ARTICLE
+          <h1>$$title</h1>
+          <blockquote class="summary">$$summary</blockquote>
+          <address>
+            <span>$$author &lt;</span>
+            <span>[[ date_fmt :: $$created ]] &lt;</span>
+            <span>$$location &lt;</span>
+          </address>
+          ??==
+          ^^
+        </section>
+      </div>
     </main>
 
     <footer>
@@ -306,14 +310,6 @@ main {
 
     <!-- AWCML -->
     <script src="awcml/awcml-latest.js"></script>
-    <!-- AWCML-based Theming -->
-    <script>
-      const main = document.getElementsByTagName("main")[0];
-      main.classList = "theme-first-DEFAULT";
-      window.addEventListener("loadawcml", function() {
-        main.classList = "theme-first-" + $$style;
-      });
-    </script>
     <!-- CSS/LESS -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/less.js/4.2.1/less.min.js"
@@ -321,9 +317,9 @@ main {
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
-    <!-- Hides unstyled page until Markdown and LESS finishes processing. -->
+    <!-- Hides unstyled page until AWCML finishes processing. -->
     <script>
-      window.addEventListener("load", function () {
+      window.addEventListener("loadawcml", function() {
         document.getElementsByTagName("html")[0].style.visibility = "visible";
       });
     </script>
