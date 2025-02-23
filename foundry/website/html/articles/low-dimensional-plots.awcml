@@ -3,7 +3,7 @@
   type: ARTICLE,
   style: SUBSTACK,
   author: Andrew,
-  created: "2024-02-17",
+  created: "2024-02-23",
   updated: null,
   location: "Bushwick\, Brooklyn",
   title: "True depth in low-dimensional plots (2025)",
@@ -20,7 +20,76 @@
 
 <blockquote>"There ain't no sin and there ain't no cos. There's just stuff graphs do."</blockquote>
 
-What’s a “low-dimensional” plot? I just mean 1D and 2D forms like lines and surfaces in 3D space. If you look at the curvy line below, there’s no indication that it’s even in a 3D world—it could be a scribble on paper. TODO `Dimensional` and `( ... & )`.
+What's a "low-dimensional" plot? I just mean 1D and 2D forms like lines and surfaces in 3D space. If you look at the curvy line below, there's no indication that it's even in a 3D world--it could be a scribble on paper.
+
+[[ 20250209-low-dimensional-plots-010.png ]]
+
+So suppose we add an indication—what are called **face grids** in the program and programming language, _Mathematica_:
+
+[[ 20250209-low-dimensional-plots-020.png ]]
+
+Is it better? It seems so at first, but it's not really. If you stare at this for a bit, you'll see different ways this curve can "be." For example, pretend one line is front of another. Now pretend it's behind. This happens because there's still no depth information. Still, the hint of a 3D world is nice, so we'll keep at least one face grid going forward:
+
+[[ 20250209-low-dimensional-plots-030.png ]]
+
+Here's what the _Mathematica_ code looks like for that:
+
+```
+ParametricPlot3D[
+   BSplineFunction[samplePoints][t],
+   {t, 0, 1},
+   AxesOrigin -> {0, 0, 0},
+   Boxed -> False,
+   FaceGrids -> {{
+      {0, 0, -1},
+      {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+       {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}
+      }},
+   PlotRange -> {{0, 11}, {0, 11}, {0, 11}},
+   PlotStyle -> Directive[Black],
+   Ticks -> False
+]
+```
+
+[[ caption :: You can find the values of `samplePoints` at the bottom of this article. They were all placed in the cube between (0, 0, 0) and (10, 10, 10). The reason we set the **PlotRange** up to 11 is because <s>11 is louder than 10</s> the interpolated spline happens to stick out slightly at one of the bends. ]]
+
+Now, one common way to add a dimension to any plot is through color:
+
+[[ 20250209-low-dimensional-plots-040.png ]]
+
+Say red is farther away and violet is closer. For the first time, we know unambiguously what this curve looks like. Yet, it's a "deduced" sense; you have to think about what the colors mean to "see" what you're meant to see. Interestingly though, converting from colors to grayscale actually moves us toward a more "intuitive" sense of depth:
+
+[[ 20250209-low-dimensional-plots-050.png ]]
+
+And that's because, while we don't see things in different colors according to their distance, we do see things fade with distance, like on a foggy or rainy day.
+
+In _Mathematica_, adding colors just takes an option called **ColorFunction** that uses **Hue**:
+
+```
+ColorFunction -> Function[{x, y, z}, Hue[0.8 - y/1.25]]
+```
+
+The formula is just a way of adjusting the range of colors. As for going grayscale, one way is to use **ColorFunction** again but with **Opacity**:
+
+```
+ColorFunction -> Function[{x, y, z}, Opacity[1 - y]]
+```
+
+This was already pretty good. Still, I wondered if there wasn't more we could do. I tried another simple tweak to the options:
+
+```
+PlotStyle -> Directive[Black, Dashed]
+```
+
+[[ 20250209-low-dimensional-plots-060.png ]]
+
+What I liked about this was being able to see the dashes "bunch up" where there's actually a lot of line going on—a lot of movement in the depth direction—which colors and fog weren't able to show as precisely. On the other hand, dashes have their own weakness: When looking at the criss-crossing areas, it's hard to tell what's in front of what. Scroll further back up to see how the fog was much clearer about that.
+
+So, what if we combine the 2 techniques?
+
+[[ 20250209-low-dimensional-plots-070.png ]]
+
+Now we have the best of both worlds, while remaining stylistically minimal. Let's call this the **dashed-fog** method. Here's its code in full:
 
 ```
 ParametricPlot3D[
@@ -29,98 +98,428 @@ ParametricPlot3D[
    AxesOrigin -> {0, 0, 0},
    Boxed -> False,
    ColorFunction -> Function[{x, y, z}, Opacity[1 - y]],
-   TODO
+   FaceGrids -> {{
+      {0, 0, -1},
+      {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+       {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}
+      }},
+   PlotRange -> {{0, 11}, {0, 11}, {0, 11}},
    PlotStyle -> Directive[Black, Dashed],
    Ticks -> False
 ]
 ```
 
-[[ caption :: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica: So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica ]]
+## II. Just make the thing 3D
 
-## Appendix
-
-### Sample points
-
-[[ 20250209-low-dimensional-plots-010.png ]]
-
-So suppose we add an indication—what’s called face grids in the program and programming language, Mathematica:
-
-[[ 20250209-low-dimensional-plots-020.png ]]
-
-Is it better? It seems so at first, but it’s not really. If you stare at this for a bit, you’ll find different ways this curve can “be.” For example, pretend one line is front of another. Now pretend it’s behind. This happens because there’s still no depth information. Still, the hint of a 3D world is nice, so we’ll keep at least one face grid going forward:
-
-[[ 20250209-low-dimensional-plots-030.png ]]
-
-[[ 20250209-low-dimensional-plots-040.png ]]
-
-[[ 20250209-low-dimensional-plots-050.png ]]
-
-[[ 20250209-low-dimensional-plots-060.png ]]
-
-[[ 20250209-low-dimensional-plots-070.png ]]
-
-Now we have the best of both worlds, while remaining stylistically minimal. Let’s call this the *dashed-fog* method. Here’s its code in full:
+Sometimes it can feel like _Mathematica_ comes out-of-the-box with too much. What principles or "core" philosophy can a language have, when it appears to have first-class syntax for everything? For example, adding or tweaking just 3 lines can turn our plot into a solid material:
 
 [[ 20250209-low-dimensional-plots-080.png ]]
 
+```
+ParametricPlot3D[
+   ...
+   Lighting -> "Neutral",
+   PlotStyle -> Directive[Gray, Specularity[White, 25]]
+   ...
+] /. Line -> (Tube[#, 0.075] &)
+```
+
+[[ caption :: But it's not really "first-class syntax for everything." _Mathematica_ uses `[]` where most other programming languages use `()`, making things look stateful when they're actually functional. _Mathematica_ style also makes heavy use of operators—all catalogued on [this single reference page](https://reference.wolfram.com/language/tutorial/OperatorInputForms.html.en)—so you'll rarely see control syntax like `If` or `For`, in fact anything but what other programming languages might call identifiers, named parameters, and enums. If you're curious for example, the `/.` just means replace the `Line[…]` in the result of `ParametricPlot3D[…]` with a lambda function `( … &)` that creates a `Tube` instead, where `#` is the lambda's first argument (as opposed to `#2`, `#3`, etc.) ]]
+
+[[ vspace :: 1.5rem ]]
+
+Arguably, this is the best approach yet. It clarifies distance through a familiar experience we all have—_"shiny things under a pointed source of light"_—as opposed to fog. And it clarifies what's in front of what simply by the fact that there are now distinguishable boundaries—also thanks to the shininess. But what a complicated way to say, _"It's real now."_ We wanted to see the thing in 3D? So we made the thing 3D.
+
+Well... there's a catch. This approach always works for 1D plots, because 1D always becomes a **wire**, _i.e._ a curved surface with consistent radius, which gives our eyes a constant frame of reference. It doesn't work for arbitrary 2D forms. Secondly, it's not the easiest thing to do if you're not specifically using _Mathematica_. Thirdly, one might find this representation distracting or misleading, for example, to see _paths_ or _contour lines_ as if they were solid materials. So, the dashed-fog method is still a good fallback.
+
+There's another general class of techniques that are _also_ not applicable to every situation and also another case of _just-make-the-thing-3D_. If it's not for paper or PDF media, why not just _animate_ the plot?
+
 [[ 20250209-low-dimensional-plots-110.gif ]]
+
+[[ vspace :: 1.5rem ]]
+
+But stare at the left animation for a while. Doesn't it seem to change directions every now and then? Even despite a rotating animation, our eyes can't tell where is near and where is far, so they get confused. So here yet again the dashed-fog method (right) can help, albeit not perfectly.
+
+Here's a **ZRotateGraphics3D** function I wrote to help with the left animation:
+
+```
+ZRotateGraphics3D[graphics3d_, degrees_, {x_, y_}] :=
+  Graphics3D[
+    GeometricTransformation[
+      graphics3d[[1]],
+      Composition[
+        TranslationTransform[{x, y, 0}],
+        RotationTransform[degrees Degree, {0, 0, 1}],
+        TranslationTransform[{-x, -y, 0}]
+      ]
+    ]
+  ]
+];
+```
+
+It simply takes an already-constructed 3D graphic and rotates it by a number of degrees. To create an animation, we have to generate a series of images—or **frames**; for example, a frame for each degree of rotation from 0 to 359 to get 360 frames. **ZRotateGraphics3D** is extremely efficient at this because the graphic doesn't need to be reconstructed for each frame—we just turn the same graphic bit by bit while taking snapshots. **ParallelTable** is a nice way to do distribute a repetitive but independent set of tasks to multiple CPU cores, and finally, exporting a GIF in _Mathematica_ is a no-brainer:
+
+```
+plot = ParametricPlot3D[
+  ...
+];
+frames = ParallelTable[
+  Show[ZRotateGraphics3D[plot, degrees, {5, 5}],
+  {degrees, 0, 359, 1}
+];
+Export["test.gif", frames];
+```
+
+[[ caption :: The (5, 5) refers to where the "center axis" is that I want to rotate around. ]]
+
+However, this approach didn't quite work for the dashed-fog animation. I needed a different approach using **ZRotatePoints**, but I'll leave why for the Appendix. I just wanted to highlight **ZRotateGraphics3D** because it'll turn out to be useful for something totally different later.
+
+[[ separator-40x40.png ]]
+
+We've seen that when we can _just make things look real_, it might pay off to do so. But it doesn't work in all situations. For example, what if you _are_ creating media for print or PDF, or just prefer a static graphic? Is this the end of the road, or is there anything besides the dashed-fog method? Maybe depth-of-field blurring, or motion trails to show parallax? But as techniques I think they would have been too subtle. Recalling how color could represent depth in a "deduced" sense, are there other "deduced" senses worth looking at?
+
+## III. Peeking into the land of "deduced" methods
+
+We'll barely step our foot in the door. Let's look at colors again:
+
+[[ 20250209-low-dimensional-plots-040.png ]]
+
+Color is _not_ a spatial dimension, yes? Yet apparently it could fill in for one. It's pretty lousy at it because we have to _think_ about it, but it could. One question to ask is: Is color always this way? Well, imagine the plot above was actually a wire, or the path of some object near a heat source, and blue meant cold and red meant hot. Taking another look now, you should feel that color has a much more natural feel for representing temperature. This is because we have been influenced by the color of fire and heat-adjacent things like extinguishers and alarms, the color of the sea and hue of the winter, and depictions on the weather channel and other labels and diagrams about temperature. So we must conclude that 1) "deduced"-ness is not an either-or property, but rather a spectrum, and 2) this spectrum is a flattened measure of an overwhelmingly complex dimension: our living experience.
+
+[[ 20250209-low-dimensional-plots-dalle-1.png ]]
+
+From the vast and infinitely nuanced space of living experiences, if we're going to pull out a technique for representing something _that works the same for every individual_, then almost by definition we need to minimize there being _anything to think about as an individual_. Which, already pushes us back out to where we began: the land of _non_-deduced, "intuitive" representations.
+
+That's not exactly a proof, but I do think it's unlikely we'll find, through this door, a universal technique like the dashed-fog method. Hardly anything is as universal across human beings as the way our eyes work. It doesn't rule out there being some _strangely_ effective technique, say, particular to a certain culture of humans. But I spent weeks turning over this desert—or this barren jungle. I thought about all of our senses—heat, sound, even smell—thinking about their unique dimensionalities; I discovered that we had more senses in the realms of memory and time (and they work remarkably like the "physical" senses); I thought about alternative HCIs (human-computer interfaces) such as VR; and about culturally augmented senses like the ability to distinguish frequencies of sound as musical notes. Still, nothing felt as natural as simply the natural way we see things.
+
+So then back to our task, clarified. **Are there any other non-"deduced," print-media techniques for showing depth in low-dimensional plots?**
+
+I thought of one last.
+
+## IV. The stereoscopic anaglyph
+
+[[ 20250209-low-dimensional-plots-red-blue-glasses.png ]]
+
+Remember these? Here's another way we can _just-make-the-thing-3D_ without using an animation, though at the tradeoff of needing a pair of these glasses. (Send me your address, I'll mail you one for free.)
 
 [[ 20250209-low-dimensional-plots-120.png ]]
 
+A pair of images used to give the illusion of 3D is known as a **stereoscopic image**. When they're encoded in red and blue and overlayed for 3D glasses, they're a specific kind called **anaglyphs**.
+
+**To try to narrate for those without the glasses:** What I see with the glasses is a plot that actually pops out of my screen, loops, shoots back through the screen almost touching my window curtains, then loops around again to swoop under itself. The part that's close to me feels so much like it's there that I unconsciously tried to hook it with my right index finger and pull it like a string.
+
+**To those with the glasses:** It doesn't jump out like this for everyone immediately. Even for me, after taking a break from writing I have to acclimate to "stages" of 3D-ness, from _"sort of"_ seeing 3D, to _"that one part"_ definitely sticking out, to _"Oh cool, I see it now,"_ to _"Whoa, it's right in front of my face and I want to touch it."_
+
+And I was surprised by the outcome. I thought this technique would land somewhere better than the dashed-fog method, but worse than solid materials and animations. Instead, the feel for depth is so visceral that it blows past all of the methods, making even dashed-fog feel like a "deduced" method.
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-comparison.png ]]
+
+[[ vspace :: 1.5rem ]]
+
+I honestly wish it wasn't so good, because now I don't think people will believe me. The measure is subjective of course. I was imagining, for example, if these were showing a molecular structure—like the twisting of a chain of amino acids—how easily am I able to grasp the space and distances between different parts of the structure? I thought with the dashed-fog animation I was grasping it as well as one possibly could, but with 3D glasses, it was like a toy right in front of me that I could pick up and examine.
+
+Briefly on code before we move on. Creating this anaglyph turned out to need just one tool—a tool we'd already seen: **ZRotateGraphics3D**. This is because each part of an anaglyph—the red, the blue—is simply what something would look like _slightly_ turned toward the left eye, versus _slightly_ turned toward the right eye. So it's as easy as creating a plot in each color, rotating them slightly in opposing directions, and then overlaying the images on top of one another:
+
+```
+left = ParametricPlot3D[
+  BSplineFunction[samplePoints][t],
+  {t, 0, 1},
+  PlotStyle -> Directive[Thickness[0.001], RGBColor[1, 0.6, 0.6]]
+];
+right = ParametricPlot3D[
+  BSplineFunction[samplePoints][t],
+  {t, 0, 1},
+  PlotStyle -> Directive[Thickness[0.001], Cyan]
+];
+Show[
+  ZRotateGraphics3D[left, -4.5, {5, 5}],
+  ZRotateGraphics3D[right, 4.5, {5, 5}]
+]
+```
+
+## V. From paths to polygons
+
+We have been stuck on graphs of paths for all this time. Let's take a look at the next level of low-dimensional plots: 2D shapes. Here too, only a brief visit is necessary.
+
 [[ 20250209-low-dimensional-plots-150.png ]]
+
+It's clear what's in front of what when the shapes overlap. Elsewhere though, it's impossible to tell. Even if I were to tell you that the brown rectangle is in the _opposite_ orientation of what you think, you'd have trouble picturing it as such. So here's the plot as an animation:
 
 [[ 20250209-low-dimensional-plots-160.gif ]]
 
+Not what you saw at first, probably. Plotting 2D shapes in _Mathematica_ is pretty easy, but we'll leave that for the Appendix. Now, how do anaglyphs perform for 2D plots?
+
 [[ 20250209-low-dimensional-plots-170.png ]]
+
+I can witness for those without the glasses: They work great, but interestingly, not as great as before. I'd rank them squarely between the dashed-fog and animation methods, like my original expectations for 1D plots. I wondered why that was until I realized: For 1D plots, we never had to wonder what's "behind" anything—a line couldn't cover anything up. But for 2D plots, we only see one side of each figure. Only an animation can definitively reveal to us that there's nothing funky going on behind a figure. Which is interesting: Built also into our comprehension of depth is a sense for missing information—the depth of _things we can't even see_.
+
+A different technique was used to create this 2D anaglyph—it's worth pointing out because it enables some fun in the next section. A weakness with the previous technique, which needs to generate a red plot then a blue plot, is that it requires _knowing how to generate the plots from scratch_. For example, for 1D we'd been using a **BSplineFunction** on a known set of sample points, and for 2D also we were using **Polygons** with known vertices. But what if we're just given a **Graphics3D** object to begin with? How do we anaglyph _any_ pair of images without needing to reverse-engineer their constitution?
+
+I adapted this function from [Simon Woods' answer](https://mathematica.stackexchange.com/a/9328/6944) at the _Mathematica_ Stack Exchange:
+
+```
+RenderAnaglyphFromImages[
+  imageL_, imageR_, hOffset_, vOffset_
+] := Module[
+  {left, right, combined},
+  {left, right} = ColorConvert[#, "Grayscale"] & /@ {
+    ImagePad[imageL, {{hOffset, 0}, {0, vOffset}}, White],
+    ImagePad[imageR, {{0, hOffset}, {vOffset, 0}}, White]
+  };
+  combined = ColorCombine[{left, right, right}];
+  ImageTrim[combined, {{hOffset, vOffset}, {
+    ImageDimensions[combined][[1]] - hOffset,
+    ImageDimensions[combined][[2]] - vOffset}
+  }]
+];
+```
+
+Basically, you just convert the images to grayscale using **ColorConvert**, then use **ColorCombine** to distribute one image to the red channel, and the other image to both the green and blue channels, which is what makes the "blue" more like "cyan." I believe this to be _the_ canonical method of creating anaglyphs. Later, I added some code for adjusting the horizontal and vertical alignment of the two images, it being immensely useful for fine-tuning pairs of photographs.
+
+## VI. Epilogue: Anaglyphs in practice
+
+I took 2 photos of Abi's gardening corner, apart by roughly the distance between my eyes, and applied the same function:
 
 [[ 20250209-low-dimensional-plots-180.png ]]
 
+It came out beautifully. It looks like there's a portal on my laptop screen that I can reach into to touch the plants, especially the string of hearts and string of pearls hanging from the shelf.
+
+Before, I mentioned imagining the 1D plot as a molecular structure—a chain of amino acids. And remember me saying _Mathematica_ comes out-of-the-box with a bit too much? Well, you can literally plot a complex protein using a single command by importing the protein's structural information from a public source such as the [RCSB Protein Data Bank](https://www.rcsb.org/). Here's what the protein **1U19** looks like:
+
+```
+Import[
+  "http://www.rcsb.org/pdb/download/downloadFile.do\
+      fileFormat=pdb&structureId=1U19",
+  "PDB"
+]
+```
+
 [[ 20250209-low-dimensional-plots-190.png ]]
+
+Since this **Graphics3D** could be rotated just like any other plot we've been handling, it's easy to take a snapshot from 2 different angles and apply **RenderAnaglyphFromImages** again:
 
 [[ 20250209-low-dimensional-plots-200.png ]]
 
+I actually stopped believing my effort on this article would pay off—I thought anaglyphs only would amount to an amusing gimmick nothing more, and resigned myself to finishing writing for sake of practice. But I was delighted by this example. Viewed through the glasses, I can see numerous details in the anaglyph'ed version that I can't figure at all from the original image, even as I compare them side-by-side lifting the glasses on and off my nose. In the center peeks out a single turquoise coil (see below, green highlight)—I can see exactly how far away that is, and know even from a glimpse that this overall structure is longer in the depth direction than it is shown wide. On the right edge is a red coil (magenta highlight)—I can see that it actually protrudes quite far to the front, lining up with the front of the yellow coil near the center (cyan highlight). On the upper left is a pair of molecules (red highlight)—I can see the tiny one is actually in front of the larger one, which wasn't my first inclination. Finally on the bottom left is another pair of molecules (yellow highlight)—here too, the narrower, distant-looking molecule is actually the one in front, and is nearly touching the yellow coil to its right, which isn't what it seems like. Overall, through glasses this structure doesn't feel as dense, having been "stretched out" in the depth dimension—I can see pockets of space, even near the center of the structure.
+
 [[ 20250209-low-dimensional-plots-210-annotated.png ]]
+
+Here's a rotating version:
 
 [[ 20250209-low-dimensional-plots-220.gif ]]
 
+This actually uses an entirely new approach where the camera's **ViewPoint** is rotated rather than the object itself.
+
+```
+RenderAnaglyphByViewPoint[
+  object_, cameraAngle_, stereoSeparation_
+] := Module[
+  {left, right},
+  left = Rasterize[
+    Show[object, ViewPoint -> {
+      Cos[cameraAngle Degree - (stereoSeparation Degree)/2],
+      Sin[cameraAngle Degree - (stereoSeparation Degree)/2],
+      0
+    }, SphericalRegion -> True]
+  ];
+  right = Rasterize[
+    Show[object, ViewPoint -> {
+      Cos[cameraAngle Degree + (stereoSeparation Degree)/2],
+      Sin[cameraAngle Degree + (stereoSeparation Degree)/2],
+      0
+    }, SphericalRegion -> True]
+  ];
+  RenderAnaglyphFromImages[left, right, 0, 0]
+];
+```
+
+Finally, before we conclude, I'd be remiss to demonstrate the lowest dimension possible in an article about low-dimensional plots. A 0-dimensional plot is basically a scatterplot:
+
 [[ 20250209-low-dimensional-plots-240.gif ]]
 
+It's the least advantaged plot when it comes to showing depth, precisely because it lacks any dimension to leverage in a clever way to create the illusion of depth. For these, all other techniques fall short. Only the anaglyph gives a true sense of depth. We end with code for generating random rotating scatterplot anaglyphs like above:
+
+```
+frames = ParallelTable[
+  RenderAnaglyphByViewPoint[
+    ListPointPlot3D[
+      Table[RandomReal[{-5, 5}, 3], 25],
+      Axes -> None,
+      Boxed -> False,
+      PlotStyle -> Directive[PointSize[0.005], Black, Opacity[0.5]],
+      SphericalRegion -> True,
+    ], cameraAngleDegrees, 6, 512],
+    {cameraAngleDegrees, 0, 359, 1}
+  ];
+Export["animation.gif", frames]
+```
+
+Nothing we looked at today took more than 50 lines of code in _Mathematica_, even expanding the functions that were defined and reused.
+
+## VII. Motivation
+
+Normally one begins with this, but my motivation was a somewhat grandiose chain of tangents, and I wanted this article to stand on its own without my personal injections. Now that we're this far down though, and since the audience probably isn't a captive one, I feel at liberty to tell a story.
+
+When I was 11 or 12 I lived in semi-upstate New York and my neighbor George, a chemist, was working in his garage with the garage door open. I was passing by and we said hello and somehow we got to talking about iodine—I wanted some but I didn't know where to get it. (Around that age in elementary school we learn in science class that we can write invisible messages in lemon juice that can be revealed by droplets of iodine.) Of course, he had some. He invited me into his garage lab. It was dim and messy, but the glass and metal equipment seemed to glimmer, and stacks of books felt to me like they hid secret knowledge. He handed me a dropper of iodine and was already leading me out but I lingered. He began to pick things up and explain what they were to me. I asked about the books. He looked through a few at the top of the stack and handed me a sky bluish-grey one, saying I could keep it.
+
+This book, I never made it out of the first chapter, because I got stuck on something. I understood about protons, neutrons, and electrons, but what was up with the _**s**_, _**p**_, _**d**_, _**f**_ electron orbitals? Why these shapes? Why would electrons follow such rules? Here's a modern illustration of what I'm talking about. Depending on what "orbital" an electron is in—again, _**s**_, _**p**_, _**d**_, or _**f**_—these are the regions around an atom's nucleus that they're most likely to be found:
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-orbitals.jpg ]]
+
+[[ vspace :: 1.5rem ]]
+
+The donut ("toroid") shaped ones in the middle bothered me the most. And the book never explained, and I couldn't move on. Thinking about it again recently, I looked up "electron orbital shape" hoping finally to understand someone's modern ELI5 of it. If you try the same, be careful to avoid what's currently the 5th Google search result, a website called Energy Wave Theory, which despite its high ranking and legitimate textbook-reminiscent illustrations, is just some guy's theory—granted some guy way smarter than me—that's considered fringe. In the end I didn't find an ELI5 but I did find an answer I understood just enough to convince me that the shapes weren't arbitrary or magical:
+
+> The orbitals are solutions (also called wave functions) to the time-independent Schrödinger equation. The solutions are related to Bessel functions and Legendre polynomials.
+>
+> — @geisshirt on [Chemistry Stack Exchange](https://chemistry.stackexchange.com/a/14258/92505).
+
+I studied the Schrödinger equation briefly in my second semester of college, and I can vaguely imagine how, setting it up as an inequality at a probability threshold like 90%, a clever reorganization might allow dropping the time variable to produce essentially a region in 3D, analogous to the way we, in middle school, shaded areas below or above lines to plot inequalities in 2D. Polynomials probably come out of solving or reorganizing the differential equations.
+
+But for much of the time between 12 year old me and today year old me, I suspected another source. The electron orbital shapes reminded me of 2D cross-sections of 3D objects, some of which can come as a surprise. For example, cross-sections of a cone include a circle, ellipse, semi-circle, parabolic cutout, pie, and triangle.
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-cross-sections-3.png ]]
+
+[[ caption :: Illustration from [Byju's Math](https://byjus.com/us/math/cross-sections-of-cones/). ]]
+
+[[ vspace :: 1.5rem ]]
+
+Now make that a semi-hollow cone and you end up with a zoo of new shapes, some of them even donut-like. So I thought, what if those electron orbital shapes are themselves 3D cross-sections of some higher-dimensional object? Is there a 4D or 5D shape that can produce all of those orbitals as its cross-sections?
+
+But I didn't know how to start engineering cross-sections of shapes I couldn't even imagine. So I put a pin in that, because anyway there was another major problem: If I wanted to say, for fun, that the regions we find electrons in are actually just cross-sections of a larger 4D or 5D space they inhabit, then what does it even mean for electrons to move in 4 or 5 dimensions? Are they oscillating in time as well as space? Are we bound to neighboring universes by shared electrons? I was in prime crackpot theory territory.
+
+And as fun as it is to speculate manically, I didn't want to be another Energy Wave Theory, that fringe website I mentioned before. I felt I could easily disprove my ideas by creating simple examples that contradict reality. So I began drawing paths of electrons in higher dimensions, in pen-and-paper. To depict a 4th dimension, I had to pretend the world was 2D so I could have a spare axis. To depict a 5th dimension, I had to down-dimension even further to 1D so that I'd have 2 spare axes. The universe already in ridiculously low fidelity, I had to at least be able to perceive the "4th" and "5th" dimensions visually effortlessly, to aid the mental gymnastics I was already doing, interpreting one direction as time and another direction as parallel universes. But it wasn't working. I couldn't see _depth_ accurately enough in my pen-and-paper drawings, for the third axis to be a visual aid—I was bottlenecked having to spend part of my mental resources interpreting depth at different parts of my drawings.
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-drawing.png ]]
+
+[[ caption :: One of the drawings. ]]
+
+[[ vspace :: 1.5rem ]]
+
+I thought maybe it was my poor drawing skills. Since it was a pain anyway to draw these over and over by hand, I decided it would pay off to learn how to plot in _Mathematica_:
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-mma.png ]]
+
+[[ vspace :: 1.5rem ]]
+
+But it turned out it wasn't that. Low-dimensional plots just naturally lack depth. So what could I do to bring out depth? In an unknown landscape you can only tell what's good and what's better by surveying enough of the land. That's what drove all this work, because I felt that only the best technique—the one that consumes closest to 0% of my mental resources on having to interpret depth—was going to help me think in 5D. There was no guarantee that a 0% solution would even exist, let alone that it would involve a novelty toy like these red-blue glasses. But anaglyphs turned out to be a perfect, if surprising, solution.
+
+[[ separator-40x40.png ]]
+
+## ∞. Appendix
+
+### Sample Points
+
+```
+samplePoints = {
+  {1, 5, 6},
+  {1, 2, 4},
+  {2, 1, 7},
+  {3, 3, 3},
+  {4, 4, 7},
+  {5, 5, 8},
+  {6, 6, 5},
+  {7, 5, 3},
+  {8, 4, 2},
+  {9, 3, 3},
+  {10, 2.5, 7},
+  {8, 9, 9.5},
+  {7, 8, 9},
+  {8, 3, 7},
+  {5, 4, 1},
+  {1, 8, 10}
+};
+```
+
+### 3 Methods for Rotating Animations
+
+I came across 3 ways to create rotating animations.
+
+- **Efficient but limited.** As I explained about **ZRotateGraphics3D** before, the most efficient way is to plot once then take snapshots of the resulting graphic while rotating it. However, this didn't work with fog.
+
+- **Inefficient but generalized.** It didn't work with fog because simply rotating the pre-fogged result meant the faintest part of the plot would _stay_ faint as it rotated into the foreground, making the fog make no sense. **When the style of the plot depends on its orientation—as does depth-based colors and opacity—the only way is to regenerate the plot for every frame of rotation.** Which is wildly inefficient, but at least general. Here's the **ZRotatePoints** I used to regenerate the plot after the points themselves were rotated, allowing proper recalculation of fog:
+
+```
+ZRotatePoints[points_, degrees_, {x_, y_}] :=
+  Table[
+   Composition[
+     TranslationTransform[{x, y, 0}],
+     RotationTransform[degrees Degree, {0, 0, 1}],
+     TranslationTransform[{-x, -y, 0}]
+     ][point],
+   {point, points}
+   ];
+```
+
+- **Efficient and more general but sometimes complicated and still limited.** The third way is, instead of rotating the plot, rotating the _camera_ instead. That's what we did for the rotating protein anaglyph in **RenderAnaglyphByViewPoint**. However I could not figure out how to create a rotation starting from an arbitrary **V**iewPoint. I got messy results like below. Also, orientation-dependent effects still would require regenerating the graphic. What we really need in order to render things like fog efficiently, is access to something like a post-processing shader, closer to _Mathematica_'s graphics engine. Unfortunately there is no such support at this time.
+
+[[ vspace :: 1.5rem ]]
+
+[[ 20250209-low-dimensional-plots-viewpoint-issues.png ]]
+
+### Plotting 2D shapes
+
+It's easy to plot 2D figures in _Mathematica_. Here's the source for my shapes:
+
+```
+Graphics3D[{
+  EdgeForm[],
+  Polygon[{
+    {5, 1, 3},
+    {4.54, 1.54, 5.54},
+    {3, 9, 6},
+    {4.1248, 7.0819, 0.6400}
+  }],
+  Place3D[FilledEllipse[1.3, 1], {4.5, 1, 3}, {Pi/2.2, 0}],
+  Place3D[FilledEllipse[1/2, 2/5], {10, 3, 4}, {Pi/2.2, Pi/3}],
+  Place3D[FilledEllipse[2, 2.2], {7, 7, 8}, {0.4 Pi, 0.15 Pi}],
+  Polygon[{
+    {10.5, 0.5, 2.5},
+    {10, 0, 2},
+    {3, 10, 1},
+    {4.1562, 10.7626, 2.0173}
+  }]
+}]
+```
+
+**Place3D** and **FilledEllipse** are some helper functions I wrote:
+
+```
+Place3D[shape_, {x_, y_, z_}, {θ_, ϕ_}] :=
+  GeometricTransformation[
+    shape,
+    Composition[
+      TranslationTransform[{x, y, z}],
+      RotationTransform[θ, {1, 0, 0}],
+      RotationTransform[ϕ, {0, 1, 0}]
+    ]
+  ];
+
+FilledEllipse[r1_, r2_] :=
+  Polygon[
+    Table[
+      {r1 Cos[θ], r2 Sin[θ], 0},
+      {θ, 0, 2 Pi, 0.1}
+    ]
+  ];
+```
+
+### _Mathematica_ notebook
+
+Contact me for the full source code. I may upload the notebook to my website one day. Currently I cannot because it exceeds GitHub's file size limit.
 
 
 
 
 
-<!--
-graveyard
-[[ placeholder.png ;; 360 ]]
-
-Graphs do different things in different places. They are depictions of relationships between quantities, like the population of rabbits and foxes. They become a kind of visual "language," expressing abstract concepts like _orthogonality_ in simplifying ways, where words only seem to proliferate technicalities. Graphs shown above are like maps of realms we don't fully understand, and want to explore and wonder about. These kinds, while all important, don't have much to do with this article.
-
-The graphs relevant to this article are the ones that are <strong>representations of physical reality</strong>, like the trajectory of a thrown ball. This feels boring in comparison. But the techniques in this article were developed for an interesting turn on "representations of reality": visualizations of 4D and 5D trajectories.
-
-<strong>This article is about improving 3D graphs of 1D paths by introducing ways to realize depth that don't depend entirely on implicit rules of vision in our brains.</strong> This is unnecessary if you're just needing some pretty pictures for an article or textbook. It's also unnecessary for depictions of anything intuitive and familiar (like actual reality), because you can likely just choose a perspective that accentuates depth, and it'll make enough sense to viewers (since, again, it's intuitive and familiar). But if you're wanting to use a graph to _augment_ intuition that humans don't naturally have, then relying on the familiar to fill in an entire dimension might be a handicap if not misleading.
-
-To be honest though, I don't know. I was wanting to visualize the 3D "imprint" of electrons orbiting nuclei in 4 or 5 dimensions, especially if one or both were time dimensions (vastly complicating the role of intuition). I didn't get far enough to say whether these techniques are actually helpful or not. But in the process I developed one technique for creating interactive and animated "stereoscopic anaglyphs" (which are just those images that become 3D through red-blue glasses) in _Mathematica_ that I didn't see elsewhere. So I use that as a destination to talk about other findings and insights along the way.
-
-## 2. Common methods {...}
-
-- Graphs are really just visual aids for humans—for the human intuition. But there are different degrees and purposes of aid. 
-This article is about 2 yet other kinds of graphs. Some graphs are illustrations of physical _realities_, such as the trajectory of a ball. Some graphs are _tools_ to arrive at a visual "answer"
-This article is about graphs that are at least 2 other things. 
-They're even sometimes simply to explore and wonder (wander) _about_, like the graphs shown above. But the kind of graph 
-They might depict a relationship between 2 things, like time versus the number of foxes and rabbits, somehow making a subject easier to digest and reason about.
-Latereven become their own visual "language," able to express abstracts concepts such as orthogonality in ways that 
-endow abstract concepts such as orthogonality, 
-In grade school they try to impart a visual intuition of relationships between 2 factors, such as time and the number of trees in a forest.
-have different degrees and purposes as visual aids. 
-trajectory, model reality
-abstract concept, such as orthogonality
-map
-illustration, recall
-algebra, intersection, tool
-Graphs are often visual _aids_. They can help—in some cases _greatly_ help—someone {...} but 
-but when you're trying to do research
-When you're plotting a path—a line—in 3D, 
-But I share the techniques I've come across or developed, culminating in interactive and animated "stereoscopic anaglyphs"—which are just those images that become 3D through red-blue glasses.
--->
 

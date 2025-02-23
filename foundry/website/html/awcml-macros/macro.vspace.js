@@ -16,13 +16,7 @@
 function __define_macro() {
   return /* async */ function() {
     let config = arguments[0] ??= {};
-    let url = arguments[1] ??= "placeholder.png";
-    let width = arguments[2] ??= "640";
-    let caption = arguments[3] ??= "";
-    // TODO: Deprecate caption in favor of separate macro.
-    if (caption !== "") {
-      caption = `<p style="margin: 0; font-size: 1rem; width: ${width}px;"><span>${caption}</span></p>`;
-    }
-    return `<center><img src="/.staging/shared/assets/${url}" style="max-width: ${width}px;"/>${caption}</center>`;
+    let height = arguments[1] ??= ""
+    return `<div style="height: ${height};"></div>`;
   }
 }
