@@ -32,8 +32,9 @@
     die();
   }
 
+  $environment = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
   define("INCLUDE_HEAD", '
-    <base href="' . dirname($_SERVER['SCRIPT_NAME']) . '/" />
+    <base href="' . $environment . '/" />
     <script type="text/awcml">
       {{ __page : "' . $page . '" }}
     </script>
