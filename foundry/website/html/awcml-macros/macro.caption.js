@@ -17,6 +17,6 @@ function __define_macro() {
   return /* async */ function() {
     let config = arguments[0] ??= {};
     let body = arguments[1] ??= ""
-    return `<p class="caption">${body}</p>`;
+    return marked.parse(body).replace('<p>', '<p class="caption">');
   }
 }
