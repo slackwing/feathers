@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en" style="visibility: hidden;">
+  <head>
+    <?=INCLUDE_HEAD?>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cute+Font&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    >
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant:wght@300;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cute+Font&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+      rel="stylesheet"
+    />
+    <style type="text/less">
+
+body {
+
+  display: flex; flex-direction: column;
+  
+  color: rgb(36, 36, 36);
+
+  a { color: inherit; text-decoration: none; }
+
+  header {
+
+    font-family: 'Cute Font', sans-serif;
+
+    div.header-container {
+
+      display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 48rem;
+
+      div.header-subcontainer {
+
+        display: flex; align-items: center; justify-content: space-between;
+
+        width: 100%;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+
+        position: relative;
+
+        a.header-link {
+          font-size: 2rem;
+        }
+
+        nav {
+
+          display: flex; flex-direction: row; align-items: center; justify-content: flex-end;
+
+          ul {
+
+            display: flex;
+
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+
+            li {
+
+              display: flex; align-items: center; justify-content: center;
+
+              margin-block-end: 0.5rem;
+              margin-block-start: 0.5rem;
+              padding-inline-start: 2rem;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  main {
+
+    display: block;
+
+    section {
+
+      display: block;
+
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 48rem;
+      padding-top: 2rem;
+      padding-bottom: 1rem;
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 100;
+      }
+
+      h2 {
+        font-size: 2rem;
+        font-weight: 100;
+      }
+
+      blockquote {
+        color: rgb(108, 108, 108);
+        font-size: 1.3rem;
+        font-style: italic;
+        margin-top: 2.5rem;
+        margin-bottom: 2.5rem;
+        padding-left: 1.5rem;
+        box-shadow: inset 6px 0 0 -1px rgb(196, 0, 0);
+      }
+
+      blockquote.summary {
+        box-shadow: inset 3px 0 0 -1px rgb(108, 108, 108);
+        color: rgb(108, 108, 108);
+        font-size: 1.2rem;
+        font-style: italic;
+        line-height: 1.5;
+        padding-left: 2rem;
+        text-align: justify;
+      }
+
+      address {
+        color: rgb(140, 140, 140);
+        font-family: 'Cute Font', sans-serif;
+        font-size: 1.5rem;
+        text-align: right;
+        font-style: normal;
+        line-height: 0.6rem;
+        margin-top: -1rem;
+        margin-bottom: 3rem;
+        span:after { content: "\A"; }
+        span:last-child:after { content: ""; }
+        white-space: pre-wrap;
+      }
+    }
+  }
+}
+
+main div {
+
+  &.theme-first-DEFAULT {
+    font-family: Times New Roman, serif;
+    font-size: 1.3rem;
+    line-height: 1.75;
+  }
+
+  &.theme-first-MANUAL {
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    font-size: 1.3rem;
+    line-height: 1.75;
+  }
+
+  &.theme-first-SUBSTACK {
+    font-family: 'Spectral', serif;
+    font-size: 1.3rem;
+    line-height: 2.3rem;
+    h1, h2 {
+      font-family: 'SF Pro Display', sans-serif;
+    }
+    h2 {
+      font-weight: 600;
+    }
+    p.caption {
+      font-size: 1rem;
+      line-height: 1.75;
+      margin-left: auto;
+      margin-right: auto;
+      width: 90%;
+    }
+    code {
+       font-family: 'Source Code Pro', monospace;
+       font-size: 1.1rem;
+    }
+    pre {
+      code {
+        font-family: 'Source Code Pro', monospace;
+        font-size: 0.9rem;
+      }
+      background: #F9F9F9;
+      border: 1px solid #E5E5E5;
+      border-radius: 0.5rem;
+      line-height: 1.1;
+      overflow: auto;
+      padding: 1.5rem;
+      white-space: pre;
+    }
+  }
+
+  &.theme-first-TEXTBOOK {
+    font-family: 'Cormorant', serif;
+    font-weight: 300;
+    font-size: 1.4rem;
+    line-height: 1.75;
+  }
+
+  &.theme-first-UNUSED {
+    font-family: 'Lora', serif;
+    font-size: 1.3rem;
+    line-height: 1.58;
+  }
+
+  a { color: #3366cc; }
+  b, strong { color: rgb(0, 0, 0); font-weight: 500; }
+  code { color: #993333; font-size: 18px; }
+
+  div.admonition-block {
+    padding: 0.5rem 2rem;
+    margin-left: 4rem;
+    margin-bottom: 1rem;
+    border-left: 0.25em solid;
+  }
+
+  div.admonition-block-blue {
+    border-left-color: #0969da;
+    p.admonition-type { color: #0969da; }
+  }
+
+  div.admonition-block-green {
+    border-left-color: #1a7f37;
+    p.admonition-type { color: #1a7f37; }
+  }
+
+  div.admonition-block-purple {
+    border-left-color: #8250df;
+    p.admonition-type { color: #8250df; }
+  }
+
+  div.admonition-block-red {
+    border-left-color: #d12f24;
+    p.admonition-type { color: #d12f24; }
+  }
+
+  div.admonition-block-yellow {
+    border-left-color: #9a6700;
+    p.admonition-type { color: #9a6700; }
+  }
+
+  p.admonition-type {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: 0;
+  }
+
+  p.admonition-content {
+    font-size: 0.85em;
+  }
+}
+    </style>
+    <script type="text/awcml">
+      // Page types for this theme.
+      PAGE_TYPE @@ INDEX ;; ARTICLE
+      <<$$__page>>
+    </script>
+  </head>
+  <body>
+
+    <header class="awcml">
+      ??type==ARTICLE
+      <div class="header-container">
+        <div class="header-subcontainer">
+          <a href="/" class="header-link">A<span style="position: relative; top: -0.25rem;">C</span></a>
+          <!-- Temporarily disabled. -->
+          <nav style="display: none;">
+            <ul>
+              <li><span class="material-icons icon-shuffle" style="font-size: 1.3em">shuffle</span></li>
+              <li><span class="material-icons">search</span></li>
+              <li><span class="material-icons" style="font-size: 1.2em;">bedtime</span></li>
+            </ul>
+        </div>
+      </div>
+      ??==
+    </header>
+
+    <main class="awcml">
+      <div class="theme-first-$$style">
+        <section>
+          ??type==ARTICLE
+          <h1>$$title</h1>
+          <blockquote class="summary">$$summary</blockquote>
+          <address>
+            <span>$$author &lt;</span>
+            <span>[[ date_fmt :: $$created ]] &lt;</span>
+            <span>$$location &lt;</span>
+          </address>
+          ??==
+          ^^
+        </section>
+      </div>
+    </main>
+
+    <footer>
+    </footer>
+
+    <!-- AWCML -->
+    <script src="awcml/awcml-latest.js"></script>
+    <!-- CSS/LESS -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/less.js/4.2.1/less.min.js"
+      integrity="sha512-Sd9bkuRWrLvdJvYFD2hGxUatm0HxJy8At4kbkCgr+u4BOz35aZBlGuUrRsx13cRGKWdt8QmoJEfTlxqy9Vv4Vw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <!-- Hides unstyled page until AWCML finishes processing. -->
+    <script>
+      window.addEventListener("loadawcml", function() {
+        document.getElementsByTagName("html")[0].style.visibility = "visible";
+      });
+    </script>
+    <!-- Other. -->
+    <script>
+      <!-- TODO: Turn into extension. -->
+      window.addEventListener("load", function () {
+        const chameleon = document.querySelector(".icon-shuffle");
+        chameleon.style.transition = "color 1000ms ease";
+        setInterval(() => {
+          const r = Math.random() * 255;
+          const g = Math.random() * 255;
+          const b = Math.random() * 255;
+          chameleon.style.color = `rgb(${r}, ${g}, ${b})`;
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>

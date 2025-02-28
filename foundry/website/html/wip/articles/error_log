@@ -1,0 +1,23 @@
+[01-Oct-2023 13:41:52 UTC] PHP Warning:  include(_template.html): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:41:52 UTC] PHP Warning:  include(_template.html): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:41:52 UTC] PHP Warning:  include(): Failed opening '_template.html' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:32 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:32 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:32 UTC] PHP Warning:  include(): Failed opening '_template.php' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:33 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:33 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:33 UTC] PHP Warning:  include(): Failed opening '_template.php' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:42:41 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:42:41 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:42:41 UTC] PHP Warning:  include(): Failed opening '_template.php' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:42:55 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:42:55 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:42:55 UTC] PHP Warning:  include(): Failed opening '_template.php' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 171
+[01-Oct-2023 13:44:53 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:44:53 UTC] PHP Warning:  include(_template.php): failed to open stream: No such file or directory in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 13:44:53 UTC] PHP Warning:  include(): Failed opening '_template.php' for inclusion (include_path='.:/opt/cpanel/ea-php74/root/usr/share/pear') in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.php on line 170
+[01-Oct-2023 14:01:57 UTC] PHP Parse error:  syntax error, unexpected '<<' (T_SL) in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.html on line 2
+[01-Oct-2023 14:02:07 UTC] PHP Parse error:  syntax error, unexpected '<<' (T_SL) in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.html on line 2
+[01-Oct-2023 14:02:32 UTC] PHP Parse error:  syntax error, unexpected '<<' (T_SL) in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.html on line 3
+[01-Oct-2023 14:02:39 UTC] PHP Parse error:  syntax error, unexpected '<<' (T_SL) in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.html on line 3
+[01-Oct-2023 14:02:44 UTC] PHP Parse error:  syntax error, unexpected '<<' (T_SL) in /home/andre305/public_html/articles/quantum-mechanics-lecture-2.html on line 2
