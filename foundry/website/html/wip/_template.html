@@ -1,0 +1,495 @@
+<?php
+  if (!isset($style)) $style = 0;
+  
+  function isStaging() {
+    return strpos(
+        realpath(__DIR__),
+        DIRECTORY_SEPARATOR . '.staging' . DIRECTORY_SEPARATOR
+    ) !== false;
+  }
+
+  $ROOT_DIR = isStaging() ? '/.staging/' : '/';
+?>
+<html lang="en" style="visibility: hidden">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,minimum-scale=0.76,initial-scale=0.76,maximum-scale=0.76"
+    />
+    <title><?php echo $title; ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant:wght@300;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+          displayMath: [["$$", "$$"]],
+        },
+        chtml: {
+          scale: 1.2,
+        },
+        svg: {
+          scale: 1.2,
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <style type="text/less">
+      body {
+        color: rgb(36, 36, 36);
+
+        <?php if ($style == 0) { ?>
+        
+          font-family: Helvetica, Arial, sans-serif;
+          font-weight: 300;
+          font-size: 21px;
+          line-height: 1.75;
+          b, strong {
+            color: rgb(0, 0, 0);
+            font-weight: 500;
+          }
+          
+        <?php } else if ($style == 1) { ?>
+
+          font-family: "Cormorant", serif;
+          font-weight: 300;
+          font-size: 23px;
+          line-height: 1.75;
+
+          @font-face {
+            font-family: 'Korean Custom';
+            src: local('나눔명조'), local('NanumMyeongjo'), local('Nanum Myeongjo');
+            unicode-range: U+3131-314E, U+AC00-D7A3;
+          }
+
+        <?php } else if ($style == 2) { ?>
+
+          font-family: 'Lora', serif;
+          font-size: 21px;
+          line-height: 1.58;
+
+        <?php } ?>
+
+        span[lang="ko"] {
+          font-family: 'Korean Custom';
+          font-size: 0.8em;
+        }
+
+        #container {
+          max-width: 740px;
+          margin: auto;
+
+          #header {
+            font-family: Helvetica, Arial, sans-serif;
+
+            #navigation {
+              text-transform: uppercase;
+              font-size: 18px;
+
+              a {
+                color: rgb(108, 108, 108);
+                text-decoration: none;
+              }
+            }
+
+            #title h1 {
+              font-size: 36px;
+              font-weight: 100;
+            }
+          }
+
+          #undertitle {
+            h2 {
+              margin-top: 43px;
+              font-family: Helvetica, Arial, sans-serif;
+              font-size: 29px;
+              font-weight: 100;
+            }
+          }
+
+          #metadata {
+            font-size: 14px;
+
+            #author-name {
+              font-size: 16px;
+            }
+
+            #author-email a {
+              font-size: 16px;
+              color: #1a8917;
+            }
+
+            #article-version,
+            #article-published,
+            #article-updated {
+              color: rgb(108, 108, 108);
+            }
+          }
+
+          #content {
+            .intro {
+              font-family: Helvetica, Arial, sans-serif;
+              font-size: 21px;
+            }
+
+            h2 {
+              margin-top: 43px;
+              font-family: Helvetica, Arial, sans-serif;
+              font-size: 29px;
+              font-weight: 100;
+            }
+
+            blockquote {
+              color: rgb(108, 108, 108);
+              font-size: 21px;
+              padding-left: 23px;
+              box-shadow: inset 3px 0 0 -1px rgb(108, 108, 108);
+            }
+
+            .declaration {
+              /* These are copied from the computed properties of <blockquote>. */
+              display: block;
+              margin-block-start: 1em;
+              margin-block-end: 1em;
+              margin-inline-start: 40px;
+              margin-inline-end: 40px;
+              /* These are custom. */
+              color: rgb(36, 36, 36);
+              font-size: 21px;
+              padding: 1px 33px 21px 33px;
+              box-shadow: inset 3px 0 0 0 rgb(108, 108, 108);
+              background-color: #e5e5e5;
+
+              p.declaration-type {
+                font-weight: bold;
+                font-size: 17px;
+                color: rgb(144, 144, 144);
+              }
+            }
+
+            .declaration-old {
+              /* These are copied from the computed properties of <blockquote>. */
+              display: block;
+              margin-block-start: 1em;
+              margin-block-end: 1em;
+              margin-inline-start: 40px;
+              margin-inline-end: 40px;
+              /* These are custom. */
+              color: rgb(36, 36, 36);
+              font-size: 21px;
+              padding-left: 23px;
+              box-shadow: inset 3px 0 0 0 rgb(36, 36, 36);
+              font-weight: bold;
+            }
+
+            .wip {
+              font-family: Helvetica, Arial, sans-serif;
+              font-size: 16px;
+              color: rgb(0, 128, 0);
+            }
+
+            .references {
+              font-family: Helvetica, Arial, sans-serif;
+              font-size: 16px;
+            }
+
+            div.admonition-block {
+              padding: 0.5rem 2rem;
+              margin-left: 4rem;
+              margin-bottom: 1rem;
+              border-left: 0.25em solid;
+            }
+
+            div.admonition-block-blue {
+              border-left-color: #0969da;
+              p.admonition-type { color: #0969da; }
+            }
+
+            div.admonition-block-green {
+              border-left-color: #1a7f37;
+              p.admonition-type { color: #1a7f37; }
+            }
+
+            div.admonition-block-purple {
+              border-left-color: #8250df;
+              p.admonition-type { color: #8250df; }
+            }
+
+            div.admonition-block-red {
+              border-left-color: #d12f24;
+              p.admonition-type { color: #d12f24; }
+            }
+
+            div.admonition-block-yellow {
+              border-left-color: #9a6700;
+              p.admonition-type { color: #9a6700; }
+            }
+
+            p.admonition-type {
+              font-size: 0.9em;
+              font-weight: 600;
+              margin-top: 0;
+            }
+
+            p.admonition-content {
+              font-size: 0.85em;
+            }
+          }
+        }
+      }
+
+      a {
+        color: #3366cc;
+        text-decoration: none;
+      }
+
+      /* pre {
+        padding: 32px;
+        overflow: auto;
+        border-radius: 4px;
+        background: #F9F9F9;
+        border: 1px solid #E5E5E5;
+        white-space: pre;
+        font-size: 14px;
+      } */
+
+      pre {
+        /* padding: 32px; */
+        overflow: auto;
+        border: 1px solid #e5e5e5;
+        white-space: pre;
+        font-size: 12px;
+      }
+
+      /* Markdown's grave tick styling: */
+      code {
+        color: #993333;
+        font-size: 18px;
+      }
+
+      /* https://stackoverflow.com/a/41566570/925913 */
+      .cryptedmail:after {
+        content: attr(data-name) "@" attr(data-domain) "." attr(data-tld);
+      }
+
+      /* mjx-math {
+        font-size: 1.2em !important;
+        font-size: 120% !important;
+        font-size: 23px !important;
+      } */
+
+      .modal-opener {
+        cursor: pointer;
+      }
+
+      .modal {
+        z-index: 10;
+        display: none;
+        padding-top: 100px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-content {
+        z-index: 20;
+        margin: auto;
+        background-color: #fff;
+        position: relative;
+        padding: 0;
+        outline: 0;
+        width: 900px;
+      }
+
+      .journal {
+        /* border-image: conic-gradient(#fff6e6 0 0) fill 0/0/0 100vw; */ /* sunny */
+        /* border-image: conic-gradient(#ecf6ef 0 0) fill 0/0/0 100vw; */ /* mint */
+        border-image: conic-gradient(#e3ecf3 0 0) fill 0/0/0 100vw; /* cloudy */
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .highlight {
+        background-color: #fff6e6;
+      }
+
+      img {
+        width: 80%;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      img.border {
+        border: solid 1px #eeeeee;
+      }
+
+      img.mma {
+        padding: 16px;
+      }
+
+      img.mma50 {
+        padding: 16px;
+        width: 40%;
+      }
+
+      div.double-img {
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 16px;
+        width: 80%;
+        border: solid 1px #eeeeee;
+        img {
+          border: none;
+          display: inline;
+          margin: 0;
+          width: 50%;
+        }
+      }
+    </style>
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/atelier-lakeside-light.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/atelier-savanna-light.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/harmonic16-light.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/horizon-light.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/phd.min.css"> -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/unikitty-light.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/mathematica.min.js"></script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </head>
+  <body>
+    <div id="container">
+      <div id="header">
+        <div id="navigation" style="margin-bottom: 30px">
+          <a href="/">Index</a>
+        </div>
+        <div id="title">
+          <h1><?php echo $title; ?></h1>
+        </div>
+        <div id="undertitle"><?php echo $undertitle; ?></div>
+      </div>
+      <article id="content"><?php echo $content; ?></article>
+    </div>
+    <!-- Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      var content = document.getElementById("content");
+      content.innerHTML = marked.parse(content.innerHTML);
+    </script>
+    <!-- CSS/LESS -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/less.js/4.2.0/less.min.js"
+      integrity="sha512-y2WgniVReZzVhOotEigpCJTu6Q6yGN0o8ezFzgS21PlWM1rqfSv7UPraV+IEDO9ljsli47Kr/toVOsukTVynuw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <!-- Hides unstyled page until Markdown and LESS finishes processing. -->
+    <script>
+      window.addEventListener("load", function () {
+        document.getElementsByTagName("html")[0].style.visibility = "visible";
+      });
+    </script>
+    <script>
+      window.onload = function () {
+
+        let elements = Array.prototype.slice.call(
+          document.querySelectorAll("p, h1, h2, h3, h4, h5, h6"),
+        );
+        elements.forEach(function (el) {
+
+          /* Custom quick-coloring syntax. */
+          el.innerHTML = el.innerHTML.replace(/%%(.*?)%%/g, '<span style="color: red">$1</span>');
+
+          /* Custom quick-image syntax. */
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[(?![=])(.*?)\]\]/g,
+            '<center><img src="<?=$ROOT_DIR?>shared/assets/placeholder.png" style="width:300px"/><p style="width:500px"><span style="color: green">[Image: $1]</span></p></center>',
+          );
+          el.innerHTML = el.innerHTML.replace(
+            /\[\[=(.*?):(\d+)(;border)?\]\]/g,
+            function(match, c1, c2, c3) {
+              return '<center><img src="<?=$ROOT_DIR?>shared/assets/'
+                  + c1
+                  + '" style="width:'
+                  + c2
+                  + 'px;"'
+                  + (c3 ? ' class="border"' : '')
+                  + '/></center>';
+            }
+          );
+
+          /* Custom Markdown admonitions syntax. */
+          /* Styling reference: https://github.com/sinsukehlab/NOTE-test/blob/main/NOTE.md. */
+          el.innerHTML = el.innerHTML.replace(
+            /!!!\s*(Note|Tip|Important|Troubleshooting|Caution|Warning|(?:[^\n]+))\s+([^\n]+)/g,
+            function(match, type, content) {
+              let color;
+              switch (type) {
+                case "Tip":
+                  color = "green";
+                  break;
+                case "Important":
+                case "Troubleshooting":
+                  color = "yellow";
+                  break;
+                case "Caution":
+                case "Warning":
+                  color = "red";
+                  break;
+                case "Note":
+                default:
+                  color = "blue";
+                  break;
+              }
+              return '<div class="admonition-block admonition-block-' + color + '">'
+                + '<p class="admonition-type">' + type + '</p>'
+                + '<p class="admonition-content">' + content + '</p>'
+                + '</div>';
+            });
+        });
+
+        <!-- Hand-written Modals -->
+        var openers = document.getElementsByClassName("modal-opener");
+        for (var i = 0; i < openers.length; i++) {
+          var opener = openers[i];
+          opener.onclick = function () {
+            var id = this.getAttribute("data-modal-id");
+            document.getElementById(id).style.display = "block";
+          };
+        }
+        var modals = document.getElementsByClassName("modal");
+        for (var i = 0; i < modals.length; i++) {
+          var modal = modals[i];
+          modal.onclick = function () {
+            if (event.target == this) {
+              this.style.display = "none";
+            }
+          };
+        }
+      };
+    </script>
+  </body>
+</html>

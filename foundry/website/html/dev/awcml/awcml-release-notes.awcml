@@ -1,0 +1,18 @@
+0.5.0 (WIP)
+> Support $$ in JS.
+> Support for loadawcml event.
+> Support for escapes (e.g. code blocks).
+> Support numbers in informal JSON. *TODO*
+* Rename main() and awcml() to avoid common name clashes.
+
+0.4.1
+> Support escaped jsonChars in configs.
+> Support $$ in [[]] macros.
+* Added hint().
+
+0.4.0
+> Support for <<>> includes using ^^ for recall.
+> Support for $$ config interpolations.
+> Fix async replacement to pseudo-async.
+> Had brunch with Abi.
+* Refactor triple-underscore prefixes to double-underscore.

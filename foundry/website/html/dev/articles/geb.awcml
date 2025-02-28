@@ -1,0 +1,13 @@
+{{
+  type: ARTICLE,
+  style: TEXTBOOK,
+  published: "2024-12-01",
+  updated: null,
+  title: "A novel way to teach the proof that not everything can be proved",
+  subtitle: "Reworking Hofstadter's presentation of Godel's incompleteness theorem",
+  tags: ["math", "philosophy"],
+  audience: ANYONE,
+  prerequisites: [],
+  willingness: [MULTIPLE_SESSIONS, ABSTRACT_THINKING, MULTIPLE_ATTEMPTS],
+  reward: [MINDBLOWN, WONDERMENT, ACCOMPLISHMENT],
+}}

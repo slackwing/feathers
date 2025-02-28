@@ -1,0 +1,13 @@
+# Rewrite all requests to index.html in the root directory, temporarily /next/.
+# Copy this block into any subdirectory to actually be handled by this index.html.
+RewriteEngine On
+
+# So that "foo" doesn't "exist" when in reality only "foo.awcml" exists.
+Options -MultiViews
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_FILENAME}.awcml -f
+RewriteCond %{REQUEST_URI} ^(/\.staging/dev|/\.staging|)/(.*)$
+RewriteRule ^ %1/index.html?page=%2 [QSA,L]

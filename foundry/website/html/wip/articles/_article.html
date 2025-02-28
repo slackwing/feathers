@@ -1,0 +1,48 @@
+<?php
+
+$undertitle = <<<'HEREDOC'
+
+<div id="metadata" style="
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    grid-template-rows: 1fr 1fr;
+    column-gap: 10px;
+    margin-bottom: 60px;">
+  <div style="grid-column: 1; grid-row: 1 / 3;">
+    <span id="author-avatar">
+      <img
+          src="avatar.png"
+          width="44"
+          height="44"
+          style="border-radius: 50%;"/>
+    </span>
+  </div>
+  <div style="grid-column: 2; grid-row: 1;">
+    <span id="author-name">Andrew Cheong</span>
+    ·
+    <span id="author-email">
+      <!-- https://stackoverflow.com/a/41566570/925913 -->
+      <a
+        href="#"
+        class="cryptedmail"
+        data-name="acheong87"
+        data-domain="gmail"
+        data-tld="com"
+        onclick="window.location.href = 'mailto:'
+                                        + this.dataset.name
+                                        + '@'
+                                        + this.dataset.domain
+                                        + '.'
+                                        + this.dataset.tld; return false;"></a>
+    </span>
+  </div>
+  <div style="grid-column: 2; grid-row: 2;">
+    <span id="article-version">Version <?php echo $version; ?></span>
+    ·
+    <span id="article-published">Published <?php echo $published; ?></span>
+    ·
+    <span id="article-updated">Last Updated <?php echo $updated; ?></span>
+  </div>
+</div>
+
+HEREDOC; include '../shared/_template.html'; ?>
