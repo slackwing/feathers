@@ -1,0 +1,57 @@
+{{
+  __active_macro: algo_journal.entry,
+  type: JOURNAL,
+  style: JOURNAL,
+  author: Andrew,
+  created: "2025-04-01",
+  updated: null,
+  location: "Bushwick\, Brooklyn",
+  title: "Algorithmic Trading in the Age of AI",
+  subtitle: "",
+  summary: "",
+  tags: ["todo"],
+  audience: TODO,
+  prerequisites: [],
+  willingness: [],
+  reward: [],
+}}
+
+[[ 2025-03-16 ;;
+
+_Steve:_ Mark W. is my best friend from college who I tried to get into algorithmic trading with, more than 10 years ago. _Mark:_ Steve C. is a former colleague and close friend who's been leading my book club since I went offline in 2018 and continues to today; about 6 months ago he initiated working on a startup with me. AI has changed the playing field in a way that may affects all of us, and I want to speak to both of you about how and what is now possible.
+
+_Mark:_ We knew so little when we began. In 2013, market data was prohibitively expensive, APIs weren't prevalent, cloud computing wasn't mature, equities were our only option (despite the saturated market, colocated hedgefunds, etc.), we had too little capital to survive volatility inherent to the risk we _needed_ to generate any worthwhile profit, and we didn't realize that to accept _any_ outside funds (even from friends) we'd need to set up legal structures and relationships with brokers and submit regulatory filings.
+
+_Steve:_ The path we currently are taking—planning, storyboarding, prototyping, iterating, funding—I believe is already an outdated mode of thinking that is doomed to fail, and all our effort will be wasted. {...}
+
+{...}
+
+- AI is _good_ for the overwhelming tasks of the past.
+
+I don't know how long I'll have to dive into this before I'm sure enough to bring up the idea, if ever. But if it does happen, I want to pitch it to both of you, the only 2 people I know that I want to—and feel safe attempting to—start a business with. I would also then like you to be able to retrace the steps I've taken—"be there" with me from the beginning, in a way—so that's what this journal's for. Only these green sections are for you—the rest are notes you can skip over or look at if you're curious.
+
+]]
+
+![Static Badge](https://img.shields.io/badge/action-defer-blue) _Andrew:_ Transcribe notes from "Algorithmic Trading in 2025" to here.
+
+[[ 2025-03-30 ;; TODO ]]
+
+<div class="todo-prompt">
+
+I want to generate passive income by developing a mostly autonomous trading system. I would like you to guide me on the choice of security (e.g. stocks, options, futures, FX, bonds, crypto), exchange(s) (e.g. NYSE, Coinbase, Binance), API(s), trading strategies, algorithm development and backtesting strategies, and infrastructure, based on the parameters I'm about to give you.
+
+[[ show-more :: ;;
+
+First, I want the feedback loop of strategies—the time it takes to set up for a strategy, run the strategy, and finish and evaluate the strategy—to lie somewhere in the order of days to weeks, rather than months to years. This is to give me the opportunity to pivot multiple times a year if I feel that a strategy isn't ideal or I come across new ideas.
+
+Second, I want the strategy to be testable with live data (paper trading). Ideally the data would be free, but I would entertain a reasonable cost. Ideally the paper trading would execute on the actual exchange we plan to use, i.e. on a "native" paper trading mirror of the exchange if such exists, but I would entertain an exchange-less, self-hosted system that relies on feeds and calculates profits.
+
+Third, on trading strategies, I would like you to give me an overview of all kinds (e.g. market-making, directional trends, HFT, DeFi yield, etc.) that would be realistic with a personal fund of $100,000, and the risks and pros and cons of each.
+
+Fourth, assume that I am technologically proficient. For example, I can write software in C++ and many other languages, run virtual machines on Google Cloud Platform, set up build and deployment chains, etc. Assume that I am mathematically inclined but not proficient, i.e. I will probably not be able to understand differential equations in financial calculus. ]]
+
+</div>
+
+[[ 2025-04-01 ;; ]]
+
+Test

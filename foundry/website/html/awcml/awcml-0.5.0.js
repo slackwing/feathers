@@ -277,7 +277,7 @@ async function parseMacro(config, input, asyncInstances) {
   indent();
   debug("raw macro input:\n" + input);
   // e.g. [[>> common/utils :: someMacro ;; arg1 ;; arg2 ;; arg3 ]]
-  let match = input.match(/^\s*(>>|&gt;&gt;)?\s*(?:([a-zA-Z0-9_-]+)\s*::)?\s*(.+?)\s*$/);
+  let match = input.match(/^\s*(>>|&gt;&gt;)?\s*(?:([a-zA-Z0-9_-]+)\s*::)?\s*(.+)\s*$/sm);
   if (match === null) {
     error("invalid syntax in macro");
     return "";

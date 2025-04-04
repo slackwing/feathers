@@ -16,21 +16,32 @@
 function __define_macro() {
   return /* async */ function() {
     let config = arguments[0] ??= {};
-    let YYYY_MM_DD = arguments[1] ??= "2024-12-31";
-    return formatDate(YYYY_MM_DD);
+    let date = arguments[1] ??= "1987-11-29";
+    let letter = arguments[2] ??= "";
+    if (letter !== "") {
+      letter = `<div class="colored-band-mint">${letter}</div>`;
+    }
+    return `<h2>${formatDate(date)}</h2>${letter}`;
   }
 }
 
 // via ChatGPT
 function formatDate(isoString) {
-  const date = new Date(isoString);
+  // https://stackoverflow.com/a/563442/925913
+  Date.prototype.addDays = function(days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+  }
+  const date = new Date(isoString).addDays(1); // Not sure why this is needed.
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
   const year = date.getFullYear();
   const month = months[date.getMonth()];
   const day = date.getDate();
+  const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
   function getOrdinalSuffix(d) {
     if (d >= 11 && d <= 13) {
       return 'th';
@@ -46,6 +57,5 @@ function formatDate(isoString) {
         return 'th';
     }
   }
-  return `${year} ${month} ${day}`;
-  // return `${year} ${month} ${day}${getOrdinalSuffix(day)}`;
+  return `${dayOfWeek}, ${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
 }

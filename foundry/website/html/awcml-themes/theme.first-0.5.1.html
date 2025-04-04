@@ -116,7 +116,6 @@ body {
         font-weight: 100;
       }
 
-      /*
       blockquote {
         color: rgb(108, 108, 108);
         font-size: 1.3rem;
@@ -126,6 +125,7 @@ body {
         padding-left: 1.5rem;
         box-shadow: inset 6px 0 0 -1px rgb(196, 0, 0);
       }
+
       blockquote.summary {
         box-shadow: inset 3px 0 0 -1px rgb(108, 108, 108);
         color: rgb(108, 108, 108);
@@ -135,7 +135,6 @@ body {
         padding-left: 2rem;
         text-align: justify;
       }
-      */
 
       address {
         color: rgb(140, 140, 140);
@@ -217,67 +216,6 @@ main div {
     line-height: 1.75;
   }
 
-  &.theme-first-JOURNAL {
-    font-family: Times New Roman, serif;
-    font-size: 1.3rem;
-    line-height: 1.75;
-    blockquote.summary {
-      color: rgb(108, 108, 108);
-    }
-    h2 {
-      color: #666666;
-      font-size: 1.5rem;
-      font-weight: 500;
-      margin-top: 5rem;
-      text-align: right;
-    }
-    div.colored-band-mint {
-      /* border-image: conic-gradient(#fff6e6 0 0) fill 0/0/0 100vw; */ /* sunny */
-      border-image: conic-gradient(#ecf6ef 0 0) fill 0/0/0 100vw; /* mint */
-      /* border-image: conic-gradient(#e3ecf3 0 0) fill 0/0/0 100vw; */ /* cloudy */
-      padding-top: 1.5rem;
-      padding-bottom: 1rem;
-    }
-    img[alt="Static Badge"] {
-      vertical-align: text-bottom;
-    }
-    .todo-prompt {
-      background-color: #f9f9f9;
-      border: 1px solid #e5e5e5;
-      border-radius: 0.5rem;
-      font-family: JetBrains Mono, monospace;
-      font-size: 1rem;
-      line-height: 1.5rem;
-      margin-top: 1rem;
-      padding: 1.5rem;
-    }
-    .awcml-macro-show-more-hidden, .awcml-macro-show-more-toggle {
-      display: none;
-    }
-    .awcml-macro-show-more-toggle:checked ~ .awcml-macro-show-more-hidden {
-      display: block;
-    }
-    .awcml-macro-show-more-toggle ~ label {
-      display: block;
-      border: 1px solid #e5e5e5;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      text-align: center;
-    }
-    .awcml-macro-show-more-toggle:not(:checked) ~ label.show {
-      display: block;
-    }
-    .awcml-macro-show-more-toggle:checked ~ label.show {
-      display: none;
-    }
-    .awcml-macro-show-more-toggle:not(:checked) ~ label.hide {
-      display: none;
-    }
-    .awcml-macro-show-more-toggle:checked ~ label.hide {
-      display: block;
-    }
-  }
-
   &.theme-first-UNUSED {
     font-family: 'Lora', serif;
     font-size: 1.3rem;
@@ -332,7 +270,7 @@ main div {
     </style>
     <script type="text/awcml">
       // Page types for this theme.
-      PAGE_TYPE @@ INDEX ;; ARTICLE ;; JOURNAL
+      PAGE_TYPE @@ INDEX ;; ARTICLE
       <<$$__page>>
     </script>
   </head>
@@ -340,20 +278,6 @@ main div {
 
     <header class="awcml">
       ??type==ARTICLE
-      <div class="header-container">
-        <div class="header-subcontainer">
-          <a href="/" class="header-link">A<span style="position: relative; top: -0.25rem;">C</span></a>
-          <!-- Temporarily disabled. -->
-          <nav style="display: none;">
-            <ul>
-              <li><span class="material-icons icon-shuffle" style="font-size: 1.3em">shuffle</span></li>
-              <li><span class="material-icons">search</span></li>
-              <li><span class="material-icons" style="font-size: 1.2em;">bedtime</span></li>
-            </ul>
-        </div>
-      </div>
-      ??==
-      ??type==JOURNAL
       <div class="header-container">
         <div class="header-subcontainer">
           <a href="/" class="header-link">A<span style="position: relative; top: -0.25rem;">C</span></a>
@@ -380,10 +304,6 @@ main div {
             <span>[[ date_fmt :: $$created ]] &lt;</span>
             <span>$$location &lt;</span>
           </address>
-          ??==
-          ??type==JOURNAL
-          <h1>$$title</h1>
-          <blockquote class="summary">$$summary</blockquote>
           ??==
           ^^
         </section>

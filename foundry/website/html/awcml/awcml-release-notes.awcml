@@ -1,10 +1,13 @@
-0.5.0 (WIP)
+0.5.1 (WIP)
+> Support numbers in informal JSON. *TODO*
+
+0.5.0
 > Support $$ in JS.
 > Support for loadawcml event.
 > Support for escapes (e.g. code blocks).
 > Support for ??== switches.
-> Support numbers in informal JSON. *TODO*
 > Disable marked.js from processing indents as code blocks.
+> Multi-line macro arguments.
 * Rename main() and awcml() to avoid common name clashes.
 
 0.4.1
