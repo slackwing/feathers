@@ -3,80 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coinbase WebSocket Demo</title>
+    <title>Coinbase Order Book Comparison</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
         }
         .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        h1 {
-            color: #333;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
         }
-        #messages {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            height: 1800px;
-            overflow-y: auto;
+        .order-books {
+            display: flex;
+            gap: 20px;
         }
-        .message {
+        .order-book {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .order-book h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+        }
+        .order-book table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .order-book th {
+            background-color: #f8f9fa;
+            padding: 10px;
+            text-align: right;
+            font-weight: bold;
+        }
+        .order-book td {
+            padding: 8px;
+            text-align: right;
+            font-family: monospace;
+        }
+        .bids {
+            color: #28a745;
+        }
+        .asks {
+            color: #dc3545;
+        }
+        .spread {
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c82333;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
             margin-bottom: 10px;
             padding: 10px;
-            border-bottom: 1px solid #dee2e6;
+            border-radius: 4px;
+            text-align: center;
         }
-        .message:last-child {
-            border-bottom: none;
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
         }
-        .message-count {
-            font-weight: bold;
-            color: #007bff;
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
         }
-        pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .debug-section {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            resize: vertical;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Coinbase WebSocket Messages</h1>
-        <div id="messages"></div>
+        <div class="header">
+            <h1>Coinbase Order Book Comparison</h1>
+            <button id="stopButton" disabled>Stop Feeds</button>
+        </div>
+        <div id="status" class="status disconnected">Disconnected</div>
+        <div class="order-books">
+            <div class="order-book">
+                <h2>Level 2 Order Book</h2>
+                <div id="level2Spread" class="spread">Spread: -</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Price</th>
+                            <th>Size</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="level2Asks"></tbody>
+                    <tbody id="level2Bids"></tbody>
+                </table>
+                <div class="debug-section">
+                    <h3>Debug Messages (Level 2)</h3>
+                    <textarea id="level2Debug" readonly></textarea>
+                </div>
+            </div>
+            <div class="order-book">
+                <h2>Level 3 Order Book</h2>
+                <div id="level3Spread" class="spread">Spread: -</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Price</th>
+                            <th>Size</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="level3Asks"></tbody>
+                    <tbody id="level3Bids"></tbody>
+                </table>
+                <div class="debug-section">
+                    <h3>Debug Messages (Level 3)</h3>
+                    <textarea id="level3Debug" readonly></textarea>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const messagesDiv = document.getElementById('messages');
         const ws = new WebSocket(`ws://${window.location.host}`);
+        const stopButton = document.getElementById('stopButton');
+        const statusDiv = document.getElementById('status');
+        const level2Debug = document.getElementById('level2Debug');
+        const level3Debug = document.getElementById('level3Debug');
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message';
-            messageElement.innerHTML = `
-                <span class="message-count">Message ${data.count}:</span>
-                <pre>${JSON.stringify(data.data, null, 2)}</pre>
-            `;
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        };
+        function formatNumber(num) {
+            return parseFloat(num).toFixed(8);
+        }
 
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+        function calculateTotal(price, size) {
+            return (parseFloat(price) * parseFloat(size)).toFixed(2);
+        }
+
+        function updateOrderBook(level, data) {
+            console.log(`Updating ${level} order book:`, data);
+            const asksTbody = document.getElementById(`${level}Asks`);
+            const bidsTbody = document.getElementById(`${level}Bids`);
+            const spreadDiv = document.getElementById(`${level}Spread`);
+
+            // Clear existing rows
+            asksTbody.innerHTML = '';
+            bidsTbody.innerHTML = '';
+
+            // Update asks
+            data.asks.forEach(([price, size]) => {
+                const row = document.createElement('tr');
+                row.className = 'asks';
+                row.innerHTML = `
+                    <td>${formatNumber(price)}</td>
+                    <td>${formatNumber(size)}</td>
+                    <td>${calculateTotal(price, size)}</td>
+                `;
+                asksTbody.appendChild(row);
+            });
+
+            // Update bids
+            data.bids.forEach(([price, size]) => {
+                const row = document.createElement('tr');
+                row.className = 'bids';
+                row.innerHTML = `
+                    <td>${formatNumber(price)}</td>
+                    <td>${formatNumber(size)}</td>
+                    <td>${calculateTotal(price, size)}</td>
+                `;
+                bidsTbody.appendChild(row);
+            });
+
+            // Update spread
+            if (data.asks.length > 0 && data.bids.length > 0) {
+                const bestAsk = parseFloat(data.asks[0][0]);
+                const bestBid = parseFloat(data.bids[0][0]);
+                const spread = (bestAsk - bestBid).toFixed(2);
+                spreadDiv.textContent = `Spread: ${spread}`;
+            }
+        }
+
+        function appendDebugMessage(level, message) {
+            const textarea = level === 'level2' ? level2Debug : level3Debug;
+            const timestamp = new Date().toISOString();
+            textarea.value += `[${timestamp}] ${JSON.stringify(message, null, 2)}\n`;
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            statusDiv.textContent = 'Connected';
+            statusDiv.className = 'status connected';
+            stopButton.disabled = false;
         };
 
         ws.onclose = () => {
-            console.log('WebSocket connection closed');
+            console.log('WebSocket disconnected');
+            statusDiv.textContent = 'Disconnected';
+            statusDiv.className = 'status disconnected';
+            stopButton.disabled = true;
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received message:', data);
+
+            if (data.type === 'debug_message') {
+                appendDebugMessage(data.level, data.message);
+            } else if (data.type === 'orderbook_update') {
+                updateOrderBook('level2', data.level2);
+                updateOrderBook('level3', data.level3);
+            }
+        };
+
+        stopButton.onclick = () => {
+            console.log('Stopping feeds');
+            ws.send(JSON.stringify({ type: 'stop' }));
+            stopButton.disabled = true;
         };
     </script>
 </body>
