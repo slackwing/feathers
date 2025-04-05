@@ -21,7 +21,7 @@ const server = app.listen(port, () => {
 // WebSocket server for client connections
 const wss = new WebSocket.Server({ server });
 
-// Coinbase Advanced Trade WebSocket configuration
+// Coinbase WebSocket configuration
 const WS_API_URL = "wss://advanced-trade-ws.coinbase.com";
 
 // Handle client WebSocket connections
@@ -30,59 +30,50 @@ wss.on('connection', (ws) => {
 
     // Connect to Coinbase WebSocket
     const coinbaseWs = new WebSocket(WS_API_URL);
-    let messageCount = 0;
-    let heartbeatInterval;
+    let isSubscribed = false;
 
     coinbaseWs.on('open', () => {
         console.log('Connected to Coinbase WebSocket');
         
-        // Subscribe to heartbeats channel
+        // Subscribe to heartbeats first
         const heartbeatMessage = {
             type: "subscribe",
             channel: "heartbeats"
         };
         coinbaseWs.send(JSON.stringify(heartbeatMessage));
-        
+
         // Subscribe to BTC-USD level2 channel
         const subscribeMessage = {
             type: "subscribe",
             channel: "level2",
             product_ids: ["BTC-USD"]
         };
+        
         coinbaseWs.send(JSON.stringify(subscribeMessage));
+        isSubscribed = true;
     });
 
     coinbaseWs.on('message', (data) => {
-        const parsedData = JSON.parse(data);
-        
-        // Handle heartbeat messages
-        if (parsedData.channel === 'heartbeats') {
-            console.log('Heartbeat received:', parsedData.events[0].heartbeat_counter);
-            return;
-        }
-
-        // Handle level2 messages
-        if (parsedData.channel === 'l2_data' && messageCount < 10) {
-            messageCount++;
+        try {
+            const parsedData = JSON.parse(data);
             
-            // Send message to client
+            // // Only log l2_data messages
+            // if (parsedData.channel === 'l2_data') {
+            //     const event = parsedData.events[0];
+            //     console.log(`L2 ${event.type}:`, 
+            //         event.type === 'snapshot' 
+            //             ? `Initial snapshot with ${event.updates.length} orders` 
+            //             : `Update with ${event.updates.length} changes`
+            //     );
+            // }
+            
+            // Forward message to client
             ws.send(JSON.stringify({
-                count: messageCount,
+                type: parsedData.channel,
                 data: parsedData
             }));
-
-            // Unsubscribe after 10 messages
-            if (messageCount === 10) {
-                const unsubscribeMessage = {
-                    type: "unsubscribe",
-                    channel: "level2",
-                    product_ids: ["BTC-USD"]
-                };
-                
-                coinbaseWs.send(JSON.stringify(unsubscribeMessage));
-                clearInterval(heartbeatInterval);
-                coinbaseWs.close();
-            }
+        } catch (error) {
+            console.error('Error processing message:', error);
         }
     });
 
@@ -96,13 +87,37 @@ wss.on('connection', (ws) => {
 
     coinbaseWs.on('close', () => {
         console.log('Coinbase WebSocket connection closed');
-        clearInterval(heartbeatInterval);
+        isSubscribed = false;
+    });
+
+    // Handle client messages (for stop command)
+    ws.on('message', (message) => {
+        const data = JSON.parse(message);
+        if (data.command === 'stop' && isSubscribed) {
+            // Unsubscribe from both channels
+            const unsubscribeMessage = {
+                type: "unsubscribe",
+                channel: "level2",
+                product_ids: ["BTC-USD"]
+            };
+            coinbaseWs.send(JSON.stringify(unsubscribeMessage));
+
+            const unsubscribeHeartbeat = {
+                type: "unsubscribe",
+                channel: "heartbeats"
+            };
+            coinbaseWs.send(JSON.stringify(unsubscribeHeartbeat));
+            
+            isSubscribed = false;
+            coinbaseWs.close();
+        }
     });
 
     // Handle client disconnection
     ws.on('close', () => {
         console.log('Client disconnected');
-        clearInterval(heartbeatInterval);
-        coinbaseWs.close();
+        if (isSubscribed) {
+            coinbaseWs.close();
+        }
     });
 }); 
