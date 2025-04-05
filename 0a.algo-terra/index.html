@@ -230,6 +230,10 @@
         const numBuckets = 200; // Number of price buckets to display (100 per side)
         let maxVolume = 0.1; // Maximum volume to scale the bars (will be adjusted dynamically)
 
+        // Add these variables at the top with other state variables
+        let initialBestBid = null;
+        let initialBestAsk = null;
+
         // Connect to WebSocket
         const ws = new WebSocket(`ws://${window.location.host}`);
 
@@ -277,6 +281,15 @@
                             }
                         }
                     });
+
+                    // Initialize reference prices on first snapshot
+                    if (initialBestBid === null || initialBestAsk === null) {
+                        const sortedBids = Array.from(orderBook.bids.entries()).sort((a, b) => b[0] - a[0]);
+                        const sortedAsks = Array.from(orderBook.asks.entries()).sort((a, b) => a[0] - b[0]);
+                        initialBestBid = sortedBids[0][0];
+                        initialBestAsk = sortedAsks[0][0];
+                        console.log('Initialized reference prices:', { initialBestBid, initialBestAsk });
+                    }
                 } else {
                     // Process update
                     event.updates.forEach(update => {
@@ -343,12 +356,12 @@
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0]);
             
-            if (sortedBids.length === 0 || sortedAsks.length === 0) {
+            if (sortedBids.length === 0 || sortedAsks.length === 0 || !initialBestBid || !initialBestAsk) {
                 console.log('Not enough data to visualize');
                 return;
             }
             
-            // Calculate spread
+            // Calculate current spread
             const bestBid = sortedBids[0][0];
             const bestAsk = sortedAsks[0][0];
             const spread = bestAsk - bestBid;
@@ -363,25 +376,39 @@
             
             // Create buckets for bids
             const bidBuckets = new Map();
+            // Initialize all bid buckets first
+            for (let i = 0; i < numBucketsPerSide; i++) {
+                const bucketPrice = initialBestBid - (i * bucketSize);
+                bidBuckets.set(i, { price: bucketPrice, volume: 0 });
+            }
+            
+            // Fill bid buckets with volume
             sortedBids.forEach(([price, volume]) => {
-                const bucketIndex = Math.floor((bestBid - price) / bucketSize);
+                const bucketIndex = Math.floor((initialBestBid - price) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
-                    const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
-                    const bucket = bidBuckets.get(bucketIndex) || { price: bucketPrice, volume: 0 };
-                    bucket.volume += volume;
-                    bidBuckets.set(bucketIndex, bucket);
+                    const bucket = bidBuckets.get(bucketIndex);
+                    if (bucket) {
+                        bucket.volume += volume;
+                    }
                 }
             });
             
             // Create buckets for asks
             const askBuckets = new Map();
+            // Initialize all ask buckets first
+            for (let i = 0; i < numBucketsPerSide; i++) {
+                const bucketPrice = initialBestAsk + (i * bucketSize);
+                askBuckets.set(i, { price: bucketPrice, volume: 0 });
+            }
+            
+            // Fill ask buckets with volume
             sortedAsks.forEach(([price, volume]) => {
-                const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
+                const bucketIndex = Math.floor((price - initialBestAsk) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
-                    const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
-                    const bucket = askBuckets.get(bucketIndex) || { price: bucketPrice, volume: 0 };
-                    bucket.volume += volume;
-                    askBuckets.set(bucketIndex, bucket);
+                    const bucket = askBuckets.get(bucketIndex);
+                    if (bucket) {
+                        bucket.volume += volume;
+                    }
                 }
             });
             
@@ -396,39 +423,33 @@
                 numAskBuckets: askBuckets.size
             });
             
-            // Create bid bars
+            // Create all bid bars (including zero volume)
             const bidBars = Array.from(bidBuckets.entries())
                 .sort((a, b) => a[0] - b[0]) // Sort by bucket index
                 .map(([index, { price, volume }]) => {
                     const height = (volume / maxVolume) * 100;
-                    if (height > 0) {
-                        return `
-                            <div class="bar bid-bar" 
-                                 style="height: ${height}%;" 
-                                 title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
+                    return `
+                        <div class="bar bid-bar" 
+                             style="height: ${height}%;" 
+                             title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
 Volume: ${volume.toFixed(8)}">
-                            </div>
-                        `;
-                    }
-                    return '';
-                }).filter(bar => bar !== '');
+                        </div>
+                    `;
+                });
             
-            // Create ask bars
+            // Create all ask bars (including zero volume)
             const askBars = Array.from(askBuckets.entries())
                 .sort((a, b) => a[0] - b[0]) // Sort by bucket index
                 .map(([index, { price, volume }]) => {
                     const height = (volume / maxVolume) * 100;
-                    if (height > 0) {
-                        return `
-                            <div class="bar ask-bar" 
-                                 style="height: ${height}%;" 
-                                 title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
+                    return `
+                        <div class="bar ask-bar" 
+                             style="height: ${height}%;" 
+                             title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
 Volume: ${volume.toFixed(8)}">
-                            </div>
-                        `;
-                    }
-                    return '';
-                }).filter(bar => bar !== '');
+                        </div>
+                    `;
+                });
             
             // Update visualization
             bidsBarsDiv.innerHTML = bidBars.join('');
