@@ -96,7 +96,6 @@
             margin: 0 1px;
             transition: height 0.3s ease;
             position: relative;
-            min-height: 2px;
         }
         .bar.bid-bar {
             background-color: rgba(40, 167, 69, 0.7);
@@ -358,56 +357,78 @@
             // Update spread label
             spreadLabel.textContent = `Spread: $${spread.toFixed(2)} (${spreadPercentage.toFixed(3)}%)`;
             
-            // Calculate volumes and find maximum for better scaling
-            let maxBidVolume = 0;
-            let maxAskVolume = 0;
+            // Use fixed bucket size of $1
+            const bucketSize = 1.0;
+            const numBucketsPerSide = 100;
             
-            // Calculate bid volumes and maximum
-            const bidVolumes = sortedBids.slice(0, numBuckets/2).map(([price, volume]) => {
-                maxBidVolume = Math.max(maxBidVolume, volume);
-                return { price, volume };
+            // Create buckets for bids
+            const bidBuckets = new Map();
+            sortedBids.forEach(([price, volume]) => {
+                const bucketIndex = Math.floor((bestBid - price) / bucketSize);
+                if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
+                    const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
+                    const bucket = bidBuckets.get(bucketIndex) || { price: bucketPrice, volume: 0 };
+                    bucket.volume += volume;
+                    bidBuckets.set(bucketIndex, bucket);
+                }
             });
             
-            // Calculate ask volumes and maximum
-            const askVolumes = sortedAsks.slice(0, numBuckets/2).map(([price, volume]) => {
-                maxAskVolume = Math.max(maxAskVolume, volume);
-                return { price, volume };
+            // Create buckets for asks
+            const askBuckets = new Map();
+            sortedAsks.forEach(([price, volume]) => {
+                const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
+                if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
+                    const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
+                    const bucket = askBuckets.get(bucketIndex) || { price: bucketPrice, volume: 0 };
+                    bucket.volume += volume;
+                    askBuckets.set(bucketIndex, bucket);
+                }
             });
             
-            // Use the larger of the two maximums for scaling
-            const maxVolume = Math.max(maxBidVolume, maxAskVolume);
+            // Find maximum volume across all buckets
+            let maxVolume = 0;
+            bidBuckets.forEach(bucket => maxVolume = Math.max(maxVolume, bucket.volume));
+            askBuckets.forEach(bucket => maxVolume = Math.max(maxVolume, bucket.volume));
             
             console.log('Volume stats:', {
-                maxBidVolume,
-                maxAskVolume,
                 maxVolume,
-                numBids: bidVolumes.length,
-                numAsks: askVolumes.length
+                numBidBuckets: bidBuckets.size,
+                numAskBuckets: askBuckets.size
             });
             
-            // Create bid bars with direct volume scaling
-            const bidBars = bidVolumes.map(({ price, volume }) => {
-                const height = (volume / maxVolume) * 100;
-                console.log(`Bid bar at ${price}: volume=${volume}, height=${height}%`);
-                return `
-                    <div class="bar bid-bar" 
-                         style="height: ${height}%;" 
-                         title="Price: $${price.toFixed(2)}, Size: ${volume.toFixed(8)}">
-                    </div>
-                `;
-            });
+            // Create bid bars
+            const bidBars = Array.from(bidBuckets.entries())
+                .sort((a, b) => a[0] - b[0]) // Sort by bucket index
+                .map(([index, { price, volume }]) => {
+                    const height = (volume / maxVolume) * 100;
+                    if (height > 0) {
+                        return `
+                            <div class="bar bid-bar" 
+                                 style="height: ${height}%;" 
+                                 title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
+Volume: ${volume.toFixed(8)}">
+                            </div>
+                        `;
+                    }
+                    return '';
+                }).filter(bar => bar !== '');
             
-            // Create ask bars with direct volume scaling
-            const askBars = askVolumes.map(({ price, volume }) => {
-                const height = (volume / maxVolume) * 100;
-                console.log(`Ask bar at ${price}: volume=${volume}, height=${height}%`);
-                return `
-                    <div class="bar ask-bar" 
-                         style="height: ${height}%;" 
-                         title="Price: $${price.toFixed(2)}, Size: ${volume.toFixed(8)}">
-                    </div>
-                `;
-            });
+            // Create ask bars
+            const askBars = Array.from(askBuckets.entries())
+                .sort((a, b) => a[0] - b[0]) // Sort by bucket index
+                .map(([index, { price, volume }]) => {
+                    const height = (volume / maxVolume) * 100;
+                    if (height > 0) {
+                        return `
+                            <div class="bar ask-bar" 
+                                 style="height: ${height}%;" 
+                                 title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
+Volume: ${volume.toFixed(8)}">
+                            </div>
+                        `;
+                    }
+                    return '';
+                }).filter(bar => bar !== '');
             
             // Update visualization
             bidsBarsDiv.innerHTML = bidBars.join('');
