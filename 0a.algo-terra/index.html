@@ -356,7 +356,7 @@
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0]);
             
-            if (sortedBids.length === 0 || sortedAsks.length === 0 || !initialBestBid || !initialBestAsk) {
+            if (sortedBids.length === 0 || sortedAsks.length === 0) {
                 console.log('Not enough data to visualize');
                 return;
             }
@@ -378,13 +378,14 @@
             const bidBuckets = new Map();
             // Initialize all bid buckets first
             for (let i = 0; i < numBucketsPerSide; i++) {
-                const bucketPrice = initialBestBid - (i * bucketSize);
+                const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
                 bidBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
             
             // Fill bid buckets with volume
             sortedBids.forEach(([price, volume]) => {
-                const bucketIndex = Math.floor((initialBestBid - price) / bucketSize);
+                const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
+                const bucketIndex = Math.floor((bestBid - price) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
                     const bucket = bidBuckets.get(bucketIndex);
                     if (bucket) {
@@ -397,13 +398,14 @@
             const askBuckets = new Map();
             // Initialize all ask buckets first
             for (let i = 0; i < numBucketsPerSide; i++) {
-                const bucketPrice = initialBestAsk + (i * bucketSize);
+                const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
                 askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
             
             // Fill ask buckets with volume
             sortedAsks.forEach(([price, volume]) => {
-                const bucketIndex = Math.floor((price - initialBestAsk) / bucketSize);
+                const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
+                const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
                     const bucket = askBuckets.get(bucketIndex);
                     if (bucket) {
@@ -420,7 +422,10 @@
             console.log('Volume stats:', {
                 maxVolume,
                 numBidBuckets: bidBuckets.size,
-                numAskBuckets: askBuckets.size
+                numAskBuckets: askBuckets.size,
+                bestBid,
+                bestAsk,
+                spread
             });
             
             // Create all bid bars (including zero volume)
@@ -428,9 +433,12 @@
                 .sort((a, b) => a[0] - b[0]) // Sort by bucket index
                 .map(([index, { price, volume }]) => {
                     const height = (volume / maxVolume) * 100;
+                    const styles = height > 0 
+                        ? `height: ${height}%;` 
+                        : `height: 0; background-color: transparent; border-color: transparent;`;
                     return `
                         <div class="bar bid-bar" 
-                             style="height: ${height}%;" 
+                             style="${styles}" 
                              title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
 Volume: ${volume.toFixed(8)}">
                         </div>
@@ -442,9 +450,12 @@ Volume: ${volume.toFixed(8)}">
                 .sort((a, b) => a[0] - b[0]) // Sort by bucket index
                 .map(([index, { price, volume }]) => {
                     const height = (volume / maxVolume) * 100;
+                    const styles = height > 0 
+                        ? `height: ${height}%;` 
+                        : `height: 0; background-color: transparent; border-color: transparent;`;
                     return `
                         <div class="bar ask-bar" 
-                             style="height: ${height}%;" 
+                             style="${styles}" 
                              title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
 Volume: ${volume.toFixed(8)}">
                         </div>
