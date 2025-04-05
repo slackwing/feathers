@@ -53,7 +53,7 @@
         }
         .visualization {
             display: flex;
-            height: 300px;
+            height: 400px;
             position: relative;
             border: 1px solid #dee2e6;
             background-color: #ffffff;
@@ -138,7 +138,7 @@
             padding: 15px;
             border-radius: 4px;
             border: 1px solid #dee2e6;
-            height: 300px;
+            height: 600px;
             overflow-y: auto;
         }
         .order-row {
@@ -228,7 +228,7 @@
         };
         
         // Visualization settings
-        const numBuckets = 50; // Number of price buckets to display
+        const numBuckets = 200; // Number of price buckets to display (100 per side)
         let maxVolume = 0.1; // Maximum volume to scale the bars (will be adjusted dynamically)
 
         // Connect to WebSocket
@@ -312,12 +312,12 @@
             // Sort and display bids (descending)
             const sortedBids = Array.from(orderBook.bids.entries())
                 .sort((a, b) => b[0] - a[0])
-                .slice(0, 20);
+                .slice(0, 100);
             
             // Sort and display asks (ascending)
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0])
-                .slice(0, 20);
+                .slice(0, 100);
             
             // Update bids display
             bidsDiv.innerHTML = sortedBids.map(([price, quantity]) => `
