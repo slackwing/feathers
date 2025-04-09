@@ -544,14 +544,8 @@
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();
             } else if (message.type === 'market_trades') {
-                // Print first 10 market trades messages
-                if (!window.marketTradesCount) {
-                    window.marketTradesCount = 0;
-                }
-                if (window.marketTradesCount < 10) {
-                    console.log('Market Trade:', message.data.events[0].trades);
-                    window.marketTradesCount++;
-                }
+                // Log all market trades messages
+                console.log('Market Trade:', message);
 
                 // Process trades for execution against paper orders
                 message.data.events[0].trades.forEach(trade => {
