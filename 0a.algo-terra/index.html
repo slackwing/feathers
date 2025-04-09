@@ -219,31 +219,30 @@
         const spreadLabel = document.getElementById('spread-label');
         const stopButton = document.getElementById('stopButton');
         const statusDiv = document.getElementById('status');
+
+        const MIN_Y_HEIGHT_VOLUME = 0.1;
+        const X_BUCKET_WIDTH_USD = 1.0;
+        const X_BUCKETS_PER_SIDE = 100;
         
-        // Order book state
         let orderBook = {
             bids: new Map(),
             asks: new Map()
         };
-        
-        // Visualization settings
-        const numBuckets = 200; // Number of price buckets to display (100 per side)
-        let maxVolume = 0.1; // Maximum volume to scale the bars (will be adjusted dynamically)
-
-        // Add these variables at the top with other state variables
         let initialBestBid = null;
         let initialBestAsk = null;
+        
+        let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
 
         // Connect to WebSocket
         const ws = new WebSocket(`ws://${window.location.host}`);
 
         ws.onopen = () => {
-            statusDiv.textContent = 'Connected';
+            statusDiv.textContent = 'Connected.';
             statusDiv.style.backgroundColor = '#d4edda';
         };
 
         ws.onclose = () => {
-            statusDiv.textContent = 'Disconnected';
+            statusDiv.textContent = 'Disconnected.';
             statusDiv.style.backgroundColor = '#f8d7da';
         };
 
@@ -253,60 +252,66 @@
         };
 
         ws.onmessage = (event) => {
+
             const message = JSON.parse(event.data);
             
             if (message.type === 'l2_data') {
+
                 const event = message.data.events[0];
                 
                 if (event.type === 'snapshot') {
-                    // Clear existing order book
+
+                    // Snapshot to initialize the order book.
+
                     orderBook.bids.clear();
                     orderBook.asks.clear();
-                    maxVolume = 0.1; // Reset max volume on snapshot
+                    yHeightVolume = MIN_Y_HEIGHT_VOLUME;
                     
-                    // Process snapshot
                     event.updates.forEach(update => {
+
                         const price = parseFloat(update.price_level);
                         const quantity = parseFloat(update.new_quantity);
                         
                         if (update.side === 'bid') {
                             if (quantity > 0) {
                                 orderBook.bids.set(price, quantity);
-                                maxVolume = Math.max(maxVolume, quantity);
+                                yHeightVolume = Math.max(yHeightVolume, quantity);
                             }
                         } else {
                             if (quantity > 0) {
                                 orderBook.asks.set(price, quantity);
-                                maxVolume = Math.max(maxVolume, quantity);
+                                yHeightVolume = Math.max(yHeightVolume, quantity);
                             }
                         }
                     });
-
-                    // Initialize reference prices on first snapshot
+                    
                     if (initialBestBid === null || initialBestAsk === null) {
                         const sortedBids = Array.from(orderBook.bids.entries()).sort((a, b) => b[0] - a[0]);
                         const sortedAsks = Array.from(orderBook.asks.entries()).sort((a, b) => a[0] - b[0]);
                         initialBestBid = sortedBids[0][0];
                         initialBestAsk = sortedAsks[0][0];
-                        console.log('Initialized reference prices:', { initialBestBid, initialBestAsk });
                     }
+
                 } else {
-                    // Process update
+
+                    // Incremental updates to the order book.
+
                     event.updates.forEach(update => {
+
                         const price = parseFloat(update.price_level);
                         const quantity = parseFloat(update.new_quantity);
                         
                         if (update.side === 'bid') {
                             if (quantity > 0) {
                                 orderBook.bids.set(price, quantity);
-                                maxVolume = Math.max(maxVolume, quantity);
+                                yHeightVolume = Math.max(yHeightVolume, quantity);
                             } else {
                                 orderBook.bids.delete(price);
                             }
                         } else {
                             if (quantity > 0) {
                                 orderBook.asks.set(price, quantity);
-                                maxVolume = Math.max(maxVolume, quantity);
+                                yHeightVolume = Math.max(yHeightVolume, quantity);
                             } else {
                                 orderBook.asks.delete(price);
                             }
@@ -314,32 +319,25 @@
                     });
                 }
                 
-                // Update display
-                updateOrderBookDisplay();
-                updateVisualization();
+                updateDisplay_OrderBook();
+                updateDisplay_BarChart();
             }
         };
 
-        function updateOrderBookDisplay() {
-            // Sort and display bids (descending)
+        function updateDisplay_OrderBook() {
+            // TODO(P2): Look into using a sorted data structure.
             const sortedBids = Array.from(orderBook.bids.entries())
                 .sort((a, b) => b[0] - a[0])
                 .slice(0, 100);
-            
-            // Sort and display asks (ascending)
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0])
                 .slice(0, 100);
-            
-            // Update bids display
             bidsDiv.innerHTML = sortedBids.map(([price, quantity]) => `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
                     <span class="quantity">${quantity.toFixed(8)}</span>
                 </div>
             `).join('');
-            
-            // Update asks display
             asksDiv.innerHTML = sortedAsks.map(([price, quantity]) => `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
@@ -348,45 +346,38 @@
             `).join('');
         }
         
-        function updateVisualization() {
-            // Get sorted orders
+        function updateDisplay_BarChart() {
+
+            // TODO(P2): Look into using a sorted data structure.
             const sortedBids = Array.from(orderBook.bids.entries())
                 .sort((a, b) => b[0] - a[0]);
-            
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0]);
-            
+
             if (sortedBids.length === 0 || sortedAsks.length === 0) {
-                console.log('Not enough data to visualize');
+                console.log('Awaiting data to initialize bar chart...');
                 return;
             }
             
-            // Calculate current spread
             const bestBid = sortedBids[0][0];
             const bestAsk = sortedAsks[0][0];
             const spread = bestAsk - bestBid;
             const spreadPercentage = (spread / bestBid) * 100;
             
-            // Update spread label
             spreadLabel.textContent = `Spread: $${spread.toFixed(2)} (${spreadPercentage.toFixed(3)}%)`;
             
-            // Use fixed bucket size of $1
-            const bucketSize = 1.0;
-            const numBucketsPerSide = 100;
+            const bucketSize = X_BUCKET_WIDTH_USD;
+            const bucketsPerSide = X_BUCKETS_PER_SIDE;
             
-            // Create buckets for bids
             const bidBuckets = new Map();
-            // Initialize all bid buckets first
-            for (let i = 0; i < numBucketsPerSide; i++) {
+            for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
                 bidBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
-            
-            // Fill bid buckets with volume
             sortedBids.forEach(([price, volume]) => {
                 const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
                 const bucketIndex = Math.floor((bestBid - price) / bucketSize);
-                if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
+                if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = bidBuckets.get(bucketIndex);
                     if (bucket) {
                         bucket.volume += volume;
@@ -394,19 +385,15 @@
                 }
             });
             
-            // Create buckets for asks
             const askBuckets = new Map();
-            // Initialize all ask buckets first
-            for (let i = 0; i < numBucketsPerSide; i++) {
+            for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
                 askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
-            
-            // Fill ask buckets with volume
             sortedAsks.forEach(([price, volume]) => {
                 const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
                 const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
-                if (bucketIndex >= 0 && bucketIndex < numBucketsPerSide) {
+                if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = askBuckets.get(bucketIndex);
                     if (bucket) {
                         bucket.volume += volume;
@@ -414,55 +401,42 @@
                 }
             });
             
-            // Find maximum volume across all buckets
-            let maxVolume = 0;
-            bidBuckets.forEach(bucket => maxVolume = Math.max(maxVolume, bucket.volume));
-            askBuckets.forEach(bucket => maxVolume = Math.max(maxVolume, bucket.volume));
+            // TODO(P3): This can be computed above.
+            let yHeightVolume = 0;
+            bidBuckets.forEach(bucket => yHeightVolume = Math.max(yHeightVolume, bucket.volume));
+            askBuckets.forEach(bucket => yHeightVolume = Math.max(yHeightVolume, bucket.volume));
             
-            console.log('Volume stats:', {
-                maxVolume,
-                numBidBuckets: bidBuckets.size,
-                numAskBuckets: askBuckets.size,
-                bestBid,
-                bestAsk,
-                spread
-            });
+            // console.log('Volume stats:', {
+            //     yHeightVolume,
+            //     numBidBuckets: bidBuckets.size,
+            //     numAskBuckets: askBuckets.size,
+            //     bestBid,
+            //     bestAsk,
+            //     spread
+            // });
             
-            // Create all bid bars (including zero volume)
+            // TODO(P2): Is bidBuckets not already sorted?
             const bidBars = Array.from(bidBuckets.entries())
-                .sort((a, b) => a[0] - b[0]) // Sort by bucket index
+                .sort((a, b) => a[0] - b[0])
                 .map(([index, { price, volume }]) => {
-                    const height = (volume / maxVolume) * 100;
+                    const height = (volume / yHeightVolume) * 100;
                     const styles = height > 0 
                         ? `height: ${height}%;` 
                         : `height: 0; background-color: transparent; border-color: transparent;`;
-                    return `
-                        <div class="bar bid-bar" 
-                             style="${styles}" 
-                             title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
-Volume: ${volume.toFixed(8)}">
-                        </div>
-                    `;
+                    return `<div class="bar bid-bar" style="${styles}"></div>`;
                 });
             
-            // Create all ask bars (including zero volume)
+            // TODO(P2): Is askBuckets not already sorted?
             const askBars = Array.from(askBuckets.entries())
-                .sort((a, b) => a[0] - b[0]) // Sort by bucket index
+                .sort((a, b) => a[0] - b[0])
                 .map(([index, { price, volume }]) => {
-                    const height = (volume / maxVolume) * 100;
+                    const height = (volume / yHeightVolume) * 100;
                     const styles = height > 0 
                         ? `height: ${height}%;` 
                         : `height: 0; background-color: transparent; border-color: transparent;`;
-                    return `
-                        <div class="bar ask-bar" 
-                             style="${styles}" 
-                             title="Price: $${price.toFixed(2)} - $${(price + bucketSize).toFixed(2)}
-Volume: ${volume.toFixed(8)}">
-                        </div>
-                    `;
+                    return `<div class="bar ask-bar" style="${styles}"></div>`;
                 });
             
-            // Update visualization
             bidsBarsDiv.innerHTML = bidBars.join('');
             asksBarsDiv.innerHTML = askBars.join('');
         }
@@ -470,7 +444,7 @@ Volume: ${volume.toFixed(8)}">
         stopButton.onclick = () => {
             ws.send(JSON.stringify({ command: 'stop' }));
             stopButton.disabled = true;
-            statusDiv.textContent = 'Stopped';
+            statusDiv.textContent = 'Stopped.';
             statusDiv.style.backgroundColor = '#e9ecef';
         };
     </script>
