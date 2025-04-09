@@ -175,7 +175,7 @@
     <div class="container">
         <h1>BTC-USD Order Book</h1>
         <div class="controls">
-            <button id="stopButton">Stop Updates</button>
+            <button id="stopButton">Power Off</button>
             <div class="status" id="status">Connecting...</div>
         </div>
         
@@ -219,6 +219,12 @@
         const spreadLabel = document.getElementById('spread-label');
         const stopButton = document.getElementById('stopButton');
         const statusDiv = document.getElementById('status');
+
+        class PriceLevel {
+            constructor(quantity) {
+                this.quantity = quantity;
+            }
+        }
 
         const MIN_Y_HEIGHT_VOLUME = 0.1;
         const X_BUCKET_WIDTH_USD = 1.0;
@@ -274,12 +280,12 @@
                         
                         if (update.side === 'bid') {
                             if (quantity > 0) {
-                                orderBook.bids.set(price, quantity);
+                                orderBook.bids.set(price, new PriceLevel(quantity));
                                 yHeightVolume = Math.max(yHeightVolume, quantity);
                             }
                         } else {
                             if (quantity > 0) {
-                                orderBook.asks.set(price, quantity);
+                                orderBook.asks.set(price, new PriceLevel(quantity));
                                 yHeightVolume = Math.max(yHeightVolume, quantity);
                             }
                         }
@@ -303,14 +309,14 @@
                         
                         if (update.side === 'bid') {
                             if (quantity > 0) {
-                                orderBook.bids.set(price, quantity);
+                                orderBook.bids.set(price, new PriceLevel(quantity));
                                 yHeightVolume = Math.max(yHeightVolume, quantity);
                             } else {
                                 orderBook.bids.delete(price);
                             }
                         } else {
                             if (quantity > 0) {
-                                orderBook.asks.set(price, quantity);
+                                orderBook.asks.set(price, new PriceLevel(quantity));
                                 yHeightVolume = Math.max(yHeightVolume, quantity);
                             } else {
                                 orderBook.asks.delete(price);
@@ -332,16 +338,16 @@
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0])
                 .slice(0, 100);
-            bidsDiv.innerHTML = sortedBids.map(([price, quantity]) => `
+            bidsDiv.innerHTML = sortedBids.map(([price, priceLevel]) => `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
-                    <span class="quantity">${quantity.toFixed(8)}</span>
+                    <span class="quantity">${priceLevel.quantity.toFixed(8)}</span>
                 </div>
             `).join('');
-            asksDiv.innerHTML = sortedAsks.map(([price, quantity]) => `
+            asksDiv.innerHTML = sortedAsks.map(([price, priceLevel]) => `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
-                    <span class="quantity">${quantity.toFixed(8)}</span>
+                    <span class="quantity">${priceLevel.quantity.toFixed(8)}</span>
                 </div>
             `).join('');
         }
@@ -374,13 +380,13 @@
                 const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
                 bidBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
-            sortedBids.forEach(([price, volume]) => {
+            sortedBids.forEach(([price, priceLevel]) => {
                 const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
                 const bucketIndex = Math.floor((bestBid - price) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = bidBuckets.get(bucketIndex);
                     if (bucket) {
-                        bucket.volume += volume;
+                        bucket.volume += priceLevel.quantity;
                     }
                 }
             });
@@ -390,13 +396,13 @@
                 const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
                 askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
-            sortedAsks.forEach(([price, volume]) => {
+            sortedAsks.forEach(([price, priceLevel]) => {
                 const bucketPrice = Math.floor(price / bucketSize) * bucketSize;
                 const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = askBuckets.get(bucketIndex);
                     if (bucket) {
-                        bucket.volume += volume;
+                        bucket.volume += priceLevel.quantity;
                     }
                 }
             });
