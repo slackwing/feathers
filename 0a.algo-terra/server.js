@@ -42,6 +42,14 @@ wss.on('connection', (ws) => {
         };
         coinbaseWs.send(JSON.stringify(subscribeMessage));
 
+        console.log('Subscribing to BTC-USD "market_trades" channel...');
+        const marketTradesMessage = {
+            type: "subscribe",
+            channel: "market_trades",
+            product_ids: ["BTC-USD"]
+        };
+        coinbaseWs.send(JSON.stringify(marketTradesMessage));
+
         isSubscribed = true;
     });
 
@@ -81,6 +89,13 @@ wss.on('connection', (ws) => {
                 product_ids: ["BTC-USD"]
             };
             coinbaseWs.send(JSON.stringify(unsubscribeMessage));
+
+            const unsubscribeMarketTrades = {
+                type: "unsubscribe",
+                channel: "market_trades",
+                product_ids: ["BTC-USD"]
+            };
+            coinbaseWs.send(JSON.stringify(unsubscribeMarketTrades));
 
             const unsubscribeHeartbeat = {
                 type: "unsubscribe",

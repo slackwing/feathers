@@ -174,9 +174,21 @@
             background-color: rgba(220, 53, 69, 0.7);
             border-color: rgba(220, 53, 69, 1);
         }
-        .bar.paper-bar {
+        .bar.ghost-bar {
             position: absolute;
             bottom: 100%;
+            left: -1px;
+            width: calc(100% + 2px);
+            min-height: 1px;
+            background-color: rgba(192, 192, 192, 0.5);
+            border-color: rgba(192, 192, 192, 0.8);
+            transform-origin: bottom;
+            margin: 0;
+            z-index: 2;
+        }
+        .bar.paper-bar {
+            position: absolute;
+            bottom: calc(100% + var(--ghost-height, 0px));
             left: -1px;
             width: calc(100% + 2px);
             min-height: 1px;
@@ -184,6 +196,7 @@
             border-color: rgba(218, 165, 32, 1);
             transform-origin: bottom;
             margin: 0;
+            z-index: 1;
         }
         .spread-line {
             position: absolute;
@@ -530,6 +543,56 @@
                 
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();
+            } else if (message.type === 'market_trades') {
+                // Print first 10 market trades messages
+                if (!window.marketTradesCount) {
+                    window.marketTradesCount = 0;
+                }
+                if (window.marketTradesCount < 10) {
+                    console.log('Market Trade:', message.data.events[0].trades);
+                    window.marketTradesCount++;
+                }
+
+                // Process trades for execution against paper orders
+                message.data.events[0].trades.forEach(trade => {
+                    const price = parseFloat(trade.price);
+                    const size = parseFloat(trade.size);
+                    
+                    if (trade.side === 'BUY') {
+                        // Trade executed against asks (seller was maker)
+                        // Check if price crosses any paper asks
+                        orderBook.asks.forEach((level, askPrice) => {
+                            if (price >= askPrice && level.paperQty > 0) {
+                                const executedQty = Math.min(size, level.paperQty);
+                                level.paperQty -= executedQty;
+                                level.ghostQty += executedQty;
+                                
+                                if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
+                                    orderBook.asks.delete(askPrice);
+                                }
+                            }
+                        });
+                    } else {
+                        // Trade executed against bids (buyer was maker)
+                        // Check if price crosses any paper bids
+                        orderBook.bids.forEach((level, bidPrice) => {
+                            if (price <= bidPrice && level.paperQty > 0) {
+                                const executedQty = Math.min(size, level.paperQty);
+                                level.paperQty -= executedQty;
+                                level.ghostQty += executedQty;
+                                
+                                if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
+                                    orderBook.bids.delete(bidPrice);
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                updateDisplay_OrderBook();
+                updateDisplay_BarChart();
+            } else {
+                // console.log('Unhandled message:', message);
             }
         };
 
@@ -541,24 +604,28 @@
             const sortedAsks = Array.from(orderBook.asks.entries())
                 .sort((a, b) => a[0] - b[0])
                 .slice(0, 100);
-            bidsDiv.innerHTML = sortedBids.map(([price, priceLevel]) => `
+            bidsDiv.innerHTML = sortedBids.map(([price, priceLevel]) => {
+                return `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
                     <span class="quantity">
                         ${priceLevel.paperQty > 0 ? `<span style="color: #28a745">${priceLevel.paperQty.toFixed(8)}</span> ` : ''}
+                        ${priceLevel.ghostQty > 0 && priceLevel.paperQty === 0 ? `<span style="color: #999">${priceLevel.ghostQty.toFixed(8)}</span> ` : ''}
                         ${priceLevel.quantity.toFixed(8)}
                     </span>
                 </div>
-            `).join('');
-            asksDiv.innerHTML = sortedAsks.map(([price, priceLevel]) => `
+            `}).join('');
+            asksDiv.innerHTML = sortedAsks.map(([price, priceLevel]) => {
+                return `
                 <div class="order-row">
                     <span class="price">$${price.toFixed(2)}</span>
                     <span class="quantity">
                         ${priceLevel.paperQty > 0 ? `<span style="color: #dc3545">${priceLevel.paperQty.toFixed(8)}</span> ` : ''}
+                        ${priceLevel.ghostQty > 0 && priceLevel.paperQty === 0 ? `<span style="color: #999">${priceLevel.ghostQty.toFixed(8)}</span> ` : ''}
                         ${priceLevel.quantity.toFixed(8)}
                     </span>
                 </div>
-            `).join('');
+            `}).join('');
         }
         
         function updateDisplay_BarChart() {
@@ -587,13 +654,13 @@
             const bidBuckets = new Map();
             for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
-                bidBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0 });
+                bidBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0, ghostVolume: 0 });
             }
             
             const askBuckets = new Map();
             for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
-                askBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0 });
+                askBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0, ghostVolume: 0 });
             }
 
             sortedBids.forEach(([price, priceLevel]) => {
@@ -603,6 +670,7 @@
                     if (bucket) {
                         bucket.volume += priceLevel.quantity;
                         bucket.paperVolume += priceLevel.paperQty;
+                        bucket.ghostVolume += priceLevel.ghostQty;
                     }
                 }
             });
@@ -614,41 +682,46 @@
                     if (bucket) {
                         bucket.volume += priceLevel.quantity;
                         bucket.paperVolume += priceLevel.paperQty;
+                        bucket.ghostVolume += priceLevel.ghostQty;
                     }
                 }
             });
 
             let maxVolume = MIN_Y_HEIGHT_VOLUME;
             bidBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume);
+                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume + bucket.ghostVolume);
             });
             askBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume);
+                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume + bucket.ghostVolume);
             });
             yHeightVolume = maxVolume;
 
             const bidBars = Array.from(bidBuckets.entries())
                 .sort((a, b) => a[0] - b[0])
-                .map(([index, { volume, paperVolume }]) => {
+                .map(([index, { volume, paperVolume, ghostVolume }]) => {
                     const realHeight = (volume / yHeightVolume) * 100;
                     const paperHeight = (paperVolume / yHeightVolume) * 100;
-                    const baseStyles = realHeight > 0 || paperVolume > 0
+                    const ghostHeight = (ghostVolume / yHeightVolume) * 100;
+                    const baseStyles = realHeight > 0 || paperVolume > 0 || ghostVolume > 0
                         ? `height: ${realHeight}%;` 
                         : `height: 0; background-color: transparent; border-color: transparent;`;
                     return `<div class="bar bid-bar" style="${baseStyles}">
+                        ${ghostVolume > 0 ? `<div class="bar ghost-bar" style="transform: scaleY(${ghostHeight}); --ghost-height: ${ghostHeight}%;"></div>` : ''}
                         ${paperVolume > 0 ? `<div class="bar paper-bar" style="transform: scaleY(${paperHeight});"></div>` : ''}
                     </div>`;
                 });
             
             const askBars = Array.from(askBuckets.entries())
                 .sort((a, b) => a[0] - b[0])
-                .map(([index, { volume, paperVolume }]) => {
+                .map(([index, { volume, paperVolume, ghostVolume }]) => {
                     const realHeight = (volume / yHeightVolume) * 100;
                     const paperHeight = (paperVolume / yHeightVolume) * 100;
-                    const baseStyles = realHeight > 0 || paperVolume > 0
+                    const ghostHeight = (ghostVolume / yHeightVolume) * 100;
+                    const baseStyles = realHeight > 0 || paperVolume > 0 || ghostVolume > 0
                         ? `height: ${realHeight}%;` 
                         : `height: 0; background-color: transparent; border-color: transparent;`;
                     return `<div class="bar ask-bar" style="${baseStyles}">
+                        ${ghostVolume > 0 ? `<div class="bar ghost-bar" style="transform: scaleY(${ghostHeight}); --ghost-height: ${ghostHeight}%;"></div>` : ''}
                         ${paperVolume > 0 ? `<div class="bar paper-bar" style="transform: scaleY(${paperHeight});"></div>` : ''}
                     </div>`;
                 });
