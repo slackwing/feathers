@@ -69,10 +69,48 @@
         .order-panel.sell {
             border-top: 3px solid #dc3545;
         }
+        .order-panel.trades {
+            border-top: 3px solid #17a2b8;
+        }
         .order-panel h3 {
             margin-top: 0;
             margin-bottom: 15px;
             color: #495057;
+        }
+        .trades-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .trade-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        .trade-row:last-child {
+            border-bottom: none;
+        }
+        .trade-row.buy {
+            color: #28a745;
+        }
+        .trade-row.sell {
+            color: #dc3545;
+        }
+        .pl-section {
+            margin-bottom: 30px;
+        }
+        .pl-value {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .pl-value.positive {
+            color: #28a745;
+        }
+        .pl-value.negative {
+            color: #dc3545;
         }
         .order-form {
             display: flex;
@@ -249,6 +287,67 @@
             font-weight: bold;
             color: #495057;
         }
+        .trades-filter {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #28a745;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+        }
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #495057;
+        }
+        .trades-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .trades-header h3 {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -293,6 +392,22 @@
                     </div>
                     <button type="submit" class="order-button buy">Buy BTC</button>
                 </form>
+            </div>
+            <div class="order-panel trades">
+                <div class="pl-section">
+                    <div class="pl-value" id="pl-value">$0.00</div>
+                </div>
+                <div class="trades-header">
+                    <h3>Recent Trades</h3>
+                    <label class="toggle-label">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="showAllTrades" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                        <span id="toggleText">Show all trades</span>
+                    </label>
+                </div>
+                <div class="trades-list" id="trades-list"></div>
             </div>
             <div class="order-panel sell">
                 <h3>Sell BTC</h3>
@@ -348,12 +463,17 @@
         const statusDiv = document.getElementById('status');
         const buyForm = document.querySelector('.order-panel.buy form');
         const sellForm = document.querySelector('.order-panel.sell form');
+        const tradesListDiv = document.getElementById('trades-list');
+        const plValueDiv = document.getElementById('pl-value');
+        const showAllTradesCheckbox = document.getElementById('showAllTrades');
 
         class PriceLevel {
-            constructor(quantity, paperQty = 0, ghostQty = 0) {
+            constructor(quantity, paperQty = 0, ghostQty = 0, executionPrice = 0, initialGhostQty = 0) {
                 this.quantity = quantity;
                 this.paperQty = paperQty;
                 this.ghostQty = ghostQty;
+                this.executionPrice = executionPrice;
+                this.initialGhostQty = initialGhostQty;  // Track the initial execution amount
             }
         }
 
@@ -369,6 +489,8 @@
         let initialBestAsk = null;
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
+        let recentTrades = [];
+        let totalPL = 0;  // This will be our persistent running total
 
         // Add form submission handlers
         buyForm.addEventListener('submit', (e) => {
@@ -530,6 +652,7 @@
                 
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();
+                updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
 
                 // Process trades for execution against paper orders
@@ -537,49 +660,110 @@
                     const price = parseFloat(trade.price);
                     const size = parseFloat(trade.size);
                     
+                    // Add to recent trades
+                    const wasPaperTrade = (() => {
+                        if (trade.side === 'BUY') {
+                            // Check all ask levels at or below the trade price
+                            const sortedAsks = Array.from(orderBook.asks.entries())
+                                .sort((a, b) => a[0] - b[0]);
+                            for (const [askPrice, level] of sortedAsks) {
+                                if (price >= askPrice && level.paperQty > 0) {
+                                    console.log('Found paper sell at:', { askPrice, paperQty: level.paperQty });
+                                    return true;
+                                }
+                            }
+                            return false;
+                        } else {
+                            // Check all bid levels at or above the trade price
+                            const sortedBids = Array.from(orderBook.bids.entries())
+                                .sort((a, b) => b[0] - a[0]);
+                            for (const [bidPrice, level] of sortedBids) {
+                                if (price <= bidPrice && level.paperQty > 0) {
+                                    console.log('Found paper buy at:', { bidPrice, paperQty: level.paperQty });
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    })();
+
+                    recentTrades.unshift({
+                        price,
+                        size,
+                        side: trade.side,
+                        time: new Date().toLocaleTimeString(),
+                        wasPaperTrade
+                    });
+                    if (recentTrades.length > 7) {
+                        recentTrades.pop();
+                    }
+                    
                     if (trade.side === 'BUY') {
                         // Trade executed against asks (seller was maker)
-                        // Check if price crosses any paper asks or ghost asks
-                        orderBook.asks.forEach((level, askPrice) => {
-                            if (price >= askPrice) {
+                        // Process from inside-out (lowest ask first)
+                        const sortedAsks = Array.from(orderBook.asks.entries())
+                            .sort((a, b) => a[0] - b[0]);
+                        
+                        let remainingSize = size;
+                        for (const [askPrice, level] of sortedAsks) {
+                            if (price >= askPrice && remainingSize > 0) {
                                 if (level.paperQty > 0) {
-                                    const executedQty = Math.min(size, level.paperQty);
+                                    const executedQty = Math.min(remainingSize, level.paperQty);
+                                    // Update P/L when paperQty decreases using the ask price level
+                                    totalPL += executedQty * askPrice;  // Sell order executed = profit
                                     level.paperQty -= executedQty;
                                     level.ghostQty += executedQty;
+                                    level.initialGhostQty = level.ghostQty;
+                                    level.executionPrice = askPrice;
+                                    remainingSize -= executedQty;
+                                    console.log('Paper sell executed:', { marketPrice: price, orderPrice: askPrice, executedQty, remainingPaperQty: level.paperQty });
                                 } else if (level.ghostQty > 0) {
-                                    const executedQty = Math.min(size, level.ghostQty);
+                                    const executedQty = Math.min(remainingSize, level.ghostQty);
                                     level.ghostQty -= executedQty;
+                                    remainingSize -= executedQty;
                                 }
                                 
                                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
                                     orderBook.asks.delete(askPrice);
                                 }
                             }
-                        });
+                        }
                     } else {
                         // Trade executed against bids (buyer was maker)
-                        // Check if price crosses any paper bids or ghost bids
-                        orderBook.bids.forEach((level, bidPrice) => {
-                            if (price <= bidPrice) {
+                        // Process from inside-out (highest bid first)
+                        const sortedBids = Array.from(orderBook.bids.entries())
+                            .sort((a, b) => b[0] - a[0]);
+                        
+                        let remainingSize = size;
+                        for (const [bidPrice, level] of sortedBids) {
+                            if (price <= bidPrice && remainingSize > 0) {
                                 if (level.paperQty > 0) {
-                                    const executedQty = Math.min(size, level.paperQty);
+                                    const executedQty = Math.min(remainingSize, level.paperQty);
+                                    // Update P/L when paperQty decreases using the bid price level
+                                    totalPL -= executedQty * bidPrice;  // Buy order executed = loss
                                     level.paperQty -= executedQty;
                                     level.ghostQty += executedQty;
+                                    level.initialGhostQty = level.ghostQty;
+                                    level.executionPrice = bidPrice;
+                                    remainingSize -= executedQty;
+                                    console.log('Paper buy executed:', { marketPrice: price, orderPrice: bidPrice, executedQty, remainingPaperQty: level.paperQty });
                                 } else if (level.ghostQty > 0) {
-                                    const executedQty = Math.min(size, level.ghostQty);
+                                    const executedQty = Math.min(remainingSize, level.ghostQty);
                                     level.ghostQty -= executedQty;
+                                    remainingSize -= executedQty;
                                 }
                                 
                                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
                                     orderBook.bids.delete(bidPrice);
                                 }
                             }
-                        });
+                        }
                     }
                 });
                 
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();
+                updateDisplay_Trades();
             } else {
                 // console.log('Unhandled message:', message);
             }
@@ -714,6 +898,35 @@
             bidsBarsDiv.innerHTML = bidBars.join('');
             asksBarsDiv.innerHTML = askBars.join('');
         }
+
+        function updateDisplay_Trades() {
+            const filteredTrades = showAllTradesCheckbox.checked ? 
+                recentTrades : 
+                recentTrades.filter(trade => trade.wasPaperTrade);
+
+            console.log('Filtered trades:', filteredTrades.map(t => ({
+                price: t.price,
+                size: t.size,
+                side: t.side,
+                wasPaperTrade: t.wasPaperTrade
+            })));
+
+            tradesListDiv.innerHTML = filteredTrades.map(trade => `
+                <div class="trade-row ${trade.side.toLowerCase()}">
+                    <span>${trade.time}</span>
+                    <span>$${trade.price.toFixed(2)}</span>
+                    <span${trade.wasPaperTrade ? ' style="color: #b8860b"' : ''}>${trade.size.toFixed(8)} BTC</span>
+                </div>
+            `).join('');
+
+            plValueDiv.textContent = `$${totalPL.toFixed(2)}`;
+            plValueDiv.className = `pl-value ${totalPL >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        showAllTradesCheckbox.addEventListener('change', () => {
+            document.getElementById('toggleText').textContent = showAllTradesCheckbox.checked ? 'Show all trades' : 'Only paper trades';
+            updateDisplay_Trades();
+        });
 
         stopButton.onclick = () => {
             ws.send(JSON.stringify({ command: 'stop' }));
