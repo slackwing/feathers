@@ -655,10 +655,14 @@
                 updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
 
+                // console.log('Received trade event with ' + message.data.events[0].trades.length + ' trades.');
+
                 // Process trades for execution against paper orders
                 message.data.events[0].trades.forEach(trade => {
                     const price = parseFloat(trade.price);
                     const size = parseFloat(trade.size);
+
+                    // console.log(trade);
                     
                     // Add to recent trades
                     const wasPaperTrade = (() => {
@@ -903,13 +907,6 @@
             const filteredTrades = showAllTradesCheckbox.checked ? 
                 recentTrades : 
                 recentTrades.filter(trade => trade.wasPaperTrade);
-
-            console.log('Filtered trades:', filteredTrades.map(t => ({
-                price: t.price,
-                size: t.size,
-                side: t.side,
-                wasPaperTrade: t.wasPaperTrade
-            })));
 
             tradesListDiv.innerHTML = filteredTrades.map(trade => `
                 <div class="trade-row ${trade.side.toLowerCase()}">
