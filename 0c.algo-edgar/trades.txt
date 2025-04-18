@@ -1,0 +1,218 @@
+Received trade event with 100 trades.
+(index):665 TRADE SELL 84590.75 0.00001724
+(index):665 TRADE SELL 84590.75 0.00648277
+(index):665 TRADE SELL 84590.75 0.00452723
+(index):665 TRADE SELL 84590.75 0.00123346
+(index):665 TRADE SELL 84590.75 0.00076923
+(index):665 TRADE SELL 84590.75 0.00002352
+(index):665 TRADE BUY 84590.73 0.01847686
+(index):665 TRADE BUY 84590.74 0.086
+(index):665 TRADE BUY 84590.74 0.00011821
+(index):665 TRADE SELL 84590.75 0.00000756
+(index):665 TRADE SELL 84590.73 0.01885977
+(index):665 TRADE SELL 84590.73 0.00124365
+(index):665 TRADE BUY 84597.15 0.004272
+(index):665 TRADE BUY 84597.15 0.0000301
+(index):665 TRADE BUY 84597.15 0.0001182
+(index):665 TRADE BUY 84597.15 0.03333895
+(index):665 TRADE BUY 84597.15 0.00908105
+(index):665 TRADE BUY 84597.15 0.00249
+(index):665 TRADE SELL 84597.16 0.0005028
+(index):665 TRADE SELL 84597.16 0.00003442
+(index):665 TRADE SELL 84597.16 0.03476098
+(index):665 TRADE SELL 84597.16 0.07021337
+(index):665 TRADE BUY 84595.38 0.00107582
+(index):665 TRADE BUY 84595.39 0.0001182
+(index):665 TRADE SELL 84588.15 0.02
+(index):665 TRADE SELL 84588.03 0.00118877
+(index):665 TRADE SELL 84588 0.02
+(index):665 TRADE SELL 84587.9 0.09367561
+(index):665 TRADE SELL 84587.9 0.00613048
+(index):665 TRADE SELL 84587.9 0.0079725
+(index):665 TRADE SELL 84587.9 0.00846125
+(index):665 TRADE SELL 84587.9 0.00439057
+(index):665 TRADE SELL 84587.9 0.0130306
+(index):665 TRADE SELL 84587.9 0.00001287
+(index):665 TRADE SELL 84587.9 0.00175557
+(index):665 TRADE SELL 84587.9 0.00017556
+(index):665 TRADE SELL 84587.9 0.00034257
+(index):665 TRADE SELL 84587.9 0.02344271
+(index):665 TRADE BUY 84587.89 0.00000613
+(index):665 TRADE SELL 84587.9 0.00128742
+(index):665 TRADE SELL 84587.9 0.00023408
+(index):665 TRADE SELL 84587.9 0.00044
+(index):665 TRADE BUY 84587.89 8.1e-7
+(index):665 TRADE BUY 84583.06 0.00369865
+(index):665 TRADE BUY 84583.27 0.00354843
+(index):665 TRADE BUY 84587.89 0.00656122
+(index):665 TRADE BUY 84587.91 0.00019518
+(index):665 TRADE BUY 84587.91 0.00001409
+(index):665 TRADE BUY 84587.91 0.0000301
+(index):665 TRADE BUY 84587.91 0.0002135
+(index):665 TRADE BUY 84587.91 0.02
+(index):665 TRADE BUY 84587.91 0.01
+(index):665 TRADE BUY 84587.91 0.00011822
+(index):665 TRADE BUY 84587.91 0.00000449
+(index):665 TRADE BUY 84587.91 8.2e-7
+(index):665 TRADE BUY 84587.91 0.00407729
+(index):665 TRADE BUY 84587.91 0.00013938
+(index):665 TRADE SELL 84587.92 0.00001148
+(index):665 TRADE BUY 84587.91 0.00010333
+(index):665 TRADE BUY 84587.91 0.00019518
+(index):665 TRADE SELL 84587.92 0.00056061
+(index):665 TRADE SELL 84587.92 0.00032782
+(index):665 TRADE SELL 84587.92 0.00017229
+(index):665 TRADE SELL 84587.92 0.00004728
+(index):665 TRADE SELL 84587.92 0.00287103
+(index):665 TRADE SELL 84587.92 0.00005852
+(index):665 TRADE SELL 84587.92 0.00002341
+(index):665 TRADE SELL 84587.92 0.00029259
+(index):665 TRADE SELL 84587.92 0.00058519
+(index):665 TRADE SELL 84587.92 0.0000052
+(index):665 TRADE SELL 84587.92 0.00002024
+(index):665 TRADE SELL 84587.92 0.01148601
+(index):665 TRADE SELL 84587.92 0.00001144
+(index):665 TRADE SELL 84587.92 0.00101
+(index):665 TRADE BUY 84582.57 0.00140887
+(index):665 TRADE BUY 84586.4 0.00656133
+(index):665 TRADE BUY 84586.83 0.00556431
+(index):665 TRADE BUY 84587.94 0.00021362
+(index):665 TRADE BUY 84587.94 0.01
+(index):665 TRADE BUY 84587.94 0.00000906
+(index):665 TRADE BUY 84587.94 0.00011822
+(index):665 TRADE BUY 84586.83 0.00034544
+(index):665 TRADE BUY 84587.88 0.00022402
+(index):665 TRADE BUY 84587.88 0.00019778
+(index):665 TRADE BUY 84587.88 0.00016118
+(index):665 TRADE BUY 84587.94 0.001341
+(index):665 TRADE BUY 84587.94 0.00011822
+(index):665 TRADE SELL 84587.95 0.00002352
+(index):665 TRADE SELL 84587.95 0.00032765
+(index):665 TRADE SELL 84587.87 0.00056065
+(index):665 TRADE BUY 84587.86 0.00060925
+(index):665 TRADE SELL 84587.87 0.00000859
+(index):665 TRADE BUY 84588 0.00058873
+(index):665 TRADE BUY 84592.55 0.04301385
+(index):665 TRADE BUY 84589.57 0.00354843
+(index):665 TRADE BUY 84591.26 0.00354843
+(index):665 TRADE BUY 84591.91 0.00808653
+(index):665 TRADE BUY 84591.91 0.00070806
+(index):665 TRADE BUY 84591.97 0.01550484
+(index):665 TRADE BUY 84592.95 0.00354843
+(index):558 [Violation] 'message' handler took 206ms
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00001182
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE BUY 84590.74 0.00116184
+(index):665 TRADE BUY 84590.74 0.010778
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84590.74 0.00023403
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.01046
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84590.74 0.00003549
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00312797
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00093067
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00021663
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.0002927
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00005852
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84590.74 0.00236432
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00044485
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00029259
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.01148806
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00011703
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00011703
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00002341
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00000591
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00037614
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00249851
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00021663
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00027515
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00112657
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00002679
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84590.74 0.02387968
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00533277
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE BUY 84590.74 0.00003546
+(index):665 TRADE SELL 84590.75 0.00056059
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.01170341
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00114178
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84590.75 0.00516963
+(index):658 Received trade event with 5 trades.
+(index):665 TRADE SELL 84599.29 0.00002253
+(index):665 TRADE SELL 84595.54 0.00008292
+(index):665 TRADE SELL 84593.06 0.00656082
+(index):665 TRADE SELL 84590.75 0.02561664
+(index):665 TRADE SELL 84590.75 0.03352455
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84599.03 0.00224261
+(index):658 Received trade event with 3 trades.
+(index):665 TRADE SELL 84599.03 0.000024
+(index):665 TRADE SELL 84599.03 0.00580016
+(index):665 TRADE SELL 84599.02 0.00005154
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84596.85 0.00002364
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00224261
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE SELL 84598.52 0.00001458
+(index):665 TRADE SELL 84598.52 0.00112657
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00010545
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00029259
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE SELL 84598.52 0.00170288
+(index):665 TRADE SELL 84598.52 0.00277859
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.0003511
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE SELL 84598.52 0.00002907
+(index):665 TRADE SELL 84598.52 0.00003389
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00001182
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00229658
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84598.51 0.00005439
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00001072
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.0002872
+(index):658 Received trade event with 2 trades.
+(index):665 TRADE SELL 84598.52 1.1e-7
+(index):665 TRADE SELL 84598.52 0.00029185
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE SELL 84598.52 0.00001144
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84598.51 0.00005911
+(index):658 Received trade event with 1 trades.
+(index):665 TRADE BUY 84598.51 0.00003546
+
+// full object; note microseconds
+
+{product_id: 'BTC-USD', trade_id: '813758561', price: '84610.09', size: '0.00102805', time: '2025-04-18T18:29:07.190435Z', …}
