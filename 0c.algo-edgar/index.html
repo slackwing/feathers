@@ -556,163 +556,135 @@
 
                     const price = parseFloat(update.price_level);
                     const quantity = parseFloat(update.new_quantity);
+                    const side = update.side === 'bid' ? 'B' : 'S';
 
-                    const priceForId = price.toLocaleString('fullwide', {useGrouping: false});
+                    const priceStr = price.toLocaleString('fullwide', {useGrouping: false});
                     
-                    if (update.side === 'bid') {
+                    const id = "L2" + side + "-" + priceStr;
 
-                        const id = "L2B-" + priceForId;
+                    const order = new Order('limit', id, side, price, quantity, update.timestamp);
 
-                        const order = new Order('limit', id, 'B', price, quantity, update.timestamp);
-                        l2Book.upsertOrder(order);
-
-
-                        if (quantity > 0) {
-                            orderBook.bids.set(price, new PriceLevel(quantity, paperQty));
-                            yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                        } else if (paperQty === 0) {
-                            orderBook.bids.delete(price);
-                        } else {
-                            orderBook.bids.set(price, new PriceLevel(0, paperQty));
-                        }
-                    } else {
-
-
-
-                        const order = new Order('limit', null, 'S', price, quantity, update.timestamp);
-                        l2Book.addOrder(order);
-
-                        const existingLevel = orderBook.asks.get(price);
-                        const paperQty = existingLevel ? existingLevel.paperQty : 0;
-                        if (quantity > 0) {
-                            orderBook.asks.set(price, new PriceLevel(quantity, paperQty));
-                            yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                        } else if (paperQty === 0) {
-                            orderBook.asks.delete(price);
-                        } else {
-                            orderBook.asks.set(price, new PriceLevel(0, paperQty));
-                        }
-                    }
+                    l2Book.upsertOrder(order);
                 });
                 
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();
-                updateDisplay_Trades();
+                // updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
 
-                console.log("--------------------------------");
+                // console.log("--------------------------------");
 
-                // Process trades for execution against paper orders
-                message.data.events[0].trades.forEach(trade => {
-                    const price = parseFloat(trade.price);
-                    const size = parseFloat(trade.size);
+                // // Process trades for execution against paper orders
+                // message.data.events[0].trades.forEach(trade => {
+                //     const price = parseFloat(trade.price);
+                //     const size = parseFloat(trade.size);
 
-                    console.log(trade.trade_id,trade.side, trade.price, trade.size, trade.time);
+                //     console.log(trade.trade_id,trade.side, trade.price, trade.size, trade.time);
                     
-                    // Add to recent trades
-                    const wasPaperTrade = (() => {
-                        if (trade.side === 'BUY') {
-                            // Check all ask levels at or below the trade price
-                            const sortedAsks = Array.from(orderBook.asks.entries())
-                                .sort((a, b) => a[0] - b[0]);
-                            for (const [askPrice, level] of sortedAsks) {
-                                if (price >= askPrice && level.paperQty > 0) {
-                                    console.log('Found paper sell at:', { askPrice, paperQty: level.paperQty });
-                                    return true;
-                                }
-                            }
-                            return false;
-                        } else {
-                            // Check all bid levels at or above the trade price
-                            const sortedBids = Array.from(orderBook.bids.entries())
-                                .sort((a, b) => b[0] - a[0]);
-                            for (const [bidPrice, level] of sortedBids) {
-                                if (price <= bidPrice && level.paperQty > 0) {
-                                    console.log('Found paper buy at:', { bidPrice, paperQty: level.paperQty });
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                    })();
+                //     // Add to recent trades
+                //     const wasPaperTrade = (() => {
+                //         if (trade.side === 'BUY') {
+                //             // Check all ask levels at or below the trade price
+                //             const sortedAsks = Array.from(orderBook.asks.entries())
+                //                 .sort((a, b) => a[0] - b[0]);
+                //             for (const [askPrice, level] of sortedAsks) {
+                //                 if (price >= askPrice && level.paperQty > 0) {
+                //                     console.log('Found paper sell at:', { askPrice, paperQty: level.paperQty });
+                //                     return true;
+                //                 }
+                //             }
+                //             return false;
+                //         } else {
+                //             // Check all bid levels at or above the trade price
+                //             const sortedBids = Array.from(orderBook.bids.entries())
+                //                 .sort((a, b) => b[0] - a[0]);
+                //             for (const [bidPrice, level] of sortedBids) {
+                //                 if (price <= bidPrice && level.paperQty > 0) {
+                //                     console.log('Found paper buy at:', { bidPrice, paperQty: level.paperQty });
+                //                     return true;
+                //                 }
+                //             }
+                //             return false;
+                //         }
+                //     })();
 
-                    recentTrades.unshift({
-                        price,
-                        size,
-                        side: trade.side,
-                        time: new Date().toLocaleTimeString(),
-                        wasPaperTrade
-                    });
-                    if (recentTrades.length > 7) {
-                        recentTrades.pop();
-                    }
+                //     recentTrades.unshift({
+                //         price,
+                //         size,
+                //         side: trade.side,
+                //         time: new Date().toLocaleTimeString(),
+                //         wasPaperTrade
+                //     });
+                //     if (recentTrades.length > 7) {
+                //         recentTrades.pop();
+                //     }
                     
-                    if (trade.side === 'BUY') {
-                        // Trade executed against asks (seller was maker)
-                        // Process from inside-out (lowest ask first)
-                        const sortedAsks = Array.from(orderBook.asks.entries())
-                            .sort((a, b) => a[0] - b[0]);
+                //     if (trade.side === 'BUY') {
+                //         // Trade executed against asks (seller was maker)
+                //         // Process from inside-out (lowest ask first)
+                //         const sortedAsks = Array.from(orderBook.asks.entries())
+                //             .sort((a, b) => a[0] - b[0]);
                         
-                        let remainingSize = size;
-                        for (const [askPrice, level] of sortedAsks) {
-                            if (price >= askPrice && remainingSize > 0) {
-                                if (level.paperQty > 0) {
-                                    const executedQty = Math.min(remainingSize, level.paperQty);
-                                    // Update P/L when paperQty decreases using the ask price level
-                                    totalPL += executedQty * askPrice;  // Sell order executed = profit
-                                    level.paperQty -= executedQty;
-                                    level.ghostQty += executedQty;
-                                    level.initialGhostQty = level.ghostQty;
-                                    level.executionPrice = askPrice;
-                                    remainingSize -= executedQty;
-                                    console.log('Paper sell executed:', { marketPrice: price, orderPrice: askPrice, executedQty, remainingPaperQty: level.paperQty });
-                                } else if (level.ghostQty > 0) {
-                                    const executedQty = Math.min(remainingSize, level.ghostQty);
-                                    level.ghostQty -= executedQty;
-                                    remainingSize -= executedQty;
-                                }
+                //         let remainingSize = size;
+                //         for (const [askPrice, level] of sortedAsks) {
+                //             if (price >= askPrice && remainingSize > 0) {
+                //                 if (level.paperQty > 0) {
+                //                     const executedQty = Math.min(remainingSize, level.paperQty);
+                //                     // Update P/L when paperQty decreases using the ask price level
+                //                     totalPL += executedQty * askPrice;  // Sell order executed = profit
+                //                     level.paperQty -= executedQty;
+                //                     level.ghostQty += executedQty;
+                //                     level.initialGhostQty = level.ghostQty;
+                //                     level.executionPrice = askPrice;
+                //                     remainingSize -= executedQty;
+                //                     console.log('Paper sell executed:', { marketPrice: price, orderPrice: askPrice, executedQty, remainingPaperQty: level.paperQty });
+                //                 } else if (level.ghostQty > 0) {
+                //                     const executedQty = Math.min(remainingSize, level.ghostQty);
+                //                     level.ghostQty -= executedQty;
+                //                     remainingSize -= executedQty;
+                //                 }
                                 
-                                if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
-                                    orderBook.asks.delete(askPrice);
-                                }
-                            }
-                        }
-                    } else {
-                        // Trade executed against bids (buyer was maker)
-                        // Process from inside-out (highest bid first)
-                        const sortedBids = Array.from(orderBook.bids.entries())
-                            .sort((a, b) => b[0] - a[0]);
+                //                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
+                //                     orderBook.asks.delete(askPrice);
+                //                 }
+                //             }
+                //         }
+                //     } else {
+                //         // Trade executed against bids (buyer was maker)
+                //         // Process from inside-out (highest bid first)
+                //         const sortedBids = Array.from(orderBook.bids.entries())
+                //             .sort((a, b) => b[0] - a[0]);
                         
-                        let remainingSize = size;
-                        for (const [bidPrice, level] of sortedBids) {
-                            if (price <= bidPrice && remainingSize > 0) {
-                                if (level.paperQty > 0) {
-                                    const executedQty = Math.min(remainingSize, level.paperQty);
-                                    // Update P/L when paperQty decreases using the bid price level
-                                    totalPL -= executedQty * bidPrice;  // Buy order executed = loss
-                                    level.paperQty -= executedQty;
-                                    level.ghostQty += executedQty;
-                                    level.initialGhostQty = level.ghostQty;
-                                    level.executionPrice = bidPrice;
-                                    remainingSize -= executedQty;
-                                    console.log('Paper buy executed:', { marketPrice: price, orderPrice: bidPrice, executedQty, remainingPaperQty: level.paperQty });
-                                } else if (level.ghostQty > 0) {
-                                    const executedQty = Math.min(remainingSize, level.ghostQty);
-                                    level.ghostQty -= executedQty;
-                                    remainingSize -= executedQty;
-                                }
+                //         let remainingSize = size;
+                //         for (const [bidPrice, level] of sortedBids) {
+                //             if (price <= bidPrice && remainingSize > 0) {
+                //                 if (level.paperQty > 0) {
+                //                     const executedQty = Math.min(remainingSize, level.paperQty);
+                //                     // Update P/L when paperQty decreases using the bid price level
+                //                     totalPL -= executedQty * bidPrice;  // Buy order executed = loss
+                //                     level.paperQty -= executedQty;
+                //                     level.ghostQty += executedQty;
+                //                     level.initialGhostQty = level.ghostQty;
+                //                     level.executionPrice = bidPrice;
+                //                     remainingSize -= executedQty;
+                //                     console.log('Paper buy executed:', { marketPrice: price, orderPrice: bidPrice, executedQty, remainingPaperQty: level.paperQty });
+                //                 } else if (level.ghostQty > 0) {
+                //                     const executedQty = Math.min(remainingSize, level.ghostQty);
+                //                     level.ghostQty -= executedQty;
+                //                     remainingSize -= executedQty;
+                //                 }
                                 
-                                if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
-                                    orderBook.bids.delete(bidPrice);
-                                }
-                            }
-                        }
-                    }
-                });
+                //                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
+                //                     orderBook.bids.delete(bidPrice);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // });
                 
-                updateDisplay_OrderBook();
-                updateDisplay_BarChart();
-                updateDisplay_Trades();
+                // updateDisplay_OrderBook();
+                // updateDisplay_BarChart();
+                // updateDisplay_Trades();
             } else {
                 // console.log('Unhandled message:', message);
             }
@@ -848,22 +820,22 @@
             asksBarsDiv.innerHTML = askBars.join('');
         }
 
-        function updateDisplay_Trades() {
-            const filteredTrades = showAllTradesCheckbox.checked ? 
-                recentTrades : 
-                recentTrades.filter(trade => trade.wasPaperTrade);
+        // function updateDisplay_Trades() {
+        //     const filteredTrades = showAllTradesCheckbox.checked ? 
+        //         recentTrades : 
+        //         recentTrades.filter(trade => trade.wasPaperTrade);
 
-            tradesListDiv.innerHTML = filteredTrades.map(trade => `
-                <div class="trade-row ${trade.side.toLowerCase()}">
-                    <span>${trade.time}</span>
-                    <span>$${trade.price.toFixed(2)}</span>
-                    <span${trade.wasPaperTrade ? ' style="color: #b8860b"' : ''}>${trade.size.toFixed(8)} BTC</span>
-                </div>
-            `).join('');
+        //     tradesListDiv.innerHTML = filteredTrades.map(trade => `
+        //         <div class="trade-row ${trade.side.toLowerCase()}">
+        //             <span>${trade.time}</span>
+        //             <span>$${trade.price.toFixed(2)}</span>
+        //             <span${trade.wasPaperTrade ? ' style="color: #b8860b"' : ''}>${trade.size.toFixed(8)} BTC</span>
+        //         </div>
+        //     `).join('');
 
-            plValueDiv.textContent = `$${totalPL.toFixed(2)}`;
-            plValueDiv.className = `pl-value ${totalPL >= 0 ? 'positive' : 'negative'}`;
-        }
+        //     plValueDiv.textContent = `$${totalPL.toFixed(2)}`;
+        //     plValueDiv.className = `pl-value ${totalPL >= 0 ? 'positive' : 'negative'}`;
+        // }
 
         showAllTradesCheckbox.addEventListener('change', () => {
             document.getElementById('toggleText').textContent = showAllTradesCheckbox.checked ? 'Show all trades' : 'Only paper trades';
