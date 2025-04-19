@@ -467,75 +467,63 @@
         const plValueDiv = document.getElementById('pl-value');
         const showAllTradesCheckbox = document.getElementById('showAllTrades');
 
-        class PriceLevel {
-            constructor(quantity, paperQty = 0, ghostQty = 0, executionPrice = 0, initialGhostQty = 0) {
-                this.quantity = quantity;
-                this.paperQty = paperQty;
-                this.ghostQty = ghostQty;
-                this.executionPrice = executionPrice;
-                this.initialGhostQty = initialGhostQty;  // Track the initial execution amount
-            }
-        }
-
         const MIN_Y_HEIGHT_VOLUME = 0.1;
         const X_BUCKET_WIDTH_USD = 1.0;
         const X_BUCKETS_PER_SIDE = 100;
-        
-        let orderBook = {
-            bids: new Map(),
-            asks: new Map()
-        };
-        let initialBestBid = null;
-        let initialBestAsk = null;
+
+        let l2Book = new OrderBook();
+        let resistantUniverse = new World();
+        let liquidUniverse = new World();
+    
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
-        let recentTrades = [];
-        let totalPL = 0;  // This will be our persistent running total
+        // let recentTrades = [];
+        // let totalPL = 0;  // This will be our persistent running total
 
         // Add form submission handlers
-        buyForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const price = parseFloat(document.getElementById('buyPrice').value);
-            const amount = parseFloat(document.getElementById('buyAmount').value);
+        // buyForm.addEventListener('submit', (e) => {
+        //     e.preventDefault();
+        //     const price = parseFloat(document.getElementById('buyPrice').value);
+        //     const amount = parseFloat(document.getElementById('buyAmount').value);
             
-            if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-                alert('Invalid price or amount.');
-                return;
-            }
+        //     if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
+        //         alert('Invalid price or amount.');
+        //         return;
+        //     }
 
-            // Add or update the price level with paper quantity
-            const existingLevel = orderBook.bids.get(price);
-            if (existingLevel) {
-                existingLevel.paperQty += amount;
-            } else {
-                orderBook.bids.set(price, new PriceLevel(0, amount));
-            }
+        //     // Add or update the price level with paper quantity
+        //     const existingLevel = orderBook.bids.get(price);
+        //     if (existingLevel) {
+        //         existingLevel.paperQty += amount;
+        //     } else {
+        //         orderBook.bids.set(price, new PriceLevel(0, amount));
+        //     }
 
-            updateDisplay_OrderBook();
-            updateDisplay_BarChart();
-        });
+        //     updateDisplay_OrderBook();
+        //     updateDisplay_BarChart();
+        // });
 
-        sellForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const price = parseFloat(document.getElementById('sellPrice').value);
-            const amount = parseFloat(document.getElementById('sellAmount').value);
+        // sellForm.addEventListener('submit', (e) => {
+        //     e.preventDefault();
+        //     const price = parseFloat(document.getElementById('sellPrice').value);
+        //     const amount = parseFloat(document.getElementById('sellAmount').value);
             
-            if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-                alert('Invalid price or amount.');
-                return;
-            }
+        //     if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
+        //         alert('Invalid price or amount.');
+        //         return;
+        //     }
 
-            // Add or update the price level with paper quantity
-            const existingLevel = orderBook.asks.get(price);
-            if (existingLevel) {
-                existingLevel.paperQty += amount;
-            } else {
-                orderBook.asks.set(price, new PriceLevel(0, amount));
-            }
+        //     // Add or update the price level with paper quantity
+        //     const existingLevel = orderBook.asks.get(price);
+        //     if (existingLevel) {
+        //         existingLevel.paperQty += amount;
+        //     } else {
+        //         orderBook.asks.set(price, new PriceLevel(0, amount));
+        //     }
 
-            updateDisplay_OrderBook();
-            updateDisplay_BarChart();
-        });
+        //     updateDisplay_OrderBook();
+        //     updateDisplay_BarChart();
+        // });
 
         // Connect to WebSocket
         const ws = new WebSocket(`ws://${window.location.host}`);
@@ -562,93 +550,50 @@
             if (message.type === 'l2_data') {
 
                 const event = message.data.events[0];
-                
-                if (event.type === 'snapshot') {
 
-                    // TODO(P2): Is there a better way to track paper orders?
+                // Handle snapshots and update equivalently.
+                event.updates.forEach(update => {
 
-                    // Snapshot to initialize the order book.
-                    const paperBids = new Map();
-                    const paperAsks = new Map();
+                    const price = parseFloat(update.price_level);
+                    const quantity = parseFloat(update.new_quantity);
+
+                    const priceForId = price.toLocaleString('fullwide', {useGrouping: false});
                     
-                    // Save existing paper orders.
-                    orderBook.bids.forEach((level, price) => {
-                        if (level.paperQty > 0) {
-                            paperBids.set(price, level.paperQty);
-                        }
-                    });
-                    orderBook.asks.forEach((level, price) => {
-                        if (level.paperQty > 0) {
-                            paperAsks.set(price, level.paperQty);
-                        }
-                    });
+                    if (update.side === 'bid') {
 
-                    // Clear and reinitialize order book
-                    orderBook.bids.clear();
-                    orderBook.asks.clear();
-                    yHeightVolume = MIN_Y_HEIGHT_VOLUME;
-                    
-                    event.updates.forEach(update => {
+                        const id = "L2B-" + priceForId;
 
-                        const price = parseFloat(update.price_level);
-                        const quantity = parseFloat(update.new_quantity);
-                        
-                        if (update.side === 'bid') {
-                            if (quantity > 0) {
-                                const paperQty = paperBids.get(price) || 0;
-                                orderBook.bids.set(price, new PriceLevel(quantity, paperQty));
-                                yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                            }
+                        const order = new Order('limit', id, 'B', price, quantity, update.timestamp);
+                        l2Book.upsertOrder(order);
+
+
+                        if (quantity > 0) {
+                            orderBook.bids.set(price, new PriceLevel(quantity, paperQty));
+                            yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
+                        } else if (paperQty === 0) {
+                            orderBook.bids.delete(price);
                         } else {
-                            if (quantity > 0) {
-                                const paperQty = paperAsks.get(price) || 0;
-                                orderBook.asks.set(price, new PriceLevel(quantity, paperQty));
-                                yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                            }
+                            orderBook.bids.set(price, new PriceLevel(0, paperQty));
                         }
-                    });
-                    
-                    if (initialBestBid === null || initialBestAsk === null) {
-                        const sortedBids = Array.from(orderBook.bids.entries()).sort((a, b) => b[0] - a[0]);
-                        const sortedAsks = Array.from(orderBook.asks.entries()).sort((a, b) => a[0] - b[0]);
-                        initialBestBid = sortedBids[0][0];
-                        initialBestAsk = sortedAsks[0][0];
+                    } else {
+
+
+
+                        const order = new Order('limit', null, 'S', price, quantity, update.timestamp);
+                        l2Book.addOrder(order);
+
+                        const existingLevel = orderBook.asks.get(price);
+                        const paperQty = existingLevel ? existingLevel.paperQty : 0;
+                        if (quantity > 0) {
+                            orderBook.asks.set(price, new PriceLevel(quantity, paperQty));
+                            yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
+                        } else if (paperQty === 0) {
+                            orderBook.asks.delete(price);
+                        } else {
+                            orderBook.asks.set(price, new PriceLevel(0, paperQty));
+                        }
                     }
-
-                } else {
-
-                    // Incremental updates to the order book.
-
-                    event.updates.forEach(update => {
-
-                        const price = parseFloat(update.price_level);
-                        const quantity = parseFloat(update.new_quantity);
-                        
-                        if (update.side === 'bid') {
-                            const existingLevel = orderBook.bids.get(price);
-                            const paperQty = existingLevel ? existingLevel.paperQty : 0;
-                            if (quantity > 0) {
-                                orderBook.bids.set(price, new PriceLevel(quantity, paperQty));
-                                yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                            } else if (paperQty === 0) {
-                                orderBook.bids.delete(price);
-                            } else {
-                                orderBook.bids.set(price, new PriceLevel(0, paperQty));
-                            }
-                        } else {
-                            const existingLevel = orderBook.asks.get(price);
-                            const paperQty = existingLevel ? existingLevel.paperQty : 0;
-                            if (quantity > 0) {
-                                orderBook.asks.set(price, new PriceLevel(quantity, paperQty));
-                                yHeightVolume = Math.max(yHeightVolume, quantity + paperQty);
-                            } else if (paperQty === 0) {
-                                orderBook.asks.delete(price);
-                            } else {
-                                orderBook.asks.set(price, new PriceLevel(0, paperQty));
-                            }
-                        }
-                    });
-                }
+                });
                 
                 updateDisplay_OrderBook();
                 updateDisplay_BarChart();

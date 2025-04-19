@@ -7,8 +7,15 @@ export class OrderBook {
         this.worlds = [];
     }
 
-    update(order) {
-        // To be implemented
+    upsertOrder(order) {
+        if (order.side === 'B') {
+            this.bids.upsertOrder(order.price, order);
+        } else {
+            this.asks.upsertOrder(order.price, order);
+        }
+        this.worlds.forEach(world => {
+            world.reflect(order);
+        });
     }
 
     mirror(world) {

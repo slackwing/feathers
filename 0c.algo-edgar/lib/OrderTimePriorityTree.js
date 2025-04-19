@@ -8,7 +8,8 @@ export class OrderTimePriorityTree {
         );
     }
 
-    insertOrder(order) {
+    upsertOrder(order) {
+        // Later, might be more performant to copy over the quantity, etc.
         this.orders.set(order.id, order);
     }
 

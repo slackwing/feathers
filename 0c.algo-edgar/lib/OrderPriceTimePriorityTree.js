@@ -11,26 +11,30 @@ export class OrderPriceTimePriorityTree {
         );
     }
 
-    insertOrder(order) {
-        const price = order.price;
+    upsertOrder(price, order) {
         let priceLevel = this.priceLevels.get(price);
-        
-        if (!priceLevel) {
-            priceLevel = new OrderTimePriorityTree();
-            this.priceLevels.set(price, priceLevel);
-        }
-        
-        priceLevel.insertOrder(order);
-    }
-
-    removeOrder(price, orderId) {
-        const priceLevel = this.priceLevels.get(price);
-        if (priceLevel) {
-            priceLevel.removeOrder(orderId);
-            if (priceLevel.orders.size === 0) {
-                this.priceLevels.remove(price);
+        if (order.quantity > 0) {
+            if (!priceLevel) {
+                priceLevel = new OrderTimePriorityTree();
+                this.priceLevels.set(price, priceLevel);
+            }
+            priceLevel.upsertOrder(order);
+        } else {
+            if (priceLevel) {
+                priceLevel.removeOrder(order.id);
+                if (priceLevel.orders.size === 0) {
+                    this.priceLevels.remove(price);
+                }
             }
         }
+    }
+
+    getOrder(price, orderId) {
+        const priceLevel = this.priceLevels.get(price);
+        if (priceLevel) {
+            return priceLevel.getOrder(orderId);
+        }
+        return null;
     }
 
     getOrders(price) {
