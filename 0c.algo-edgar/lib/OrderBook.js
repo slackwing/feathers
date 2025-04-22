@@ -9,9 +9,9 @@ export class OrderBook {
 
     upsertOrder(order) {
         if (order.side === 'B') {
-            this.bids.upsertOrder(order.price, order);
+            this.bids.upsertOrder(order);
         } else {
-            this.asks.upsertOrder(order.price, order);
+            this.asks.upsertOrder(order);
         }
         this.worlds.forEach(world => {
             world.reflect(order);

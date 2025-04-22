@@ -486,53 +486,43 @@
         l2Book.mirror(liquidUniverse);
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
-        // let recentTrades = [];
-        // let totalPL = 0;  // This will be our persistent running total
+        let messageCounter = 0;
+        let lastTimingUpdate = 0;
+        let lastDisplayUpdate = 0;
+        const TIMING_UPDATE_INTERVAL = 1000; // Update timings every second
+        const DISPLAY_UPDATE_INTERVAL = 500; // Update display every 500ms
 
-        // Add form submission handlers
-        // buyForm.addEventListener('submit', (e) => {
-        //     e.preventDefault();
-        //     const price = parseFloat(document.getElementById('buyPrice').value);
-        //     const amount = parseFloat(document.getElementById('buyAmount').value);
+        function updateTimings() {
+            const now = performance.now();
+            if (now - lastTimingUpdate < TIMING_UPDATE_INTERVAL) {
+                return;
+            }
+            lastTimingUpdate = now;
+
+            const bidTimings = l2Book.bids.getTimings();
+            const askTimings = l2Book.asks.getTimings();
             
-        //     if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-        //         alert('Invalid price or amount.');
-        //         return;
-        //     }
-
-        //     // Add or update the price level with paper quantity
-        //     const existingLevel = orderBook.bids.get(price);
-        //     if (existingLevel) {
-        //         existingLevel.paperQty += amount;
-        //     } else {
-        //         orderBook.bids.set(price, new PriceLevel(0, amount));
-        //     }
-
-        //     updateDisplay_OrderBook();
-        //     updateDisplay_BarChart();
-        // });
-
-        // sellForm.addEventListener('submit', (e) => {
-        //     e.preventDefault();
-        //     const price = parseFloat(document.getElementById('sellPrice').value);
-        //     const amount = parseFloat(document.getElementById('sellAmount').value);
+            console.log('Bid Timings:', bidTimings);
+            console.log('Ask Timings:', askTimings);
             
-        //     if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-        //         alert('Invalid price or amount.');
-        //         return;
-        //     }
+            // Check for memory leaks
+            const bidSizeCheck = l2Book.bids.checkMemoryLeak();
+            const askSizeCheck = l2Book.asks.checkMemoryLeak();
+            console.log('Size Check:', { bids: bidSizeCheck, asks: askSizeCheck });
+            
+            // Reset timings after logging
+            l2Book.bids.priceLevels.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0 };
+            l2Book.asks.priceLevels.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0 };
+        }
 
-        //     // Add or update the price level with paper quantity
-        //     const existingLevel = orderBook.asks.get(price);
-        //     if (existingLevel) {
-        //         existingLevel.paperQty += amount;
-        //     } else {
-        //         orderBook.asks.set(price, new PriceLevel(0, amount));
-        //     }
-
-        //     updateDisplay_OrderBook();
-        //     updateDisplay_BarChart();
-        // });
+        function shouldUpdateDisplay() {
+            const now = performance.now();
+            if (now - lastDisplayUpdate < DISPLAY_UPDATE_INTERVAL) {
+                return false;
+            }
+            lastDisplayUpdate = now;
+            return true;
+        }
 
         // Connect to WebSocket
         const ws = new WebSocket(`ws://${window.location.host}`);
@@ -553,16 +543,18 @@
         };
 
         ws.onmessage = (event) => {
+            messageCounter++;
+            if (messageCounter % 5 !== 0) {
+                return;
+            }
 
             const message = JSON.parse(event.data);
             
             if (message.type === 'l2_data') {
-
                 const event = message.data.events[0];
 
                 // Handle snapshots and update equivalently.
                 event.updates.forEach(update => {
-
                     const price = parseFloat(update.price_level);
                     const quantity = parseFloat(update.new_quantity);
                     const side = update.side === 'bid' ? 'B' : 'S';
@@ -574,11 +566,15 @@
                     l2Book.upsertOrder(order);
                 });
                 
-                updateDisplay_OrderBook();
-                updateDisplay_BarChart();
+                // Only update display periodically
+                if (shouldUpdateDisplay()) {
+                    updateDisplay_OrderBook();
+                    updateDisplay_BarChart();
+                }
+                
+                updateTimings();
                 // updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
-
                 // console.log("--------------------------------");
 
                 // // Process trades for execution against paper orders
@@ -822,6 +818,7 @@
         //         </div>
         //     `).join('');
 
+        //     plValueDiv.textContent = `
         //     plValueDiv.textContent = `$${totalPL.toFixed(2)}`;
         //     plValueDiv.className = `pl-value ${totalPL >= 0 ? 'positive' : 'negative'}`;
         // }
@@ -839,4 +836,3 @@
         };
     </script>
 </body>
-</html>
