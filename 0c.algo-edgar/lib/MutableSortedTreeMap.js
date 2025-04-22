@@ -19,16 +19,12 @@ export class MutableSortedTreeMap {
         const start = performance.now();
         const oldValue = this.map.get(key);
         if (oldValue !== undefined) {
-            // Only update tree if value actually changed
-            if (oldValue !== value) {
-                this.root = this._removeFromTree(this.root, { key, value: oldValue });
-                this.root = this._insertIntoTree(this.root, { key, value });
-            }
+            this.root = this._removeFromTree(this.root, { key, value: oldValue });
         } else {
-            this.size++;
-            this.root = this._insertIntoTree(this.root, { key, value });
+            this.size++; // Increment size only for new entries
         }
         this.map.set(key, value);
+        this.root = this._insertIntoTree(this.root, { key, value });
         this.timings.set += performance.now() - start;
     }
 
