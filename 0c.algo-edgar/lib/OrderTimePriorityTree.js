@@ -35,17 +35,22 @@ export class OrderTimePriorityTree {
 
     [Symbol.iterator]() {
         const start = performance.now();
-        const result = [];
-        if (!this.orders) {
-            this.timings.iterator += performance.now() - start;
-            return result[Symbol.iterator]();
-        }
-        for (const [_, order] of this.orders) {
-            if (!order) continue;
-            result.push(order);
-        }
+        const iterator = this.orders[Symbol.iterator]();
+        const result = {
+            next() {
+                const next = iterator.next();
+                if (next.done) {
+                    return { done: true };
+                }
+                const [_, order] = next.value;
+                if (!order) {
+                    return result.next(); // Skip null orders
+                }
+                return { value: order, done: false };
+            }
+        };
         this.timings.iterator += performance.now() - start;
-        return result[Symbol.iterator]();
+        return result;
     }
 
     getTimings() {

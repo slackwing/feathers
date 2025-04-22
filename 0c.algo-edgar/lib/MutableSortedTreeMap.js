@@ -19,13 +19,26 @@ export class MutableSortedTreeMap {
         const start = performance.now();
         const oldValue = this.map.get(key);
         if (oldValue !== undefined) {
-            this.root = this._removeFromTree(this.root, { key, value: oldValue });
+            this.map.set(key, value);
+            this._updateNodeValue(this.root, key, value);
         } else {
-            this.size++; // Increment size only for new entries
+            this.size++;
+            this.map.set(key, value);
+            this.root = this._insertIntoTree(this.root, { key, value });
         }
-        this.map.set(key, value);
-        this.root = this._insertIntoTree(this.root, { key, value });
         this.timings.set += performance.now() - start;
+    }
+
+    _updateNodeValue(node, key, value) {
+        if (!node) return;
+        
+        if (key === node.key) {
+            node.value = value;
+        } else if (this.comparator(value, node.value) < 0) {
+            this._updateNodeValue(node.left, key, value);
+        } else {
+            this._updateNodeValue(node.right, key, value);
+        }
     }
 
     get(key) {
@@ -151,39 +164,41 @@ export class MutableSortedTreeMap {
 
     [Symbol.iterator]() {
         const start = performance.now();
-        const result = [];
-        if (!this.root) {
-            this.timings.iterator += performance.now() - start;
-            return result[Symbol.iterator]();
-        }
         
-        // Use a dynamic array for the stack
+        // Create a stack for in-order traversal
         const stack = [];
         let current = this.root;
         
-        // Traverse to the leftmost node
-        while (current) {
-            stack.push(current);
-            current = current.left;
-        }
-        
-        // Process nodes in-order
-        while (stack.length > 0) {
-            current = stack.pop();
-            if (current && current.key && current.value) {
-                result.push([current.key, current.value]);
+        // Create an iterator that yields values directly
+        const iterator = {
+            next() {
+                // If we have a current node, process it
+                if (current) {
+                    // Traverse to the leftmost node
+                    while (current) {
+                        stack.push(current);
+                        current = current.left;
+                    }
+                }
+                
+                // If stack is empty, we're done
+                if (stack.length === 0) {
+                    return { done: true };
+                }
+                
+                // Process the current node
+                current = stack.pop();
+                const result = { value: [current.key, current.value], done: false };
+                
+                // Move to the right subtree
+                current = current.right;
+                
+                return result;
             }
-            
-            // Process right subtree
-            current = current.right;
-            while (current) {
-                stack.push(current);
-                current = current.left;
-            }
-        }
+        };
         
         this.timings.iterator += performance.now() - start;
-        return result[Symbol.iterator]();
+        return iterator;
     }
 
     getTimings() {
