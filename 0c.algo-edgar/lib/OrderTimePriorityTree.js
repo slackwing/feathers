@@ -21,7 +21,12 @@ export class OrderTimePriorityTree {
         return this.orders.get(orderId);
     }
 
-    [Symbol.iterator]() {
-        return this.orders[Symbol.iterator]();
+    *[Symbol.iterator]() {
+        if (!this.orders) {
+            return;
+        }
+        for (const [_, order] of this.orders) {
+            yield order;
+        }
     }
 }

@@ -9,6 +9,6 @@ export class World {
     }
 
     reflect(order) {
-        this.combinedBook.update(order);
+        this.combinedBook.upsertOrder(order);
     }
 }

@@ -1,10 +1,11 @@
 import { MutableSortedTreeMap } from './MutableSortedTreeMap.js';
-import { assert } from 'assert';
 import { OrderTimePriorityTree } from './OrderTimePriorityTree.js';
 
 export class OrderPriceTimePriorityTree {
     constructor(side) {
-        assert(side === 'B' || side === 'S', 'Side must be either B or S');
+        if (side !== 'B' && side !== 'S') {
+            throw new Error('Side must be either B or S');
+        }
         this.side = side;
         this.priceLevels = new MutableSortedTreeMap(
             (orderA, orderB) => this.side === 'B' ? orderB.price - orderA.price : orderA.price - orderB.price
@@ -41,15 +42,16 @@ export class OrderPriceTimePriorityTree {
         return this.priceLevels.get(price);
     }
 
-    [Symbol.iterator]() {
-        return {
-            *[Symbol.iterator]() {
-                for (const [_, priceLevel] of this.priceLevels) {
-                    for (const order of priceLevel) {
-                        yield order;
-                    }
+    *[Symbol.iterator]() {
+        if (!this.priceLevels) {
+            return;
+        }
+        for (const [_, priceLevel] of this.priceLevels) {
+            if (priceLevel) {
+                for (const order of priceLevel) {
+                    yield order;
                 }
             }
-        }.bind(this);
+        }
     }
 }

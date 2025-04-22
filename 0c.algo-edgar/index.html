@@ -453,7 +453,14 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { MutableSortedTreeMap } from './lib/MutableSortedTreeMap.js';
+        import { Order } from './lib/Order.js';
+        import { OrderTimePriorityTree } from './lib/OrderTimePriorityTree.js';
+        import { OrderPriceTimePriorityTree } from './lib/OrderPriceTimePriorityTree.js';
+        import { OrderBook } from './lib/OrderBook.js';
+        import { World } from './lib/World.js';
+
         const bidsDiv = document.getElementById('bids');
         const asksDiv = document.getElementById('asks');
         const bidsBarsDiv = document.getElementById('bids-bars');
@@ -472,9 +479,11 @@
         const X_BUCKETS_PER_SIDE = 100;
 
         let l2Book = new OrderBook();
-        let resistantUniverse = new World();
-        let liquidUniverse = new World();
+        let resistantUniverse = new World(l2Book);
+        let liquidUniverse = new World(l2Book);
     
+        l2Book.mirror(resistantUniverse);
+        l2Book.mirror(liquidUniverse);
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
         // let recentTrades = [];
@@ -557,9 +566,7 @@
                     const price = parseFloat(update.price_level);
                     const quantity = parseFloat(update.new_quantity);
                     const side = update.side === 'bid' ? 'B' : 'S';
-
                     const priceStr = price.toLocaleString('fullwide', {useGrouping: false});
-                    
                     const id = "L2" + side + "-" + priceStr;
 
                     const order = new Order('limit', id, side, price, quantity, update.timestamp);
@@ -691,52 +698,48 @@
         };
 
         function updateDisplay_OrderBook() {
-            // TODO(P2): Look into using a sorted data structure.
-            const sortedBids = Array.from(orderBook.bids.entries())
-                .sort((a, b) => b[0] - a[0])
-                .slice(0, 100);
-            const sortedAsks = Array.from(orderBook.asks.entries())
-                .sort((a, b) => a[0] - b[0])
-                .slice(0, 100);
-            bidsDiv.innerHTML = sortedBids.map(([price, priceLevel]) => {
+            let bids = [];
+            let asks = [];
+            
+            try {
+                bids = Array.from(l2Book.bids).slice(0, 100);
+            } catch (e) {
+                console.error("Error converting bids to array:", e);
+            }
+            
+            try {
+                asks = Array.from(l2Book.asks).slice(0, 100);
+            } catch (e) {
+                console.error("Error converting asks to array:", e);
+            }
+            
+            bidsDiv.innerHTML = bids.map(order => {
                 return `
                 <div class="order-row">
-                    <span class="price">$${price.toFixed(2)}</span>
-                    <span class="quantity">
-                        ${priceLevel.paperQty > 0 ? `<span style="color: #28a745">${priceLevel.paperQty.toFixed(8)}</span> ` : ''}
-                        ${priceLevel.ghostQty > 0 && priceLevel.paperQty === 0 ? `<span style="color: #999">${priceLevel.ghostQty.toFixed(8)}</span> ` : ''}
-                        ${priceLevel.quantity.toFixed(8)}
-                    </span>
+                    <span class="price">$${order.price.toFixed(2)}</span>
+                    <span class="quantity">${order.quantity.toFixed(8)}</span>
                 </div>
             `}).join('');
-            asksDiv.innerHTML = sortedAsks.map(([price, priceLevel]) => {
+            asksDiv.innerHTML = asks.map(order => {
                 return `
                 <div class="order-row">
-                    <span class="price">$${price.toFixed(2)}</span>
-                    <span class="quantity">
-                        ${priceLevel.paperQty > 0 ? `<span style="color: #dc3545">${priceLevel.paperQty.toFixed(8)}</span> ` : ''}
-                        ${priceLevel.ghostQty > 0 && priceLevel.paperQty === 0 ? `<span style="color: #999">${priceLevel.ghostQty.toFixed(8)}</span> ` : ''}
-                        ${priceLevel.quantity.toFixed(8)}
-                    </span>
+                    <span class="price">$${order.price.toFixed(2)}</span>
+                    <span class="quantity">${order.quantity.toFixed(8)}</span>
                 </div>
             `}).join('');
         }
         
         function updateDisplay_BarChart() {
+            const bids = Array.from(l2Book.bids);
+            const asks = Array.from(l2Book.asks);
 
-            // TODO(P2): Look into using a sorted data structure.
-            const sortedBids = Array.from(orderBook.bids.entries())
-                .sort((a, b) => b[0] - a[0]);
-            const sortedAsks = Array.from(orderBook.asks.entries())
-                .sort((a, b) => a[0] - b[0]);
-
-            if (sortedBids.length === 0 || sortedAsks.length === 0) {
+            if (bids.length === 0 || asks.length === 0) {
                 console.log('Awaiting data to initialize bar chart...');
                 return;
             }
             
-            const bestBid = sortedBids[0][0];
-            const bestAsk = sortedAsks[0][0];
+            const bestBid = bids[0].price;
+            const bestAsk = asks[0].price;
             const spread = bestAsk - bestBid;
             const spreadPercentage = (spread / bestBid) * 100;
             
@@ -748,71 +751,57 @@
             const bidBuckets = new Map();
             for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
-                bidBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0, ghostVolume: 0 });
+                bidBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
             
             const askBuckets = new Map();
             for (let i = 0; i < bucketsPerSide; i++) {
                 const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
-                askBuckets.set(i, { price: bucketPrice, volume: 0, paperVolume: 0, ghostVolume: 0 });
+                askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
 
-            sortedBids.forEach(([price, priceLevel]) => {
-                const bucketIndex = Math.floor((bestBid - price) / bucketSize);
+            bids.forEach((order) => {
+                const bucketIndex = Math.floor((bestBid - order.price) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = bidBuckets.get(bucketIndex);
                     if (bucket) {
-                        bucket.volume += priceLevel.quantity;
-                        bucket.paperVolume += priceLevel.paperQty;
-                        bucket.ghostVolume += priceLevel.ghostQty;
+                        bucket.volume += order.quantity;
                     }
                 }
             });
             
-            sortedAsks.forEach(([price, priceLevel]) => {
-                const bucketIndex = Math.floor((price - bestAsk) / bucketSize);
+            asks.forEach((order) => {
+                const bucketIndex = Math.floor((order.price - bestAsk) / bucketSize);
                 if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
                     const bucket = askBuckets.get(bucketIndex);
                     if (bucket) {
-                        bucket.volume += priceLevel.quantity;
-                        bucket.paperVolume += priceLevel.paperQty;
-                        bucket.ghostVolume += priceLevel.ghostQty;
+                        bucket.volume += order.quantity;
                     }
                 }
             });
 
             let maxVolume = MIN_Y_HEIGHT_VOLUME;
             bidBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume + bucket.ghostVolume);
+                maxVolume = Math.max(maxVolume, bucket.volume);
             });
             askBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume + bucket.paperVolume + bucket.ghostVolume);
+                maxVolume = Math.max(maxVolume, bucket.volume);
             });
             yHeightVolume = maxVolume;
 
             const bidBars = Array.from(bidBuckets.entries())
-                .sort((a, b) => a[0] - b[0])
-                .map(([index, { volume, paperVolume, ghostVolume }]) => {
-                    const realHeight = (volume / yHeightVolume) * 100;
-                    const paperHeight = (paperVolume / yHeightVolume) * 100;
-                    const ghostHeight = (ghostVolume / yHeightVolume) * 100;
+                .map(([index, { volume }]) => {
+                    const height = (volume / yHeightVolume) * 100;
                     return `<div class="bar-container">
-                        <div class="bar bid-bar" style="height: ${realHeight}%;"></div>
-                        ${ghostVolume > 0 ? `<div class="bar ghost-bar" style="height: ${ghostHeight}%;"></div>` : ''}
-                        ${paperVolume > 0 ? `<div class="bar paper-bar" style="height: ${paperHeight}%;"></div>` : ''}
+                        <div class="bar bid-bar" style="height: ${height}%;"></div>
                     </div>`;
                 });
             
             const askBars = Array.from(askBuckets.entries())
-                .sort((a, b) => a[0] - b[0])
-                .map(([index, { volume, paperVolume, ghostVolume }]) => {
-                    const realHeight = (volume / yHeightVolume) * 100;
-                    const paperHeight = (paperVolume / yHeightVolume) * 100;
-                    const ghostHeight = (ghostVolume / yHeightVolume) * 100;
+                .map(([index, { volume }]) => {
+                    const height = (volume / yHeightVolume) * 100;
                     return `<div class="bar-container">
-                        <div class="bar ask-bar" style="height: ${realHeight}%;"></div>
-                        ${ghostVolume > 0 ? `<div class="bar ghost-bar" style="height: ${ghostHeight}%;"></div>` : ''}
-                        ${paperVolume > 0 ? `<div class="bar paper-bar" style="height: ${paperHeight}%;"></div>` : ''}
+                        <div class="bar ask-bar" style="height: ${height}%;"></div>
                     </div>`;
                 });
             

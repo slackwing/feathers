@@ -1,6 +1,10 @@
-const express = require('express');
-const WebSocket = require('ws');
-const path = require('path');
+import express from 'express';
+import { WebSocket, WebSocketServer } from 'ws';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
@@ -15,7 +19,7 @@ const server = app.listen(port, () => {
 });
 
 const WS_API_URL = "wss://advanced-trade-ws.coinbase.com";
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 wss.on('connection', (ws) => {
     console.log(`Node.js server connected to user WebSocket client (e.g. browser).`);
 

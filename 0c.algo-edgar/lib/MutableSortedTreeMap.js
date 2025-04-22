@@ -111,6 +111,9 @@ export class MutableSortedTreeMap {
     }
 
     *[Symbol.iterator]() {
+        if (!this.root) {
+            return;
+        }
         function* inorder(node) {
             if (node) {
                 yield* inorder(node.left);
