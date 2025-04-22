@@ -95,10 +95,10 @@ export class OrderPriceTimePriorityTree {
         
         const treeSize = this.priceLevels.size;
         
-        console.log(`OrderPriceTimePriorityTree size check: ${totalOrders} orders in ${treeSize} price levels`);
+        // console.log(`OrderPriceTimePriorityTree size check: ${totalOrders} orders in ${treeSize} price levels`);
         
         if (totalOrders > treeSize * 100) {
-            console.warn(`Potential memory leak detected: ${totalOrders} orders in ${treeSize} price levels`);
+            // console.warn(`Potential memory leak detected: ${totalOrders} orders in ${treeSize} price levels`);
         }
         
         return { totalOrders, treeSize };
