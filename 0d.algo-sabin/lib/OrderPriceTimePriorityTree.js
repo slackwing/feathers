@@ -28,7 +28,11 @@ export class OrderPriceTimePriorityTree {
 
     upsertOrder(order) {
         const start = performance.now();
-        this.orders.set(order.id, order);
+        if (order.quantity === 0) {
+            this.orders.remove(order.id);
+        } else {
+            this.orders.set(order.id, order);
+        }
         this.timings.upsertOrder += performance.now() - start;
     }
 
