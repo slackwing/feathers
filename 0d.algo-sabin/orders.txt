@@ -1,0 +1,81 @@
+Each order update message looks like this:
+
+{side: 'bid', event_time: '2025-04-19T21:27:15.342722Z', price_level: '85260.19', new_quantity: '0.03642307'}
+{side: 'bid', event_time: '2025-04-19T21:27:15.50028Z', price_level: '85291.14', new_quantity: '0'}
+
+Notice timestamp trailing zeroes might be truncated.
+
+Received order book snapshot event with 46739 updates.
+(index):598 85339.03 0.03283615
+(index):598 85338.98 0.10414483
+(index):598 85338.96 0.05972836
+(index):598 85335.3 0.00011718
+(index):598 85335.29 0.06462303
+(index):598 85334.59 0.09473855
+(index):598 85334.58 0.04898063
+(index):598 85333.25 0.06407097
+(index):598 85332.03 0.00151721
+(index):598 85332.01 0.03831034
+(index):598 85332 0.00127655
+(index):598 85331.99 0.00058698
+(index):598 85331.93 0.0002257
+(index):598 85331.84 0.00281202
+(index):598 85331.23 0.07539827
+(index):598 85331.22 0.1422701
+(index):598 85330.61 0.05972836
+(index):598 85329.37 0.01523354
+(index):598 85329.36 0.0729992
+(index):598 85329.12 0.00281202
+(index):598 85328.84 0.00029355
+(index):598 85328.82 1.1e-7
+(index):598 85328.09 0.00654654
+
+...
+
+(index):598 980000 0.01
+(index):598 990000 0.0003
+(index):598 999999 4.7
+(index):598 1000000 0.76796419
+(index):598 1184949.88 0.1000006
+(index):598 8664292.63 0.00012588
+(index):598 10000000 1.70616565
+(index):598 10101010 0.4
+(index):566 Received order book update event with 1 updates.
+(index):631 74665.55 0
+(index):566 Received order book update event with 1 updates.
+(index):631 85302.91 0.06
+(index):566 Received order book update event with 4 updates.
+(index):631 85324.38 0.00650458
+(index):631 85324.2 0
+(index):631 85277.36 0.37972944
+(index):631 85277.35 0
+(index):566 Received order book update event with 1 updates.
+(index):631 85324.38 0
+(index):566 Received order book update event with 4 updates.
+(index):631 85324.44 0
+(index):631 85302.91 0
+(index):631 85277.37 0.3797294
+(index):631 85277.36 0
+(index):566 Received order book update event with 18 updates.
+(index):631 85325.39 0.00650451
+(index):631 85324.43 0
+(index):631 85323.94 0
+(index):631 85320.25 0.02930136
+(index):631 85318.22 0
+(index):631 85302.91 0.06
+(index):631 85299.67 0.11723374
+(index):631 85293.25 0
+(index):631 85292.51 0.58621788
+(index):631 85285.31 0
+(index):631 85277.38 0.37972935
+(index):631 85277.37 0
+(index):631 85332.13 0
+(index):631 85333.61 0
+(index):631 85334.91 0.02929633
+(index):631 85345.13 0.00010715
+(index):631 85345.14 0.02398908
+(index):631 85350.53 0
+(index):566 Received order book update event with 3 updates.
+(index):631 85332.05 0.10461136
+(index):631 85326.29 0.00650444
+(index):631 85325.39 0
