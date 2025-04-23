@@ -694,39 +694,51 @@
         };
 
         function updateDisplay_OrderBook() {
-            let bids = [];
-            let asks = [];
+            let bidsHtml = '';
+            let asksHtml = '';
+            let count = 0;
         
-            bids = Array.from(world_Slow.combinedBook.bids).slice(0, 100);
-            asks = Array.from(world_Slow.combinedBook.asks).slice(0, 100);
+            for (const order of world_Slow.combinedBook.bids) {
+                if (count >= 100) break;
+                bidsHtml += `
+                <div class="order-row">
+                    <span class="price">$${order.price.toFixed(2)}</span>
+                    <span class="quantity">${order.quantity.toFixed(8)}</span>
+                </div>`;
+                count++;
+            }
             
-            bidsDiv.innerHTML = bids.map(order => {
-                return `
+            count = 0;
+            for (const order of world_Slow.combinedBook.asks) {
+                if (count >= 100) break;
+                asksHtml += `
                 <div class="order-row">
                     <span class="price">$${order.price.toFixed(2)}</span>
                     <span class="quantity">${order.quantity.toFixed(8)}</span>
-                </div>
-            `}).join('');
-            asksDiv.innerHTML = asks.map(order => {
-                return `
-                <div class="order-row">
-                    <span class="price">$${order.price.toFixed(2)}</span>
-                    <span class="quantity">${order.quantity.toFixed(8)}</span>
-                </div>
-            `}).join('');
+                </div>`;
+                count++;
+            }
+            
+            bidsDiv.innerHTML = bidsHtml;
+            asksDiv.innerHTML = asksHtml;
         }
         
         function updateDisplay_BarChart() {
-            const bids = Array.from(world_Slow.combinedBook.bids);
-            const asks = Array.from(world_Slow.combinedBook.asks);
+            let bestBid = null;
+            let bestAsk = null;
 
-            if (bids.length === 0 || asks.length === 0) {
+            // Get best bid and ask using iterators
+            const [firstBid] = world_Slow.combinedBook.bids;
+            const [firstAsk] = world_Slow.combinedBook.asks;
+            
+            bestBid = firstBid?.price;
+            bestAsk = firstAsk?.price;
+
+            if (!bestBid || !bestAsk) {
                 console.log('Awaiting data to initialize bar chart...');
                 return;
             }
             
-            const bestBid = bids[0].price;
-            const bestAsk = asks[0].price;
             const spread = bestAsk - bestBid;
             const spreadPercentage = (spread / bestBid) * 100;
             
@@ -747,25 +759,27 @@
                 askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
 
-            bids.forEach((order) => {
+            for (const order of world_Slow.combinedBook.bids) {
                 const bucketIndex = Math.floor((bestBid - order.price) / bucketSize);
-                if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
+                if (bucketIndex >= bucketsPerSide) break; // Price too low, stop iterating
+                if (bucketIndex >= 0) {
                     const bucket = bidBuckets.get(bucketIndex);
                     if (bucket) {
                         bucket.volume += order.quantity;
                     }
                 }
-            });
+            }
             
-            asks.forEach((order) => {
+            for (const order of world_Slow.combinedBook.asks) {
                 const bucketIndex = Math.floor((order.price - bestAsk) / bucketSize);
-                if (bucketIndex >= 0 && bucketIndex < bucketsPerSide) {
+                if (bucketIndex >= bucketsPerSide) break; // Price too high, stop iterating
+                if (bucketIndex >= 0) {
                     const bucket = askBuckets.get(bucketIndex);
                     if (bucket) {
                         bucket.volume += order.quantity;
                     }
                 }
-            });
+            }
 
             let maxVolume = MIN_Y_HEIGHT_VOLUME;
             bidBuckets.forEach(bucket => {
