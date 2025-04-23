@@ -73,4 +73,13 @@ export class OrderPriceTimePriorityTree {
             orders: this.orders.getTimings()
         };
     }
+
+    resetTimings() {
+        this.timings = {
+            upsertOrder: 0,
+            getOrder: 0,
+            iterator: 0
+        };
+        this.orders.resetTimings();
+    }
 }
