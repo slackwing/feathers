@@ -14,11 +14,11 @@ export class OrderBook {
             this.asks.upsertOrder(order);
         }
         this.worlds.forEach(world => {
-            world.reflect(order);
+            world.upsertOrder(order);
         });
     }
 
-    mirror(world) {
+    register(world) {
         this.worlds.push(world);
     }
 }

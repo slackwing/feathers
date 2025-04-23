@@ -478,11 +478,11 @@
         const X_BUCKETS_PER_SIDE = 100;
 
         let l2Book = new OrderBook();
-        let resistantUniverse = new World(l2Book);
-        let liquidUniverse = new World(l2Book);
+        let world_Slow = new World(l2Book);
+        let world_Fast = new World(l2Book);
     
-        l2Book.mirror(resistantUniverse);
-        l2Book.mirror(liquidUniverse);
+        l2Book.register(world_Slow);
+        l2Book.register(world_Fast);
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
         let messageCounter = 0;
@@ -506,11 +506,7 @@
                 console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
                 console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
                 
-                // Check for memory leaks
-                const bidSize = l2Book.bids.checkMemoryLeak();
-                const askSize = l2Book.asks.checkMemoryLeak();
-                
-                console.log(`Bids: ${bidSize.totalOrders.toLocaleString()} - Asks: ${askSize.totalOrders.toLocaleString()}`);
+                console.log(`Bids: ${l2Book.bids.orders.map.size.toLocaleString()} - Asks: ${l2Book.asks.orders.map.size.toLocaleString()}`);
             }
             
             // Reset timings
@@ -701,13 +697,13 @@
             let asks = [];
             
             try {
-                bids = Array.from(l2Book.bids).slice(0, 100);
+                bids = Array.from(world_Slow.combinedBook.bids).slice(0, 100);
             } catch (e) {
                 console.error("Error converting bids to array:", e);
             }
             
             try {
-                asks = Array.from(l2Book.asks).slice(0, 100);
+                asks = Array.from(world_Slow.combinedBook.asks).slice(0, 100);
             } catch (e) {
                 console.error("Error converting asks to array:", e);
             }
@@ -729,8 +725,8 @@
         }
         
         function updateDisplay_BarChart() {
-            const bids = Array.from(l2Book.bids);
-            const asks = Array.from(l2Book.asks);
+            const bids = Array.from(world_Slow.combinedBook.bids);
+            const asks = Array.from(world_Slow.combinedBook.asks);
 
             if (bids.length === 0 || asks.length === 0) {
                 console.log('Awaiting data to initialize bar chart...');

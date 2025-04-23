@@ -8,7 +8,7 @@ export class World {
         this.combinedBook = new OrderBook();
     }
 
-    reflect(order) {
+    upsertOrder(order) {
         this.combinedBook.upsertOrder(order);
     }
 }

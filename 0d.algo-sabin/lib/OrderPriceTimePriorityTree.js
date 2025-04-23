@@ -21,7 +21,6 @@ export class OrderPriceTimePriorityTree {
         );
         this.timings = {
             upsertOrder: 0,
-            getOrder: 0,
             iterator: 0
         };
     }
@@ -34,13 +33,6 @@ export class OrderPriceTimePriorityTree {
             this.orders.set(order.id, order);
         }
         this.timings.upsertOrder += performance.now() - start;
-    }
-
-    getOrder(orderId) {
-        const start = performance.now();
-        const result = this.orders.get(orderId);
-        this.timings.getOrder += performance.now() - start;
-        return result;
     }
 
     [Symbol.iterator]() {
@@ -63,14 +55,6 @@ export class OrderPriceTimePriorityTree {
         return result;
     }
 
-    checkMemoryLeak() {
-        let totalOrders = 0;
-        for (const _ of this.orders) {
-            totalOrders++;
-        }
-        return { totalOrders, treeSize: this.orders.size };
-    }
-
     getTimings() {
         return {
             ...this.timings,
@@ -81,7 +65,6 @@ export class OrderPriceTimePriorityTree {
     resetTimings() {
         this.timings = {
             upsertOrder: 0,
-            getOrder: 0,
             iterator: 0
         };
         this.orders.resetTimings();
