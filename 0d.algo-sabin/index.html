@@ -540,10 +540,10 @@
         };
 
         ws.onmessage = (event) => {
-            messageCounter++;
-            if (messageCounter % 5 !== 0) {
-                return;
-            }
+            // messageCounter++;
+            // if (messageCounter % 3 !== 0) {
+            //     return;
+            // }
 
             const message = JSON.parse(event.data);
             
