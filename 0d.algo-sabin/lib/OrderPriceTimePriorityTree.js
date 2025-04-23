@@ -8,8 +8,14 @@ export class OrderPriceTimePriorityTree {
         this.side = side;
         this.orders = new MutableSortedTreeMap(
             (orderA, orderB) => {
-                const priceCompare = this.side === 'B' ? orderB.price - orderA.price : orderA.price - orderB.price;
-                if (priceCompare !== 0) return priceCompare;
+                // Pre-compute price comparison based on side
+                const priceA = this.side === 'B' ? -orderA.price : orderA.price;
+                const priceB = this.side === 'B' ? -orderB.price : orderB.price;
+                
+                // Compare prices first (most significant)
+                if (priceA !== priceB) return priceA - priceB;
+                
+                // Only compare timestamps if prices are equal
                 return orderA.timestamp - orderB.timestamp;
             }
         );

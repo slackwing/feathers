@@ -501,17 +501,17 @@
             const bidTimings = l2Book.bids.orders.timings;
             const askTimings = l2Book.asks.orders.timings;
             
-            console.log('Bid Timings:', bidTimings);
-            console.log('Ask Timings:', askTimings);
+            console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
+            console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
             
             // Check for memory leaks
             const bidSizeCheck = l2Book.bids.checkMemoryLeak();
             const askSizeCheck = l2Book.asks.checkMemoryLeak();
-            console.log('Size Check:', { bids: bidSizeCheck, asks: askSizeCheck });
+            console.log('Size Check:', JSON.stringify({ bids: bidSizeCheck, asks: askSizeCheck }, null, 2));
             
             // Reset timings after logging
-            l2Book.bids.orders.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0 };
-            l2Book.asks.orders.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0 };
+            l2Book.bids.orders.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0, mapOp: 0, treeOp: 0, compare: 0, heightCalc: 0, balanceCheck: 0 };
+            l2Book.asks.orders.timings = { set: 0, get: 0, remove: 0, insert: 0, removeFromTree: 0, balance: 0, iterator: 0, mapOp: 0, treeOp: 0, compare: 0, heightCalc: 0, balanceCheck: 0 };
         }
 
         function shouldUpdateDisplay() {
