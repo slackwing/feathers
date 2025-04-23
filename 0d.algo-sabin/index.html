@@ -492,20 +492,23 @@
         const DISPLAY_UPDATE_INTERVAL = 20; // Update display every 500ms
 
         function updateTimings() {
+            const now = performance.now();
+            if (now - lastTimingUpdate < TIMING_UPDATE_INTERVAL) {
+                return;
+            }
+            lastTimingUpdate = now;
+
             const bidTimings = l2Book.bids.getTimings();
             const askTimings = l2Book.asks.getTimings();
             
-            // console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
-            // console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
+            console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
+            console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
             
             // Check for memory leaks
             const bidSize = l2Book.bids.checkMemoryLeak();
             const askSize = l2Book.asks.checkMemoryLeak();
             
-            // console.log('Size Check:', JSON.stringify({
-            //     bids: bidSize,
-            //     asks: askSize
-            // }, null, 2));
+            console.log(`Bids: ${bidSize.totalOrders.toLocaleString()} - Asks: ${askSize.totalOrders.toLocaleString()}`);
             
             // Reset timings
             l2Book.bids.resetTimings();
@@ -569,7 +572,7 @@
                     updateDisplay_BarChart();
                 }
                 
-                // updateTimings();
+                updateTimings();
                 // updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
                 // console.log("--------------------------------");

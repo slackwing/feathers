@@ -22,25 +22,25 @@ export class MutableSortedTreeMap {
     }
 
     set(key, value) {
-        // const start = performance.now();
+        const start = performance.now();
         if (this.map.has(key)) {
-            // const mapStart = performance.now();
+            const mapStart = performance.now();
             this.map.set(key, value);
-            // this.timings.mapOp += performance.now() - mapStart;
-            // const treeStart = performance.now();
+            this.timings.mapOp += performance.now() - mapStart;
+            const treeStart = performance.now();
             this._updateValueInTree(key, value);
-            // this.timings.treeOp += performance.now() - treeStart;
+            this.timings.treeOp += performance.now() - treeStart;
         } else {
-            // const mapStart = performance.now();
+            const mapStart = performance.now();
             this.map.set(key, value);
-            // this.timings.mapOp += performance.now() - mapStart;
-            // const treeStart = performance.now();
+            this.timings.mapOp += performance.now() - mapStart;
+            const treeStart = performance.now();
             const node = this._insertIntoTree(this.root, { key, value });
             this.root = node;
             this.nodeMap.set(key, node);
-            // this.timings.treeOp += performance.now() - treeStart;
+            this.timings.treeOp += performance.now() - treeStart;
         }
-        // this.timings.set += performance.now() - start;
+        this.timings.set += performance.now() - start;
     }
 
     _updateNodeValue(node, key, value) {
@@ -56,43 +56,43 @@ export class MutableSortedTreeMap {
     }
 
     get(key) {
-        // const start = performance.now();
+        const start = performance.now();
         const result = this.map.get(key);
-        // this.timings.get += performance.now() - start;
+        this.timings.get += performance.now() - start;
         return result;
     }
 
     remove(key) {
-        // const start = performance.now();
+        const start = performance.now();
         if (!this.map.has(key)) {
-            // this.timings.remove += performance.now() - start;
+            this.timings.remove += performance.now() - start;
             return false;
         }
-        // const mapStart = performance.now();
+        const mapStart = performance.now();
         this.map.delete(key);
-        // this.timings.mapOp += performance.now() - mapStart;
-        // const treeStart = performance.now();
+        this.timings.mapOp += performance.now() - mapStart;
+        const treeStart = performance.now();
         const node = this.nodeMap.get(key);
         if (node) {
             this.root = this._removeFromTree(node);
             this.nodeMap.delete(key);
         }
-        // this.timings.treeOp += performance.now() - treeStart;
-        // this.timings.remove += performance.now() - start;
+        this.timings.treeOp += performance.now() - treeStart;
+        this.timings.remove += performance.now() - start;
         return true;
     }
 
     _insertIntoTree(node, { key, value }, parent = null) {
-        // const start = performance.now();
+        const start = performance.now();
         if (!node) {
-            // this.timings.insert += performance.now() - start;
+            this.timings.insert += performance.now() - start;
             return { key, value, left: null, right: null, height: 1, parent };
         }
 
         // Cache the comparison result to avoid multiple comparisons
-        // const compareStart = performance.now();
+        const compareStart = performance.now();
         const cmp = this.comparator(value, node.value);
-        // this.timings.compare += performance.now() - compareStart;
+        this.timings.compare += performance.now() - compareStart;
 
         let heightChanged = false;
         let oldHeight = node.height;
@@ -112,25 +112,25 @@ export class MutableSortedTreeMap {
 
         // Only update height and balance if necessary
         if (heightChanged) {
-            // const heightStart = performance.now();
+            const heightStart = performance.now();
             node.height = 1 + Math.max(
                 node.left ? node.left.height : 0,
                 node.right ? node.right.height : 0
             );
-            // this.timings.heightCalc += performance.now() - heightStart;
+            this.timings.heightCalc += performance.now() - heightStart;
 
             // Only balance if height actually changed
             if (node.height !== oldHeight) {
-                // const balanceStart = performance.now();
+                const balanceStart = performance.now();
                 const balance = this._getBalance(node);
                 if (Math.abs(balance) > 1) {
                     result = this._balance(node);
                 }
-                // this.timings.balanceCheck += performance.now() - balanceStart;
+                this.timings.balanceCheck += performance.now() - balanceStart;
             }
         }
 
-        // this.timings.insert += performance.now() - start;
+        this.timings.insert += performance.now() - start;
         return result;
     }
 
@@ -143,9 +143,9 @@ export class MutableSortedTreeMap {
     }
 
     _removeFromTree(node) {
-        // const start = performance.now();
+        const start = performance.now();
         if (!node) {
-            // this.timings.removeFromTree += performance.now() - start;
+            this.timings.removeFromTree += performance.now() - start;
             return null;
         }
 
@@ -154,7 +154,7 @@ export class MutableSortedTreeMap {
                 node.right.parent = node.parent;
                 this.nodeMap.set(node.right.key, node.right);
             }
-            // this.timings.removeFromTree += performance.now() - start;
+            this.timings.removeFromTree += performance.now() - start;
             return node.right;
         }
         if (!node.right) {
@@ -162,7 +162,7 @@ export class MutableSortedTreeMap {
                 node.left.parent = node.parent;
                 this.nodeMap.set(node.left.key, node.left);
             }
-            // this.timings.removeFromTree += performance.now() - start;
+            this.timings.removeFromTree += performance.now() - start;
             return node.left;
         }
 
@@ -177,35 +177,35 @@ export class MutableSortedTreeMap {
         }
 
         // Update height and balance
-        // const heightStart = performance.now();
+        const heightStart = performance.now();
         node.height = 1 + Math.max(
             node.left ? node.left.height : 0,
             node.right ? node.right.height : 0
         );
-        // this.timings.heightCalc += performance.now() - heightStart;
+        this.timings.heightCalc += performance.now() - heightStart;
 
-        // const balanceStart = performance.now();
+        const balanceStart = performance.now();
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
             node = this._balance(node);
         }
-        // this.timings.balanceCheck += performance.now() - balanceStart;
+        this.timings.balanceCheck += performance.now() - balanceStart;
 
-        // this.timings.removeFromTree += performance.now() - start;
+        this.timings.removeFromTree += performance.now() - start;
         return node;
     }
 
     _findMin(node) {
-        // const start = performance.now();
+        const start = performance.now();
         while (node.left) {
             node = node.left;
         }
-        // this.timings.findMin += performance.now() - start;
+        this.timings.findMin += performance.now() - start;
         return node;
     }
 
     _balance(node) {
-        // const start = performance.now();
+        const start = performance.now();
         const balance = this._getBalance(node);
         
         let result;
@@ -307,14 +307,14 @@ export class MutableSortedTreeMap {
             result = node;
         }
         
-        // this.timings.balance += performance.now() - start;
+        this.timings.balance += performance.now() - start;
         return result;
     }
 
     _getBalance(node) {
-        // const start = performance.now();
+        const start = performance.now();
         const result = (node.left ? node.left.height : 0) - (node.right ? node.right.height : 0);
-        // this.timings.balanceCheck += performance.now() - start;
+        this.timings.balanceCheck += performance.now() - start;
         return result;
     }
 
@@ -324,7 +324,7 @@ export class MutableSortedTreeMap {
     }
 
     _rotateRight(y) {
-        // const start = performance.now();
+        const start = performance.now();
         const x = y.left;
         const T2 = x.right;
 
@@ -350,12 +350,12 @@ export class MutableSortedTreeMap {
             x.right ? x.right.height : 0
         );
 
-        // this.timings.balance += performance.now() - start;
+        this.timings.balance += performance.now() - start;
         return x;
     }
 
     _rotateLeft(x) {
-        // const start = performance.now();
+        const start = performance.now();
         const y = x.right;
         const T2 = y.left;
 
@@ -381,21 +381,21 @@ export class MutableSortedTreeMap {
             y.right ? y.right.height : 0
         );
 
-        // this.timings.balance += performance.now() - start;
+        this.timings.balance += performance.now() - start;
         return y;
     }
 
     _updateValueInTree(key, value) {
-        // const start = performance.now();
+        const start = performance.now();
         const node = this._findNode(this.root, key);
         if (node) {
             node.value = value;
         }
-        // this.timings.updateValue += performance.now() - start;
+        this.timings.updateValue += performance.now() - start;
     }
 
     [Symbol.iterator]() {
-        // const start = performance.now();
+        const start = performance.now();
         const iterator = this.map[Symbol.iterator]();
         const result = {
             next() {
@@ -407,7 +407,7 @@ export class MutableSortedTreeMap {
                 return { value: [key, value], done: false };
             }
         };
-        // this.timings.iterator += performance.now() - start;
+        this.timings.iterator += performance.now() - start;
         return result;
     }
 
