@@ -92,19 +92,23 @@ export class MutableSortedTreeMap {
         const cmp = this.comparator(value, node.value);
         this.timings.compare += performance.now() - compareStart;
 
-        // Only update height if we actually inserted
         let heightChanged = false;
+        let oldHeight = node.height;
+        let result = node;
+
         if (cmp < 0) {
-            const oldHeight = node.left ? node.left.height : 0;
             node.left = this._insertIntoTree(node.left, { key, value });
-            heightChanged = (node.left.height > oldHeight);
+            if (node.left.height > (node.left.left ? node.left.left.height : 0)) {
+                heightChanged = true;
+            }
         } else {
-            const oldHeight = node.right ? node.right.height : 0;
             node.right = this._insertIntoTree(node.right, { key, value });
-            heightChanged = (node.right.height > oldHeight);
+            if (node.right.height > (node.right.right ? node.right.right.height : 0)) {
+                heightChanged = true;
+            }
         }
 
-        // Only recalculate height and balance if the height changed
+        // Only update height and balance if necessary
         if (heightChanged) {
             const heightStart = performance.now();
             node.height = 1 + Math.max(
@@ -113,15 +117,27 @@ export class MutableSortedTreeMap {
             );
             this.timings.heightCalc += performance.now() - heightStart;
 
-            const balanceStart = performance.now();
-            const result = this._balance(node);
-            this.timings.balanceCheck += performance.now() - balanceStart;
-            this.timings.insert += performance.now() - start;
-            return result;
+            // Only balance if height actually changed
+            if (node.height !== oldHeight) {
+                const balanceStart = performance.now();
+                const balance = this._getBalance(node);
+                if (Math.abs(balance) > 1) {
+                    result = this._balance(node);
+                }
+                this.timings.balanceCheck += performance.now() - balanceStart;
+            }
         }
 
         this.timings.insert += performance.now() - start;
-        return node;
+        return result;
+    }
+
+    _findNode(root, key) {
+        if (!root) return null;
+        if (root.key === key) return root;
+        const left = this._findNode(root.left, key);
+        if (left) return left;
+        return this._findNode(root.right, key);
     }
 
     _removeFromTree(node, { key, value }) {
@@ -168,18 +184,70 @@ export class MutableSortedTreeMap {
         let result;
         if (balance > 1) {
             // Left heavy
-            if (this._getBalance(node.left) < 0) {
-                // Left-Right case
-                node.left = this._rotateLeft(node.left);
+            const leftBalance = this._getBalance(node.left);
+            if (leftBalance < 0) {
+                // Left-Right case - do both rotations at once
+                const x = node.left;
+                const y = x.right;
+                const T2 = y.left;
+                const T3 = y.right;
+                
+                // First rotation
+                y.left = x;
+                x.right = T2;
+                
+                // Second rotation
+                y.right = node;
+                node.left = T3;
+                
+                // Update heights
+                x.height = 1 + Math.max(
+                    x.left ? x.left.height : 0,
+                    x.right ? x.right.height : 0
+                );
+                node.height = 1 + Math.max(
+                    node.left ? node.left.height : 0,
+                    node.right ? node.right.height : 0
+                );
+                y.height = 1 + Math.max(x.height, node.height);
+                
+                result = y;
+            } else {
+                result = this._rotateRight(node);
             }
-            result = this._rotateRight(node);
         } else if (balance < -1) {
             // Right heavy
-            if (this._getBalance(node.right) > 0) {
-                // Right-Left case
-                node.right = this._rotateRight(node.right);
+            const rightBalance = this._getBalance(node.right);
+            if (rightBalance > 0) {
+                // Right-Left case - do both rotations at once
+                const x = node.right;
+                const y = x.left;
+                const T2 = y.right;
+                const T3 = y.left;
+                
+                // First rotation
+                y.right = x;
+                x.left = T2;
+                
+                // Second rotation
+                y.left = node;
+                node.right = T3;
+                
+                // Update heights
+                x.height = 1 + Math.max(
+                    x.left ? x.left.height : 0,
+                    x.right ? x.right.height : 0
+                );
+                node.height = 1 + Math.max(
+                    node.left ? node.left.height : 0,
+                    node.right ? node.right.height : 0
+                );
+                y.height = 1 + Math.max(x.height, node.height);
+                
+                result = y;
+            } else {
+                result = this._rotateLeft(node);
             }
-            result = this._rotateLeft(node);
         } else {
             result = node;
         }
