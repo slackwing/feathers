@@ -1,6 +1,7 @@
 export class MutableSortedTreeMap {
     constructor(comparator) {
         this.map = new Map(); // For O(1) lookups
+        this.nodeMap = new Map(); // For O(1) node access
         this.comparator = comparator;
         this.root = null;
         this.size = 0; // Track size explicitly
@@ -34,7 +35,9 @@ export class MutableSortedTreeMap {
             this.map.set(key, value);
             // this.timings.mapOp += performance.now() - mapStart;
             // const treeStart = performance.now();
-            this.root = this._insertIntoTree(this.root, { key, value });
+            const node = this._insertIntoTree(this.root, { key, value });
+            this.root = node;
+            this.nodeMap.set(key, node);
             // this.timings.treeOp += performance.now() - treeStart;
         }
         // this.timings.set += performance.now() - start;
@@ -69,17 +72,21 @@ export class MutableSortedTreeMap {
         this.map.delete(key);
         // this.timings.mapOp += performance.now() - mapStart;
         // const treeStart = performance.now();
-        this.root = this._removeFromTree(this.root, key);
+        const node = this.nodeMap.get(key);
+        if (node) {
+            this.root = this._removeFromTree(node);
+            this.nodeMap.delete(key);
+        }
         // this.timings.treeOp += performance.now() - treeStart;
         // this.timings.remove += performance.now() - start;
         return true;
     }
 
-    _insertIntoTree(node, { key, value }) {
+    _insertIntoTree(node, { key, value }, parent = null) {
         // const start = performance.now();
         if (!node) {
             // this.timings.insert += performance.now() - start;
-            return { key, value, left: null, right: null, height: 1 };
+            return { key, value, left: null, right: null, height: 1, parent };
         }
 
         // Cache the comparison result to avoid multiple comparisons
@@ -92,12 +99,12 @@ export class MutableSortedTreeMap {
         let result = node;
 
         if (cmp < 0) {
-            node.left = this._insertIntoTree(node.left, { key, value });
+            node.left = this._insertIntoTree(node.left, { key, value }, node);
             if (node.left.height > (node.left.left ? node.left.left.height : 0)) {
                 heightChanged = true;
             }
         } else {
-            node.right = this._insertIntoTree(node.right, { key, value });
+            node.right = this._insertIntoTree(node.right, { key, value }, node);
             if (node.right.height > (node.right.right ? node.right.right.height : 0)) {
                 heightChanged = true;
             }
@@ -135,31 +142,38 @@ export class MutableSortedTreeMap {
         return this._findNode(root.right, key);
     }
 
-    _removeFromTree(node, key) {
+    _removeFromTree(node) {
         // const start = performance.now();
         if (!node) {
             // this.timings.removeFromTree += performance.now() - start;
             return null;
         }
 
-        if (key === node.key) {
-            if (!node.left) {
-                // this.timings.removeFromTree += performance.now() - start;
-                return node.right;
+        if (!node.left) {
+            if (node.right) {
+                node.right.parent = node.parent;
+                this.nodeMap.set(node.right.key, node.right);
             }
-            if (!node.right) {
-                // this.timings.removeFromTree += performance.now() - start;
-                return node.left;
+            // this.timings.removeFromTree += performance.now() - start;
+            return node.right;
+        }
+        if (!node.right) {
+            if (node.left) {
+                node.left.parent = node.parent;
+                this.nodeMap.set(node.left.key, node.left);
             }
+            // this.timings.removeFromTree += performance.now() - start;
+            return node.left;
+        }
 
-            const minNode = this._findMin(node.right);
-            node.key = minNode.key;
-            node.value = minNode.value;
-            node.right = this._removeFromTree(node.right, minNode.key);
-        } else if (key < node.key) {
-            node.left = this._removeFromTree(node.left, key);
-        } else {
-            node.right = this._removeFromTree(node.right, key);
+        const minNode = this._findMin(node.right);
+        node.key = minNode.key;
+        node.value = minNode.value;
+        this.nodeMap.set(node.key, node);
+        node.right = this._removeFromTree(minNode);
+        if (node.right) {
+            node.right.parent = node;
+            this.nodeMap.set(node.right.key, node.right);
         }
 
         // Update height and balance
@@ -205,6 +219,20 @@ export class MutableSortedTreeMap {
                 const T2 = y.left;
                 const T3 = y.right;
                 
+                // Update parent pointers
+                y.parent = node.parent;
+                x.parent = y;
+                node.parent = y;
+                if (T2) T2.parent = x;
+                if (T3) T3.parent = node;
+                
+                // Update nodeMap
+                this.nodeMap.set(y.key, y);
+                this.nodeMap.set(x.key, x);
+                this.nodeMap.set(node.key, node);
+                if (T2) this.nodeMap.set(T2.key, T2);
+                if (T3) this.nodeMap.set(T3.key, T3);
+                
                 // First rotation
                 y.left = x;
                 x.right = T2;
@@ -237,6 +265,20 @@ export class MutableSortedTreeMap {
                 const y = x.left;
                 const T2 = y.right;
                 const T3 = y.left;
+                
+                // Update parent pointers
+                y.parent = node.parent;
+                x.parent = y;
+                node.parent = y;
+                if (T2) T2.parent = x;
+                if (T3) T3.parent = node;
+                
+                // Update nodeMap
+                this.nodeMap.set(y.key, y);
+                this.nodeMap.set(x.key, x);
+                this.nodeMap.set(node.key, node);
+                if (T2) this.nodeMap.set(T2.key, T2);
+                if (T3) this.nodeMap.set(T3.key, T3);
                 
                 // First rotation
                 y.right = x;
@@ -286,6 +328,16 @@ export class MutableSortedTreeMap {
         const x = y.left;
         const T2 = x.right;
 
+        // Update parent pointers
+        x.parent = y.parent;
+        y.parent = x;
+        if (T2) T2.parent = y;
+
+        // Update nodeMap
+        this.nodeMap.set(x.key, x);
+        this.nodeMap.set(y.key, y);
+        if (T2) this.nodeMap.set(T2.key, T2);
+
         x.right = y;
         y.left = T2;
 
@@ -306,6 +358,16 @@ export class MutableSortedTreeMap {
         // const start = performance.now();
         const y = x.right;
         const T2 = y.left;
+
+        // Update parent pointers
+        y.parent = x.parent;
+        x.parent = y;
+        if (T2) T2.parent = x;
+
+        // Update nodeMap
+        this.nodeMap.set(y.key, y);
+        this.nodeMap.set(x.key, x);
+        if (T2) this.nodeMap.set(T2.key, T2);
 
         y.left = x;
         x.right = T2;
