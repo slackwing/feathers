@@ -490,6 +490,7 @@
         let lastDisplayUpdate = 0;
         const TIMING_UPDATE_INTERVAL = 1000; // Update timings every second
         const DISPLAY_UPDATE_INTERVAL = 20; // Update display every 500ms
+        const ENABLE_TIMING_OUTPUT = false; // Set to true to enable timing output
 
         function updateTimings() {
             const now = performance.now();
@@ -501,14 +502,16 @@
             const bidTimings = l2Book.bids.getTimings();
             const askTimings = l2Book.asks.getTimings();
             
-            console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
-            console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
-            
-            // Check for memory leaks
-            const bidSize = l2Book.bids.checkMemoryLeak();
-            const askSize = l2Book.asks.checkMemoryLeak();
-            
-            console.log(`Bids: ${bidSize.totalOrders.toLocaleString()} - Asks: ${askSize.totalOrders.toLocaleString()}`);
+            if (ENABLE_TIMING_OUTPUT) {
+                console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
+                console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
+                
+                // Check for memory leaks
+                const bidSize = l2Book.bids.checkMemoryLeak();
+                const askSize = l2Book.asks.checkMemoryLeak();
+                
+                console.log(`Bids: ${bidSize.totalOrders.toLocaleString()} - Asks: ${askSize.totalOrders.toLocaleString()}`);
+            }
             
             // Reset timings
             l2Book.bids.resetTimings();
