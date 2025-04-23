@@ -489,7 +489,7 @@
         let lastTimingUpdate = 0;
         let lastDisplayUpdate = 0;
         const TIMING_UPDATE_INTERVAL = 1000; // Update timings every second
-        const DISPLAY_UPDATE_INTERVAL = 20; // Update display every 500ms
+        const DISPLAY_UPDATE_INTERVAL = 1; // Update display every 500ms
         const ENABLE_TIMING_OUTPUT = false; // Set to true to enable timing output
 
         function updateTimings() {
@@ -517,6 +517,7 @@
         function shouldUpdateDisplay() {
             const now = performance.now();
             if (now - lastDisplayUpdate < DISPLAY_UPDATE_INTERVAL) {
+                console.log("Throttling display update.");
                 return false;
             }
             lastDisplayUpdate = now;
@@ -695,18 +696,9 @@
         function updateDisplay_OrderBook() {
             let bids = [];
             let asks = [];
-            
-            try {
-                bids = Array.from(world_Slow.combinedBook.bids).slice(0, 100);
-            } catch (e) {
-                console.error("Error converting bids to array:", e);
-            }
-            
-            try {
-                asks = Array.from(world_Slow.combinedBook.asks).slice(0, 100);
-            } catch (e) {
-                console.error("Error converting asks to array:", e);
-            }
+        
+            bids = Array.from(world_Slow.combinedBook.bids).slice(0, 100);
+            asks = Array.from(world_Slow.combinedBook.asks).slice(0, 100);
             
             bidsDiv.innerHTML = bids.map(order => {
                 return `
