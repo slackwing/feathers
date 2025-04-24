@@ -455,7 +455,7 @@
 
     <script type="module">
         import { MutableSortedTreeMap } from './lib/MutableSortedTreeMap.js';
-        import { Order } from './lib/Order.js';
+        import { Order, BookType } from './lib/Order.js';
         import { OrderPriceTimePriorityTree } from './lib/OrderPriceTimePriorityTree.js';
         import { OrderBook } from './lib/OrderBook.js';
         import { World } from './lib/World.js';
@@ -480,6 +480,7 @@
         let l2Book = new OrderBook();
         let world_Slow = new World(l2Book);
         let world_Fast = new World(l2Book);
+        let worlds = [world_Slow, world_Fast];
     
         l2Book.register(world_Slow);
         l2Book.register(world_Fast);
@@ -524,6 +525,13 @@
             return true;
         }
 
+        function updateDisplay() {
+            if (shouldUpdateDisplay()) {
+                updateDisplay_OrderBook();
+                updateDisplay_BarChart();
+            }
+        }
+
         // Connect to WebSocket
         const ws = new WebSocket(`ws://${window.location.host}`);
 
@@ -561,16 +569,13 @@
                     const priceStr = price.toLocaleString('fullwide', {useGrouping: false});
                     const id = "L2" + side + "-" + priceStr;
 
-                    const order = new Order('limit', id, side, price, quantity, update.timestamp);
+                    const order = new Order('limit', id, side, price, quantity, update.timestamp, BookType.L2);
 
                     l2Book.upsertOrder(order);
                 });
                 
                 // Only update display periodically
-                if (shouldUpdateDisplay()) {
-                    updateDisplay_OrderBook();
-                    updateDisplay_BarChart();
-                }
+                updateDisplay();
                 
                 updateTimings();
                 // updateDisplay_Trades();
@@ -700,10 +705,13 @@
         
             for (const order of world_Slow.combinedBook.bids) {
                 if (count >= 100) break;
+                const isPaperOrder = order.book_type === BookType.PAPER;
                 bidsHtml += `
                 <div class="order-row">
                     <span class="price">$${order.price.toFixed(2)}</span>
-                    <span class="quantity">${order.quantity.toFixed(8)}</span>
+                    <span class="quantity">
+                        ${isPaperOrder ? `<span style="color: #28a745">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
+                    </span>
                 </div>`;
                 count++;
             }
@@ -711,10 +719,13 @@
             count = 0;
             for (const order of world_Slow.combinedBook.asks) {
                 if (count >= 100) break;
+                const isPaperOrder = order.book_type === BookType.PAPER;
                 asksHtml += `
                 <div class="order-row">
                     <span class="price">$${order.price.toFixed(2)}</span>
-                    <span class="quantity">${order.quantity.toFixed(8)}</span>
+                    <span class="quantity">
+                        ${isPaperOrder ? `<span style="color: #dc3545">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
+                    </span>
                 </div>`;
                 count++;
             }
@@ -839,5 +850,31 @@
             statusDiv.textContent = 'Stopped.';
             statusDiv.style.backgroundColor = '#e9ecef';
         };
+
+        // Add form submission handlers
+        function handleOrderSubmit(e, side) {
+            e.preventDefault();
+            const prefix = side === 'B' ? 'buy' : 'sell';
+            const price = parseFloat(document.getElementById(`${prefix}Price`).value);
+            const amount = parseFloat(document.getElementById(`${prefix}Amount`).value);
+            
+            if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
+                alert('Invalid price or amount.');
+                return;
+            }
+
+            // Create paper order for each world
+            const orderId = "P" + side + "-" + new Date().toISOString().slice(2,16).replace(/[-]/g,'') + "_" + String(messageCounter++).padStart(3, '0');
+            const order = new Order('limit', orderId, side, price, amount, Date.now(), BookType.PAPER);
+            
+            worlds.forEach(world => {
+                world.paperBook.upsertOrder(order);
+            });
+
+            updateDisplay();
+        }
+
+        buyForm.addEventListener('submit', (e) => handleOrderSubmit(e, 'B'));
+        sellForm.addEventListener('submit', (e) => handleOrderSubmit(e, 'S'));
     </script>
 </body>
