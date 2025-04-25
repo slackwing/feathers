@@ -42,6 +42,7 @@ export class MutableSortedTreeMap {
         }
         const value = this.map.get(key);
         this.map.delete(key);
+        this.nodeMap.delete(key);
         this.root = this._removeNode(this.root, key, value);
         this.size--; // Decrement size when removing a key
         return true;
