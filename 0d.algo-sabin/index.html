@@ -514,28 +514,6 @@
             }
         );
 
-        // function updateTimings() {
-        //     const now = performance.now();
-        //     if (now - lastTimingUpdate < TIMING_UPDATE_INTERVAL) {
-        //         return;
-        //     }
-        //     lastTimingUpdate = now;
-
-        //     const bidTimings = l2Book.bids.getTimings();
-        //     const askTimings = l2Book.asks.getTimings();
-            
-        //     if (ENABLE_TIMING_OUTPUT) {
-        //         console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
-        //         console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
-                
-        //         console.log(`Bids: ${l2Book.bids.orders.map.size.toLocaleString()} - Asks: ${l2Book.asks.orders.map.size.toLocaleString()}`);
-        //     }
-            
-        //     // Reset timings
-        //     l2Book.bids.resetTimings();
-        //     l2Book.asks.resetTimings();
-        // }
-
         function shouldUpdateDisplay() {
             const now = performance.now();
             if (now - lastDisplayUpdate < DISPLAY_UPDATE_INTERVAL) {

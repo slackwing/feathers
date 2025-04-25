@@ -39,6 +39,7 @@ export class MutableSortedTreeMap {
             this.root = node;
             this.nodeMap.set(key, node);
             this.timings.treeOp += performance.now() - treeStart;
+            this.size++; // Increment size when adding a new key
         }
         this.timings.set += performance.now() - start;
     }
@@ -76,6 +77,7 @@ export class MutableSortedTreeMap {
         if (node) {
             this.root = this._removeFromTree(node);
             this.nodeMap.delete(key);
+            this.size--; // Decrement size when removing a key
         }
         this.timings.treeOp += performance.now() - treeStart;
         this.timings.remove += performance.now() - start;
