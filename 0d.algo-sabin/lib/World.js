@@ -1,14 +1,19 @@
 import { OrderBook } from './OrderBook.js';
 
 export class World {
-    constructor(level2Book) {
-        this.level2Book = level2Book;
-        this.paperBook = new OrderBook();
-        this.ghostBook = new OrderBook();
-        this.combinedBook = new OrderBook();
+    constructor() {
+        this._combinedBook = new OrderBook();
     }
 
-    upsertOrder(order) {
-        this.combinedBook.upsertOrder(order);
+    subscribeOrderFeed(orderFeed) {
+        orderFeed.subscribe(this._combinedBook.onOrder);
+    }
+
+    subscribeTradeFeed(tradeFeed) {
+        tradeFeed.subscribe(this._onTrade);
+    }
+
+    _onTrade(trade) {
+        // Does nothing. Override in subclass.
     }
 }

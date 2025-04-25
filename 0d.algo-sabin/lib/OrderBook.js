@@ -7,7 +7,7 @@ export class OrderBook {
         this.worlds = [];
     }
 
-    upsertOrder(order) {
+    onOrder(order) {
         if (order.side === 'B') {
             this.bids.upsertOrder(order);
         } else {

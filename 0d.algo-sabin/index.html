@@ -477,7 +477,23 @@
         const X_BUCKET_WIDTH_USD = 1.0;
         const X_BUCKETS_PER_SIDE = 100;
 
+        let l2OrderFeed = new PubSub();
+        let paperOrderFeed = new PubSub();
+
+        let l2OrderBook = new OrderBook();
+        l2OrderFeed.subscribe(l2OrderBook.onOrder);
+
+        let slowWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+        let fastWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+
         let l2Book = new OrderBook();
+        l2OrderFeed.subscribe(l2Book.onOrder);
+
+        let paperBook = new OrderBook();
+        paperOrderFeed.subscribe(paperBook.onOrder);
+
+
+
         let world_Slow = new World(l2Book);
         let world_Fast = new World(l2Book);
         let worlds = [world_Slow, world_Fast];
