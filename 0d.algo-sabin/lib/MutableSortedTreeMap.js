@@ -69,19 +69,51 @@ export class MutableSortedTreeMap {
             this.timings.remove += performance.now() - start;
             return false;
         }
+        const value = this.map.get(key);
         const mapStart = performance.now();
         this.map.delete(key);
         this.timings.mapOp += performance.now() - mapStart;
         const treeStart = performance.now();
-        const node = this.nodeMap.get(key);
-        if (node) {
-            this.root = this._removeFromTree(node);
-            this.nodeMap.delete(key);
-            this.size--; // Decrement size when removing a key
-        }
+        this.root = this._removeNode(this.root, key, value);
+        this.size--; // Decrement size when removing a key
         this.timings.treeOp += performance.now() - treeStart;
         this.timings.remove += performance.now() - start;
         return true;
+    }
+
+    _removeNode(node, key, value) {
+        if (!node) return null;
+
+        const cmp = key === node.key ? 0 : this.comparator(value, node.value);
+        
+        if (cmp < 0) {
+            node.left = this._removeNode(node.left, key, value);
+        } else if (cmp > 0) {
+            node.right = this._removeNode(node.right, key, value);
+        } else {
+            // Node to delete found
+            if (!node.left) return node.right;
+            if (!node.right) return node.left;
+
+            // Node has two children
+            const minNode = this._findMin(node.right);
+            node.key = minNode.key;
+            node.value = minNode.value;
+            node.right = this._removeNode(node.right, minNode.key, minNode.value);
+        }
+
+        // Update height and rebalance
+        node.height = 1 + Math.max(
+            node.left ? node.left.height : 0,
+            node.right ? node.right.height : 0
+        );
+
+        const balance = this._getBalance(node);
+        if (Math.abs(balance) > 1) {
+            return this._balance(node);
+        }
+
+        return node;
     }
 
     _insertIntoTree(node, { key, value }, parent = null) {
@@ -93,7 +125,7 @@ export class MutableSortedTreeMap {
 
         // Cache the comparison result to avoid multiple comparisons
         const compareStart = performance.now();
-        const cmp = this.comparator(value, node.value);
+        const cmp = key === node.key ? 0 : this.comparator(value, node.value);
         this.timings.compare += performance.now() - compareStart;
 
         let heightChanged = false;
@@ -142,59 +174,6 @@ export class MutableSortedTreeMap {
         const left = this._findNode(root.left, key);
         if (left) return left;
         return this._findNode(root.right, key);
-    }
-
-    _removeFromTree(node) {
-        const start = performance.now();
-        if (!node) {
-            this.timings.removeFromTree += performance.now() - start;
-            return null;
-        }
-
-        if (!node.left) {
-            if (node.right) {
-                node.right.parent = node.parent;
-                this.nodeMap.set(node.right.key, node.right);
-            }
-            this.timings.removeFromTree += performance.now() - start;
-            return node.right;
-        }
-        if (!node.right) {
-            if (node.left) {
-                node.left.parent = node.parent;
-                this.nodeMap.set(node.left.key, node.left);
-            }
-            this.timings.removeFromTree += performance.now() - start;
-            return node.left;
-        }
-
-        const minNode = this._findMin(node.right);
-        node.key = minNode.key;
-        node.value = minNode.value;
-        this.nodeMap.set(node.key, node);
-        node.right = this._removeFromTree(minNode);
-        if (node.right) {
-            node.right.parent = node;
-            this.nodeMap.set(node.right.key, node.right);
-        }
-
-        // Update height and balance
-        const heightStart = performance.now();
-        node.height = 1 + Math.max(
-            node.left ? node.left.height : 0,
-            node.right ? node.right.height : 0
-        );
-        this.timings.heightCalc += performance.now() - heightStart;
-
-        const balanceStart = performance.now();
-        const balance = this._getBalance(node);
-        if (Math.abs(balance) > 1) {
-            node = this._balance(node);
-        }
-        this.timings.balanceCheck += performance.now() - balanceStart;
-
-        this.timings.removeFromTree += performance.now() - start;
-        return node;
     }
 
     _findMin(node) {
@@ -389,26 +368,35 @@ export class MutableSortedTreeMap {
 
     _updateValueInTree(key, value) {
         const start = performance.now();
-        const node = this._findNode(this.root, key);
-        if (node) {
-            node.value = value;
-        }
+        // Remove and reinsert to maintain order
+        this.remove(key);
+        this.set(key, value);
         this.timings.updateValue += performance.now() - start;
+    }
+
+    _inorderTraversal(node, result = []) {
+        if (node) {
+            this._inorderTraversal(node.left, result);
+            result.push([node.key, node.value]);
+            this._inorderTraversal(node.right, result);
+        }
+        return result;
     }
 
     [Symbol.iterator]() {
         const start = performance.now();
-        const iterator = this.map[Symbol.iterator]();
+        const values = this._inorderTraversal(this.root);
+        let index = 0;
+        
         const result = {
             next() {
-                const next = iterator.next();
-                if (next.done) {
+                if (index >= values.length) {
                     return { done: true };
                 }
-                const [key, value] = next.value;
-                return { value: [key, value], done: false };
+                return { value: values[index++], done: false };
             }
         };
+        
         this.timings.iterator += performance.now() - start;
         return result;
     }

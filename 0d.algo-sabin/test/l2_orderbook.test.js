@@ -39,38 +39,38 @@ function processMessage(message) {
 }
 
 function outputCsv(message) {
-    const bidsIterator = l2OrderBook.bids.orders[Symbol.iterator]();
-    const asksIterator = l2OrderBook.asks.orders[Symbol.iterator]();
-    
     // Get first bid and ask
-    const firstBid = bidsIterator.next().value;
-    const firstAsk = asksIterator.next().value;
+    const firstBid = l2OrderBook.bids[Symbol.iterator]().next().value;
+    const firstAsk = l2OrderBook.asks[Symbol.iterator]().next().value;
     
     // Skip to 10th bid and ask
     let tenthBid = null;
     let tenthAsk = null;
     
-    for (let i = 1; i < 10; i++) {
-        const bidResult = bidsIterator.next();
-        const askResult = asksIterator.next();
-        
-        if (i === 9) {
-            tenthBid = bidResult.value;
-            tenthAsk = askResult.value;
-        }
+    const bidsIterator = l2OrderBook.bids[Symbol.iterator]();
+    const asksIterator = l2OrderBook.asks[Symbol.iterator]();
+    
+    // Skip first 9 bids and asks
+    for (let i = 0; i < 9; i++) {
+        bidsIterator.next();
+        asksIterator.next();
     }
     
+    // Get 10th bid and ask
+    tenthBid = bidsIterator.next().value;
+    tenthAsk = asksIterator.next().value;
+    
     const csvLine = `${message.sequence_num},` +
-        `${firstBid?.[0] || 0},` +
-        `${firstBid?.[1].quantity || 0},` +
-        `${firstAsk?.[0] || 0},` +
-        `${firstAsk?.[1].quantity || 0},` +
-        `${tenthBid?.[0] || 0},` +
-        `${tenthBid?.[1].quantity || 0},` +
-        `${tenthAsk?.[0] || 0},` +
-        `${tenthAsk?.[1].quantity || 0},` +
+        `${firstBid?.price || 0},` +
+        `${firstBid?.quantity || 0},` +
+        `${firstAsk?.price || 0},` +
+        `${firstAsk?.quantity || 0},` +
+        `${tenthBid?.price || 0},` +
+        `${tenthBid?.quantity || 0},` +
+        `${tenthAsk?.price || 0},` +
+        `${tenthAsk?.quantity || 0},` +
         `${l2OrderBook.bids.orders.size},` +
-        `${l2OrderBook.asks.orders.size}\n`;
+        `${l2OrderBook.asks.orders.size}`;
     
     console.log(csvLine);
 }

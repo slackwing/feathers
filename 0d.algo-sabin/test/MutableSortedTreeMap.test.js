@@ -1,4 +1,4 @@
-import { assert } from 'assert';
+import assert from 'assert';
 import { MutableSortedTreeMap } from '../lib/MutableSortedTreeMap.js';
 
 function testMutableSortedTreeMap() {
