@@ -462,6 +462,10 @@
         import { PubSub } from './lib/PubSub.js';
         import { L2OrderBook } from './lib/L2OrderBook.js';
         import { L2PaperWorld } from './lib/L2PaperWorld.js';
+        import { OrderBookDisplay } from './lib/OrderBookDisplay.js';
+        import { BarChartDisplay } from './lib/BarChartDisplay.js';
+        import { WebSocketHandler } from './lib/WebSocketHandler.js';
+        import { DisplayManager } from './lib/DisplayManager.js';
 
         const bidsDiv = document.getElementById('bids');
         const asksDiv = document.getElementById('asks');
@@ -494,6 +498,21 @@
         const TIMING_UPDATE_INTERVAL = 1000; // Update timings every second
         const DISPLAY_UPDATE_INTERVAL = 1; // Update display every 500ms
         const ENABLE_TIMING_OUTPUT = false; // Set to true to enable timing output
+
+        // Initialize display components
+        const orderBookDisplay = new OrderBookDisplay(bidsDiv, asksDiv);
+        const barChartDisplay = new BarChartDisplay(bidsBarsDiv, asksBarsDiv, spreadLabel);
+        const displayManager = new DisplayManager(orderBookDisplay, barChartDisplay);
+
+        // Initialize WebSocket handler
+        const wsHandler = new WebSocketHandler(
+            l2OrderFeed, 
+            paperOrderFeed, 
+            (text, color) => {
+                statusDiv.textContent = text;
+                statusDiv.style.backgroundColor = color;
+            }
+        );
 
         // function updateTimings() {
         //     const now = performance.now();
@@ -529,8 +548,7 @@
 
         function updateDisplay() {
             if (shouldUpdateDisplay()) {
-                updateDisplay_OrderBook(slowWorld);
-                updateDisplay_BarChart(slowWorld);
+                displayManager.update(slowWorld);
             }
         }
 
@@ -538,18 +556,15 @@
         const ws = new WebSocket(`ws://${window.location.host}`);
 
         ws.onopen = () => {
-            statusDiv.textContent = 'Connected.';
-            statusDiv.style.backgroundColor = '#d4edda';
+            wsHandler.handleOpen();
         };
 
         ws.onclose = () => {
-            statusDiv.textContent = 'Disconnected.';
-            statusDiv.style.backgroundColor = '#f8d7da';
+            wsHandler.handleClose();
         };
 
         ws.onerror = (error) => {
-            statusDiv.textContent = 'Error: ' + error.message;
-            statusDiv.style.backgroundColor = '#f8d7da';
+            wsHandler.handleError(error);
         };
 
         ws.onmessage = (event) => {
@@ -558,270 +573,134 @@
             //     return;
             // }
 
-            const message = JSON.parse(event.data);
+            wsHandler.handleMessage(event);
             
-            if (message.type === 'l2_data') {
-                const event = message.data.events[0];
-
-                // Handle snapshots and update equivalently.
-                event.updates.forEach(update => {
-                    const price = parseFloat(update.price_level);
-                    const quantity = parseFloat(update.new_quantity);
-                    const side = update.side === 'bid' ? 'B' : 'S';
-                    const priceStr = price.toLocaleString('fullwide', {useGrouping: false});
-                    const id = "L2" + side + "-" + priceStr;
-
-                    const order = new Order('limit', id, side, price, quantity, update.timestamp, BookType.L2);
-
-                    l2OrderFeed.publish(order);
-                });
-                
-                // Only update display periodically
-                updateDisplay();
-                
-                // updateTimings(); // TODO(P1): Fix to count function-static.
-                // updateDisplay_Trades();
-            } else if (message.type === 'market_trades') {
-                // console.log("--------------------------------");
-
-                // // Process trades for execution against paper orders
-                // message.data.events[0].trades.forEach(trade => {
-                //     const price = parseFloat(trade.price);
-                //     const size = parseFloat(trade.size);
-
-                //     console.log(trade.trade_id,trade.side, trade.price, trade.size, trade.time);
-                    
-                //     // Add to recent trades
-                //     const wasPaperTrade = (() => {
-                //         if (trade.side === 'BUY') {
-                //             // Check all ask levels at or below the trade price
-                //             const sortedAsks = Array.from(orderBook.asks.entries())
-                //                 .sort((a, b) => a[0] - b[0]);
-                //             for (const [askPrice, level] of sortedAsks) {
-                //                 if (price >= askPrice && level.paperQty > 0) {
-                //                     console.log('Found paper sell at:', { askPrice, paperQty: level.paperQty });
-                //                     return true;
-                //                 }
-                //             }
-                //             return false;
-                //         } else {
-                //             // Check all bid levels at or above the trade price
-                //             const sortedBids = Array.from(orderBook.bids.entries())
-                //                 .sort((a, b) => b[0] - a[0]);
-                //             for (const [bidPrice, level] of sortedBids) {
-                //                 if (price <= bidPrice && level.paperQty > 0) {
-                //                     console.log('Found paper buy at:', { bidPrice, paperQty: level.paperQty });
-                //                     return true;
-                //                 }
-                //             }
-                //             return false;
-                //         }
-                //     })();
-
-                //     recentTrades.unshift({
-                //         price,
-                //         size,
-                //         side: trade.side,
-                //         time: new Date().toLocaleTimeString(),
-                //         wasPaperTrade
-                //     });
-                //     if (recentTrades.length > 7) {
-                //         recentTrades.pop();
-                //     }
-                    
-                //     if (trade.side === 'BUY') {
-                //         // Trade executed against asks (seller was maker)
-                //         // Process from inside-out (lowest ask first)
-                //         const sortedAsks = Array.from(orderBook.asks.entries())
-                //             .sort((a, b) => a[0] - b[0]);
-                        
-                //         let remainingSize = size;
-                //         for (const [askPrice, level] of sortedAsks) {
-                //             if (price >= askPrice && remainingSize > 0) {
-                //                 if (level.paperQty > 0) {
-                //                     const executedQty = Math.min(remainingSize, level.paperQty);
-                //                     // Update P/L when paperQty decreases using the ask price level
-                //                     totalPL += executedQty * askPrice;  // Sell order executed = profit
-                //                     level.paperQty -= executedQty;
-                //                     level.ghostQty += executedQty;
-                //                     level.initialGhostQty = level.ghostQty;
-                //                     level.executionPrice = askPrice;
-                //                     remainingSize -= executedQty;
-                //                     console.log('Paper sell executed:', { marketPrice: price, orderPrice: askPrice, executedQty, remainingPaperQty: level.paperQty });
-                //                 } else if (level.ghostQty > 0) {
-                //                     const executedQty = Math.min(remainingSize, level.ghostQty);
-                //                     level.ghostQty -= executedQty;
-                //                     remainingSize -= executedQty;
-                //                 }
-                                
-                //                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
-                //                     orderBook.asks.delete(askPrice);
-                //                 }
-                //             }
-                //         }
-                //     } else {
-                //         // Trade executed against bids (buyer was maker)
-                //         // Process from inside-out (highest bid first)
-                //         const sortedBids = Array.from(orderBook.bids.entries())
-                //             .sort((a, b) => b[0] - a[0]);
-                        
-                //         let remainingSize = size;
-                //         for (const [bidPrice, level] of sortedBids) {
-                //             if (price <= bidPrice && remainingSize > 0) {
-                //                 if (level.paperQty > 0) {
-                //                     const executedQty = Math.min(remainingSize, level.paperQty);
-                //                     // Update P/L when paperQty decreases using the bid price level
-                //                     totalPL -= executedQty * bidPrice;  // Buy order executed = loss
-                //                     level.paperQty -= executedQty;
-                //                     level.ghostQty += executedQty;
-                //                     level.initialGhostQty = level.ghostQty;
-                //                     level.executionPrice = bidPrice;
-                //                     remainingSize -= executedQty;
-                //                     console.log('Paper buy executed:', { marketPrice: price, orderPrice: bidPrice, executedQty, remainingPaperQty: level.paperQty });
-                //                 } else if (level.ghostQty > 0) {
-                //                     const executedQty = Math.min(remainingSize, level.ghostQty);
-                //                     level.ghostQty -= executedQty;
-                //                     remainingSize -= executedQty;
-                //                 }
-                                
-                //                 if (level.paperQty === 0 && level.quantity === 0 && level.ghostQty === 0) {
-                //                     orderBook.bids.delete(bidPrice);
-                //                 }
-                //             }
-                //         }
-                //     }
-                // });
-                
-                // updateDisplay_OrderBook();
-                // updateDisplay_BarChart();
-                // updateDisplay_Trades();
-            } else {
-                // console.log('Unhandled message:', message);
-            }
+            // Only update display periodically
+            updateDisplay();
         };
 
-        function updateDisplay_OrderBook(world) {
-            let bidsHtml = '';
-            let asksHtml = '';
-            let count = 0;
+        // function updateDisplay_OrderBook(world) {
+        //     let bidsHtml = '';
+        //     let asksHtml = '';
+        //     let count = 0;
         
-            for (const order of world.book.bids) {
-                if (count >= 100) break;
-                const isPaperOrder = order.book_type === BookType.PAPER;
-                bidsHtml += `
-                <div class="order-row">
-                    <span class="price">$${order.price.toFixed(2)}</span>
-                    <span class="quantity">
-                        ${isPaperOrder ? `<span style="color: #28a745">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
-                    </span>
-                </div>`;
-                count++;
-            }
+        //     for (const order of world.book.bids) {
+        //         if (count >= 100) break;
+        //         const isPaperOrder = order.book_type === BookType.PAPER;
+        //         bidsHtml += `
+        //         <div class="order-row">
+        //             <span class="price">$${order.price.toFixed(2)}</span>
+        //             <span class="quantity">
+        //                 ${isPaperOrder ? `<span style="color: #28a745">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
+        //             </span>
+        //         </div>`;
+        //         count++;
+        //     }
             
-            count = 0;
-            for (const order of world.book.asks) {
-                if (count >= 100) break;
-                const isPaperOrder = order.book_type === BookType.PAPER;
-                asksHtml += `
-                <div class="order-row">
-                    <span class="price">$${order.price.toFixed(2)}</span>
-                    <span class="quantity">
-                        ${isPaperOrder ? `<span style="color: #dc3545">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
-                    </span>
-                </div>`;
-                count++;
-            }
+        //     count = 0;
+        //     for (const order of world.book.asks) {
+        //         if (count >= 100) break;
+        //         const isPaperOrder = order.book_type === BookType.PAPER;
+        //         asksHtml += `
+        //         <div class="order-row">
+        //             <span class="price">$${order.price.toFixed(2)}</span>
+        //             <span class="quantity">
+        //                 ${isPaperOrder ? `<span style="color: #dc3545">${order.quantity.toFixed(8)}</span>` : order.quantity.toFixed(8)}
+        //             </span>
+        //         </div>`;
+        //         count++;
+        //     }
             
-            bidsDiv.innerHTML = bidsHtml;
-            asksDiv.innerHTML = asksHtml;
-        }
+        //     bidsDiv.innerHTML = bidsHtml;
+        //     asksDiv.innerHTML = asksHtml;
+        // }
         
-        function updateDisplay_BarChart(world) {
-            let bestBid = null;
-            let bestAsk = null;
+        // function updateDisplay_BarChart(world) {
+        //     let bestBid = null;
+        //     let bestAsk = null;
 
-            // Get best bid and ask using iterators
-            const [firstBid] = world.book.bids;
-            const [firstAsk] = world.book.asks;
+        //     // Get best bid and ask using iterators
+        //     const [firstBid] = world.book.bids;
+        //     const [firstAsk] = world.book.asks;
             
-            bestBid = firstBid?.price;
-            bestAsk = firstAsk?.price;
+        //     bestBid = firstBid?.price;
+        //     bestAsk = firstAsk?.price;
 
-            if (!bestBid || !bestAsk) {
-                console.log('Awaiting data to initialize bar chart...');
-                return;
-            }
+        //     if (!bestBid || !bestAsk) {
+        //         console.log('Awaiting data to initialize bar chart...');
+        //         return;
+        //     }
             
-            const spread = bestAsk - bestBid;
-            const spreadPercentage = (spread / bestBid) * 100;
+        //     const spread = bestAsk - bestBid;
+        //     const spreadPercentage = (spread / bestBid) * 100;
             
-            spreadLabel.textContent = `Spread: $${spread.toFixed(2)} (${spreadPercentage.toFixed(3)}%)`;
+        //     spreadLabel.textContent = `Spread: $${spread.toFixed(2)} (${spreadPercentage.toFixed(3)}%)`;
             
-            const bucketSize = X_BUCKET_WIDTH_USD;
-            const bucketsPerSide = X_BUCKETS_PER_SIDE;
+        //     const bucketSize = X_BUCKET_WIDTH_USD;
+        //     const bucketsPerSide = X_BUCKETS_PER_SIDE;
             
-            const bidBuckets = new Map();
-            for (let i = 0; i < bucketsPerSide; i++) {
-                const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
-                bidBuckets.set(i, { price: bucketPrice, volume: 0 });
-            }
+        //     const bidBuckets = new Map();
+        //     for (let i = 0; i < bucketsPerSide; i++) {
+        //         const bucketPrice = Math.floor(bestBid / bucketSize) * bucketSize - (i * bucketSize);
+        //         bidBuckets.set(i, { price: bucketPrice, volume: 0 });
+        //     }
             
-            const askBuckets = new Map();
-            for (let i = 0; i < bucketsPerSide; i++) {
-                const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
-                askBuckets.set(i, { price: bucketPrice, volume: 0 });
-            }
+        //     const askBuckets = new Map();
+        //     for (let i = 0; i < bucketsPerSide; i++) {
+        //         const bucketPrice = Math.floor(bestAsk / bucketSize) * bucketSize + (i * bucketSize);
+        //         askBuckets.set(i, { price: bucketPrice, volume: 0 });
+        //     }
 
-            for (const order of world.book.bids) {
-                const bucketIndex = Math.floor((bestBid - order.price) / bucketSize);
-                if (bucketIndex >= bucketsPerSide) break; // Price too low, stop iterating
-                if (bucketIndex >= 0) {
-                    const bucket = bidBuckets.get(bucketIndex);
-                    if (bucket) {
-                        bucket.volume += order.quantity;
-                    }
-                }
-            }
+        //     for (const order of world.book.bids) {
+        //         const bucketIndex = Math.floor((bestBid - order.price) / bucketSize);
+        //         if (bucketIndex >= bucketsPerSide) break; // Price too low, stop iterating
+        //         if (bucketIndex >= 0) {
+        //             const bucket = bidBuckets.get(bucketIndex);
+        //             if (bucket) {
+        //                 bucket.volume += order.quantity;
+        //             }
+        //         }
+        //     }
             
-            for (const order of world.book.asks) {
-                const bucketIndex = Math.floor((order.price - bestAsk) / bucketSize);
-                if (bucketIndex >= bucketsPerSide) break; // Price too high, stop iterating
-                if (bucketIndex >= 0) {
-                    const bucket = askBuckets.get(bucketIndex);
-                    if (bucket) {
-                        bucket.volume += order.quantity;
-                    }
-                }
-            }
+        //     for (const order of world.book.asks) {
+        //         const bucketIndex = Math.floor((order.price - bestAsk) / bucketSize);
+        //         if (bucketIndex >= bucketsPerSide) break; // Price too high, stop iterating
+        //         if (bucketIndex >= 0) {
+        //             const bucket = askBuckets.get(bucketIndex);
+        //             if (bucket) {
+        //                 bucket.volume += order.quantity;
+        //             }
+        //         }
+        //     }
 
-            let maxVolume = MIN_Y_HEIGHT_VOLUME;
-            bidBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume);
-            });
-            askBuckets.forEach(bucket => {
-                maxVolume = Math.max(maxVolume, bucket.volume);
-            });
-            yHeightVolume = maxVolume;
+        //     let maxVolume = MIN_Y_HEIGHT_VOLUME;
+        //     bidBuckets.forEach(bucket => {
+        //         maxVolume = Math.max(maxVolume, bucket.volume);
+        //     });
+        //     askBuckets.forEach(bucket => {
+        //         maxVolume = Math.max(maxVolume, bucket.volume);
+        //     });
+        //     yHeightVolume = maxVolume;
 
-            const bidBars = Array.from(bidBuckets.entries())
-                .map(([index, { volume }]) => {
-                    const height = (volume / yHeightVolume) * 100;
-                    return `<div class="bar-container">
-                        <div class="bar bid-bar" style="height: ${height}%;"></div>
-                    </div>`;
-                });
+        //     const bidBars = Array.from(bidBuckets.entries())
+        //         .map(([index, { volume }]) => {
+        //             const height = (volume / yHeightVolume) * 100;
+        //             return `<div class="bar-container">
+        //                 <div class="bar bid-bar" style="height: ${height}%;"></div>
+        //             </div>`;
+        //         });
             
-            const askBars = Array.from(askBuckets.entries())
-                .map(([index, { volume }]) => {
-                    const height = (volume / yHeightVolume) * 100;
-                    return `<div class="bar-container">
-                        <div class="bar ask-bar" style="height: ${height}%;"></div>
-                    </div>`;
-                });
+        //     const askBars = Array.from(askBuckets.entries())
+        //         .map(([index, { volume }]) => {
+        //             const height = (volume / yHeightVolume) * 100;
+        //             return `<div class="bar-container">
+        //                 <div class="bar ask-bar" style="height: ${height}%;"></div>
+        //             </div>`;
+        //         });
             
-            bidsBarsDiv.innerHTML = bidBars.join('');
-            asksBarsDiv.innerHTML = askBars.join('');
-        }
+        //     bidsBarsDiv.innerHTML = bidBars.join('');
+        //     asksBarsDiv.innerHTML = askBars.join('');
+        // }
 
         // function updateDisplay_Trades() {
         //     const filteredTrades = showAllTradesCheckbox.checked ? 
@@ -843,7 +722,7 @@
 
         showAllTradesCheckbox.addEventListener('change', () => {
             document.getElementById('toggleText').textContent = showAllTradesCheckbox.checked ? 'Show all trades' : 'Only paper trades';
-            updateDisplay_Trades();
+            // updateDisplay_Trades();
         });
 
         stopButton.onclick = () => {
