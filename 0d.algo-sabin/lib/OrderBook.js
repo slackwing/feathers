@@ -4,7 +4,7 @@ export class OrderBook {
     constructor() {
         this.bids = new OrderPriceTimePriorityTree('B');
         this.asks = new OrderPriceTimePriorityTree('S');
-        this.worlds = [];
+        this.onOrder = this.onOrder.bind(this);
     }
 
     onOrder(order) {
@@ -13,12 +13,5 @@ export class OrderBook {
         } else {
             this.asks.upsertOrder(order);
         }
-        this.worlds.forEach(world => {
-            world.upsertOrder(order);
-        });
-    }
-
-    register(world) {
-        this.worlds.push(world);
     }
 }

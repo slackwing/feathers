@@ -459,6 +459,9 @@
         import { OrderPriceTimePriorityTree } from './lib/OrderPriceTimePriorityTree.js';
         import { OrderBook } from './lib/OrderBook.js';
         import { World } from './lib/World.js';
+        import { PubSub } from './lib/PubSub.js';
+        import { L2OrderBook } from './lib/L2OrderBook.js';
+        import { L2PaperWorld } from './lib/L2PaperWorld.js';
 
         const bidsDiv = document.getElementById('bids');
         const asksDiv = document.getElementById('asks');
@@ -479,27 +482,10 @@
 
         let l2OrderFeed = new PubSub();
         let paperOrderFeed = new PubSub();
-
-        let l2OrderBook = new OrderBook();
-        l2OrderFeed.subscribe(l2OrderBook.onOrder);
-
+        let l2OrderBook = new L2OrderBook(l2OrderFeed);
+        // The worlds share L2 _and_ paper order _entry_, but separate paper books.
         let slowWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
         let fastWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
-
-        let l2Book = new OrderBook();
-        l2OrderFeed.subscribe(l2Book.onOrder);
-
-        let paperBook = new OrderBook();
-        paperOrderFeed.subscribe(paperBook.onOrder);
-
-
-
-        let world_Slow = new World(l2Book);
-        let world_Fast = new World(l2Book);
-        let worlds = [world_Slow, world_Fast];
-    
-        l2Book.register(world_Slow);
-        l2Book.register(world_Fast);
         
         let yHeightVolume = MIN_Y_HEIGHT_VOLUME; // Expands as necessary.
         let messageCounter = 0;
@@ -509,27 +495,27 @@
         const DISPLAY_UPDATE_INTERVAL = 1; // Update display every 500ms
         const ENABLE_TIMING_OUTPUT = false; // Set to true to enable timing output
 
-        function updateTimings() {
-            const now = performance.now();
-            if (now - lastTimingUpdate < TIMING_UPDATE_INTERVAL) {
-                return;
-            }
-            lastTimingUpdate = now;
+        // function updateTimings() {
+        //     const now = performance.now();
+        //     if (now - lastTimingUpdate < TIMING_UPDATE_INTERVAL) {
+        //         return;
+        //     }
+        //     lastTimingUpdate = now;
 
-            const bidTimings = l2Book.bids.getTimings();
-            const askTimings = l2Book.asks.getTimings();
+        //     const bidTimings = l2Book.bids.getTimings();
+        //     const askTimings = l2Book.asks.getTimings();
             
-            if (ENABLE_TIMING_OUTPUT) {
-                console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
-                console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
+        //     if (ENABLE_TIMING_OUTPUT) {
+        //         console.log('Bid Timings:', JSON.stringify(bidTimings, null, 2));
+        //         console.log('Ask Timings:', JSON.stringify(askTimings, null, 2));
                 
-                console.log(`Bids: ${l2Book.bids.orders.map.size.toLocaleString()} - Asks: ${l2Book.asks.orders.map.size.toLocaleString()}`);
-            }
+        //         console.log(`Bids: ${l2Book.bids.orders.map.size.toLocaleString()} - Asks: ${l2Book.asks.orders.map.size.toLocaleString()}`);
+        //     }
             
-            // Reset timings
-            l2Book.bids.resetTimings();
-            l2Book.asks.resetTimings();
-        }
+        //     // Reset timings
+        //     l2Book.bids.resetTimings();
+        //     l2Book.asks.resetTimings();
+        // }
 
         function shouldUpdateDisplay() {
             const now = performance.now();
@@ -543,8 +529,8 @@
 
         function updateDisplay() {
             if (shouldUpdateDisplay()) {
-                updateDisplay_OrderBook();
-                updateDisplay_BarChart();
+                updateDisplay_OrderBook(slowWorld);
+                updateDisplay_BarChart(slowWorld);
             }
         }
 
@@ -587,13 +573,13 @@
 
                     const order = new Order('limit', id, side, price, quantity, update.timestamp, BookType.L2);
 
-                    l2Book.upsertOrder(order);
+                    l2OrderFeed.publish(order);
                 });
                 
                 // Only update display periodically
                 updateDisplay();
                 
-                updateTimings();
+                // updateTimings(); // TODO(P1): Fix to count function-static.
                 // updateDisplay_Trades();
             } else if (message.type === 'market_trades') {
                 // console.log("--------------------------------");
@@ -714,12 +700,12 @@
             }
         };
 
-        function updateDisplay_OrderBook() {
+        function updateDisplay_OrderBook(world) {
             let bidsHtml = '';
             let asksHtml = '';
             let count = 0;
         
-            for (const order of world_Slow.combinedBook.bids) {
+            for (const order of world.book.bids) {
                 if (count >= 100) break;
                 const isPaperOrder = order.book_type === BookType.PAPER;
                 bidsHtml += `
@@ -733,7 +719,7 @@
             }
             
             count = 0;
-            for (const order of world_Slow.combinedBook.asks) {
+            for (const order of world.book.asks) {
                 if (count >= 100) break;
                 const isPaperOrder = order.book_type === BookType.PAPER;
                 asksHtml += `
@@ -750,13 +736,13 @@
             asksDiv.innerHTML = asksHtml;
         }
         
-        function updateDisplay_BarChart() {
+        function updateDisplay_BarChart(world) {
             let bestBid = null;
             let bestAsk = null;
 
             // Get best bid and ask using iterators
-            const [firstBid] = world_Slow.combinedBook.bids;
-            const [firstAsk] = world_Slow.combinedBook.asks;
+            const [firstBid] = world.book.bids;
+            const [firstAsk] = world.book.asks;
             
             bestBid = firstBid?.price;
             bestAsk = firstAsk?.price;
@@ -786,7 +772,7 @@
                 askBuckets.set(i, { price: bucketPrice, volume: 0 });
             }
 
-            for (const order of world_Slow.combinedBook.bids) {
+            for (const order of world.book.bids) {
                 const bucketIndex = Math.floor((bestBid - order.price) / bucketSize);
                 if (bucketIndex >= bucketsPerSide) break; // Price too low, stop iterating
                 if (bucketIndex >= 0) {
@@ -797,7 +783,7 @@
                 }
             }
             
-            for (const order of world_Slow.combinedBook.asks) {
+            for (const order of world.book.asks) {
                 const bucketIndex = Math.floor((order.price - bestAsk) / bucketSize);
                 if (bucketIndex >= bucketsPerSide) break; // Price too high, stop iterating
                 if (bucketIndex >= 0) {
@@ -883,9 +869,7 @@
             const orderId = "P" + side + "-" + new Date().toISOString().slice(2,16).replace(/[-]/g,'') + "_" + String(messageCounter++).padStart(3, '0');
             const order = new Order('limit', orderId, side, price, amount, Date.now(), BookType.PAPER);
             
-            worlds.forEach(world => {
-                world.paperBook.upsertOrder(order);
-            });
+            paperOrderFeed.publish(order);
 
             updateDisplay();
         }
