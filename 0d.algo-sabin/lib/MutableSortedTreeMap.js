@@ -4,7 +4,10 @@ export class MutableSortedTreeMap {
         this.nodeMap = new Map(); // For O(1) node access
         this.comparator = comparator;
         this.root = null;
-        this.size = 0; // Track size explicitly
+    }
+
+    get size() {
+        return this.map.size;
     }
 
     set(key, value) {
@@ -13,10 +16,7 @@ export class MutableSortedTreeMap {
             this._updateValueInTree(key, value);
         } else {
             this.map.set(key, value);
-            const node = this._insertIntoTree(this.root, { key, value });
-            this.root = node;
-            this.nodeMap.set(key, node);
-            this.size++; // Increment size when adding a new key
+            this.root = this._insertIntoTree(this.root, { key, value });
         }
     }
 
@@ -42,80 +42,127 @@ export class MutableSortedTreeMap {
         }
         const value = this.map.get(key);
         this.map.delete(key);
-        this.nodeMap.delete(key);
-        this.root = this._removeNode(this.root, key, value);
-        this.size--; // Decrement size when removing a key
+        const removed = this._removeNodeOptimized(key);
+        if (removed) this.nodeMap.delete(key);
+        return removed;
+    }
+
+    _removeNodeOptimized(key) {
+        if (!this.nodeMap.has(key)) return false;
+        const nodeToRemove = this.nodeMap.get(key);
+        const parent = nodeToRemove.parent;
+        if (nodeToRemove.left && nodeToRemove.right) {
+            // If the node has 2 children, we're going to keep this node
+            // and move a different node's value into it. So we don't
+            // need to update its parent's pointer.
+            const minRightNode = this._findMin(nodeToRemove.right);
+            const minRightNodeParent = minRightNode.parent;
+            
+            // Special case: minRightNode is the right child of nodeToRemove
+            if (minRightNodeParent === nodeToRemove) {
+                nodeToRemove.right = minRightNode.right;
+                if (minRightNode.right) {
+                    minRightNode.right.parent = nodeToRemove;
+                }
+            } else {
+                minRightNodeParent.left = minRightNode.right;
+                if (minRightNode.right) {
+                    minRightNode.right.parent = minRightNodeParent;
+                }
+            }
+            
+            nodeToRemove.key = minRightNode.key;
+            nodeToRemove.value = minRightNode.value;
+            this.nodeMap.set(minRightNode.key, nodeToRemove);
+            
+            // Update height
+            this._updateHeight(nodeToRemove);
+        } else {
+            if (!parent) {
+                if (!nodeToRemove.left && !nodeToRemove.right) {
+                    this.root = null;
+                } else if (!nodeToRemove.left) {
+                    this.root = nodeToRemove.right;
+                    nodeToRemove.right.parent = null;
+                    this._updateHeight(this.root);
+                } else if (!nodeToRemove.right) {
+                    this.root = nodeToRemove.left;
+                    nodeToRemove.left.parent = null;
+                    this._updateHeight(this.root);
+                }
+            } else if (parent.left === nodeToRemove) {
+                if (!nodeToRemove.left && !nodeToRemove.right) {
+                    parent.left = null;
+                } else if (!nodeToRemove.left) {
+                    parent.left = nodeToRemove.right;
+                    nodeToRemove.right.parent = parent;
+                } else if (!nodeToRemove.right) {
+                    parent.left = nodeToRemove.left;
+                    nodeToRemove.left.parent = parent;
+                }
+                this._updateHeight(parent);
+            } else if (parent.right === nodeToRemove) {
+                if (!nodeToRemove.left && !nodeToRemove.right) {
+                    parent.right = null;
+                } else if (!nodeToRemove.left) {
+                    parent.right = nodeToRemove.right;
+                    nodeToRemove.right.parent = parent;
+                } else if (!nodeToRemove.right) {
+                    parent.right = nodeToRemove.left;
+                    nodeToRemove.left.parent = parent;
+                }
+                this._updateHeight(parent);
+            }
+            this.nodeMap.delete(key);
+        }
         return true;
     }
 
-    _removeNode(node, key, value) {
-        if (!node) return null;
-
-        const cmp = key === node.key ? 0 : this.comparator(value, node.value);
-        
-        if (cmp < 0) {
-            node.left = this._removeNode(node.left, key, value);
-        } else if (cmp > 0) {
-            node.right = this._removeNode(node.right, key, value);
-        } else {
-            // Node to delete found
-            if (!node.left) return node.right;
-            if (!node.right) return node.left;
-
-            // Node has two children
-            const minNode = this._findMin(node.right);
-            node.key = minNode.key;
-            node.value = minNode.value;
-            node.right = this._removeNode(node.right, minNode.key, minNode.value);
-        }
-
-        // Update height and rebalance
+    _updateHeight(node) {
+        if (!node) return;
         node.height = 1 + Math.max(
             node.left ? node.left.height : 0,
             node.right ? node.right.height : 0
         );
-
+        
+        // Check balance and rebalance if needed
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
-            return this._balance(node);
+            // Use _balance instead of _rebalanceAfterRemoval
+            const newRoot = this._balance(node);
+            
+            // Update root if necessary
+            if (node === this.root) {
+                this.root = newRoot;
+            }
         }
-
-        return node;
     }
 
     _insertIntoTree(node, { key, value }, parent = null) {
         if (!node) {
-            return { key, value, left: null, right: null, height: 1, parent };
+            const newNode = { key, value, left: null, right: null, height: 1, parent };
+            this.nodeMap.set(key, newNode);
+            return newNode;
         }
 
-        // Cache the comparison result to avoid multiple comparisons
-        const cmp = key === node.key ? 0 : this.comparator(value, node.value);
-
-        let heightChanged = false;
         let oldHeight = node.height;
         let result = node;
 
-        if (cmp < 0) {
+        if (node.key === key ? 0 : this.comparator(value, node.value) < 0) {
+            const oldLeftHeight = node.left ? node.left.height : 0;
             node.left = this._insertIntoTree(node.left, { key, value }, node);
-            if (node.left.height > (node.left.left ? node.left.left.height : 0)) {
-                heightChanged = true;
+            if (node.left.height > oldLeftHeight) {
+                node.height = 1 + Math.max(node.left.height, node.right ? node.right.height : 0);
+                const balance = this._getBalance(node);
+                if (Math.abs(balance) > 1) {
+                    result = this._balance(node);
+                }
             }
         } else {
+            const oldRightHeight = node.right ? node.right.height : 0;
             node.right = this._insertIntoTree(node.right, { key, value }, node);
-            if (node.right.height > (node.right.right ? node.right.right.height : 0)) {
-                heightChanged = true;
-            }
-        }
-
-        // Only update height and balance if necessary
-        if (heightChanged) {
-            node.height = 1 + Math.max(
-                node.left ? node.left.height : 0,
-                node.right ? node.right.height : 0
-            );
-
-            // Only balance if height actually changed
-            if (node.height !== oldHeight) {
+            if (node.right.height > oldRightHeight) {
+                node.height = 1 + Math.max(node.left ? node.left.height : 0, node.right.height);
                 const balance = this._getBalance(node);
                 if (Math.abs(balance) > 1) {
                     result = this._balance(node);
