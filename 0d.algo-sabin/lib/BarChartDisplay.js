@@ -76,8 +76,8 @@ export class BarChartDisplay {
         });
         this.yHeightVolume = maxVolume;
 
+        // The direction is reversed via CSS.
         const bidBars = Array.from(bidBuckets.entries())
-            .reverse()
             .map(([index, { volume }]) => {
                 const height = (volume / this.yHeightVolume) * 100;
                 return `<div class="bar-container">

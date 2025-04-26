@@ -530,27 +530,8 @@
             // }
         }
 
-        // Temporary test code to read from JSON file
-        fetch('test/cb.advanced.l2.10s.json')
-            .then(response => response.json())
-            .then(data => {
-                let start = performance.now();
-                let updates = 0;
-                for (let i = 0; i < data.length; i++) {
-                    const message = data[i];
-                    updates += message.events[0].updates.length;
-                    const wsMessage = {
-                        type: 'l2_data',
-                        data: message
-                    };
-                    ws.onmessage({ data: JSON.stringify(wsMessage) });
-                }
-                let elapsed = performance.now() - start;
-                console.log(`Processed ${data.length} messages, ${updates} updates in ${elapsed}ms. ${updates / elapsed * 1000} updates per second.`);
-            });
         // Connect to WebSocket
-        // const ws = new WebSocket(`ws://${window.location.host}`);
-        const ws = { onmessage: null };
+        const ws = new WebSocket(`ws://${window.location.host}`);
 
         ws.onopen = () => {
             wsHandler.handleOpen();
