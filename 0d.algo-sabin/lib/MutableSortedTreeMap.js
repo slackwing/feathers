@@ -456,15 +456,31 @@ export class MutableSortedTreeMap {
     }
 
     [Symbol.iterator]() {
-        const values = this._inorderTraversal(this.root);
-        let index = 0;
+        const stack = [];
+        let current = this.root;
+        
+        // Initialize stack with leftmost path
+        while (current) {
+            stack.push(current);
+            current = current.left;
+        }
         
         return {
             next() {
-                if (index >= values.length) {
+                if (stack.length === 0) {
                     return { done: true };
                 }
-                return { value: values[index++], done: false };
+                
+                const node = stack.pop();
+                let current = node.right;
+                
+                // Add leftmost path of right subtree
+                while (current) {
+                    stack.push(current);
+                    current = current.left;
+                }
+                
+                return { value: [node.key, node.value], done: false };
             }
         };
     }
