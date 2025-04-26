@@ -191,106 +191,186 @@ export class MutableSortedTreeMap {
     _balance(node) {
         const balance = this._getBalance(node);
         
-        let result;
+        // Left heavy
         if (balance > 1) {
-            // Left heavy
             const leftBalance = this._getBalance(node.left);
+            
+            // Left-Right case
             if (leftBalance < 0) {
-                // Left-Right case - do both rotations at once
-                const x = node.left;
-                const y = x.right;
-                const T2 = y.left;
-                const T3 = y.right;
+                // First rotation: left rotate node.left
+                const leftChild = node.left;
+                const newLeftChild = leftChild.right;
+                const T2 = newLeftChild.left;
                 
                 // Update parent pointers
-                y.parent = node.parent;
-                x.parent = y;
-                node.parent = y;
-                if (T2) T2.parent = x;
-                if (T3) T3.parent = node;
+                newLeftChild.parent = node;
+                leftChild.parent = newLeftChild;
+                if (T2) T2.parent = leftChild;
                 
                 // Update nodeMap
-                this.nodeMap.set(y.key, y);
-                this.nodeMap.set(x.key, x);
-                this.nodeMap.set(node.key, node);
+                this.nodeMap.set(newLeftChild.key, newLeftChild);
+                this.nodeMap.set(leftChild.key, leftChild);
                 if (T2) this.nodeMap.set(T2.key, T2);
-                if (T3) this.nodeMap.set(T3.key, T3);
                 
-                // First rotation
-                y.left = x;
-                x.right = T2;
-                
-                // Second rotation
-                y.right = node;
-                node.left = T3;
+                // Perform rotation
+                newLeftChild.left = leftChild;
+                leftChild.right = T2;
                 
                 // Update heights
-                x.height = 1 + Math.max(
-                    x.left ? x.left.height : 0,
-                    x.right ? x.right.height : 0
+                leftChild.height = 1 + Math.max(
+                    leftChild.left ? leftChild.left.height : 0,
+                    leftChild.right ? leftChild.right.height : 0
                 );
+                newLeftChild.height = 1 + Math.max(
+                    newLeftChild.left ? newLeftChild.left.height : 0,
+                    newLeftChild.right ? newLeftChild.right.height : 0
+                );
+                
+                // Second rotation: right rotate node
+                const oldParent = node.parent;
+                const isLeftChild = oldParent && oldParent.left === node;
+                
+                // Update parent pointers
+                newLeftChild.parent = oldParent;
+                node.parent = newLeftChild;
+                
+                // Update nodeMap
+                this.nodeMap.set(newLeftChild.key, newLeftChild);
+                this.nodeMap.set(node.key, node);
+                
+                // Perform rotation
+                newLeftChild.right = node;
+                node.left = null;
+                
+                // Update heights
                 node.height = 1 + Math.max(
                     node.left ? node.left.height : 0,
                     node.right ? node.right.height : 0
                 );
-                y.height = 1 + Math.max(x.height, node.height);
+                newLeftChild.height = 1 + Math.max(
+                    newLeftChild.left ? newLeftChild.left.height : 0,
+                    newLeftChild.right ? newLeftChild.right.height : 0
+                );
                 
-                result = y;
+                // Update parent's child pointer
+                if (oldParent) {
+                    if (isLeftChild) {
+                        oldParent.left = newLeftChild;
+                    } else {
+                        oldParent.right = newLeftChild;
+                    }
+                }
+                
+                return newLeftChild;
             } else {
-                result = this._rotateRight(node);
+                // Left-Left case
+                const oldParent = node.parent;
+                const isLeftChild = oldParent && oldParent.left === node;
+                const newRoot = this._rotateRight(node);
+                
+                // Update parent's child pointer
+                if (oldParent) {
+                    if (isLeftChild) {
+                        oldParent.left = newRoot;
+                    } else {
+                        oldParent.right = newRoot;
+                    }
+                }
+                
+                return newRoot;
             }
-        } else if (balance < -1) {
-            // Right heavy
+        } 
+        // Right heavy
+        else if (balance < -1) {
             const rightBalance = this._getBalance(node.right);
+            
+            // Right-Left case
             if (rightBalance > 0) {
-                // Right-Left case - do both rotations at once
-                const x = node.right;
-                const y = x.left;
-                const T2 = y.right;
-                const T3 = y.left;
+                // First rotation: right rotate node.right
+                const rightChild = node.right;
+                const newRightChild = rightChild.left;
+                const T2 = newRightChild.right;
                 
                 // Update parent pointers
-                y.parent = node.parent;
-                x.parent = y;
-                node.parent = y;
-                if (T2) T2.parent = x;
-                if (T3) T3.parent = node;
+                newRightChild.parent = node;
+                rightChild.parent = newRightChild;
+                if (T2) T2.parent = rightChild;
                 
                 // Update nodeMap
-                this.nodeMap.set(y.key, y);
-                this.nodeMap.set(x.key, x);
-                this.nodeMap.set(node.key, node);
+                this.nodeMap.set(newRightChild.key, newRightChild);
+                this.nodeMap.set(rightChild.key, rightChild);
                 if (T2) this.nodeMap.set(T2.key, T2);
-                if (T3) this.nodeMap.set(T3.key, T3);
                 
-                // First rotation
-                y.right = x;
-                x.left = T2;
-                
-                // Second rotation
-                y.left = node;
-                node.right = T3;
+                // Perform rotation
+                newRightChild.right = rightChild;
+                rightChild.left = T2;
                 
                 // Update heights
-                x.height = 1 + Math.max(
-                    x.left ? x.left.height : 0,
-                    x.right ? x.right.height : 0
+                rightChild.height = 1 + Math.max(
+                    rightChild.left ? rightChild.left.height : 0,
+                    rightChild.right ? rightChild.right.height : 0
                 );
+                newRightChild.height = 1 + Math.max(
+                    newRightChild.left ? newRightChild.left.height : 0,
+                    newRightChild.right ? newRightChild.right.height : 0
+                );
+                
+                // Second rotation: left rotate node
+                const oldParent = node.parent;
+                const isLeftChild = oldParent && oldParent.left === node;
+                
+                // Update parent pointers
+                newRightChild.parent = oldParent;
+                node.parent = newRightChild;
+                
+                // Update nodeMap
+                this.nodeMap.set(newRightChild.key, newRightChild);
+                this.nodeMap.set(node.key, node);
+                
+                // Perform rotation
+                newRightChild.left = node;
+                node.right = null;
+                
+                // Update heights
                 node.height = 1 + Math.max(
                     node.left ? node.left.height : 0,
                     node.right ? node.right.height : 0
                 );
-                y.height = 1 + Math.max(x.height, node.height);
+                newRightChild.height = 1 + Math.max(
+                    newRightChild.left ? newRightChild.left.height : 0,
+                    newRightChild.right ? newRightChild.right.height : 0
+                );
                 
-                result = y;
+                // Update parent's child pointer
+                if (oldParent) {
+                    if (isLeftChild) {
+                        oldParent.left = newRightChild;
+                    } else {
+                        oldParent.right = newRightChild;
+                    }
+                }
+                
+                return newRightChild;
             } else {
-                result = this._rotateLeft(node);
+                // Right-Right case
+                const oldParent = node.parent;
+                const isLeftChild = oldParent && oldParent.left === node;
+                const newRoot = this._rotateLeft(node);
+                
+                // Update parent's child pointer
+                if (oldParent) {
+                    if (isLeftChild) {
+                        oldParent.left = newRoot;
+                    } else {
+                        oldParent.right = newRoot;
+                    }
+                }
+                
+                return newRoot;
             }
-        } else {
-            result = node;
         }
         
-        return result;
+        return node;
     }
 
     _getBalance(node) {
