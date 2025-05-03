@@ -1,103 +1,92 @@
-import Image from "next/image";
+import React from 'react';
+import styles from './page.module.css';
+import OrderBook from './components/OrderBook';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className={styles.container}>
+      <h1 className={styles.title}>BTC-USD Order Book</h1>
+      <div className={styles.controls}>
+        <button className={styles.powerButton} id="stopButton">Power Off</button>
+        <div className={styles.status} id="status">Connecting...</div>
+      </div>
+      
+      <div className={styles.visualizationContainer}>
+        <h2 className={styles.title}>Order Book Visualization</h2>
+        <div className={styles.visualization}>
+          <div className={styles.volumeBars}>
+            <div className={styles.bidsBars} id="bids-bars"></div>
+            <div className={styles.asksBars} id="asks-bars"></div>
+          </div>
+          <div className={styles.spreadLine}></div>
+          <div className={styles.spreadLabel} id="spread-label">Spread: $0.00</div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <div className={styles.orderEntry}>
+        <div className={`${styles.orderPanel} ${styles.buy}`}>
+          <h3>Buy BTC</h3>
+          <form className={styles.orderForm}>
+            <div className={styles.formGroup}>
+              <label htmlFor="buyOrderType">Order Type</label>
+              <select id="buyOrderType">
+                <option value="limit">Limit</option>
+                <option value="market" disabled>Market</option>
+                <option value="stop" disabled>Stop</option>
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="buyPrice">Price (USD)</label>
+              <input type="number" id="buyPrice" step="0.01" placeholder="Enter price" />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="buyAmount">Amount (BTC)</label>
+              <input type="number" id="buyAmount" step="0.00000001" placeholder="Enter amount" />
+            </div>
+            <button type="submit" className={`${styles.orderButton} ${styles.buy}`}>Buy BTC</button>
+          </form>
+        </div>
+        <div className={`${styles.orderPanel} ${styles.trades}`}>
+          <div className={styles.plSection}>
+            <div className={styles.plValue} id="pl-value">$0.00</div>
+          </div>
+          <div className={styles.tradesHeader}>
+            <h3>Recent Trades</h3>
+            <label className={styles.toggleLabel}>
+              <span className={styles.toggleSwitch}>
+                <input type="checkbox" id="showAllTrades" defaultChecked />
+                <span className={styles.toggleSlider}></span>
+              </span>
+              <span id="toggleText">Show all trades</span>
+            </label>
+          </div>
+          <div className={styles.tradesList} id="trades-list"></div>
+        </div>
+        <div className={`${styles.orderPanel} ${styles.sell}`}>
+          <h3>Sell BTC</h3>
+          <form className={styles.orderForm}>
+            <div className={styles.formGroup}>
+              <label htmlFor="sellOrderType">Order Type</label>
+              <select id="sellOrderType">
+                <option value="limit">Limit</option>
+                <option value="market" disabled>Market</option>
+                <option value="stop" disabled>Stop</option>
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="sellPrice">Price (USD)</label>
+              <input type="number" id="sellPrice" step="0.01" placeholder="Enter price" />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="sellAmount">Amount (BTC)</label>
+              <input type="number" id="sellAmount" step="0.00000001" placeholder="Enter amount" />
+            </div>
+            <button type="submit" className={`${styles.orderButton} ${styles.sell}`}>Sell BTC</button>
+          </form>
+        </div>
+      </div>
+      
+      <OrderBook />
     </div>
   );
 }
