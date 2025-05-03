@@ -1,4 +1,4 @@
-import { MutableSortedTreeMap } from './MutableSortedTreeMap';
+import { MutableSortedTreeMap } from '../infra/MutableSortedTreeMap';
 import { Order, Side } from './Order';
 
 export class OrderPriceTimePriorityTree {

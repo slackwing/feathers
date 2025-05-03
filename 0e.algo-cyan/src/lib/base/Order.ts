@@ -4,8 +4,8 @@ export enum BookType {
 }
 
 export enum Side {
-    BUY = 'BUY',
-    SELL = 'SELL'
+    BUY = 'B',
+    SELL = 'S'
 }
 
 export class Order {
@@ -14,11 +14,11 @@ export class Order {
     side: Side;
     price: number;
     quantity: number;
-    timestamp: number;
+    timestamp: string;
     remaining_qty: number;
     book_type: BookType;
 
-    constructor(type: string, id: string, side: Side, price: number, quantity: number, timestamp: number, book_type: BookType) {
+    constructor(type: string, id: string, side: Side, price: number, quantity: number, timestamp: string, book_type: BookType) {
         this.type = type;
         this.id = id;
         this.side = side;

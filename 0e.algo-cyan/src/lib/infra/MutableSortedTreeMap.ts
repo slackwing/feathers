@@ -199,7 +199,6 @@ export class MutableSortedTreeMap<T> {
 
     private _balance(node: Node<T>): Node<T> {
         const balance = this._getBalance(node);
-        
         if (balance > 1) {
             const leftBalance = this._getBalance(node.left!);
             

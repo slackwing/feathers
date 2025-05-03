@@ -10,7 +10,7 @@ export class OrderBook {
         this.asks = new OrderPriceTimePriorityTree(Side.SELL);
     }
 
-    onOrder(order: Order): void {
+    onOrder = (order: Order): void => {
         if (order.side === Side.BUY) {
             this.bids.upsertOrder(order);
         } else {

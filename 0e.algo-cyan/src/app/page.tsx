@@ -9,13 +9,15 @@ import { PubSub } from '@/lib/infra/PubSub';
 import { L2OrderBook } from '@/lib/derived/L2OrderBook';
 import { Order } from '@/lib/base/Order';
 import { L2PaperWorld } from '@/lib/derived/L2PaperWorld';
+import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
 
   useEffect(() => {
-    const l2OrderFeed = new PubSub<Order>();
+    const coinbaseAdapter = new CoinbaseDataAdapter();
+    const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const paperOrderFeed = new PubSub<Order>();
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
     const slowWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
@@ -23,8 +25,7 @@ const Dashboard = () => {
     
     connect({
       onMessage: (data) => {
-        console.log('Received:', data);
-        // Handle trading data
+        coinbaseAdapter.onMessage(data);
       },
       onError: (error) => {
         console.error('WebSocket error:', error);

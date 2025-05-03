@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from 'react';
 import { createContext, useEffect, useRef, useCallback } from 'react';
 import { CoinbaseWebSocketService } from '../types/coinbase';
 

@@ -10,6 +10,7 @@ export class PubSub<T> {
     return () => this.subscribers.delete(callback);
   }
 
+  // TODO(P2): How to make PubSubs that are read-only to be passed around?
   publish(data: T): void {
     for (const callback of this.subscribers) {
       callback(data);
