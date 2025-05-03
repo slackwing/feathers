@@ -1,14 +1,52 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBook from './components/OrderBook';
+import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
+import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
+import { PubSub } from '@/lib/infra/PubSub';
+import { L2OrderBook } from '@/lib/derived/L2OrderBook';
+import { Order } from '@/lib/base/Order';
+import { L2PaperWorld } from '@/lib/derived/L2PaperWorld';
+// TODO(P3): Standardize all these import styles.
 
-export default function Home() {
+const Dashboard = () => {
+  const { connect, disconnect } = useCoinbaseWebSocket();
+
+  useEffect(() => {
+    const l2OrderFeed = new PubSub<Order>();
+    const paperOrderFeed = new PubSub<Order>();
+    const l2OrderBook = new L2OrderBook(l2OrderFeed);
+    const slowWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+    const fastWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+    
+    connect({
+      onMessage: (data) => {
+        console.log('Received:', data);
+        // Handle trading data
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error);
+      },
+      onOpen: () => {
+        console.log('Connected to Coinbase');
+      }
+    });
+
+    return () => disconnect();
+  }, []);
+
+  const handlePowerOff = () => {
+    disconnect();
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
-        <button className={styles.powerButton} id="stopButton">Power Off</button>
-        <div className={styles.status} id="status">Connecting...</div>
+        <button className={styles.powerButton} onClick={handlePowerOff}>Power Off</button>
+        <div className={styles.status}>Connecting...</div>
       </div>
       
       <div className={styles.visualizationContainer}>
@@ -88,5 +126,13 @@ export default function Home() {
       
       <OrderBook />
     </div>
+  );
+};
+
+export default function Page() {
+  return (
+    <CoinbaseWebSocketProvider>
+      <Dashboard />
+    </CoinbaseWebSocketProvider>
   );
 }
