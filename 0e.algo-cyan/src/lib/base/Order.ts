@@ -1,6 +1,7 @@
 export enum BookType {
     L2 = 'L2',
-    PAPER = 'PAPER'
+    PAPER = 'PAPER',
+    GHOST = 'GHOST'
 }
 
 export enum Side {
