@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import styles from './page.module.css';
-import OrderBook from './components/OrderBook';
+import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub } from '@/lib/infra/PubSub';
@@ -57,7 +57,7 @@ const Dashboard = () => {
       </div>
       
       <div className={styles.visualizationContainer}>
-        <h2 className={styles.title}>Order Book Visualization</h2>
+        <h2 className={styles.title}>Inside 100 Bids and Asks</h2>
         <div className={styles.visualization}>
           <div className={styles.volumeBars}>
             <div className={styles.bidsBars} id="bids-bars"></div>
@@ -131,7 +131,7 @@ const Dashboard = () => {
         </div>
       </div>
       {slowWorld ? (
-        <OrderBook orderBook={slowWorld.combinedBook} orderBookUpdated={lastRefreshed} />
+        <OrderBookTableDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}

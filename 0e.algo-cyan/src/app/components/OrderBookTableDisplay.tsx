@@ -3,7 +3,7 @@ import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
 import { Order, Side, BookType } from '@/lib/base/Order';
 
-export default function OrderBook({ orderBook, lastRefreshed }: { orderBook: OrderBookType, orderBookUpdated: number }) {
+export default function OrderBookTableDisplay({ orderBook, lastRefreshed }: { orderBook: OrderBookType, lastRefreshed: number }) {
   const bids = orderBook.getTopBids(100);
   const asks = orderBook.getTopAsks(100);
 
