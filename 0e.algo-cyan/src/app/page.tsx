@@ -11,6 +11,8 @@ import { L2OrderBook } from '@/lib/derived/L2OrderBook';
 import { Order } from '@/lib/base/Order';
 import { L2PaperWorld } from '@/lib/derived/L2PaperWorld';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
+import OrderForm from './components/OrderForm';
+import { Side } from '@/lib/base/Order';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -19,15 +21,17 @@ const Dashboard = () => {
   const [slowWorld, setSlowWorld] = React.useState<L2PaperWorld | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PaperWorld | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
+  const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
-    const paperOrderFeed = new PubSub<Order>();
+    const paperFeed = new PubSub<Order>();
+    setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
-    const world = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+    const world = new L2PaperWorld(l2OrderBook, paperFeed);
     setSlowWorld(world);
-    setFastWorld(new L2PaperWorld(l2OrderBook, paperOrderFeed));
+    setFastWorld(world);
     
     connect({
       onMessage: (data) => {
@@ -44,6 +48,12 @@ const Dashboard = () => {
 
     return () => disconnect();
   }, []);
+
+  const handleOrderSubmit = (order: Order) => {
+    if (paperOrderFeed) {
+      paperOrderFeed.publish(order);
+    }
+  };
 
   const handlePowerOff = () => {
     disconnect();
@@ -66,25 +76,7 @@ const Dashboard = () => {
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>
           <h3>Buy BTC</h3>
-          <form className={styles.orderForm}>
-            <div className={styles.formGroup}>
-              <label htmlFor="buyOrderType">Order Type</label>
-              <select id="buyOrderType">
-                <option value="limit">Limit</option>
-                <option value="market" disabled>Market</option>
-                <option value="stop" disabled>Stop</option>
-              </select>
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="buyPrice">Price (USD)</label>
-              <input type="number" id="buyPrice" step="0.01" placeholder="Enter price" />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="buyAmount">Amount (BTC)</label>
-              <input type="number" id="buyAmount" step="0.00000001" placeholder="Enter amount" />
-            </div>
-            <button type="submit" className={`${styles.orderButton} ${styles.buy}`}>Buy BTC</button>
-          </form>
+          <OrderForm side={Side.BUY} onSubmit={handleOrderSubmit} />
         </div>
         <div className={`${styles.orderPanel} ${styles.trades}`}>
           <div className={styles.plSection}>
@@ -104,25 +96,7 @@ const Dashboard = () => {
         </div>
         <div className={`${styles.orderPanel} ${styles.sell}`}>
           <h3>Sell BTC</h3>
-          <form className={styles.orderForm}>
-            <div className={styles.formGroup}>
-              <label htmlFor="sellOrderType">Order Type</label>
-              <select id="sellOrderType">
-                <option value="limit">Limit</option>
-                <option value="market" disabled>Market</option>
-                <option value="stop" disabled>Stop</option>
-              </select>
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="sellPrice">Price (USD)</label>
-              <input type="number" id="sellPrice" step="0.01" placeholder="Enter price" />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="sellAmount">Amount (BTC)</label>
-              <input type="number" id="sellAmount" step="0.00000001" placeholder="Enter amount" />
-            </div>
-            <button type="submit" className={`${styles.orderButton} ${styles.sell}`}>Sell BTC</button>
-          </form>
+          <OrderForm side={Side.SELL} onSubmit={handleOrderSubmit} />
         </div>
       </div>
       {slowWorld ? (
