@@ -14,18 +14,24 @@ import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
+  
+  const [slowWorld, setSlowWorld] = React.useState<L2PaperWorld | null>(null);
+  const [fastWorld, setFastWorld] = React.useState<L2PaperWorld | null>(null);
+  const [orderBookUpdated, setOrderBookUpdated] = React.useState(Date.now());
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const paperOrderFeed = new PubSub<Order>();
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
-    const slowWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
-    const fastWorld = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+    const world = new L2PaperWorld(l2OrderBook, paperOrderFeed);
+    setSlowWorld(world);
+    setFastWorld(new L2PaperWorld(l2OrderBook, paperOrderFeed));
     
     connect({
       onMessage: (data) => {
         coinbaseAdapter.onMessage(data);
+        setOrderBookUpdated(Date.now());
       },
       onError: (error) => {
         console.error('WebSocket error:', error);
@@ -124,8 +130,11 @@ const Dashboard = () => {
           </form>
         </div>
       </div>
-      
-      <OrderBook />
+      {slowWorld ? (
+        <OrderBook orderBook={slowWorld.combinedBook} orderBookUpdated={orderBookUpdated} />
+      ) : (
+        <div className={styles.loading}>Loading order book...</div>
+      )}
     </div>
   );
 };

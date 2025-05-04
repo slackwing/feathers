@@ -1,7 +1,7 @@
 import { MutableSortedTreeMap } from '../infra/MutableSortedTreeMap';
 import { Order, Side } from './Order';
 
-export class OrderPriceTimePriorityTree {
+export class OrderPriceTimePriorityTree implements Iterable<Order> {
     private side: Side;
     private orders: MutableSortedTreeMap<Order>;
     private timings: {

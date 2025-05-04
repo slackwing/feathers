@@ -17,4 +17,12 @@ export class OrderBook {
             this.asks.upsertOrder(order);
         }
     }
+
+    getBids(): Iterable<Order> {
+        return this.bids;
+    }
+
+    getAsks(): Iterable<Order> {
+        return this.asks;
+    }
 } 

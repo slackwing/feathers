@@ -7,7 +7,7 @@ type Node<T> = {
     parent: Node<T> | null;
 };
 
-export class MutableSortedTreeMap<T> {
+export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     private map: Map<string, T>; // TODO(P1): Replace with nodeMap.
     private nodeMap: Map<string, Node<T>>;
     private comparator: (a: T, b: T) => number;
