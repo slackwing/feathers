@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
+import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub } from '@/lib/infra/PubSub';
@@ -56,17 +57,11 @@ const Dashboard = () => {
         <div className={styles.status}>Connecting...</div>
       </div>
       
-      <div className={styles.visualizationContainer}>
-        <h2 className={styles.title}>Inside 100 Bids and Asks</h2>
-        <div className={styles.visualization}>
-          <div className={styles.volumeBars}>
-            <div className={styles.bidsBars} id="bids-bars"></div>
-            <div className={styles.asksBars} id="asks-bars"></div>
-          </div>
-          <div className={styles.spreadLine}></div>
-          <div className={styles.spreadLabel} id="spread-label">Spread: $0.00</div>
-        </div>
-      </div>
+      {slowWorld ? (
+        <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+      ) : (
+        <div className={styles.loading}>Loading order book...</div>
+      )}
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>
