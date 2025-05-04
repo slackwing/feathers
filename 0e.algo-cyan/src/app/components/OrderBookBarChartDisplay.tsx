@@ -11,18 +11,19 @@ export default function OrderBookBarChartDisplay({
     /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
     lastRefreshed
 }: { orderBook: OrderBookType, lastRefreshed: number }) {
-  const bids = orderBook.getTopBids(100);
-  const asks = orderBook.getTopAsks(100);
 
-  const [firstBid] = bids;
-  const [firstAsk] = asks;
+  const insideBid = orderBook.getTopBids(1).at(0);
+  const insideAsk = orderBook.getTopAsks(1).at(0);
 
-  if (!firstBid || !firstAsk) {
+  if (!insideBid || !insideAsk) {
     return <div>Awaiting data to initialize bar chart...</div>;
   }
 
-  const bestBid = firstBid.price;
-  const bestAsk = firstAsk.price;
+  const bids = orderBook.getBidsUntil(insideBid.price - X_BUCKET_WIDTH_USD * X_BUCKETS_PER_SIDE);
+  const asks = orderBook.getAsksUntil(insideAsk.price + X_BUCKET_WIDTH_USD * X_BUCKETS_PER_SIDE);
+
+  const bestBid = insideBid.price;
+  const bestAsk = insideAsk.price;
   const spread = bestAsk - bestBid;
   const spreadPercentage = (spread / bestBid) * 100;
 

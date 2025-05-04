@@ -45,7 +45,7 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
                 if (next.done) {
                     return { done: true, value: undefined };
                 }
-                const [_, order] = next.value;
+                const [, order] = next.value;
                 if (!order) {
                     return result.next();
                 }
@@ -75,6 +75,15 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
         for (const order of this) {
             if (count++ >= n) break;
             result.push(order);
+        }
+        return result;
+    }
+
+    until(price: number): Order[] {
+        const result: Order[] = [];
+        for (const order of this) {
+            if (this.side === Side.BUY ? order.price >= price : order.price <= price) result.push(order);
+            else break;
         }
         return result;
     }

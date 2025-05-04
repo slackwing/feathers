@@ -25,4 +25,12 @@ export class OrderBook {
     getTopAsks(n: number): Order[] {
         return this.asks.first(n);
     }
+
+    getBidsUntil(price: number): Order[] {
+        return this.bids.until(price);
+    }
+
+    getAsksUntil(price: number): Order[] {
+        return this.asks.until(price);
+    }
 } 
