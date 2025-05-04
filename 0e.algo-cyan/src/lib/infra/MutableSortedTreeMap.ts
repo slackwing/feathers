@@ -134,8 +134,8 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     private _updateHeight(node: Node<T> | null): void {
         if (!node) return;
         node.height = 1 + Math.max(
-            node.left ? node.left.height : 0,
-            node.right ? node.right.height : 0
+            node.left ? (node.left as Node<T>).height : 0,
+            node.right ? (node.right as Node<T>).height : 0
         );
         
         const balance = this._getBalance(node);
@@ -240,12 +240,12 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
                 node.left = null;
                 
                 node.height = 1 + Math.max(
-                    node.left ? node.left.height : 0,
-                    node.right ? node.right.height : 0
+                    node.left ? (node.left as Node<T>).height : 0,
+                    node.right ? (node.right as Node<T>).height : 0
                 );
                 newLeftChild.height = 1 + Math.max(
-                    newLeftChild.left ? newLeftChild.left.height : 0,
-                    newLeftChild.right ? newLeftChild.right.height : 0
+                    newLeftChild.left ? (newLeftChild.left as Node<T>).height : 0,
+                    newLeftChild.right ? (newLeftChild.right as Node<T>).height : 0
                 );
                 
                 if (oldParent) {
@@ -313,12 +313,12 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
                 node.right = null;
                 
                 node.height = 1 + Math.max(
-                    node.left ? node.left.height : 0,
-                    node.right ? node.right.height : 0
+                    node.left ? (node.left as Node<T>).height : 0,
+                    node.right ? (node.right as Node<T>).height : 0
                 );
                 newRightChild.height = 1 + Math.max(
-                    newRightChild.left ? newRightChild.left.height : 0,
-                    newRightChild.right ? newRightChild.right.height : 0
+                    newRightChild.left ? (newRightChild.left as Node<T>).height : 0,
+                    newRightChild.right ? (newRightChild.right as Node<T>).height : 0
                 );
                 
                 if (oldParent) {

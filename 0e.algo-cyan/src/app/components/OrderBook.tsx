@@ -3,9 +3,9 @@ import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
 import { Order, Side, BookType } from '@/lib/base/Order';
 
-export default function OrderBook({ orderBook, orderBookUpdated }: { orderBook: OrderBookType, orderBookUpdated: number }) {
-  const bids = Array.from(orderBook.getBids()).slice(0, 100);
-  const asks = Array.from(orderBook.getAsks()).slice(0, 100);
+export default function OrderBook({ orderBook, lastRefreshed }: { orderBook: OrderBookType, orderBookUpdated: number }) {
+  const bids = orderBook.getTopBids(100);
+  const asks = orderBook.getTopAsks(100);
 
   return (
     <div className={styles.orderBook}>

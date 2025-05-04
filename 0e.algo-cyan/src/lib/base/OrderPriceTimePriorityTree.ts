@@ -68,4 +68,14 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
             iterator: 0
         };
     }
+
+    first(n: number): Order[] {
+        const result: Order[] = [];
+        let count = 0;
+        for (const order of this) {
+            if (count++ >= n) break;
+            result.push(order);
+        }
+        return result;
+    }
 } 

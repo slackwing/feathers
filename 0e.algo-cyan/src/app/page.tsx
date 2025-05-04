@@ -17,7 +17,7 @@ const Dashboard = () => {
   
   const [slowWorld, setSlowWorld] = React.useState<L2PaperWorld | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PaperWorld | null>(null);
-  const [orderBookUpdated, setOrderBookUpdated] = React.useState(Date.now());
+  const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
@@ -31,7 +31,7 @@ const Dashboard = () => {
     connect({
       onMessage: (data) => {
         coinbaseAdapter.onMessage(data);
-        setOrderBookUpdated(Date.now());
+        setLastRefreshed(Date.now());
       },
       onError: (error) => {
         console.error('WebSocket error:', error);
@@ -131,7 +131,7 @@ const Dashboard = () => {
         </div>
       </div>
       {slowWorld ? (
-        <OrderBook orderBook={slowWorld.combinedBook} orderBookUpdated={orderBookUpdated} />
+        <OrderBook orderBook={slowWorld.combinedBook} orderBookUpdated={lastRefreshed} />
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}

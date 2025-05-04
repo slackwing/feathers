@@ -18,11 +18,11 @@ export class OrderBook {
         }
     }
 
-    getBids(): Iterable<Order> {
-        return this.bids;
+    getTopBids(n: number): Order[] {
+        return this.bids.first(n);
     }
 
-    getAsks(): Iterable<Order> {
-        return this.asks;
+    getTopAsks(n: number): Order[] {
+        return this.asks.first(n);
     }
 } 
