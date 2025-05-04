@@ -3,7 +3,7 @@ import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
 
 const X_BUCKET_WIDTH_USD = 1;
-const X_BUCKETS_PER_SIDE = 50;
+const X_BUCKETS_PER_SIDE = 100;
 const MIN_Y_HEIGHT_VOLUME = 0.1;
 
 export default function OrderBookBarChartDisplay({
