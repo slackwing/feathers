@@ -19,8 +19,8 @@ export class World {
         tradeFeed.subscribe(this.onTrade);
     }
 
-    public subscribeToBatchedTradeFeed(tradeFeed: BatchedPubSub<Trade>): void {
-        tradeFeed.subscribe(this.onTradeBatch);
+    public subscribeToBatchedTradeFeed(batchedTradeFeed: BatchedPubSub<Trade>): void {
+        batchedTradeFeed.subscribe(this.onTradeBatch);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

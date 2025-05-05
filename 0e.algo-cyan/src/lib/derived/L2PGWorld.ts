@@ -11,7 +11,7 @@ export class L2PGWorld extends World {
     private paper: OrderBook;
     private ghost: OrderBook;
     private ghostFeed: PubSub<Order>;
-    constructor(l2OrderBook: L2OrderBook, paperFeed: PubSub<Order>, tradeFeed: BatchedPubSub<Trade>, liquidityFactor: number) {
+    constructor(l2OrderBook: L2OrderBook, paperFeed: PubSub<Order>, batchedTradeFeed: BatchedPubSub<Trade>, liquidityFactor: number) {
         super();
         this.l2 = l2OrderBook;
         this.paper = new OrderBook(paperFeed);
@@ -20,7 +20,7 @@ export class L2PGWorld extends World {
         this.subscribeToOrderFeed(l2OrderBook.singleSource);
         this.subscribeToOrderFeed(paperFeed);
         this.subscribeToOrderFeed(this.ghostFeed);
-        this.subscribeToBatchedTradeFeed(tradeFeed);
+        this.subscribeToBatchedTradeFeed(batchedTradeFeed);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -29,7 +29,6 @@ export class L2PGWorld extends World {
     }
 
     protected onTradeBatch(trades: Trade[]): void {
-        console.log('onTradeBatch');
         console.log(trades);
     }
 } 

@@ -22,7 +22,7 @@ export const CoinbaseWebSocketProvider = ({ children }: { children: React.ReactN
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('Connected to Coinbase WebSocket');
+      console.log('Connected to Coinbase WebSocket.');
       callbacks.onOpen?.();
       
       const heartbeatMessage = {

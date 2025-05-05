@@ -46,7 +46,7 @@ const Dashboard = () => {
         console.error('WebSocket error:', error);
       },
       onOpen: () => {
-        console.log('Connected to Coinbase');
+        console.log('Connected to Coinbase.');
       }
     });
 
