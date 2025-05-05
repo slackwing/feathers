@@ -4,7 +4,7 @@ export class BatchedPubSub<T> {
     private batch: T[] = [];
     private currentTimeoutId: NodeJS.Timeout | null = null;
     private timestampFieldAccessor?: (item: T) => number;
-    private lastTimestamp: number | null = null;
+    private batchTimestamp: number | null = null;
 
     constructor(maxTimeout: number, timestampFieldAccessor?: (item: T) => number) {
         if (maxTimeout < 0) {
@@ -14,24 +14,23 @@ export class BatchedPubSub<T> {
         this.timestampFieldAccessor = timestampFieldAccessor;
     }
 
-    subscribe(callback: (data: T[]) => void): void {
+    public subscribe(callback: (data: T[]) => void): void {
         this.subscribers.push(callback);
     }
 
-    publish(data: T): void {
+    public publish(data: T): void {
         this.batch.push(data);
         
         if (this.timestampFieldAccessor) {
             const currentTimestamp = this.timestampFieldAccessor(data);
-            if (this.lastTimestamp === null) {
-                this.lastTimestamp = currentTimestamp;
-            } else if (Math.abs(currentTimestamp - this.lastTimestamp) >= this.maxTimeout) {
+            if (this.batchTimestamp === null) {
+                this.batchTimestamp = currentTimestamp;
+            } else if (Math.abs(currentTimestamp - this.batchTimestamp) > this.maxTimeout) {
                 if (this.currentTimeoutId) {
                     clearTimeout(this.currentTimeoutId);
                     this.currentTimeoutId = null;
                 }
                 this.publishBatch();
-                this.lastTimestamp = currentTimestamp;
                 return;
             }
         }
@@ -40,13 +39,14 @@ export class BatchedPubSub<T> {
             this.currentTimeoutId = setTimeout(() => {
                 this.publishBatch();
                 this.currentTimeoutId = null;
-            }, Math.min(1, this.maxTimeout));
+            }, Math.max(5, this.maxTimeout));
         }
     }
 
     private publishBatch(): void {
         const batch = this.batch;
         this.batch = [];
+        this.batchTimestamp = null;
         this.subscribers.forEach(callback => callback(batch));
     }
 }

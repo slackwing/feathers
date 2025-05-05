@@ -3,8 +3,8 @@ import { Order, Side } from './Order';
 import { PubSub } from '../infra/PubSub';
 
 export class OrderBook {
-    private bids: OrderPriceTimePriorityTree;
-    private asks: OrderPriceTimePriorityTree;
+    protected bids: OrderPriceTimePriorityTree;
+    protected asks: OrderPriceTimePriorityTree;
 
     constructor(...pubsubs: PubSub<Order>[]) {
         this.bids = new OrderPriceTimePriorityTree(Side.BUY);
@@ -12,7 +12,7 @@ export class OrderBook {
         pubsubs.forEach(pubsub => this.subscribe(pubsub));
     }
 
-    private onOrder = (order: Order): void => {
+    protected onOrder = (order: Order): void => {
         if (order.side === Side.BUY) {
             this.bids.upsertOrder(order);
         } else {
@@ -20,23 +20,23 @@ export class OrderBook {
         }
     }
 
-    subscribe(pubsub: PubSub<Order>): void {
+    public subscribe(pubsub: PubSub<Order>): void {
         pubsub.subscribe(this.onOrder);
     }
 
-    getTopBids(n: number): Order[] {
+    public getTopBids(n: number): Order[] {
         return this.bids.first(n);
     }
 
-    getTopAsks(n: number): Order[] {
+    public getTopAsks(n: number): Order[] {
         return this.asks.first(n);
     }
 
-    getBidsUntil(price: number): Order[] {
+    public getBidsUntil(price: number): Order[] {
         return this.bids.until(price);
     }
 
-    getAsksUntil(price: number): Order[] {
+    public getAsksUntil(price: number): Order[] {
         return this.asks.until(price);
     }
 } 

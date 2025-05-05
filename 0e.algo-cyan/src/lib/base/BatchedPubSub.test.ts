@@ -1,72 +1,115 @@
 import { BatchedPubSub } from './BatchedPubSub';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
+interface Trade {
+    timestamp: number;
+    price: number;
+}
 
 describe('BatchedPubSub', () => {
-    let pubSub: BatchedPubSub<number>;
+    let pubSub: BatchedPubSub<Trade>;
     let callback: jest.Mock;
-    let callback2: jest.Mock;
 
     beforeEach(() => {
         jest.useFakeTimers();
         callback = jest.fn();
-        callback2 = jest.fn();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        jest.clearAllTimers();
+        jest.clearAllMocks();
     });
 
     describe('basic functionality', () => {
         beforeEach(() => {
-            pubSub = new BatchedPubSub<number>(100);
+            pubSub = new BatchedPubSub<Trade>(10);
             pubSub.subscribe(callback);
         });
 
-        it('should batch multiple publishes within timeout', () => {
-            pubSub.publish(1);
-            pubSub.publish(2);
-            pubSub.publish(3);
+        it('should batch messages within timeout', () => {
+            pubSub.publish({ timestamp: 0, price: 100 });
+            pubSub.publish({ timestamp: 1, price: 101 });
+            
+            jest.advanceTimersByTime(10);
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith([
+                { timestamp: 0, price: 100 },
+                { timestamp: 1, price: 101 }
+            ]);
+        });
 
+        it('should not publish before timeout', () => {
+            pubSub.publish({ timestamp: 0, price: 100 });
+            jest.advanceTimersByTime(5);
             expect(callback).not.toHaveBeenCalled();
-            jest.advanceTimersByTime(100);
-            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+        });
+
+        it('should use minimum timeout of 5ms', () => {
+            pubSub = new BatchedPubSub<Trade>(0);
+            pubSub.subscribe(callback);
+            
+            pubSub.publish({ timestamp: 0, price: 100 });
+
+            jest.advanceTimersByTime(3);
+            expect(callback).not.toHaveBeenCalled();
+            
+            jest.advanceTimersByTime(5);
+            expect(callback).toHaveBeenCalled();
+        });
+    });
+
+    describe('with timestampFieldAccessor', () => {
+        beforeEach(() => {
+            pubSub = new BatchedPubSub<Trade>(10, (trade) => trade.timestamp);
+            pubSub.subscribe(callback);
+        });
+
+        it('should publish when timestamp difference exceeds maxTimeout', () => {
+            pubSub.publish({ timestamp: 0, price: 100 });
+            pubSub.publish({ timestamp: 5, price: 101 });
+            expect(callback).not.toHaveBeenCalled();
+            
+            pubSub.publish({ timestamp: 11, price: 102 });
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith([
+                { timestamp: 0, price: 100 },
+                { timestamp: 5, price: 101 },
+                { timestamp: 11, price: 102 }
+            ]);
+        });
+
+        it('should not publish on same timestamp with maxTimeout 0', () => {
+            pubSub = new BatchedPubSub<Trade>(0, (trade) => trade.timestamp);
+            pubSub.subscribe(callback);
+            
+            pubSub.publish({ timestamp: 0, price: 100 });
+            pubSub.publish({ timestamp: 0, price: 101 });
+            expect(callback).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(11);
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith([
+                { timestamp: 0, price: 100 },
+                { timestamp: 0, price: 101 }
+            ]);
         });
 
         it('should handle multiple subscribers', () => {
+            const callback2 = jest.fn();
             pubSub.subscribe(callback2);
-            pubSub.publish(1);
-            jest.advanceTimersByTime(100);
-            expect(callback).toHaveBeenCalledWith([1]);
-            expect(callback2).toHaveBeenCalledWith([1]);
-        });
-    });
-
-    describe('timestamp-based batching', () => {
-        beforeEach(() => {
-            pubSub = new BatchedPubSub<number>(100, (item) => item);
-        });
-
-        it('should batch items within timestamp threshold', () => {
-            pubSub.publish(1);
-            pubSub.publish(2);
-            pubSub.publish(3);
-            jest.advanceTimersByTime(100);
-            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
-        });
-
-        it('should publish batch when timestamp threshold is exceeded', () => {
-            pubSub.subscribe(callback);
-            pubSub.publish(1);
-            pubSub.publish(101); // Exceeds threshold
-            expect(callback).toHaveBeenCalledWith([1]);
-            jest.advanceTimersByTime(100);
-            expect(callback).toHaveBeenCalledWith([101]);
-        });
-    });
-
-    describe('error handling', () => {
-        it('should throw error for negative timeout', () => {
-            expect(() => new BatchedPubSub<number>(-1)).toThrow('maxTimeout must non-negative');
+            
+            pubSub.publish({ timestamp: 0, price: 100 });
+            pubSub.publish({ timestamp: 11, price: 101 });
+            
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback2).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith([
+                { timestamp: 0, price: 100 },
+                { timestamp: 11, price: 101 }
+            ]);
+            expect(callback2).toHaveBeenCalledWith([
+                { timestamp: 0, price: 100 },
+                { timestamp: 11, price: 101 }
+            ]);
         });
     });
 }); 

@@ -2,6 +2,7 @@ import { Order } from '@/lib/base/Order';
 import { OrderBook } from '@/lib/base/OrderBook';
 import { PubSub } from '@/lib/infra/PubSub';
 import { Trade } from '@/lib/base/Trade';
+import { BatchedPubSub } from './BatchedPubSub';
 
 export class World {
     public combinedBook: OrderBook;
@@ -16,6 +17,10 @@ export class World {
 
     public subscribeToTradeFeed(tradeFeed: PubSub<Trade>): void {
         tradeFeed.subscribe(this.onTrade);
+    }
+
+    public subscribeToBatchedTradeFeed(tradeFeed: BatchedPubSub<Trade>): void {
+        tradeFeed.subscribe(this.onTradeBatch);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

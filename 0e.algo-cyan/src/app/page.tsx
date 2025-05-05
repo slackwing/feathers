@@ -13,6 +13,8 @@ import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
 import { L2PGWorld } from '@/lib/derived/L2PGWorld';
+import { BatchedPubSub } from '@/lib/base/BatchedPubSub';
+import { Trade } from '@/lib/base/Trade';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -27,11 +29,13 @@ const Dashboard = () => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
+    const batchedTradeFeed = new BatchedPubSub<Trade>(0, (trade) => trade.timestamp);
+    tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new PubSub<Order>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
-    setSlowWorld(new L2PGWorld(l2OrderBook, paperFeed, tradeFeed, 0.0));
-    setFastWorld(new L2PGWorld(l2OrderBook, paperFeed, tradeFeed, 1.0));
+    setSlowWorld(new L2PGWorld(l2OrderBook, paperFeed, batchedTradeFeed, 0.0));
+    setFastWorld(new L2PGWorld(l2OrderBook, paperFeed, batchedTradeFeed, 1.0));
     
     connect({
       onMessage: (data) => {

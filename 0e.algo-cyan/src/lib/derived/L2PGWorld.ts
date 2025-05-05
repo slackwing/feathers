@@ -2,15 +2,16 @@ import { L2OrderBook } from './L2OrderBook';
 import { Order } from '../base/Order';
 import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
-import { Trade, TradeBatch } from '../base/Trade';
+import { Trade } from '../base/Trade';
 import { World } from '../base/World';
+import { BatchedPubSub } from '../base/BatchedPubSub';
 
 export class L2PGWorld extends World {
     private l2: L2OrderBook;
     private paper: OrderBook;
     private ghost: OrderBook;
     private ghostFeed: PubSub<Order>;
-    constructor(l2OrderBook: L2OrderBook, paperFeed: PubSub<Order>, tradeFeed: PubSub<Trade>, liquidityFactor: number) {
+    constructor(l2OrderBook: L2OrderBook, paperFeed: PubSub<Order>, tradeFeed: BatchedPubSub<Trade>, liquidityFactor: number) {
         super();
         this.l2 = l2OrderBook;
         this.paper = new OrderBook(paperFeed);
@@ -19,15 +20,16 @@ export class L2PGWorld extends World {
         this.subscribeToOrderFeed(l2OrderBook.singleSource);
         this.subscribeToOrderFeed(paperFeed);
         this.subscribeToOrderFeed(this.ghostFeed);
-        this.subscribeToTradeFeed(tradeFeed);
+        this.subscribeToBatchedTradeFeed(tradeFeed);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected onTrade(trade: Trade): void {
-        throw new Error('The L2PGWorld model relies on batches of trades to infer multi-level price-taking.');
+        // The L2PGWorld model relies on batches of trades to infer multi-level price-taking.
     }
 
     protected onTradeBatch(trades: Trade[]): void {
+        console.log('onTradeBatch');
         console.log(trades);
     }
 } 
