@@ -4,4 +4,4 @@ export class Trade {
         public readonly quantity: number,
         public readonly timestamp: number
     ) {}
-} 
+}

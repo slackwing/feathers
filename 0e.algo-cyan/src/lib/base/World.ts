@@ -1,23 +1,32 @@
-import { Order } from './Order';
-import { OrderBook } from './OrderBook';
-import { PubSub } from '../infra/PubSub';
-import { Trade } from './Trade';
+import { Order } from '@/lib/base/Order';
+import { OrderBook } from '@/lib/base/OrderBook';
+import { PubSub } from '@/lib/infra/PubSub';
+import { Trade } from '@/lib/base/Trade';
 
 export class World {
     public combinedBook: OrderBook;
-    protected onTrade(trade: Trade): void {
-        // Does nothing. Override in subclass.
-    }
 
     constructor() {
         this.combinedBook = new OrderBook();
     }
 
-    subscribeToOrderFeed(orderFeed: PubSub<Order>): void {
+    public subscribeToOrderFeed(orderFeed: PubSub<Order>): void {
         this.combinedBook.subscribe(orderFeed);
     }
 
-    subscribeToTradeFeed(tradeFeed: PubSub<Trade>): void {
+    public subscribeToTradeFeed(tradeFeed: PubSub<Trade>): void {
         tradeFeed.subscribe(this.onTrade);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected onTrade(trade: Trade): void {
+        // Does nothing. Override in subclass.
+    }
+
+    // Some world models may depend on batches of trades to infer specific
+    // information, e.g. a single taker across multiple price levels. By
+    // default, simply forwards to onTrade() for each trade.
+    protected onTradeBatch(trades: Trade[]): void {
+        trades.forEach(trade => this.onTrade(trade));
     }
 } 

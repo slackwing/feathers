@@ -2,7 +2,7 @@ import { L2OrderBook } from './L2OrderBook';
 import { Order } from '../base/Order';
 import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
-import { Trade } from '../base/Trade';
+import { Trade, TradeBatch } from '../base/Trade';
 import { World } from '../base/World';
 
 export class L2PGWorld extends World {
@@ -22,7 +22,12 @@ export class L2PGWorld extends World {
         this.subscribeToTradeFeed(tradeFeed);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected onTrade(trade: Trade): void {
-        console.log(trade);
+        throw new Error('The L2PGWorld model relies on batches of trades to infer multi-level price-taking.');
+    }
+
+    protected onTradeBatch(trades: Trade[]): void {
+        console.log(trades);
     }
 } 

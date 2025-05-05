@@ -10,4 +10,9 @@ export class L2OrderBook extends OrderBook {
         super(l2OrderFeed);
         this.singleSource = l2OrderFeed;
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    subscribe(pubsub: PubSub<Order>): void {
+        throw new Error('L2OrderBook does not support subscribing to additional feeds.');
+    }
 } 
