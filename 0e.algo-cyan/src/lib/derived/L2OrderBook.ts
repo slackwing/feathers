@@ -7,8 +7,7 @@ export class L2OrderBook extends OrderBook {
 
     // TODO(P2): Should this take price-time or orders?
     constructor(l2OrderFeed: PubSub<Order>) {
-        super();
+        super(l2OrderFeed);
         this.singleSource = l2OrderFeed;
-        this.singleSource.subscribe((order) => this.onOrder(order));
     }
 } 

@@ -1,7 +1,7 @@
-import { Order } from '../base/Order';
-import { OrderBook } from '../base/OrderBook';
+import { Order } from './Order';
+import { OrderBook } from './OrderBook';
 import { PubSub } from '../infra/PubSub';
-import { Trade } from '../base/Trade';
+import { Trade } from './Trade';
 
 export class World {
     public combinedBook: OrderBook;
@@ -13,11 +13,11 @@ export class World {
         this.combinedBook = new OrderBook();
     }
 
-    subscribeOrderFeed(orderFeed: PubSub<Order>): void {
-        orderFeed.subscribe(this.combinedBook.onOrder);
+    subscribeToOrderFeed(orderFeed: PubSub<Order>): void {
+        this.combinedBook.subscribe(orderFeed);
     }
 
-    subscribeTradeFeed(tradeFeed: PubSub<Trade>): void {
+    subscribeToTradeFeed(tradeFeed: PubSub<Trade>): void {
         tradeFeed.subscribe(this.onTrade);
     }
 } 

@@ -71,9 +71,14 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
 
     first(n: number): Order[] {
         const result: Order[] = [];
+        const seenIds = new Map<string, number>();
         let count = 0;
         for (const order of this) {
             if (count++ >= n) break;
+            if (seenIds.has(order.id)) {
+                console.log(`Duplicate order ID found: ${order.id} (seen ${seenIds.get(order.id)} times)`);
+            }
+            seenIds.set(order.id, (seenIds.get(order.id) || 0) + 1);
             result.push(order);
         }
         return result;

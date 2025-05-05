@@ -34,14 +34,14 @@ export class CoinbaseDataAdapter {
             });
         } else if (data.channel === 'market_trades') {
             const event = data.events[0];
-            event.trades.forEach((trade: any) => {
+            // TODO(P3):Coinbase trades are in reverse chronological order. Platformize.
+            for (let i = event.trades.length - 1; i >= 0; i--) {
+                const trade = event.trades[i];
                 const price = parseFloat(trade.price);
                 const quantity = parseFloat(trade.size);
                 const timestamp = Date.now();
-
-                const domainTrade = new Trade(price, quantity, timestamp);
-                this.tradeFeed.publish(domainTrade);
-            });
+                this.tradeFeed.publish(new Trade(price, quantity, timestamp));
+            }
         }
     }
 

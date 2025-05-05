@@ -9,29 +9,29 @@ import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub } from '@/lib/infra/PubSub';
 import { L2OrderBook } from '@/lib/derived/L2OrderBook';
 import { Order } from '@/lib/base/Order';
-import { L2PaperWorld } from '@/lib/derived/L2PaperWorld';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
+import { L2PGWorld } from '@/lib/derived/L2PGWorld';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
   
-  const [slowWorld, setSlowWorld] = React.useState<L2PaperWorld | null>(null);
-  const [fastWorld, setFastWorld] = React.useState<L2PaperWorld | null>(null);
+  const [slowWorld, setSlowWorld] = React.useState<L2PGWorld | null>(null);
+  const [fastWorld, setFastWorld] = React.useState<L2PGWorld | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
+    const tradeFeed = coinbaseAdapter.getTradeFeed();
     const paperFeed = new PubSub<Order>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
-    const world = new L2PaperWorld(l2OrderBook, paperFeed);
-    setSlowWorld(world);
-    setFastWorld(world);
+    setSlowWorld(new L2PGWorld(l2OrderBook, paperFeed, tradeFeed, 0.0));
+    setFastWorld(new L2PGWorld(l2OrderBook, paperFeed, tradeFeed, 1.0));
     
     connect({
       onMessage: (data) => {
