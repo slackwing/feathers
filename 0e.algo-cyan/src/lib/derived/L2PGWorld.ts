@@ -48,7 +48,7 @@ export class L2PGWorld extends World {
             } else {
                 assert.ok(
                     outsideOrEqual(trade.price, previousPrice),
-                    "ASSERT: Unexpectedly moving toward inside price levels in trade batch..");
+                    "ASSERT: Expected all trades in a batch to be moving outward.");
             }
             remainingQty += trade.quantity;
         }
