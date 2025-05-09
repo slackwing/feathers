@@ -11,15 +11,15 @@ function customBatchWithFn() {
 }
 
 function customPriceBatchWithoutFn() {
-    let lastPrice: number | null = null;
+    let lastTimestamp: number | null = null;
     return (trade: Trade) => {
-        if (lastPrice === null) {
-            lastPrice = trade.price;
+        if (lastTimestamp === null) {
+            lastTimestamp = trade.timestamp;
             return false;
         }
-        const shouldPublish = trade.price !== lastPrice;
+        const shouldPublish = trade.timestamp !== lastTimestamp;
         if (shouldPublish) {
-            lastPrice = trade.price;
+            lastTimestamp = trade.timestamp;
         }
         return shouldPublish;
     };
@@ -116,20 +116,20 @@ describe('BatchedPubSub', () => {
 
     describe('with shouldPublishBatchWithout', () => {
         beforeEach(() => {
-            pubSub = new BatchedPubSub<Trade>(10, undefined, customPriceBatchWithoutFn());
+            pubSub = new BatchedPubSub<Trade>(0, undefined, customPriceBatchWithoutFn());
             pubSub.subscribe(callback);
         });
 
-        it('should publish batch without current item when price changes', () => {
+        it('should publish batch without current item when timestamp changes', () => {
             pubSub.publish({ timestamp: 0, price: 100, potentialIceberg: false });
-            pubSub.publish({ timestamp: 1, price: 100, potentialIceberg: false });
+            pubSub.publish({ timestamp: 0, price: 101, potentialIceberg: false });
             expect(callback).not.toHaveBeenCalled();
 
-            pubSub.publish({ timestamp: 2, price: 101, potentialIceberg: false });
+            pubSub.publish({ timestamp: 1, price: 100, potentialIceberg: false });
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback).toHaveBeenCalledWith([
                 { timestamp: 0, price: 100, potentialIceberg: false },
-                { timestamp: 1, price: 100, potentialIceberg: false }
+                { timestamp: 0, price: 101, potentialIceberg: false }
             ]);
         });
     });
@@ -137,7 +137,7 @@ describe('BatchedPubSub', () => {
     describe('with both shouldPublishBatchWith and shouldPublishBatchWithout', () => {
         beforeEach(() => {
             pubSub = new BatchedPubSub<Trade>(
-                10,
+                0,
                 customBatchWithFn(),
                 customPriceBatchWithoutFn()
             );
@@ -145,22 +145,28 @@ describe('BatchedPubSub', () => {
         });
 
         it('should handle both conditions', () => {
-            // First batch: price change triggers publish without current item
+            // First batch with timestamp 0
             pubSub.publish({ timestamp: 0, price: 100, potentialIceberg: false });
+            pubSub.publish({ timestamp: 0, price: 101, potentialIceberg: false });
+            // New timestamp triggers publish of previous batch
             pubSub.publish({ timestamp: 1, price: 100, potentialIceberg: false });
-            pubSub.publish({ timestamp: 2, price: 101, potentialIceberg: false });
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback).toHaveBeenCalledWith([
                 { timestamp: 0, price: 100, potentialIceberg: false },
-                { timestamp: 1, price: 100, potentialIceberg: false }
+                { timestamp: 0, price: 101, potentialIceberg: false }
             ]);
 
-            // Second batch: potentialIceberg true triggers publish with current item
-            pubSub.publish({ timestamp: 15, price: 101, potentialIceberg: true });
-            expect(callback).toHaveBeenCalledTimes(2);
-            expect(callback).toHaveBeenCalledWith([
-                { timestamp: 2, price: 101, potentialIceberg: false },
-                { timestamp: 15, price: 101, potentialIceberg: true }
+            // Second batch with timestamp 1
+            pubSub.publish({ timestamp: 1, price: 102, potentialIceberg: false });
+            // New timestamp with potentialIceberg triggers publish of previous batch
+            pubSub.publish({ timestamp: 15, price: 100, potentialIceberg: true });
+            expect(callback).toHaveBeenCalledTimes(3);
+            expect(callback).toHaveBeenNthCalledWith(2, [
+                { timestamp: 1, price: 100, potentialIceberg: false },
+                { timestamp: 1, price: 102, potentialIceberg: false }
+            ]);
+            expect(callback).toHaveBeenNthCalledWith(3, [
+                { timestamp: 15, price: 100, potentialIceberg: true }
             ]);
         });
     });
