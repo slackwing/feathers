@@ -46,7 +46,7 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = bidBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.book_type) {
+        switch (order.bookType) {
           case BookType.L2:
             bucket.l2Volume += order.quantity;
             break;
@@ -67,7 +67,7 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = askBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.book_type) {
+        switch (order.bookType) {
           case BookType.L2:
             bucket.l2Volume += order.quantity;
             break;

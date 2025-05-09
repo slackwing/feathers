@@ -49,4 +49,8 @@ export class BatchedPubSub<T> {
         this.batchTimestamp = null;
         this.subscribers.forEach(callback => callback(batch));
     }
+
+    public getMaxTimeout(): number {
+        return this.maxTimeout;
+    }
 }

@@ -37,10 +37,11 @@ export class CoinbaseDataAdapter {
             // TODO(P3):Coinbase trades are in reverse chronological order. Platformize.
             for (let i = event.trades.length - 1; i >= 0; i--) {
                 const trade = event.trades[i];
+                const side = trade.side === 'BUY' ? Side.BUY : Side.SELL;
                 const price = parseFloat(trade.price);
                 const quantity = parseFloat(trade.size);
                 const timestamp = Date.now();
-                this.tradeFeed.publish(new Trade(price, quantity, timestamp));
+                this.tradeFeed.publish(new Trade(side, price, quantity, timestamp));
             }
         }
     }

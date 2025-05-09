@@ -16,21 +16,21 @@ export class Order {
     price: number;
     quantity: number;
     timestamp: number;
-    remaining_qty: number;
-    book_type: BookType;
+    remainingQty: number;
+    bookType: BookType;
 
-    constructor(type: string, id: string, side: Side, price: number, quantity: number, timestamp: number, book_type: BookType) {
+    constructor(type: string, id: string, side: Side, price: number, quantity: number, timestamp: number, bookType: BookType) {
         this.type = type;
         this.id = id;
         this.side = side;
         this.price = price;
         this.quantity = quantity;
         this.timestamp = timestamp;
-        this.remaining_qty = quantity;
-        this.book_type = book_type; // TODO(P3): Not sure if meaningful.
+        this.remainingQty = quantity;
+        this.bookType = bookType; // TODO(P3): Not sure if meaningful.
     }
 
     get filled_qty(): number {
-        return this.quantity - this.remaining_qty;
+        return this.quantity - this.remainingQty;
     }
 } 

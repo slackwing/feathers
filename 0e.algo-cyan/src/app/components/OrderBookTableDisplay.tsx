@@ -21,7 +21,7 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {bids.map((order) => {
-            const isPaperOrder = order.book_type === BookType.PAPER;
+            const isPaperOrder = order.bookType === BookType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
@@ -45,7 +45,7 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {asks.map((order) => {
-            const isPaperOrder = order.book_type === BookType.PAPER;
+            const isPaperOrder = order.bookType === BookType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
