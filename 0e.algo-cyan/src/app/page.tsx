@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect } from 'react';
 import styles from './page.module.css';
@@ -19,25 +19,25 @@ import { Trade } from '@/lib/base/Trade';
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
-  
+
   const [slowWorld, setSlowWorld] = React.useState<L2PGWorld | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PGWorld | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
 
   function publishTradeBatchOnTimestampOrDirectionChangeFn() {
-      let lastPrice: number | null = null;
-      return (trade: Trade) => {
-          if (lastPrice === null) {
-              lastPrice = trade.price;
-              return false;
-          }
-          const shouldPublish = trade.price !== lastPrice;
-          if (shouldPublish) {
-              lastPrice = trade.price;
-          }
-          return shouldPublish;
-      };
+    let lastPrice: number | null = null;
+    return (trade: Trade) => {
+      if (lastPrice === null) {
+        lastPrice = trade.price;
+        return false;
+      }
+      const shouldPublish = trade.price !== lastPrice;
+      if (shouldPublish) {
+        lastPrice = trade.price;
+      }
+      return shouldPublish;
+    };
   }
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const Dashboard = () => {
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
     setSlowWorld(new L2PGWorld(l2OrderBook, paperFeed, batchedTradeFeed, 0.0));
     setFastWorld(new L2PGWorld(l2OrderBook, paperFeed, batchedTradeFeed, 1.0));
-    
+
     connect({
       onMessage: (data) => {
         coinbaseAdapter.onMessage(data);
@@ -62,7 +62,7 @@ const Dashboard = () => {
       },
       onOpen: () => {
         console.log('Connected to Coinbase.');
-      }
+      },
     });
 
     return () => disconnect();
@@ -82,12 +82,17 @@ const Dashboard = () => {
     <div className={styles.container}>
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
-        <button className={styles.powerButton} onClick={handlePowerOff}>Power Off</button>
+        <button className={styles.powerButton} onClick={handlePowerOff}>
+          Power Off
+        </button>
         <div className={styles.status}>Connecting...</div>
       </div>
-      
+
       {slowWorld ? (
-        <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+        <OrderBookBarChartDisplay
+          orderBook={slowWorld.combinedBook}
+          lastRefreshed={lastRefreshed}
+        />
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}
@@ -99,7 +104,9 @@ const Dashboard = () => {
         </div>
         <div className={`${styles.orderPanel} ${styles.trades}`}>
           <div className={styles.plSection}>
-            <div className={styles.plValue} id="pl-value">$0.00</div>
+            <div className={styles.plValue} id="pl-value">
+              $0.00
+            </div>
           </div>
           <div className={styles.tradesHeader}>
             <h3>Recent Trades</h3>

@@ -5,4 +5,4 @@ export interface CoinbaseWebSocketService {
     onOpen?: () => void;
   }) => void;
   disconnect: () => void;
-} 
+}

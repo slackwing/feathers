@@ -6,8 +6,11 @@ import { BookType } from '@/lib/base/Order';
 export default function OrderBookTableDisplay({
   orderBook,
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  lastRefreshed
-}: { orderBook: OrderBookType, lastRefreshed: number }) {
+  lastRefreshed,
+}: {
+  orderBook: OrderBookType;
+  lastRefreshed: number;
+}) {
   const bids = orderBook.getTopBids(100);
   const asks = orderBook.getTopAsks(100);
 
@@ -63,4 +66,4 @@ export default function OrderBookTableDisplay({
       </div>
     </div>
   );
-} 
+}

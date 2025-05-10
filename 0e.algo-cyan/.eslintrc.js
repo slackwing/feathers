@@ -1,14 +1,15 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'react'],
+  plugins: ['@typescript-eslint', 'react', 'prettier'],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
+    'plugin:prettier/recommended',
   ],
   rules: {
-    'max-len': ['error', { code: 100 }],
+    'prettier/prettier': 'error',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     'react/react-in-jsx-scope': 'off',
   },
@@ -17,4 +18,4 @@ module.exports = {
       version: 'detect',
     },
   },
-}; 
+};

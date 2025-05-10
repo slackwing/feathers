@@ -10,7 +10,7 @@
   background-color: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .title {
@@ -145,7 +145,8 @@
   color: #495057;
 }
 
-.formGroup input, .formGroup select {
+.formGroup input,
+.formGroup select {
   padding: 8px;
   border: 1px solid #ced4da;
   border-radius: 4px;
@@ -197,7 +198,8 @@
   position: relative;
 }
 
-.bidsBars, .asksBars {
+.bidsBars,
+.asksBars {
   display: flex;
   width: 50%;
   height: 100%;
@@ -288,7 +290,8 @@
   margin-bottom: 20px;
 }
 
-.bids, .asks {
+.bids,
+.asks {
   flex: 1;
   background-color: #f8f9fa;
   padding: 15px;
@@ -362,19 +365,19 @@
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 24px;
 }
 
 .toggleSlider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 50%;
 }
 
@@ -403,4 +406,4 @@ input:checked + .toggleSlider:before {
 
 .tradesHeader h3 {
   margin: 0;
-} 
+}
