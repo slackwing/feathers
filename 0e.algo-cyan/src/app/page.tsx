@@ -25,6 +25,21 @@ const Dashboard = () => {
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
 
+  function publishTradeBatchOnTimestampOrDirectionChangeFn() {
+      let lastPrice: number | null = null;
+      return (trade: Trade) => {
+          if (lastPrice === null) {
+              lastPrice = trade.price;
+              return false;
+          }
+          const shouldPublish = trade.price !== lastPrice;
+          if (shouldPublish) {
+              lastPrice = trade.price;
+          }
+          return shouldPublish;
+      };
+  }
+
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();

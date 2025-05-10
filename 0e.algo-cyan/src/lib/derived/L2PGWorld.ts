@@ -7,25 +7,39 @@ import { World } from '../base/World';
 import { BatchedPubSub } from '../base/BatchedPubSub';
 import * as assert from 'assert';
 
+enum ReluctanceFactor {
+    RELUCTANT,
+    AGGRESSIVE_BOUNDED,
+    AGGRESSIVE_LIMITED,
+    MIDPOINT_BOUNDED,
+    MIDPOINT_LIMITED
+}
+
 export class L2PGWorld extends World {
     private l2: L2OrderBook;
     private paper: OrderBook;
     private ghost: OrderBook;
     private ghostFeed: PubSub<Order>;
-    private liquidityFactor: number;
-    constructor(l2OrderBook: L2OrderBook, paperFeed: PubSub<Order>, batchedTradeFeed: BatchedPubSub<Trade>, liquidityFactor: number) {
+    private reluctanceFactorSupplier: () => ReluctanceFactor;
+    private impedimentFactorSupplier: () => number;
+    constructor(
+        l2OrderBook: L2OrderBook,
+        paperFeed: PubSub<Order>,
+        batchedTradeFeed: BatchedPubSub<Trade>,
+        reluctanceFactorSupplier: () => ReluctanceFactor,
+        impedimentFactorSupplier: () => number) {
         super();
         this.l2 = l2OrderBook;
         this.paper = new OrderBook(paperFeed);
         this.ghostFeed = new PubSub<Order>();
         this.ghost = new OrderBook(this.ghostFeed);
-        this.liquidityFactor = liquidityFactor;
+        this.reluctanceFactorSupplier = reluctanceFactorSupplier;
+        this.impedimentFactorSupplier = impedimentFactorSupplier;
         this.subscribeToOrderFeed(l2OrderBook.singleSource);
         this.subscribeToOrderFeed(paperFeed);
         this.subscribeToOrderFeed(this.ghostFeed);
         this.subscribeToBatchedTradeFeed(batchedTradeFeed);
         assert.ok(batchedTradeFeed.getMaxTimeout() === 0, "ASSERT: Expected batched trade feed with max timeout of 0.");
-        assert.ok(liquidityFactor >= 0 && liquidityFactor <= 1, "ASSERT: Expected liquidity factor to be between 0 and 1.");
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -34,7 +48,14 @@ export class L2PGWorld extends World {
     }
 
     protected onTradeBatch(trades: Trade[]): void {
-        console.log(trades);
+
+        const reluctanceFactor = this.reluctanceFactorSupplier();
+        const impedimentFactor = this.impedimentFactorSupplier();
+        assert.ok(impedimentFactor >= 0 && impedimentFactor <= 1, "ASSERT: Expected impediment factor to be between 0 and 1.");
+        assert.ok(reluctanceFactor >= 0 && reluctanceFactor <= 1, "ASSERT: Expected reluctance factor to be between 0 and 1.");
+        assert.ok(reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED || reluctanceFactor === ReluctanceFactor.RELUCTANT, "ASSERT: Currently only supporting RELUCTANT or AGGRESSIVE_LIMITED.");
+        
+        // console.log(trades);
         const side = trades[0].side;
         const inside = (a: number, b: number) => side === Side.BUY ? a > b : a < b;
         const insideOrEqual = (a: number, b: number) => side === Side.BUY ? a >= b : a <= b;
@@ -53,28 +74,65 @@ export class L2PGWorld extends World {
             remainingQty += trade.quantity;
         }
         assert.ok(previousPrice !== null, "NEVER: Previous price should have been set by any trade in batch.");
-        const orders = side === Side.BUY ? this.combinedBook.getBidsUntil(previousPrice) : this.combinedBook.getAsksUntil(previousPrice);
+        const outsideTradePrice = previousPrice;
+        const orders = side === Side.BUY ? this.combinedBook.getBidsUntil(outsideTradePrice) : this.combinedBook.getAsksUntil(outsideTradePrice);
 
         const tradeIt = trades[Symbol.iterator]();
         const orderIt = orders[Symbol.iterator]();
-
         let nextTrade = tradeIt.next();
-        while (!nextTrade.done) {
-            const trade = nextTrade.value;
-            let nextOrder = orderIt.next();
-            // For all orders crossed or matched by this trade...
-            while (remainingQty > 0 && !nextOrder.done && inside(nextOrder.value.price, trade.price)) {
+        let nextOrder = orderIt.next();
+
+        if (reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED) {
+
+            // NOTE: Check insideOrEqual() because once supporting AGGRESSIVE_BOUNDED there will be orders even farther out.
+            while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
                 const order = nextOrder.value;
                 if (order.bookType === BookType.PAPER ||
                     order.bookType === BookType.GHOST) {
-                    // If order was crossed, definitely would have been executed.
-                    const executingQty = Math.min(remainingQty, order.remainingQty);
                     // TODO(P0): Execute the order.
-                    remainingQty -= executingQty;
                 }
                 nextOrder = orderIt.next();
             }
-            let prioritizedRemainingQty = remainingQty * this.liquidityFactor;
+            // No ghost orders created.
+
+        } else {
+            while (remainingQty > 0 && !nextTrade.done) {
+                const trade = nextTrade.value;
+                // For all orders crossed by this trade...
+                while (remainingQty > 0 && !nextOrder.done && inside(nextOrder.value.price, trade.price)) {
+                    const order = nextOrder.value;
+                    if (order.bookType === BookType.PAPER ||
+                        order.bookType === BookType.GHOST) {
+                        // If order was crossed, definitely would have been executed.
+                        const executingQty = Math.min(remainingQty, order.remainingQty);
+                        // TODO(P0): Execute the order.
+                        remainingQty -= executingQty;
+                    }
+                    nextOrder = orderIt.next();
+                }
+                nextTrade = tradeIt.next();
+            }
+            if (remainingQty <= 0) {
+                // If out of quantity before even reaching the outside trade price,
+                // create ghost orders to compensate quantity of trades at each
+                // price level.
+                while (!nextTrade.done) {
+                    const trade = nextTrade.value;
+                    const prioritizedGhostQty = trade.quantity * this.impedimentFactor;
+                    const normalGhostQty = trade.quantity - prioritizedGhostQty;
+                    // TODO(P0): Create ghost orders.
+                    nextTrade = tradeIt.next();
+                }
+            } else {
+
+            }
+
+
+
+
+
+
+            let prioritizedRemainingQty = remainingQty * this.impedimentFactor;
             remainingQty -= prioritizedRemainingQty;
             while (prioritizedRemainingQty > 0 && !nextOrder.done && insideOrEqual(nextOrder.value.price, trade.price)) {
                 const order = nextOrder.value;
@@ -96,7 +154,7 @@ export class L2PGWorld extends World {
 
             nextTrade = tradeIt.next();
         }
-        const partialQtyExecutedFirst = partialQty * this.liquidityFactor;
+        const partialQtyExecutedFirst = partialQty * this.impedimentFactor;
         const partialQtyExecutedLater = partialQty - partialQtyExecutedFirst;
         remainingQty -= partialQtyExecutedFirst;
         // TODO(P0): Continue.
