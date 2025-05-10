@@ -15,6 +15,8 @@ enum ReluctanceFactor {
   MIDPOINT_LIMITED,
 }
 
+const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
+
 export class L2PGWorld extends World {
   private l2: L2OrderBook;
   private paper: OrderBook;
@@ -74,7 +76,7 @@ export class L2PGWorld extends World {
     const insideOrEqual = (a: number, b: number) => (side === Side.BUY ? a >= b : a <= b);
     const outsideOrEqual = (a: number, b: number) => (side === Side.BUY ? a <= b : a >= b);
     let previousPrice = null;
-    let remainingQty = 0;
+    let totalTradeQty = 0;
     for (const trade of trades) {
       assert.ok(trade.side === side, 'ASSERT: Expected all trades in batch to be on same side.');
       if (previousPrice === null) {
@@ -85,7 +87,7 @@ export class L2PGWorld extends World {
           'ASSERT: Expected all trades in a batch to be moving outward.'
         );
       }
-      remainingQty += trade.quantity;
+      totalTradeQty += trade.quantity;
     }
     assert.ok(
       previousPrice !== null,
@@ -103,6 +105,7 @@ export class L2PGWorld extends World {
     let nextOrder = orderIt.next();
 
     if (reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED) {
+
       // NOTE: Check insideOrEqual() because once supporting AGGRESSIVE_BOUNDED there will be orders even farther out.
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
@@ -112,34 +115,125 @@ export class L2PGWorld extends World {
         nextOrder = orderIt.next();
       }
       // No ghost orders created.
+
     } else {
+
+      // Orders fully crossed by each trade definitely would have been executed.
+      let remainingQty = totalTradeQty;
       while (remainingQty > 0 && !nextTrade.done) {
         const trade = nextTrade.value;
-        // For all orders crossed by this trade...
         while (remainingQty > 0 && !nextOrder.done && inside(nextOrder.value.price, trade.price)) {
           const order = nextOrder.value;
           if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-            // If order was crossed, definitely would have been executed.
             const executingQty = Math.min(remainingQty, order.remainingQty);
             // TODO(P0): Execute the order.
             remainingQty -= executingQty;
+            if (remainingQty <= 0 && order.remainingQty > 0) {
+              // Necessary to prevent advancing to next order while this still has quantity.
+              break;
+            }
           }
           nextOrder = orderIt.next();
         }
         nextTrade = tradeIt.next();
       }
+
       if (remainingQty <= 0) {
-        // If out of quantity before even reaching the outside trade price,
-        // create ghost orders to compensate quantity of trades at each
-        // price level.
+
+        // If all trade quantity exhausted before even reaching outside trade price, create ghost
+        // orders to compensate quantity of remaining trades at each price level. Any of these
+        // price levels may have pre-existing hypothetical orders whose time priority with respect
+        // to the compensated L2 quantity is unclear. Therefore, use the impediment factor to
+        // prioritize a portion of the ghost orders, i.e. higher impediment translating to more
+        // prioritized ghost quantity.
+        // BUG: Is there a partial trade quantity case?
         while (!nextTrade.done) {
           const trade = nextTrade.value;
-          const prioritizedGhostQty = trade.quantity * this.impedimentFactor;
+          const prioritizedGhostQty = trade.quantity * (1 - impedimentFactor);
           const normalGhostQty = trade.quantity - prioritizedGhostQty;
           // TODO(P0): Create ghost orders.
           nextTrade = tradeIt.next();
         }
+
       } else {
+
+        // As long as remainingQty > 0, we would have finished iterating through all trades, and
+        // executed hypothetical orders up to the first order matching the outside trade price.
+        // Now execute the remaining quantity against prioritized hypothetical orders at this
+        // outside trade price. That is, for sure the hypothetical orders that were prioritized
+        // to begin with (since they've "always existed" at that time priority), and then a
+        // portion of the remaining hypothetical orders whose time priority with respect to the
+        // traded L2 quantity is unclear (so we'll use the impediment factor again).
+
+        while (
+          remainingQty > 0 &&
+          !nextOrder.done &&
+          insideOrEqual(nextOrder.value.price, outsideTradePrice) &&
+          nextOrder.value.timestamp != ABSOLUTE_PRIORITY_TIMESTAMP
+        ) {
+          const order = nextOrder.value;
+          if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+            const executingQty = Math.min(remainingQty, order.remainingQty);
+            // TODO(P0): Execute the order.
+            remainingQty -= executingQty;
+            if (remainingQty <= 0 && order.remainingQty > 0) {
+              // Necessary to prevent advancing to next order while this still has quantity.
+              break;
+            }
+          }
+          nextOrder = orderIt.next();
+        }
+
+        let prioritizedRemQty = remainingQty * (1 - impedimentFactor);
+
+        while (
+          prioritizedRemQty > 0 &&
+          !nextOrder.done &&
+          insideOrEqual(nextOrder.value.price, outsideTradePrice)
+        ) {
+          const order = nextOrder.value;
+          if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+            const executingQty = Math.min(prioritizedRemQty, order.remainingQty);
+            // TODO(P0): Execute the order.
+            remainingQty -= executingQty;
+            prioritizedRemQty -= executingQty;
+            if (prioritizedRemQty <= 0 && order.remainingQty > 0) {
+              // Necessary to prevent advancing to next order while this still has quantity.
+              break;
+            }
+          }
+          nextOrder = orderIt.next();
+        }
+
+        // BUG: Something feels off here. Think about the generalized formula.
+        if (prioritizedRemQty > 0) {
+
+          // If prioritized quantity still remains at this point, then none of the L2 was reached,
+          // so the entirety of the total traded quantity should be compensated with ghost orders
+          // at the highest priority.
+          // TODO(P0): Create absolute priority ghost order for totalTradeQty.
+
+        } else {
+
+          // If prioritized quantity is exhausted at this point, then remainingQty represents the
+          // quantity of the L2 that would have executed even despite all of the impediments. This
+          // L2 is by definition higher priority than the remaining hypothetical orders (that's why
+          // we split them up in the first place), so the ghost order we create should be created at
+          // the highest priority.
+          // TODO(P0): Create absolute priority ghost order for totalTradeQty - remainingQty.
+
+          // Note: This case may be possible to merge with the other using a general formula, but
+          // Note: maybe keep them separate for clarity.
+        }
+          
+
+          
+
+
+
+
+        const executedCrossedQty = totalTradeQty - remainingQty;
+
       }
 
       let prioritizedRemainingQty = remainingQty * this.impedimentFactor;
