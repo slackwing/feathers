@@ -19,6 +19,7 @@ export default function OrderForm({ side, onSubmit }: OrderFormProps) {
       return;
     }
 
+    // TODO(P1): Factor out order ID generation.
     const orderId =
       'P' +
       side +

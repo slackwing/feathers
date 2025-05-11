@@ -7,7 +7,7 @@ import { World } from '../base/World';
 import { BatchedPubSub } from '../base/BatchedPubSub';
 import * as assert from 'assert';
 
-enum ReluctanceFactor {
+export enum ReluctanceFactor {
   RELUCTANT,
   AGGRESSIVE_BOUNDED,
   AGGRESSIVE_LIMITED,
@@ -15,11 +15,12 @@ enum ReluctanceFactor {
   MIDPOINT_LIMITED,
 }
 
-const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
+export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 
 export class L2PGWorld extends World {
   private l2: L2OrderBook;
   private paper: OrderBook;
+  private paperFeed: PubSub<Order>;
   private ghost: OrderBook;
   private ghostFeed: PubSub<Order>;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
@@ -34,6 +35,7 @@ export class L2PGWorld extends World {
     super();
     this.l2 = l2OrderBook;
     this.paper = new OrderBook(paperFeed);
+    this.paperFeed = paperFeed;
     this.ghostFeed = new PubSub<Order>();
     this.ghost = new OrderBook(this.ghostFeed);
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
@@ -42,31 +44,17 @@ export class L2PGWorld extends World {
     this.subscribeToOrderFeed(paperFeed);
     this.subscribeToOrderFeed(this.ghostFeed);
     this.subscribeToBatchedTradeFeed(batchedTradeFeed);
-    assert.ok(
-      batchedTradeFeed.getMaxTimeout() === 0,
-      'ASSERT: Expected batched trade feed with max timeout of 0.'
-    );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onTrade(trade: Trade): void {
+  protected onTrade = (trade: Trade): void => {
     // The L2PGWorld model relies on batches of trades to infer multi-level price-taking.
   }
 
-  protected onTradeBatch(trades: Trade[]): void {
+  protected onTradeBatch = (trades: Trade[]): void => {
     const reluctanceFactor = this.reluctanceFactorSupplier();
-    const impedimentFactor = this.impedimentFactorSupplier();
-    assert.ok(
-      impedimentFactor >= 0 && impedimentFactor <= 1,
-      'ASSERT: Expected impediment factor to be between 0 and 1.'
-    );
-    assert.ok(
-      reluctanceFactor >= 0 && reluctanceFactor <= 1,
-      'ASSERT: Expected reluctance factor to be between 0 and 1.'
-    );
     assert.ok(
       reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED ||
-        reluctanceFactor === ReluctanceFactor.RELUCTANT,
+      reluctanceFactor === ReluctanceFactor.RELUCTANT,
       'ASSERT: Currently only supporting RELUCTANT or AGGRESSIVE_LIMITED.'
     );
 
@@ -75,29 +63,46 @@ export class L2PGWorld extends World {
     const inside = (a: number, b: number) => (side === Side.BUY ? a > b : a < b);
     const insideOrEqual = (a: number, b: number) => (side === Side.BUY ? a >= b : a <= b);
     const outsideOrEqual = (a: number, b: number) => (side === Side.BUY ? a <= b : a >= b);
-    let previousPrice = null;
-    let totalTradeQty = 0;
+
+    let pPrevious = null;
+    let qTradedTotal = 0;
+    let qTradedByPrice = new Map<number, number>();
     for (const trade of trades) {
       assert.ok(trade.side === side, 'ASSERT: Expected all trades in batch to be on same side.');
-      if (previousPrice === null) {
-        previousPrice = trade.price;
+      if (pPrevious === null) {
+        pPrevious = trade.price;
       } else {
         assert.ok(
-          outsideOrEqual(trade.price, previousPrice),
+          outsideOrEqual(trade.price, pPrevious),
           'ASSERT: Expected all trades in a batch to be moving outward.'
         );
       }
-      totalTradeQty += trade.quantity;
+      qTradedTotal += trade.quantity;
+      qTradedByPrice.set(trade.price, (qTradedByPrice.get(trade.price) || 0) + trade.quantity);
     }
     assert.ok(
-      previousPrice !== null,
+      pPrevious !== null,
       'NEVER: Previous price should have been set by any trade in batch.'
     );
-    const outsideTradePrice = previousPrice;
+    const outsideTradePrice = pPrevious;
+
     const orders =
       side === Side.BUY
         ? this.combinedBook.getBidsUntil(outsideTradePrice)
         : this.combinedBook.getAsksUntil(outsideTradePrice);
+    console.log(orders);
+
+    let qOrdersByPrice = new Map<number, number>();
+    for (const order of orders) {
+      if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+        qOrdersByPrice.set(order.price, (qOrdersByPrice.get(order.price) || 0) + order.remainingQty);
+      }
+    }
+
+    console.log(qTradedByPrice);
+    console.log(qOrdersByPrice);
+    console.log(qTradedTotal);
+    console.log(outsideTradePrice);
 
     const tradeIt = trades[Symbol.iterator]();
     const orderIt = orders[Symbol.iterator]();
@@ -110,7 +115,13 @@ export class L2PGWorld extends World {
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-          // TODO(P0): Execute the order.
+          order.execute(order.remainingQty);
+          // TODO(P2): Reconsider architecture.
+          if (order.bookType === BookType.PAPER) {
+            this.paperFeed.publish(order);
+          } else {
+            this.ghostFeed.publish(order);
+          }
         }
         nextOrder = orderIt.next();
       }
@@ -118,150 +129,187 @@ export class L2PGWorld extends World {
 
     } else {
 
-      // Orders fully crossed by each trade definitely would have been executed.
-      let remainingQty = totalTradeQty;
-      while (remainingQty > 0 && !nextTrade.done) {
-        const trade = nextTrade.value;
-        while (remainingQty > 0 && !nextOrder.done && inside(nextOrder.value.price, trade.price)) {
-          const order = nextOrder.value;
-          if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-            const executingQty = Math.min(remainingQty, order.remainingQty);
-            // TODO(P0): Execute the order.
-            remainingQty -= executingQty;
-            if (remainingQty <= 0 && order.remainingQty > 0) {
-              // Necessary to prevent advancing to next order while this still has quantity.
-              break;
-            }
-          }
-          nextOrder = orderIt.next();
+      // Unique price levels sorted inside to outside.
+      const pLevels =
+        [...new Set([...qTradedByPrice.keys(), ...qOrdersByPrice.keys()])]
+        .sort((a, b) => inside(a, b) ? -1 : 1);
+
+      let qRemaining = qTradedTotal;
+      let pFinalLevel;
+
+      // Execute fully covered price levels.
+
+      for (const pLevel of pLevels) {
+        const qTraded = qTradedByPrice.get(pLevel) || 0;
+        const qOrders = qOrdersByPrice.get(pLevel) || 0;
+        if (qRemaining < qTraded + qOrders) {
+          pFinalLevel = pLevel;
+          break;
         }
-        nextTrade = tradeIt.next();
-      }
-
-      if (remainingQty <= 0) {
-
-        // If all trade quantity exhausted before even reaching outside trade price, create ghost
-        // orders to compensate quantity of remaining trades at each price level. Any of these
-        // price levels may have pre-existing hypothetical orders whose time priority with respect
-        // to the compensated L2 quantity is unclear. Therefore, use the impediment factor to
-        // prioritize a portion of the ghost orders, i.e. higher impediment translating to more
-        // prioritized ghost quantity.
-        // BUG: Is there a partial trade quantity case?
-        while (!nextTrade.done) {
-          const trade = nextTrade.value;
-          const prioritizedGhostQty = trade.quantity * (1 - impedimentFactor);
-          const normalGhostQty = trade.quantity - prioritizedGhostQty;
-          // TODO(P0): Create ghost orders.
-          nextTrade = tradeIt.next();
-        }
-
-      } else {
-
-        // As long as remainingQty > 0, we would have finished iterating through all trades, and
-        // executed hypothetical orders up to the first order matching the outside trade price.
-        // Now execute the remaining quantity against prioritized hypothetical orders at this
-        // outside trade price. That is, for sure the hypothetical orders that were prioritized
-        // to begin with (since they've "always existed" at that time priority), and then a
-        // portion of the remaining hypothetical orders whose time priority with respect to the
-        // traded L2 quantity is unclear (so we'll use the impediment factor again).
-
         while (
-          remainingQty > 0 &&
-          !nextOrder.done &&
-          insideOrEqual(nextOrder.value.price, outsideTradePrice) &&
-          nextOrder.value.timestamp != ABSOLUTE_PRIORITY_TIMESTAMP
+          qRemaining >= qTraded + qOrders &&
+          !nextOrder.done && insideOrEqual(nextOrder.value.price, pLevel)
         ) {
           const order = nextOrder.value;
           if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-            const executingQty = Math.min(remainingQty, order.remainingQty);
-            // TODO(P0): Execute the order.
-            remainingQty -= executingQty;
-            if (remainingQty <= 0 && order.remainingQty > 0) {
-              // Necessary to prevent advancing to next order while this still has quantity.
-              break;
+            const executingQty = Math.min(qRemaining, order.remainingQty);
+            order.execute(executingQty);
+            if (order.bookType === BookType.PAPER) {
+              this.paperFeed.publish(order);
+            } else {
+              this.ghostFeed.publish(order);
             }
+            qRemaining -= executingQty;
           }
           nextOrder = orderIt.next();
         }
-
-        let prioritizedRemQty = remainingQty * (1 - impedimentFactor);
-
-        while (
-          prioritizedRemQty > 0 &&
-          !nextOrder.done &&
-          insideOrEqual(nextOrder.value.price, outsideTradePrice)
-        ) {
-          const order = nextOrder.value;
-          if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-            const executingQty = Math.min(prioritizedRemQty, order.remainingQty);
-            // TODO(P0): Execute the order.
-            remainingQty -= executingQty;
-            prioritizedRemQty -= executingQty;
-            if (prioritizedRemQty <= 0 && order.remainingQty > 0) {
-              // Necessary to prevent advancing to next order while this still has quantity.
-              break;
-            }
-          }
-          nextOrder = orderIt.next();
-        }
-
-        // BUG: Something feels off here. Think about the generalized formula.
-        if (prioritizedRemQty > 0) {
-
-          // If prioritized quantity still remains at this point, then none of the L2 was reached,
-          // so the entirety of the total traded quantity should be compensated with ghost orders
-          // at the highest priority.
-          // TODO(P0): Create absolute priority ghost order for totalTradeQty.
-
-        } else {
-
-          // If prioritized quantity is exhausted at this point, then remainingQty represents the
-          // quantity of the L2 that would have executed even despite all of the impediments. This
-          // L2 is by definition higher priority than the remaining hypothetical orders (that's why
-          // we split them up in the first place), so the ghost order we create should be created at
-          // the highest priority.
-          // TODO(P0): Create absolute priority ghost order for totalTradeQty - remainingQty.
-
-          // Note: This case may be possible to merge with the other using a general formula, but
-          // Note: maybe keep them separate for clarity.
-        }
-          
-
-          
-
-
-
-
-        const executedCrossedQty = totalTradeQty - remainingQty;
-
+        qRemaining -= qTraded;
       }
 
-      let prioritizedRemainingQty = remainingQty * this.impedimentFactor;
-      remainingQty -= prioritizedRemainingQty;
+      assert.ok(pFinalLevel !== undefined, 'ASSERT: Final price level should have been set.');
+
+      // Execute absolute priority hypothetical orders.
+
       while (
-        prioritizedRemainingQty > 0 &&
-        !nextOrder.done &&
-        insideOrEqual(nextOrder.value.price, trade.price)
+        qRemaining >= 0 &&
+        !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel) &&
+        nextOrder.value.timestamp == ABSOLUTE_PRIORITY_TIMESTAMP
       ) {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-          // In a more liquid world, paper and ghost orders are prioritized.
-          const executingQty = Math.min(prioritizedRemainingQty, order.remainingQty);
-          // TODO(P0): Execute the order.
-          prioritizedRemainingQty -= executingQty;
+          const executingQty = Math.min(qRemaining, order.remainingQty);
+          order.execute(executingQty);
+          if (order.bookType === BookType.PAPER) {
+            this.paperFeed.publish(order);
+          } else {
+            this.ghostFeed.publish(order);
+          }
+          qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
       }
-      remainingQty += prioritizedRemainingQty;
-      // TODO(P0): Create a ghost order for
 
-      // if remainingQty is 0, then none of the L2 was touched, ghost order qT
+      // Execute impeding L2.
 
-      nextTrade = tradeIt.next();
+      const qTraded = qTradedByPrice.get(pFinalLevel) || 0;
+      const qImpedingL2 = qTraded * this.impedimentFactorSupplier();
+      const executingImpedingQty = Math.min(qRemaining, qImpedingL2);
+      qRemaining -= executingImpedingQty;
+
+      // Execute regular priority hypothetical orders.
+
+      while (
+        qRemaining >= 0 &&
+        !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel)
+      ) {
+        const order = nextOrder.value;
+        if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+          const executingQty = Math.min(qRemaining, order.remainingQty);
+          order.execute(executingQty);
+          if (order.bookType === BookType.PAPER) {
+            this.paperFeed.publish(order);
+          } else {
+            this.ghostFeed.publish(order);
+          }
+          qRemaining -= executingQty;
+        }
+        nextOrder = orderIt.next();
+      }
+
+      // Execute non-impeding L2.
+
+      const executingNonImpedingQty = Math.min(qRemaining, qTraded - qImpedingL2);
+      qRemaining -= executingNonImpedingQty;
+
+      assert.ok(qRemaining > 0, 'ASSERT: It should have been impossible to exhaust qTraded here.');
+
+      // Create ghost orders for unexecuted L2.
+
+      const qUnexecutedL2 = qTraded - executingImpedingQty - executingNonImpedingQty;
+
+      assert.ok(qUnexecutedL2 == qRemaining, 'ASSERT: The unexecuted L2 should be equivalent to the remaining quantity.');
+
+      const impedimentFactor = this.impedimentFactorSupplier();
+      const prioritizedGhostQty = qUnexecutedL2 * impedimentFactor;
+      const normalGhostQty = qUnexecutedL2 * (1 - impedimentFactor);
+      
+      // TODO(P1): Factor out order ID generation.
+      const prioritizedGhostOrderId =
+      'G0' +
+      side +
+      '-' +
+      new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
+      '_' +
+      String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      this.ghostFeed.publish(new Order(
+        'limit',
+        prioritizedGhostOrderId,
+        side,
+        pFinalLevel,
+        prioritizedGhostQty,
+        ABSOLUTE_PRIORITY_TIMESTAMP,
+        BookType.GHOST
+      ));
+      const normalGhostOrderId =
+      'GN' +
+      side +
+      '-' +
+      new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
+      '_' +
+      String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      this.ghostFeed.publish(new Order(
+        'limit',
+        normalGhostOrderId,
+        side,
+        pFinalLevel,
+        normalGhostQty,
+        Date.now(),
+        BookType.GHOST
+      ));
+
+      // Create ghost orders for remaining untouched price levels.
+
+      for (const pLevel of pLevels) {
+        if (inside(pLevel, pFinalLevel)) {
+          continue;
+        }
+        const qTraded = qTradedByPrice.get(pLevel) || 0;
+        const prioritizedGhostQty = qTraded * impedimentFactor;
+        const normalGhostQty = qTraded * (1 - impedimentFactor);
+        // TODO(P1): Factor out order ID generation.
+        const prioritizedGhostOrderId =
+        'G0' +
+        side +
+        '-' +
+        new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
+        '_' +
+        String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        this.ghostFeed.publish(new Order(
+          'limit',
+          prioritizedGhostOrderId,
+          side,
+          pLevel,
+          prioritizedGhostQty,
+          ABSOLUTE_PRIORITY_TIMESTAMP,
+          BookType.GHOST
+        ));
+        const normalGhostOrderId =
+        'GN' +
+        side +
+        '-' +
+        new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
+        '_' +
+        String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        this.ghostFeed.publish(new Order(
+          'limit',
+          normalGhostOrderId,
+          side,
+          pLevel,
+          normalGhostQty,
+          Date.now(),
+          BookType.GHOST
+        ));
+      }
     }
-    const partialQtyExecutedFirst = partialQty * this.impedimentFactor;
-    const partialQtyExecutedLater = partialQty - partialQtyExecutedFirst;
-    remainingQty -= partialQtyExecutedFirst;
-    // TODO(P0): Continue.
   }
 }

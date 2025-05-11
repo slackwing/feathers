@@ -86,6 +86,7 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
   until(price: number): Order[] {
     const result: Order[] = [];
     for (const order of this) {
+      console.log(order.price, price);
       if (this.side === Side.BUY ? order.price >= price : order.price <= price) result.push(order);
       else break;
     }

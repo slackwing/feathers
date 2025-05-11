@@ -12,8 +12,8 @@ export class BatchedPubSub<T> {
     shouldPublishBatchWith?: (item: T) => boolean,
     shouldPublishBatchWithout?: (item: T) => boolean
   ) {
-    if (maxTimeout < 0) {
-      throw new Error('maxTimeout must non-negative');
+    if (maxTimeout < 0 && maxTimeout !== -1) {
+      throw new Error('maxTimeout must -1 or non-negative.');
     }
     this.maxTimeout = maxTimeout;
     this.shouldPublishBatchWith = shouldPublishBatchWith;
@@ -44,13 +44,13 @@ export class BatchedPubSub<T> {
       return;
     }
 
-    if (!this.currentTimeoutId) {
+    if (!this.currentTimeoutId && this.maxTimeout !== -1) {
       this.currentTimeoutId = setTimeout(
         () => {
           this.publishBatch();
           this.currentTimeoutId = null;
         },
-        Math.max(5, this.maxTimeout)
+        this.maxTimeout
       );
     }
   }
@@ -59,9 +59,5 @@ export class BatchedPubSub<T> {
     const batch = this.batch;
     this.batch = [];
     this.subscribers.forEach((callback) => callback(batch));
-  }
-
-  public getMaxTimeout(): number {
-    return this.maxTimeout;
   }
 }

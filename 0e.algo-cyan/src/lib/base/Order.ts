@@ -1,3 +1,5 @@
+import assert from "assert";
+
 export enum BookType {
   L2 = 'L2',
   PAPER = 'PAPER',
@@ -40,5 +42,11 @@ export class Order {
 
   get filled_qty(): number {
     return this.quantity - this.remainingQty;
+  }
+
+  public execute(quantity: number): void {
+    assert.ok(quantity > 0, 'ASSERT: Quantity to execute must be positive.');
+    assert.ok(quantity <= this.remainingQty, 'ASSERT: Quantity to execute must be less than or equal to remaining quantity.');
+    this.remainingQty -= quantity;
   }
 }
