@@ -32,11 +32,17 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
 
   set(key: string, value: T): void {
     if (this.map.has(key)) {
+      console.log("ASDF730a", key);
       this.map.set(key, value);
       this._updateValueInTree(key, value);
+      console.log("ASDFASDF AFTER UPDATE " + key);
+      console.log(this._printTree(this.root));
     } else {
+      console.log("ASDF730b", key);
       this.map.set(key, value);
       this.root = this._insertIntoTree(this.root, { key, value });
+      console.log("ASDFASDF AFTER INSERT " + key);
+      console.log(this._printTree(this.root));
     }
   }
 
@@ -64,11 +70,15 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     this.map.delete(key);
     const removed = this._removeNodeOptimized(key);
     if (removed) this.nodeMap.delete(key);
+    console.log("ASDFASDF AFTER REMOVE " + key);
+    console.log(this._printTree(this.root));
     return removed;
   }
 
   private _removeNodeOptimized(key: string): boolean {
     if (!this.nodeMap.has(key)) return false;
+    console.log("ASDFASDF _insertIntoTree BEFORE REMOVE NODE OPTIMIZED " + key);
+    console.log(this._printTree(this.root));
     const nodeToRemove = this.nodeMap.get(key)!;
     const parent = nodeToRemove.parent;
     if (nodeToRemove.left && nodeToRemove.right) {
@@ -130,6 +140,8 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
       }
       this.nodeMap.delete(key);
     }
+    console.log("ASDFASDF _insertIntoTree AFTER REMOVE NODE OPTIMIZED " + key);
+    console.log(this._printTree(this.root));
     return true;
   }
 
@@ -156,8 +168,17 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     { key, value }: { key: string; value: T },
     parent: Node<T> | null = null
   ): Node<T> {
+
+    let ASDF = null;
+    if (key.startsWith("G0S")) {
+      ASDF = key;
+      console.log("ASDFASDF _insertIntoTree BEFORE " + key);
+      console.log(this._printTree(this.root));
+    }
+
     if (!node) {
       const newNode: Node<T> = { key, value, left: null, right: null, height: 1, parent };
+      console.log("ASDFASDF _insertIntoTree SET " + key);
       this.nodeMap.set(key, newNode);
       return newNode;
     }
@@ -166,24 +187,50 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     let result: Node<T> = node;
 
     if (node.key === key ? 0 : this.comparator(value, node.value) < 0) {
+      if (ASDF) {
+        console.log("ASDFASDF _insertIntoTree LEFT " + key);
+      }
       const oldLeftHeight = node.left ? node.left.height : 0;
       node.left = this._insertIntoTree(node.left, { key, value }, node);
       if (node.left.height > oldLeftHeight) {
         node.height = 1 + Math.max(node.left.height, node.right ? node.right.height : 0);
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
+          console.log("ASDFASDFASDF _insertIntoTree BEFORE REBALANCE " + key);
+          console.log(this._printTree(this.root));
           result = this._balance(node);
+          console.log("ASDFASDFASDF _insertIntoTree AFTER REBALANCE " + key);
+          console.log(this._printTree(result));
         }
       }
     } else {
+      if (ASDF) {
+        console.log("ASDFASDF _insertIntoTree RIGHT " + key);
+      }
       const oldRightHeight = node.right ? node.right.height : 0;
       node.right = this._insertIntoTree(node.right, { key, value }, node);
       if (node.right.height > oldRightHeight) {
         node.height = 1 + Math.max(node.left ? node.left.height : 0, node.right.height);
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
+          console.log("ASDFASDF _insertIntoTree BEFORE REBALANCE " + key);
+          console.log(this._printTree(this.root));
           result = this._balance(node);
+          console.log("ASDFASDF _insertIntoTree AFTER REBALANCE " + key);
+          console.log(this._printTree(result));
         }
+      }
+    }
+
+    if (ASDF) {
+      let insertingNode = this.nodeMap.get(ASDF);
+      if (insertingNode) {
+        console.log("ASDF735", insertingNode.value);
+        console.log(insertingNode.parent);
+        console.log(insertingNode.left);
+        console.log(insertingNode.right);
+        console.log("ASDFASDF _insertIntoTree AFTER " + key);
+        console.log(this._printTree(this.root));
       }
     }
 
@@ -214,17 +261,22 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
         const leftChild = node.left!;
         const newLeftChild = leftChild.right!;
         const T2 = newLeftChild.left;
+        const T3 = newLeftChild.right;
 
         newLeftChild.parent = node;
         leftChild.parent = newLeftChild;
         if (T2) T2.parent = leftChild;
+        if (T3) T3.parent = node;
 
-        this.nodeMap.set(newLeftChild.key, newLeftChild);
-        this.nodeMap.set(leftChild.key, leftChild);
-        if (T2) this.nodeMap.set(T2.key, T2);
+        this.nodeMap.set(newLeftChild.key, newLeftChild); // TODO(P1): Remove?
+        this.nodeMap.set(leftChild.key, leftChild); // TODO(P1): Remove?
+        if (T2) this.nodeMap.set(T2.key, T2); // TODO(P1): Remove?
+        if (T3) this.nodeMap.set(T3.key, T3); // TODO(P1): Remove?
 
         newLeftChild.left = leftChild;
         leftChild.right = T2;
+        newLeftChild.right = node;
+        node.left = T3;
 
         leftChild.height =
           1 +
@@ -245,11 +297,8 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
         newLeftChild.parent = oldParent;
         node.parent = newLeftChild;
 
-        this.nodeMap.set(newLeftChild.key, newLeftChild);
-        this.nodeMap.set(node.key, node);
-
-        newLeftChild.right = node;
-        node.left = null;
+        this.nodeMap.set(newLeftChild.key, newLeftChild); // TODO(P1): Remove?
+        this.nodeMap.set(node.key, node); // TODO(P1): Remove?
 
         node.height =
           1 +
@@ -295,17 +344,22 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
         const rightChild = node.right!;
         const newRightChild = rightChild.left!;
         const T2 = newRightChild.right;
+        const T3 = newRightChild.left;
 
         newRightChild.parent = node;
         rightChild.parent = newRightChild;
         if (T2) T2.parent = rightChild;
+        if (T3) T3.parent = node;
 
-        this.nodeMap.set(newRightChild.key, newRightChild);
-        this.nodeMap.set(rightChild.key, rightChild);
-        if (T2) this.nodeMap.set(T2.key, T2);
+        this.nodeMap.set(newRightChild.key, newRightChild); // TODO(P1): Remove?
+        this.nodeMap.set(rightChild.key, rightChild); // TODO(P1): Remove?
+        if (T2) this.nodeMap.set(T2.key, T2); // TODO(P1): Remove?
+        if (T3) this.nodeMap.set(T3.key, T3); // TODO(P1): Remove?
 
         newRightChild.right = rightChild;
         rightChild.left = T2;
+        newRightChild.left = node;
+        node.right = T3;
 
         rightChild.height =
           1 +
@@ -326,11 +380,8 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
         newRightChild.parent = oldParent;
         node.parent = newRightChild;
 
-        this.nodeMap.set(newRightChild.key, newRightChild);
-        this.nodeMap.set(node.key, node);
-
-        newRightChild.left = node;
-        node.right = null;
+        this.nodeMap.set(newRightChild.key, newRightChild); // TODO(P1): Remove?
+        this.nodeMap.set(node.key, node); // TODO(P1): Remove?
 
         node.height =
           1 +
@@ -439,9 +490,22 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     return result;
   }
 
+  private _printTree(node: Node<T> | null, depth = 0): string {
+    if (!node) return '';
+    const indent = '  '.repeat(depth);
+    const result = [
+      `${indent}${node.key} (${node.value})`,
+      node.right ? `${indent}  R: ${this._printTree(node.right, depth + 1).trim()}` : '',
+      node.left ? `${indent}  L: ${this._printTree(node.left, depth + 1).trim()}` : ''
+    ].filter(Boolean).join('\n');
+    return depth === 0 ? '\n' + result + '\n' : result;
+  }
+
   [Symbol.iterator](): Iterator<[string, T]> {
     const stack: Node<T>[] = [];
     let current = this.root;
+
+    console.log(this._printTree(this.root));
 
     while (current) {
       stack.push(current);

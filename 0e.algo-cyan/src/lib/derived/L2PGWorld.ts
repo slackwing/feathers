@@ -6,6 +6,7 @@ import { Trade } from '../base/Trade';
 import { World } from '../base/World';
 import { BatchedPubSub } from '../base/BatchedPubSub';
 import * as assert from 'assert';
+import { roundQuantity } from '../utils/number';
 
 export enum ReluctanceFactor {
   RELUCTANT,
@@ -69,9 +70,7 @@ export class L2PGWorld extends World {
     let qTradedByPrice = new Map<number, number>();
     for (const trade of trades) {
       assert.ok(trade.side === side, 'ASSERT: Expected all trades in batch to be on same side.');
-      if (pPrevious === null) {
-        pPrevious = trade.price;
-      } else {
+      if (pPrevious !== null) {
         assert.ok(
           outsideOrEqual(trade.price, pPrevious),
           'ASSERT: Expected all trades in a batch to be moving outward.'
@@ -79,6 +78,7 @@ export class L2PGWorld extends World {
       }
       qTradedTotal += trade.quantity;
       qTradedByPrice.set(trade.price, (qTradedByPrice.get(trade.price) || 0) + trade.quantity);
+      pPrevious = trade.price;
     }
     assert.ok(
       pPrevious !== null,
@@ -90,7 +90,6 @@ export class L2PGWorld extends World {
       side === Side.BUY
         ? this.combinedBook.getBidsUntil(outsideTradePrice)
         : this.combinedBook.getAsksUntil(outsideTradePrice);
-    console.log(orders);
 
     let qOrdersByPrice = new Map<number, number>();
     for (const order of orders) {
@@ -98,11 +97,6 @@ export class L2PGWorld extends World {
         qOrdersByPrice.set(order.price, (qOrdersByPrice.get(order.price) || 0) + order.remainingQty);
       }
     }
-
-    console.log(qTradedByPrice);
-    console.log(qOrdersByPrice);
-    console.log(qTradedTotal);
-    console.log(outsideTradePrice);
 
     const tradeIt = trades[Symbol.iterator]();
     const orderIt = orders[Symbol.iterator]();
@@ -171,7 +165,7 @@ export class L2PGWorld extends World {
       // Execute absolute priority hypothetical orders.
 
       while (
-        qRemaining >= 0 &&
+        qRemaining > 0 &&
         !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel) &&
         nextOrder.value.timestamp == ABSOLUTE_PRIORITY_TIMESTAMP
       ) {
@@ -192,14 +186,15 @@ export class L2PGWorld extends World {
       // Execute impeding L2.
 
       const qTraded = qTradedByPrice.get(pFinalLevel) || 0;
-      const qImpedingL2 = qTraded * this.impedimentFactorSupplier();
+      const qImpedingL2 = roundQuantity(qTraded * this.impedimentFactorSupplier());
+      console.log("ASDF400", qTraded, qImpedingL2);
       const executingImpedingQty = Math.min(qRemaining, qImpedingL2);
       qRemaining -= executingImpedingQty;
 
       // Execute regular priority hypothetical orders.
 
       while (
-        qRemaining >= 0 &&
+        qRemaining > 0 &&
         !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel)
       ) {
         const order = nextOrder.value;
@@ -221,17 +216,14 @@ export class L2PGWorld extends World {
       const executingNonImpedingQty = Math.min(qRemaining, qTraded - qImpedingL2);
       qRemaining -= executingNonImpedingQty;
 
-      assert.ok(qRemaining > 0, 'ASSERT: It should have been impossible to exhaust qTraded here.');
-
       // Create ghost orders for unexecuted L2.
 
       const qUnexecutedL2 = qTraded - executingImpedingQty - executingNonImpedingQty;
 
-      assert.ok(qUnexecutedL2 == qRemaining, 'ASSERT: The unexecuted L2 should be equivalent to the remaining quantity.');
-
       const impedimentFactor = this.impedimentFactorSupplier();
-      const prioritizedGhostQty = qUnexecutedL2 * impedimentFactor;
-      const normalGhostQty = qUnexecutedL2 * (1 - impedimentFactor);
+      console.log("ASDF500", qUnexecutedL2, qRemaining, impedimentFactor);
+      const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
+      const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
       
       // TODO(P1): Factor out order ID generation.
       const prioritizedGhostOrderId =
@@ -270,12 +262,14 @@ export class L2PGWorld extends World {
       // Create ghost orders for remaining untouched price levels.
 
       for (const pLevel of pLevels) {
-        if (inside(pLevel, pFinalLevel)) {
+        if (insideOrEqual(pLevel, pFinalLevel)) {
           continue;
         }
         const qTraded = qTradedByPrice.get(pLevel) || 0;
-        const prioritizedGhostQty = qTraded * impedimentFactor;
-        const normalGhostQty = qTraded * (1 - impedimentFactor);
+        const impedimentFactor = this.impedimentFactorSupplier();
+        console.log("ASDF700", qTraded, impedimentFactor);
+        const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
+        const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
         // TODO(P1): Factor out order ID generation.
         const prioritizedGhostOrderId =
         'G0' +
@@ -284,6 +278,7 @@ export class L2PGWorld extends World {
         new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
         '_' +
         String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        console.log("ASDF710", prioritizedGhostOrderId, prioritizedGhostQty);
         this.ghostFeed.publish(new Order(
           'limit',
           prioritizedGhostOrderId,

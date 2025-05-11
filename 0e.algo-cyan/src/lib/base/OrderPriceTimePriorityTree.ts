@@ -25,8 +25,9 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
   }
 
   upsertOrder(order: Order): void {
+    console.log("ASDF720", order);
     const start = performance.now();
-    if (order.quantity === 0) {
+    if (order.remainingQty === 0) {
       this.orders.remove(order.id);
     } else {
       this.orders.set(order.id, order);
@@ -86,7 +87,6 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
   until(price: number): Order[] {
     const result: Order[] = [];
     for (const order of this) {
-      console.log(order.price, price);
       if (this.side === Side.BUY ? order.price >= price : order.price <= price) result.push(order);
       else break;
     }
