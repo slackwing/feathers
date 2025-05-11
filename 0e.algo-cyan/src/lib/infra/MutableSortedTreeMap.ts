@@ -32,17 +32,11 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
 
   set(key: string, value: T): void {
     if (this.map.has(key)) {
-      console.log("ASDF730a", key);
       this.map.set(key, value);
       this._updateValueInTree(key, value);
-      console.log("ASDFASDF AFTER UPDATE " + key);
-      console.log(this._printTree(this.root));
     } else {
-      console.log("ASDF730b", key);
       this.map.set(key, value);
       this.root = this._insertIntoTree(this.root, { key, value });
-      console.log("ASDFASDF AFTER INSERT " + key);
-      console.log(this._printTree(this.root));
     }
   }
 
@@ -70,15 +64,11 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     this.map.delete(key);
     const removed = this._removeNodeOptimized(key);
     if (removed) this.nodeMap.delete(key);
-    console.log("ASDFASDF AFTER REMOVE " + key);
-    console.log(this._printTree(this.root));
     return removed;
   }
 
   private _removeNodeOptimized(key: string): boolean {
     if (!this.nodeMap.has(key)) return false;
-    console.log("ASDFASDF _insertIntoTree BEFORE REMOVE NODE OPTIMIZED " + key);
-    console.log(this._printTree(this.root));
     const nodeToRemove = this.nodeMap.get(key)!;
     const parent = nodeToRemove.parent;
     if (nodeToRemove.left && nodeToRemove.right) {
@@ -140,8 +130,6 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
       }
       this.nodeMap.delete(key);
     }
-    console.log("ASDFASDF _insertIntoTree AFTER REMOVE NODE OPTIMIZED " + key);
-    console.log(this._printTree(this.root));
     return true;
   }
 
@@ -168,17 +156,8 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     { key, value }: { key: string; value: T },
     parent: Node<T> | null = null
   ): Node<T> {
-
-    let ASDF = null;
-    if (key.startsWith("G0S")) {
-      ASDF = key;
-      console.log("ASDFASDF _insertIntoTree BEFORE " + key);
-      console.log(this._printTree(this.root));
-    }
-
     if (!node) {
       const newNode: Node<T> = { key, value, left: null, right: null, height: 1, parent };
-      console.log("ASDFASDF _insertIntoTree SET " + key);
       this.nodeMap.set(key, newNode);
       return newNode;
     }
@@ -187,50 +166,24 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     let result: Node<T> = node;
 
     if (node.key === key ? 0 : this.comparator(value, node.value) < 0) {
-      if (ASDF) {
-        console.log("ASDFASDF _insertIntoTree LEFT " + key);
-      }
       const oldLeftHeight = node.left ? node.left.height : 0;
       node.left = this._insertIntoTree(node.left, { key, value }, node);
       if (node.left.height > oldLeftHeight) {
         node.height = 1 + Math.max(node.left.height, node.right ? node.right.height : 0);
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
-          console.log("ASDFASDFASDF _insertIntoTree BEFORE REBALANCE " + key);
-          console.log(this._printTree(this.root));
           result = this._balance(node);
-          console.log("ASDFASDFASDF _insertIntoTree AFTER REBALANCE " + key);
-          console.log(this._printTree(result));
         }
       }
     } else {
-      if (ASDF) {
-        console.log("ASDFASDF _insertIntoTree RIGHT " + key);
-      }
       const oldRightHeight = node.right ? node.right.height : 0;
       node.right = this._insertIntoTree(node.right, { key, value }, node);
       if (node.right.height > oldRightHeight) {
         node.height = 1 + Math.max(node.left ? node.left.height : 0, node.right.height);
         const balance = this._getBalance(node);
         if (Math.abs(balance) > 1) {
-          console.log("ASDFASDF _insertIntoTree BEFORE REBALANCE " + key);
-          console.log(this._printTree(this.root));
           result = this._balance(node);
-          console.log("ASDFASDF _insertIntoTree AFTER REBALANCE " + key);
-          console.log(this._printTree(result));
         }
-      }
-    }
-
-    if (ASDF) {
-      let insertingNode = this.nodeMap.get(ASDF);
-      if (insertingNode) {
-        console.log("ASDF735", insertingNode.value);
-        console.log(insertingNode.parent);
-        console.log(insertingNode.left);
-        console.log(insertingNode.right);
-        console.log("ASDFASDF _insertIntoTree AFTER " + key);
-        console.log(this._printTree(this.root));
       }
     }
 
@@ -504,8 +457,6 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
   [Symbol.iterator](): Iterator<[string, T]> {
     const stack: Node<T>[] = [];
     let current = this.root;
-
-    console.log(this._printTree(this.root));
 
     while (current) {
       stack.push(current);

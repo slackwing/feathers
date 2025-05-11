@@ -25,7 +25,6 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
   }
 
   upsertOrder(order: Order): void {
-    console.log("ASDF720", order);
     const start = performance.now();
     if (order.remainingQty === 0) {
       this.orders.remove(order.id);

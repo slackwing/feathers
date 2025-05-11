@@ -163,8 +163,6 @@ describe('L2PGWorld', () => {
 
     const asks = world.combinedBook.getAsksUntil(110);
 
-    console.log("FDSA", asks);
-
     expect(asks.length).toBe(8);
     expect(asks[0].price).toBe(104);
     expect(asks[0].quantity).toBe(2.0);
@@ -173,11 +171,11 @@ describe('L2PGWorld', () => {
     expect(asks[1]).toBe(paperP);
     expect(asks[2]).toBe(ghostP);
     expect(asks[3].price).toBe(107);
-    expect(asks[3].quantity).toBe(1.8);
+    expect(asks[3].quantity).toBe(1.2);
     expect(asks[3].bookType).toBe(BookType.GHOST);
     expect(asks[3].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
     expect(asks[4].price).toBe(107);
-    expect(asks[4].quantity).toBe(1.2);
+    expect(asks[4].quantity).toBe(1.8);
     expect(asks[4].bookType).toBe(BookType.GHOST);
     expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
     expect(asks[5]).toBe(ghostF);

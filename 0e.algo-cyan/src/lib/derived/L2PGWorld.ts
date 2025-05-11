@@ -187,7 +187,7 @@ export class L2PGWorld extends World {
 
       const qTraded = qTradedByPrice.get(pFinalLevel) || 0;
       const qImpedingL2 = roundQuantity(qTraded * this.impedimentFactorSupplier());
-      console.log("ASDF400", qTraded, qImpedingL2);
+      //console.log("ASDF400", qTraded, qImpedingL2);
       const executingImpedingQty = Math.min(qRemaining, qImpedingL2);
       qRemaining -= executingImpedingQty;
 
@@ -221,7 +221,7 @@ export class L2PGWorld extends World {
       const qUnexecutedL2 = qTraded - executingImpedingQty - executingNonImpedingQty;
 
       const impedimentFactor = this.impedimentFactorSupplier();
-      console.log("ASDF500", qUnexecutedL2, qRemaining, impedimentFactor);
+      //console.log("ASDF500", qUnexecutedL2, qRemaining, impedimentFactor);
       const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
       const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
       
@@ -267,7 +267,7 @@ export class L2PGWorld extends World {
         }
         const qTraded = qTradedByPrice.get(pLevel) || 0;
         const impedimentFactor = this.impedimentFactorSupplier();
-        console.log("ASDF700", qTraded, impedimentFactor);
+        //console.log("ASDF700", qTraded, impedimentFactor);
         const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
         const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
         // TODO(P1): Factor out order ID generation.
@@ -278,7 +278,7 @@ export class L2PGWorld extends World {
         new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
         '_' +
         String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        console.log("ASDF710", prioritizedGhostOrderId, prioritizedGhostQty);
+        //console.log("ASDF710", prioritizedGhostOrderId, prioritizedGhostQty);
         this.ghostFeed.publish(new Order(
           'limit',
           prioritizedGhostOrderId,
