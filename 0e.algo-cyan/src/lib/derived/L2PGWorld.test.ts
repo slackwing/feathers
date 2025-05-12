@@ -3,7 +3,7 @@ import { L2OrderBook } from './L2OrderBook';
 import { PubSub } from '../infra/PubSub';
 import { BatchedPubSub } from '../base/BatchedPubSub';
 import { Order, Side, BookType } from '../base/Order';
-import { Trade } from '../base/Trade';
+import { getBatchingFn, Trade } from '../base/Trade';
 
 describe('L2PGWorld', () => {
   let l2OrderBook: L2OrderBook;
@@ -36,20 +36,7 @@ describe('L2PGWorld', () => {
     const l2OrderFeed = new PubSub<Order>();
     l2OrderBook = new L2OrderBook(l2OrderFeed);
     paperFeed = new PubSub<Order>();
-    batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, (() => {
-      let prevTimestamp: number | null = null;
-      let prevPrice: number | null = null;
-      return (trade) => {
-        const timestampChanged = prevTimestamp !== null && trade.timestamp !== prevTimestamp;
-        const movingInward = prevPrice !== null && (
-          trade.side === Side.BUY ? trade.price > prevPrice : trade.price < prevPrice
-        );
-        const shouldPublish = timestampChanged || movingInward;
-        prevTimestamp = trade.timestamp;
-        prevPrice = trade.price;
-        return shouldPublish;
-      };
-    })());
+    batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
 
     world = new L2PGWorld(
       l2OrderBook,

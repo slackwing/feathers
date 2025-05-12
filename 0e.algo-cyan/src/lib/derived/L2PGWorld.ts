@@ -52,6 +52,9 @@ export class L2PGWorld extends World {
   }
 
   protected onTradeBatch = (trades: Trade[]): void => {
+
+    // console.log('trades = ', trades);
+
     const reluctanceFactor = this.reluctanceFactorSupplier();
     assert.ok(
       reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED ||
@@ -90,11 +93,17 @@ export class L2PGWorld extends World {
         ? this.combinedBook.getBidsUntil(outsideTradePrice)
         : this.combinedBook.getAsksUntil(outsideTradePrice);
 
+    let hypotheticalOrderFound = false;
     let qOrdersByPrice = new Map<number, number>();
     for (const order of orders) {
       if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+        hypotheticalOrderFound = true;
         qOrdersByPrice.set(order.price, (qOrdersByPrice.get(order.price) || 0) + order.remainingQty);
       }
+    }
+
+    if (!hypotheticalOrderFound) {
+      return;
     }
 
     const tradeIt = trades[Symbol.iterator]();

@@ -1,5 +1,23 @@
 import { Side } from './Order';
 
+export function getBatchingFn() {
+  let prevTimestamp: number | null = null;
+  let prevPrice: number | null = null;
+  let prevSide: Side | null = null;
+  return (trade: Trade) => {
+    const timestampChanged = prevTimestamp !== null && trade.timestamp !== prevTimestamp;
+    const movingInward = prevPrice !== null && (
+      trade.side === Side.BUY ? trade.price > prevPrice : trade.price < prevPrice
+    );
+    const sideChanged = prevSide !== null && trade.side !== prevSide;
+    const shouldPublish = timestampChanged || movingInward || sideChanged;
+    prevTimestamp = trade.timestamp;
+    prevPrice = trade.price;
+    prevSide = trade.side;
+    return shouldPublish;
+  };
+}
+
 export class Trade {
   constructor(
     public readonly side: Side,

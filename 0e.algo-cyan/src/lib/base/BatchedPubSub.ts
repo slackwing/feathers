@@ -25,23 +25,32 @@ export class BatchedPubSub<T> {
   }
 
   public publish(data: T): void {
-    if (this.shouldPublishBatchWithout?.(data)) {
-      if (this.currentTimeoutId) {
-        clearTimeout(this.currentTimeoutId);
-        this.currentTimeoutId = null;
+
+    try {
+      if (this.shouldPublishBatchWithout?.(data)) {
+        if (this.currentTimeoutId) {
+          clearTimeout(this.currentTimeoutId);
+          this.currentTimeoutId = null;
+        }
+        this.publishBatch();
       }
-      this.publishBatch();
+    } catch (e) {
+      console.error('Failed to publish batch: ', e);
     }
 
     this.batch.push(data);
 
-    if (this.shouldPublishBatchWith?.(data)) {
-      if (this.currentTimeoutId) {
-        clearTimeout(this.currentTimeoutId);
-        this.currentTimeoutId = null;
+    try {
+      if (this.shouldPublishBatchWith?.(data)) {
+        if (this.currentTimeoutId) {
+          clearTimeout(this.currentTimeoutId);
+          this.currentTimeoutId = null;
+        }
+        this.publishBatch();
+        return;
       }
-      this.publishBatch();
-      return;
+    } catch (e) {
+      console.error('Failed to publish batch: ', e);
     }
 
     if (!this.currentTimeoutId && this.maxTimeout !== -1) {
@@ -56,6 +65,8 @@ export class BatchedPubSub<T> {
   }
 
   private publishBatch(): void {
+    // Should no longer be necessary since adding try-catch but just in case.
+    if (this.batch.length === 0) return;
     const batch = this.batch;
     this.batch = [];
     this.subscribers.forEach((callback) => callback(batch));

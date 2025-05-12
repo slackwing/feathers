@@ -47,6 +47,7 @@ export class Order {
   public execute(quantity: number): void {
     assert.ok(quantity > 0, 'ASSERT: Quantity to execute must be positive.');
     assert.ok(quantity <= this.remainingQty, 'ASSERT: Quantity to execute must be less than or equal to remaining quantity.');
+    console.log('Executing ', quantity, ' of ', this.id);
     this.remainingQty -= quantity;
   }
 }
