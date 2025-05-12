@@ -595,7 +595,51 @@ describe('L2PGWorld', () => {
     batchedTradeFeed.publish(trade108b);
     batchedTradeFeed.publish(trade99);
 
-    console.log(ghostP);
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(5);
+    expect(asks[0].price).toBe(107);
+    expect(asks[0].quantity).toBe(9.00);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[1]).toBe(ghostF);
+    // In previous tests we were splitting the 107 level, but now it's the 108.
+    expect(asks[2].price).toBe(108);
+    expect(asks[2].quantity).toBe(1.20);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3].price).toBe(108);
+    expect(asks[3].quantity).toBe(1.80);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 28.0', () => {
+
+    // Adding any quantity beyond this point only offsets itself. Same result as above.
+
+    const additionalQty = 10.0;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
 
     expect(paperX.remainingQty).toBe(0.0); // Fully executed.
     expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
@@ -609,16 +653,15 @@ describe('L2PGWorld', () => {
 
     expect(asks.length).toBe(5);
     expect(asks[0].price).toBe(107);
-    expect(asks[0].quantity).toBe(3.60);
+    expect(asks[0].quantity).toBe(9.00);
     expect(asks[0].bookType).toBe(BookType.GHOST);
-    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
-    expect(asks[1].price).toBe(107);
-    expect(asks[1].quantity).toBe(5.40);
-    expect(asks[1].bookType).toBe(BookType.GHOST);
-    expect(asks[1].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
-    expect(asks[2]).toBe(ghostF);
+    expect(asks[1]).toBe(ghostF);
+    expect(asks[2].price).toBe(108);
+    expect(asks[2].quantity).toBe(1.20);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
     expect(asks[3].price).toBe(108);
-    expect(asks[3].quantity).toBe(3);
+    expect(asks[3].quantity).toBe(1.80);
     expect(asks[3].bookType).toBe(BookType.GHOST);
     expect(asks[3].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
     expect(asks[4]).toBe(paperF);

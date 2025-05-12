@@ -59,7 +59,6 @@ export class L2PGWorld extends World {
       'ASSERT: Currently only supporting RELUCTANT or AGGRESSIVE_LIMITED.'
     );
 
-    // console.log(trades);
     const side = trades[0].side;
     const inside = (a: number, b: number) => (side === Side.BUY ? a > b : a < b);
     const insideOrEqual = (a: number, b: number) => (side === Side.BUY ? a >= b : a <= b);
@@ -135,7 +134,7 @@ export class L2PGWorld extends World {
 
       for (const pLevel of pLevels) {
         const qTraded = qTradedByPrice.get(pLevel) || 0;
-        const qOrders = qOrdersByPrice.get(pLevel) || 0;
+        let qOrders = qOrdersByPrice.get(pLevel) || 0;
         if (qRemaining < qTraded + qOrders) {
           pFinalLevel = pLevel;
           break;
@@ -154,6 +153,7 @@ export class L2PGWorld extends World {
               this.ghostFeed.publish(order);
             }
             qRemaining -= executingQty;
+            qOrders -= executingQty;
           }
           nextOrder = orderIt.next();
         }
@@ -187,13 +187,11 @@ export class L2PGWorld extends World {
 
       const qTraded = qTradedByPrice.get(pFinalLevel) || 0;
       const qImpedingL2 = roundQuantity(qTraded * this.impedimentFactorSupplier());
-      //console.log("ASDF400", qTraded, qImpedingL2);
       const executingImpedingQty = Math.min(qRemaining, qImpedingL2);
       qRemaining -= executingImpedingQty;
 
       // Execute regular priority hypothetical orders.
 
-      console.log("ASDFASDF100: " + qRemaining)
       while (
         qRemaining > 0 &&
         !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel)
@@ -202,19 +200,15 @@ export class L2PGWorld extends World {
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
           order.execute(executingQty);
-          console.log("ASDFASDF200: " + order.id + " " + executingQty)
           if (order.bookType === BookType.PAPER) {
             this.paperFeed.publish(order);
           } else {
-            console.log("ASDFASDF201: " + order.remainingQty);
             this.ghostFeed.publish(order);
           }
           qRemaining -= executingQty;
         }
-        console.log("ASDFASDF400");
         nextOrder = orderIt.next();
       }
-      console.log("ASDFASDF500");
 
       // Execute non-impeding L2.
 
@@ -226,7 +220,6 @@ export class L2PGWorld extends World {
       const qUnexecutedL2 = qTraded - executingImpedingQty - executingNonImpedingQty;
 
       const impedimentFactor = this.impedimentFactorSupplier();
-      //console.log("ASDF500", qUnexecutedL2, qRemaining, impedimentFactor);
       const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
       const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
       
@@ -272,7 +265,6 @@ export class L2PGWorld extends World {
         }
         const qTraded = qTradedByPrice.get(pLevel) || 0;
         const impedimentFactor = this.impedimentFactorSupplier();
-        //console.log("ASDF700", qTraded, impedimentFactor);
         const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
         const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
         // TODO(P1): Factor out order ID generation.
@@ -283,7 +275,6 @@ export class L2PGWorld extends World {
         new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
         '_' +
         String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        //console.log("ASDF710", prioritizedGhostOrderId, prioritizedGhostQty);
         this.ghostFeed.publish(new Order(
           'limit',
           prioritizedGhostOrderId,
