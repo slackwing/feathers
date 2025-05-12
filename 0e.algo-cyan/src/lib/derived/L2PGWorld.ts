@@ -4,7 +4,7 @@ import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
 import { Trade } from '../base/Trade';
 import { World } from '../base/World';
-import { BatchedPubSub } from '../base/BatchedPubSub';
+import { BatchedPubSub } from '../infra/BatchedPubSub';
 import * as assert from 'assert';
 import { roundQuantity } from '../utils/number';
 
@@ -117,6 +117,7 @@ export class L2PGWorld extends World {
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+          console.log("ASDF100: executingQty = " + order.remainingQty);
           order.execute(order.remainingQty);
           // TODO(P2): Reconsider architecture.
           if (order.bookType === BookType.PAPER) {
@@ -154,7 +155,8 @@ export class L2PGWorld extends World {
         ) {
           const order = nextOrder.value;
           if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-            const executingQty = Math.min(qRemaining, order.remainingQty);
+              const executingQty = Math.min(qRemaining, order.remainingQty);
+              console.log("ASDF200: executingQty = " + executingQty);
             order.execute(executingQty);
             if (order.bookType === BookType.PAPER) {
               this.paperFeed.publish(order);
@@ -181,6 +183,7 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
+          console.log("ASDF300: executingQty = " + executingQty);
           order.execute(executingQty);
           if (order.bookType === BookType.PAPER) {
             this.paperFeed.publish(order);
@@ -208,6 +211,7 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
+          console.log("ASDF400: executingQty = " + executingQty);
           order.execute(executingQty);
           if (order.bookType === BookType.PAPER) {
             this.paperFeed.publish(order);

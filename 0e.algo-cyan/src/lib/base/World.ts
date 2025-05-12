@@ -2,7 +2,7 @@ import { Order } from '@/lib/base/Order';
 import { OrderBook } from '@/lib/base/OrderBook';
 import { PubSub } from '@/lib/infra/PubSub';
 import { Trade } from '@/lib/base/Trade';
-import { BatchedPubSub } from './BatchedPubSub';
+import { BatchedPubSub } from '../infra/BatchedPubSub';
 
 export class World {
   public combinedBook: OrderBook;

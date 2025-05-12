@@ -1,4 +1,5 @@
 import assert from "assert";
+import { Cloneable } from "../infra/Cloneable";
 
 export enum BookType {
   L2 = 'L2',
@@ -11,7 +12,7 @@ export enum Side {
   SELL = 'S',
 }
 
-export class Order {
+export class Order implements Cloneable<Order> {
   type: string;
   id: string;
   side: Side;
@@ -49,5 +50,11 @@ export class Order {
     assert.ok(quantity <= this.remainingQty, 'ASSERT: Quantity to execute must be less than or equal to remaining quantity.');
     console.log('Executing ', quantity, ' of ', this.id);
     this.remainingQty -= quantity;
+  }
+
+  public clone(): Order {
+    const cloned = new Order(this.type, this.id, this.side, this.price, this.quantity, this.timestamp, this.bookType);
+    cloned.remainingQty = this.remainingQty;
+    return cloned;
   }
 }

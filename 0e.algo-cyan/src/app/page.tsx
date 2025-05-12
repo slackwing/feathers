@@ -13,8 +13,9 @@ import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
 import { L2PGWorld, ReluctanceFactor } from '@/lib/derived/L2PGWorld';
-import { BatchedPubSub } from '@/lib/base/BatchedPubSub';
+import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
+import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -46,7 +47,7 @@ const Dashboard = () => {
     const tradeFeed = coinbaseAdapter.getTradeFeed();
     const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
-    const paperFeed = new PubSub<Order>();
+    const paperFeed = new BifurcatingPubSub<Order>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
     setSlowWorld(

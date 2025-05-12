@@ -1,7 +1,7 @@
 import { ABSOLUTE_PRIORITY_TIMESTAMP, L2PGWorld, ReluctanceFactor } from './L2PGWorld';
 import { L2OrderBook } from './L2OrderBook';
 import { PubSub } from '../infra/PubSub';
-import { BatchedPubSub } from '../base/BatchedPubSub';
+import { BatchedPubSub } from '../infra/BatchedPubSub';
 import { Order, Side, BookType } from '../base/Order';
 import { getBatchingFn, Trade } from '../base/Trade';
 
