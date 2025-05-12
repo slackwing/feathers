@@ -63,17 +63,29 @@ describe('BatchedPubSub', () => {
       expect(callback).not.toHaveBeenCalled();
     });
 
-    it('should use minimum timeout of 5ms', () => {
+    it('should handle maxTimeout of 0', () => {
       pubSub = new BatchedPubSub<Trade>(0);
       pubSub.subscribe(callback);
 
       pubSub.publish({ timestamp: 0, price: 100, potentialIceberg: false });
-
-      jest.advanceTimersByTime(3);
       expect(callback).not.toHaveBeenCalled();
+      
+      // Advance to next tick
+      jest.runAllTimers();
+      expect(callback).toHaveBeenCalledWith([
+        { timestamp: 0, price: 100, potentialIceberg: false },
+      ]);
+    });
 
-      jest.advanceTimersByTime(5);
-      expect(callback).toHaveBeenCalled();
+    it('should handle maxTimeout of -1', () => {
+      pubSub = new BatchedPubSub<Trade>(-1);
+      pubSub.subscribe(callback);
+
+      pubSub.publish({ timestamp: 0, price: 100, potentialIceberg: false });
+      pubSub.publish({ timestamp: 1, price: 101, potentialIceberg: false });
+      
+      jest.advanceTimersByTime(1000);
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 
