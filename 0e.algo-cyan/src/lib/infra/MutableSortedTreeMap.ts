@@ -30,7 +30,7 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     return this.map.size;
   }
 
-  set(key: string, value: T): void {
+  public set(key: string, value: T): void {
     if (this.map.has(key)) {
       this.map.set(key, value);
       this._updateValueInTree(key, value);
@@ -52,13 +52,22 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     }
   }
 
-  get(key: string): T | undefined {
+  public get(key: string): T | undefined {
     return this.map.get(key);
   }
 
-  remove(key: string): boolean {
+  public remove(key: string): boolean {
+    if (key === "GHOST-P") {
+      console.log("ASDF302: " + key);
+    }
     if (!this.map.has(key)) {
+      if (key === "GHOST-P") {
+        console.log("ASDF303", this.map);
+      }
       return false;
+    }
+    if (key === "GHOST-P") {
+      console.log("ASDF305: " + key);
     }
     const value = this.map.get(key)!;
     this.map.delete(key);
@@ -69,6 +78,9 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
 
   private _removeNodeOptimized(key: string): boolean {
     if (!this.nodeMap.has(key)) return false;
+    if (key === "GHOST-P") {
+      console.log("ASDF310: " + key);
+    }
     const nodeToRemove = this.nodeMap.get(key)!;
     const parent = nodeToRemove.parent;
     if (nodeToRemove.left && nodeToRemove.right) {

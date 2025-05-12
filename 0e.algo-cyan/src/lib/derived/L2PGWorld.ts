@@ -193,6 +193,7 @@ export class L2PGWorld extends World {
 
       // Execute regular priority hypothetical orders.
 
+      console.log("ASDFASDF100: " + qRemaining)
       while (
         qRemaining > 0 &&
         !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel)
@@ -201,15 +202,19 @@ export class L2PGWorld extends World {
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
           order.execute(executingQty);
+          console.log("ASDFASDF200: " + order.id + " " + executingQty)
           if (order.bookType === BookType.PAPER) {
             this.paperFeed.publish(order);
           } else {
+            console.log("ASDFASDF201: " + order.remainingQty);
             this.ghostFeed.publish(order);
           }
           qRemaining -= executingQty;
         }
+        console.log("ASDFASDF400");
         nextOrder = orderIt.next();
       }
+      console.log("ASDFASDF500");
 
       // Execute non-impeding L2.
 

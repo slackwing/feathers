@@ -185,4 +185,442 @@ describe('L2PGWorld', () => {
     expect(asks[6].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
     expect(asks[7]).toBe(paperF);
   });
+
+  it('should process a batch of trades of quantity 20.25', () => {
+
+    const additionalQty = 2.25;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(1.0);
+    expect(ghostP.remainingQty).toBe(3.0);
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(8);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.75);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1]).toBe(paperP);
+    expect(asks[2]).toBe(ghostP);
+    expect(asks[3].price).toBe(107);
+    expect(asks[3].quantity).toBe(1.30);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4].price).toBe(107);
+    expect(asks[4].quantity).toBe(1.95);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(ghostF);
+    expect(asks[6].price).toBe(108);
+    expect(asks[6].quantity).toBe(3);
+    expect(asks[6].bookType).toBe(BookType.GHOST);
+    expect(asks[6].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[7]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 20.5', () => {
+
+    const additionalQty = 2.5;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(1.0);
+    expect(ghostP.remainingQty).toBe(3.0);
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(8);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1]).toBe(paperP);
+    expect(asks[2]).toBe(ghostP);
+    expect(asks[3].price).toBe(107);
+    expect(asks[3].quantity).toBe(1.40);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4].price).toBe(107);
+    expect(asks[4].quantity).toBe(2.10);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(ghostF);
+    expect(asks[6].price).toBe(108);
+    expect(asks[6].quantity).toBe(3);
+    expect(asks[6].bookType).toBe(BookType.GHOST);
+    expect(asks[6].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[7]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 21', () => {
+
+    const additionalQty = 3.0;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.5); // Partially executed.
+    expect(ghostP.remainingQty).toBe(3.0);
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(8);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1]).toBe(paperP);
+    expect(asks[2]).toBe(ghostP);
+    expect(asks[3].price).toBe(107);
+    expect(asks[3].quantity).toBe(1.60);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4].price).toBe(107);
+    expect(asks[4].quantity).toBe(2.40);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(ghostF);
+    expect(asks[6].price).toBe(108);
+    expect(asks[6].quantity).toBe(3);
+    expect(asks[6].bookType).toBe(BookType.GHOST);
+    expect(asks[6].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[7]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 21.5', () => {
+
+    const additionalQty = 3.5;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(3.0);
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(7);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1]).toBe(ghostP);
+    expect(asks[2].price).toBe(107);
+    expect(asks[2].quantity).toBe(1.80);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3].price).toBe(107);
+    expect(asks[3].quantity).toBe(2.70);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4]).toBe(ghostF);
+    expect(asks[5].price).toBe(108);
+    expect(asks[5].quantity).toBe(3);
+    expect(asks[5].bookType).toBe(BookType.GHOST);
+    expect(asks[5].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[6]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 22.0', () => {
+
+    const additionalQty = 4.0;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(2.5); // Partially executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(7);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1]).toBe(ghostP);
+    expect(asks[2].price).toBe(107);
+    expect(asks[2].quantity).toBe(2.00);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3].price).toBe(107);
+    expect(asks[3].quantity).toBe(3.00);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4]).toBe(ghostF);
+    expect(asks[5].price).toBe(108);
+    expect(asks[5].quantity).toBe(3);
+    expect(asks[5].bookType).toBe(BookType.GHOST);
+    expect(asks[5].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[6]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 24.5', () => {
+
+    const additionalQty = 6.5;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(6);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1].price).toBe(107);
+    expect(asks[1].quantity).toBe(3.00);
+    expect(asks[1].bookType).toBe(BookType.GHOST);
+    expect(asks[1].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[2].price).toBe(107);
+    expect(asks[2].quantity).toBe(4.50);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3]).toBe(ghostF);
+    expect(asks[4].price).toBe(108);
+    expect(asks[4].quantity).toBe(3);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 25.0', () => {
+
+    const additionalQty = 7.0;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(6);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(1.0);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1].price).toBe(107);
+    expect(asks[1].quantity).toBe(3.20);
+    expect(asks[1].bookType).toBe(BookType.GHOST);
+    expect(asks[1].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[2].price).toBe(107);
+    expect(asks[2].quantity).toBe(4.80);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3]).toBe(ghostF);
+    expect(asks[4].price).toBe(108);
+    expect(asks[4].quantity).toBe(3);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 25.5', () => {
+
+    const additionalQty = 7.5;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(6);
+    expect(asks[0].price).toBe(104);
+    expect(asks[0].quantity).toBe(0.5);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1].price).toBe(107);
+    expect(asks[1].quantity).toBe(3.40);
+    expect(asks[1].bookType).toBe(BookType.GHOST);
+    expect(asks[1].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[2].price).toBe(107);
+    expect(asks[2].quantity).toBe(5.10);
+    expect(asks[2].bookType).toBe(BookType.GHOST);
+    expect(asks[2].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[3]).toBe(ghostF);
+    expect(asks[4].price).toBe(108);
+    expect(asks[4].quantity).toBe(3);
+    expect(asks[4].bookType).toBe(BookType.GHOST);
+    expect(asks[4].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[5]).toBe(paperF);
+  });
+
+  it('should process a batch of trades of quantity 26.0', () => {
+
+    const additionalQty = 8.0;
+    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+
+    batchedTradeFeed.publish(trade100);
+    batchedTradeFeed.publish(trade102a);
+    batchedTradeFeed.publish(trade102b);
+    batchedTradeFeed.publish(trade103a);
+    batchedTradeFeed.publish(trade103b);
+    batchedTradeFeed.publish(trade104a);
+    batchedTradeFeed.publish(trade104b);
+    batchedTradeFeed.publish(trade107);
+    batchedTradeFeed.publish(trade108a);
+    batchedTradeFeed.publish(trade108b);
+    batchedTradeFeed.publish(trade99);
+
+    console.log(ghostP);
+
+    expect(paperX.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostM.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghost0.remainingQty).toBe(0.0); // Fully executed.
+    expect(paperP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostP.remainingQty).toBe(0.0); // Fully executed.
+    expect(ghostF.remainingQty).toBe(1.0);
+    expect(paperF.remainingQty).toBe(1.0);
+
+    const asks = world.combinedBook.getAsksUntil(110);
+
+    expect(asks.length).toBe(5);
+    expect(asks[0].price).toBe(107);
+    expect(asks[0].quantity).toBe(3.60);
+    expect(asks[0].bookType).toBe(BookType.GHOST);
+    expect(asks[0].timestamp).toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[1].price).toBe(107);
+    expect(asks[1].quantity).toBe(5.40);
+    expect(asks[1].bookType).toBe(BookType.GHOST);
+    expect(asks[1].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[2]).toBe(ghostF);
+    expect(asks[3].price).toBe(108);
+    expect(asks[3].quantity).toBe(3);
+    expect(asks[3].bookType).toBe(BookType.GHOST);
+    expect(asks[3].timestamp).not.toBe(ABSOLUTE_PRIORITY_TIMESTAMP);
+    expect(asks[4]).toBe(paperF);
+  });
 }); 
