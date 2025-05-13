@@ -24,9 +24,6 @@ export class OrderBook implements Organizer<Order> {
   // TODO(P2): Oh, wait. The self-organization calls reorganize() above which calls this.
   protected upsertOrderById = (order: Order): void => {
     order.addOrganizer(this);
-    if (order.bookType === BookType.PAPER) {
-      console.log("ASDF050: ", order);
-    }
     if (order.side === Side.BUY) {
       this.bids.upsertOrder(order);
     } else {
