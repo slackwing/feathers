@@ -9,7 +9,7 @@ export class L2OrderBook extends OrderBook {
   constructor(l2OrderFeed: PubSub<Order>) {
     super(l2OrderFeed);
     this.singleSource = l2OrderFeed;
-    this.singleSource.subscribe(this.onOrder);
+    this.singleSource.subscribe(this.upsertOrderById);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

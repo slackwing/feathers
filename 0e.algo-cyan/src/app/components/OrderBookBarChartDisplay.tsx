@@ -52,13 +52,13 @@ export default function OrderBookBarChartDisplay({
       if (bucket) {
         switch (order.bookType) {
           case BookType.L2:
-            bucket.l2Volume += order.quantity;
+            bucket.l2Volume += order.remainingQty;
             break;
           case BookType.PAPER:
-            bucket.paperVolume += order.quantity;
+            bucket.paperVolume += order.remainingQty;
             break;
           case BookType.GHOST:
-            bucket.ghostVolume += order.quantity;
+            bucket.ghostVolume += order.remainingQty;
             break;
         }
       }
@@ -73,13 +73,13 @@ export default function OrderBookBarChartDisplay({
       if (bucket) {
         switch (order.bookType) {
           case BookType.L2:
-            bucket.l2Volume += order.quantity;
+            bucket.l2Volume += order.remainingQty;
             break;
           case BookType.PAPER:
-            bucket.paperVolume += order.quantity;
+            bucket.paperVolume += order.remainingQty;
             break;
           case BookType.GHOST:
-            bucket.ghostVolume += order.quantity;
+            bucket.ghostVolume += order.remainingQty;
             break;
         }
       }

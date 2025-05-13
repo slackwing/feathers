@@ -1,8 +1,10 @@
 import { OrderPriceTimePriorityTree } from './OrderPriceTimePriorityTree';
-import { Order, Side } from './Order';
+import { BookType, Order, Side } from './Order';
 import { PubSub } from '../infra/PubSub';
+import { SelfOrganizing } from '../infra/SelfOrganizing';
+import { Organizer } from '../infra/Organizer';
 
-export class OrderBook {
+export class OrderBook implements Organizer<Order> {
   protected bids: OrderPriceTimePriorityTree;
   protected asks: OrderPriceTimePriorityTree;
 
@@ -12,7 +14,19 @@ export class OrderBook {
     pubsubs.forEach((pubsub) => this.subscribe(pubsub));
   }
 
-  protected onOrder = (order: Order): void => {
+  public reorganize(order: Order): void {
+    this.upsertOrderById(order);
+  }
+
+  // TODO(P2): Architectural ambiguity. This inserts a new Order instance, even for an update.
+  // TODO(P2): This might only be appropriate for new orders and L2 updates.
+  // TODO(P2): Actual updates should occur through the Order object itself, which self-organizes.
+  // TODO(P2): Oh, wait. The self-organization calls reorganize() above which calls this.
+  protected upsertOrderById = (order: Order): void => {
+    order.addOrganizer(this);
+    if (order.bookType === BookType.PAPER) {
+      console.log("ASDF050: ", order);
+    }
     if (order.side === Side.BUY) {
       this.bids.upsertOrder(order);
     } else {
@@ -21,7 +35,7 @@ export class OrderBook {
   };
 
   public subscribe(pubsub: PubSub<Order>): void {
-    pubsub.subscribe(this.onOrder);
+    pubsub.subscribe(this.upsertOrderById);
   }
 
   public getTopBids(n: number): Order[] {

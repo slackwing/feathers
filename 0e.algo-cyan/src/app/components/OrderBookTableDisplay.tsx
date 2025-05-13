@@ -30,7 +30,7 @@ export default function OrderBookTableDisplay({
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
                 <span className={styles.quantity}>
                   {isPaperOrder ? (
-                    <span style={{ color: '#28a745' }}>{order.quantity.toFixed(8)}</span>
+                    <span style={{ color: '#28a745' }}>{order.remainingQty.toFixed(8)}</span>
                   ) : (
                     order.quantity.toFixed(8)
                   )}
@@ -54,7 +54,7 @@ export default function OrderBookTableDisplay({
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
                 <span className={styles.quantity}>
                   {isPaperOrder ? (
-                    <span style={{ color: '#dc3545' }}>{order.quantity.toFixed(8)}</span>
+                    <span style={{ color: '#dc3545' }}>{order.remainingQty.toFixed(8)}</span>
                   ) : (
                     order.quantity.toFixed(8)
                   )}

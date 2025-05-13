@@ -26,7 +26,7 @@ export class OrderPriceTimePriorityTree implements Iterable<Order> {
 
   upsertOrder(order: Order): void {
     const start = performance.now();
-    if (order.remainingQty === 0) {
+    if (order.remainingQty <= 0) {
       this.orders.remove(order.id);
     } else {
       this.orders.set(order.id, order);

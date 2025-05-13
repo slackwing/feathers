@@ -21,7 +21,6 @@ export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 export class L2PGWorld extends World {
   private l2: L2OrderBook;
   private paper: OrderBook;
-  private paperFeed: PubSub<Order>;
   private ghost: OrderBook;
   private ghostFeed: PubSub<Order>;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
@@ -36,7 +35,6 @@ export class L2PGWorld extends World {
     super();
     this.l2 = l2OrderBook;
     this.paper = new OrderBook(paperFeed);
-    this.paperFeed = paperFeed;
     this.ghostFeed = new PubSub<Order>();
     this.ghost = new OrderBook(this.ghostFeed);
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
@@ -117,14 +115,7 @@ export class L2PGWorld extends World {
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-          console.log("ASDF100: executingQty = " + order.remainingQty);
           order.execute(order.remainingQty);
-          // TODO(P2): Reconsider architecture.
-          if (order.bookType === BookType.PAPER) {
-            this.paperFeed.publish(order);
-          } else {
-            this.ghostFeed.publish(order);
-          }
         }
         nextOrder = orderIt.next();
       }
@@ -155,14 +146,8 @@ export class L2PGWorld extends World {
         ) {
           const order = nextOrder.value;
           if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-              const executingQty = Math.min(qRemaining, order.remainingQty);
-              console.log("ASDF200: executingQty = " + executingQty);
+            const executingQty = Math.min(qRemaining, order.remainingQty);
             order.execute(executingQty);
-            if (order.bookType === BookType.PAPER) {
-              this.paperFeed.publish(order);
-            } else {
-              this.ghostFeed.publish(order);
-            }
             qRemaining -= executingQty;
             qOrders -= executingQty;
           }
@@ -183,13 +168,7 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          console.log("ASDF300: executingQty = " + executingQty);
           order.execute(executingQty);
-          if (order.bookType === BookType.PAPER) {
-            this.paperFeed.publish(order);
-          } else {
-            this.ghostFeed.publish(order);
-          }
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
@@ -211,13 +190,7 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          console.log("ASDF400: executingQty = " + executingQty);
           order.execute(executingQty);
-          if (order.bookType === BookType.PAPER) {
-            this.paperFeed.publish(order);
-          } else {
-            this.ghostFeed.publish(order);
-          }
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
