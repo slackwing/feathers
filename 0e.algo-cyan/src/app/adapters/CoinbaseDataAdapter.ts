@@ -1,27 +1,35 @@
 import { PubSub } from '@/lib/infra/PubSub';
-import { Order, Side, BookType } from '@/lib/base/Order';
+import { Order, Side, OrderType, ExchangeType } from '@/lib/base/Order';
 import { Trade } from '@/lib/base/Trade';
-
+import { Asset, AssetPair } from '@/lib/base/Asset';
+import { Account, NullAccount } from '@/lib/base/Account';
 export class CoinbaseDataAdapter {
   private orderFeed: PubSub<Order>;
   private tradeFeed: PubSub<Trade>;
+  private nullAccount: Account;
+  private assetPair: AssetPair; // TODO(P1): Currently hardcoded to BTC-USD.
 
   constructor() {
     this.orderFeed = new PubSub<Order>();
     this.tradeFeed = new PubSub<Trade>();
+    this.nullAccount = new NullAccount();
+    this.assetPair = new AssetPair(Asset.BTC, Asset.USD);
   }
 
   onMessage(data: any) {
     if (data.channel === 'l2_data') {
       const event = data.events[0];
       event.updates.forEach((update: any) => {
-        const price = parseFloat(update.price_level);
-        const quantity = parseFloat(update.new_quantity);
-        const side = update.side === 'bid' ? Side.BUY : Side.SELL;
-        const priceStr = price.toLocaleString('fullwide', { useGrouping: false });
-        const id = 'L2' + side + '-' + priceStr;
-
-        const order = new Order('limit', id, side, price, quantity, data.timestamp, BookType.L2);
+        const order = new Order(
+          this.nullAccount,
+          OrderType.L2,
+          ExchangeType.LIMIT,
+          this.assetPair,
+          update.side === 'bid' ? Side.BUY : Side.SELL,
+          parseFloat(update.price_level),
+          parseFloat(update.new_quantity),
+          data.timestamp
+        );
         this.orderFeed.publish(order);
       });
     } else if (data.channel === 'market_trades') {

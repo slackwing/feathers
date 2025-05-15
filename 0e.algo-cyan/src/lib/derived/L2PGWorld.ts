@@ -1,5 +1,5 @@
 import { L2OrderBook } from './L2OrderBook';
-import { BookType, Order, Side } from '../base/Order';
+import { OrderType, Order, Side, ABSOLUTE_PRIORITY_TIMESTAMP, ExchangeType } from '../base/Order';
 import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
 import { Trade } from '../base/Trade';
@@ -7,6 +7,9 @@ import { World } from '../base/World';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import * as assert from 'assert';
 import { roundQuantity } from '../utils/number';
+import { Execution } from '../base/Execution';
+import { Asset, AssetPair } from '../base/Asset';
+import { Account, InfiniteAccount } from '../base/Account';
 
 export enum ReluctanceFactor {
   RELUCTANT,
@@ -16,33 +19,41 @@ export enum ReluctanceFactor {
   MIDPOINT_LIMITED,
 }
 
-export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
-
 export class L2PGWorld extends World {
   private l2: L2OrderBook;
-  private paper: OrderBook;
-  private ghost: OrderBook;
+  private paperBook: OrderBook;
+  private ghostBook: OrderBook;
   private ghostFeed: PubSub<Order>;
+  private executionFeed: PubSub<Execution>;
+  private paperAccount: Account;
+  private ghostAccount: Account;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
   private impedimentFactorSupplier: () => number;
+  readonly assetPair: AssetPair;
   constructor(
     l2OrderBook: L2OrderBook,
     paperFeed: PubSub<Order>,
     batchedTradeFeed: BatchedPubSub<Trade>,
+    paperAccount: Account,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
     super();
     this.l2 = l2OrderBook;
-    this.paper = new OrderBook(paperFeed);
+    this.paperBook = new OrderBook(paperFeed);
     this.ghostFeed = new PubSub<Order>();
-    this.ghost = new OrderBook(this.ghostFeed);
+    this.ghostBook = new OrderBook(this.ghostFeed);
+    this.executionFeed = new PubSub<Execution>();
+    this.paperAccount = paperAccount;
+    this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
     this.impedimentFactorSupplier = impedimentFactorSupplier;
     this.subscribeToOrderFeed(l2OrderBook.singleSource);
     this.subscribeToOrderFeed(paperFeed);
     this.subscribeToOrderFeed(this.ghostFeed);
     this.subscribeToBatchedTradeFeed(batchedTradeFeed);
+    // TODO(P1): Currently hardcoded to BTC-USD.
+    this.assetPair = new AssetPair(Asset.BTC, Asset.USD);
   }
 
   protected onTrade = (trade: Trade): void => {
@@ -94,7 +105,7 @@ export class L2PGWorld extends World {
     let hypotheticalOrderFound = false;
     let qOrdersByPrice = new Map<number, number>();
     for (const order of orders) {
-      if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+      if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
         hypotheticalOrderFound = true;
         qOrdersByPrice.set(order.price, (qOrdersByPrice.get(order.price) || 0) + order.remainingQty);
       }
@@ -114,8 +125,9 @@ export class L2PGWorld extends World {
       // NOTE: Check insideOrEqual() because once supporting AGGRESSIVE_BOUNDED there will be orders even farther out.
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
-        if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
-          order.execute(order.remainingQty);
+        if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
+          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, order.remainingQty, Date.now());
+          execution.execute();
         }
         nextOrder = orderIt.next();
       }
@@ -145,9 +157,10 @@ export class L2PGWorld extends World {
           !nextOrder.done && insideOrEqual(nextOrder.value.price, pLevel)
         ) {
           const order = nextOrder.value;
-          if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+          if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
             const executingQty = Math.min(qRemaining, order.remainingQty);
-            order.execute(executingQty);
+            const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+            execution.execute();
             qRemaining -= executingQty;
             qOrders -= executingQty;
           }
@@ -166,9 +179,10 @@ export class L2PGWorld extends World {
         nextOrder.value.timestamp == ABSOLUTE_PRIORITY_TIMESTAMP
       ) {
         const order = nextOrder.value;
-        if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+        if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          order.execute(executingQty);
+          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+          execution.execute();
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
@@ -188,9 +202,10 @@ export class L2PGWorld extends World {
         !nextOrder.done && insideOrEqual(nextOrder.value.price, pFinalLevel)
       ) {
         const order = nextOrder.value;
-        if (order.bookType === BookType.PAPER || order.bookType === BookType.GHOST) {
+        if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          order.execute(executingQty);
+          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+          execution.execute();
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
@@ -209,38 +224,26 @@ export class L2PGWorld extends World {
       const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
       const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
       
-      // TODO(P1): Factor out order ID generation.
-      const prioritizedGhostOrderId =
-      'G0' +
-      side +
-      '-' +
-      new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
-      '_' +
-      String(Math.floor(Math.random() * 1000)).padStart(3, '0');
       this.ghostFeed.publish(new Order(
-        'limit',
-        prioritizedGhostOrderId,
+        this.ghostAccount,
+        OrderType.GHOST,
+        ExchangeType.LIMIT,
+        this.assetPair,
         side,
         pFinalLevel,
         prioritizedGhostQty,
-        ABSOLUTE_PRIORITY_TIMESTAMP,
-        BookType.GHOST
+        ABSOLUTE_PRIORITY_TIMESTAMP
       ));
-      const normalGhostOrderId =
-      'GN' +
-      side +
-      '-' +
-      new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
-      '_' +
-      String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      
       this.ghostFeed.publish(new Order(
-        'limit',
-        normalGhostOrderId,
+        this.ghostAccount,
+        OrderType.GHOST,
+        ExchangeType.LIMIT,
+        this.assetPair,
         side,
         pFinalLevel,
         normalGhostQty,
-        Date.now(),
-        BookType.GHOST
+        Date.now()
       ));
 
       // Create ghost orders for remaining untouched price levels.
@@ -253,38 +256,27 @@ export class L2PGWorld extends World {
         const impedimentFactor = this.impedimentFactorSupplier();
         const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
         const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
-        // TODO(P1): Factor out order ID generation.
-        const prioritizedGhostOrderId =
-        'G0' +
-        side +
-        '-' +
-        new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
-        '_' +
-        String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      
         this.ghostFeed.publish(new Order(
-          'limit',
-          prioritizedGhostOrderId,
+          this.ghostAccount,
+          OrderType.GHOST,
+          ExchangeType.LIMIT,
+          this.assetPair,
           side,
-          pLevel,
+          pFinalLevel,
           prioritizedGhostQty,
-          ABSOLUTE_PRIORITY_TIMESTAMP,
-          BookType.GHOST
+          ABSOLUTE_PRIORITY_TIMESTAMP
         ));
-        const normalGhostOrderId =
-        'GN' +
-        side +
-        '-' +
-        new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
-        '_' +
-        String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        
         this.ghostFeed.publish(new Order(
-          'limit',
-          normalGhostOrderId,
+          this.ghostAccount,
+          OrderType.GHOST,
+          ExchangeType.LIMIT,
+          this.assetPair,
           side,
-          pLevel,
+          pFinalLevel,
           normalGhostQty,
-          Date.now(),
-          BookType.GHOST
+          Date.now()
         ));
       }
     }

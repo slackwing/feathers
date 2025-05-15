@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
-import { BookType } from '@/lib/base/Order';
+import { OrderType } from '@/lib/base/Order';
 
 const X_BUCKET_WIDTH_USD = 1;
 const X_BUCKETS_PER_SIDE = 100;
@@ -50,14 +50,14 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = bidBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.bookType) {
-          case BookType.L2:
+        switch (order.type) {
+          case OrderType.L2:
             bucket.l2Volume += order.remainingQty;
             break;
-          case BookType.PAPER:
+          case OrderType.PAPER:
             bucket.paperVolume += order.remainingQty;
             break;
-          case BookType.GHOST:
+          case OrderType.GHOST:
             bucket.ghostVolume += order.remainingQty;
             break;
         }
@@ -71,14 +71,14 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = askBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.bookType) {
-          case BookType.L2:
+        switch (order.type) {
+          case OrderType.L2:
             bucket.l2Volume += order.remainingQty;
             break;
-          case BookType.PAPER:
+          case OrderType.PAPER:
             bucket.paperVolume += order.remainingQty;
             break;
-          case BookType.GHOST:
+          case OrderType.GHOST:
             bucket.ghostVolume += order.remainingQty;
             break;
         }

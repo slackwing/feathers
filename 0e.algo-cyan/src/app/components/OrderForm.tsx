@@ -1,13 +1,17 @@
 import React from 'react';
 import styles from '../page.module.css';
-import { Side, Order, BookType } from '@/lib/base/Order';
+import { Side, Order, OrderType, ExchangeType } from '@/lib/base/Order';
+import { Account } from '@/lib/base/Account';
+import { AssetPair } from '@/lib/base/Asset';
 
 interface OrderFormProps {
+  account: Account;
+  assetPair: AssetPair;
   side: Side;
   onSubmit: (order: Order) => void;
 }
 
-export default function OrderForm({ side, onSubmit }: OrderFormProps) {
+export default function OrderForm({ account, assetPair, side, onSubmit }: OrderFormProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -27,7 +31,7 @@ export default function OrderForm({ side, onSubmit }: OrderFormProps) {
       new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
       '_' +
       String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    const order = new Order('limit', orderId, side, price, amount, Date.now(), BookType.PAPER);
+    const order = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, assetPair, side, price, amount, Date.now());
     onSubmit(order);
   };
 

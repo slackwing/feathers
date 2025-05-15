@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
-import { BookType } from '@/lib/base/Order';
+import { OrderType } from '@/lib/base/Order';
 
 export default function OrderBookTableDisplay({
   orderBook,
@@ -24,7 +24,7 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {bids.map((order) => {
-            const isPaperOrder = order.bookType === BookType.PAPER;
+            const isPaperOrder = order.type === OrderType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
@@ -48,7 +48,7 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {asks.map((order) => {
-            const isPaperOrder = order.bookType === BookType.PAPER;
+            const isPaperOrder = order.type === OrderType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>

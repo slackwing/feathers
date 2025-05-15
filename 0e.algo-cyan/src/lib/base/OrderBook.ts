@@ -1,5 +1,5 @@
 import { OrderPriceTimePriorityTree } from './OrderPriceTimePriorityTree';
-import { BookType, Order, Side } from './Order';
+import { OrderType, Order, Side } from './Order';
 import { PubSub } from '../infra/PubSub';
 import { SelfOrganizing } from '../infra/SelfOrganizing';
 import { Organizer } from '../infra/Organizer';

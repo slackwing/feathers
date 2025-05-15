@@ -16,6 +16,8 @@ import { L2PGWorld, ReluctanceFactor } from '@/lib/derived/L2PGWorld';
 import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
+import { Account, InfiniteWallet, Wallet } from '@/lib/base/Account';
+import { Asset, AssetPair, Funds } from '@/lib/base/Asset';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -25,6 +27,8 @@ const Dashboard = () => {
   const [fastWorld, setFastWorld] = React.useState<L2PGWorld | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
+  const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
+  const [assetPair] = React.useState(new AssetPair(Asset.BTC, Asset.USD));
 
   function publishTradeBatchOnTimestampOrDirectionChangeFn() {
     let lastPrice: number | null = null;
@@ -50,11 +54,18 @@ const Dashboard = () => {
     const paperFeed = new BifurcatingPubSub<Order>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(l2OrderFeed);
+    const paperAccount = new Account('paper', 'Paper Account');
+    const paperWallet = new Wallet('paper', 'Paper Wallet');
+    paperAccount.addWallet(paperWallet);
+    paperWallet.depositAsset(new Funds(Asset.USD, 1000000000));
+    paperWallet.depositAsset(new Funds(Asset.BTC, 1000));
+    setPaperAccount(paperAccount);
     setSlowWorld(
       new L2PGWorld(
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,
+        paperAccount,
         () => ReluctanceFactor.RELUCTANT,
         () => 1.0
       )
@@ -64,6 +75,7 @@ const Dashboard = () => {
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,
+        paperAccount,
         () => ReluctanceFactor.AGGRESSIVE_LIMITED,
         () => 0.0
       )
@@ -126,7 +138,7 @@ const Dashboard = () => {
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>
           <h3>Buy BTC</h3>
-          <OrderForm side={Side.BUY} onSubmit={handleOrderSubmit} />
+          {paperAccount && <OrderForm account={paperAccount} assetPair={assetPair} side={Side.BUY} onSubmit={handleOrderSubmit} />}
         </div>
         <div className={`${styles.orderPanel} ${styles.trades}`}>
           <div className={styles.plSection}>
@@ -148,7 +160,7 @@ const Dashboard = () => {
         </div>
         <div className={`${styles.orderPanel} ${styles.sell}`}>
           <h3>Sell BTC</h3>
-          <OrderForm side={Side.SELL} onSubmit={handleOrderSubmit} />
+          {paperAccount && <OrderForm account={paperAccount} assetPair={assetPair} side={Side.SELL} onSubmit={handleOrderSubmit} />}
         </div>
       </div>
       {slowWorld ? (

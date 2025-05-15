@@ -2,11 +2,19 @@ import assert from "assert";
 import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
+import { AssetPair } from "./Asset";
+import { Execution, ExecutionStatus } from "./Execution";
+import { Account } from "./Account";
 
-export enum BookType {
+export enum OrderType {
   L2 = 'L2',
   PAPER = 'PAPER',
   GHOST = 'GHOST',
+}
+
+export enum ExchangeType {
+  LIMIT = 'LIMIT',
+  MARKET = 'MARKET',
 }
 
 export enum Side {
@@ -14,35 +22,80 @@ export enum Side {
   SELL = 'S',
 }
 
+export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
+
+export function toBase34Max39304(num: number): string {
+  const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Skips I and O
+  const base = chars.length;
+  const maxValue = Math.pow(base, 3);
+  if (num < 0) throw new Error('Number must be non-negative');
+  let n = num % maxValue;
+  let result = '';
+  while (result.length < 3) {
+    result = chars[n % base] + result;
+    n = Math.floor(n / base);
+  }
+  return result;
+}
+
 export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cloneable<Order> {
-  readonly type: string;
+  readonly id: string;
+  readonly account: Account
+  readonly type: OrderType;
+  readonly exchangeType: ExchangeType;
+  readonly assetPair: AssetPair;
   readonly side: Side;
-  readonly bookType: BookType;
-  private _id: string;
   private _price: number;
   private _quantity: number;
   private _timestamp: number;
   private _remainingQty: number;
+  private _executions: Set<Execution>;
 
   constructor(
-    type: string,
-    id: string,
+    account: Account,
+    type: OrderType,
+    exchangeType: ExchangeType,
+    assetPair: AssetPair,
     side: Side,
     price: number,
     quantity: number,
     timestamp: number,
-    bookType: BookType
   ) {
     super();
+    this.id = this.generateId(type, side, price, timestamp);
+    this.account = account;
     this.type = type;
-    this._id = id;
+    this.exchangeType = exchangeType;
+    this.assetPair = assetPair;
     this.side = side;
     this._price = price;
     this._quantity = quantity;
     this._timestamp = timestamp;
     this._remainingQty = quantity;
-    this.bookType = bookType; // TODO(P3): Not sure if meaningful.
+    this._executions = new Set<Execution>();
   }
+
+  private generateId = (() => {
+    let globalCounter = 0;
+    return (type: OrderType, side: Side, price: number, timestamp: number): string => {
+      if (type === OrderType.L2) {
+        const priceStr = price.toLocaleString('fullwide', { useGrouping: false });
+        return `L2-${side}-${priceStr}`;
+      } else if (type === OrderType.PAPER) {
+        const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'P';
+        const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+        const counterStr = toBase34Max39304(globalCounter++);
+        return `P${priorityStr}${side}-${dateStr}-${counterStr}`;
+      } else if (type === OrderType.GHOST) {
+        const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'H';
+        const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+        const counterStr = toBase34Max39304(globalCounter++);
+        return `G${priorityStr}${side}-${dateStr}-${counterStr}`;
+      } else {
+        assert.fail('Invalid order type.');
+      }
+    };
+  })();
 
   get remainingQty(): number { return this._remainingQty; }
   set remainingQty(value: number) {
@@ -51,14 +104,6 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
       if (this._remainingQty <= 0) {
         this.selfOrganize(this);
       }
-    }
-  }
-
-  get id(): string { return this._id; }
-  set id(value: string) {
-    if (this._id !== value) {
-      this._id = value;
-      this.selfOrganize(this);
     }
   }
 
@@ -91,15 +136,35 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     return Math.max(0, this.quantity - this.remainingQty);
   }
 
-  public execute(quantity: number): void {
-    assert.ok(quantity > 0, 'ASSERT: Quantity to execute must be positive.');
-    assert.ok(quantity <= this.remainingQty, 'ASSERT: Quantity to execute must be less than or equal to remaining quantity.');
-    console.log('Executing ', quantity, ' of ', this.id);
-    this.remainingQty = this._remainingQty - quantity;
+  public executed(execution: Execution): void {
+    if (this.side === Side.BUY) {
+      assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
+    } else {
+      assert.ok(this === execution.sellOrder, 'ASSERT: Non-matching sell order and execution.');
+    }
+    assert.ok(execution.status === ExecutionStatus.COMPLETED, 'ASSERT: Execution must be completed.');
+    assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
+    this.remainingQty = this._remainingQty - execution.executionQty;
+    this._executions.add(execution);
   }
 
   public clone(): Order {
-    const cloned = new Order(this.type, this.id, this.side, this.price, this.quantity, this.timestamp, this.bookType);
+    const cloned = new Order(this.account, this.type, this.exchangeType, this.assetPair, this.side, this.price, this.quantity, this.timestamp);
+    cloned.remainingQty = this.remainingQty;
+    return cloned;
+  }
+
+public mirroring(account: Account): Order {
+    const cloned = new Order(
+      account,
+      this.type,
+      this.exchangeType,
+      this.assetPair,
+      this.side === Side.BUY ? Side.SELL : Side.BUY,
+      this.price,
+      this.quantity,
+      this.timestamp
+    );
     cloned.remainingQty = this.remainingQty;
     return cloned;
   }
