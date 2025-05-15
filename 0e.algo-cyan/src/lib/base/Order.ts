@@ -1,7 +1,7 @@
 import assert from "assert";
 import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
-import { OrderBook } from "./OrderBook";
+import { Organizer } from "../infra/Organizer";
 
 export enum BookType {
   L2 = 'L2',
@@ -14,7 +14,7 @@ export enum Side {
   SELL = 'S',
 }
 
-export class Order extends SelfOrganizing<Order, OrderBook> implements Cloneable<Order> {
+export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cloneable<Order> {
   readonly type: string;
   readonly side: Side;
   readonly bookType: BookType;
