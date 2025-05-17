@@ -1,18 +1,20 @@
 import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
-import { BookType } from '@/lib/base/Order';
+import { OrderType } from '@/lib/base/Order';
 
 const X_BUCKET_WIDTH_USD = 1;
 const X_BUCKETS_PER_SIDE = 100;
 const MIN_Y_HEIGHT_VOLUME = 0.1;
 
 export default function OrderBookBarChartDisplay({
-    orderBook,
-    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-    lastRefreshed
-}: { orderBook: OrderBookType, lastRefreshed: number }) {
-
+  orderBook,
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  lastRefreshed,
+}: {
+  orderBook: OrderBookType;
+  lastRefreshed: number;
+}) {
   const insideBid = orderBook.getTopBids(1).at(0);
   const insideAsk = orderBook.getTopAsks(1).at(0);
 
@@ -30,13 +32,15 @@ export default function OrderBookBarChartDisplay({
 
   const bidBuckets = new Map();
   for (let i = 0; i < X_BUCKETS_PER_SIDE; i++) {
-    const bucketPrice = Math.floor(bestBid / X_BUCKET_WIDTH_USD) * X_BUCKET_WIDTH_USD - (i * X_BUCKET_WIDTH_USD);
+    const bucketPrice =
+      Math.floor(bestBid / X_BUCKET_WIDTH_USD) * X_BUCKET_WIDTH_USD - i * X_BUCKET_WIDTH_USD;
     bidBuckets.set(i, { price: bucketPrice, l2Volume: 0, paperVolume: 0, ghostVolume: 0 });
   }
 
   const askBuckets = new Map();
   for (let i = 0; i < X_BUCKETS_PER_SIDE; i++) {
-    const bucketPrice = Math.floor(bestAsk / X_BUCKET_WIDTH_USD) * X_BUCKET_WIDTH_USD + (i * X_BUCKET_WIDTH_USD);
+    const bucketPrice =
+      Math.floor(bestAsk / X_BUCKET_WIDTH_USD) * X_BUCKET_WIDTH_USD + i * X_BUCKET_WIDTH_USD;
     askBuckets.set(i, { price: bucketPrice, l2Volume: 0, paperVolume: 0, ghostVolume: 0 });
   }
 
@@ -46,15 +50,15 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = bidBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.book_type) {
-          case BookType.L2:
-            bucket.l2Volume += order.quantity;
+        switch (order.type) {
+          case OrderType.L2:
+            bucket.l2Volume += order.remainingQty;
             break;
-          case BookType.PAPER:
-            bucket.paperVolume += order.quantity;
+          case OrderType.PAPER:
+            bucket.paperVolume += order.remainingQty;
             break;
-          case BookType.GHOST:
-            bucket.ghostVolume += order.quantity;
+          case OrderType.GHOST:
+            bucket.ghostVolume += order.remainingQty;
             break;
         }
       }
@@ -67,15 +71,15 @@ export default function OrderBookBarChartDisplay({
     if (bucketIndex >= 0) {
       const bucket = askBuckets.get(bucketIndex);
       if (bucket) {
-        switch (order.book_type) {
-          case BookType.L2:
-            bucket.l2Volume += order.quantity;
+        switch (order.type) {
+          case OrderType.L2:
+            bucket.l2Volume += order.remainingQty;
             break;
-          case BookType.PAPER:
-            bucket.paperVolume += order.quantity;
+          case OrderType.PAPER:
+            bucket.paperVolume += order.remainingQty;
             break;
-          case BookType.GHOST:
-            bucket.ghostVolume += order.quantity;
+          case OrderType.GHOST:
+            bucket.ghostVolume += order.remainingQty;
             break;
         }
       }
@@ -83,10 +87,10 @@ export default function OrderBookBarChartDisplay({
   }
 
   let maxVolume = MIN_Y_HEIGHT_VOLUME;
-  bidBuckets.forEach(bucket => {
+  bidBuckets.forEach((bucket) => {
     maxVolume = Math.max(maxVolume, bucket.l2Volume + bucket.paperVolume + bucket.ghostVolume);
   });
-  askBuckets.forEach(bucket => {
+  askBuckets.forEach((bucket) => {
     maxVolume = Math.max(maxVolume, bucket.l2Volume + bucket.paperVolume + bucket.ghostVolume);
   });
 
@@ -96,32 +100,62 @@ export default function OrderBookBarChartDisplay({
       <div className={styles.visualization}>
         <div className={styles.volumeBars}>
           <div className={styles.bidsBars}>
-            {Array.from(bidBuckets.entries()).map(([index, { l2Volume, paperVolume, ghostVolume }]) => {
-              const l2Height = (l2Volume / maxVolume) * 100;
-              const paperHeight = (paperVolume / maxVolume) * 100;
-              const ghostHeight = (ghostVolume / maxVolume) * 100;
-              return (
-                <div key={index} className={styles.barContainer}>
-                  <div className={`${styles.bar} ${styles.bidBar}`} style={{ height: `${l2Height}%` }} />
-                  {ghostVolume > 0 && <div className={`${styles.bar} ${styles.ghostBar}`} style={{ height: `${ghostHeight}%` }} />}
-                  {paperVolume > 0 && <div className={`${styles.bar} ${styles.paperBar}`} style={{ height: `${paperHeight}%` }} />}
-                </div>
-              );
-            })}
+            {Array.from(bidBuckets.entries()).map(
+              ([index, { l2Volume, paperVolume, ghostVolume }]) => {
+                const l2Height = (l2Volume / maxVolume) * 100;
+                const paperHeight = (paperVolume / maxVolume) * 100;
+                const ghostHeight = (ghostVolume / maxVolume) * 100;
+                return (
+                  <div key={index} className={styles.barContainer}>
+                    <div
+                      className={`${styles.bar} ${styles.bidBar}`}
+                      style={{ height: `${l2Height}%` }}
+                    />
+                    {ghostVolume > 0 && (
+                      <div
+                        className={`${styles.bar} ${styles.ghostBar}`}
+                        style={{ height: `${ghostHeight}%` }}
+                      />
+                    )}
+                    {paperVolume > 0 && (
+                      <div
+                        className={`${styles.bar} ${styles.paperBar}`}
+                        style={{ height: `${paperHeight}%` }}
+                      />
+                    )}
+                  </div>
+                );
+              }
+            )}
           </div>
           <div className={styles.asksBars}>
-            {Array.from(askBuckets.entries()).map(([index, { l2Volume, paperVolume, ghostVolume }]) => {
-              const l2Height = (l2Volume / maxVolume) * 100;
-              const paperHeight = (paperVolume / maxVolume) * 100;
-              const ghostHeight = (ghostVolume / maxVolume) * 100;
-              return (
-                <div key={index} className={styles.barContainer}>
-                  <div className={`${styles.bar} ${styles.askBar}`} style={{ height: `${l2Height}%` }} />
-                  {ghostVolume > 0 && <div className={`${styles.bar} ${styles.ghostBar}`} style={{ height: `${ghostHeight}%` }} />}
-                  {paperVolume > 0 && <div className={`${styles.bar} ${styles.paperBar}`} style={{ height: `${paperHeight}%` }} />}
-                </div>
-              );
-            })}
+            {Array.from(askBuckets.entries()).map(
+              ([index, { l2Volume, paperVolume, ghostVolume }]) => {
+                const l2Height = (l2Volume / maxVolume) * 100;
+                const paperHeight = (paperVolume / maxVolume) * 100;
+                const ghostHeight = (ghostVolume / maxVolume) * 100;
+                return (
+                  <div key={index} className={styles.barContainer}>
+                    <div
+                      className={`${styles.bar} ${styles.askBar}`}
+                      style={{ height: `${l2Height}%` }}
+                    />
+                    {ghostVolume > 0 && (
+                      <div
+                        className={`${styles.bar} ${styles.ghostBar}`}
+                        style={{ height: `${ghostHeight}%` }}
+                      />
+                    )}
+                    {paperVolume > 0 && (
+                      <div
+                        className={`${styles.bar} ${styles.paperBar}`}
+                        style={{ height: `${paperHeight}%` }}
+                      />
+                    )}
+                  </div>
+                );
+              }
+            )}
           </div>
         </div>
         <div className={styles.spreadLine} />
@@ -131,4 +165,4 @@ export default function OrderBookBarChartDisplay({
       </div>
     </div>
   );
-} 
+}

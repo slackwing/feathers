@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useContext } from 'react';
 import { CoinbaseWebSocketContext } from '../providers/CoinbaseWebSocketProvider';
@@ -9,4 +9,4 @@ export const useCoinbaseWebSocket = () => {
     throw new Error('useCoinbaseWebSocket must be used within a CoinbaseWebSocketProvider');
   }
   return context;
-}; 
+};

@@ -1,5 +1,5 @@
 export class PubSub<T> {
-  private subscribers: Set<(data: T) => void>;
+  protected subscribers: Set<(data: T) => void>;
 
   constructor() {
     this.subscribers = new Set();
@@ -16,4 +16,4 @@ export class PubSub<T> {
       callback(data);
     }
   }
-} 
+}

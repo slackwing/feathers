@@ -1,13 +1,16 @@
 import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
-import { BookType } from '@/lib/base/Order';
+import { OrderType } from '@/lib/base/Order';
 
 export default function OrderBookTableDisplay({
   orderBook,
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  lastRefreshed
-}: { orderBook: OrderBookType, lastRefreshed: number }) {
+  lastRefreshed,
+}: {
+  orderBook: OrderBookType;
+  lastRefreshed: number;
+}) {
   const bids = orderBook.getTopBids(100);
   const asks = orderBook.getTopAsks(100);
 
@@ -21,13 +24,13 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {bids.map((order) => {
-            const isPaperOrder = order.book_type === BookType.PAPER;
+            const isPaperOrder = order.type === OrderType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
                 <span className={styles.quantity}>
                   {isPaperOrder ? (
-                    <span style={{ color: '#28a745' }}>{order.quantity.toFixed(8)}</span>
+                    <span style={{ color: '#28a745' }}>{order.remainingQty.toFixed(8)}</span>
                   ) : (
                     order.quantity.toFixed(8)
                   )}
@@ -45,13 +48,13 @@ export default function OrderBookTableDisplay({
         </div>
         <div>
           {asks.map((order) => {
-            const isPaperOrder = order.book_type === BookType.PAPER;
+            const isPaperOrder = order.type === OrderType.PAPER;
             return (
               <div className={styles.orderRow} key={order.id}>
                 <span className={styles.price}>${order.price.toFixed(2)}</span>
                 <span className={styles.quantity}>
                   {isPaperOrder ? (
-                    <span style={{ color: '#dc3545' }}>{order.quantity.toFixed(8)}</span>
+                    <span style={{ color: '#dc3545' }}>{order.remainingQty.toFixed(8)}</span>
                   ) : (
                     order.quantity.toFixed(8)
                   )}
@@ -63,4 +66,4 @@ export default function OrderBookTableDisplay({
       </div>
     </div>
   );
-} 
+}

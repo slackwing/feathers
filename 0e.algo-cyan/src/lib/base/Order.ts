@@ -1,36 +1,182 @@
-export enum BookType {
-    L2 = 'L2',
-    PAPER = 'PAPER',
-    GHOST = 'GHOST'
+import assert from "assert";
+import { Cloneable } from "../infra/Cloneable";
+import { SelfOrganizing } from "../infra/SelfOrganizing";
+import { Organizer } from "../infra/Organizer";
+import { AssetPair } from "./Asset";
+import { Execution, ExecutionStatus } from "./Execution";
+import { Account } from "./Account";
+
+export enum OrderType {
+  L2 = 'L2',
+  PAPER = 'PAPER',
+  GHOST = 'GHOST',
+}
+
+export enum ExchangeType {
+  LIMIT = 'LIMIT',
+  MARKET = 'MARKET',
 }
 
 export enum Side {
-    BUY = 'B',
-    SELL = 'S'
+  BUY = 'B',
+  SELL = 'S',
 }
 
-export class Order {
-    type: string;
-    id: string;
-    side: Side;
-    price: number;
-    quantity: number;
-    timestamp: number;
-    remaining_qty: number;
-    book_type: BookType;
+export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 
-    constructor(type: string, id: string, side: Side, price: number, quantity: number, timestamp: number, book_type: BookType) {
-        this.type = type;
-        this.id = id;
-        this.side = side;
-        this.price = price;
-        this.quantity = quantity;
-        this.timestamp = timestamp;
-        this.remaining_qty = quantity;
-        this.book_type = book_type; // TODO(P3): Not sure if meaningful.
-    }
+let globalCounter = 0;
 
-    get filled_qty(): number {
-        return this.quantity - this.remaining_qty;
+export function toBase34Max39304(num: number): string {
+  const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Skips I and O
+  const base = chars.length;
+  const maxValue = Math.pow(base, 3);
+  if (num < 0) throw new Error('Number must be non-negative');
+  let n = num % maxValue;
+  let result = '';
+  while (result.length < 3) {
+    result = chars[n % base] + result;
+    n = Math.floor(n / base);
+  }
+  return result;
+}
+
+export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cloneable<Order> {
+  readonly account: Account
+  readonly type: OrderType;
+  readonly exchangeType: ExchangeType;
+  readonly assetPair: AssetPair;
+  readonly side: Side;
+  private _id: string;
+  private _price: number;
+  private _quantity: number;
+  private _timestamp: number;
+  private _remainingQty: number;
+  private _executions: Set<Execution>;
+
+  constructor(
+    account: Account,
+    type: OrderType,
+    exchangeType: ExchangeType,
+    assetPair: AssetPair,
+    side: Side,
+    price: number,
+    quantity: number,
+    timestamp: number,
+  ) {
+    super();
+    this._id = this.generateId(type, side, price, timestamp);
+    this.account = account;
+    this.type = type;
+    this.exchangeType = exchangeType;
+    this.assetPair = assetPair;
+    this.side = side;
+    this._price = price;
+    this._quantity = quantity;
+    this._timestamp = timestamp;
+    this._remainingQty = quantity;
+    this._executions = new Set<Execution>();
+  }
+
+  private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
+    if (type === OrderType.L2) {
+      const priceStr = price.toLocaleString('fullwide', { useGrouping: false });
+      return `L2-${side}-${priceStr}`;
+    } else if (type === OrderType.PAPER) {
+      const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'P';
+      const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+      const counterStr = toBase34Max39304(globalCounter++);
+      return `P${priorityStr}${side}-${dateStr}-${counterStr}`;
+    } else if (type === OrderType.GHOST) {
+      const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'H';
+      const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+      const counterStr = toBase34Max39304(globalCounter++);
+      return `G${priorityStr}${side}-${dateStr}-${counterStr}`;
+    } else {
+      assert.fail('Invalid order type.');
     }
-} 
+  }
+
+  get remainingQty(): number { return this._remainingQty; }
+  set remainingQty(value: number) {
+    if (this._remainingQty !== value) {
+      this._remainingQty = value;
+      if (this._remainingQty <= 0) {
+        this.selfOrganize(this);
+      }
+    }
+  }
+
+  get id(): string { return this._id; }
+
+  get price(): number { return this._price; }
+  set price(value: number) {
+    if (this._price !== value) {
+      this._price = value;
+      this.selfOrganize(this);
+    }
+  }
+
+  get timestamp(): number { return this._timestamp; }
+  set timestamp(value: number) {
+    if (this._timestamp !== value) {
+      this._timestamp = value;
+      this.selfOrganize(this);
+    }
+  }
+
+  get quantity(): number { return this._quantity; }
+  set quantity(value: number) {
+    if (this._quantity !== value) {
+      const delta = value - this._quantity;
+      this._quantity += delta;
+      this.remainingQty = this.remainingQty + delta;
+    }
+  }
+
+  get filled_qty(): number {
+    return Math.max(0, this.quantity - this.remainingQty);
+  }
+
+  public executed(execution: Execution): void {
+    if (this.side === Side.BUY) {
+      assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
+    } else {
+      assert.ok(this === execution.sellOrder, 'ASSERT: Non-matching sell order and execution.');
+    }
+    assert.ok(execution.status === ExecutionStatus.COMPLETED, 'ASSERT: Execution must be completed.');
+    assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
+    this.remainingQty = this._remainingQty - execution.executionQty;
+    this._executions.add(execution);
+  }
+
+  public clone(): Order {
+    const cloned = new Order(
+      this.account,
+      this.type,
+      this.exchangeType,
+      this.assetPair,
+      this.side,
+      this.price,
+      this.quantity,
+      this.timestamp
+    );
+    cloned._id = this.id;
+    cloned.remainingQty = this.remainingQty;
+    return cloned;
+  }
+
+public mirroring(account: Account, type: OrderType): Order {
+    const cloned = new Order(
+      account,
+      type,
+      this.exchangeType,
+      this.assetPair,
+      this.side === Side.BUY ? Side.SELL : Side.BUY,
+      this.price,
+      this.quantity,
+      this.timestamp
+    );
+    cloned.remainingQty = this.remainingQty;
+    return cloned;
+  }
+}
