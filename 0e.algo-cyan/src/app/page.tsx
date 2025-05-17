@@ -47,6 +47,7 @@ const Dashboard = () => {
   }
 
   useEffect(() => {
+    const assetPair = new AssetPair(Asset.BTC, Asset.USD);
     const coinbaseAdapter = new CoinbaseDataAdapter();
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
@@ -64,6 +65,7 @@ const Dashboard = () => {
     setPaperAccount(paperAccount);
     setSlowWorld(
       new L2PGWorld(
+        assetPair,
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,
@@ -75,6 +77,7 @@ const Dashboard = () => {
     );
     setFastWorld(
       new L2PGWorld(
+        assetPair,
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,

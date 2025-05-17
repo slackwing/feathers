@@ -4,8 +4,10 @@ import { PubSub } from '../infra/PubSub';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import { Order, Side, OrderType, ABSOLUTE_PRIORITY_TIMESTAMP, ExchangeType } from '../base/Order';
 import { getBatchingFn, Trade } from '../base/Trade';
+import { AssetPair } from '../base/Asset';
 import { InfiniteAccount } from '../base/Account';
 import { Execution } from '../base/Execution';
+import { Asset } from '../base/Asset';
 describe('L2PGWorld', () => {
   let l2OrderBook: L2OrderBook;
   let paperFeed: PubSub<Order>;
@@ -42,6 +44,7 @@ describe('L2PGWorld', () => {
     const account = new InfiniteAccount();
 
     world = new L2PGWorld(
+      new AssetPair(Asset.BTC, Asset.USD),
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,

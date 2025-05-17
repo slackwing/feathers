@@ -3,11 +3,15 @@ import { OrderBook } from '@/lib/base/OrderBook';
 import { PubSub } from '@/lib/infra/PubSub';
 import { Trade } from '@/lib/base/Trade';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
+import { AssetPair } from './Asset';
 
 export class World {
+
+  public readonly assetPair: AssetPair;
   public combinedBook: OrderBook;
 
-  constructor() {
+  constructor(assetPair: AssetPair) {
+    this.assetPair = assetPair;
     this.combinedBook = new OrderBook();
   }
 

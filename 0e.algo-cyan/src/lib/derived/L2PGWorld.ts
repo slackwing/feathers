@@ -20,7 +20,8 @@ export enum ReluctanceFactor {
 }
 
 export class L2PGWorld extends World {
-  private l2: L2OrderBook;
+  readonly assetPair: AssetPair;
+  private l2book: L2OrderBook;
   private paperBook: OrderBook;
   private ghostBook: OrderBook;
   private ghostFeed: PubSub<Order>;
@@ -29,8 +30,8 @@ export class L2PGWorld extends World {
   private ghostAccount: Account;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
   private impedimentFactorSupplier: () => number;
-  readonly assetPair: AssetPair;
   constructor(
+    assetPair: AssetPair,
     l2OrderBook: L2OrderBook,
     paperFeed: PubSub<Order>,
     batchedTradeFeed: BatchedPubSub<Trade>,
@@ -39,8 +40,9 @@ export class L2PGWorld extends World {
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
-    super();
-    this.l2 = l2OrderBook;
+    super(assetPair);
+    this.assetPair = assetPair;
+    this.l2book = l2OrderBook;
     this.paperBook = new OrderBook(paperFeed);
     this.ghostFeed = new PubSub<Order>();
     this.ghostBook = new OrderBook(this.ghostFeed);
@@ -53,8 +55,6 @@ export class L2PGWorld extends World {
     this.subscribeToOrderFeed(paperFeed);
     this.subscribeToOrderFeed(this.ghostFeed);
     this.subscribeToBatchedTradeFeed(batchedTradeFeed);
-    // TODO(P1): Currently hardcoded to BTC-USD.
-    this.assetPair = new AssetPair(Asset.BTC, Asset.USD);
   }
 
   protected onTrade = (trade: Trade): void => {
