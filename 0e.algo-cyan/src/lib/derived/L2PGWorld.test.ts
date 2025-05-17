@@ -40,7 +40,6 @@ describe('L2PGWorld', () => {
     l2OrderBook = new L2OrderBook(l2OrderFeed);
     paperFeed = new PubSub<Order>();
     batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
-    const executionFeed = new PubSub<Execution>();
     const account = new InfiniteAccount();
 
     world = new L2PGWorld(
@@ -48,7 +47,6 @@ describe('L2PGWorld', () => {
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      executionFeed,
       account,
       () => ReluctanceFactor.RELUCTANT,
       // Control the impedance factor each time.

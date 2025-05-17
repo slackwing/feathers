@@ -10,6 +10,7 @@ import { roundQuantity } from '../utils/number';
 import { Execution, ExecutionStatus } from '../base/Execution';
 import { Asset, AssetPair } from '../base/Asset';
 import { Account, InfiniteAccount } from '../base/Account';
+import { L2PaperWorld } from './L2PaperWorld';
 
 export enum ReluctanceFactor {
   RELUCTANT,
@@ -19,13 +20,11 @@ export enum ReluctanceFactor {
   MIDPOINT_LIMITED,
 }
 
-export class L2PGWorld extends World {
+export class L2PGWorld extends L2PaperWorld {
   readonly assetPair: AssetPair;
-  private l2book: L2OrderBook;
-  private paperBook: OrderBook;
   private ghostBook: OrderBook;
   private ghostFeed: PubSub<Order>;
-  private executionFeed: PubSub<Execution>;
+  readonly executionFeed: PubSub<Execution>;
   private paperAccount: Account;
   private ghostAccount: Account;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
@@ -35,18 +34,16 @@ export class L2PGWorld extends World {
     l2OrderBook: L2OrderBook,
     paperFeed: PubSub<Order>,
     batchedTradeFeed: BatchedPubSub<Trade>,
-    executionFeed: PubSub<Execution>,
     paperAccount: Account,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
-    super(assetPair);
+    super(assetPair, l2OrderBook, paperFeed);
     this.assetPair = assetPair;
     this.l2book = l2OrderBook;
-    this.paperBook = new OrderBook(paperFeed);
     this.ghostFeed = new PubSub<Order>();
     this.ghostBook = new OrderBook(this.ghostFeed);
-    this.executionFeed = executionFeed;
+    this.executionFeed = new PubSub<Execution>();
     this.paperAccount = paperAccount;
     this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;

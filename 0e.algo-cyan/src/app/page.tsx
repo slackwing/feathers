@@ -19,6 +19,7 @@ import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
 import { Account, InfiniteWallet, Wallet } from '@/lib/base/Account';
 import { Asset, AssetPair, Funds } from '@/lib/base/Asset';
 import { Execution } from '@/lib/base/Execution';
+import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -52,7 +53,6 @@ const Dashboard = () => {
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
     const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
-    const executionFeed = new PubSub<Execution>();
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new BifurcatingPubSub<Order>();
     setPaperOrderFeed(paperFeed);
@@ -63,34 +63,43 @@ const Dashboard = () => {
     paperWallet.depositAsset(new Funds(Asset.USD, 1000000000));
     paperWallet.depositAsset(new Funds(Asset.BTC, 1000));
     setPaperAccount(paperAccount);
-    setSlowWorld(
-      new L2PGWorld(
-        assetPair,
-        l2OrderBook,
-        paperFeed,
-        batchedTradeFeed,
-        executionFeed,
-        paperAccount,
-        () => ReluctanceFactor.RELUCTANT,
-        () => 1.0
-      )
+    const sWorld = new L2PGWorld(
+      assetPair,
+      l2OrderBook,
+      paperFeed,
+      batchedTradeFeed,
+      paperAccount,
+      () => ReluctanceFactor.RELUCTANT,
+      () => 1.0
     );
-    setFastWorld(
-      new L2PGWorld(
-        assetPair,
-        l2OrderBook,
-        paperFeed,
-        batchedTradeFeed,
-        executionFeed,
-        paperAccount,
-        () => ReluctanceFactor.AGGRESSIVE_LIMITED,
-        () => 0.0
-      )
+    const fWorld = new L2PGWorld(
+      assetPair,
+      l2OrderBook,
+      paperFeed,
+      batchedTradeFeed,
+      paperAccount,
+      () => ReluctanceFactor.AGGRESSIVE_LIMITED,
+      () => 0.0
     );
+    setSlowWorld(sWorld);
+    setFastWorld(fWorld);
 
-    executionFeed.subscribe((execution) => {
+    sWorld.executionFeed.subscribe((execution) => {
       console.log('Execution:', execution);
     });
+
+    const mmStrat = new MMStrat_StaticSpread(
+      sWorld,
+      paperAccount,
+      sWorld.executionFeed,
+      1,
+      0.1
+    );
+
+    // TODO(P1): Do this properly.
+    setTimeout(() => {
+      mmStrat.start();
+    }, 3000);
 
     connect({
       onMessage: (data) => {

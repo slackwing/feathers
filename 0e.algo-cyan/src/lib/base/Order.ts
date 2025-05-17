@@ -41,12 +41,12 @@ export function toBase34Max39304(num: number): string {
 }
 
 export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cloneable<Order> {
-  readonly id: string;
   readonly account: Account
   readonly type: OrderType;
   readonly exchangeType: ExchangeType;
   readonly assetPair: AssetPair;
   readonly side: Side;
+  private _id: string;
   private _price: number;
   private _quantity: number;
   private _timestamp: number;
@@ -64,7 +64,7 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     timestamp: number,
   ) {
     super();
-    this.id = this.generateId(type, side, price, timestamp);
+    this._id = this.generateId(type, side, price, timestamp);
     this.account = account;
     this.type = type;
     this.exchangeType = exchangeType;
@@ -105,6 +105,8 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
       }
     }
   }
+
+  get id(): string { return this._id; }
 
   get price(): number { return this._price; }
   set price(value: number) {
@@ -148,7 +150,17 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
   }
 
   public clone(): Order {
-    const cloned = new Order(this.account, this.type, this.exchangeType, this.assetPair, this.side, this.price, this.quantity, this.timestamp);
+    const cloned = new Order(
+      this.account,
+      this.type,
+      this.exchangeType,
+      this.assetPair,
+      this.side,
+      this.price,
+      this.quantity,
+      this.timestamp
+    );
+    cloned._id = this.id;
     cloned.remainingQty = this.remainingQty;
     return cloned;
   }

@@ -18,11 +18,11 @@ export class MMStrat_StaticSpread extends Strategy {
   protected askOrder: Order | null;
 
   protected onExecution = (execution: Execution): void => {
-    if (execution.buyOrder === this.bidOrder) {
+    if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
         this.newOrder(Side.BUY);
       }
-    } else if (execution.sellOrder === this.askOrder) {
+    } else if (execution.sellOrder.id === this.askOrder?.id) {
       if (execution.sellOrder.remainingQty === 0) {
         this.newOrder(Side.SELL);
       }
