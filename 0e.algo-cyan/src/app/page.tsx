@@ -18,6 +18,7 @@ import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
 import { Account, InfiniteWallet, Wallet } from '@/lib/base/Account';
 import { Asset, AssetPair, Funds } from '@/lib/base/Asset';
+import { Execution } from '@/lib/base/Execution';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -50,6 +51,7 @@ const Dashboard = () => {
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
     const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
+    const executionFeed = new PubSub<Execution>();
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new BifurcatingPubSub<Order>();
     setPaperOrderFeed(paperFeed);
@@ -65,6 +67,7 @@ const Dashboard = () => {
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,
+        executionFeed,
         paperAccount,
         () => ReluctanceFactor.RELUCTANT,
         () => 1.0
@@ -75,11 +78,16 @@ const Dashboard = () => {
         l2OrderBook,
         paperFeed,
         batchedTradeFeed,
+        executionFeed,
         paperAccount,
         () => ReluctanceFactor.AGGRESSIVE_LIMITED,
         () => 0.0
       )
     );
+
+    executionFeed.subscribe((execution) => {
+      console.log('Execution:', execution);
+    });
 
     connect({
       onMessage: (data) => {

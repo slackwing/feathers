@@ -24,6 +24,8 @@ export enum Side {
 
 export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 
+let globalCounter = 0;
+
 export function toBase34Max39304(num: number): string {
   const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Skips I and O
   const base = chars.length;
@@ -75,27 +77,24 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     this._executions = new Set<Execution>();
   }
 
-  private generateId = (() => {
-    let globalCounter = 0;
-    return (type: OrderType, side: Side, price: number, timestamp: number): string => {
-      if (type === OrderType.L2) {
-        const priceStr = price.toLocaleString('fullwide', { useGrouping: false });
-        return `L2-${side}-${priceStr}`;
-      } else if (type === OrderType.PAPER) {
-        const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'P';
-        const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
-        const counterStr = toBase34Max39304(globalCounter++);
-        return `P${priorityStr}${side}-${dateStr}-${counterStr}`;
-      } else if (type === OrderType.GHOST) {
-        const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'H';
-        const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
-        const counterStr = toBase34Max39304(globalCounter++);
-        return `G${priorityStr}${side}-${dateStr}-${counterStr}`;
-      } else {
-        assert.fail('Invalid order type.');
-      }
-    };
-  })();
+  private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
+    if (type === OrderType.L2) {
+      const priceStr = price.toLocaleString('fullwide', { useGrouping: false });
+      return `L2-${side}-${priceStr}`;
+    } else if (type === OrderType.PAPER) {
+      const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'P';
+      const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+      const counterStr = toBase34Max39304(globalCounter++);
+      return `P${priorityStr}${side}-${dateStr}-${counterStr}`;
+    } else if (type === OrderType.GHOST) {
+      const priorityStr = timestamp === ABSOLUTE_PRIORITY_TIMESTAMP ? '0' : 'H';
+      const dateStr = new Date().toISOString().slice(2, 19).replace(/[-]/g, '');
+      const counterStr = toBase34Max39304(globalCounter++);
+      return `G${priorityStr}${side}-${dateStr}-${counterStr}`;
+    } else {
+      assert.fail('Invalid order type.');
+    }
+  }
 
   get remainingQty(): number { return this._remainingQty; }
   set remainingQty(value: number) {
@@ -154,10 +153,10 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     return cloned;
   }
 
-public mirroring(account: Account): Order {
+public mirroring(account: Account, type: OrderType): Order {
     const cloned = new Order(
       account,
-      this.type,
+      type,
       this.exchangeType,
       this.assetPair,
       this.side === Side.BUY ? Side.SELL : Side.BUY,

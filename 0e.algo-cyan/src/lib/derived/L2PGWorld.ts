@@ -7,7 +7,7 @@ import { World } from '../base/World';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import * as assert from 'assert';
 import { roundQuantity } from '../utils/number';
-import { Execution } from '../base/Execution';
+import { Execution, ExecutionStatus } from '../base/Execution';
 import { Asset, AssetPair } from '../base/Asset';
 import { Account, InfiniteAccount } from '../base/Account';
 
@@ -34,6 +34,7 @@ export class L2PGWorld extends World {
     l2OrderBook: L2OrderBook,
     paperFeed: PubSub<Order>,
     batchedTradeFeed: BatchedPubSub<Trade>,
+    executionFeed: PubSub<Execution>,
     paperAccount: Account,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
@@ -43,7 +44,7 @@ export class L2PGWorld extends World {
     this.paperBook = new OrderBook(paperFeed);
     this.ghostFeed = new PubSub<Order>();
     this.ghostBook = new OrderBook(this.ghostFeed);
-    this.executionFeed = new PubSub<Execution>();
+    this.executionFeed = executionFeed;
     this.paperAccount = paperAccount;
     this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
@@ -126,8 +127,13 @@ export class L2PGWorld extends World {
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
-          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, order.remainingQty, Date.now());
+          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, order.remainingQty, Date.now());
           execution.execute();
+          if (execution.status === ExecutionStatus.COMPLETED) {
+            this.executionFeed.publish(execution);
+          } else {
+            throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+          }
         }
         nextOrder = orderIt.next();
       }
@@ -159,8 +165,13 @@ export class L2PGWorld extends World {
           const order = nextOrder.value;
           if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
             const executingQty = Math.min(qRemaining, order.remainingQty);
-            const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+            const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
             execution.execute();
+            if (execution.status === ExecutionStatus.COMPLETED) {
+              this.executionFeed.publish(execution);
+            } else {
+              throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+            }
             qRemaining -= executingQty;
             qOrders -= executingQty;
           }
@@ -181,8 +192,13 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
           execution.execute();
+          if (execution.status === ExecutionStatus.COMPLETED) {
+            this.executionFeed.publish(execution);
+          } else {
+            throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+          }
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
@@ -204,8 +220,13 @@ export class L2PGWorld extends World {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          const execution = new Execution(order, order.mirroring(this.ghostAccount), order.price, executingQty, Date.now());
+          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
           execution.execute();
+          if (execution.status === ExecutionStatus.COMPLETED) {
+            this.executionFeed.publish(execution);
+          } else {
+            throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+          }
           qRemaining -= executingQty;
         }
         nextOrder = orderIt.next();
@@ -263,7 +284,7 @@ export class L2PGWorld extends World {
           ExchangeType.LIMIT,
           this.assetPair,
           side,
-          pFinalLevel,
+          pLevel,
           prioritizedGhostQty,
           ABSOLUTE_PRIORITY_TIMESTAMP
         ));
@@ -274,7 +295,7 @@ export class L2PGWorld extends World {
           ExchangeType.LIMIT,
           this.assetPair,
           side,
-          pFinalLevel,
+          pLevel,
           normalGhostQty,
           Date.now()
         ));
