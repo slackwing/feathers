@@ -5,17 +5,17 @@ import { Trade } from '@/lib/base/Trade';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import { AssetPair } from './Asset';
 
-export class World {
+export class SingleAssetWorld<T extends AssetPair> {
 
-  public readonly assetPair: AssetPair;
-  public combinedBook: OrderBook;
+  readonly assetPair: T;
+  public combinedBook: OrderBook<T>;
 
-  constructor(assetPair: AssetPair) {
+  constructor(assetPair: T) {
     this.assetPair = assetPair;
-    this.combinedBook = new OrderBook();
+    this.combinedBook = new OrderBook<T>(assetPair);
   }
 
-  public subscribeToOrderFeed(orderFeed: PubSub<Order>): void {
+  public subscribeToOrderFeed(orderFeed: PubSub<Order<T>>): void {
     this.combinedBook.subscribe(orderFeed);
   }
 

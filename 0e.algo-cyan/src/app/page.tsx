@@ -16,47 +16,31 @@ import { L2PGWorld, ReluctanceFactor } from '@/lib/derived/L2PGWorld';
 import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
-import { Account, InfiniteWallet, Wallet } from '@/lib/base/Account';
-import { Asset, AssetPair, Funds } from '@/lib/base/Asset';
-import { Execution } from '@/lib/base/Execution';
+import { Account, Wallet } from '@/lib/base/Account';
+import { Asset, Funds } from '@/lib/base/Asset';
 import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
+import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
 
-  const [slowWorld, setSlowWorld] = React.useState<L2PGWorld | null>(null);
-  const [fastWorld, setFastWorld] = React.useState<L2PGWorld | null>(null);
+  const [slowWorld, setSlowWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
+  const [fastWorld, setFastWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
-  const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order> | null>(null);
+  const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
-  const [assetPair] = React.useState(new AssetPair(Asset.BTC, Asset.USD));
-
-  function publishTradeBatchOnTimestampOrDirectionChangeFn() {
-    let lastPrice: number | null = null;
-    return (trade: Trade) => {
-      if (lastPrice === null) {
-        lastPrice = trade.price;
-        return false;
-      }
-      const shouldPublish = trade.price !== lastPrice;
-      if (shouldPublish) {
-        lastPrice = trade.price;
-      }
-      return shouldPublish;
-    };
-  }
+  const [assetPair] = React.useState(new BTCUSD());
 
   useEffect(() => {
-    const assetPair = new AssetPair(Asset.BTC, Asset.USD);
-    const coinbaseAdapter = new CoinbaseDataAdapter();
+    const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
     const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
-    const paperFeed = new BifurcatingPubSub<Order>();
+    const paperFeed = new BifurcatingPubSub<Order<BTCUSD>>();
     setPaperOrderFeed(paperFeed);
-    const l2OrderBook = new L2OrderBook(l2OrderFeed);
+    const l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
     const paperAccount = new Account('paper', 'Paper Account');
     const paperWallet = new Wallet('paper', 'Paper Wallet');
     paperAccount.addWallet(paperWallet);
@@ -64,7 +48,7 @@ const Dashboard = () => {
     paperWallet.depositAsset(new Funds(Asset.BTC, 1000));
     setPaperAccount(paperAccount);
     const sWorld = new L2PGWorld(
-      assetPair,
+      BTCUSD_,
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
@@ -73,7 +57,7 @@ const Dashboard = () => {
       () => 1.0
     );
     const fWorld = new L2PGWorld(
-      assetPair,
+      BTCUSD_,
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
@@ -89,6 +73,7 @@ const Dashboard = () => {
     });
 
     const mmStrat = new MMStrat_StaticSpread(
+      BTCUSD_,
       sWorld,
       paperAccount,
       sWorld.executionFeed,
@@ -117,7 +102,7 @@ const Dashboard = () => {
     return () => disconnect();
   }, []);
 
-  const handleOrderSubmit = (order: Order) => {
+  const handleOrderSubmit = (order: Order<BTCUSD>) => {
     if (paperOrderFeed) {
       paperOrderFeed.publish(order);
     }
@@ -158,7 +143,7 @@ const Dashboard = () => {
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>
           <h3>Buy BTC</h3>
-          {paperAccount && <OrderForm account={paperAccount} assetPair={assetPair} side={Side.BUY} onSubmit={handleOrderSubmit} />}
+          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.BUY} onSubmit={handleOrderSubmit} />}
         </div>
         <div className={`${styles.orderPanel} ${styles.trades}`}>
           <div className={styles.plSection}>
@@ -180,7 +165,7 @@ const Dashboard = () => {
         </div>
         <div className={`${styles.orderPanel} ${styles.sell}`}>
           <h3>Sell BTC</h3>
-          {paperAccount && <OrderForm account={paperAccount} assetPair={assetPair} side={Side.SELL} onSubmit={handleOrderSubmit} />}
+          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
         </div>
       </div>
       {slowWorld ? (

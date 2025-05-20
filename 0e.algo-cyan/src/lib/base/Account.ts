@@ -83,10 +83,12 @@ export class NullWallet extends Wallet {
     super('nullWallet', 'Null Wallet');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public depositAsset(funds: Funds): void {
     throw new Error('NullWallet does not support deposits.');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public withdrawAsset(asset: Asset, amount: number): Funds {
     throw new Error('NullWallet does not support withdrawals.');
   }
@@ -97,6 +99,7 @@ export class InfiniteWallet extends Wallet {
     super('infiniteWallet', 'Infinite Wallet');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public depositAsset(funds: Funds): void {
     // Do nothing.
   }

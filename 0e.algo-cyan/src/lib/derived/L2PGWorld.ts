@@ -3,14 +3,13 @@ import { OrderType, Order, Side, ABSOLUTE_PRIORITY_TIMESTAMP, ExchangeType } fro
 import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
 import { Trade } from '../base/Trade';
-import { World } from '../base/World';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import * as assert from 'assert';
 import { roundQuantity } from '../utils/number';
 import { Execution, ExecutionStatus } from '../base/Execution';
-import { Asset, AssetPair } from '../base/Asset';
 import { Account, InfiniteAccount } from '../base/Account';
 import { L2PaperWorld } from './L2PaperWorld';
+import { AssetPair } from '../base/Asset';
 
 export enum ReluctanceFactor {
   RELUCTANT,
@@ -20,30 +19,28 @@ export enum ReluctanceFactor {
   MIDPOINT_LIMITED,
 }
 
-export class L2PGWorld extends L2PaperWorld {
-  readonly assetPair: AssetPair;
-  private ghostBook: OrderBook;
-  private ghostFeed: PubSub<Order>;
-  readonly executionFeed: PubSub<Execution>;
+export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
+  private ghostBook: OrderBook<T>;
+  private ghostFeed: PubSub<Order<T>>;
+  readonly executionFeed: PubSub<Execution<T>>;
   private paperAccount: Account;
   private ghostAccount: Account;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
   private impedimentFactorSupplier: () => number;
   constructor(
-    assetPair: AssetPair,
-    l2OrderBook: L2OrderBook,
-    paperFeed: PubSub<Order>,
+    assetPair: T,
+    l2OrderBook: L2OrderBook<T>,
+    paperFeed: PubSub<Order<T>>,
     batchedTradeFeed: BatchedPubSub<Trade>,
     paperAccount: Account,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
     super(assetPair, l2OrderBook, paperFeed);
-    this.assetPair = assetPair;
     this.l2book = l2OrderBook;
-    this.ghostFeed = new PubSub<Order>();
-    this.ghostBook = new OrderBook(this.ghostFeed);
-    this.executionFeed = new PubSub<Execution>();
+    this.ghostFeed = new PubSub<Order<T>>();
+    this.ghostBook = new OrderBook<T>(assetPair);
+    this.executionFeed = new PubSub<Execution<T>>();
     this.paperAccount = paperAccount;
     this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
@@ -54,6 +51,7 @@ export class L2PGWorld extends L2PaperWorld {
     this.subscribeToBatchedTradeFeed(batchedTradeFeed);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onTrade = (trade: Trade): void => {
     // The L2PGWorld model relies on batches of trades to infer multi-level price-taking.
   }
@@ -76,7 +74,7 @@ export class L2PGWorld extends L2PaperWorld {
 
     let pPrevious = null;
     let qTradedTotal = 0;
-    let qTradedByPrice = new Map<number, number>();
+    const qTradedByPrice = new Map<number, number>();
     for (const trade of trades) {
       assert.ok(trade.side === side, 'ASSERT: Expected all trades in batch to be on same side.');
       if (pPrevious !== null) {
@@ -101,7 +99,7 @@ export class L2PGWorld extends L2PaperWorld {
         : this.combinedBook.getAsksUntil(outsideTradePrice);
 
     let hypotheticalOrderFound = false;
-    let qOrdersByPrice = new Map<number, number>();
+    const qOrdersByPrice = new Map<number, number>();
     for (const order of orders) {
       if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
         hypotheticalOrderFound = true;
@@ -113,9 +111,7 @@ export class L2PGWorld extends L2PaperWorld {
       return;
     }
 
-    const tradeIt = trades[Symbol.iterator]();
     const orderIt = orders[Symbol.iterator]();
-    let nextTrade = tradeIt.next();
     let nextOrder = orderIt.next();
 
     if (reluctanceFactor === ReluctanceFactor.AGGRESSIVE_LIMITED) {
@@ -124,7 +120,7 @@ export class L2PGWorld extends L2PaperWorld {
       while (!nextOrder.done && insideOrEqual(nextOrder.value.price, outsideTradePrice)) {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
-          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, order.remainingQty, Date.now());
+          const execution = new Execution<T>(this.assetPair, order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, order.remainingQty, Date.now());
           execution.execute();
           if (execution.status === ExecutionStatus.COMPLETED) {
             this.executionFeed.publish(execution);
@@ -162,7 +158,7 @@ export class L2PGWorld extends L2PaperWorld {
           const order = nextOrder.value;
           if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
             const executingQty = Math.min(qRemaining, order.remainingQty);
-            const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
+            const execution = new Execution<T>(this.assetPair, order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
             execution.execute();
             if (execution.status === ExecutionStatus.COMPLETED) {
               this.executionFeed.publish(execution);
@@ -189,7 +185,7 @@ export class L2PGWorld extends L2PaperWorld {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
+          const execution = new Execution<T>(this.assetPair, order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
           execution.execute();
           if (execution.status === ExecutionStatus.COMPLETED) {
             this.executionFeed.publish(execution);
@@ -217,7 +213,7 @@ export class L2PGWorld extends L2PaperWorld {
         const order = nextOrder.value;
         if (order.type === OrderType.PAPER || order.type === OrderType.GHOST) {
           const executingQty = Math.min(qRemaining, order.remainingQty);
-          const execution = new Execution(order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
+          const execution = new Execution<T>(this.assetPair, order, order.mirroring(this.ghostAccount, OrderType.GHOST), order.price, executingQty, Date.now());
           execution.execute();
           if (execution.status === ExecutionStatus.COMPLETED) {
             this.executionFeed.publish(execution);
@@ -242,22 +238,22 @@ export class L2PGWorld extends L2PaperWorld {
       const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
       const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
       
-      this.ghostFeed.publish(new Order(
+      this.ghostFeed.publish(new Order<T>(
+        this.assetPair,
         this.ghostAccount,
         OrderType.GHOST,
         ExchangeType.LIMIT,
-        this.assetPair,
         side,
         pFinalLevel,
         prioritizedGhostQty,
         ABSOLUTE_PRIORITY_TIMESTAMP
       ));
       
-      this.ghostFeed.publish(new Order(
+      this.ghostFeed.publish(new Order<T>(
+        this.assetPair,
         this.ghostAccount,
         OrderType.GHOST,
         ExchangeType.LIMIT,
-        this.assetPair,
         side,
         pFinalLevel,
         normalGhostQty,
@@ -275,22 +271,22 @@ export class L2PGWorld extends L2PaperWorld {
         const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
         const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
       
-        this.ghostFeed.publish(new Order(
+        this.ghostFeed.publish(new Order<T>(
+          this.assetPair,
           this.ghostAccount,
           OrderType.GHOST,
           ExchangeType.LIMIT,
-          this.assetPair,
           side,
           pLevel,
           prioritizedGhostQty,
           ABSOLUTE_PRIORITY_TIMESTAMP
         ));
         
-        this.ghostFeed.publish(new Order(
+        this.ghostFeed.publish(new Order<T>(
+          this.assetPair,
           this.ghostAccount,
           OrderType.GHOST,
           ExchangeType.LIMIT,
-          this.assetPair,
           side,
           pLevel,
           normalGhostQty,

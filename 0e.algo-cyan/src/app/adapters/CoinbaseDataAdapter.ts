@@ -1,30 +1,32 @@
 import { PubSub } from '@/lib/infra/PubSub';
 import { Order, Side, OrderType, ExchangeType } from '@/lib/base/Order';
 import { Trade } from '@/lib/base/Trade';
-import { Asset, AssetPair } from '@/lib/base/Asset';
+import { AssetPair } from '@/lib/base/Asset';
 import { Account, NullAccount } from '@/lib/base/Account';
-export class CoinbaseDataAdapter {
-  private orderFeed: PubSub<Order>;
+import { BTCUSD_ } from '@/lib/derived/AssetPairs';
+
+export class CoinbaseDataAdapter<T extends AssetPair> {
+  readonly assetPair: T;
+  private orderFeed: PubSub<Order<T>>;
   private tradeFeed: PubSub<Trade>;
   private nullAccount: Account;
-  private assetPair: AssetPair; // TODO(P1): Currently hardcoded to BTC-USD.
 
-  constructor() {
-    this.orderFeed = new PubSub<Order>();
+  constructor(assetPair: T) {
+    this.assetPair = assetPair;
+    this.orderFeed = new PubSub<Order<T>>();
     this.tradeFeed = new PubSub<Trade>();
     this.nullAccount = new NullAccount();
-    this.assetPair = new AssetPair(Asset.BTC, Asset.USD);
   }
 
   onMessage(data: any) {
     if (data.channel === 'l2_data') {
       const event = data.events[0];
       event.updates.forEach((update: any) => {
-        const order = new Order(
+        const order = new Order<T>(
+          this.assetPair,
           this.nullAccount,
           OrderType.L2,
           ExchangeType.LIMIT,
-          this.assetPair,
           update.side === 'bid' ? Side.BUY : Side.SELL,
           parseFloat(update.price_level),
           parseFloat(update.new_quantity),
@@ -46,7 +48,7 @@ export class CoinbaseDataAdapter {
     }
   }
 
-  getL2OrderFeed(): PubSub<Order> {
+  getL2OrderFeed(): PubSub<Order<T>> {
     return this.orderFeed;
   }
 

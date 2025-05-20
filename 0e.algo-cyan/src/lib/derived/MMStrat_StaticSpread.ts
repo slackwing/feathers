@@ -1,23 +1,24 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
-import { Strategy } from "../base/Strategy";
+import { SingleAssetStrategy } from "../base/Strategy_SingleAsset";
 import { PubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { L2PaperWorld } from "./L2PaperWorld";
+import { AssetPair } from "../base/Asset";
 
-export class MMStrat_StaticSpread extends Strategy {
+export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrategy<T> {
 
   public paperAccount: Account;
 
-  protected l2PaperWorld: L2PaperWorld;
-  protected executionFeed: PubSub<Execution>;
+  protected l2PaperWorld: L2PaperWorld<T>;
+  protected executionFeed: PubSub<Execution<T>>;
   protected spreadPips: number;
   protected fixedQuantity: number;
 
-  protected bidOrder: Order | null;
-  protected askOrder: Order | null;
+  protected bidOrder: Order<T> | null;
+  protected askOrder: Order<T> | null;
 
-  protected onExecution = (execution: Execution): void => {
+  protected onExecution = (execution: Execution<T>): void => {
     if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
         this.newOrder(Side.BUY);
@@ -30,13 +31,14 @@ export class MMStrat_StaticSpread extends Strategy {
   }
 
   constructor(
-    l2PaperWorld: L2PaperWorld,
+    assetPair: T,
+    l2PaperWorld: L2PaperWorld<T>,
     paperAccount: Account,
-    executionFeed: PubSub<Execution>,
+    executionFeed: PubSub<Execution<T>>,
     spreadPips: number,
     fixedQuantity: number
   ) {
-    super(l2PaperWorld);
+    super(assetPair, l2PaperWorld);
     this.l2PaperWorld = l2PaperWorld;
     this.paperAccount = paperAccount;
     this.executionFeed = executionFeed;
@@ -64,22 +66,22 @@ export class MMStrat_StaticSpread extends Strategy {
     const bidPrice = midpoint * (1 - this.spreadPips / 10000 / 2);
     const askPrice = midpoint * (1 + this.spreadPips / 10000 / 2);
     if (side === Side.BUY) {
-      this.bidOrder = new Order(
+      this.bidOrder = new Order<T>(
+        this.assetPair,
         this.paperAccount,
         OrderType.PAPER,
         ExchangeType.LIMIT,
-        this.world.assetPair,
         Side.BUY, bidPrice,
         this.fixedQuantity,
         Date.now()
       );
       this.l2PaperWorld.paperFeed.publish(this.bidOrder);
     } else {
-      this.askOrder = new Order(
+      this.askOrder = new Order<T>(
+        this.assetPair,
         this.paperAccount,
         OrderType.PAPER,
         ExchangeType.LIMIT,
-        this.world.assetPair,
         Side.SELL, askPrice,
         this.fixedQuantity,
         Date.now()

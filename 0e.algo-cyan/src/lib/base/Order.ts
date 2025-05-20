@@ -40,41 +40,41 @@ export function toBase34Max39304(num: number): string {
   return result;
 }
 
-export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cloneable<Order> {
+export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organizer<Order<T>>> implements Cloneable<Order<T>> {
+  readonly assetPair: T;
   readonly account: Account
   readonly type: OrderType;
   readonly exchangeType: ExchangeType;
-  readonly assetPair: AssetPair;
   readonly side: Side;
   private _id: string;
   private _price: number;
   private _quantity: number;
   private _timestamp: number;
   private _remainingQty: number;
-  private _executions: Set<Execution>;
+  private _executions: Set<Execution<T>>;
 
   constructor(
+    assetPair: T,
     account: Account,
     type: OrderType,
     exchangeType: ExchangeType,
-    assetPair: AssetPair,
     side: Side,
     price: number,
     quantity: number,
     timestamp: number,
   ) {
     super();
-    this._id = this.generateId(type, side, price, timestamp);
+    this.assetPair = assetPair;
     this.account = account;
     this.type = type;
     this.exchangeType = exchangeType;
-    this.assetPair = assetPair;
     this.side = side;
+    this._id = this.generateId(type, side, price, timestamp);
     this._price = price;
     this._quantity = quantity;
     this._timestamp = timestamp;
     this._remainingQty = quantity;
-    this._executions = new Set<Execution>();
+    this._executions = new Set<Execution<T>>();
   }
 
   private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
@@ -137,7 +137,7 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     return Math.max(0, this.quantity - this.remainingQty);
   }
 
-  public executed(execution: Execution): void {
+  public executed(execution: Execution<T>): void {
     if (this.side === Side.BUY) {
       assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
     } else {
@@ -149,12 +149,12 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     this._executions.add(execution);
   }
 
-  public clone(): Order {
-    const cloned = new Order(
+  public clone(): Order<T> {
+    const cloned = new Order<T>(
+      this.assetPair,
       this.account,
       this.type,
       this.exchangeType,
-      this.assetPair,
       this.side,
       this.price,
       this.quantity,
@@ -165,12 +165,12 @@ export class Order extends SelfOrganizing<Order, Organizer<Order>> implements Cl
     return cloned;
   }
 
-public mirroring(account: Account, type: OrderType): Order {
-    const cloned = new Order(
+public mirroring(account: Account, type: OrderType): Order<T> {
+    const cloned = new Order<T>(
+      this.assetPair,
       account,
       type,
       this.exchangeType,
-      this.assetPair,
       this.side === Side.BUY ? Side.SELL : Side.BUY,
       this.price,
       this.quantity,
