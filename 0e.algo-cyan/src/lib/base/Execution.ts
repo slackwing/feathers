@@ -3,6 +3,7 @@ import { Order } from "./Order";
 import { Side } from "./Order";
 import { gte } from "../utils/number";
 import { AssetPair } from "./Asset";
+import { Fund } from "./Funds";
 
 export enum ExecutionStatus {
   PENDING,
@@ -40,14 +41,11 @@ export class Execution<T extends AssetPair> {
   }
 
   private exchangeFunds(): void {
-    console.log(this.buyOrder.assetPair);
     const cost = this.executionPrice * this.executionQty;
-    const buyingAccount = this.buyOrder.account;
-    const sellingAccount = this.sellOrder.account;
-    const withdrawnQuoteFunds = buyingAccount.primaryWallet.withdrawAsset(this.buyOrder.assetPair.quote, cost);
-    const withdrawnBaseFunds = sellingAccount.primaryWallet.withdrawAsset(this.sellOrder.assetPair.base, this.executionQty);
-    sellingAccount.primaryWallet.depositAsset(withdrawnQuoteFunds);
-    buyingAccount.primaryWallet.depositAsset(withdrawnBaseFunds);
+    const buyerFunds: Fund = this.buyOrder.withdrawFunds(this.buyOrder.assetPair.quote, cost);
+    const sellerFunds: Fund = this.sellOrder.withdrawFunds(this.sellOrder.assetPair.base, this.executionQty);
+    this.buyOrder.account.depositAsset(sellerFunds);
+    this.sellOrder.account.depositAsset(buyerFunds);
   }
 
   public canExecute(): boolean {
@@ -67,8 +65,8 @@ export class Execution<T extends AssetPair> {
       this.status = ExecutionStatus.COMPLETED;
       this.buyOrder.executed(this);
       this.sellOrder.executed(this);
-      const cost = this.executionPrice * this.executionQty;
-      console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
+      // const cost = this.executionPrice * this.executionQty;
+      // console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
     }
   }
 

@@ -14,13 +14,3 @@ export class AssetPair {
     this.symbol = `${base}-${quote}`;
   }
 }
-
-export class Funds {
-  readonly asset: Asset;
-  readonly amount: number;
-
-  constructor(asset: Asset, amount: number) {
-    this.asset = asset;
-    this.amount = amount;
-  }
-}

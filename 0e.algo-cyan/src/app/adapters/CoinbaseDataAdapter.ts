@@ -2,29 +2,30 @@ import { PubSub } from '@/lib/infra/PubSub';
 import { Order, Side, OrderType, ExchangeType } from '@/lib/base/Order';
 import { Trade } from '@/lib/base/Trade';
 import { AssetPair } from '@/lib/base/Asset';
-import { Account, NullAccount } from '@/lib/base/Account';
-import { BTCUSD_ } from '@/lib/derived/AssetPairs';
+import { Account, InfiniteAccount } from '@/lib/base/Account';
 
 export class CoinbaseDataAdapter<T extends AssetPair> {
   readonly assetPair: T;
   private orderFeed: PubSub<Order<T>>;
   private tradeFeed: PubSub<Trade>;
-  private nullAccount: Account;
+  private infiniteAccount: Account;
 
   constructor(assetPair: T) {
     this.assetPair = assetPair;
     this.orderFeed = new PubSub<Order<T>>();
     this.tradeFeed = new PubSub<Trade>();
-    this.nullAccount = new NullAccount();
+    this.infiniteAccount = new InfiniteAccount();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onMessage(data: any) {
     if (data.channel === 'l2_data') {
       const event = data.events[0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       event.updates.forEach((update: any) => {
         const order = new Order<T>(
           this.assetPair,
-          this.nullAccount,
+          this.infiniteAccount,
           OrderType.L2,
           ExchangeType.LIMIT,
           update.side === 'bid' ? Side.BUY : Side.SELL,

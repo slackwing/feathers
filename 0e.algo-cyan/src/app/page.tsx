@@ -17,7 +17,8 @@ import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
 import { Account, Wallet } from '@/lib/base/Account';
-import { Asset, Funds } from '@/lib/base/Asset';
+import { Asset } from '@/lib/base/Asset';
+import { Fund } from "@/lib/base/Funds";
 import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
 // TODO(P3): Standardize all these import styles.
@@ -44,8 +45,8 @@ const Dashboard = () => {
     const paperAccount = new Account('paper', 'Paper Account');
     const paperWallet = new Wallet('paper', 'Paper Wallet');
     paperAccount.addWallet(paperWallet);
-    paperWallet.depositAsset(new Funds(Asset.USD, 1000000000));
-    paperWallet.depositAsset(new Funds(Asset.BTC, 1000));
+    paperWallet.depositAsset(new Fund(Asset.USD, 1000000000));
+    paperWallet.depositAsset(new Fund(Asset.BTC, 1000));
     setPaperAccount(paperAccount);
     const sWorld = new L2PGWorld(
       BTCUSD_,
@@ -68,9 +69,9 @@ const Dashboard = () => {
     setSlowWorld(sWorld);
     setFastWorld(fWorld);
 
-    sWorld.executionFeed.subscribe((execution) => {
-      console.log('Execution:', execution);
-    });
+    // sWorld.executionFeed.subscribe((execution) => {
+    //   console.log('Execution:', execution);
+    // });
 
     const mmStrat = new MMStrat_StaticSpread(
       BTCUSD_,

@@ -2,7 +2,8 @@ import assert from "assert";
 import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
-import { AssetPair } from "./Asset";
+import { Asset, AssetPair } from "./Asset";
+import { Fund, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Execution, ExecutionStatus } from "./Execution";
 import { Account } from "./Account";
 
@@ -52,6 +53,7 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
   private _timestamp: number;
   private _remainingQty: number;
   private _executions: Set<Execution<T>>;
+  private _heldFunds: Map<Asset, Fund>;
 
   constructor(
     assetPair: T,
@@ -75,6 +77,10 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     this._timestamp = timestamp;
     this._remainingQty = quantity;
     this._executions = new Set<Execution<T>>();
+    this._heldFunds = new Map<Asset, Fund>();
+    const fundingAsset = side === Side.BUY ? assetPair.quote : assetPair.base;
+    const fundingAmount = side === Side.BUY ? this.price * quantity : quantity;
+    this._heldFunds.set(fundingAsset, account.withdrawAsset(fundingAsset, fundingAmount));
   }
 
   private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
@@ -135,6 +141,14 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
 
   get filled_qty(): number {
     return Math.max(0, this.quantity - this.remainingQty);
+  }
+
+  public withdrawFunds(asset: Asset, amount: number): Fund {
+    return safelyWithdrawFunds(asset, amount, this._heldFunds);
+  }
+
+  public depositFunds(funds: Fund): void {
+    safelyDepositFunds(funds, this._heldFunds);
   }
 
   public executed(execution: Execution<T>): void {
