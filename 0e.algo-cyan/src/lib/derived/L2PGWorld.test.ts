@@ -4,23 +4,22 @@ import { PubSub } from '../infra/PubSub';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import { Order, Side, OrderType, ABSOLUTE_PRIORITY_TIMESTAMP, ExchangeType } from '../base/Order';
 import { getBatchingFn, Trade } from '../base/Trade';
-import { AssetPair } from '../base/Asset';
 import { InfiniteAccount } from '../base/Account';
-import { Execution } from '../base/Execution';
-import { Asset } from '../base/Asset';
+import { BTCUSD_, BTCUSD } from './AssetPairs';
 describe('L2PGWorld', () => {
-  let l2OrderBook: L2OrderBook;
-  let paperFeed: PubSub<Order>;
-  let batchedTradeFeed: BatchedPubSub<Trade>;
-  let world: L2PGWorld;
 
-  let paperX: Order;
-  let ghostM: Order;
-  let ghost0: Order;
-  let paperP: Order;
-  let ghostP: Order;
-  let ghostF: Order;
-  let paperF: Order;
+  let l2OrderBook: L2OrderBook<BTCUSD>;
+  let paperFeed: PubSub<Order<BTCUSD>>;
+  let batchedTradeFeed: BatchedPubSub<Trade>;
+  let world: L2PGWorld<BTCUSD>;
+
+  let paperX: Order<BTCUSD>;
+  let ghostM: Order<BTCUSD>;
+  let ghost0: Order<BTCUSD>;
+  let paperP: Order<BTCUSD>;
+  let ghostP: Order<BTCUSD>;
+  let ghostF: Order<BTCUSD>;
+  let paperF: Order<BTCUSD>;
 
   const now = Date.now();
   const trade100 = new Trade(Side.SELL, 100, 2.0, now);
@@ -36,14 +35,14 @@ describe('L2PGWorld', () => {
   const trade99 = new Trade(Side.SELL, 99, 1.0, now); // Simply for triggering the batch publish.
 
   beforeEach(() => {
-    const l2OrderFeed = new PubSub<Order>();
-    l2OrderBook = new L2OrderBook(l2OrderFeed);
-    paperFeed = new PubSub<Order>();
+    const l2OrderFeed = new PubSub<Order<BTCUSD>>();
+    l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
+    paperFeed = new PubSub<Order<BTCUSD>>();
     batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
     const account = new InfiniteAccount();
 
     world = new L2PGWorld(
-      new AssetPair(Asset.BTC, Asset.USD),
+      BTCUSD_,
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
@@ -62,13 +61,13 @@ describe('L2PGWorld', () => {
       })()
     );
 
-    paperX = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, world.assetPair, Side.SELL, 102, 2.0, Date.now());
-    ghostM = new Order(account, OrderType.GHOST, ExchangeType.LIMIT, world.assetPair, Side.SELL, 103, 4.0, Date.now());
-    ghost0 = new Order(account, OrderType.GHOST, ExchangeType.LIMIT, world.assetPair, Side.SELL, 104, 2.0, ABSOLUTE_PRIORITY_TIMESTAMP);
-    paperP = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, world.assetPair, Side.SELL, 104, 1.0, Date.now() + 1000);
-    ghostP = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, world.assetPair, Side.SELL, 104, 3.0, Date.now() + 2000);
-    ghostF = new Order(account, OrderType.GHOST, ExchangeType.LIMIT, world.assetPair, Side.SELL, 108, 1.0, ABSOLUTE_PRIORITY_TIMESTAMP);
-    paperF = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, world.assetPair, Side.SELL, 108, 1.0, Date.now() + 1000);
+    paperX = new Order(BTCUSD_, account, OrderType.PAPER, ExchangeType.LIMIT, Side.SELL, 102, 2.0, Date.now());
+    ghostM = new Order(BTCUSD_, account, OrderType.GHOST, ExchangeType.LIMIT, Side.SELL, 103, 4.0, Date.now());
+    ghost0 = new Order(BTCUSD_, account, OrderType.GHOST, ExchangeType.LIMIT, Side.SELL, 104, 2.0, ABSOLUTE_PRIORITY_TIMESTAMP);
+    paperP = new Order(BTCUSD_, account, OrderType.PAPER, ExchangeType.LIMIT, Side.SELL, 104, 1.0, Date.now() + 1000);
+    ghostP = new Order(BTCUSD_, account, OrderType.PAPER, ExchangeType.LIMIT, Side.SELL, 104, 3.0, Date.now() + 2000);
+    ghostF = new Order(BTCUSD_, account, OrderType.GHOST, ExchangeType.LIMIT, Side.SELL, 108, 1.0, ABSOLUTE_PRIORITY_TIMESTAMP);
+    paperF = new Order(BTCUSD_, account, OrderType.PAPER, ExchangeType.LIMIT, Side.SELL, 108, 1.0, Date.now() + 1000);
 
     paperFeed.publish(paperX);
     paperFeed.publish(ghostM);

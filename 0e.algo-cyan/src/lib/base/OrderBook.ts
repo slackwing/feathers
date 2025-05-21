@@ -1,20 +1,22 @@
 import { OrderPriceTimePriorityTree } from './OrderPriceTimePriorityTree';
-import { OrderType, Order, Side } from './Order';
+import { Order, Side } from './Order';
 import { PubSub } from '../infra/PubSub';
-import { SelfOrganizing } from '../infra/SelfOrganizing';
 import { Organizer } from '../infra/Organizer';
+import { AssetPair } from './Asset';
 
-export class OrderBook implements Organizer<Order> {
-  protected bids: OrderPriceTimePriorityTree;
-  protected asks: OrderPriceTimePriorityTree;
+export class OrderBook<T extends AssetPair> implements Organizer<Order<T>> {
+  readonly assetPair: T;
+  protected bids: OrderPriceTimePriorityTree<T>;
+  protected asks: OrderPriceTimePriorityTree<T>;
 
-  constructor(...pubsubs: PubSub<Order>[]) {
-    this.bids = new OrderPriceTimePriorityTree(Side.BUY);
-    this.asks = new OrderPriceTimePriorityTree(Side.SELL);
+  constructor(assetPair: T, ...pubsubs: PubSub<Order<T>>[]) {
+    this.assetPair = assetPair;
+    this.bids = new OrderPriceTimePriorityTree(assetPair, Side.BUY);
+    this.asks = new OrderPriceTimePriorityTree(assetPair, Side.SELL);
     pubsubs.forEach((pubsub) => this.subscribe(pubsub));
   }
 
-  public reorganize(order: Order): void {
+  public reorganize(order: Order<T>): void {
     this.upsertOrderById(order);
   }
 
@@ -22,7 +24,7 @@ export class OrderBook implements Organizer<Order> {
   // TODO(P2): This might only be appropriate for new orders and L2 updates.
   // TODO(P2): Actual updates should occur through the Order object itself, which self-organizes.
   // TODO(P2): Oh, wait. The self-organization calls reorganize() above which calls this.
-  protected upsertOrderById = (order: Order): void => {
+  protected upsertOrderById = (order: Order<T>): void => {
     order.addOrganizer(this);
     if (order.side === Side.BUY) {
       this.bids.upsertOrder(order);
@@ -31,23 +33,23 @@ export class OrderBook implements Organizer<Order> {
     }
   };
 
-  public subscribe(pubsub: PubSub<Order>): void {
+  public subscribe(pubsub: PubSub<Order<T>>): void {
     pubsub.subscribe(this.upsertOrderById);
   }
 
-  public getTopBids(n: number): Order[] {
+  public getTopBids(n: number): Order<T>[] {
     return this.bids.first(n);
   }
 
-  public getTopAsks(n: number): Order[] {
+  public getTopAsks(n: number): Order<T>[] {
     return this.asks.first(n);
   }
 
-  public getBidsUntil(price: number): Order[] {
+  public getBidsUntil(price: number): Order<T>[] {
     return this.bids.until(price);
   }
 
-  public getAsksUntil(price: number): Order[] {
+  public getAsksUntil(price: number): Order<T>[] {
     return this.asks.until(price);
   }
 }

@@ -1,66 +1,59 @@
-import { Funds } from "./Asset";
-import { deleteSelf } from "../utils/delete";
+import { Fund, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Asset } from "./Asset";
 
 export class Account {
   readonly id: string;
   readonly name: string;
   readonly wallets: Map<string, Wallet>;
-  private _primaryWallet: Wallet | null;
 
   constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
     this.wallets = new Map<string, Wallet>();
-    this._primaryWallet = null;
   }
 
   public addWallet(wallet: Wallet): void {
     if (this.wallets.has(wallet.id)) {
       throw new Error(`Wallet ${wallet.id} already exists.`);
     } else {
-      if (this.wallets.size === 0) {
-        this._primaryWallet = wallet;
-      }
       this.wallets.set(wallet.id, wallet);
     }
   }
 
-  get primaryWallet(): Wallet {
-    if (!this._primaryWallet) {
-      throw new Error('Primary wallet not set.');
+  private getActiveWallet(): Wallet {
+    const wallet = this.wallets.values().next().value;
+    if (!wallet) {
+      throw new Error('No wallets available.');
     }
-    return this._primaryWallet;
+    return wallet;
+  }
+
+  public depositAsset(funds: Fund): void {
+    this.getActiveWallet().depositAsset(funds);
+  }
+
+  public withdrawAsset(asset: Asset, amount: number): Fund {
+    return this.getActiveWallet().withdrawAsset(asset, amount);
   }
 }
 
 export class Wallet {
   readonly id: string;
   readonly name: string;
-  readonly assets: Map<Asset, number>;
+  private _assets: Funds;
 
   constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
-    this.assets = new Map<Asset, number>();
+    this._assets = new Map<Asset, Fund>();
   }
 
-  // TODO(P1): Temporary method; actual implementation should audit.
-  // Consider creating a class called Transactional that is used
-  // to handle all transfers at once.
-  public depositAsset(funds: Funds): void {
-    const current = this.assets.get(funds.asset) || 0;
-    this.assets.set(funds.asset, current + funds.amount);
-    deleteSelf(funds); // Ensure funds can't be used again, even outside this scope.
+  public depositAsset(funds: Fund): void {
+    safelyDepositFunds(funds, this._assets);
   }
 
-  public withdrawAsset(asset: Asset, amount: number): Funds {
-    const current = this.assets.get(asset) || 0;
-    if (current < amount) {
-      throw new Error(`Insufficient balance ${current} for asset ${asset}, requested ${amount}.`);
-    }
-    this.assets.set(asset, current - amount);
-    return new Funds(asset, amount);
+  public withdrawAsset(asset: Asset, amount: number): Fund {
+    return safelyWithdrawFunds(asset, amount, this._assets);
   }
 }
 
@@ -83,11 +76,13 @@ export class NullWallet extends Wallet {
     super('nullWallet', 'Null Wallet');
   }
 
-  public depositAsset(funds: Funds): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public depositAsset(funds: Fund): void {
     throw new Error('NullWallet does not support deposits.');
   }
 
-  public withdrawAsset(asset: Asset, amount: number): Funds {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public withdrawAsset(asset: Asset, amount: number): Fund {
     throw new Error('NullWallet does not support withdrawals.');
   }
 }
@@ -97,11 +92,12 @@ export class InfiniteWallet extends Wallet {
     super('infiniteWallet', 'Infinite Wallet');
   }
 
-  public depositAsset(funds: Funds): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public depositAsset(funds: Fund): void {
     // Do nothing.
   }
 
-  public withdrawAsset(asset: Asset, amount: number): Funds {
-    return new Funds(asset, amount);
+  public withdrawAsset(asset: Asset, amount: number): Fund {
+    return new Fund(asset, amount);
   }
 }
