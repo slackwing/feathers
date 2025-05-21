@@ -53,7 +53,6 @@ const Dashboard = () => {
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      paperAccount,
       () => ReluctanceFactor.RELUCTANT,
       () => 1.0
     );
@@ -62,7 +61,6 @@ const Dashboard = () => {
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      paperAccount,
       () => ReluctanceFactor.AGGRESSIVE_LIMITED,
       () => 0.0
     );

@@ -23,7 +23,6 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
   private ghostBook: OrderBook<T>;
   private ghostFeed: PubSub<Order<T>>;
   readonly executionFeed: PubSub<Execution<T>>;
-  private paperAccount: Account;
   private ghostAccount: Account;
   private reluctanceFactorSupplier: () => ReluctanceFactor;
   private impedimentFactorSupplier: () => number;
@@ -32,7 +31,6 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
     l2OrderBook: L2OrderBook<T>,
     paperFeed: PubSub<Order<T>>,
     batchedTradeFeed: BatchedPubSub<Trade>,
-    paperAccount: Account,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
@@ -41,7 +39,6 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
     this.ghostFeed = new PubSub<Order<T>>();
     this.ghostBook = new OrderBook<T>(assetPair);
     this.executionFeed = new PubSub<Execution<T>>();
-    this.paperAccount = paperAccount;
     this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
     this.impedimentFactorSupplier = impedimentFactorSupplier;
