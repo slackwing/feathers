@@ -1,6 +1,6 @@
-const EPSILON = 1e-9;
+const EPSILON = 1e-8; // 1e-9 caused errors.
 
-export function roundQuantity(qty: number): number {
+export function round(qty: number): number {
   return Number(qty.toFixed(9));
 }
 

@@ -5,7 +5,7 @@ import { PubSub } from '../infra/PubSub';
 import { Trade } from '../base/Trade';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import * as assert from 'assert';
-import { roundQuantity } from '../utils/number';
+import { round } from '../utils/number';
 import { Execution, ExecutionStatus } from '../base/Execution';
 import { Account, InfiniteAccount } from '../base/Account';
 import { L2PaperWorld } from './L2PaperWorld';
@@ -197,7 +197,7 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
       // Execute impeding L2.
 
       const qTraded = qTradedByPrice.get(pFinalLevel) || 0;
-      const qImpedingL2 = roundQuantity(qTraded * this.impedimentFactorSupplier());
+      const qImpedingL2 = round(qTraded * this.impedimentFactorSupplier());
       const executingImpedingQty = Math.min(qRemaining, qImpedingL2);
       qRemaining -= executingImpedingQty;
 
@@ -232,8 +232,8 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
       const qUnexecutedL2 = qTraded - executingImpedingQty - executingNonImpedingQty;
 
       const impedimentFactor = this.impedimentFactorSupplier();
-      const prioritizedGhostQty = roundQuantity(qUnexecutedL2 * impedimentFactor);
-      const normalGhostQty = roundQuantity(qUnexecutedL2 * (1 - impedimentFactor));
+      const prioritizedGhostQty = round(qUnexecutedL2 * impedimentFactor);
+      const normalGhostQty = round(qUnexecutedL2 * (1 - impedimentFactor));
       
       this.ghostFeed.publish(new Order<T>(
         this.assetPair,
@@ -265,8 +265,8 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
         }
         const qTraded = qTradedByPrice.get(pLevel) || 0;
         const impedimentFactor = this.impedimentFactorSupplier();
-        const prioritizedGhostQty = roundQuantity(qTraded * impedimentFactor);
-        const normalGhostQty = roundQuantity(qTraded * (1 - impedimentFactor));
+        const prioritizedGhostQty = round(qTraded * impedimentFactor);
+        const normalGhostQty = round(qTraded * (1 - impedimentFactor));
       
         this.ghostFeed.publish(new Order<T>(
           this.assetPair,

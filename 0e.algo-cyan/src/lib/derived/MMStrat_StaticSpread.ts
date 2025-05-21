@@ -21,10 +21,12 @@ export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrate
   protected onExecution = (execution: Execution<T>): void => {
     if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
+        console.log("StaticSpread: Bought! Entering new buy.");
         this.newOrder(Side.BUY);
       }
     } else if (execution.sellOrder.id === this.askOrder?.id) {
       if (execution.sellOrder.remainingQty === 0) {
+        console.log("StaticSpread: Sold! Entering new sell.");
         this.newOrder(Side.SELL);
       }
     }
