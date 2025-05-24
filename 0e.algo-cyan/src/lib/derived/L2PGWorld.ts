@@ -30,7 +30,7 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
     assetPair: T,
     l2OrderBook: L2OrderBook<T>,
     paperFeed: PubSub<Order<T>>,
-    batchedTradeFeed: BatchedPubSub<Trade>,
+    batchedTradeFeed: BatchedPubSub<Trade<T>>,
     reluctanceFactorSupplier: () => ReluctanceFactor,
     impedimentFactorSupplier: () => number
   ) {
@@ -49,11 +49,11 @@ export class L2PGWorld<T extends AssetPair> extends L2PaperWorld<T> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onTrade = (trade: Trade): void => {
+  protected onTrade = (trade: Trade<T>): void => {
     // The L2PGWorld model relies on batches of trades to infer multi-level price-taking.
   }
 
-  protected onTradeBatch = (trades: Trade[]): void => {
+  protected onTradeBatch = (trades: Trade<T>[]): void => {
 
     // console.log('trades = ', trades);
 

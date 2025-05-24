@@ -7,13 +7,13 @@ import { Account, InfiniteAccount } from '@/lib/base/Account';
 export class CoinbaseDataAdapter<T extends AssetPair> {
   readonly assetPair: T;
   private orderFeed: PubSub<Order<T>>;
-  private tradeFeed: PubSub<Trade>;
+  private tradeFeed: PubSub<Trade<T>>;
   private infiniteAccount: Account;
 
   constructor(assetPair: T) {
     this.assetPair = assetPair;
     this.orderFeed = new PubSub<Order<T>>();
-    this.tradeFeed = new PubSub<Trade>();
+    this.tradeFeed = new PubSub<Trade<T>>();
     this.infiniteAccount = new InfiniteAccount();
   }
 
@@ -44,7 +44,7 @@ export class CoinbaseDataAdapter<T extends AssetPair> {
         const price = parseFloat(trade.price);
         const quantity = parseFloat(trade.size);
         const timestamp = Date.now();
-        this.tradeFeed.publish(new Trade(side, price, quantity, timestamp));
+        this.tradeFeed.publish(new Trade(this.assetPair, side, price, quantity, timestamp));
       }
     }
   }
@@ -53,7 +53,7 @@ export class CoinbaseDataAdapter<T extends AssetPair> {
     return this.orderFeed;
   }
 
-  getTradeFeed(): PubSub<Trade> {
+  getTradeFeed(): PubSub<Trade<T>> {
     return this.tradeFeed;
   }
 }

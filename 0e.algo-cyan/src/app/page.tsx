@@ -21,6 +21,9 @@ import { Fund } from "@/lib/base/Funds";
 import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
 import { Quotes } from '@/lib/base/Quotes';
+import { Signal_P } from '@/lib/derived/Signal_P';
+import { I15SQ_ } from '@/lib/derived/Intervals';
+import { Signal_OHLC } from '@/lib/derived/Signal_OHLC';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -37,7 +40,7 @@ const Dashboard = () => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
-    const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
+    const batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new PubSub<Order<BTCUSD>>();
     setPaperOrderFeed(paperFeed);
@@ -95,6 +98,15 @@ const Dashboard = () => {
         console.log('Paper account delta: ', currentValue - initialValue);
       }, 3000);
     }, 3000);
+
+    const sP = new Signal_P(tradeFeed);
+    sP.subscribe((p) => {
+      console.log('Last Price: ', p);
+    });
+    const sOHLC = new Signal_OHLC(sP, I15SQ_);
+    sOHLC.subscribe((ohlc) => {
+      console.log('Change: ', ohlc);
+    });
 
     connect({
       onMessage: (data) => {
