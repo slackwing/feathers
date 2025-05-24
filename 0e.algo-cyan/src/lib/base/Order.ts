@@ -3,9 +3,10 @@ import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
 import { Asset, AssetPair } from "./Asset";
-import { Fund, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
+import { Fund, safelyWithdrawFunds } from "./Funds";
 import { Execution, ExecutionStatus } from "./Execution";
 import { Account } from "./Account";
+import { round } from "../utils/number";
 
 export enum OrderType {
   L2 = 'L2',
@@ -147,10 +148,6 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     return safelyWithdrawFunds(asset, amount, this._heldFunds);
   }
 
-  public depositFunds(funds: Fund): void {
-    safelyDepositFunds(funds, this._heldFunds);
-  }
-
   public executed(execution: Execution<T>): void {
     if (this.side === Side.BUY) {
       assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
@@ -159,7 +156,7 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     }
     assert.ok(execution.status === ExecutionStatus.COMPLETED, 'ASSERT: Execution must be completed.');
     assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
-    this.remainingQty = this._remainingQty - execution.executionQty;
+    this.remainingQty = round(this._remainingQty - execution.executionQty);
     this._executions.add(execution);
   }
 

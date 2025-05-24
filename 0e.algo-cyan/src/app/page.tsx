@@ -15,12 +15,15 @@ import { Side } from '@/lib/base/Order';
 import { L2PGWorld, ReluctanceFactor } from '@/lib/derived/L2PGWorld';
 import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
-import { BifurcatingPubSub } from '@/lib/infra/BifurcatingPubSub';
 import { Account, Wallet } from '@/lib/base/Account';
 import { Asset } from '@/lib/base/Asset';
 import { Fund } from "@/lib/base/Funds";
 import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
+import { Quotes } from '@/lib/base/Quotes';
+import { Signal_P } from '@/lib/derived/Signal_P';
+import { I15SQ_ } from '@/lib/derived/Intervals';
+import { Signal_OHLC } from '@/lib/derived/Signal_OHLC';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -37,23 +40,22 @@ const Dashboard = () => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
     const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
     const tradeFeed = coinbaseAdapter.getTradeFeed();
-    const batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
+    const batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
-    const paperFeed = new BifurcatingPubSub<Order<BTCUSD>>();
+    const paperFeed = new PubSub<Order<BTCUSD>>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
     const paperAccount = new Account('paper', 'Paper Account');
     const paperWallet = new Wallet('paper', 'Paper Wallet');
     paperAccount.addWallet(paperWallet);
-    paperWallet.depositAsset(new Fund(Asset.USD, 1000000000));
-    paperWallet.depositAsset(new Fund(Asset.BTC, 1000));
+    paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
+    paperWallet.depositAsset(new Fund(Asset.BTC, 100));
     setPaperAccount(paperAccount);
     const sWorld = new L2PGWorld(
       BTCUSD_,
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      paperAccount,
       () => ReluctanceFactor.RELUCTANT,
       () => 1.0
     );
@@ -62,7 +64,6 @@ const Dashboard = () => {
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      paperAccount,
       () => ReluctanceFactor.AGGRESSIVE_LIMITED,
       () => 0.0
     );
@@ -82,10 +83,30 @@ const Dashboard = () => {
       0.1
     );
 
+    const quotes = new Quotes(Asset.USD);
+    tradeFeed.subscribe((trade) => {
+      quotes.setQuote(BTCUSD_, trade.price);
+    });
+
     // TODO(P1): Do this properly.
     setTimeout(() => {
+      const initialValue = paperAccount?.computeValue(quotes);
+      console.log('Initial value: ', initialValue);
       mmStrat.start();
+      setInterval(() => {
+        const currentValue = paperAccount?.computeValue(quotes);
+        console.log('Paper account delta: ', currentValue - initialValue);
+      }, 3000);
     }, 3000);
+
+    const sP = new Signal_P(tradeFeed);
+    sP.subscribe((p) => {
+      console.log('Last Price: ', p);
+    });
+    const sOHLC = new Signal_OHLC(sP, I15SQ_);
+    sOHLC.subscribe((ohlc) => {
+      console.log('Change: ', ohlc);
+    });
 
     connect({
       onMessage: (data) => {
@@ -101,7 +122,7 @@ const Dashboard = () => {
     });
 
     return () => disconnect();
-  }, []);
+  }, [connect, disconnect]);
 
   const handleOrderSubmit = (order: Order<BTCUSD>) => {
     if (paperOrderFeed) {

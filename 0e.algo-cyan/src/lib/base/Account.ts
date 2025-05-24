@@ -1,5 +1,6 @@
 import { Fund, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Asset } from "./Asset";
+import { Quotes } from "./Quotes";
 
 export class Account {
   readonly id: string;
@@ -35,6 +36,10 @@ export class Account {
   public withdrawAsset(asset: Asset, amount: number): Fund {
     return this.getActiveWallet().withdrawAsset(asset, amount);
   }
+
+  public computeValue(quotes: Quotes): number {
+    return this.wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
+  }
 }
 
 export class Wallet {
@@ -54,6 +59,10 @@ export class Wallet {
 
   public withdrawAsset(asset: Asset, amount: number): Fund {
     return safelyWithdrawFunds(asset, amount, this._assets);
+  }
+
+  public computeValue(quotes: Quotes): number {
+    return quotes.getQuote(this._assets);
   }
 }
 

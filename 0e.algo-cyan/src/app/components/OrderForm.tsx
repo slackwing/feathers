@@ -8,7 +8,7 @@ interface OrderFormProps {
   account: Account;
   assetPair: AssetPair;
   side: Side;
-  onSubmit: (order: Order) => void;
+  onSubmit: (order: Order<AssetPair>) => void;
 }
 
 export default function OrderForm({ account, assetPair, side, onSubmit }: OrderFormProps) {
@@ -23,15 +23,7 @@ export default function OrderForm({ account, assetPair, side, onSubmit }: OrderF
       return;
     }
 
-    // TODO(P1): Factor out order ID generation.
-    const orderId =
-      'P' +
-      side +
-      '-' +
-      new Date().toISOString().slice(2, 16).replace(/[-]/g, '') +
-      '_' +
-      String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    const order = new Order(account, OrderType.PAPER, ExchangeType.LIMIT, assetPair, side, price, amount, Date.now());
+    const order = new Order(assetPair, account, OrderType.PAPER, ExchangeType.LIMIT, side, price, amount, Date.now());
     onSubmit(order);
   };
 
