@@ -13,5 +13,5 @@ export class Wavelet<A extends AssetPair, T> implements Timestamped {
   constructor(public readonly value: T, public readonly timestamp: number) {}
 }
 
-export class WaveletN<A extends AssetPair> extends Wavelet<A, number> {}
-export class WaveletOHLC<A extends AssetPair> extends Wavelet<A, OHLC> {}
+export class NWave<A extends AssetPair> extends Wavelet<A, number> {}
+export class OHLCWave<A extends AssetPair> extends Wavelet<A, OHLC> {}

@@ -1,26 +1,26 @@
 import { AssetPair } from "../base/Asset";
 import { Interval } from "../base/Interval";
-import { WaveletN } from "../base/Wavelet";
+import { NWave } from "../base/Wavelet";
 import { Signal } from "../infra/Signal";
 import { Signal_Bucketed } from "./Signal_Bucketed";
 
-export class Signal_H<A extends AssetPair, I extends Interval> extends Signal_Bucketed<WaveletN<A>, WaveletN<A>, I>
+export class Signal_H<A extends AssetPair, I extends Interval> extends Signal_Bucketed<NWave<A>, NWave<A>, I>
 {
-  private _max: WaveletN<A> | null = null;
+  private _max: NWave<A> | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: Signal<any, WaveletN<A>>, interval: I) {
+  constructor(source: Signal<any, NWave<A>>, interval: I) {
     super(source, interval);
   }
 
-  protected onNewBucket(signal: WaWaveletNvelet<A>): void {
+  protected onNewBucket(signal: NWave<A>): void {
     if (this._max) {
-      this.publish(new WaveletN<A>(this._max.value, this.bucketEndTimestamp));
+      this.publish(new NWave<A>(this._max.value, this.bucketEndTimestamp));
     }
     this._max = signal;
   }
 
-  protected onCurrentBucket(signal: WaveletN<A>): void {
+  protected onCurrentBucket(signal: NWave<A>): void {
     if (!this._max ||signal.value > this._max.value) {
       this._max = signal;
     }

@@ -1,26 +1,26 @@
 import { AssetPair } from "../base/Asset";
 import { Interval } from "../base/Interval";
 import { OHLC } from "../base/OHLC";
-import { WaveletN, WaveletOHLC } from "../base/Wavelet";
+import { NWave, OHLCWave } from "../base/Wavelet";
 import { Signal } from "../infra/Signal";
 import { Signal_C } from "./Signal_C";
 import { Signal_H } from "./Signal_H";
 import { Signal_L } from "./Signal_L";
 import { Signal_O } from "./Signal_O";
 
-export class Signal_OHLC<A extends AssetPair, I extends Interval> extends Signal<WaveletN<A>, WaveletOHLC<A>> {
+export class Signal_OHLC<A extends AssetPair, I extends Interval> extends Signal<NWave<A>, OHLCWave<A>> {
   private _signalO: Signal_O<A, I>;
   private _signalH: Signal_H<A, I>;
   private _signalL: Signal_L<A, I>;
   private _signalC: Signal_C<A, I>;
-  private _o: WaveletN<A> | null = null;
-  private _h: WaveletN<A> | null = null;
-  private _l: WaveletN<A> | null = null;
-  private _c: WaveletN<A> | null = null;
+  private _o: NWave<A> | null = null;
+  private _h: NWave<A> | null = null;
+  private _l: NWave<A> | null = null;
+  private _c: NWave<A> | null = null;
   private _currentTimestamp: number | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: Signal<any, WaveletN<A>>, interval: I) {
+  constructor(source: Signal<any, NWave<A>>, interval: I) {
     super(source);
     this._signalO = new Signal_O(source, interval);
     this._signalH = new Signal_H(source, interval);
@@ -37,11 +37,11 @@ export class Signal_OHLC<A extends AssetPair, I extends Interval> extends Signal
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected process(signal: WaveletN<A>): void {
+  protected process(signal: NWave<A>): void {
     // Do nothing with the signal itself.
   }
 
-  protected shouldKeep(signal: WaveletN<A>): boolean {
+  protected shouldKeep(signal: NWave<A>): boolean {
     if (!this._currentTimestamp || signal.timestamp > this._currentTimestamp) {
       this._o = null;
       this._h = null;
@@ -58,7 +58,7 @@ export class Signal_OHLC<A extends AssetPair, I extends Interval> extends Signal
 
   private maybePublish(): void {
     if (this._o && this._h && this._l && this._c && this._currentTimestamp) {
-      this.publish(new WaveletOHLC<A>(new OHLC(this._o.value, this._h.value, this._l.value, this._c.value), this._currentTimestamp));
+      this.publish(new OHLCWave<A>(new OHLC(this._o.value, this._h.value, this._l.value, this._c.value), this._currentTimestamp));
     }
   }
 }
