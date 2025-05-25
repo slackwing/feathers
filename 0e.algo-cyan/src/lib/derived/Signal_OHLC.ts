@@ -1,64 +1,32 @@
 import { AssetPair } from "../base/Asset";
 import { Interval } from "../base/Interval";
 import { OHLC } from "../base/OHLC";
-import { NWave, OHLCWave } from "../base/Wavelet";
-import { Signal } from "../infra/Signal";
+import { AOHLCWave } from "../base/Wavelets";
+import { DSignal } from "../infra/signals/DSignal";
+import { Wavelet } from "../infra/Wavelet";
 import { Signal_C } from "./Signal_C";
 import { Signal_H } from "./Signal_H";
 import { Signal_L } from "./Signal_L";
 import { Signal_O } from "./Signal_O";
+import { Signal_P } from "./Signal_P";
 
-export class Signal_OHLC<A extends AssetPair, I extends Interval> extends Signal<NWave<A>, OHLCWave<A>> {
-  private _signalO: Signal_O<A, I>;
-  private _signalH: Signal_H<A, I>;
-  private _signalL: Signal_L<A, I>;
-  private _signalC: Signal_C<A, I>;
-  private _o: NWave<A> | null = null;
-  private _h: NWave<A> | null = null;
-  private _l: NWave<A> | null = null;
-  private _c: NWave<A> | null = null;
-  private _currentTimestamp: number | null = null;
+export class Signal_OHLC<A extends AssetPair, I extends Interval> extends DSignal<number, OHLC, I> {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: Signal<any, NWave<A>>, interval: I) {
-    super(source);
-    this._signalO = new Signal_O(source, interval);
-    this._signalH = new Signal_H(source, interval);
-    this._signalL = new Signal_L(source, interval);
-    this._signalC = new Signal_C(source, interval);
-    this._o = null;
-    this._h = null;
-    this._l = null;
-    this._c = null;
-    this._signalO.subscribe((o) => this.shouldKeep(o) && (this._o = o) && this.maybePublish());
-    this._signalH.subscribe((h) => this.shouldKeep(h) && (this._h = h) && this.maybePublish());
-    this._signalL.subscribe((l) => this.shouldKeep(l) && (this._l = l) && this.maybePublish());
-    this._signalC.subscribe((c) => this.shouldKeep(c) && (this._c = c) && this.maybePublish());
+  constructor(source: Signal_P<A>, interval: I) {
+    super(
+      new Signal_O(source, interval),
+      new Signal_H(source, interval),
+      new Signal_L(source, interval),
+      new Signal_C(source, interval)
+    );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected process(signal: NWave<A>): void {
-    // Do nothing with the signal itself.
-  }
-
-  protected shouldKeep(signal: NWave<A>): boolean {
-    if (!this._currentTimestamp || signal.timestamp > this._currentTimestamp) {
-      this._o = null;
-      this._h = null;
-      this._l = null;
-      this._c = null;
-      this._currentTimestamp = signal.timestamp;
-      return true;
-    } else if (signal.timestamp < this._currentTimestamp) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  private maybePublish(): void {
-    if (this._o && this._h && this._l && this._c && this._currentTimestamp) {
-      this.publish(new OHLCWave<A>(new OHLC(this._o.value, this._h.value, this._l.value, this._c.value), this._currentTimestamp));
-    }
+  protected onAlignment(values: Wavelet<number>[]): void {
+    this.broadcast(
+      new AOHLCWave<A>(
+        new OHLC(values[0].value, values[1].value, values[2].value, values[3].value),
+        values[0].timestamp
+      )
+    );
   }
 }

@@ -1,19 +1,27 @@
-export class PubSub<T> {
-  protected subscribers: Set<(data: T) => void>;
+import { Signal } from "./signals/Signal";
 
+export class ReadOnlyPubSub<T> extends Signal<T, T> {
   constructor() {
-    this.subscribers = new Set();
+    super();
   }
 
-  subscribe(callback: (data: T) => void): () => void {
-    this.subscribers.add(callback);
-    return () => this.subscribers.delete(callback);
+  // Just an alias for listen in the PubSub context.
+  public subscribe(callback: (data: T) => void): () => void {
+    return this.listen(callback); // Returns a function to unsubscribe.
+  }
+}
+
+export class PubSub<T> extends ReadOnlyPubSub<T> {
+  constructor() {
+    super();
   }
 
-  // TODO(P2): How to make PubSubs that are read-only to be passed around?
-  publish(data: T): void {
-    for (const callback of this.subscribers) {
-      callback(data);
-    }
+  // Just an alias for listen in the PubSub context.
+  public publish(data: T): void {
+    this.broadcast(data);
+  }
+
+  public asReadOnly(): ReadOnlyPubSub<T> {
+    return this;
   }
 }

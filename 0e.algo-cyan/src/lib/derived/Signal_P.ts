@@ -1,15 +1,16 @@
-import { PubSub } from "../infra/PubSub";
-import { Signal } from "../infra/Signal";
 import { AssetPair } from "../base/Asset";
 import { Trade } from "../base/Trade";
-import { NWave } from "../base/Wavelet";
+import { TSignal } from "../infra/signals/TSignal";
+import { ANWave } from "../base/Wavelets";
+import { Wavelet } from "../infra/Wavelet";
 
-export class Signal_P<A extends AssetPair> extends Signal<Trade<A>, NWave<A>> {
-  constructor(source: PubSub<Trade<A>>) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export class Signal_P<A extends AssetPair> extends TSignal<Trade<A>, number> {
+  constructor(source: TSignal<any, Trade<A>>) {
     super(source);
   }
 
-  protected process(signal: Trade<A>): void {
-    this.publish(new NWave<A>(signal.price, signal.timestamp));
+  protected process(source: number, signal: Wavelet<Trade<A>>): void {
+    this.broadcast(new ANWave<A>(signal.value.price, signal.timestamp));
   }
 }

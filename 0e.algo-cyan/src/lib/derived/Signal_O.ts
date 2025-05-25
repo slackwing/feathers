@@ -1,27 +1,27 @@
 import { AssetPair } from "../base/Asset";
 import { Interval } from "../base/Interval";
-import { NWave } from "../base/Wavelet";
-import { Signal } from "../infra/Signal";
-import { Signal_Bucketed } from "./Signal_Bucketed";
+import { ANWave } from "../base/Wavelets";
+import { DSignalAdapter } from "../infra/signals/DSignal";
+import { TSignal } from "../infra/signals/TSignal";
 
-export class Signal_O<A extends AssetPair, I extends Interval> extends Signal_Bucketed<NWave<A>, NWave<A>, I>
+export class Signal_O<A extends AssetPair, I extends Interval> extends DSignalAdapter<number, I>
 {
-  private _first: NWave<A> | null = null;
+  protected _first: ANWave<A> | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: Signal<any, NWave<A>>, interval: I) {
+  constructor(source: TSignal<any, number>, interval: I) {
     super(source, interval);
   }
 
-  protected onNewBucket(signal: NWave<A>): void {
+  protected onNewInterval(signal: ANWave<A>): void {
     if (this._first) {
-      this.publish(new NWave<A>(this._first.value, this.bucketEndTimestamp));
+      this.broadcast(new ANWave<A>(this._first.value, this._intervalEndTimestamp));
     }
     this._first = signal;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onCurrentBucket(signal: NWave<A>): void {
+  protected onCurrentInterval(signal: ANWave<A>): void {
     // Do nothing.
   }
 }
