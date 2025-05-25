@@ -24,6 +24,7 @@ import { Quotes } from '@/lib/base/Quotes';
 import { Signal_P } from '@/lib/derived/Signal_P';
 import { I15SQ_ } from '@/lib/derived/Intervals';
 import { Signal_OHLC } from '@/lib/derived/Signal_OHLC';
+import { Signal_Trade } from '@/lib/derived/Signal_Trade';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -99,13 +100,14 @@ const Dashboard = () => {
       }, 3000);
     }, 3000);
 
-    const sP = new Signal_P(tradeFeed);
-    sP.subscribe((p) => {
+    const sTrade = new Signal_Trade(tradeFeed);
+    const sP = new Signal_P(sTrade);
+    sP.listen((p) => {
       console.log('Last Price: ', p);
     });
     const sOHLC = new Signal_OHLC(sP, I15SQ_);
-    sOHLC.subscribe((ohlc) => {
-      console.log('Change: ', ohlc);
+    sOHLC.listen((ohlc) => {
+      console.log('OHLC: ', ohlc);
     });
 
     connect({
