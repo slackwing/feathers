@@ -7,16 +7,17 @@ import { TSignal } from "./TSignal";
 
 export class DSignal<T, U, I extends Interval> extends Signal<any, Wavelet<U>> {
 
+  protected _interval: I;
   private _values: Wavelet<T>[];
   private _currentInterval: number;
 
-  constructor(...sources: DSignal<any, T, I>[]) {
+  constructor(interval: I, ...sources: DSignal<any, T, I>[]) {
     super(...sources);
+    this._interval = interval;
     this._values = Array(this._sources.length).fill(null);
     this._currentInterval = 0;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected process(source: number, signal: Wavelet<T>): void {
     if (this.shouldKeep(signal)) {
       this._values[source] = signal;
@@ -49,16 +50,26 @@ export class DSignal<T, U, I extends Interval> extends Signal<any, Wavelet<U>> {
   }
 }
 
-export class DSignalAdapter<U, I extends Interval> extends DSignal<any, U, I> {
+export class DSignalAdapter_Overlapping<U, I extends Interval> extends DSignal<any, U, I> {
+  constructor(interval: I, source: TSignal<any, U>) {
+    super(interval, source);
+  }
+
+  protected onAlignment(values: Wavelet<T>[]): void {
+    this.broadcast({} as Wavelet<U>); // Override in subclass.
+  }
+}
+
+export class DSignalAdapter_NonOverlapping<U, I extends Interval> extends DSignal<any, U, I> {
   
-  protected _source: TSignal<any, U>;
   protected _interval: I;
+  protected _source: TSignal<any, U>;
   protected _intervalMs: number;
   protected _intervalEndTimestamp: number;
   protected _waitingForFirstInterval: boolean;
 
-  constructor(source: TSignal<any, U>, interval: I) {
-    super();
+  constructor(interval: I, source: TSignal<any, U>) {
+    super(interval);
     this._source = source;
     this._interval = interval;
     this._intervalMs = toMilliseconds(interval);

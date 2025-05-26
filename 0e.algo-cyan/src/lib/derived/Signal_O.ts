@@ -9,8 +9,8 @@ export class Signal_O<A extends AssetPair, I extends Interval> extends DSignalAd
   protected _first: ANWave<A> | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: TSignal<any, number>, interval: I) {
-    super(source, interval);
+  constructor(interval: I, source: TSignal<any, number>) {
+    super(interval, source);
   }
 
   protected onNewInterval(signal: ANWave<A>): void {

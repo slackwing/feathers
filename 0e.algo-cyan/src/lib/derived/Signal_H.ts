@@ -9,8 +9,8 @@ export class Signal_H<A extends AssetPair, I extends Interval> extends DSignalAd
   private _max: ANWave<A> | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(source: Signal<any, ANWave<A>>, interval: I) {
-    super(source, interval);
+  constructor(interval: I, source: Signal<any, ANWave<A>>) {
+    super(interval, source);
   }
 
   protected onNewInterval(signal: ANWave<A>): void {
@@ -20,7 +20,7 @@ export class Signal_H<A extends AssetPair, I extends Interval> extends DSignalAd
     this._max = signal;
   }
 
-  protected onCurrentInterval(signal: ANWave<A>): void {
+  protected onCurrentBucket(signal: ANWave<A>): void {
     if (!this._max || signal.value > this._max.value) {
       this._max = signal;
     }

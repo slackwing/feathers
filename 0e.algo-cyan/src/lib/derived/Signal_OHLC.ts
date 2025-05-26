@@ -14,10 +14,11 @@ export class Signal_OHLC<A extends AssetPair, I extends Interval> extends DSigna
 
   constructor(source: Signal_P<A>, interval: I) {
     super(
-      new Signal_O(source, interval),
-      new Signal_H(source, interval),
-      new Signal_L(source, interval),
-      new Signal_C(source, interval)
+      interval,
+      new Signal_O(interval, source),
+      new Signal_H(interval, source),
+      new Signal_L(interval, source),
+      new Signal_C(interval, source)
     );
   }
 
