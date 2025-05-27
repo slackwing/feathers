@@ -10,7 +10,10 @@ export class TSignal<T, U> extends Signal<any, Wavelet<U>> {
   }
 }
 
-export class TSignalAdapterWithInstant<U> extends TSignal<any, U> {
+/**
+ * NOTE(UNUSED): Written because it seemed like it might be useful in the future.
+ */
+export class TSignalAdapter_UsingInstant<U> extends TSignal<any, U> {
   protected _source: Signal<any, U>;
   constructor(source: Signal<any, U>) {
     super();
@@ -21,7 +24,7 @@ export class TSignalAdapterWithInstant<U> extends TSignal<any, U> {
   }
 }
 
-export class TSignalAdapterWithTimestamp<U extends Timestamped> extends TSignal<any, U> {
+export class TSignalAdapter_UsingTimestamp<U extends Timestamped> extends TSignal<any, U> {
   protected _source: Signal<any, U>;
   constructor(source: Signal<any, U>) {
     super();

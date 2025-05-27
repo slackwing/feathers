@@ -21,10 +21,11 @@ import { Fund } from "@/lib/base/Funds";
 import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
 import { Quotes } from '@/lib/base/Quotes';
-import { Signal_P } from '@/lib/derived/Signal_P';
-import { I15SQ_ } from '@/lib/derived/Intervals';
-import { Signal_OHLC } from '@/lib/derived/Signal_OHLC';
+import { TSignal_P } from '@/lib/derived/TSignal_P';
 import { Signal_Trade } from '@/lib/derived/Signal_Trade';
+import { I1SQ_ } from '@/lib/derived/Intervals';
+import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
+import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -101,13 +102,14 @@ const Dashboard = () => {
     }, 3000);
 
     const sTrade = new Signal_Trade(tradeFeed);
-    const sP = new Signal_P(sTrade);
-    sP.listen((p) => {
-      console.log('Last Price: ', p);
-    });
-    const sOHLC = new Signal_OHLC(sP, I15SQ_);
-    sOHLC.listen((ohlc) => {
+    const tsP = new TSignal_P(sTrade);
+    const dsOHLC = new DSignal_OHLC(I1SQ_, tsP, 14);
+    dsOHLC.listen((ohlc) => {
       console.log('OHLC: ', ohlc);
+    });
+    const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3);
+    dsFullStochastic.listen((stochastic) => {
+      console.log('Full Stochastic: ', stochastic);
     });
 
     connect({

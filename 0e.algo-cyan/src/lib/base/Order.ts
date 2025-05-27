@@ -160,6 +160,9 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     this._executions.add(execution);
   }
 
+  /**
+   * NOTE(DECOMISSIONED): See BifurcatingPubSub.
+   */
   public clone(): Order<T> {
     const cloned = new Order<T>(
       this.assetPair,

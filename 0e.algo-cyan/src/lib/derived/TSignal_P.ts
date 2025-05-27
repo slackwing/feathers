@@ -5,7 +5,7 @@ import { ANWave } from "../base/Wavelets";
 import { Wavelet } from "../infra/Wavelet";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export class Signal_P<A extends AssetPair> extends TSignal<Trade<A>, number> {
+export class TSignal_P<A extends AssetPair> extends TSignal<Trade<A>, number> {
   constructor(source: TSignal<any, Trade<A>>) {
     super(source);
   }
