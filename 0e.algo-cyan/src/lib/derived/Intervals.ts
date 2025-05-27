@@ -1,5 +1,12 @@
 import { Interval, TimeUnit } from "../base/Interval";
 
+export class I1SQ extends Interval {
+  constructor() {
+    super(1, TimeUnit.SECOND, true);
+  }
+}
+export const I1SQ_ = new I1SQ();
+
 export class I15S extends Interval {
   constructor() {
     super(15, TimeUnit.SECOND);

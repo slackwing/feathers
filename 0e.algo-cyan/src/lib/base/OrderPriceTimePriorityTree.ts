@@ -2,19 +2,19 @@ import { MutableSortedTreeMap } from '../infra/MutableSortedTreeMap';
 import { AssetPair } from './Asset';
 import { Order, Side } from './Order';
 
-export class OrderPriceTimePriorityTree<T extends AssetPair> implements Iterable<Order<T>> {
-  readonly assetPair: T;
+export class OrderPriceTimePriorityTree<A extends AssetPair> implements Iterable<Order<A>> {
+  readonly assetPair: A;
   private side: Side;
-  private orders: MutableSortedTreeMap<Order<T>>;
+  private orders: MutableSortedTreeMap<Order<A>>;
   private timings: {
     upsertOrder: number;
     iterator: number;
   };
 
-  constructor(assetPair: T, side: Side) {
+  constructor(assetPair: A, side: Side) {
     this.assetPair = assetPair;
     this.side = side;
-    this.orders = new MutableSortedTreeMap<Order<T>>((orderA, orderB) => {
+    this.orders = new MutableSortedTreeMap<Order<A>>((orderA, orderB) => {
       const priceA = this.side === Side.BUY ? -orderA.price : orderA.price;
       const priceB = this.side === Side.BUY ? -orderB.price : orderB.price;
 
@@ -27,7 +27,7 @@ export class OrderPriceTimePriorityTree<T extends AssetPair> implements Iterable
     };
   }
 
-  upsertOrder(order: Order<T>): void {
+  upsertOrder(order: Order<A>): void {
     const start = performance.now();
     if (order.remainingQty <= 0) {
       this.orders.remove(order.id);
@@ -37,11 +37,11 @@ export class OrderPriceTimePriorityTree<T extends AssetPair> implements Iterable
     this.timings.upsertOrder += performance.now() - start;
   }
 
-  [Symbol.iterator](): Iterator<Order<T>> {
+  [Symbol.iterator](): Iterator<Order<A>> {
     const start = performance.now();
     const iterator = this.orders[Symbol.iterator]();
     const result = {
-      next: (): IteratorResult<Order<T>> => {
+      next: (): IteratorResult<Order<A>> => {
         const next = iterator.next();
         if (next.done) {
           return { done: true, value: undefined };
@@ -70,8 +70,8 @@ export class OrderPriceTimePriorityTree<T extends AssetPair> implements Iterable
     };
   }
 
-  first(n: number): Order<T>[] {
-    const result: Order<T>[] = [];
+  first(n: number): Order<A>[] {
+    const result: Order<A>[] = [];
     const seenIds = new Map<string, number>();
     let count = 0;
     for (const order of this) {
@@ -86,8 +86,8 @@ export class OrderPriceTimePriorityTree<T extends AssetPair> implements Iterable
     return result;
   }
 
-  until(price: number): Order<T>[] {
-    const result: Order<T>[] = [];
+  until(price: number): Order<A>[] {
+    const result: Order<A>[] = [];
     for (const order of this) {
       if (this.side === Side.BUY ? order.price >= price : order.price <= price) result.push(order);
       else break;

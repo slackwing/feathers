@@ -11,16 +11,16 @@ export enum ExecutionStatus {
   CANCELLED,
 }
 
-export class Execution<T extends AssetPair> {
-  readonly assetPair: T;
-  readonly buyOrder: Order<T>;
-  readonly sellOrder: Order<T>;
+export class Execution<A extends AssetPair> {
+  readonly assetPair: A;
+  readonly buyOrder: Order<A>;
+  readonly sellOrder: Order<A>;
   readonly executionPrice: number;
   readonly executionQty: number;
   readonly timestamp: number;
   public status: ExecutionStatus;
 
-  constructor(assetPair: T, order: Order<T>, oppositeOrder: Order<T>, executionPrice: number, executionQty: number, timestamp: number) {
+  constructor(assetPair: A, order: Order<A>, oppositeOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
     this.assetPair = assetPair;
     if (order.side === Side.BUY) {
       this.buyOrder = order;

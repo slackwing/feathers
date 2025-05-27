@@ -26,6 +26,6 @@ export class Signal<T, U> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected process(source: number, signal: T): void {
-    this.broadcast({} as U); // Override in subclass.
+    throw new Error("Unimplemented (abstract) method.");
   }
 }
