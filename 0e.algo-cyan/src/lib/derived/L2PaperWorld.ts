@@ -5,15 +5,15 @@ import { PubSub } from '../infra/PubSub';
 import { SingleAssetWorld } from '../base/World_SingleAsset';
 import { AssetPair } from '../base/Asset';
 
-export class L2PaperWorld<T extends AssetPair> extends SingleAssetWorld<T> {
-  protected l2book: L2OrderBook<T>;
-  protected paperBook: OrderBook<T>;
-  public paperFeed: PubSub<Order<T>>;
+export class L2PaperWorld<A extends AssetPair> extends SingleAssetWorld<A> {
+  protected l2book: L2OrderBook<A>;
+  protected paperBook: OrderBook<A>;
+  public paperFeed: PubSub<Order<A>>;
 
-  constructor(assetPair: T, l2OrderBook: L2OrderBook<T>, paperFeed: PubSub<Order<T>>) {
+  constructor(assetPair: A, l2OrderBook: L2OrderBook<A>, paperFeed: PubSub<Order<A>>) {
     super(assetPair);
     this.l2book = l2OrderBook;
-    this.paperBook = new OrderBook<T>(assetPair);
+    this.paperBook = new OrderBook<A>(assetPair);
     this.paperFeed = paperFeed;
     this.subscribeToOrderFeed(l2OrderBook.singleSource);
     this.subscribeToOrderFeed(paperFeed);

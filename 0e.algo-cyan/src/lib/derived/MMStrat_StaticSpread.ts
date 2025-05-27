@@ -1,24 +1,24 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
 import { SingleAssetStrategy } from "../base/Strategy_SingleAsset";
-import { PubSub } from "../infra/PubSub";
+import { ReadOnlyPubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { L2PaperWorld } from "./L2PaperWorld";
 import { AssetPair } from "../base/Asset";
 
-export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrategy<T> {
+export class MMStrat_StaticSpread<A extends AssetPair> extends SingleAssetStrategy<A> {
 
   public paperAccount: Account;
 
-  protected l2PaperWorld: L2PaperWorld<T>;
-  protected executionFeed: PubSub<Execution<T>>;
+  protected l2PaperWorld: L2PaperWorld<A>;
+  protected executionFeed: ReadOnlyPubSub<Execution<A>>;
   protected spreadPips: number;
   protected fixedQuantity: number;
 
-  protected bidOrder: Order<T> | null;
-  protected askOrder: Order<T> | null;
+  protected bidOrder: Order<A> | null;
+  protected askOrder: Order<A> | null;
 
-  protected onExecution = (execution: Execution<T>): void => {
+  protected onExecution = (execution: Execution<A>): void => {
     if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
         console.log("StaticSpread: Bought! Entering new buy.");
@@ -33,10 +33,10 @@ export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrate
   }
 
   constructor(
-    assetPair: T,
-    l2PaperWorld: L2PaperWorld<T>,
+    assetPair: A,
+    l2PaperWorld: L2PaperWorld<A>,
     paperAccount: Account,
-    executionFeed: PubSub<Execution<T>>,
+    executionFeed: ReadOnlyPubSub<Execution<A>>,
     spreadPips: number,
     fixedQuantity: number
   ) {
@@ -68,7 +68,7 @@ export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrate
     const bidPrice = midpoint * (1 - this.spreadPips / 10000 / 2);
     const askPrice = midpoint * (1 + this.spreadPips / 10000 / 2);
     if (side === Side.BUY) {
-      this.bidOrder = new Order<T>(
+      this.bidOrder = new Order<A>(
         this.assetPair,
         this.paperAccount,
         OrderType.PAPER,
@@ -79,7 +79,7 @@ export class MMStrat_StaticSpread<T extends AssetPair> extends SingleAssetStrate
       );
       this.l2PaperWorld.paperFeed.publish(this.bidOrder);
     } else {
-      this.askOrder = new Order<T>(
+      this.askOrder = new Order<A>(
         this.assetPair,
         this.paperAccount,
         OrderType.PAPER,

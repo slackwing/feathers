@@ -19,9 +19,9 @@ export function getBatchingFn() {
   };
 }
 
-export class Trade<T extends AssetPair> {
+export class Trade<A extends AssetPair> {
   constructor(
-    public readonly assetPair: T,
+    public readonly assetPair: A,
     public readonly side: Side,
     public readonly price: number,
     public readonly quantity: number,

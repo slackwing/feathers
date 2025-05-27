@@ -1,19 +1,19 @@
 import { AssetPair } from '../base/Asset';
 import { Order } from '../base/Order';
 import { OrderBook } from '../base/OrderBook';
-import { PubSub } from '../infra/PubSub';
+import { ReadOnlyPubSub } from '../infra/PubSub';
 
-export class L2OrderBook<T extends AssetPair> extends OrderBook<T> {
-  readonly singleSource: PubSub<Order<T>>;
+export class L2OrderBook<A extends AssetPair> extends OrderBook<A> {
+  readonly singleSource: ReadOnlyPubSub<Order<A>>;
 
-  constructor(assetPair: T, l2OrderFeed: PubSub<Order<T>>) {
+  constructor(assetPair: A, l2OrderFeed: ReadOnlyPubSub<Order<A>>) {
     super(assetPair, l2OrderFeed);
     this.singleSource = l2OrderFeed;
     this.singleSource.subscribe(this.upsertOrderById);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public subscribe(pubsub: PubSub<Order<T>>): void {
+  public subscribe(pubsub: ReadOnlyPubSub<Order<A>>): void {
     // L2OrderBook does not support subscribing to additional feeds.
   }
 }

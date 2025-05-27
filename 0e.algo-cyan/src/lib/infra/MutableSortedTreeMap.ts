@@ -60,7 +60,6 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
     if (!this.map.has(key)) {
       return false;
     }
-    const value = this.map.get(key)!;
     this.map.delete(key);
     const removed = this._removeNodeOptimized(key);
     if (removed) this.nodeMap.delete(key);
@@ -162,7 +161,6 @@ export class MutableSortedTreeMap<T> implements Iterable<[string, T]> {
       return newNode;
     }
 
-    let oldHeight = node.height;
     let result: Node<T> = node;
 
     if (node.key === key ? 0 : this.comparator(value, node.value) < 0) {

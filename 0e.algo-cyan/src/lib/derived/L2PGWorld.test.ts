@@ -10,7 +10,7 @@ describe('L2PGWorld', () => {
 
   let l2OrderBook: L2OrderBook<BTCUSD>;
   let paperFeed: PubSub<Order<BTCUSD>>;
-  let batchedTradeFeed: BatchedPubSub<Trade>;
+  let batchedTradeFeed: BatchedPubSub<Trade<BTCUSD>>;
   let world: L2PGWorld<BTCUSD>;
 
   let paperX: Order<BTCUSD>;
@@ -22,23 +22,23 @@ describe('L2PGWorld', () => {
   let paperF: Order<BTCUSD>;
 
   const now = Date.now();
-  const trade100 = new Trade(Side.SELL, 100, 2.0, now);
-  const trade102a = new Trade(Side.SELL, 102, 1.0, now);
-  const trade102b = new Trade(Side.SELL, 102, 3.0, now);
-  const trade103a = new Trade(Side.SELL, 103, 4.0, now);
-  const trade103b = new Trade(Side.SELL, 103, 2.0, now);
-  const trade104a = new Trade(Side.SELL, 104, 1.0, now);
-  const trade104b = new Trade(Side.SELL, 104, 1.0, now);
+  const trade100 = new Trade(BTCUSD_, Side.SELL, 100, 2.0, now);
+  const trade102a = new Trade(BTCUSD_, Side.SELL, 102, 1.0, now);
+  const trade102b = new Trade(BTCUSD_, Side.SELL, 102, 3.0, now);
+  const trade103a = new Trade(BTCUSD_, Side.SELL, 103, 4.0, now);
+  const trade103b = new Trade(BTCUSD_, Side.SELL, 103, 2.0, now);
+  const trade104a = new Trade(BTCUSD_, Side.SELL, 104, 1.0, now);
+  const trade104b = new Trade(BTCUSD_, Side.SELL, 104, 1.0, now);
   let trade107; // This trade quantity will be altered in each test.
-  const trade108a = new Trade(Side.SELL, 108, 1.5, now);
-  const trade108b = new Trade(Side.SELL, 108, 1.5, now);
-  const trade99 = new Trade(Side.SELL, 99, 1.0, now); // Simply for triggering the batch publish.
+  const trade108a = new Trade(BTCUSD_, Side.SELL, 108, 1.5, now);
+  const trade108b = new Trade(BTCUSD_, Side.SELL, 108, 1.5, now);
+  const trade99 = new Trade(BTCUSD_, Side.SELL, 99, 1.0, now); // Simply for triggering the batch publish.
 
   beforeEach(() => {
     const l2OrderFeed = new PubSub<Order<BTCUSD>>();
     l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
     paperFeed = new PubSub<Order<BTCUSD>>();
-    batchedTradeFeed = new BatchedPubSub<Trade>(-1, undefined, getBatchingFn());
+    batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
     const account = new InfiniteAccount();
 
     world = new L2PGWorld(
@@ -46,7 +46,6 @@ describe('L2PGWorld', () => {
       l2OrderBook,
       paperFeed,
       batchedTradeFeed,
-      account,
       () => ReluctanceFactor.RELUCTANT,
       // Control the impedance factor each time.
       (() => {
@@ -81,7 +80,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 19', () => {
 
     const additionalQty = 1.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -131,7 +130,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 20', () => {
 
     const additionalQty = 2.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -181,7 +180,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 20.25', () => {
 
     const additionalQty = 2.25;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -231,7 +230,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 20.5', () => {
 
     const additionalQty = 2.5;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -281,7 +280,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 21', () => {
 
     const additionalQty = 3.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -331,7 +330,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 21.5', () => {
 
     const additionalQty = 3.5;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -380,7 +379,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 22.0', () => {
 
     const additionalQty = 4.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -429,7 +428,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 24.5', () => {
 
     const additionalQty = 6.5;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -477,7 +476,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 25.0', () => {
 
     const additionalQty = 7.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -525,7 +524,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 25.5', () => {
 
     const additionalQty = 7.5;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -573,7 +572,7 @@ describe('L2PGWorld', () => {
   it('should process a batch of trades of quantity 26.0', () => {
 
     const additionalQty = 8.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);
@@ -619,7 +618,7 @@ describe('L2PGWorld', () => {
     // Adding any quantity beyond this point only offsets itself. Same result as above.
 
     const additionalQty = 10.0;
-    trade107 = new Trade(Side.SELL, 107, 1.0 + additionalQty, now);
+    trade107 = new Trade(BTCUSD_, Side.SELL, 107, 1.0 + additionalQty, now);
 
     batchedTradeFeed.publish(trade100);
     batchedTradeFeed.publish(trade102a);

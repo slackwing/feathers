@@ -42,8 +42,8 @@ export function toBase34Max39304(num: number): string {
   return result;
 }
 
-export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organizer<Order<T>>> implements Cloneable<Order<T>> {
-  readonly assetPair: T;
+export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organizer<Order<A>>> implements Cloneable<Order<A>> {
+  readonly assetPair: A;
   readonly account: Account
   readonly type: OrderType;
   readonly exchangeType: ExchangeType;
@@ -53,11 +53,11 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
   private _quantity: number;
   private _timestamp: number;
   private _remainingQty: number;
-  private _executions: Set<Execution<T>>;
+  private _executions: Set<Execution<A>>;
   private _heldFunds: Map<Asset, Fund>;
 
   constructor(
-    assetPair: T,
+    assetPair: A,
     account: Account,
     type: OrderType,
     exchangeType: ExchangeType,
@@ -77,7 +77,7 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     this._quantity = quantity;
     this._timestamp = timestamp;
     this._remainingQty = quantity;
-    this._executions = new Set<Execution<T>>();
+    this._executions = new Set<Execution<A>>();
     this._heldFunds = new Map<Asset, Fund>();
     const fundingAsset = side === Side.BUY ? assetPair.quote : assetPair.base;
     const fundingAmount = side === Side.BUY ? this.price * quantity : quantity;
@@ -148,7 +148,7 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     return safelyWithdrawFunds(asset, amount, this._heldFunds);
   }
 
-  public executed(execution: Execution<T>): void {
+  public executed(execution: Execution<A>): void {
     if (this.side === Side.BUY) {
       assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
     } else {
@@ -163,8 +163,8 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
   /**
    * NOTE(DECOMISSIONED): See BifurcatingPubSub.
    */
-  public clone(): Order<T> {
-    const cloned = new Order<T>(
+  public clone(): Order<A> {
+    const cloned = new Order<A>(
       this.assetPair,
       this.account,
       this.type,
@@ -179,8 +179,8 @@ export class Order<T extends AssetPair> extends SelfOrganizing<Order<T>, Organiz
     return cloned;
   }
 
-public mirroring(account: Account, type: OrderType): Order<T> {
-    const cloned = new Order<T>(
+public mirroring(account: Account, type: OrderType): Order<A> {
+    const cloned = new Order<A>(
       this.assetPair,
       account,
       type,
