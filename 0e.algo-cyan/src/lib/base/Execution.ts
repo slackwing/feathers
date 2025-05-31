@@ -20,16 +20,16 @@ export class Execution<A extends AssetPair> {
   readonly timestamp: number;
   public status: ExecutionStatus;
 
-  constructor(assetPair: A, takingOrder: Order<A>, makingOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
+  constructor(assetPair: A, newOrder: Order<A>, bookedOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
     this.assetPair = assetPair;
-    if (takingOrder.side === Side.BUY) {
-      assert.ok(makingOrder.side === Side.SELL, 'ASSERT: Making order must be a sell order.');
-      this.buyOrder = takingOrder;
-      this.sellOrder = makingOrder;
+    if (newOrder.side === Side.BUY) {
+      assert.ok(bookedOrder.side === Side.SELL, 'ASSERT: Making order must be a sell order.');
+      this.buyOrder = newOrder;
+      this.sellOrder = bookedOrder;
     } else {
-      assert.ok(makingOrder.side === Side.BUY, 'ASSERT: Making order must be a buy order.');
-      this.buyOrder = makingOrder;
-      this.sellOrder = takingOrder;
+      assert.ok(bookedOrder.side === Side.BUY, 'ASSERT: Making order must be a buy order.');
+      this.buyOrder = bookedOrder;
+      this.sellOrder = newOrder;
     }
     assert.ok(gt(executionPrice, 0), 'ASSERT: Execution price must be positive.');
     this.executionPrice = executionPrice;
@@ -42,7 +42,6 @@ export class Execution<A extends AssetPair> {
 
   private exchangeFunds(): void {
     const cost = this.executionPrice * this.executionQty;
-    console.log("ASDF700: " + this.buyOrder.id + " " + this.buyOrder.account.id + " " + this.buyOrder._heldFunds.get(this.buyOrder.assetPair.quote)?.amount);
     const buyerFunds: Fund = this.buyOrder.withdrawFunds(this.buyOrder.assetPair.quote, cost);
     const sellerFunds: Fund = this.sellOrder.withdrawFunds(this.sellOrder.assetPair.base, this.executionQty);
     this.buyOrder.account.depositAsset(sellerFunds);

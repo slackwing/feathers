@@ -25,7 +25,7 @@ export class Quotes {
     return quote;
   }
 
-  public computeQuote(funds: Funds): number {
+  public computeValue(funds: Funds): number {
     return Array.from(funds.values()).reduce((total, fund) => {
       if (fund.asset === this._quotingAsset) {
         return total + fund.amount;

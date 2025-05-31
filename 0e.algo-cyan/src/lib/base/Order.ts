@@ -3,10 +3,11 @@ import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
 import { Asset, AssetPair } from "./Asset";
-import { Fund, safelyWithdrawFunds } from "./Funds";
+import { Fund, Funds, safelyWithdrawFunds } from "./Funds";
 import { Execution, ExecutionStatus } from "./Execution";
 import { Account } from "./Account";
 import { round } from "../utils/number";
+import { Quotes } from "./Quotes";
 
 export enum OrderType {
   L2 = 'L2',
@@ -54,7 +55,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
   private _timestamp: number;
   private _remainingQty: number;
   private _executions: Set<Execution<A>>;
-  private _heldFunds: Map<Asset, Fund>;
+  private _heldFunds: Funds;
 
   constructor(
     assetPair: A,
@@ -93,6 +94,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     };
     const fundingAmount = this.side === Side.BUY ? fundingPrice * quantity : quantity;
     this._heldFunds.set(fundingAsset, account.withdrawAsset(fundingAsset, fundingAmount));
+    account.orderFunded(this);
   }
 
   private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
@@ -119,7 +121,6 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     if (this._remainingQty !== value) {
       this._remainingQty = value;
       if (this._remainingQty <= 0) {
-        console.log("ASDF400: Completed order ", this.id);
         this._returnFunds();
         // TODO(P1): Introduce order statuses. Set to CANCELLED here.
         this.selfOrganize(this);
@@ -190,6 +191,10 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
     this.remainingQty = round(this._remainingQty - execution.executionQty);
     this._executions.add(execution);
+  }
+
+  public computeValue(quotes: Quotes): number {
+    return quotes.computeValue(this._heldFunds);
   }
 
   /**

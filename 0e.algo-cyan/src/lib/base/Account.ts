@@ -1,16 +1,21 @@
 import { Fund, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Asset } from "./Asset";
 import { Quotes } from "./Quotes";
+import { Order } from "./Order";
 
 export class Account {
   readonly id: string;
   readonly name: string;
   readonly wallets: Map<string, Wallet>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly orders: Map<string, Order<any>>;
 
   constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
     this.wallets = new Map<string, Wallet>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.orders = new Map<string, Order<any>>();
   }
 
   public addWallet(wallet: Wallet): void {
@@ -37,8 +42,15 @@ export class Account {
     return this.getActiveWallet().withdrawAsset(asset, amount);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public orderFunded(order: Order<any>): void {
+    this.orders.set(order.id, order);
+  }
+
   public computeValue(quotes: Quotes): number {
-    return this.wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
+    const walletValue = this.wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
+    const orderValue = Array.from(this.orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
+    return walletValue + orderValue;
   }
 }
 
@@ -62,7 +74,7 @@ export class Wallet {
   }
 
   public computeValue(quotes: Quotes): number {
-    return quotes.computeQuote(this._assets);
+    return quotes.computeValue(this._assets);
   }
 }
 
