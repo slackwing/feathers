@@ -92,6 +92,7 @@ const Dashboard = () => {
         xWorld.executionFeed,
         dsFullStochastic,
         quotes,
+        20,
         2
       );
       const initialValue = paperAccount?.computeValue(quotes);
@@ -99,12 +100,13 @@ const Dashboard = () => {
       mrStrat.start();
 
       // Add new run result after starting the experiment
-      setRunResults(prev => [...prev, {
+      const newRunResult = {
         initialValue: initialValue || 0,
         currentValue: initialValue || 0,
         isComplete: false,
         startTime: Date.now()
-      }]);
+      };
+      setRunResults(prev => [...prev, newRunResult]);
 
       // Update current value every 5 seconds
       const updateInterval = setInterval(() => {
@@ -112,8 +114,9 @@ const Dashboard = () => {
           const currentValue = paperAccount.computeValue(quotes);
           setRunResults(prev => {
             const newResults = [...prev];
-            newResults[runCount + 1] = {
-              ...newResults[runCount + 1],
+            const lastIndex = newResults.length - 1;
+            newResults[lastIndex] = {
+              ...newResults[lastIndex],
               currentValue
             };
             return newResults;
@@ -128,8 +131,9 @@ const Dashboard = () => {
         if (finalValue !== undefined && initialValue !== undefined) {
           setRunResults(prev => {
             const newResults = [...prev];
-            newResults[runCount + 1] = {
-              ...newResults[runCount + 1],
+            const lastIndex = newResults.length - 1;
+            newResults[lastIndex] = {
+              ...newResults[lastIndex],
               currentValue: finalValue,
               isComplete: true
             };

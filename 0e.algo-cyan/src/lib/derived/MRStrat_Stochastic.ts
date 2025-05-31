@@ -31,6 +31,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   protected stochasticSignal: DSignal_FullStochastic<A, I>;
   protected quotes: Quotes;
 
+  protected threshold: number; // Typically 20 (meaning 80% for overbought, 20% for oversold).
   protected fixedQuantity: number;
 
   protected bidOrder: Order<A> | null;
@@ -79,6 +80,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     executionFeed: ReadOnlyPubSub<Execution<A>>,
     stochasticSignal: DSignal_FullStochastic<A, I>,
     quotes: Quotes,
+    threshold: number,
     fixedQuantity: number
   ) {
     super(assetPair, l2PaperWorld);
@@ -87,6 +89,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     this.executionFeed = executionFeed;
     this.stochasticSignal = stochasticSignal;
     this.quotes = quotes;
+    this.threshold = threshold;
     this.fixedQuantity = fixedQuantity;
     this.bidOrder = null;
     this.askOrder = null;
@@ -111,7 +114,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
           this.previousFastD +
           (currentFastD - this.previousFastD) *
           (this.previousSlowD - this.previousFastD) / crossingPointDenominator;
-        if (crossingPoint > 80 && currentFastD < this.previousFastD) {
+        if (crossingPoint > (100 - this.threshold) && currentFastD < this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(A): FastD crossed below SlowD; entering PENDING_SHORT.");
             this.position = Position.PENDING_SHORT;
@@ -121,7 +124,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.SELL);
           }
-        } else if (crossingPoint < 20 && currentFastD > this.previousFastD) {
+        } else if (crossingPoint < this.threshold && currentFastD > this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(C): FastD crossed above SlowD; entering PENDING_LONG.");
             this.position = Position.PENDING_LONG;
