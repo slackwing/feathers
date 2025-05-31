@@ -111,7 +111,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
           this.previousFastD +
           (currentFastD - this.previousFastD) *
           (this.previousSlowD - this.previousFastD) / crossingPointDenominator;
-        if (crossingPoint > 50 && currentFastD < this.previousFastD) {
+        if (crossingPoint > 80 && currentFastD < this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(A): FastD crossed below SlowD; entering PENDING_SHORT.");
             this.position = Position.PENDING_SHORT;
@@ -121,7 +121,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.SELL);
           }
-        } else if (crossingPoint < 50 && currentFastD > this.previousFastD) {
+        } else if (crossingPoint < 20 && currentFastD > this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(C): FastD crossed above SlowD; entering PENDING_LONG.");
             this.position = Position.PENDING_LONG;

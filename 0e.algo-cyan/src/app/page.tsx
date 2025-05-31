@@ -28,6 +28,7 @@ import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
 import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
 import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
+import { RunResult } from '@/lib/base/RunResult';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -40,7 +41,8 @@ const Dashboard = () => {
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
-  const [finalValues, setFinalValues] = React.useState<number[]>([]);
+  const [runResults, setRunResults] = React.useState<RunResult[]>([]);
+  const [quotes] = React.useState(new Quotes(Asset.USD));
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
@@ -58,12 +60,10 @@ const Dashboard = () => {
     // dsOHLC.listen((ohlc) => {
     //   console.log('OHLC: ', ohlc);
     // });
-    const quotes = new Quotes(Asset.USD);
     tradeFeed.subscribe((trade) => {
       quotes.setQuote(BTCUSD_, trade.price);
     });
 
-    const finalValues: number[] = [];
     let runCount = 0;
     const MAX_RUNS = 100;
 
@@ -80,7 +80,7 @@ const Dashboard = () => {
         paperFeed,
       );
       setXWorld(xWorld);
-      const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 3, 3);
+      const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3, 3);
       // dsFullStochastic.listen((stochastic) => {
       //   console.log('Full Stochastic: ', stochastic);
       // });
@@ -98,15 +98,45 @@ const Dashboard = () => {
       console.log('Initial value: ', initialValue);
       mrStrat.start();
 
+      // Add new run result after starting the experiment
+      setRunResults(prev => [...prev, {
+        initialValue: initialValue || 0,
+        currentValue: initialValue || 0,
+        isComplete: false,
+        startTime: Date.now()
+      }]);
+
+      // Update current value every 5 seconds
+      const updateInterval = setInterval(() => {
+        if (paperAccount) {
+          const currentValue = paperAccount.computeValue(quotes);
+          setRunResults(prev => {
+            const newResults = [...prev];
+            newResults[runCount + 1] = {
+              ...newResults[runCount + 1],
+              currentValue
+            };
+            return newResults;
+          });
+        }
+      }, 5000);
+
       setTimeout(() => {
+        clearInterval(updateInterval);
         mrStrat.stop();
         const finalValue = paperAccount?.computeValue(quotes);
         if (finalValue !== undefined && initialValue !== undefined) {
-          const percentChange = ((finalValue - initialValue) / initialValue) * 100;
-          finalValues.push(percentChange);
-          setFinalValues([...finalValues]);
+          setRunResults(prev => {
+            const newResults = [...prev];
+            newResults[runCount + 1] = {
+              ...newResults[runCount + 1],
+              currentValue: finalValue,
+              isComplete: true
+            };
+            return newResults;
+          });
           console.log('Final account value for run ', runCount + 1, ':', finalValue);
-          console.log('Percent change: ', percentChange.toFixed(2) + '%');
+          console.log('Percent change: ', ((finalValue - initialValue) / initialValue * 100).toFixed(2) + '%');
         }
         runCount++;
         
@@ -207,7 +237,7 @@ const Dashboard = () => {
         <div className={styles.loading}>Loading order book...</div>
       )}
 
-      <ExperimentResultsDisplay finalValues={finalValues} />
+      <ExperimentResultsDisplay runResults={runResults} />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>
