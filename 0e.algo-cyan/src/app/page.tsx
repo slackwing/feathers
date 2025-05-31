@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
+import ExperimentResultsDisplay from './components/ExperimentResultsDisplay';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub } from '@/lib/infra/PubSub';
@@ -12,13 +13,12 @@ import { Order } from '@/lib/base/Order';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
-import { L2PGWorld, ReluctanceFactor } from '@/lib/derived/L2PGWorld';
+import { L2PGWorld } from '@/lib/derived/L2PGWorld';
 import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
 import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { Account, Wallet } from '@/lib/base/Account';
 import { Asset } from '@/lib/base/Asset';
 import { Fund } from "@/lib/base/Funds";
-import { MMStrat_StaticSpread } from '@/lib/derived/MMStrat_StaticSpread';
 import { BTCUSD, BTCUSD_ } from '@/lib/derived/AssetPairs';
 import { Quotes } from '@/lib/base/Quotes';
 import { TSignal_P } from '@/lib/derived/TSignal_P';
@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
+  const [finalValues, setFinalValues] = React.useState<number[]>([]);
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
@@ -50,12 +51,75 @@ const Dashboard = () => {
     const paperFeed = new PubSub<Order<BTCUSD>>();
     setPaperOrderFeed(paperFeed);
     const l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
-    const paperAccount = new Account('paper', 'Paper Account');
-    const paperWallet = new Wallet('paper', 'Paper Wallet');
-    paperAccount.addWallet(paperWallet);
-    paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
-    paperWallet.depositAsset(new Fund(Asset.BTC, 100));
-    setPaperAccount(paperAccount);
+
+    const sTrade = new Signal_Trade(tradeFeed);
+    const tsP = new TSignal_P(sTrade);
+    const dsOHLC = new DSignal_OHLC(I1SQ_, tsP, 14);
+    // dsOHLC.listen((ohlc) => {
+    //   console.log('OHLC: ', ohlc);
+    // });
+    const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3);
+    // dsFullStochastic.listen((stochastic) => {
+    //   console.log('Full Stochastic: ', stochastic);
+    // });
+    const quotes = new Quotes(Asset.USD);
+    tradeFeed.subscribe((trade) => {
+      quotes.setQuote(BTCUSD_, trade.price);
+    });
+
+    const finalValues: number[] = [];
+    let runCount = 0;
+    const MAX_RUNS = 100;
+
+    const runExperiment = () => {
+      const paperAccount = new Account('paper', 'Paper Account');
+      const paperWallet = new Wallet('paper', 'Paper Wallet');
+      paperAccount.addWallet(paperWallet);
+      paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
+      paperWallet.depositAsset(new Fund(Asset.BTC, 100));
+      setPaperAccount(paperAccount);
+      const xWorld = new World_SimpleL2PaperMatching(
+        BTCUSD_,
+        l2OrderBook,
+        paperFeed,
+      );
+      setXWorld(xWorld);
+      const mrStrat = new MRStrat_Stochastic(
+        BTCUSD_,
+        I1SQ_,
+        xWorld,
+        paperAccount,
+        xWorld.executionFeed,
+        dsFullStochastic,
+        quotes,
+        2
+      );
+      const initialValue = paperAccount?.computeValue(quotes);
+      console.log('Initial value: ', initialValue);
+      mrStrat.start();
+
+      setTimeout(() => {
+        mrStrat.stop();
+        const finalValue = paperAccount?.computeValue(quotes);
+        if (finalValue !== undefined && initialValue !== undefined) {
+          const percentChange = ((finalValue - initialValue) / initialValue) * 100;
+          finalValues.push(percentChange);
+          setFinalValues([...finalValues]);
+          console.log('Final account value for run ', runCount + 1, ':', finalValue);
+          console.log('Percent change: ', percentChange.toFixed(2) + '%');
+        }
+        runCount++;
+        
+        if (runCount < MAX_RUNS) {
+          // Wait 10 seconds before next experiment
+          setTimeout(runExperiment, 10000);
+        }
+      }, 60000);
+    };
+
+    // Wait 3 seconds before starting first experiment
+    setTimeout(runExperiment, 3000);
+
     // const sWorld = new L2PGWorld(
     //   BTCUSD_,
     //   l2OrderBook,
@@ -72,36 +136,14 @@ const Dashboard = () => {
     //   () => ReluctanceFactor.AGGRESSIVE_LIMITED,
     //   () => 0.0
     // );
-    const xWorld = new World_SimpleL2PaperMatching(
-      BTCUSD_,
-      l2OrderBook,
-      paperFeed,
-    );
     // setSlowWorld(sWorld);
     // setFastWorld(fWorld);
     setSlowWorld(null);
     setFastWorld(null);
-    setXWorld(xWorld);
 
     // sWorld.executionFeed.subscribe((execution) => {
     //   console.log('Execution:', execution);
     // });
-
-    const sTrade = new Signal_Trade(tradeFeed);
-    const tsP = new TSignal_P(sTrade);
-    const dsOHLC = new DSignal_OHLC(I1SQ_, tsP, 14);
-    dsOHLC.listen((ohlc) => {
-      console.log('OHLC: ', ohlc);
-    });
-    const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3);
-    dsFullStochastic.listen((stochastic) => {
-      console.log('Full Stochastic: ', stochastic);
-    });
-
-    const quotes = new Quotes(Asset.USD);
-    tradeFeed.subscribe((trade) => {
-      quotes.setQuote(BTCUSD_, trade.price);
-    });
 
     // const mmStrat = new MMStrat_StaticSpread(
     //   BTCUSD_,
@@ -122,28 +164,6 @@ const Dashboard = () => {
     //     console.log('Paper account delta: ', currentValue - initialValue);
     //   }, 3000);
     // }, 3000);
-
-    const mrStrat = new MRStrat_Stochastic(
-      BTCUSD_,
-      I1SQ_,
-      xWorld,
-      paperAccount,
-      xWorld.executionFeed,
-      dsFullStochastic,
-      quotes,
-      2
-    );
-
-    // TODO(P1): Do this properly.
-    setTimeout(() => {
-      const initialValue = paperAccount?.computeValue(quotes);
-      console.log('Initial value: ', initialValue);
-      mrStrat.start();
-      setInterval(() => {
-        const currentValue = paperAccount?.computeValue(quotes);
-        console.log('Paper account delta: ', currentValue - initialValue);
-      }, 3000);
-    }, 3000);
 
     connect({
       onMessage: (data) => {
@@ -186,6 +206,8 @@ const Dashboard = () => {
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}
+
+      <ExperimentResultsDisplay finalValues={finalValues} />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>

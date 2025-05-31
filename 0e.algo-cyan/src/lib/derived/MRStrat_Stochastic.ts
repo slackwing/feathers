@@ -67,6 +67,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     }
   }
 
+  protected onStochastic: ((data: AStochasticsWave<A, I>) => void) | null = null;
+  protected unsubscribeStochastic: (() => void) | null = null;
+  protected unsubscribeExecution: (() => void) | null = null;
+
   constructor(
     assetPair: A,
     interval: I,
@@ -92,7 +96,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   }
 
   public start(): void {
-    this.stochasticSignal.listen((data: AStochasticsWave<A, I>) => {
+    this.onStochastic = (data: AStochasticsWave<A, I>) => {
       const currentFastD = data.value.fastD;
       const currentSlowD = data.value.slowD;
       if (this.previousFastD !== null && this.previousSlowD !== null) {
@@ -139,9 +143,20 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
       }
       this.previousFastD = currentFastD;
       this.previousSlowD = currentSlowD;
-    });
-    // Subscribe to the execution feed
-    this.executionFeed.subscribe(this.onExecution);
+    };
+    this.unsubscribeStochastic = this.stochasticSignal.listen(this.onStochastic);
+    this.unsubscribeExecution = this.executionFeed.subscribe(this.onExecution);
+  }
+
+  public stop(): void {
+    if (this.unsubscribeStochastic) {
+      this.unsubscribeStochastic();
+      this.unsubscribeStochastic = null;
+    }
+    if (this.unsubscribeExecution) {
+      this.unsubscribeExecution();
+      this.unsubscribeExecution = null;
+    }
   }
 
   protected _newOrder(side: Side): void {
