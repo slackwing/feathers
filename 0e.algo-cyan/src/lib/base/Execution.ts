@@ -1,7 +1,7 @@
 import assert from "assert";
 import { Order } from "./Order";
 import { Side } from "./Order";
-import { gte } from "../utils/number";
+import { gt, gte } from "../utils/number";
 import { AssetPair } from "./Asset";
 import { Fund } from "./Funds";
 
@@ -20,18 +20,18 @@ export class Execution<A extends AssetPair> {
   readonly timestamp: number;
   public status: ExecutionStatus;
 
-  constructor(assetPair: A, order: Order<A>, oppositeOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
+  constructor(assetPair: A, takingOrder: Order<A>, makingOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
     this.assetPair = assetPair;
-    if (order.side === Side.BUY) {
-      this.buyOrder = order;
-      assert.ok(oppositeOrder.side === Side.SELL, 'ASSERT: Opposite order must be a sell order.');
-      this.sellOrder = oppositeOrder;
+    if (takingOrder.side === Side.BUY) {
+      assert.ok(makingOrder.side === Side.SELL, 'ASSERT: Making order must be a sell order.');
+      this.buyOrder = takingOrder;
+      this.sellOrder = makingOrder;
     } else {
-      assert.ok(order.side === Side.SELL, 'ASSERT: Order must be a sell order.');
-      assert.ok(oppositeOrder.side === Side.BUY, 'ASSERT: Opposite order must be a buy order.');
-      this.buyOrder = oppositeOrder;
-      this.sellOrder = order;
+      assert.ok(makingOrder.side === Side.BUY, 'ASSERT: Making order must be a buy order.');
+      this.buyOrder = makingOrder;
+      this.sellOrder = takingOrder;
     }
+    assert.ok(gt(executionPrice, 0), 'ASSERT: Execution price must be positive.');
     this.executionPrice = executionPrice;
     this.executionQty = executionQty;
     this.timestamp = timestamp;
@@ -42,6 +42,7 @@ export class Execution<A extends AssetPair> {
 
   private exchangeFunds(): void {
     const cost = this.executionPrice * this.executionQty;
+    console.log("ASDF700: " + this.buyOrder.id + " " + this.buyOrder.account.id + " " + this.buyOrder._heldFunds.get(this.buyOrder.assetPair.quote)?.amount);
     const buyerFunds: Fund = this.buyOrder.withdrawFunds(this.buyOrder.assetPair.quote, cost);
     const sellerFunds: Fund = this.sellOrder.withdrawFunds(this.sellOrder.assetPair.base, this.executionQty);
     this.buyOrder.account.depositAsset(sellerFunds);
@@ -65,8 +66,8 @@ export class Execution<A extends AssetPair> {
       this.status = ExecutionStatus.COMPLETED;
       this.buyOrder.executed(this);
       this.sellOrder.executed(this);
-      // const cost = this.executionPrice * this.executionQty;
-      // console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
+      const cost = this.executionPrice * this.executionQty;
+      console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
     }
   }
 

@@ -26,6 +26,8 @@ import { Signal_Trade } from '@/lib/derived/Signal_Trade';
 import { I1SQ_ } from '@/lib/derived/Intervals';
 import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
 import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
+import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
+import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -33,6 +35,7 @@ const Dashboard = () => {
 
   const [slowWorld, setSlowWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
+  const [xWorld, setXWorld] = React.useState<World_SimpleL2PaperMatching<BTCUSD> | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
@@ -53,53 +56,36 @@ const Dashboard = () => {
     paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
     paperWallet.depositAsset(new Fund(Asset.BTC, 100));
     setPaperAccount(paperAccount);
-    const sWorld = new L2PGWorld(
+    // const sWorld = new L2PGWorld(
+    //   BTCUSD_,
+    //   l2OrderBook,
+    //   paperFeed,
+    //   batchedTradeFeed,
+    //   () => ReluctanceFactor.RELUCTANT,
+    //   () => 1.0
+    // );
+    // const fWorld = new L2PGWorld(
+    //   BTCUSD_,
+    //   l2OrderBook,
+    //   paperFeed,
+    //   batchedTradeFeed,
+    //   () => ReluctanceFactor.AGGRESSIVE_LIMITED,
+    //   () => 0.0
+    // );
+    const xWorld = new World_SimpleL2PaperMatching(
       BTCUSD_,
       l2OrderBook,
       paperFeed,
-      batchedTradeFeed,
-      () => ReluctanceFactor.RELUCTANT,
-      () => 1.0
     );
-    const fWorld = new L2PGWorld(
-      BTCUSD_,
-      l2OrderBook,
-      paperFeed,
-      batchedTradeFeed,
-      () => ReluctanceFactor.AGGRESSIVE_LIMITED,
-      () => 0.0
-    );
-    setSlowWorld(sWorld);
-    setFastWorld(fWorld);
+    // setSlowWorld(sWorld);
+    // setFastWorld(fWorld);
+    setSlowWorld(null);
+    setFastWorld(null);
+    setXWorld(xWorld);
 
     // sWorld.executionFeed.subscribe((execution) => {
     //   console.log('Execution:', execution);
     // });
-
-    const mmStrat = new MMStrat_StaticSpread(
-      BTCUSD_,
-      sWorld,
-      paperAccount,
-      sWorld.executionFeed,
-      1,
-      0.1
-    );
-
-    const quotes = new Quotes(Asset.USD);
-    tradeFeed.subscribe((trade) => {
-      quotes.setQuote(BTCUSD_, trade.price);
-    });
-
-    // TODO(P1): Do this properly.
-    setTimeout(() => {
-      const initialValue = paperAccount?.computeValue(quotes);
-      console.log('Initial value: ', initialValue);
-      mmStrat.start();
-      setInterval(() => {
-        const currentValue = paperAccount?.computeValue(quotes);
-        console.log('Paper account delta: ', currentValue - initialValue);
-      }, 3000);
-    }, 3000);
 
     const sTrade = new Signal_Trade(tradeFeed);
     const tsP = new TSignal_P(sTrade);
@@ -111,6 +97,53 @@ const Dashboard = () => {
     dsFullStochastic.listen((stochastic) => {
       console.log('Full Stochastic: ', stochastic);
     });
+
+    const quotes = new Quotes(Asset.USD);
+    tradeFeed.subscribe((trade) => {
+      quotes.setQuote(BTCUSD_, trade.price);
+    });
+
+    // const mmStrat = new MMStrat_StaticSpread(
+    //   BTCUSD_,
+    //   sWorld,
+    //   paperAccount,
+    //   sWorld.executionFeed,
+    //   1,
+    //   0.1
+    // );
+
+    // TODO(P1): Do this properly.
+    // setTimeout(() => {
+    //   const initialValue = paperAccount?.computeValue(quotes);
+    //   console.log('Initial value: ', initialValue);
+    //   mmStrat.start();
+    //   setInterval(() => {
+    //     const currentValue = paperAccount?.computeValue(quotes);
+    //     console.log('Paper account delta: ', currentValue - initialValue);
+    //   }, 3000);
+    // }, 3000);
+
+    const mrStrat = new MRStrat_Stochastic(
+      BTCUSD_,
+      I1SQ_,
+      xWorld,
+      paperAccount,
+      xWorld.executionFeed,
+      dsFullStochastic,
+      quotes,
+      2
+    );
+
+    // TODO(P1): Do this properly.
+    setTimeout(() => {
+      const initialValue = paperAccount?.computeValue(quotes);
+      console.log('Initial value: ', initialValue);
+      mrStrat.start();
+      setInterval(() => {
+        const currentValue = paperAccount?.computeValue(quotes);
+        console.log('Paper account delta: ', currentValue - initialValue);
+      }, 3000);
+    }, 3000);
 
     connect({
       onMessage: (data) => {
@@ -148,20 +181,8 @@ const Dashboard = () => {
         <div className={styles.status}>Connecting...</div>
       </div>
 
-      {slowWorld ? (
-        <OrderBookBarChartDisplay
-          orderBook={slowWorld.combinedBook}
-          lastRefreshed={lastRefreshed}
-        />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
-
-      {fastWorld ? (
-        <OrderBookBarChartDisplay
-          orderBook={fastWorld.combinedBook}
-          lastRefreshed={lastRefreshed}
-        />
+      {xWorld ? (
+        <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}
@@ -194,8 +215,21 @@ const Dashboard = () => {
           {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
         </div>
       </div>
+
+      {xWorld ? (
+        <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+      ) : (
+        <div className={styles.loading}>Loading order book...</div>
+      )}
+
       {slowWorld ? (
-        <OrderBookTableDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+        <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+      ) : (
+        <div className={styles.loading}>Loading order book...</div>
+      )}
+
+      {fastWorld ? (
+        <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
       ) : (
         <div className={styles.loading}>Loading order book...</div>
       )}

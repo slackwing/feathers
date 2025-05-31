@@ -88,6 +88,8 @@ export class CoinbaseDataAdapter<T extends AssetPair> {
       this.latencyLastLogged = now;
       this.msgCountL2Data = 0;
       this.msgCountTrades = 0;
+      this.orderCount = 0;
+      this.tradeCount = 0;
     }
   }
 

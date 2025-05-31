@@ -62,7 +62,7 @@ export class Wallet {
   }
 
   public computeValue(quotes: Quotes): number {
-    return quotes.getQuote(this._assets);
+    return quotes.computeQuote(this._assets);
   }
 }
 

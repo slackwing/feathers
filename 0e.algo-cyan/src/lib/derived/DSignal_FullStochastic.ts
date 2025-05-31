@@ -6,7 +6,8 @@ import { Wavelet } from "../infra/Wavelet";
 import { DSignal_OHLC } from "./DSignal_OHLC";
 import { AWave } from "../base/Wavelets";
 
-export class AStochasticsWave<A extends AssetPair> extends AWave<A, Stochastics> {}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export class AStochasticsWave<A extends AssetPair, I extends Interval> extends AWave<A, Stochastics> {}
 
 export class DSignal_FullStochastic<A extends AssetPair, I extends Interval> extends DSignal_Simple<OHLC, Stochastics, I> {
 
@@ -45,7 +46,7 @@ export class DSignal_FullStochastic<A extends AssetPair, I extends Interval> ext
       if (dWindowFull) {
         const slowD = this._d.reduce((acc, curr) => acc + curr, 0) / this._dWindow;
         this.broadcast(
-          new AStochasticsWave<A>(
+          new AStochasticsWave<A, I>(
             new Stochastics(fastK, fastD, slowD),
             values[0].timestamp
           )

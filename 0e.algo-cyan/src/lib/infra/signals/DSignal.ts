@@ -3,6 +3,7 @@ import { Wavelet } from "../Wavelet";
 import { Signal } from "./Signal";
 import { TSignal } from "./TSignal";
 import { DoublyLinkedList } from "@datastructures-js/linked-list";
+import { eq } from "@/lib/utils/number";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -266,7 +267,6 @@ export class DSignalTAdapter_WindowedMin<I extends Interval> extends DSignalTAda
     if (this._min !== null) {
       this.broadcast(new Wavelet(this._min, this.getIntervalEndTimestamp()));
     }
-    this._min = null;
   }
 
   protected onCurrentInterval(): void {
@@ -280,7 +280,7 @@ export class DSignalTAdapter_WindowedMin<I extends Interval> extends DSignalTAda
   }
 
   protected onRemove(data: Wavelet<number>): void {
-    if (data.value === this._min) {
+    if (eq(data.value, this._min!)) {
       // The previous minimum was already removed from the chain.
       this._min = null;
       this._dataChain.forEach((node) => {
@@ -306,7 +306,6 @@ export class DSignalTAdapter_WindowedMax<I extends Interval> extends DSignalTAda
     if (this._max !== null) {
       this.broadcast(new Wavelet(this._max, this.getIntervalEndTimestamp()));
     }
-    this._max = null;
   }
 
   protected onCurrentInterval(): void {
@@ -320,7 +319,7 @@ export class DSignalTAdapter_WindowedMax<I extends Interval> extends DSignalTAda
   }
 
   protected onRemove(data: Wavelet<number>): void {
-    if (data.value === this._max) {
+    if (eq(data.value, this._max!)) {
       // The previous maximum was already removed from the chain.
       this._max = null;
       this._dataChain.forEach((node) => {

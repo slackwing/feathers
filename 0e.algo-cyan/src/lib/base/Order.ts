@@ -62,7 +62,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     type: OrderType,
     exchangeType: ExchangeType,
     side: Side,
-    price: number,
+    price: number | null,
     quantity: number,
     timestamp: number,
   ) {
@@ -72,15 +72,26 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     this.type = type;
     this.exchangeType = exchangeType;
     this.side = side;
-    this._id = this.generateId(type, side, price, timestamp);
-    this._price = price;
+    this._id = this.generateId(type, side, price ?? 0, timestamp);
+    this._price = price ?? 0;
     this._quantity = quantity;
     this._timestamp = timestamp;
     this._remainingQty = quantity;
     this._executions = new Set<Execution<A>>();
     this._heldFunds = new Map<Asset, Fund>();
-    const fundingAsset = side === Side.BUY ? assetPair.quote : assetPair.base;
-    const fundingAmount = side === Side.BUY ? this.price * quantity : quantity;
+    const fundingAsset = this.side === Side.BUY ? assetPair.quote : assetPair.base;
+    let fundingPrice = this._price;
+    switch (this.exchangeType) {
+      case ExchangeType.LIMIT:
+        fundingPrice = this.price;
+        break;
+      case ExchangeType.MARKET:
+        assert.ok(false, 'ASSERT: Not yet known how market orders will be funded.');
+        break;
+      default:
+        assert.ok(false, 'ASSERT: Invalid exchange type.');
+    };
+    const fundingAmount = this.side === Side.BUY ? fundingPrice * quantity : quantity;
     this._heldFunds.set(fundingAsset, account.withdrawAsset(fundingAsset, fundingAmount));
   }
 
@@ -108,9 +119,19 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     if (this._remainingQty !== value) {
       this._remainingQty = value;
       if (this._remainingQty <= 0) {
+        console.log("ASDF400: Completed order ", this.id);
+        this._returnFunds();
+        // TODO(P1): Introduce order statuses. Set to CANCELLED here.
         this.selfOrganize(this);
       }
     }
+  }
+
+  // TODO(P0): Return funds.
+  private _returnFunds(): void {
+    // this._heldFunds.forEach((fund, asset) => {
+    //   this.account.depositAsset(asset, fund.amount);
+    // });
   }
 
   get id(): string { return this._id; }
@@ -146,6 +167,17 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
 
   public withdrawFunds(asset: Asset, amount: number): Fund {
     return safelyWithdrawFunds(asset, amount, this._heldFunds);
+  }
+
+  // TODO(P2): Perhaps this should just be part of an update function.
+  public cancel(quantityToCancel: number): void {
+    if (quantityToCancel <= 0) {
+      throw new Error('ASSERT: Quantity to cancel must be positive.');
+    }
+    if (quantityToCancel > this._remainingQty) {
+      throw new Error('ASSERT: Quantity to cancel must be less than or equal to remaining quantity.');
+    }
+    this.quantity = round(this._quantity - quantityToCancel);
   }
 
   public executed(execution: Execution<A>): void {

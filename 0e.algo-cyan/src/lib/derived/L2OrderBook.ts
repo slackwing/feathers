@@ -4,7 +4,7 @@ import { OrderBook } from '../base/OrderBook';
 import { ReadOnlyPubSub } from '../infra/PubSub';
 
 export class L2OrderBook<A extends AssetPair> extends OrderBook<A> {
-  readonly singleSource: ReadOnlyPubSub<Order<A>>;
+  public readonly singleSource: ReadOnlyPubSub<Order<A>>;
 
   constructor(assetPair: A, l2OrderFeed: ReadOnlyPubSub<Order<A>>) {
     super(assetPair, l2OrderFeed);

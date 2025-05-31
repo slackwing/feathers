@@ -5,7 +5,7 @@ import { Trade } from '@/lib/base/Trade';
 import { BatchedPubSub } from '../infra/BatchedPubSub';
 import { AssetPair } from './Asset';
 
-export class SingleAssetWorld<A extends AssetPair> {
+export class World_SingleAsset<A extends AssetPair> {
 
   readonly assetPair: A;
   public combinedBook: OrderBook<A>;
@@ -17,6 +17,7 @@ export class SingleAssetWorld<A extends AssetPair> {
 
   public subscribeToOrderFeed(orderFeed: ReadOnlyPubSub<Order<A>>): void {
     this.combinedBook.subscribe(orderFeed);
+    orderFeed.subscribe(this.onOrder);
   }
 
   public subscribeToTradeFeed(tradeFeed: ReadOnlyPubSub<Trade<A>>): void {
@@ -25,6 +26,11 @@ export class SingleAssetWorld<A extends AssetPair> {
 
   public subscribeToBatchedTradeFeed(batchedTradeFeed: BatchedPubSub<Trade<A>>): void {
     batchedTradeFeed.subscribe(this.onTradeBatch);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onOrder(order: Order<A>): void {
+    // Does nothing. Override in subclass.
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -37,5 +43,6 @@ export class SingleAssetWorld<A extends AssetPair> {
   // default, simply forwards to onTrade() for each trade.
   protected onTradeBatch(trades: Trade<A>[]): void {
     trades.forEach((trade) => this.onTrade(trade));
+    // Override in subclass.
   }
 }

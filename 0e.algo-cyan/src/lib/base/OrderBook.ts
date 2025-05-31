@@ -5,9 +5,9 @@ import { Organizer } from '../infra/Organizer';
 import { AssetPair } from './Asset';
 
 export class OrderBook<A extends AssetPair> implements Organizer<Order<A>> {
-  readonly assetPair: A;
-  protected bids: OrderPriceTimePriorityTree<A>;
-  protected asks: OrderPriceTimePriorityTree<A>;
+  public readonly assetPair: A;
+  public readonly bids: OrderPriceTimePriorityTree<A>;
+  public readonly asks: OrderPriceTimePriorityTree<A>;
 
   constructor(assetPair: A, ...pubsubs: ReadOnlyPubSub<Order<A>>[]) {
     this.assetPair = assetPair;

@@ -2,10 +2,10 @@ import { L2OrderBook } from './L2OrderBook';
 import { Order } from '../base/Order';
 import { OrderBook } from '../base/OrderBook';
 import { PubSub } from '../infra/PubSub';
-import { SingleAssetWorld } from '../base/World_SingleAsset';
+import { World_SingleAsset } from '../base/World_SingleAsset';
 import { AssetPair } from '../base/Asset';
 
-export class L2PaperWorld<A extends AssetPair> extends SingleAssetWorld<A> {
+export class L2PaperWorld<A extends AssetPair> extends World_SingleAsset<A> {
   protected l2book: L2OrderBook<A>;
   protected paperBook: OrderBook<A>;
   public paperFeed: PubSub<Order<A>>;
