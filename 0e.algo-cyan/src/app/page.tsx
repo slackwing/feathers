@@ -58,10 +58,6 @@ const Dashboard = () => {
     // dsOHLC.listen((ohlc) => {
     //   console.log('OHLC: ', ohlc);
     // });
-    const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3);
-    // dsFullStochastic.listen((stochastic) => {
-    //   console.log('Full Stochastic: ', stochastic);
-    // });
     const quotes = new Quotes(Asset.USD);
     tradeFeed.subscribe((trade) => {
       quotes.setQuote(BTCUSD_, trade.price);
@@ -84,6 +80,10 @@ const Dashboard = () => {
         paperFeed,
       );
       setXWorld(xWorld);
+      const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 3, 3);
+      // dsFullStochastic.listen((stochastic) => {
+      //   console.log('Full Stochastic: ', stochastic);
+      // });
       const mrStrat = new MRStrat_Stochastic(
         BTCUSD_,
         I1SQ_,

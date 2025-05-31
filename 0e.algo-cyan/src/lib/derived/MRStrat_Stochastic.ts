@@ -106,13 +106,11 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
         }
         // Intersection of line segments: f0 + (f1 - f0) * (s0 - f0) / ((f1 - f0) - (s1 - s0)).
         const crossingPointDenominator = ((currentFastD - this.previousFastD) - (currentSlowD - this.previousSlowD));
-        console.log("ASDF430: crossingPointDenominator" + crossingPointDenominator);
         assert.ok(crossingPointDenominator !== 0, "IMPOSSIBLE: crossingPointDenominator is 0.");
         const crossingPoint =
           this.previousFastD +
           (currentFastD - this.previousFastD) *
           (this.previousSlowD - this.previousFastD) / crossingPointDenominator;
-        console.log("ASDF440: crossingPoint, currentFastD, previousFastD: " + crossingPoint + ", " + currentFastD + ", " + this.previousFastD);
         if (crossingPoint > 50 && currentFastD < this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(A): FastD crossed below SlowD; entering PENDING_SHORT.");
@@ -122,8 +120,6 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             console.log("$$$ Stochastic(B): FastD crossed below SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.SELL);
-          } else {
-            console.log("ASDF450");
           }
         } else if (crossingPoint < 50 && currentFastD > this.previousFastD) {
           if (this.position === Position.FLAT) {
@@ -134,11 +130,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             console.log("$$$ Stochastic(D): FastD crossed above SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.BUY);
-          } else {
-            console.log("ASDF460");
           }
-        } else {
-          console.log("ASDF470");
         }
       }
       this.previousFastD = currentFastD;
