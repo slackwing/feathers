@@ -3,4 +3,12 @@ export interface RunResult {
   currentValue: number;
   isComplete: boolean;
   startTime: number;
+  stochasticParams: {
+    kPeriod: number;
+    dPeriod: number;
+    slowingPeriod: number;
+  };
+  strategyParams: {
+    threshold: number;
+  };
 } 

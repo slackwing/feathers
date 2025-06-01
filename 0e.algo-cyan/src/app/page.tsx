@@ -68,87 +68,142 @@ const Dashboard = () => {
     const MAX_RUNS = 100;
 
     const runExperiment = () => {
-      const paperAccount = new Account('paper', 'Paper Account');
-      const paperWallet = new Wallet('paper', 'Paper Wallet');
-      paperAccount.addWallet(paperWallet);
-      paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
-      paperWallet.depositAsset(new Fund(Asset.BTC, 100));
-      setPaperAccount(paperAccount);
-      const xWorld = new World_SimpleL2PaperMatching(
-        BTCUSD_,
-        l2OrderBook,
-        paperFeed,
+      // const stochasticParams = [
+      //   { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
+      //   { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
+      // ];
+      // const strategyThresholds = [10, 15, 20, 30];
+      const stochasticParams = [
+        { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
+        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
+        { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
+        { kPeriod: 30, dPeriod: 14, slowingPeriod: 14 }
+      ];
+      const strategyThresholds = [10, 20, 30, 40];
+
+      // Create all combinations of parameters
+      const experiments = stochasticParams.flatMap(sp => 
+        strategyThresholds.map(st => ({
+          stochasticParams: sp,
+          strategyParams: { threshold: st }
+        }))
       );
-      setXWorld(xWorld);
-      const dsFullStochastic = new DSignal_FullStochastic(I1SQ_, dsOHLC, 14, 3, 3);
-      // dsFullStochastic.listen((stochastic) => {
-      //   console.log('Full Stochastic: ', stochastic);
-      // });
-      const mrStrat = new MRStrat_Stochastic(
-        BTCUSD_,
-        I1SQ_,
-        xWorld,
-        paperAccount,
-        xWorld.executionFeed,
-        dsFullStochastic,
-        quotes,
-        20,
-        2
-      );
-      const initialValue = paperAccount?.computeValue(quotes);
+
+      // Create separate worlds and accounts for each experiment
+      const experimentSetups = experiments.map(params => {
+        const paperAccount = new Account('paper', 'Paper Account');
+        const paperWallet = new Wallet('paper', 'Paper Wallet');
+        paperAccount.addWallet(paperWallet);
+        paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
+        paperWallet.depositAsset(new Fund(Asset.BTC, 100));
+
+        const paperFeed = new PubSub<Order<BTCUSD>>();
+        const xWorld = new World_SimpleL2PaperMatching(
+          BTCUSD_,
+          l2OrderBook,
+          paperFeed,
+        );
+
+        const dsFullStochastic = new DSignal_FullStochastic(
+          I1SQ_,
+          dsOHLC,
+          params.stochasticParams.kPeriod,
+          params.stochasticParams.dPeriod,
+          params.stochasticParams.slowingPeriod
+        );
+
+        const mrStrat = new MRStrat_Stochastic(
+          BTCUSD_,
+          I1SQ_,
+          xWorld,
+          paperAccount,
+          xWorld.executionFeed,
+          dsFullStochastic,
+          quotes,
+          params.strategyParams.threshold,
+          2
+        );
+
+        return {
+          paperAccount,
+          paperFeed,
+          xWorld,
+          mrStrat,
+          params
+        };
+      });
+
+      // Set the last experiment's world as the main display
+      const lastExperiment = experimentSetups[experimentSetups.length - 1];
+      setPaperAccount(lastExperiment.paperAccount);
+      setPaperOrderFeed(lastExperiment.paperFeed);
+      setXWorld(lastExperiment.xWorld);
+
+      const initialValue = lastExperiment.paperAccount.computeValue(quotes);
       console.log('Initial value: ', initialValue);
-      mrStrat.start();
 
-      // Add new run result after starting the experiment
-      const newRunResult = {
-        initialValue: initialValue || 0,
-        currentValue: initialValue || 0,
+      // Start all experiments
+      experimentSetups.forEach(setup => setup.mrStrat.start());
+
+      // Add new run results after starting the experiments
+      const newRunResults = experimentSetups.map(setup => ({
+        initialValue: setup.paperAccount.computeValue(quotes) || 0,
+        currentValue: setup.paperAccount.computeValue(quotes) || 0,
         isComplete: false,
-        startTime: Date.now()
-      };
-      setRunResults(prev => [...prev, newRunResult]);
+        startTime: Date.now(),
+        stochasticParams: setup.params.stochasticParams,
+        strategyParams: setup.params.strategyParams
+      }));
+      setRunResults(prev => [...prev, ...newRunResults]);
 
-      // Update current value every 5 seconds
+      // Update current values every 5 seconds
       const updateInterval = setInterval(() => {
-        if (paperAccount) {
-          const currentValue = paperAccount.computeValue(quotes);
-          setRunResults(prev => {
-            const newResults = [...prev];
-            const lastIndex = newResults.length - 1;
-            newResults[lastIndex] = {
-              ...newResults[lastIndex],
+        setRunResults(prev => {
+          const newResults = [...prev];
+          const startIdx = newResults.length - experiments.length;
+          experimentSetups.forEach((setup, i) => {
+            const currentValue = setup.paperAccount.computeValue(quotes);
+            newResults[startIdx + i] = {
+              ...newResults[startIdx + i],
               currentValue
             };
-            return newResults;
           });
-        }
+          return newResults;
+        });
       }, 5000);
 
       setTimeout(() => {
         clearInterval(updateInterval);
-        mrStrat.stop();
-        const finalValue = paperAccount?.computeValue(quotes);
-        if (finalValue !== undefined && initialValue !== undefined) {
-          setRunResults(prev => {
-            const newResults = [...prev];
-            const lastIndex = newResults.length - 1;
-            newResults[lastIndex] = {
-              ...newResults[lastIndex],
+        experimentSetups.forEach(setup => setup.mrStrat.stop());
+        
+        setRunResults(prev => {
+          const newResults = [...prev];
+          const startIdx = newResults.length - experiments.length;
+          experimentSetups.forEach((setup, i) => {
+            const finalValue = setup.paperAccount.computeValue(quotes);
+            newResults[startIdx + i] = {
+              ...newResults[startIdx + i],
               currentValue: finalValue,
               isComplete: true
             };
-            return newResults;
           });
-          console.log('Final account value for run ', runCount + 1, ':', finalValue);
-          console.log('Percent change: ', ((finalValue - initialValue) / initialValue * 100).toFixed(2) + '%');
+          return newResults;
+        });
+
+        const lastFinalValue = lastExperiment.paperAccount.computeValue(quotes);
+        if (lastFinalValue !== undefined && initialValue !== undefined) {
+          console.log('Final account value for run ', runCount + 1, ':', lastFinalValue);
+          console.log('Percent change: ', ((lastFinalValue - initialValue) / initialValue * 100).toFixed(2) + '%');
         }
         runCount++;
         
         if (runCount < MAX_RUNS) {
-          // Wait 10 seconds before next experiment
-          setTimeout(runExperiment, 10000);
+          // Cooldown.
+          setTimeout(runExperiment, 3000);
         }
-      }, 60000);
+      }, 90000);
     };
 
     // Wait 3 seconds before starting first experiment

@@ -15,7 +15,10 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
       return percentChange >= 0 ? 'rgb(0, 255, 0)' : 'rgb(255, 0, 0)';
     }
 
-    const maxAbsValue = Math.max(...runResults.slice(0, index).map(r => Math.abs((r.currentValue - r.initialValue) / r.initialValue * 100)));
+    // Calculate global maximum absolute value across all runs
+    const maxAbsValue = Math.max(...runResults.map(r => 
+      Math.abs((r.currentValue - r.initialValue) / r.initialValue * 100)
+    ));
     const clampedValue = Math.max(-maxAbsValue, Math.min(maxAbsValue, percentChange));
     const normalizedValue = (clampedValue + maxAbsValue) / (2 * maxAbsValue);
     
@@ -37,35 +40,34 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
     }
   };
 
-  const getGridSize = (count: number) => {
-    const size = Math.ceil(Math.sqrt(count));
-    return { rows: size, cols: size };
-  };
-
-  const { rows, cols } = getGridSize(runResults.length);
+  // Group results by run
+  const runs = [];
+  for (let i = 0; i < runResults.length; i += 16) {
+    runs.push(runResults.slice(i, i + 16));
+  }
 
   return (
     <div className={styles.container}>
       <h3>Experiment Results</h3>
-      <div 
-        className={styles.grid} 
-        style={{ 
-          gridTemplateColumns: `repeat(${cols}, 20px)`,
-          gridTemplateRows: `repeat(${rows}, 20px)`,
-          gap: '4px'
-        }}
-      >
-        {runResults.map((result, index) => {
-          const percentChange = ((result.currentValue - result.initialValue) / result.initialValue) * 100;
-          return (
-            <div
-              key={index}
-              className={`${styles.square} ${!result.isComplete ? styles.inProgress : ''}`}
-              style={{ backgroundColor: getColor(result.currentValue, index) }}
-              title={`Run ${index + 1}: ${percentChange.toFixed(2)}% (${result.isComplete ? 'Complete' : 'In Progress'})`}
-            />
-          );
-        })}
+      <div className={styles.runsContainer}>
+        {runs.map((runResults, runIndex) => (
+          <div key={runIndex} className={styles.runGrid}>
+            <div className={styles.runHeader}>Run {runIndex + 1}</div>
+            <div className={styles.parameterGrid}>
+              {runResults.map((result, index) => {
+                const percentChange = ((result.currentValue - result.initialValue) / result.initialValue) * 100;
+                return (
+                  <div
+                    key={index}
+                    className={`${styles.square} ${!result.isComplete ? styles.inProgress : ''}`}
+                    style={{ backgroundColor: getColor(result.currentValue, runIndex * 16 + index) }}
+                    title={`K:${result.stochasticParams.kPeriod} D:${result.stochasticParams.dPeriod} S:${result.stochasticParams.slowingPeriod} T:${result.strategyParams.threshold} - ${percentChange.toFixed(2)}% (${result.isComplete ? 'Complete' : 'In Progress'})`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

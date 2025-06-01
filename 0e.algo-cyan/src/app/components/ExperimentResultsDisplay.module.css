@@ -5,9 +5,32 @@
   border-radius: 4px;
 }
 
-.grid {
-  display: grid;
+.runsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
   margin-top: 10px;
+}
+
+.runGrid {
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.runHeader {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.parameterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  grid-template-rows: repeat(4, 20px);
+  gap: 4px;
 }
 
 .square {
