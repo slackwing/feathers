@@ -1,11 +1,23 @@
 import assert from "assert";
 import { Asset } from "./Asset";
 import { deleteSelf } from "../utils/delete";
-import { gt, lt, round } from "../utils/number";
+import { gte, gt, lt, round } from "../utils/number";
 
 export type Funds = Map<Asset, Fund>;
 
+// Pretend this encapsulates real money; don't copy it, etc. Use FundLog instead.
 export class Fund {
+  readonly asset: Asset;
+  readonly amount: number;
+
+  constructor(asset: Asset, amount: number) {
+    this.asset = asset;
+    assert.ok(gte(amount, 0), 'Fund amount must be positive.');
+    this.amount = round(amount);
+  }
+}
+
+export class FundLog {
   readonly asset: Asset;
   readonly amount: number;
 

@@ -1,14 +1,16 @@
-import { Fund, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
+import { Fund, FundLog, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Asset } from "./Asset";
 import { Quotes } from "./Quotes";
 import { Order } from "./Order";
+import { PubSub, ReadOnlyPubSub } from "../infra/PubSub";
 
 export class Account {
-  readonly id: string;
-  readonly name: string;
-  readonly wallets: Map<string, Wallet>;
+  public readonly id: string;
+  public readonly name: string;
+  private readonly wallets: Map<string, Wallet>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly orders: Map<string, Order<any>>;
+  private readonly orders: Map<string, Order<any>>;
+  private readonly transactionsFeed: PubSub<FundLog>;
 
   constructor(id: string, name: string) {
     this.id = id;
@@ -16,6 +18,7 @@ export class Account {
     this.wallets = new Map<string, Wallet>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.orders = new Map<string, Order<any>>();
+    this.transactionsFeed = new PubSub<FundLog>();
   }
 
   public addWallet(wallet: Wallet): void {
@@ -34,11 +37,13 @@ export class Account {
     return wallet;
   }
 
-  public depositAsset(funds: Fund): void {
-    this.getActiveWallet().depositAsset(funds);
+  public depositAsset(fund: Fund): void {
+    this.getActiveWallet().depositAsset(fund);
+    this.transactionsFeed.publish(new FundLog(fund.asset, fund.amount));
   }
 
   public withdrawAsset(asset: Asset, amount: number): Fund {
+    this.transactionsFeed.publish(new FundLog(asset, -1 * amount));
     return this.getActiveWallet().withdrawAsset(asset, amount);
   }
 
@@ -47,10 +52,24 @@ export class Account {
     this.orders.set(order.id, order);
   }
 
-  public computeValue(quotes: Quotes): number {
+  public computeTotalValue(quotes: Quotes): number {
     const walletValue = this.wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
     const orderValue = Array.from(this.orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
     return walletValue + orderValue;
+  }
+
+  /**
+   * NOTE(UNUSED): Added for a certain purpose but then changed courses.
+   */
+  public computeHeldValue(quotes: Quotes): number {
+    return Array.from(this.orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
+  }
+
+  /**
+   * NOTE(UNUSED): Added for a certain purpose but then changed courses.
+   */
+  public getTransactionsFeed(): ReadOnlyPubSub<FundLog> {
+    return this.transactionsFeed;
   }
 }
 

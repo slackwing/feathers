@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
-import ExperimentResultsDisplay from './components/ExperimentResultsDisplay';
+import ExperimentResultsDisplay, { Mode } from './components/ExperimentResultsDisplay';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub } from '@/lib/infra/PubSub';
@@ -66,6 +66,7 @@ const Dashboard = () => {
 
     let runCount = 0;
     const MAX_RUNS = 100;
+    let maxTransactionBalance = 0.0;
 
     const runExperiment = () => {
       // const stochasticParams = [
@@ -77,11 +78,14 @@ const Dashboard = () => {
       // const strategyThresholds = [10, 15, 20, 30];
       const stochasticParams = [
         { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
-        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
         { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
-        { kPeriod: 30, dPeriod: 14, slowingPeriod: 14 }
+        { kPeriod: 45, dPeriod: 14, slowingPeriod: 14 },
+        { kPeriod: 120, dPeriod: 30, slowingPeriod: 30 }
       ];
-      const strategyThresholds = [10, 20, 30, 40];
+      const strategyThresholds = [5, 10, 20, 40];
+
+      console.log('Stochastic params:', stochasticParams);
+      console.log('Strategy thresholds:', strategyThresholds);
 
       // Create all combinations of parameters
       const experiments = stochasticParams.flatMap(sp => 
@@ -90,6 +94,9 @@ const Dashboard = () => {
           strategyParams: { threshold: st }
         }))
       );
+      console.log('Number of experiments:', experiments.length);
+      console.log('First experiment:', experiments[0]);
+      console.log('Last experiment:', experiments[experiments.length - 1]);
 
       // Create separate worlds and accounts for each experiment
       const experimentSetups = experiments.map(params => {
@@ -99,11 +106,21 @@ const Dashboard = () => {
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const paperFeed = new PubSub<Order<BTCUSD>>();
-        const xWorld = new World_SimpleL2PaperMatching(
+        const setup = {
+          paperAccount,
+          paperFeed: new PubSub<Order<BTCUSD>>(),
+          xWorld: null as World_SimpleL2PaperMatching<BTCUSD> | null,
+          mrStrat: null as MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null,
+          params,
+          initialValue: paperAccount.computeTotalValue(quotes),
+          transactionBalance: 0.0,
+          maxTransactionBalance: 0.0
+        };
+
+        setup.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
           l2OrderBook,
-          paperFeed,
+          setup.paperFeed,
         );
 
         const dsFullStochastic = new DSignal_FullStochastic(
@@ -114,25 +131,25 @@ const Dashboard = () => {
           params.stochasticParams.slowingPeriod
         );
 
-        const mrStrat = new MRStrat_Stochastic(
+        setup.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
           BTCUSD_,
           I1SQ_,
-          xWorld,
+          setup.xWorld,
           paperAccount,
-          xWorld.executionFeed,
+          setup.xWorld.executionFeed,
           dsFullStochastic,
           quotes,
           params.strategyParams.threshold,
-          2
+          1.0
         );
 
-        return {
-          paperAccount,
-          paperFeed,
-          xWorld,
-          mrStrat,
-          params
-        };
+        paperAccount.getTransactionsFeed().subscribe((fundLog) => {
+          setup.transactionBalance += quotes.getQuote(fundLog.asset) * fundLog.amount;
+          setup.maxTransactionBalance = Math.max(setup.maxTransactionBalance, Math.abs(setup.transactionBalance));
+          maxTransactionBalance = Math.max(maxTransactionBalance, Math.abs(setup.transactionBalance));
+        });
+
+        return setup;
       });
 
       // Set the last experiment's world as the main display
@@ -141,22 +158,27 @@ const Dashboard = () => {
       setPaperOrderFeed(lastExperiment.paperFeed);
       setXWorld(lastExperiment.xWorld);
 
-      const initialValue = lastExperiment.paperAccount.computeValue(quotes);
-      console.log('Initial value: ', initialValue);
-
       // Start all experiments
-      experimentSetups.forEach(setup => setup.mrStrat.start());
+      experimentSetups.forEach(setup => {
+        if (setup.mrStrat) {
+          setup.mrStrat.start();
+        }
+      });
 
       // Add new run results after starting the experiments
       const newRunResults = experimentSetups.map(setup => ({
-        initialValue: setup.paperAccount.computeValue(quotes) || 0,
-        currentValue: setup.paperAccount.computeValue(quotes) || 0,
+        baseValueGlobal: maxTransactionBalance,
+        baseValue: setup.maxTransactionBalance,
+        deltaValue: 0.0,
         isComplete: false,
         startTime: Date.now(),
         stochasticParams: setup.params.stochasticParams,
         strategyParams: setup.params.strategyParams
       }));
-      setRunResults(prev => [...prev, ...newRunResults]);
+      setRunResults(prev => {
+        const updated = [...prev, ...newRunResults];
+        return updated;
+      });
 
       // Update current values every 5 seconds
       const updateInterval = setInterval(() => {
@@ -164,11 +186,18 @@ const Dashboard = () => {
           const newResults = [...prev];
           const startIdx = newResults.length - experiments.length;
           experimentSetups.forEach((setup, i) => {
-            const currentValue = setup.paperAccount.computeValue(quotes);
-            newResults[startIdx + i] = {
-              ...newResults[startIdx + i],
-              currentValue
-            };
+            if (newResults[startIdx + i].baseValue === 0) {
+              newResults[startIdx + i] = {
+                ...newResults[startIdx + i],
+                baseValue: maxTransactionBalance,
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue
+              };
+            } else {
+              newResults[startIdx + i] = {
+                ...newResults[startIdx + i],
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue
+              };
+            }
           });
           return newResults;
         });
@@ -176,34 +205,40 @@ const Dashboard = () => {
 
       setTimeout(() => {
         clearInterval(updateInterval);
-        experimentSetups.forEach(setup => setup.mrStrat.stop());
+        experimentSetups.forEach(setup => {
+          if (setup.mrStrat) {
+            setup.mrStrat.stop();
+          }
+        });
+        
+        console.log('Run completed. Final balances:');
+        experimentSetups.forEach((setup, i) => {
+          console.log(`Experiment ${i + 1}:`);
+          console.log(`  Transaction Balance: ${setup.transactionBalance}`);
+          console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
+          console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
+        });
         
         setRunResults(prev => {
           const newResults = [...prev];
           const startIdx = newResults.length - experiments.length;
           experimentSetups.forEach((setup, i) => {
-            const finalValue = setup.paperAccount.computeValue(quotes);
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
-              currentValue: finalValue,
+              deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
               isComplete: true
             };
           });
           return newResults;
         });
 
-        const lastFinalValue = lastExperiment.paperAccount.computeValue(quotes);
-        if (lastFinalValue !== undefined && initialValue !== undefined) {
-          console.log('Final account value for run ', runCount + 1, ':', lastFinalValue);
-          console.log('Percent change: ', ((lastFinalValue - initialValue) / initialValue * 100).toFixed(2) + '%');
-        }
         runCount++;
         
         if (runCount < MAX_RUNS) {
           // Cooldown.
           setTimeout(runExperiment, 3000);
         }
-      }, 90000);
+      }, 150000);
     };
 
     // Wait 3 seconds before starting first experiment
@@ -296,7 +331,7 @@ const Dashboard = () => {
         <div className={styles.loading}>Loading order book...</div>
       )}
 
-      <ExperimentResultsDisplay runResults={runResults} />
+      <ExperimentResultsDisplay runResults={runResults} mode={Mode.RUN_RELATIVE} />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>

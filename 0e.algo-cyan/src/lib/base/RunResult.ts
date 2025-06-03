@@ -1,6 +1,7 @@
 export interface RunResult {
-  initialValue: number;
-  currentValue: number;
+  baseValueGlobal: number;
+  baseValue: number;
+  deltaValue: number;
   isComplete: boolean;
   startTime: number;
   stochasticParams: {
