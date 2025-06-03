@@ -331,7 +331,7 @@ const Dashboard = () => {
         <div className={styles.loading}>Loading order book...</div>
       )}
 
-      <ExperimentResultsDisplay runResults={runResults} mode={Mode.RUN_RELATIVE} />
+      <ExperimentResultsDisplay runResults={runResults} />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>

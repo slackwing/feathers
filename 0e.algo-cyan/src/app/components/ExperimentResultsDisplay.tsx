@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './ExperimentResultsDisplay.module.css';
 import { RunResult } from '@/lib/base/RunResult';
 
@@ -12,10 +12,10 @@ export enum Mode {
 
 interface ExperimentResultsDisplayProps {
   runResults: RunResult[];
-  mode: Mode;
 }
 
-const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, mode }) => {
+const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults }) => {
+  const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   
   const getColor = (value: number, index: number) => {
     if (mode === Mode.GLOBAL_RELATIVE || mode === Mode.RUN_RELATIVE) {
@@ -91,7 +91,20 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
 
   return (
     <div className={styles.container}>
-      <h3>Experiment Results</h3>
+      <div className={styles.header}>
+        <h3>Experiment Results</h3>
+        <select 
+          value={mode} 
+          onChange={(e) => setMode(e.target.value as Mode)}
+          className={styles.modeSelect}
+        >
+          <option value={Mode.ABSOLUTE}>Absolute Values</option>
+          <option value={Mode.GLOBAL_ZERO_RELATIVE}>Global Zero Relative</option>
+          <option value={Mode.GLOBAL_RELATIVE}>Global Relative</option>
+          <option value={Mode.RUN_ZERO_RELATIVE}>Run Zero Relative</option>
+          <option value={Mode.RUN_RELATIVE}>Run Relative</option>
+        </select>
+      </div>
       <div className={styles.runsContainer}>
         {runs.map((runResults, runIndex) => {
           return (
