@@ -70,20 +70,20 @@ const Dashboard = () => {
     let maxTransactionBalance = 0.0;
 
     const runExperiment = () => {
-      // const stochasticParams = [
-      //   { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
-      //   { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
-      //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
-      //   { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
-      // ];
-      // const strategyThresholds = [10, 15, 20, 30];
       const stochasticParams = [
-        { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
+        { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
+        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
         { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
-        { kPeriod: 45, dPeriod: 14, slowingPeriod: 14 },
-        { kPeriod: 120, dPeriod: 30, slowingPeriod: 30 }
+        { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
       ];
-      const strategyThresholds = [5, 10, 20, 40];
+      const strategyThresholds = [10, 15, 20, 30];
+      // const stochasticParams = [
+      //   { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
+      //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
+      //   { kPeriod: 45, dPeriod: 14, slowingPeriod: 14 },
+      //   { kPeriod: 120, dPeriod: 30, slowingPeriod: 30 }
+      // ];
+      // const strategyThresholds = [5, 10, 20, 40];
 
       console.log('Stochastic params:', stochasticParams);
       console.log('Strategy thresholds:', strategyThresholds);

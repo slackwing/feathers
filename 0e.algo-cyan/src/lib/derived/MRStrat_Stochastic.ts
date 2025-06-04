@@ -119,6 +119,9 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
         }
         const isCrossed = (currentFastD - currentSlowD) * (this.previousFastD - this.previousSlowD) < 0;
         if (!isCrossed) {
+          if (minorEvent) {
+            this.minorMajorEventFeed.publish(false);
+          }
           return;
         }
         // Intersection of line segments: f0 + (f1 - f0) * (s0 - f0) / ((f1 - f0) - (s1 - s0)).

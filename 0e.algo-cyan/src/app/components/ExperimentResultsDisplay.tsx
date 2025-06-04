@@ -152,7 +152,10 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
             <input
               type="checkbox"
               checked={isSetupView}
-              onChange={(e) => setIsSetupView(e.target.checked)}
+              onChange={(e) => {
+                setIsSetupView(e.target.checked);
+                setAnimationStates({}); // Clear animations when switching views
+              }}
             />
             <span className={styles.toggleLabel}>Setup View</span>
           </label>
