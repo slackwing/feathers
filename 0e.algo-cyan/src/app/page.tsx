@@ -4,10 +4,10 @@ import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
-import ExperimentResultsDisplay, { Mode } from './components/ExperimentResultsDisplay';
+import ExperimentResultsDisplay from './components/ExperimentResultsDisplay';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
-import { PubSub } from '@/lib/infra/PubSub';
+import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
 import { L2OrderBook } from '@/lib/derived/L2OrderBook';
 import { Order } from '@/lib/base/Order';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
@@ -42,6 +42,7 @@ const Dashboard = () => {
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
   const [runResults, setRunResults] = React.useState<RunResult[]>([]);
+  const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
 
   useEffect(() => {
@@ -111,6 +112,7 @@ const Dashboard = () => {
           paperFeed: new PubSub<Order<BTCUSD>>(),
           xWorld: null as World_SimpleL2PaperMatching<BTCUSD> | null,
           mrStrat: null as MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null,
+          minorMajorEventFeed: null as ReadOnlyPubSub<boolean> | null,
           params,
           initialValue: paperAccount.computeTotalValue(quotes),
           transactionBalance: 0.0,
@@ -143,6 +145,8 @@ const Dashboard = () => {
           1.0
         );
 
+        setup.minorMajorEventFeed = setup.mrStrat.getMinorMajorEventFeed();
+
         paperAccount.getTransactionsFeed().subscribe((fundLog) => {
           setup.transactionBalance += quotes.getQuote(fundLog.asset) * fundLog.amount;
           setup.maxTransactionBalance = Math.max(setup.maxTransactionBalance, Math.abs(setup.transactionBalance));
@@ -157,6 +161,7 @@ const Dashboard = () => {
       setPaperAccount(lastExperiment.paperAccount);
       setPaperOrderFeed(lastExperiment.paperFeed);
       setXWorld(lastExperiment.xWorld);
+      setEventFeeds(experimentSetups.map(setup => setup.minorMajorEventFeed).filter((feed): feed is ReadOnlyPubSub<boolean> => feed !== null));
 
       // Start all experiments
       experimentSetups.forEach(setup => {
@@ -331,7 +336,7 @@ const Dashboard = () => {
         <div className={styles.loading}>Loading order book...</div>
       )}
 
-      <ExperimentResultsDisplay runResults={runResults} />
+      <ExperimentResultsDisplay runResults={runResults} eventPubSubs={eventFeeds} />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>

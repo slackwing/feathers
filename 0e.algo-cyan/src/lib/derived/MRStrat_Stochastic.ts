@@ -1,7 +1,7 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
 import { Strategy_SingleAsset } from "../base/Strategy_SingleAsset";
-import { ReadOnlyPubSub } from "../infra/PubSub";
+import { PubSub, ReadOnlyPubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { AssetPair } from "../base/Asset";
 import { AStochasticsWave, DSignal_FullStochastic } from "./DSignal_FullStochastic";
@@ -9,6 +9,7 @@ import { Interval } from "../base/Interval";
 import assert from "assert";
 import { World_SimpleL2PaperMatching } from "./World_SimpleL2PaperMatching";
 import { Quotes } from "../base/Quotes";
+import { RunObservableV1 } from "./RunObservableV1";
 
 export const MARKET_TO_LIMIT_PCT = 5;
 
@@ -22,7 +23,7 @@ export enum Position {
 }
 
 // MR = Momentum Reversal
-export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy_SingleAsset<A> {
+export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy_SingleAsset<A> implements RunObservableV1 {
 
   public paperAccount: Account;
 
@@ -30,6 +31,8 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   protected executionFeed: ReadOnlyPubSub<Execution<A>>;
   protected stochasticSignal: DSignal_FullStochastic<A, I>;
   protected quotes: Quotes;
+
+  protected minorMajorEventFeed: PubSub<boolean>;
 
   protected threshold: number; // Typically 20 (meaning 80% for overbought, 20% for oversold).
   protected fixedQuantity: number;
@@ -72,6 +75,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   protected unsubscribeStochastic: (() => void) | null = null;
   protected unsubscribeExecution: (() => void) | null = null;
 
+  public getMinorMajorEventFeed(): ReadOnlyPubSub<boolean> {
+    return this.minorMajorEventFeed;
+  }
+
   constructor(
     assetPair: A,
     interval: I,
@@ -89,6 +96,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     this.executionFeed = executionFeed;
     this.stochasticSignal = stochasticSignal;
     this.quotes = quotes;
+    this.minorMajorEventFeed = new PubSub<boolean>();
     this.threshold = threshold;
     this.fixedQuantity = fixedQuantity;
     this.bidOrder = null;
@@ -103,6 +111,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
       const currentFastD = data.value.fastD;
       const currentSlowD = data.value.slowD;
       if (this.previousFastD !== null && this.previousSlowD !== null) {
+        if (this.previousSlowD < (100 - this.threshold) && this.previousSlowD > this.threshold &&
+            (currentSlowD < (100 - this.threshold) || currentSlowD > this.threshold)) {
+          this.minorMajorEventFeed.publish(false);
+        }
         const isCrossed = (currentFastD - currentSlowD) * (this.previousFastD - this.previousSlowD) < 0;
         if (!isCrossed) {
           return;
@@ -155,6 +167,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   }
 
   protected _newOrder(side: Side): void {
+    this.minorMajorEventFeed.publish(true);
     if (side === Side.BUY) {
       this.bidOrder = new Order<A>(
         this.assetPair,

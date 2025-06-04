@@ -39,16 +39,45 @@
   border-radius: 2px;
   transition: background-color 0.3s ease;
   background-color: #ccc;
+  position: relative;
 }
 
 .inProgress {
   animation: pulse 2s ease-in-out infinite;
 }
 
+.ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) forwards !important;
+}
+
+.bounce {
+  animation: bounce 1s cubic-bezier(0.8, 0, 1, 1) forwards !important;
+}
+
 @keyframes pulse {
   0% { opacity: 1; }
   50% { opacity: 0.5; }
   100% { opacity: 1; }
+}
+
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(0);
+  }
 }
 
 .header {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './ExperimentResultsDisplay.module.css';
 import { RunResult } from '@/lib/base/RunResult';
+import { ReadOnlyPubSub } from '@/lib/infra/PubSub';
 
 export enum Mode {
   ABSOLUTE = 'ABSOLUTE',
@@ -12,12 +13,51 @@ export enum Mode {
 
 interface ExperimentResultsDisplayProps {
   runResults: RunResult[];
+  eventPubSubs?: ReadOnlyPubSub<boolean>[];
 }
 
-const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults }) => {
+const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs }) => {
   const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   const [isSetupView, setIsSetupView] = useState(false);
+  const [animationStates, setAnimationStates] = useState<{ [key: number]: 'ping' | 'bounce' | null }>({});
   
+  useEffect(() => {
+    if (!eventPubSubs) return;
+
+    console.log('Setting up subscriptions for', eventPubSubs.length, 'event feeds');
+    const unsubscribes = eventPubSubs.map((pubSub, index) => {
+      console.log('Subscribing to event feed', index);
+      return pubSub.subscribe((isMajor: boolean) => {
+        console.log('Received event:', { index, isMajor });
+        setAnimationStates(prev => {
+          const newStates = { ...prev };
+          // Find the corresponding running experiment
+          const resultIndex = index;
+          if (resultIndex < runResults.length && !runResults[resultIndex].isComplete) {
+            console.log('Setting animation state:', { resultIndex, animation: isMajor ? 'bounce' : 'ping' });
+            newStates[resultIndex] = isMajor ? 'bounce' : 'ping';
+            // Clear animation after 1 second
+            setTimeout(() => {
+              console.log('Clearing animation state for', resultIndex);
+              setAnimationStates(current => ({
+                ...current,
+                [resultIndex]: null
+              }));
+            }, 1000);
+          } else {
+            console.log('Skipping animation - experiment complete or out of range:', { resultIndex, isComplete: runResults[resultIndex]?.isComplete });
+          }
+          return newStates;
+        });
+      });
+    });
+
+    return () => {
+      console.log('Cleaning up subscriptions');
+      unsubscribes.forEach(unsubscribe => unsubscribe());
+    };
+  }, [eventPubSubs, runResults]);
+
   const getColor = (value: number, index: number) => {
     if (mode === Mode.GLOBAL_RELATIVE || mode === Mode.RUN_RELATIVE) {
       // For relative modes, use yellow to blue color scheme
@@ -140,11 +180,14 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
               }}>
                 {groupResults.map((result, index) => {
                   const percentChange = result.baseValue === 0 ? 0 : (result.deltaValue / result.baseValue) * 100;
+                  const globalIndex = isSetupView ? index : groupIndex * 16 + index;
+                  const animationClass = !result.isComplete ? animationStates[globalIndex] || '' : '';
+                  console.log('Rendering square:', { globalIndex, isComplete: result.isComplete, animationClass });
                   return (
                     <div
                       key={index}
-                      className={`${styles.square} ${!result.isComplete ? styles.inProgress : ''}`}
-                      style={{ backgroundColor: getColor(result.deltaValue, isSetupView ? index : groupIndex * 16 + index) }}
+                      className={`${styles.square} ${!result.isComplete ? styles.inProgress : ''} ${animationClass ? styles[animationClass] : ''}`}
+                      style={{ backgroundColor: getColor(result.deltaValue, globalIndex) }}
                       title={`K:${result.stochasticParams.kPeriod} D:${result.stochasticParams.dPeriod} S:${result.stochasticParams.slowingPeriod} T:${result.strategyParams.threshold} - ${percentChange.toFixed(2)}% (${result.isComplete ? 'Complete' : 'In Progress'})`}
                     />
                   );
