@@ -43,7 +43,7 @@
 }
 
 .inProgress {
-  animation: pulse 2s ease-in-out infinite;
+  /* Removed pulse animation */
 }
 
 .ping {
@@ -63,13 +63,7 @@
 }
 
 .bounce {
-  animation: bounce 1s cubic-bezier(0.8, 0, 1, 1) forwards !important;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  animation: bounce 0.7s cubic-bezier(0.8, 0, 1, 1) forwards !important;
 }
 
 @keyframes ping {
@@ -84,10 +78,13 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
-    transform: translateY(-5px);
+  0% {
+    transform: translateY(0);
   }
   50% {
+    transform: translateY(-5px);
+  }
+  100% {
     transform: translateY(0);
   }
 }

@@ -24,39 +24,30 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
   useEffect(() => {
     if (!eventPubSubs) return;
 
-    console.log('Setting up subscriptions for', eventPubSubs.length, 'event feeds');
     const unsubscribes = eventPubSubs.map((pubSub, index) => {
-      console.log('Subscribing to event feed', index);
       return pubSub.subscribe((isMajor: boolean) => {
-        console.log('Received event:', { index, isMajor });
         setAnimationStates(prev => {
           const newStates = { ...prev };
-          // Find the corresponding running experiment
-          const resultIndex = index;
-          if (resultIndex < runResults.length && !runResults[resultIndex].isComplete) {
-            console.log('Setting animation state:', { resultIndex, animation: isMajor ? 'bounce' : 'ping' });
-            newStates[resultIndex] = isMajor ? 'bounce' : 'ping';
-            // Clear animation after 1 second
-            setTimeout(() => {
-              console.log('Clearing animation state for', resultIndex);
-              setAnimationStates(current => ({
-                ...current,
-                [resultIndex]: null
-              }));
-            }, 1000);
-          } else {
-            console.log('Skipping animation - experiment complete or out of range:', { resultIndex, isComplete: runResults[resultIndex]?.isComplete });
-          }
+          // In setup view, we need to map the index to the correct position in the grid
+          // Each setup appears in every run, so we need to find all instances of this setup
+          const resultIndices = isSetupView ? 
+            runResults.map((_, i) => i).filter(i => i % 16 === index) : // Get all instances of this setup
+            [index]; // In run view, just use the index directly
+          
+          resultIndices.forEach(resultIndex => {
+            if (resultIndex < runResults.length && !runResults[resultIndex].isComplete) {
+              newStates[resultIndex] = isMajor ? 'bounce' : 'ping';
+            }
+          });
           return newStates;
         });
       });
     });
 
     return () => {
-      console.log('Cleaning up subscriptions');
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
-  }, [eventPubSubs, runResults]);
+  }, [eventPubSubs, runResults, isSetupView]);
 
   const getColor = (value: number, index: number) => {
     if (mode === Mode.GLOBAL_RELATIVE || mode === Mode.RUN_RELATIVE) {
@@ -180,9 +171,12 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
               }}>
                 {groupResults.map((result, index) => {
                   const percentChange = result.baseValue === 0 ? 0 : (result.deltaValue / result.baseValue) * 100;
-                  const globalIndex = isSetupView ? index : groupIndex * 16 + index;
+                  // In setup view, each group contains results from different runs
+                  // We need to calculate the original index in runResults
+                  const globalIndex = isSetupView ? 
+                    groupIndex + (index * 16) : // Each result in a setup group is from a different run
+                    groupIndex * 16 + index;    // In run view, just use the group and index
                   const animationClass = !result.isComplete ? animationStates[globalIndex] || '' : '';
-                  console.log('Rendering square:', { globalIndex, isComplete: result.isComplete, animationClass });
                   return (
                     <div
                       key={index}

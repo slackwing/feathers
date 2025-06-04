@@ -111,9 +111,11 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
       const currentFastD = data.value.fastD;
       const currentSlowD = data.value.slowD;
       if (this.previousFastD !== null && this.previousSlowD !== null) {
+        let minorEvent = false;
+        let majorEvent = false;
         if (this.previousSlowD < (100 - this.threshold) && this.previousSlowD > this.threshold &&
             (currentSlowD < (100 - this.threshold) || currentSlowD > this.threshold)) {
-          this.minorMajorEventFeed.publish(false);
+          minorEvent = true;
         }
         const isCrossed = (currentFastD - currentSlowD) * (this.previousFastD - this.previousSlowD) < 0;
         if (!isCrossed) {
@@ -131,21 +133,30 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             console.log("$$$ Stochastic(A): FastD crossed below SlowD; entering PENDING_SHORT.");
             this.position = Position.PENDING_SHORT;
             this._newOrder(Side.SELL);
+            majorEvent = true;
           } else if (this.position === Position.LONG) {
             console.log("$$$ Stochastic(B): FastD crossed below SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.SELL);
+            majorEvent = true;
           }
         } else if (crossingPoint < this.threshold && currentFastD > this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(C): FastD crossed above SlowD; entering PENDING_LONG.");
             this.position = Position.PENDING_LONG;
             this._newOrder(Side.BUY);
+            majorEvent = true;
           } else if (this.position === Position.SHORT) {
             console.log("$$$ Stochastic(D): FastD crossed above SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.BUY);
+            majorEvent = true;
           }
+        }
+        if (majorEvent) {
+          this.minorMajorEventFeed.publish(true);
+        } else if (minorEvent) {
+          this.minorMajorEventFeed.publish(false);
         }
       }
       this.previousFastD = currentFastD;
