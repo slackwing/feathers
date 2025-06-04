@@ -82,9 +82,9 @@ export class CoinbaseDataAdapter<T extends AssetPair> {
     const now = Date.now();
     if (now - this.latencyLastLogged >= 5000) {
       const timeDiff = (now - this.latencyLastLogged) / 1000;
-      console.log(`>>> LATENCY (n=${this.latencyRingBufferCount}): ${this.latencySum / this.latencyRingBufferCount}ms`);
-      console.log(`>>> MESSAGES: ${(this.msgCountL2Data / timeDiff).toFixed(1)} l2_data/s; ${(this.msgCountTrades / timeDiff).toFixed(1)} market_trades/s`);
-      console.log(`>>> ENTITIES: ${(this.orderCount / timeDiff).toFixed(1)} order/s; ${(this.tradeCount / timeDiff).toFixed(1)} trade/s`);
+      // console.log(`>>> LATENCY (n=${this.latencyRingBufferCount}): ${this.latencySum / this.latencyRingBufferCount}ms`);
+      // console.log(`>>> MESSAGES: ${(this.msgCountL2Data / timeDiff).toFixed(1)} l2_data/s; ${(this.msgCountTrades / timeDiff).toFixed(1)} market_trades/s`);
+      // console.log(`>>> ENTITIES: ${(this.orderCount / timeDiff).toFixed(1)} order/s; ${(this.tradeCount / timeDiff).toFixed(1)} trade/s`);
       this.latencyLastLogged = now;
       this.msgCountL2Data = 0;
       this.msgCountTrades = 0;

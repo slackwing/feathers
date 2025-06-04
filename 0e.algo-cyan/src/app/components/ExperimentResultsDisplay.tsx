@@ -14,9 +14,10 @@ export enum Mode {
 interface ExperimentResultsDisplayProps {
   runResults: RunResult[];
   eventPubSubs?: ReadOnlyPubSub<boolean>[];
+  globalBaseValue?: number;
 }
 
-const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs }) => {
+const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs, globalBaseValue }) => {
   const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   const [isSetupView, setIsSetupView] = useState(false);
   const [animationStates, setAnimationStates] = useState<{ [key: number]: 'ping' | 'bounce' | null }>({});
@@ -28,17 +29,31 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
       return pubSub.subscribe((isMajor: boolean) => {
         setAnimationStates(prev => {
           const newStates = { ...prev };
-          // In setup view, we need to map the index to the correct position in the grid
-          // Each setup appears in every run, so we need to find all instances of this setup
-          const resultIndices = isSetupView ? 
-            runResults.map((_, i) => i).filter(i => i % 16 === index) : // Get all instances of this setup
-            [index]; // In run view, just use the index directly
-          
-          resultIndices.forEach(resultIndex => {
-            if (resultIndex < runResults.length && !runResults[resultIndex].isComplete) {
-              newStates[resultIndex] = isMajor ? 'bounce' : 'ping';
-            }
-          });
+          // Find the most recent run
+          const currentRunIndex = Math.floor(runResults.length / 16) - 1;
+          if (currentRunIndex < 0) return newStates;
+
+          // Calculate the target index based on view mode
+          const targetIndex = isSetupView ?
+            // In setup view: setup index + (most recent run * 16)
+            index + (currentRunIndex * 16) :
+            // In run view: (current run * 16) + setup index
+            (currentRunIndex * 16) + index;
+
+          // Only animate if the result exists and isn't complete
+          if (targetIndex < runResults.length && !runResults[targetIndex].isComplete) {
+            newStates[targetIndex] = isMajor ? 'bounce' : 'ping';
+            // Clear the animation after it completes
+            setTimeout(() => {
+              setAnimationStates(current => {
+                const updated = { ...current };
+                if (updated[targetIndex] === (isMajor ? 'bounce' : 'ping')) {
+                  delete updated[targetIndex];
+                }
+                return updated;
+              });
+            }, isMajor ? 700 : 500); // Match animation durations
+          }
           return newStates;
         });
       });
@@ -78,17 +93,12 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
       }
     }
 
-    const baseValue = mode === Mode.GLOBAL_ZERO_RELATIVE ? runResults[0].baseValueGlobal : runResults[0].baseValue;
+    const baseValue = mode === Mode.GLOBAL_ZERO_RELATIVE ? (globalBaseValue ?? 0) : runResults[index].baseValue;
     const percentChange = baseValue === 0 ? 0 : (value / baseValue) * 100;
     
-    // For the first run, use pure red or green based on sign
-    if (index === 0) {
-      return percentChange >= 0 ? 'rgb(0, 255, 0)' : 'rgb(255, 0, 0)';
-    }
-
     // Calculate global maximum absolute value across all runs
     const maxAbsValue = Math.max(...runResults.map(r => {
-      const base = mode === Mode.GLOBAL_ZERO_RELATIVE ? r.baseValueGlobal : r.baseValue;
+      const base = mode === Mode.GLOBAL_ZERO_RELATIVE ? (globalBaseValue ?? 0) : r.baseValue;
       return base === 0 ? 0 : Math.abs(r.deltaValue / base * 100);
     }));
     const clampedValue = Math.max(-maxAbsValue, Math.min(maxAbsValue, percentChange));

@@ -44,6 +44,7 @@ const Dashboard = () => {
   const [runResults, setRunResults] = React.useState<RunResult[]>([]);
   const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
+  const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
@@ -172,7 +173,6 @@ const Dashboard = () => {
 
       // Add new run results after starting the experiments
       const newRunResults = experimentSetups.map(setup => ({
-        baseValueGlobal: maxTransactionBalance,
         baseValue: setup.maxTransactionBalance,
         deltaValue: 0.0,
         isComplete: false,
@@ -184,6 +184,7 @@ const Dashboard = () => {
         const updated = [...prev, ...newRunResults];
         return updated;
       });
+      setGlobalBaseValue(maxTransactionBalance);
 
       // Update current values every 5 seconds
       const updateInterval = setInterval(() => {
@@ -336,7 +337,11 @@ const Dashboard = () => {
         <div className={styles.loading}>Loading order book...</div>
       )}
 
-      <ExperimentResultsDisplay runResults={runResults} eventPubSubs={eventFeeds} />
+      <ExperimentResultsDisplay 
+        runResults={runResults} 
+        eventPubSubs={eventFeeds}
+        globalBaseValue={globalBaseValue}
+      />
 
       <div className={styles.orderEntry}>
         <div className={`${styles.orderPanel} ${styles.buy}`}>

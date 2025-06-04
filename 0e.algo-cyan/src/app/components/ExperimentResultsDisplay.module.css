@@ -48,6 +48,7 @@
 
 .ping {
   position: relative;
+  animation: ping 0.7s cubic-bezier(0, 0, 0.2, 1) forwards;
 }
 
 .ping::after {
@@ -59,7 +60,7 @@
   bottom: 0;
   border-radius: 2px;
   background-color: inherit;
-  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) forwards;
+  animation: ping-ring 0.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 .bounce {
@@ -69,10 +70,22 @@
 @keyframes ping {
   0% {
     transform: scale(1);
-    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
   }
   100% {
-    transform: scale(2);
+    transform: scale(1);
+  }
+}
+
+@keyframes ping-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.5);
     opacity: 0;
   }
 }
@@ -82,7 +95,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
   }
   100% {
     transform: translateY(0);

@@ -1,5 +1,4 @@
 export interface RunResult {
-  baseValueGlobal: number;
   baseValue: number;
   deltaValue: number;
   isComplete: boolean;

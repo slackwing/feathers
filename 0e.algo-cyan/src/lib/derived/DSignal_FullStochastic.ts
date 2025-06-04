@@ -39,14 +39,14 @@ export class DSignal_FullStochastic<A extends AssetPair, I extends Interval> ext
     }
     this._k.push(fastK);
     if (kWindowFull) {
-      const fastD = this._k.reduce((acc, curr) => acc + curr, 0) / this._dWindow;
+      const fastD = this._k.reduce((acc, curr) => acc + curr, 0) / this._k.length;
       const dWindowFull = this._d.length >= this._dWindow;
       if (dWindowFull) {
         this._d.shift();
       }
       this._d.push(fastD);
       if (dWindowFull) {
-        const slowD = this._d.reduce((acc, curr) => acc + curr, 0) / this._sWindow;
+        const slowD = this._d.reduce((acc, curr) => acc + curr, 0) / this._d.length;
         this.broadcast(
           new AStochasticsWave<A, I>(
             new Stochastics(fastK, fastD, slowD),
