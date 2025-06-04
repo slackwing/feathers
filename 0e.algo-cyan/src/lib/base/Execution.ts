@@ -31,12 +31,12 @@ export class Execution<A extends AssetPair> {
       this.buyOrder = bookedOrder;
       this.sellOrder = newOrder;
     }
-    assert.ok(gt(executionPrice, 0), 'ASSERT: Execution price must be positive.');
+    assert.ok(gt(executionPrice, 0), `ASSERT: Execution price must be positive; got ${executionPrice}.`);
     this.executionPrice = executionPrice;
     this.executionQty = executionQty;
     this.timestamp = timestamp;
     this.status = ExecutionStatus.PENDING;
-    assert.ok(executionQty > 0, 'ASSERT: Execution quantity must be positive.');
+    assert.ok(gt(executionQty, 0), `ASSERT: Execution quantity must be positive; got ${executionQty}.`);
     assert.ok(typeof this.buyOrder.assetPair === typeof this.sellOrder.assetPair, 'ASSERT: Buy and sell orders must be for the same asset pair.');
   }
 

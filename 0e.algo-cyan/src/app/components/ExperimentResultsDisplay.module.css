@@ -6,24 +6,21 @@
 }
 
 .runsContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 20px 10px;
   margin-top: 10px;
 }
 
 .runGrid {
-  background: white;
-  padding: 10px;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  grid-template-rows: repeat(4, 20px);
+  gap: 4px;
 }
 
 .runHeader {
-  font-size: 14px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
+  display: none;
 }
 
 .parameterGrid {

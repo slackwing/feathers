@@ -6,7 +6,7 @@ import { World_SingleAsset } from '../base/World_SingleAsset';
 import { AssetPair } from '../base/Asset';
 import { Execution, ExecutionStatus } from '../base/Execution';
 import assert from 'assert';
-import { eq } from '../utils/number';
+import { eq, gte, lte } from '../utils/number';
 
 export class World_SimpleL2PaperMatching<A extends AssetPair> extends World_SingleAsset<A> {
   protected l2book: L2OrderBook<A>;
@@ -31,40 +31,57 @@ export class World_SimpleL2PaperMatching<A extends AssetPair> extends World_Sing
     }
     const oppositeBook = newOrder.side === Side.BUY ? this.combinedBook.asks : this.combinedBook.bids;
     // This is relative to the order's opposing side.
-    const insideOrEqual = (a: number, b: number) => (newOrder.side === Side.BUY ? a <= b : a >= b);
+    const insideOrEqual = (a: number, b: number) => (newOrder.side === Side.BUY ? lte(a, b) : gte(a, b));
     const limitPrice = newOrder.exchangeType == ExchangeType.LIMIT ? newOrder.price : null;
     const it = oppositeBook[Symbol.iterator]();
     let next = it.next();
     while (!next.done && (limitPrice == null || insideOrEqual(next.value.price, limitPrice))) {
-      if (newOrder.remainingQty <= 0) {
-        break;
-      }
-      const existingOrder = next.value;
-      if (existingOrder.type === OrderType.L2) {
-        const originalQty = newOrder.remainingQty;
-        const executionQty = Math.min(newOrder.remainingQty, existingOrder.quantity);
-        const execution = new Execution<A>(
-          this.assetPair,
-          newOrder,
-          existingOrder,
-          existingOrder.price,
-          executionQty,
-          Date.now()
-        );
-        execution.execute();
-        if (execution.status === ExecutionStatus.COMPLETED) {
-          this.executionFeed.publish(execution);
-        } else {
-          throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+      try {
+        if (lte(newOrder.remainingQty, 0)) {
+          break;
         }
-        assert.ok(eq(newOrder.remainingQty, originalQty - executionQty), 'IMPOSSIBLE: Order remaining quantity should have decreased by execution quantity.');
-      } else if (existingOrder.type === OrderType.PAPER) {
-        // Self trade case. Mutually cancel the minimum of the two orders' remaining quantities.
-        const cancellationQty = Math.min(newOrder.remainingQty, existingOrder.remainingQty);
-        newOrder.cancel(cancellationQty);
-        existingOrder.cancel(cancellationQty);
-      } else {
-        assert.ok(false, 'IMPOSSIBLE: Unhandled opposing order type during order matching.');
+        const existingOrder = next.value;
+        if (lte(existingOrder.remainingQty, 0)) {
+          console.warn("WARNING: OrderBook had an order with 0.0 remainingQty; skipping gracefully.");
+          next = it.next();
+          continue;
+        }
+        if (existingOrder.type === OrderType.L2) {
+          const originalQty = newOrder.remainingQty;
+          const executionQty = Math.min(newOrder.remainingQty, existingOrder.remainingQty);
+          const execution = new Execution<A>(
+            this.assetPair,
+            newOrder,
+            existingOrder,
+            existingOrder.price,
+            executionQty,
+            Date.now()
+          );
+          execution.execute();
+          if (execution.status === ExecutionStatus.COMPLETED) {
+            this.executionFeed.publish(execution);
+          } else {
+            throw new Error('ASSERT: Execution should have been completed.'); // TODO(P1): Haven't thought what to do here.
+          }
+          assert.ok(eq(newOrder.remainingQty, originalQty - executionQty), 'IMPOSSIBLE: Order remaining quantity should have decreased by execution quantity.');
+        } else if (existingOrder.type === OrderType.PAPER) {
+          // Self trade case. Mutually cancel the minimum of the two orders' remaining quantities.
+          const cancellationQty = Math.min(newOrder.remainingQty, existingOrder.remainingQty);
+          newOrder.cancel(cancellationQty);
+          existingOrder.cancel(cancellationQty);
+        } else {
+          assert.ok(false, 'IMPOSSIBLE: Unhandled opposing order type during order matching.');
+        }
+      } catch (e) {
+        // Quit matching but don't fail the entire source operation.
+        console.warn("WARNING: Unexpected failure during order matching; failing gracefully.");
+        console.error(e);
+        // Only allow the order to remain booked if it won't cross the inside.
+        if (limitPrice == null || insideOrEqual(limitPrice, next.value.price)) {
+          console.warn("WARNING: Cancelling remainder of order.");
+          newOrder.cancel(newOrder.remainingQty);
+        }
+        break;
       }
       next = it.next();
     }
