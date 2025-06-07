@@ -29,6 +29,7 @@ import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
 import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
 import { RunResult } from '@/lib/base/RunResult';
+import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -58,6 +59,7 @@ const Dashboard = () => {
 
     const sTrade = new Signal_Trade(tradeFeed);
     const tsP = new TSignal_P(sTrade);
+    const dsClock = new DSignalTAdapter_Clock(I1SQ_, tsP);
     const dsOHLC = new DSignal_OHLC(I1SQ_, tsP, 14);
     // dsOHLC.listen((ohlc) => {
     //   console.log('OHLC: ', ohlc);

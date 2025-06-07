@@ -72,7 +72,7 @@ export class DSignal_Simple<T, U, I extends Interval> extends DSignal<any, U, I>
  * realized that a specialized adapter with a "memory" for rolling windows would
  * perform more efficiently.
  */
-export class DSignalTAdapter<T, U, I extends Interval> extends DSignal<any, U, I> {
+export abstract class DSignalTAdapter<T, U, I extends Interval> extends DSignal<any, U, I> {
   
   protected readonly _interval: I;
   protected readonly _source: TSignal<any, T>;
@@ -116,14 +116,24 @@ export class DSignalTAdapter<T, U, I extends Interval> extends DSignal<any, U, I
     return this._intervalEndTimestamp;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onNewInterval(data: Wavelet<T>): void {
-    throw new Error("Unimplemented (abstract) method.");
+  protected abstract onNewInterval(data: Wavelet<T>): void;
+
+  protected abstract onCurrentInterval(data: Wavelet<T>): void;
+}
+
+export class DSignalTAdapter_Clock<U, I extends Interval> extends DSignalTAdapter<U, boolean, I> {
+
+  constructor(interval: I, source: TSignal<any, U>) {
+    super(interval, source);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onCurrentInterval(data: Wavelet<T>): void {
-    throw new Error("Unimplemented (abstract) method.");
+  protected onNewInterval(data: Wavelet<U>): void {
+      this.broadcast(new Wavelet(true, this.getIntervalEndTimestamp()));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onCurrentInterval(data: Wavelet<U>): void {
   }
 }
 
@@ -174,7 +184,7 @@ export class DSignalTAdapter_Group<U, I extends Interval> extends DSignalTAdapte
   }
 }
 
-export class DSignalTAdapter_RollingWindow<T, U, I extends Interval> extends DSignal<any, U, I> {
+export abstract class DSignalTAdapter_RollingWindow<T, U, I extends Interval> extends DSignal<any, U, I> {
   
   protected readonly _interval: I;
   protected readonly _source: TSignal<any, T>;
@@ -235,13 +245,9 @@ export class DSignalTAdapter_RollingWindow<T, U, I extends Interval> extends DSi
     return this._intervalEndTimestamp;
   }
 
-  protected onNewInterval(): void {
-    throw new Error("Unimplemented (abstract) method.");
-  }
+  protected abstract onNewInterval(): void;
 
-  protected onCurrentInterval(): void {
-    throw new Error("Unimplemented (abstract) method.");
-  }
+  protected abstract onCurrentInterval(): void;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onInsert(data: Wavelet<T>): void {
