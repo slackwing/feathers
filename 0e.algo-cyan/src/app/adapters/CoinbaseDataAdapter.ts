@@ -3,6 +3,7 @@ import { Order, Side, OrderType, ExchangeType } from '@/lib/base/Order';
 import { Trade } from '@/lib/base/Trade';
 import { AssetPair } from '@/lib/base/Asset';
 import { Account, InfiniteAccount } from '@/lib/base/Account';
+import { CoinbaseMessage } from '@/lib/exchange/coinbase';
 
 export class CoinbaseDataAdapter<T extends AssetPair> {
   readonly assetPair: T;
@@ -28,42 +29,46 @@ export class CoinbaseDataAdapter<T extends AssetPair> {
     this.infiniteAccount = new InfiniteAccount();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onMessage(data: any) {
+  onMessage(data: CoinbaseMessage) {
     const startTime = performance.now();
     if (data.channel !== 'l2_data' && data.channel !== 'market_trades') {
       return;
     }
-    if (data.channel === 'l2_data') {
+    if (data.channel === 'l2_data' && data.events?.[0]?.updates) {
       this.msgCountL2Data++;
       const event = data.events[0];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event.updates.forEach((update: any) => {
-        this.orderCount++;
-        const order = new Order<T>(
-          this.assetPair,
-          this.infiniteAccount,
-          OrderType.L2,
-          ExchangeType.LIMIT,
-          update.side === 'bid' ? Side.BUY : Side.SELL,
-          parseFloat(update.price_level),
-          parseFloat(update.new_quantity),
-          data.timestamp
-        );
-        this.orderFeed.publish(order);
-      });
-    } else if (data.channel === 'market_trades') {
+      const updates = event.updates;
+      if (updates) {
+        updates.forEach((update) => {
+          this.orderCount++;
+          const order = new Order<T>(
+            this.assetPair,
+            this.infiniteAccount,
+            OrderType.L2,
+            ExchangeType.LIMIT,
+            update.side === 'bid' ? Side.BUY : Side.SELL,
+            parseFloat(update.price_level),
+            parseFloat(update.new_quantity),
+            typeof data.timestamp === 'string' ? new Date(data.timestamp).getTime() : Date.now()
+          );
+          this.orderFeed.publish(order);
+        });
+      }
+    } else if (data.channel === 'market_trades' && data.events?.[0]?.trades) {
       this.msgCountTrades++;
       const event = data.events[0];
-      // TODO(P3):Coinbase trades are in reverse chronological order. Platformize.
-      for (let i = event.trades.length - 1; i >= 0; i--) {
-        this.tradeCount++;
-        const trade = event.trades[i];
-        const side = trade.side === 'BUY' ? Side.BUY : Side.SELL;
-        const price = parseFloat(trade.price);
-        const quantity = parseFloat(trade.size);
-        const timestamp = Date.now();
-        this.tradeFeed.publish(new Trade(this.assetPair, side, price, quantity, timestamp));
+      const trades = event.trades;
+      if (trades) {
+        // TODO(P3): Coinbase trades are in reverse chronological order. Platformize.
+        for (let i = trades.length - 1; i >= 0; i--) {
+          this.tradeCount++;
+          const trade = trades[i];
+          const side = trade.side === 'BUY' ? Side.BUY : Side.SELL;
+          const price = parseFloat(trade.price);
+          const quantity = parseFloat(trade.size);
+          const timestamp = Date.now();
+          this.tradeFeed.publish(new Trade(this.assetPair, side, price, quantity, timestamp));
+        }
       }
     }
     const endTime = performance.now();
