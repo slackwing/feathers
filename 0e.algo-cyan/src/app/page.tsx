@@ -86,9 +86,6 @@ const Dashboard = () => {
       // ];
       // const strategyThresholds = [5, 10, 20, 40];
 
-      console.log('Stochastic params:', stochasticParams);
-      console.log('Strategy thresholds:', strategyThresholds);
-
       // Create all combinations of parameters
       const experiments = stochasticParams.flatMap(sp => 
         strategyThresholds.map(st => ({
@@ -96,9 +93,6 @@ const Dashboard = () => {
           strategyParams: { threshold: st }
         }))
       );
-      console.log('Number of experiments:', experiments.length);
-      console.log('First experiment:', experiments[0]);
-      console.log('Last experiment:', experiments[experiments.length - 1]);
 
       // Create separate worlds and accounts for each experiment
       const experimentSetups = experiments.map(params => {
@@ -173,6 +167,8 @@ const Dashboard = () => {
 
       // Add new run results after starting the experiments
       const newRunResults = experimentSetups.map(setup => ({
+        originalQuote: quotes.getQuote(Asset.BTC),
+        finalQuote: quotes.getQuote(Asset.BTC),
         baseValue: setup.maxTransactionBalance,
         deltaValue: 0.0,
         isComplete: false,
@@ -196,12 +192,14 @@ const Dashboard = () => {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
                 baseValue: maxTransactionBalance,
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                finalQuote: quotes.getQuote(Asset.BTC)
               };
             } else {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                finalQuote: quotes.getQuote(Asset.BTC)
               };
             }
           });
@@ -224,7 +222,6 @@ const Dashboard = () => {
           console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
           console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
         });
-        
         setRunResults(prev => {
           const newResults = [...prev];
           const startIdx = newResults.length - experiments.length;
@@ -232,6 +229,7 @@ const Dashboard = () => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
               deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              finalQuote: quotes.getQuote(Asset.BTC),
               isComplete: true
             };
           });
@@ -244,7 +242,7 @@ const Dashboard = () => {
           // Cooldown.
           setTimeout(runExperiment, 3000);
         }
-      }, 150000);
+      }, 300000);
     };
 
     // Wait 3 seconds before starting first experiment

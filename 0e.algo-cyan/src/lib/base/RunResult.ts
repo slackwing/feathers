@@ -1,4 +1,6 @@
 export interface RunResult {
+  originalQuote: number;
+  finalQuote: number;
   baseValue: number;
   deltaValue: number;
   isComplete: boolean;

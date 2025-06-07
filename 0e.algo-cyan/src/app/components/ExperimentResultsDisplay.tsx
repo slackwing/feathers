@@ -20,6 +20,7 @@ interface ExperimentResultsDisplayProps {
 const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs, globalBaseValue }) => {
   const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   const [isSetupView, setIsSetupView] = useState(false);
+  const [adjustForQuotes, setAdjustForQuotes] = useState(true);
   const [animationStates, setAnimationStates] = useState<{ [key: number]: 'ping' | 'bounce' | null }>({});
   
   useEffect(() => {
@@ -94,12 +95,20 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
     }
 
     const baseValue = mode === Mode.GLOBAL_ZERO_RELATIVE ? (globalBaseValue ?? 0) : runResults[index].baseValue;
-    const percentChange = baseValue === 0 ? 0 : (value / baseValue) * 100;
+    let percentChange = baseValue === 0 ? 0 : (value / baseValue) * 100;
+    
+    if (adjustForQuotes && runResults[index].originalQuote !== 0) {
+      percentChange *= runResults[index].originalQuote / runResults[index].finalQuote;
+    }
     
     // Calculate global maximum absolute value across all runs
     const maxAbsValue = Math.max(...runResults.map(r => {
       const base = mode === Mode.GLOBAL_ZERO_RELATIVE ? (globalBaseValue ?? 0) : r.baseValue;
-      return base === 0 ? 0 : Math.abs(r.deltaValue / base * 100);
+      let percent = base === 0 ? 0 : Math.abs(r.deltaValue / base * 100);
+      if (adjustForQuotes && r.originalQuote !== 0) {
+        percent *= r.originalQuote / r.finalQuote;
+      }
+      return percent;
     }));
     const clampedValue = Math.max(-maxAbsValue, Math.min(maxAbsValue, percentChange));
     const normalizedValue = (clampedValue + maxAbsValue) / (2 * maxAbsValue);
@@ -168,6 +177,14 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
               }}
             />
             <span className={styles.toggleLabel}>Setup View</span>
+          </label>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={adjustForQuotes}
+              onChange={(e) => setAdjustForQuotes(e.target.checked)}
+            />
+            <span className={styles.toggleLabel}>Adjust for Quotes</span>
           </label>
         </div>
       </div>
