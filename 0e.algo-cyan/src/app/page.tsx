@@ -71,6 +71,95 @@ const Dashboard = () => {
     let runCount = 0;
     const MAX_RUNS = 100;
     let maxTransactionBalance = 0.0;
+    let nextUpdateAt: number | null = null;
+    let endExperimentAt: number | null = null;
+    let startExperimentAt: number | null = null;
+    let experimentRunning = false;
+    const EXPERIMENT_DURATION_MS = 60000;
+    const COOLDOWN_DURATION_MS = 3000;
+    const UPDATE_INTERVAL_MS = 5000;
+    const INITIAL_DELAY_MS = 1000;
+    let experiments: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
+    let experimentSetups: { paperAccount: Account; paperFeed: PubSub<Order<BTCUSD>>; xWorld: World_SimpleL2PaperMatching<BTCUSD> | null; mrStrat: MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null; minorMajorEventFeed: ReadOnlyPubSub<boolean> | null; params: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }; initialValue: number; transactionBalance: number; maxTransactionBalance: number }[] = [];
+
+    dsClock.listen((clock) => {
+      if (startExperimentAt === null) {
+        startExperimentAt = clock.timestamp + INITIAL_DELAY_MS;
+      }
+
+      if (experimentRunning && nextUpdateAt !== null && clock.timestamp >= nextUpdateAt) {
+        nextUpdateAt = null;
+        setRunResults(prev => {
+          const newResults = [...prev];
+          const startIdx = newResults.length - experiments.length;
+          experimentSetups.forEach((setup, i) => {
+            if (newResults[startIdx + i].baseValue === 0) {
+              newResults[startIdx + i] = {
+                ...newResults[startIdx + i],
+                baseValue: maxTransactionBalance,
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                finalQuote: quotes.getQuote(Asset.BTC)
+              };
+            } else {
+              newResults[startIdx + i] = {
+                ...newResults[startIdx + i],
+                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                finalQuote: quotes.getQuote(Asset.BTC)
+              };
+            }
+          });
+          return newResults;
+        });
+        nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
+      }
+
+      if (experimentRunning && endExperimentAt !== null && clock.timestamp >= endExperimentAt) {
+
+        experimentRunning = false;
+        endExperimentAt = null;
+        nextUpdateAt = null;
+
+        experimentSetups.forEach(setup => {
+          if (setup.mrStrat) {
+            setup.mrStrat.stop();
+          }
+        });
+        
+        console.log('Run completed. Final balances:');
+        experimentSetups.forEach((setup, i) => {
+          console.log(`Experiment ${i + 1}:`);
+          console.log(`  Transaction Balance: ${setup.transactionBalance}`);
+          console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
+          console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
+        });
+        setRunResults(prev => {
+          const newResults = [...prev];
+          const startIdx = newResults.length - experiments.length;
+          experimentSetups.forEach((setup, i) => {
+            newResults[startIdx + i] = {
+              ...newResults[startIdx + i],
+              deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              finalQuote: quotes.getQuote(Asset.BTC),
+              isComplete: true
+            };
+          });
+          return newResults;
+        });
+
+        runCount++;
+        if (runCount < MAX_RUNS) {
+          startExperimentAt = clock.timestamp + COOLDOWN_DURATION_MS;
+        }
+      }
+
+      if (!experimentRunning && startExperimentAt !== null && clock.timestamp >= startExperimentAt) {
+        experimentRunning = true;
+        startExperimentAt = null;
+        endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
+        nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
+        runExperiment();
+      }
+    });
 
     const runExperiment = () => {
       const stochasticParams = [
@@ -89,7 +178,7 @@ const Dashboard = () => {
       // const strategyThresholds = [5, 10, 20, 40];
 
       // Create all combinations of parameters
-      const experiments = stochasticParams.flatMap(sp => 
+      experiments = stochasticParams.flatMap(sp => 
         strategyThresholds.map(st => ({
           stochasticParams: sp,
           strategyParams: { threshold: st }
@@ -97,7 +186,7 @@ const Dashboard = () => {
       );
 
       // Create separate worlds and accounts for each experiment
-      const experimentSetups = experiments.map(params => {
+      experimentSetups = experiments.map(params => {
         const paperAccount = new Account('paper', 'Paper Account');
         const paperWallet = new Wallet('paper', 'Paper Wallet');
         paperAccount.addWallet(paperWallet);
@@ -183,72 +272,7 @@ const Dashboard = () => {
         return updated;
       });
       setGlobalBaseValue(maxTransactionBalance);
-
-      // Update current values every 5 seconds
-      const updateInterval = setInterval(() => {
-        setRunResults(prev => {
-          const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
-          experimentSetups.forEach((setup, i) => {
-            if (newResults[startIdx + i].baseValue === 0) {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                baseValue: maxTransactionBalance,
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            } else {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            }
-          });
-          return newResults;
-        });
-      }, 5000);
-
-      setTimeout(() => {
-        clearInterval(updateInterval);
-        experimentSetups.forEach(setup => {
-          if (setup.mrStrat) {
-            setup.mrStrat.stop();
-          }
-        });
-        
-        console.log('Run completed. Final balances:');
-        experimentSetups.forEach((setup, i) => {
-          console.log(`Experiment ${i + 1}:`);
-          console.log(`  Transaction Balance: ${setup.transactionBalance}`);
-          console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
-          console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
-        });
-        setRunResults(prev => {
-          const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
-          experimentSetups.forEach((setup, i) => {
-            newResults[startIdx + i] = {
-              ...newResults[startIdx + i],
-              deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-              finalQuote: quotes.getQuote(Asset.BTC),
-              isComplete: true
-            };
-          });
-          return newResults;
-        });
-
-        runCount++;
-        
-        if (runCount < MAX_RUNS) {
-          // Cooldown.
-          setTimeout(runExperiment, 3000);
-        }
-      }, 300000);
     };
-
-    // Wait 3 seconds before starting first experiment
-    setTimeout(runExperiment, 3000);
 
     // const sWorld = new L2PGWorld(
     //   BTCUSD_,
