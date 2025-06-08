@@ -30,6 +30,7 @@ import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMa
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
 import { RunResult } from '@/lib/base/RunResult';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
+import ChipSelector from './components/ChipSelector';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -46,6 +47,7 @@ const Dashboard = () => {
   const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
   const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
+  const [selectedChip, setSelectedChip] = React.useState('OFF');
 
   useEffect(() => {
     const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
@@ -347,6 +349,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.container}>
+      <ChipSelector selected={selectedChip} onSelect={setSelectedChip} />
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
         <button className={styles.powerButton} onClick={handlePowerOff}>
