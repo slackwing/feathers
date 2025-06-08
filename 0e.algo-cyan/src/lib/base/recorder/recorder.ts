@@ -16,6 +16,7 @@ export abstract class ExchangeRecorder {
   private readonly STATUS_UPDATE_INTERVAL = 100; // 0.1 seconds
   private spinnerIndex = 0;
   private readonly SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  private bufferSize: number = 0;
 
   constructor(config: ExchangeConfig, dataDir?: string) {
     this.config = config;
@@ -70,13 +71,12 @@ export abstract class ExchangeRecorder {
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
     const messageCount = this.buffer.length;
-    const rawSize = JSON.stringify(this.buffer).length;
-    const totalSize = this.formatSize(rawSize);
+    const totalSize = this.formatSize(this.bufferSize);
     
     const spinner = this.SPINNER[this.spinnerIndex];
     this.spinnerIndex = (this.spinnerIndex + 1) % this.SPINNER.length;
     
-    process.stdout.write(`\r${spinner} ${messageCount} messages, ${elapsedMinutes}m${elapsedSeconds}s elapsed, ~${totalSize} (${rawSize} bytes)`);
+    process.stdout.write(`\r${spinner} ${messageCount} messages, ${elapsedMinutes}m${elapsedSeconds}s elapsed, ~${totalSize} (${this.bufferSize} bytes)`);
     this.lastStatusUpdate = now;
   }
 
@@ -104,6 +104,11 @@ export abstract class ExchangeRecorder {
       this.saveData();
       this.cleanup();
     }
+  }
+
+  protected addMessage(message: ExchangeMessage) {
+    this.buffer.push(message);
+    this.bufferSize += JSON.stringify(message).length;
   }
 
   abstract start(): Promise<void>;
