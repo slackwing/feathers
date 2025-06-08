@@ -188,16 +188,28 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
           </label>
         </div>
       </div>
-      <div className={styles.runsContainer}>
+      <div className={styles.runsContainer} style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, auto))',
+        gap: '40px',
+        padding: '20px'
+      }}>
         {groups.map((groupResults, groupIndex) => {
           return (
-            <div key={groupIndex} className={styles.runGrid}>
+            <div key={groupIndex} className={styles.runGrid} style={{
+              display: 'grid',
+              gap: '4px',
+              margin: '0',
+              padding: '0'
+            }}>
               <div className={styles.runHeader}>
                 {isSetupView ? `Setup ${groupIndex + 1}` : `Run ${groupIndex + 1}`}
               </div>
               <div className={styles.parameterGrid} style={{
                 gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(groupResults.length))}, 20px)`,
-                gridTemplateRows: `repeat(${Math.ceil(Math.sqrt(groupResults.length))}, 20px)`
+                gridTemplateRows: `repeat(${Math.ceil(Math.sqrt(groupResults.length))}, 20px)`,
+                width: `${Math.ceil(Math.sqrt(groupResults.length)) * 20}px`,
+                height: `${Math.ceil(Math.sqrt(groupResults.length)) * 20}px`
               }}>
                 {groupResults.map((result, index) => {
                   const percentChange = result.baseValue === 0 ? 0 : (result.deltaValue / result.baseValue) * 100;
