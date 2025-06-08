@@ -4,32 +4,34 @@ import { COINBASE_CHANNELS, CoinbaseChannel } from '@/lib/exchange/coinbase/type
 
 const DEFAULT_CONFIG: ExchangeConfig = {
   exchange: 'Coinbase',
-  channel: 'level2',
+  channels: ['level2', 'market_trades'],
   pair: 'BTC-USD',
-  maxDuration: 30 * 60 * 1000 // 30 minutes in ms
+  maxDuration: -1
 };
 
 // Parse command line arguments
 const args = process.argv.slice(2);
 if (!args[0]) {
-  console.error('Channel is required. Usage: node recordCoinbase.ts <channel> [pair] [duration]');
+  console.error('Channels are required. Usage: node recordCoinbase.ts <channel1,channel2,...> [pair] [minutes]');
   console.error(`Available channels: ${Object.keys(COINBASE_CHANNELS).join(', ')}`);
+  process.exit(1);
+}
+
+const channels = args[0].split(',') as CoinbaseChannel[];
+const invalidChannels = channels.filter(channel => !Object.keys(COINBASE_CHANNELS).includes(channel));
+if (invalidChannels.length > 0) {
+  console.error(`Invalid channels: ${invalidChannels.join(', ')}. Use one of: ${Object.keys(COINBASE_CHANNELS).join(', ')}`);
   process.exit(1);
 }
 
 const config: ExchangeConfig = {
   ...DEFAULT_CONFIG,
-  channel: args[0] as CoinbaseChannel,
+  channels,
   pair: args[1] || DEFAULT_CONFIG.pair,
-  maxDuration: parseInt(args[2]) * 60 * 1000 || DEFAULT_CONFIG.maxDuration
+  maxDuration: args[2] ? parseInt(args[2]) * 60 * 1000 : DEFAULT_CONFIG.maxDuration
 };
 
-if (!Object.keys(COINBASE_CHANNELS).includes(config.channel)) {
-  console.error(`Invalid channel. Use one of: ${Object.keys(COINBASE_CHANNELS).join(', ')}`);
-  process.exit(1);
-}
-
-console.log(`Recording ${config.channel} for ${config.pair}`);
+console.log(`Recording ${channels.join(', ')} for ${config.pair}`);
 console.log('Press "w" to save and quit, "q" to quit without saving');
 
 const recorder = new CoinbaseRecorder(config);

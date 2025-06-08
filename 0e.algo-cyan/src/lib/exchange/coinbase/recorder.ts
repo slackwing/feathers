@@ -16,7 +16,9 @@ export class CoinbaseRecorder extends ExchangeRecorder {
 
     this.ws.on('open', () => {
       console.log('Connected to Coinbase WebSocket');
-      this.ws.send(JSON.stringify(createSubscriptionMessage('subscribe', this.config.channel as CoinbaseChannel, [this.config.pair])));
+      for (const channel of this.config.channels) {
+        this.ws.send(JSON.stringify(createSubscriptionMessage('subscribe', channel as CoinbaseChannel, [this.config.pair])));
+      }
     });
 
     this.ws.on('message', (data: Buffer) => {

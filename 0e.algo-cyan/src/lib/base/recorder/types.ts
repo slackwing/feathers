@@ -6,8 +6,8 @@ export interface ExchangeMessage {
 
 export interface ExchangeConfig {
   exchange: string;
+  channels: string[];
   pair: string;
-  channel: string;
   maxDuration: number;
 }
 

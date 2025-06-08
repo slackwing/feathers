@@ -97,6 +97,7 @@ export abstract class ExchangeRecorder {
 
   protected checkMaxDuration() {
     this.updateStatus();
+    if (this.config.maxDuration === -1) return;
     if (Date.now() - this.startTime >= this.config.maxDuration) {
       this.isRecording = false;
       this.shouldSave = true;
