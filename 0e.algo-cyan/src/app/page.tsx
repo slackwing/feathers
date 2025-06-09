@@ -31,10 +31,12 @@ import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
 import { RunResult } from '@/lib/base/RunResult';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
+import { FileDataAdapter } from './adapters/FileDataAdapter';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [slowWorld, setSlowWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
@@ -49,10 +51,10 @@ const Dashboard = () => {
   const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
 
-  useEffect(() => {
-    const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
-    const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
-    const tradeFeed = coinbaseAdapter.getTradeFeed();
+  const setupExperiment = (
+    l2OrderFeed: PubSub<Order<BTCUSD>>,
+    tradeFeed: PubSub<Trade<BTCUSD>>
+  ) => {
     const batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new PubSub<Order<BTCUSD>>();
@@ -68,6 +70,7 @@ const Dashboard = () => {
     // });
     tradeFeed.subscribe((trade) => {
       quotes.setQuote(BTCUSD_, trade.price);
+      setLastRefreshed(Date.now());
     });
 
     let runCount = 0;
@@ -296,46 +299,64 @@ const Dashboard = () => {
     // setFastWorld(fWorld);
     setSlowWorld(null);
     setFastWorld(null);
+  };
 
-    // sWorld.executionFeed.subscribe((execution) => {
-    //   console.log('Execution:', execution);
-    // });
+  useEffect(() => {
+    if (selectedChip === 'OFF') {
+      disconnect();
+      return;
+    }
 
-    // const mmStrat = new MMStrat_StaticSpread(
-    //   BTCUSD_,
-    //   sWorld,
-    //   paperAccount,
-    //   sWorld.executionFeed,
-    //   1,
-    //   0.1
-    // );
+    if (selectedChip === 'REAL-TIME') {
+      connect({
+        onMessage: (data) => {
+          coinbaseAdapter.onMessage(data);
+          setLastRefreshed(Date.now());
+        },
+        onError: (error) => {
+          console.error('WebSocket error:', error);
+        },
+        onOpen: () => {
+          console.log('Connected to Coinbase.');
+        },
+      });
 
-    // TODO(P1): Do this properly.
-    // setTimeout(() => {
-    //   const initialValue = paperAccount?.computeValue(quotes);
-    //   console.log('Initial value: ', initialValue);
-    //   mmStrat.start();
-    //   setInterval(() => {
-    //     const currentValue = paperAccount?.computeValue(quotes);
-    //     console.log('Paper account delta: ', currentValue - initialValue);
-    //   }, 3000);
-    // }, 3000);
+      const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
+      setupExperiment(
+        coinbaseAdapter.getL2OrderFeed(),
+        coinbaseAdapter.getTradeFeed()
+      );
+    } else if (selectedChip === 'FILE') {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }
+  }, [selectedChip, connect, disconnect]);
 
-    connect({
-      onMessage: (data) => {
-        coinbaseAdapter.onMessage(data);
-        setLastRefreshed(Date.now());
-      },
-      onError: (error) => {
-        console.error('WebSocket error:', error);
-      },
-      onOpen: () => {
-        console.log('Connected to Coinbase.');
-      },
-    });
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+    console.log('Selected file:', file.name, 'size:', file.size);
 
-    return () => disconnect();
-  }, [connect, disconnect]);
+    const adapter = new FileDataAdapter(BTCUSD_);
+    console.log('Created FileDataAdapter');
+    
+    try {
+      await adapter.loadFile(file);
+      console.log('File loaded successfully');
+
+      setupExperiment(
+        adapter.getL2OrderFeed(),
+        adapter.getTradeFeed()
+      );
+      console.log('Experiment setup completed');
+    } catch (error) {
+      console.error('Error loading file:', error);
+    }
+  };
 
   const handleOrderSubmit = (order: Order<BTCUSD>) => {
     if (paperOrderFeed) {
@@ -350,71 +371,85 @@ const Dashboard = () => {
   return (
     <div className={styles.container}>
       <ChipSelector selected={selectedChip} onSelect={setSelectedChip} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept=".json"
+      />
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
         <button className={styles.powerButton} onClick={handlePowerOff}>
           Power Off
         </button>
-        <div className={styles.status}>Connecting...</div>
+        <div className={styles.status}>
+          {selectedChip === 'REAL-TIME' ? 'Connecting...' : 
+           selectedChip === 'FILE' ? 'Select a file...' : 'Off'}
+        </div>
       </div>
 
-      {xWorld ? (
-        <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+      {(selectedChip === 'REAL-TIME' || selectedChip === 'FILE') && (
+        <>
+          {xWorld ? (
+            <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      <ExperimentResultsDisplay 
-        runResults={runResults} 
-        eventPubSubs={eventFeeds}
-        globalBaseValue={globalBaseValue}
-      />
+          <ExperimentResultsDisplay 
+            runResults={runResults} 
+            eventPubSubs={eventFeeds}
+            globalBaseValue={globalBaseValue}
+          />
 
-      <div className={styles.orderEntry}>
-        <div className={`${styles.orderPanel} ${styles.buy}`}>
-          <h3>Buy BTC</h3>
-          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.BUY} onSubmit={handleOrderSubmit} />}
-        </div>
-        <div className={`${styles.orderPanel} ${styles.trades}`}>
-          <div className={styles.plSection}>
-            <div className={styles.plValue} id="pl-value">
-              $0.00
+          <div className={styles.orderEntry}>
+            <div className={`${styles.orderPanel} ${styles.buy}`}>
+              <h3>Buy BTC</h3>
+              {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.BUY} onSubmit={handleOrderSubmit} />}
+            </div>
+            <div className={`${styles.orderPanel} ${styles.trades}`}>
+              <div className={styles.plSection}>
+                <div className={styles.plValue} id="pl-value">
+                  $0.00
+                </div>
+              </div>
+              <div className={styles.tradesHeader}>
+                <h3>Recent Trades</h3>
+                <label className={styles.toggleLabel}>
+                  <span className={styles.toggleSwitch}>
+                    <input type="checkbox" id="showAllTrades" defaultChecked />
+                    <span className={styles.toggleSlider}></span>
+                  </span>
+                  <span id="toggleText">Show all trades</span>
+                </label>
+              </div>
+              <div className={styles.tradesList} id="trades-list"></div>
+            </div>
+            <div className={`${styles.orderPanel} ${styles.sell}`}>
+              <h3>Sell BTC</h3>
+              {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
             </div>
           </div>
-          <div className={styles.tradesHeader}>
-            <h3>Recent Trades</h3>
-            <label className={styles.toggleLabel}>
-              <span className={styles.toggleSwitch}>
-                <input type="checkbox" id="showAllTrades" defaultChecked />
-                <span className={styles.toggleSlider}></span>
-              </span>
-              <span id="toggleText">Show all trades</span>
-            </label>
-          </div>
-          <div className={styles.tradesList} id="trades-list"></div>
-        </div>
-        <div className={`${styles.orderPanel} ${styles.sell}`}>
-          <h3>Sell BTC</h3>
-          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
-        </div>
-      </div>
 
-      {xWorld ? (
-        <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+          {xWorld ? (
+            <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      {slowWorld ? (
-        <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+          {slowWorld ? (
+            <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      {fastWorld ? (
-        <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
+          {fastWorld ? (
+            <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
+        </>
       )}
     </div>
   );
