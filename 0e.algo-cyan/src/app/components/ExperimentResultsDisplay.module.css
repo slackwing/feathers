@@ -1,0 +1,170 @@
+.container {
+  margin: 20px 0;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.runsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
+  gap: 20px;
+  margin: 20px;
+}
+
+.runGrid {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.runHeader {
+  display: none;
+}
+
+.parameterGrid {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.square {
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+  background-color: #ccc;
+  position: relative;
+}
+
+.inProgress {
+  /* Removed pulse animation */
+}
+
+.ping {
+  position: relative;
+  animation: ping 0.7s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+.ping::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 2px;
+  background-color: inherit;
+  animation: ping-ring 0.7s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.bounce {
+  animation: bounce 0.6s cubic-bezier(0.8, 0, 1, 1) forwards !important;
+}
+
+@keyframes ping-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-7px);
+  }
+  70% {
+    transform: translateY(-0px);
+  }
+  85% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modeSelect {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.modeSelect:hover {
+  border-color: #666;
+}
+
+.modeSelect:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.toggle input {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  appearance: none;
+  background: #ccc;
+  border-radius: 20px;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.toggle input:checked {
+  background: #0066cc;
+}
+
+.toggle input::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: white;
+  transition: 0.3s;
+}
+
+.toggle input:checked::before {
+  left: 22px;
+}
+
+.toggleLabel {
+  font-size: 0.9rem;
+  color: #333;
+} 

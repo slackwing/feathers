@@ -1,12 +1,13 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
-import { SingleAssetStrategy } from "../base/Strategy_SingleAsset";
+import { Strategy_SingleAsset } from "../base/Strategy_SingleAsset";
 import { ReadOnlyPubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { L2PaperWorld } from "./L2PaperWorld";
 import { AssetPair } from "../base/Asset";
 
-export class MMStrat_StaticSpread<A extends AssetPair> extends SingleAssetStrategy<A> {
+// MM = Market Making
+export class MMStrat_StaticSpread<A extends AssetPair> extends Strategy_SingleAsset<A> {
 
   public paperAccount: Account;
 

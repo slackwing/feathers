@@ -6,22 +6,25 @@ import { Wavelet } from "../infra/Wavelet";
 import { DSignal_OHLC } from "./DSignal_OHLC";
 import { AWave } from "../base/Wavelets";
 
-export class AStochasticsWave<A extends AssetPair> extends AWave<A, Stochastics> {}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export class AStochasticsWave<A extends AssetPair, I extends Interval> extends AWave<A, Stochastics> {}
 
 export class DSignal_FullStochastic<A extends AssetPair, I extends Interval> extends DSignal_Simple<OHLC, Stochastics, I> {
 
   private _kWindow: number;
   private _dWindow: number;
+  private _sWindow: number;
   private _k: number[];
   private _d: number[];
 
-  constructor(interval: I, source: DSignal_OHLC<A, I>, kWindow: number, dWindow: number) {
+  constructor(interval: I, source: DSignal_OHLC<A, I>, kWindow: number, dWindow: number, sWindow: number) {
     super(interval, source);
     if (kWindow < 1 || dWindow < 1) {
       throw new Error("kWindow and dWindow must be greater than 0.");
     }
     this._kWindow = kWindow;
     this._dWindow = dWindow;
+    this._sWindow = sWindow;
     this._k = [];
     this._d = [];
   }
@@ -36,16 +39,16 @@ export class DSignal_FullStochastic<A extends AssetPair, I extends Interval> ext
     }
     this._k.push(fastK);
     if (kWindowFull) {
-      const fastD = this._k.reduce((acc, curr) => acc + curr, 0) / this._kWindow;
+      const fastD = this._k.reduce((acc, curr) => acc + curr, 0) / this._k.length;
       const dWindowFull = this._d.length >= this._dWindow;
       if (dWindowFull) {
         this._d.shift();
       }
       this._d.push(fastD);
       if (dWindowFull) {
-        const slowD = this._d.reduce((acc, curr) => acc + curr, 0) / this._dWindow;
+        const slowD = this._d.reduce((acc, curr) => acc + curr, 0) / this._d.length;
         this.broadcast(
-          new AStochasticsWave<A>(
+          new AStochasticsWave<A, I>(
             new Stochastics(fastK, fastD, slowD),
             values[0].timestamp
           )

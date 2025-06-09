@@ -49,6 +49,11 @@ export class L2PGWorld<A extends AssetPair> extends L2PaperWorld<A> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onOrder = (order: Order<A>): void => {
+    // The L2PGWorld does not yet do any order matching, but may in the future.
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onTrade = (trade: Trade<A>): void => {
     // The L2PGWorld model relies on batches of trades to infer multi-level price-taking.
   }

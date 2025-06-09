@@ -17,7 +17,18 @@ export class Quotes {
     this._quotes.set(assetPair.base, quote);
   }
 
-  public getQuote(funds: Funds): number {
+  public getQuote(asset: Asset): number {
+    if (asset === this._quotingAsset) {
+      return 1.0;
+    }
+    const quote = this._quotes.get(asset);
+    if (quote === undefined) {
+      throw new Error(`No quote found for asset ${asset}.`);
+    }
+    return quote;
+  }
+
+  public computeValue(funds: Funds): number {
     return Array.from(funds.values()).reduce((total, fund) => {
       if (fund.asset === this._quotingAsset) {
         return total + fund.amount;

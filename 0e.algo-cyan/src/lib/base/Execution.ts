@@ -1,7 +1,7 @@
 import assert from "assert";
 import { Order } from "./Order";
 import { Side } from "./Order";
-import { gte } from "../utils/number";
+import { gt, gte } from "../utils/number";
 import { AssetPair } from "./Asset";
 import { Fund } from "./Funds";
 
@@ -20,23 +20,23 @@ export class Execution<A extends AssetPair> {
   readonly timestamp: number;
   public status: ExecutionStatus;
 
-  constructor(assetPair: A, order: Order<A>, oppositeOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
+  constructor(assetPair: A, newOrder: Order<A>, bookedOrder: Order<A>, executionPrice: number, executionQty: number, timestamp: number) {
     this.assetPair = assetPair;
-    if (order.side === Side.BUY) {
-      this.buyOrder = order;
-      assert.ok(oppositeOrder.side === Side.SELL, 'ASSERT: Opposite order must be a sell order.');
-      this.sellOrder = oppositeOrder;
+    if (newOrder.side === Side.BUY) {
+      assert.ok(bookedOrder.side === Side.SELL, 'ASSERT: Making order must be a sell order.');
+      this.buyOrder = newOrder;
+      this.sellOrder = bookedOrder;
     } else {
-      assert.ok(order.side === Side.SELL, 'ASSERT: Order must be a sell order.');
-      assert.ok(oppositeOrder.side === Side.BUY, 'ASSERT: Opposite order must be a buy order.');
-      this.buyOrder = oppositeOrder;
-      this.sellOrder = order;
+      assert.ok(bookedOrder.side === Side.BUY, 'ASSERT: Making order must be a buy order.');
+      this.buyOrder = bookedOrder;
+      this.sellOrder = newOrder;
     }
+    assert.ok(gt(executionPrice, 0), `ASSERT: Execution price must be positive; got ${executionPrice}.`);
     this.executionPrice = executionPrice;
     this.executionQty = executionQty;
     this.timestamp = timestamp;
     this.status = ExecutionStatus.PENDING;
-    assert.ok(executionQty > 0, 'ASSERT: Execution quantity must be positive.');
+    assert.ok(gt(executionQty, 0), `ASSERT: Execution quantity must be positive; got ${executionQty}.`);
     assert.ok(typeof this.buyOrder.assetPair === typeof this.sellOrder.assetPair, 'ASSERT: Buy and sell orders must be for the same asset pair.');
   }
 
@@ -65,8 +65,8 @@ export class Execution<A extends AssetPair> {
       this.status = ExecutionStatus.COMPLETED;
       this.buyOrder.executed(this);
       this.sellOrder.executed(this);
-      // const cost = this.executionPrice * this.executionQty;
-      // console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
+      const cost = this.executionPrice * this.executionQty;
+      console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
     }
   }
 

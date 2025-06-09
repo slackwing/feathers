@@ -3,10 +3,11 @@ import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
 import { Asset, AssetPair } from "./Asset";
-import { Fund, safelyWithdrawFunds } from "./Funds";
+import { Fund, Funds, safelyWithdrawFunds } from "./Funds";
 import { Execution, ExecutionStatus } from "./Execution";
 import { Account } from "./Account";
 import { round } from "../utils/number";
+import { Quotes } from "./Quotes";
 
 export enum OrderType {
   L2 = 'L2',
@@ -54,7 +55,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
   private _timestamp: number;
   private _remainingQty: number;
   private _executions: Set<Execution<A>>;
-  private _heldFunds: Map<Asset, Fund>;
+  private _heldFunds: Funds;
 
   constructor(
     assetPair: A,
@@ -62,7 +63,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     type: OrderType,
     exchangeType: ExchangeType,
     side: Side,
-    price: number,
+    price: number | null,
     quantity: number,
     timestamp: number,
   ) {
@@ -72,16 +73,28 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     this.type = type;
     this.exchangeType = exchangeType;
     this.side = side;
-    this._id = this.generateId(type, side, price, timestamp);
-    this._price = price;
+    this._id = this.generateId(type, side, price ?? 0, timestamp);
+    this._price = price ?? 0;
     this._quantity = quantity;
     this._timestamp = timestamp;
     this._remainingQty = quantity;
     this._executions = new Set<Execution<A>>();
     this._heldFunds = new Map<Asset, Fund>();
-    const fundingAsset = side === Side.BUY ? assetPair.quote : assetPair.base;
-    const fundingAmount = side === Side.BUY ? this.price * quantity : quantity;
+    const fundingAsset = this.side === Side.BUY ? assetPair.quote : assetPair.base;
+    let fundingPrice = this._price;
+    switch (this.exchangeType) {
+      case ExchangeType.LIMIT:
+        fundingPrice = this.price;
+        break;
+      case ExchangeType.MARKET:
+        assert.ok(false, 'ASSERT: Not yet known how market orders will be funded.');
+        break;
+      default:
+        assert.ok(false, 'ASSERT: Invalid exchange type.');
+    };
+    const fundingAmount = this.side === Side.BUY ? fundingPrice * quantity : quantity;
     this._heldFunds.set(fundingAsset, account.withdrawAsset(fundingAsset, fundingAmount));
+    account.orderFunded(this);
   }
 
   private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
@@ -108,9 +121,18 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     if (this._remainingQty !== value) {
       this._remainingQty = value;
       if (this._remainingQty <= 0) {
+        this._returnFunds();
+        // TODO(P1): Introduce order statuses. Set to CANCELLED here.
         this.selfOrganize(this);
       }
     }
+  }
+
+  // TODO(P0): Return funds.
+  private _returnFunds(): void {
+    // this._heldFunds.forEach((fund, asset) => {
+    //   this.account.depositAsset(asset, fund.amount);
+    // });
   }
 
   get id(): string { return this._id; }
@@ -148,6 +170,17 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     return safelyWithdrawFunds(asset, amount, this._heldFunds);
   }
 
+  // TODO(P2): Perhaps this should just be part of an update function.
+  public cancel(quantityToCancel: number): void {
+    if (quantityToCancel <= 0) {
+      throw new Error('ASSERT: Quantity to cancel must be positive.');
+    }
+    if (quantityToCancel > this._remainingQty) {
+      throw new Error('ASSERT: Quantity to cancel must be less than or equal to remaining quantity.');
+    }
+    this.quantity = round(this._quantity - quantityToCancel);
+  }
+
   public executed(execution: Execution<A>): void {
     if (this.side === Side.BUY) {
       assert.ok(this === execution.buyOrder, 'ASSERT: Non-matching buy order and execution.');
@@ -158,6 +191,10 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
     this.remainingQty = round(this._remainingQty - execution.executionQty);
     this._executions.add(execution);
+  }
+
+  public computeValue(quotes: Quotes): number {
+    return quotes.computeValue(this._heldFunds);
   }
 
   /**
