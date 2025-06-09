@@ -84,11 +84,11 @@ export abstract class ExchangeRecorder {
     if (!this.shouldSave || this.buffer.length === 0) return;
 
     const timestamp = new Date(this.startTime).toISOString().replace(/[-:.]/g, '');
-    const dataStr = JSON.stringify(this.buffer);
+    const dataStr = this.buffer.map(msg => JSON.stringify(msg)).join('\n');
     const size = this.formatSize(dataStr.length);
-    const filename = `${timestamp}-${size}.json`;
+    const filename = `${timestamp}-${size}.ndjson`;
     const filepath = path.join(this.dataDir, filename);
-    const latestPath = path.join(this.dataDir, 'latest.json');
+    const latestPath = path.join(this.dataDir, 'latest.ndjson');
 
     fs.writeFileSync(filepath, dataStr);
     fs.copyFileSync(filepath, latestPath);
