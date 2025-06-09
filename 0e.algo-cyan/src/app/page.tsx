@@ -50,6 +50,7 @@ const Dashboard = () => {
   const [quotes] = React.useState(new Quotes(Asset.USD));
   const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
+  const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
 
   const setupExperiment = (
     l2OrderFeed: PubSub<Order<BTCUSD>>,
@@ -304,6 +305,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedChip === 'OFF') {
       disconnect();
+      setFileAdapter(null);
       return;
     }
 
@@ -327,6 +329,13 @@ const Dashboard = () => {
         coinbaseAdapter.getTradeFeed()
       );
     } else if (selectedChip === 'FILE') {
+      // Create adapter when switching to FILE mode
+      const adapter = new FileDataAdapter(BTCUSD_);
+      setFileAdapter(adapter);
+      setupExperiment(
+        adapter.getL2OrderFeed(),
+        adapter.getTradeFeed()
+      );
       if (fileInputRef.current) {
         fileInputRef.current.click();
       }
@@ -340,19 +349,13 @@ const Dashboard = () => {
       return;
     }
     console.log('Selected file:', file.name, 'size:', file.size);
-
-    const adapter = new FileDataAdapter(BTCUSD_);
-    console.log('Created FileDataAdapter');
     
     try {
-      await adapter.loadFile(file);
+      if (!fileAdapter) {
+        throw new Error('File adapter not initialized');
+      }
+      await fileAdapter.loadFile(file);
       console.log('File loaded successfully');
-
-      setupExperiment(
-        adapter.getL2OrderFeed(),
-        adapter.getTradeFeed()
-      );
-      console.log('Experiment setup completed');
     } catch (error) {
       console.error('Error loading file:', error);
     }
