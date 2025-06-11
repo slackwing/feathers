@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
-import ExperimentResultsDisplay from './components/ExperimentResultsDisplay';
+import ExperimentResultsDisplayV2 from './components/ExperimentResultsDisplayV2';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
@@ -28,7 +28,7 @@ import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
 import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
 import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
-import { RunResult } from '@/lib/base/RunResult';
+import { RunResultV2 } from '@/lib/base/RunResultV2';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
@@ -45,10 +45,10 @@ const Dashboard = () => {
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
-  const [runResults, setRunResults] = React.useState<RunResult[]>([]);
+  const [runResults, setRunResults] = React.useState<RunResultV2[]>([]);
   const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
-  const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
+  const [globalMaxNetCapitalExposure, setGlobalMaxNetCapitalExposure] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
   const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
 
@@ -76,17 +76,18 @@ const Dashboard = () => {
 
     let runCount = 0;
     const MAX_RUNS = 100;
-    let maxTransactionBalance = 0.0;
+    let maxNetCapitalExposure = 0.0;
     let nextUpdateAt: number | null = null;
     let endExperimentAt: number | null = null;
     let startExperimentAt: number | null = null;
     let experimentRunning = false;
-    const EXPERIMENT_DURATION_MS = 60000;
+    const EXPERIMENT_DURATION_MS = 15 * 60 * 1000;
     const COOLDOWN_DURATION_MS = 3000;
-    const UPDATE_INTERVAL_MS = 5000;
+    const UPDATE_INTERVAL_MS = 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
     let experiments: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let experimentSetups: { paperAccount: Account; paperFeed: PubSub<Order<BTCUSD>>; xWorld: World_SimpleL2PaperMatching<BTCUSD> | null; mrStrat: MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null; minorMajorEventFeed: ReadOnlyPubSub<boolean> | null; params: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }; initialValue: number; transactionBalance: number; maxTransactionBalance: number }[] = [];
+    let experimentSetups: { paperAccount: Account; paperFeed: PubSub<Order<BTCUSD>>; xWorld: World_SimpleL2PaperMatching<BTCUSD> | null; mrStrat: MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null; minorMajorEventFeed: ReadOnlyPubSub<boolean> | null; params: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }; initialValue: number; netCapitalExposure: number; maxNetCapitalExposure: number }[] = [];
+    let snapshotQuotes = quotes.copy();
 
     dsClock.listen((clock) => {
       if (startExperimentAt === null) {
@@ -99,17 +100,17 @@ const Dashboard = () => {
           const newResults = [...prev];
           const startIdx = newResults.length - experiments.length;
           experimentSetups.forEach((setup, i) => {
-            if (newResults[startIdx + i].baseValue === 0) {
+            if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
-                baseValue: maxTransactionBalance,
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                maxNetCapitalExposure: maxNetCapitalExposure,
+                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
                 finalQuote: quotes.getQuote(Asset.BTC)
               };
             } else {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
                 finalQuote: quotes.getQuote(Asset.BTC)
               };
             }
@@ -134,8 +135,8 @@ const Dashboard = () => {
         console.log('Run completed. Final balances:');
         experimentSetups.forEach((setup, i) => {
           console.log(`Experiment ${i + 1}:`);
-          console.log(`  Transaction Balance: ${setup.transactionBalance}`);
-          console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
+          console.log(`  Transaction Balance: ${setup.netCapitalExposure}`);
+          console.log(`  Max Transaction Balance: ${maxNetCapitalExposure}`);
           console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
         });
         setRunResults(prev => {
@@ -144,7 +145,7 @@ const Dashboard = () => {
           experimentSetups.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
-              deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
               finalQuote: quotes.getQuote(Asset.BTC),
               isComplete: true
             };
@@ -163,6 +164,7 @@ const Dashboard = () => {
         startExperimentAt = null;
         endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
         nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
+        snapshotQuotes = quotes.copy();
         runExperiment();
       }
     });
@@ -207,8 +209,8 @@ const Dashboard = () => {
           minorMajorEventFeed: null as ReadOnlyPubSub<boolean> | null,
           params,
           initialValue: paperAccount.computeTotalValue(quotes),
-          transactionBalance: 0.0,
-          maxTransactionBalance: 0.0
+          netCapitalExposure: 0.0,
+          maxNetCapitalExposure: 0.0
         };
 
         setup.xWorld = new World_SimpleL2PaperMatching(
@@ -240,9 +242,18 @@ const Dashboard = () => {
         setup.minorMajorEventFeed = setup.mrStrat.getMinorMajorEventFeed();
 
         paperAccount.getTransactionsFeed().subscribe((fundLog) => {
-          setup.transactionBalance += quotes.getQuote(fundLog.asset) * fundLog.amount;
-          setup.maxTransactionBalance = Math.max(setup.maxTransactionBalance, Math.abs(setup.transactionBalance));
-          maxTransactionBalance = Math.max(maxTransactionBalance, Math.abs(setup.transactionBalance));
+          // Only count deposits toward orders.
+          if (fundLog.amount > 0) {
+            if (fundLog.asset === Asset.USD) {
+              setup.netCapitalExposure += fundLog.amount;
+              // console.log('Deposit USD! Increase net exposure by: ', fundLog.amount);
+            } else {
+              setup.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
+              // console.log('Deposit BTC! Decrease net exposure by: ', snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount);
+            }
+            setup.maxNetCapitalExposure = Math.max(setup.maxNetCapitalExposure, Math.abs(setup.netCapitalExposure));
+            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(setup.netCapitalExposure));
+          }
         });
 
         return setup;
@@ -266,8 +277,8 @@ const Dashboard = () => {
       const newRunResults = experimentSetups.map(setup => ({
         originalQuote: quotes.getQuote(Asset.BTC),
         finalQuote: quotes.getQuote(Asset.BTC),
-        baseValue: setup.maxTransactionBalance,
-        deltaValue: 0.0,
+        maxNetCapitalExposure: setup.maxNetCapitalExposure,
+        deltaAccountValue: 0.0,
         isComplete: false,
         startTime: Date.now(),
         stochasticParams: setup.params.stochasticParams,
@@ -277,7 +288,7 @@ const Dashboard = () => {
         const updated = [...prev, ...newRunResults];
         return updated;
       });
-      setGlobalBaseValue(maxTransactionBalance);
+      setGlobalMaxNetCapitalExposure(maxNetCapitalExposure);
     };
 
     // const sWorld = new L2PGWorld(
@@ -400,10 +411,10 @@ const Dashboard = () => {
             <div className={styles.loading}>Loading order book...</div>
           )}
 
-          <ExperimentResultsDisplay 
+          <ExperimentResultsDisplayV2 
             runResults={runResults} 
             eventPubSubs={eventFeeds}
-            globalBaseValue={globalBaseValue}
+            globalMaxNetCapitalExposure={globalMaxNetCapitalExposure}
           />
 
           <div className={styles.orderEntry}>

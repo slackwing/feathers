@@ -40,4 +40,12 @@ export class Quotes {
       return total + fund.amount * quote;
     }, 0);
   }
+
+  public copy(): Quotes {
+    const quotes = new Quotes(this._quotingAsset);
+    this._quotes.forEach((quote, asset) => {
+      quotes.setQuote(new AssetPair(asset, this._quotingAsset), quote);
+    });
+    return quotes;
+  }
 }

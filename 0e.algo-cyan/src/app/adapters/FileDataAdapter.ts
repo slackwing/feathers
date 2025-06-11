@@ -42,12 +42,6 @@ export class FileDataAdapter<A extends AssetPair> {
             parseFloat(update.new_quantity),
             typeof data.timestamp === 'string' ? new Date(data.timestamp).getTime() : Date.now()
           );
-          console.log('Publishing order:', {
-            side: order.side,
-            price: order.price,
-            quantity: order.quantity,
-            timestamp: order.timestamp
-          });
           this.l2OrderFeed.publish(order);
         });
       }
@@ -62,12 +56,6 @@ export class FileDataAdapter<A extends AssetPair> {
           const price = parseFloat(trade.price);
           const quantity = parseFloat(trade.size);
           const timestamp = typeof data.timestamp === 'string' ? new Date(data.timestamp).getTime() : Date.now();
-          console.log('Publishing trade:', {
-            side,
-            price,
-            quantity,
-            timestamp
-          });
           this.tradeFeed.publish(new Trade(this.assetPair, side, price, quantity, timestamp));
         }
       }
@@ -75,7 +63,6 @@ export class FileDataAdapter<A extends AssetPair> {
   }
 
   async loadFile(file: File): Promise<void> {
-    console.log('FileDataAdapter: Starting to load file:', file.name, 'size:', file.size);
     const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
     let offset = 0;
     let buffer = '';
@@ -83,7 +70,6 @@ export class FileDataAdapter<A extends AssetPair> {
     while (offset < file.size) {
       const chunk = file.slice(offset, offset + CHUNK_SIZE);
       const text = await chunk.text();
-      console.log('FileDataAdapter: Read chunk at offset', offset, 'size:', text.length);
       buffer += text;
 
       // Split buffer into lines and process each line as a separate JSON object
@@ -95,10 +81,8 @@ export class FileDataAdapter<A extends AssetPair> {
         if (line.trim()) {  // Skip empty lines
           try {
             const data = JSON.parse(line);
-            console.log('FileDataAdapter: Processing message:', data);
             this.onMessage(data);
           } catch (error) {
-            console.error('FileDataAdapter: Error parsing line:', error, 'Line:', line);
           }
         }
       }
@@ -110,13 +94,9 @@ export class FileDataAdapter<A extends AssetPair> {
     if (buffer.trim()) {
       try {
         const data = JSON.parse(buffer);
-        console.log('FileDataAdapter: Processing final message:', data);
         this.onMessage(data);
       } catch (error) {
-        console.error('FileDataAdapter: Error parsing final line:', error, 'Line:', buffer);
       }
     }
-
-    console.log('FileDataAdapter: Finished loading file');
   }
 } 
