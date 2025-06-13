@@ -32,6 +32,7 @@ import { RunResultV2 } from '@/lib/base/RunResultV2';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
+import FileOrderingDisplay from './components/FileOrderingDisplay';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -51,6 +52,8 @@ const Dashboard = () => {
   const [globalMaxNetCapitalExposure, setGlobalMaxNetCapitalExposure] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
   const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [isExperimentRunning, setIsExperimentRunning] = React.useState(false);
 
   const setupExperiment = (
     l2OrderFeed: PubSub<Order<BTCUSD>>,
@@ -354,22 +357,44 @@ const Dashboard = () => {
   }, [selectedChip, connect, disconnect]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      console.log('No file selected');
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) {
+      console.log('No files selected');
       return;
     }
-    console.log('Selected file:', file.name, 'size:', file.size);
+    
+    if (files.length === 1) {
+      // Single file - run experiment immediately
+      try {
+        if (!fileAdapter) {
+          throw new Error('File adapter not initialized');
+        }
+        await fileAdapter.loadFile(files[0]);
+        console.log('File loaded successfully');
+        setIsExperimentRunning(true);
+      } catch (error) {
+        console.error('Error loading file:', error);
+      }
+    } else {
+      // Multiple files - show file selection UI
+      setSelectedFiles(files);
+    }
+  };
+
+  const handleRunExperiment = async () => {
+    if (!fileAdapter || selectedFiles.length === 0) return;
     
     try {
-      if (!fileAdapter) {
-        throw new Error('File adapter not initialized');
-      }
-      await fileAdapter.loadFile(file);
+      await fileAdapter.loadFile(selectedFiles[0]);
       console.log('File loaded successfully');
+      setIsExperimentRunning(true);
     } catch (error) {
       console.error('Error loading file:', error);
     }
+  };
+
+  const handleFileReorder = (newOrder: File[]) => {
+    setSelectedFiles(newOrder);
   };
 
   const handleOrderSubmit = (order: Order<BTCUSD>) => {
@@ -390,7 +415,8 @@ const Dashboard = () => {
         ref={fileInputRef}
         onChange={handleFileSelect}
         style={{ display: 'none' }}
-        accept=".json"
+        accept=".ndjson"
+        multiple
       />
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
@@ -399,12 +425,20 @@ const Dashboard = () => {
         </button>
         <div className={styles.status}>
           {selectedChip === 'REAL-TIME' ? 'Connecting...' : 
-           selectedChip === 'FILE' ? 'Select a file...' : 'Off'}
+           selectedChip === 'FILE' ? (selectedFiles.length > 0 ? `${selectedFiles.length} files selected` : 'Select files...') : 'Off'}
         </div>
       </div>
 
       {(selectedChip === 'REAL-TIME' || selectedChip === 'FILE') && (
         <>
+          {selectedChip === 'FILE' && selectedFiles.length > 1 && !isExperimentRunning && (
+            <FileOrderingDisplay
+              files={selectedFiles}
+              onReorder={handleFileReorder}
+              onRun={handleRunExperiment}
+            />
+          )}
+
           {xWorld ? (
             <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
           ) : (
