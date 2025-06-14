@@ -53,7 +53,7 @@ const Dashboard = () => {
   const [selectedChip, setSelectedChip] = React.useState('OFF');
   const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
-  const [isExperimentRunning, setIsExperimentRunning] = React.useState(false);
+  const [areExperimentsRunning, setAreExperimentsRunning] = React.useState(false);
 
   const setupExperiment = (
     l2OrderFeed: PubSub<Order<BTCUSD>>,
@@ -369,9 +369,9 @@ const Dashboard = () => {
         if (!fileAdapter) {
           throw new Error('File adapter not initialized');
         }
-        await fileAdapter.loadFile(files[0]);
+        await fileAdapter.loadFile(files);
         console.log('File loaded successfully');
-        setIsExperimentRunning(true);
+        setAreExperimentsRunning(true);
       } catch (error) {
         console.error('Error loading file:', error);
       }
@@ -385,9 +385,9 @@ const Dashboard = () => {
     if (!fileAdapter || selectedFiles.length === 0) return;
     
     try {
-      await fileAdapter.loadFile(selectedFiles[0]);
+      await fileAdapter.loadFile(selectedFiles);
       console.log('File loaded successfully');
-      setIsExperimentRunning(true);
+      setAreExperimentsRunning(true);
     } catch (error) {
       console.error('Error loading file:', error);
     }
@@ -431,7 +431,7 @@ const Dashboard = () => {
 
       {(selectedChip === 'REAL-TIME' || selectedChip === 'FILE') && (
         <>
-          {selectedChip === 'FILE' && selectedFiles.length > 1 && !isExperimentRunning && (
+          {selectedChip === 'FILE' && selectedFiles.length > 1 && !areExperimentsRunning && (
             <FileOrderingDisplay
               files={selectedFiles}
               onReorder={handleFileReorder}

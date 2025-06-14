@@ -62,40 +62,43 @@ export class FileDataAdapter<A extends AssetPair> {
     }
   }
 
-  async loadFile(file: File): Promise<void> {
+  async loadFile(files: File[]): Promise<void> {
     const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
-    let offset = 0;
-    let buffer = '';
 
-    while (offset < file.size) {
-      const chunk = file.slice(offset, offset + CHUNK_SIZE);
-      const text = await chunk.text();
-      buffer += text;
+    for (const file of files) {
+      let offset = 0;
+      let buffer = '';
 
-      // Split buffer into lines and process each line as a separate JSON object
-      const lines = buffer.split('\n');
-      // Keep the last line in the buffer as it might be incomplete
-      buffer = lines.pop() || '';
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + CHUNK_SIZE);
+        const text = await chunk.text();
+        buffer += text;
 
-      for (const line of lines) {
-        if (line.trim()) {  // Skip empty lines
-          try {
-            const data = JSON.parse(line);
-            this.onMessage(data);
-          } catch (error) {
+        // Split buffer into lines and process each line as a separate JSON object
+        const lines = buffer.split('\n');
+        // Keep the last line in the buffer as it might be incomplete
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim()) {  // Skip empty lines
+            try {
+              const data = JSON.parse(line);
+              this.onMessage(data);
+            } catch (error) {
+            }
           }
         }
+
+        offset += CHUNK_SIZE;
       }
 
-      offset += CHUNK_SIZE;
-    }
-
-    // Process any remaining data in the buffer
-    if (buffer.trim()) {
-      try {
-        const data = JSON.parse(buffer);
-        this.onMessage(data);
-      } catch (error) {
+      // Process any remaining data in the buffer
+      if (buffer.trim()) {
+        try {
+          const data = JSON.parse(buffer);
+          this.onMessage(data);
+        } catch (error) {
+        }
       }
     }
   }
