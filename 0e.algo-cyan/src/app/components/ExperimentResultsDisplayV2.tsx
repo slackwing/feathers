@@ -173,17 +173,17 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
             <option value={Mode.RUN_ZERO_RELATIVE}>Run Zero Relative</option>
             <option value={Mode.RUN_RELATIVE}>Run Relative</option>
           </select>
-          <label className={styles.toggle}>
-            <input
-              type="checkbox"
-              checked={isSetupView}
-              onChange={(e) => {
-                setIsSetupView(e.target.checked);
-                setAnimationStates({}); // Clear animations when switching views
-              }}
-            />
-            <span className={styles.toggleLabel}>Setup View</span>
-          </label>
+          <select
+            value={isSetupView ? 'experiment' : 'runGroup'}
+            onChange={(e) => {
+              setIsSetupView(e.target.value === 'experiment');
+              setAnimationStates({}); // Clear animations when switching views
+            }}
+            className={styles.modeSelect}
+          >
+            <option value="runGroup">Run Group View</option>
+            <option value="experiment">Experiment View</option>
+          </select>
           <label className={styles.toggle}>
             <input
               type="checkbox"
@@ -274,40 +274,161 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
           )}
         </div>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Run Group</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>{isSetupView ? 'Experiment' : 'Run Group'}</div>
           {selectedIndex !== null && runResults[selectedIndex] ? (
             <div>
               <hr/>
               <br/>
               <div style={{ fontSize: 14 }}>
                 {(() => {
-                  const groupStartIndex = Math.floor(selectedIndex / 16) * 16;
-                  const groupResults = runResults.slice(groupStartIndex, groupStartIndex + 16);
-                  
+                  if (isSetupView) {
+                    // In experiment view, calculate stats across all runs with same parameters
+                    const experimentIndex = selectedIndex % 16;
+                    const experimentResults = [];
+                    for (let i = experimentIndex; i < runResults.length; i += 16) {
+                      experimentResults.push(runResults[i]);
+                    }
+
+                    // Calculate signals per run stats
+                    const signalsPerRun = experimentResults.map(r => r.getSignalCount());
+                    const avgSignalsPerRun = signalsPerRun.reduce((a, b) => a + b, 0) / signalsPerRun.length;
+                    const stdSignalsPerRun = Math.sqrt(
+                      signalsPerRun.reduce((a, b) => a + Math.pow(b - avgSignalsPerRun, 2), 0) / signalsPerRun.length
+                    );
+
+                    // Calculate signals per day stats
+                    const signalsPerDay = experimentResults.map(r => r.getSignalCount()/(r.durationMs/(24*60*60*1000)));
+                    const avgSignalsPerDay = signalsPerDay.reduce((a, b) => a + b, 0) / signalsPerDay.length;
+                    const stdSignalsPerDay = Math.sqrt(
+                      signalsPerDay.reduce((a, b) => a + Math.pow(b - avgSignalsPerDay, 2), 0) / signalsPerDay.length
+                    );
+
+                    // Calculate time between signals stats
+                    const avgTimeBetweenSignals = experimentResults.map(r => r.getAverageTimeBetweenSignals());
+                    const avgTimeBetweenSignalsMean = avgTimeBetweenSignals.reduce((a, b) => a + b, 0) / avgTimeBetweenSignals.length;
+                    const avgTimeBetweenSignalsStd = Math.sqrt(
+                      avgTimeBetweenSignals.reduce((a, b) => a + Math.pow(b - avgTimeBetweenSignalsMean, 2), 0) / avgTimeBetweenSignals.length
+                    );
+
+                    // Calculate oversignal stats
+                    const oversignalRatios = experimentResults.map(r => r.getOversignalRatio());
+                    const oversignalCounts = experimentResults.map(r => r.getOversignalCount());
+                    const minOversignal = Math.min(...oversignalCounts);
+                    const maxOversignal = Math.max(...oversignalCounts);
+                    const avgOversignal = oversignalCounts.reduce((a, b) => a + b, 0) / oversignalCounts.length;
+                    const medianOversignal = [...oversignalCounts].sort((a, b) => a - b)[Math.floor(oversignalCounts.length / 2)];
+                    
+                    const oversignallingWorlds = oversignalRatios.filter(r => r > 1.0).length;
+
+                    return (
+                      <>
+                        <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
+                        <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
+                        <br/>
+                        <div><b>Signals per Run:</b> {avgSignalsPerRun.toFixed(1)} ± {stdSignalsPerRun.toFixed(1)}</div>
+                        <div><b>Signals per Day:</b> {avgSignalsPerDay.toFixed(1)} ± {stdSignalsPerDay.toFixed(1)}</div>
+                        <div><b>Avg. Time btwn Signals:</b> {avgTimeBetweenSignalsMean.toFixed(0)}ms ± {avgTimeBetweenSignalsStd.toFixed(0)}ms</div>
+                        <div><b>Oversignals:</b></div>
+                        <div style={{ marginLeft: '10px' }}>
+                          <div>Min: {minOversignal} ({(minOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Avg: {avgOversignal.toFixed(1)} ({(avgOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Median: {medianOversignal} ({(medianOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Max: {maxOversignal} ({(maxOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                        </div>
+                        <div><b>Oversignalling Runs:</b> {oversignallingWorlds} ({(oversignallingWorlds/experimentResults.length*100).toFixed(0)}%)</div>
+                      </>
+                    );
+                  } else {
+                    // Original run group view code
+                    const groupStartIndex = Math.floor(selectedIndex / 16) * 16;
+                    const groupResults = runResults.slice(groupStartIndex, groupStartIndex + 16);
+                    
+                    // Calculate signals per run stats
+                    const signalsPerRun = groupResults.map(r => r.getSignalCount());
+                    const avgSignalsPerRun = signalsPerRun.reduce((a, b) => a + b, 0) / signalsPerRun.length;
+                    const stdSignalsPerRun = Math.sqrt(
+                      signalsPerRun.reduce((a, b) => a + Math.pow(b - avgSignalsPerRun, 2), 0) / signalsPerRun.length
+                    );
+
+                    // Calculate signals per day stats
+                    const signalsPerDay = groupResults.map(r => r.getSignalCount()/(r.durationMs/(24*60*60*1000)));
+                    const avgSignalsPerDay = signalsPerDay.reduce((a, b) => a + b, 0) / signalsPerDay.length;
+                    const stdSignalsPerDay = Math.sqrt(
+                      signalsPerDay.reduce((a, b) => a + Math.pow(b - avgSignalsPerDay, 2), 0) / signalsPerDay.length
+                    );
+
+                    // Calculate time between signals stats
+                    const avgTimeBetweenSignals = groupResults.map(r => r.getAverageTimeBetweenSignals());
+                    const avgTimeBetweenSignalsMean = avgTimeBetweenSignals.reduce((a, b) => a + b, 0) / avgTimeBetweenSignals.length;
+                    const avgTimeBetweenSignalsStd = Math.sqrt(
+                      avgTimeBetweenSignals.reduce((a, b) => a + Math.pow(b - avgTimeBetweenSignalsMean, 2), 0) / avgTimeBetweenSignals.length
+                    );
+
+                    // Calculate oversignal stats
+                    const oversignalRatios = groupResults.map(r => r.getOversignalRatio());
+                    const oversignalCounts = groupResults.map(r => r.getOversignalCount());
+                    const minOversignal = Math.min(...oversignalCounts);
+                    const maxOversignal = Math.max(...oversignalCounts);
+                    const avgOversignal = oversignalCounts.reduce((a, b) => a + b, 0) / oversignalCounts.length;
+                    const medianOversignal = [...oversignalCounts].sort((a, b) => a - b)[Math.floor(oversignalCounts.length / 2)];
+                    
+                    const oversignallingWorlds = oversignalRatios.filter(r => r > 1.0).length;
+
+                    return (
+                      <>
+                        <div><b>Signals per Run:</b> {avgSignalsPerRun.toFixed(1)} ± {stdSignalsPerRun.toFixed(1)}</div>
+                        <div><b>Signals per Day:</b> {avgSignalsPerDay.toFixed(1)} ± {stdSignalsPerDay.toFixed(1)}</div>
+                        <div><b>Avg. Time btwn Signals:</b> {avgTimeBetweenSignalsMean.toFixed(0)}ms ± {avgTimeBetweenSignalsStd.toFixed(0)}ms</div>
+                        <div><b>Oversignals:</b></div>
+                        <div style={{ marginLeft: '10px' }}>
+                          <div>Min: {minOversignal} ({(minOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Avg: {avgOversignal.toFixed(1)} ({(avgOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Median: {medianOversignal} ({(medianOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                          <div>Max: {maxOversignal} ({(maxOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                        </div>
+                        <div><b>Oversignalling Runs:</b> {oversignallingWorlds} ({(oversignallingWorlds/groupResults.length*100).toFixed(0)}%)</div>
+                      </>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+          ) : (
+            <div>No run selected.</div>
+          )}
+        </div>
+        <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Overall</div>
+          {selectedIndex !== null && runResults[selectedIndex] ? (
+            <div>
+              <hr/>
+              <br/>
+              <div style={{ fontSize: 14 }}>
+                {(() => {
                   // Calculate signals per run stats
-                  const signalsPerRun = groupResults.map(r => r.getSignalCount());
+                  const signalsPerRun = runResults.map(r => r.getSignalCount());
                   const avgSignalsPerRun = signalsPerRun.reduce((a, b) => a + b, 0) / signalsPerRun.length;
                   const stdSignalsPerRun = Math.sqrt(
                     signalsPerRun.reduce((a, b) => a + Math.pow(b - avgSignalsPerRun, 2), 0) / signalsPerRun.length
                   );
 
                   // Calculate signals per day stats
-                  const signalsPerDay = groupResults.map(r => r.getSignalCount()/(r.durationMs/(24*60*60*1000)));
+                  const signalsPerDay = runResults.map(r => r.getSignalCount()/(r.durationMs/(24*60*60*1000)));
                   const avgSignalsPerDay = signalsPerDay.reduce((a, b) => a + b, 0) / signalsPerDay.length;
                   const stdSignalsPerDay = Math.sqrt(
                     signalsPerDay.reduce((a, b) => a + Math.pow(b - avgSignalsPerDay, 2), 0) / signalsPerDay.length
                   );
 
                   // Calculate time between signals stats
-                  const avgTimeBetweenSignals = groupResults.map(r => r.getAverageTimeBetweenSignals());
+                  const avgTimeBetweenSignals = runResults.map(r => r.getAverageTimeBetweenSignals());
                   const avgTimeBetweenSignalsMean = avgTimeBetweenSignals.reduce((a, b) => a + b, 0) / avgTimeBetweenSignals.length;
                   const avgTimeBetweenSignalsStd = Math.sqrt(
                     avgTimeBetweenSignals.reduce((a, b) => a + Math.pow(b - avgTimeBetweenSignalsMean, 2), 0) / avgTimeBetweenSignals.length
                   );
 
                   // Calculate oversignal stats
-                  const oversignalRatios = groupResults.map(r => r.getOversignalRatio());
-                  const oversignalCounts = groupResults.map(r => r.getOversignalCount());
+                  const oversignalRatios = runResults.map(r => r.getOversignalRatio());
+                  const oversignalCounts = runResults.map(r => r.getOversignalCount());
                   const minOversignal = Math.min(...oversignalCounts);
                   const maxOversignal = Math.max(...oversignalCounts);
                   const avgOversignal = oversignalCounts.reduce((a, b) => a + b, 0) / oversignalCounts.length;
@@ -327,7 +448,7 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
                         <div>Median: {medianOversignal} ({(medianOversignal/avgSignalsPerRun).toFixed(2)})</div>
                         <div>Max: {maxOversignal} ({(maxOversignal/avgSignalsPerRun).toFixed(2)})</div>
                       </div>
-                      <div><b>Oversignalling Runs:</b> {oversignallingWorlds} ({(oversignallingWorlds/groupResults.length*100).toFixed(0)}%)</div>
+                      <div><b>Oversignalling Runs:</b> {oversignallingWorlds} ({(oversignallingWorlds/runResults.length*100).toFixed(0)}%)</div>
                     </>
                   );
                 })()}
@@ -336,10 +457,6 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
           ) : (
             <div>No run selected.</div>
           )}
-        </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Overall</div>
-          <div></div>
         </div>
       </div>
     </div>
