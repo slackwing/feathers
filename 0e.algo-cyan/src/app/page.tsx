@@ -33,6 +33,8 @@ import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
+import { IntelligenceV1 } from '@/lib/base/Intelligence';
+import { Run } from '@/lib/base/Run';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -47,7 +49,7 @@ const Dashboard = () => {
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
   const [runResults, setRunResults] = React.useState<RunResultV2[]>([]);
-  const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
+  const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<IntelligenceV1>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
   const [globalMaxNetCapitalExposure, setGlobalMaxNetCapitalExposure] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
@@ -88,8 +90,8 @@ const Dashboard = () => {
     const COOLDOWN_DURATION_MS = 3000;
     const UPDATE_INTERVAL_MS = 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
-    let experiments: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let experimentSetups: { paperAccount: Account; paperFeed: PubSub<Order<BTCUSD>>; xWorld: World_SimpleL2PaperMatching<BTCUSD> | null; mrStrat: MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null; minorMajorEventFeed: ReadOnlyPubSub<boolean> | null; params: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }; initialValue: number; netCapitalExposure: number; maxNetCapitalExposure: number }[] = [];
+    let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
+    let experimentSetups: Run<BTCUSD>[] = [];
     let snapshotQuotes = quotes.copy();
 
     dsClock.listen((clock) => {
@@ -101,7 +103,7 @@ const Dashboard = () => {
         nextUpdateAt = null;
         setRunResults(prev => {
           const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
+          const startIdx = newResults.length - parameterSet.length;
           experimentSetups.forEach((setup, i) => {
             if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
               newResults[startIdx + i] = {
@@ -144,7 +146,7 @@ const Dashboard = () => {
         });
         setRunResults(prev => {
           const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
+          const startIdx = newResults.length - parameterSet.length;
           experimentSetups.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
@@ -189,7 +191,7 @@ const Dashboard = () => {
       // const strategyThresholds = [5, 10, 20, 40];
 
       // Create all combinations of parameters
-      experiments = stochasticParams.flatMap(sp => 
+      parameterSet = stochasticParams.flatMap(sp => 
         strategyThresholds.map(st => ({
           stochasticParams: sp,
           strategyParams: { threshold: st }
@@ -197,29 +199,19 @@ const Dashboard = () => {
       );
 
       // Create separate worlds and accounts for each experiment
-      experimentSetups = experiments.map(params => {
+      experimentSetups = parameterSet.map(params => {
         const paperAccount = new Account('paper', 'Paper Account');
         const paperWallet = new Wallet('paper', 'Paper Wallet');
         paperAccount.addWallet(paperWallet);
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const setup = {
-          paperAccount,
-          paperFeed: new PubSub<Order<BTCUSD>>(),
-          xWorld: null as World_SimpleL2PaperMatching<BTCUSD> | null,
-          mrStrat: null as MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null,
-          minorMajorEventFeed: null as ReadOnlyPubSub<boolean> | null,
-          params,
-          initialValue: paperAccount.computeTotalValue(quotes),
-          netCapitalExposure: 0.0,
-          maxNetCapitalExposure: 0.0
-        };
+        const experiment = new Run<BTCUSD>(paperAccount, params, quotes);
 
-        setup.xWorld = new World_SimpleL2PaperMatching(
+        experiment.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
           l2OrderBook,
-          setup.paperFeed,
+          experiment.paperFeed,
         );
 
         const dsFullStochastic = new DSignal_FullStochastic(
@@ -230,36 +222,34 @@ const Dashboard = () => {
           params.stochasticParams.slowingPeriod
         );
 
-        setup.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
+        experiment.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
           BTCUSD_,
           I1SQ_,
-          setup.xWorld,
+          experiment.xWorld,
           paperAccount,
-          setup.xWorld.executionFeed,
+          experiment.xWorld.executionFeed,
           dsFullStochastic,
           quotes,
           params.strategyParams.threshold,
           1.0
         );
 
-        setup.minorMajorEventFeed = setup.mrStrat.getMinorMajorEventFeed();
+        experiment.intelligenceFeed = experiment.mrStrat.getIntelligenceFeed();
 
         paperAccount.getTransactionsFeed().subscribe((fundLog) => {
           // Only count deposits toward orders.
           if (fundLog.amount > 0) {
             if (fundLog.asset === Asset.USD) {
-              setup.netCapitalExposure += fundLog.amount;
-              // console.log('Deposit USD! Increase net exposure by: ', fundLog.amount);
+              experiment.netCapitalExposure += fundLog.amount;
             } else {
-              setup.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
-              // console.log('Deposit BTC! Decrease net exposure by: ', snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount);
+              experiment.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
             }
-            setup.maxNetCapitalExposure = Math.max(setup.maxNetCapitalExposure, Math.abs(setup.netCapitalExposure));
-            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(setup.netCapitalExposure));
+            experiment.maxNetCapitalExposure = Math.max(experiment.maxNetCapitalExposure, Math.abs(experiment.netCapitalExposure));
+            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(experiment.netCapitalExposure));
           }
         });
 
-        return setup;
+        return experiment;
       });
 
       // Set the last experiment's world as the main display
@@ -267,7 +257,7 @@ const Dashboard = () => {
       setPaperAccount(lastExperiment.paperAccount);
       setPaperOrderFeed(lastExperiment.paperFeed);
       setXWorld(lastExperiment.xWorld);
-      setEventFeeds(experimentSetups.map(setup => setup.minorMajorEventFeed).filter((feed): feed is ReadOnlyPubSub<boolean> => feed !== null));
+      setEventFeeds(experimentSetups.map(setup => setup.intelligenceFeed).filter((feed): feed is ReadOnlyPubSub<IntelligenceV1> => feed !== null));
 
       // Start all experiments
       experimentSetups.forEach(setup => {

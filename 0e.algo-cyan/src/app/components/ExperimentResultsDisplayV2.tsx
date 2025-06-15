@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './ExperimentResultsDisplayV2.module.css';
 import { ReadOnlyPubSub } from '@/lib/infra/PubSub';
 import { RunResultV2 } from '@/lib/base/RunResultV2';
+import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
 
 export enum Mode {
   ABSOLUTE = 'ABSOLUTE',
@@ -13,7 +14,7 @@ export enum Mode {
 
 interface ExperimentResultsDisplayProps {
   runResults: RunResultV2[];
-  eventPubSubs?: ReadOnlyPubSub<boolean>[];
+  eventPubSubs?: ReadOnlyPubSub<IntelligenceV1>[];
   globalMaxNetCapitalExposure?: number;
 }
 
@@ -28,7 +29,10 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
     if (!eventPubSubs) return;
 
     const unsubscribes = eventPubSubs.map((pubSub, index) => {
-      return pubSub.subscribe((isMajor: boolean) => {
+      return pubSub.subscribe((intelligence: IntelligenceV1) => {
+        if (intelligence.type !== IntelligenceV1Type.PRESIGNAL && intelligence.type !== IntelligenceV1Type.SIGNAL) {
+          return;
+        }
         setAnimationStates(prev => {
           const newStates = { ...prev };
           // Find the most recent run
@@ -44,17 +48,17 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
 
           // Only animate if the result exists and isn't complete
           if (targetIndex < runResults.length && !runResults[targetIndex].isComplete) {
-            newStates[targetIndex] = isMajor ? 'bounce' : 'ping';
+            newStates[targetIndex] = intelligence.type === IntelligenceV1Type.SIGNAL ? 'bounce' : 'ping';
             // Clear the animation after it completes
             setTimeout(() => {
               setAnimationStates(current => {
                 const updated = { ...current };
-                if (updated[targetIndex] === (isMajor ? 'bounce' : 'ping')) {
+                if (updated[targetIndex] === (intelligence.type === IntelligenceV1Type.SIGNAL ? 'bounce' : 'ping')) {
                   delete updated[targetIndex];
                 }
                 return updated;
               });
-            }, isMajor ? 700 : 500); // Match animation durations
+            }, intelligence.type === IntelligenceV1Type.SIGNAL ? 700 : 500); // Match animation durations
           }
           return newStates;
         });
@@ -191,7 +195,7 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
           </label>
         </div>
       </div>
-      <div className={styles.runsContainer} style={{
+      <div style={{
         display: 'flex',
         flexWrap: 'wrap',
         gap: '20px',
