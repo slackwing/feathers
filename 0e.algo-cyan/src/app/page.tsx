@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import styles from './page.module.css';
 import OrderBookTableDisplay from './components/OrderBookTableDisplay';
 import OrderBookBarChartDisplay from './components/OrderBookBarChartDisplay';
-import ExperimentResultsDisplay from './components/ExperimentResultsDisplay';
+import ExperimentResultsDisplayV2 from './components/ExperimentResultsDisplayV2';
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
@@ -28,13 +28,18 @@ import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
 import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
 import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
-import { RunResult } from '@/lib/base/RunResult';
+import { RunResultV2 } from '@/lib/base/RunResultV2';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
+import { FileDataAdapter } from './adapters/FileDataAdapter';
+import FileOrderingDisplay from './components/FileOrderingDisplay';
+import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
+import { Run } from '@/lib/base/Run';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [slowWorld, setSlowWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
   const [fastWorld, setFastWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
@@ -43,16 +48,18 @@ const Dashboard = () => {
   const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
   const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
-  const [runResults, setRunResults] = React.useState<RunResult[]>([]);
-  const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<boolean>[]>([]);
+  const [runResults, setRunResults] = React.useState<RunResultV2[]>([]);
+  const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<IntelligenceV1>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
-  const [globalBaseValue, setGlobalBaseValue] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
+  const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [areExperimentsRunning, setAreExperimentsRunning] = React.useState(false);
 
-  useEffect(() => {
-    const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
-    const l2OrderFeed = coinbaseAdapter.getL2OrderFeed();
-    const tradeFeed = coinbaseAdapter.getTradeFeed();
+  const setupExperiment = (
+    l2OrderFeed: PubSub<Order<BTCUSD>>,
+    tradeFeed: PubSub<Trade<BTCUSD>>
+  ) => {
     const batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
     tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
     const paperFeed = new PubSub<Order<BTCUSD>>();
@@ -68,21 +75,23 @@ const Dashboard = () => {
     // });
     tradeFeed.subscribe((trade) => {
       quotes.setQuote(BTCUSD_, trade.price);
+      setLastRefreshed(Date.now());
     });
 
     let runCount = 0;
     const MAX_RUNS = 100;
-    let maxTransactionBalance = 0.0;
+    let maxNetCapitalExposure = 0.0;
     let nextUpdateAt: number | null = null;
     let endExperimentAt: number | null = null;
     let startExperimentAt: number | null = null;
     let experimentRunning = false;
-    const EXPERIMENT_DURATION_MS = 60000;
+    const EXPERIMENT_DURATION_MS = 15 * 60 * 1000;
     const COOLDOWN_DURATION_MS = 3000;
-    const UPDATE_INTERVAL_MS = 5000;
+    const UPDATE_INTERVAL_MS = 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
-    let experiments: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let experimentSetups: { paperAccount: Account; paperFeed: PubSub<Order<BTCUSD>>; xWorld: World_SimpleL2PaperMatching<BTCUSD> | null; mrStrat: MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null; minorMajorEventFeed: ReadOnlyPubSub<boolean> | null; params: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }; initialValue: number; transactionBalance: number; maxTransactionBalance: number }[] = [];
+    let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
+    let runs: Run<BTCUSD>[] = [];
+    let snapshotQuotes = quotes.copy();
 
     dsClock.listen((clock) => {
       if (startExperimentAt === null) {
@@ -93,19 +102,19 @@ const Dashboard = () => {
         nextUpdateAt = null;
         setRunResults(prev => {
           const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
-          experimentSetups.forEach((setup, i) => {
-            if (newResults[startIdx + i].baseValue === 0) {
+          const startIdx = newResults.length - parameterSet.length;
+          runs.forEach((setup, i) => {
+            if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
-                baseValue: maxTransactionBalance,
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                maxNetCapitalExposure: maxNetCapitalExposure,
+                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
                 finalQuote: quotes.getQuote(Asset.BTC)
               };
             } else {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
-                deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
                 finalQuote: quotes.getQuote(Asset.BTC)
               };
             }
@@ -121,26 +130,26 @@ const Dashboard = () => {
         endExperimentAt = null;
         nextUpdateAt = null;
 
-        experimentSetups.forEach(setup => {
+        runs.forEach(setup => {
           if (setup.mrStrat) {
             setup.mrStrat.stop();
           }
         });
         
         console.log('Run completed. Final balances:');
-        experimentSetups.forEach((setup, i) => {
+        runs.forEach((setup, i) => {
           console.log(`Experiment ${i + 1}:`);
-          console.log(`  Transaction Balance: ${setup.transactionBalance}`);
-          console.log(`  Max Transaction Balance: ${maxTransactionBalance}`);
+          console.log(`  Transaction Balance: ${setup.netCapitalExposure}`);
+          console.log(`  Max Transaction Balance: ${maxNetCapitalExposure}`);
           console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
         });
         setRunResults(prev => {
           const newResults = [...prev];
-          const startIdx = newResults.length - experiments.length;
-          experimentSetups.forEach((setup, i) => {
+          const startIdx = newResults.length - parameterSet.length;
+          runs.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
-              deltaValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
               finalQuote: quotes.getQuote(Asset.BTC),
               isComplete: true
             };
@@ -159,6 +168,7 @@ const Dashboard = () => {
         startExperimentAt = null;
         endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
         nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
+        snapshotQuotes = quotes.copy();
         runExperiment();
       }
     });
@@ -180,7 +190,7 @@ const Dashboard = () => {
       // const strategyThresholds = [5, 10, 20, 40];
 
       // Create all combinations of parameters
-      experiments = stochasticParams.flatMap(sp => 
+      parameterSet = stochasticParams.flatMap(sp => 
         strategyThresholds.map(st => ({
           stochasticParams: sp,
           strategyParams: { threshold: st }
@@ -188,29 +198,19 @@ const Dashboard = () => {
       );
 
       // Create separate worlds and accounts for each experiment
-      experimentSetups = experiments.map(params => {
+      runs = parameterSet.map(params => {
         const paperAccount = new Account('paper', 'Paper Account');
         const paperWallet = new Wallet('paper', 'Paper Wallet');
         paperAccount.addWallet(paperWallet);
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const setup = {
-          paperAccount,
-          paperFeed: new PubSub<Order<BTCUSD>>(),
-          xWorld: null as World_SimpleL2PaperMatching<BTCUSD> | null,
-          mrStrat: null as MRStrat_Stochastic<BTCUSD, typeof I1SQ_> | null,
-          minorMajorEventFeed: null as ReadOnlyPubSub<boolean> | null,
-          params,
-          initialValue: paperAccount.computeTotalValue(quotes),
-          transactionBalance: 0.0,
-          maxTransactionBalance: 0.0
-        };
+        const run = new Run<BTCUSD>(paperAccount, params, quotes);
 
-        setup.xWorld = new World_SimpleL2PaperMatching(
+        run.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
           l2OrderBook,
-          setup.paperFeed,
+          run.paperFeed,
         );
 
         const dsFullStochastic = new DSignal_FullStochastic(
@@ -221,59 +221,85 @@ const Dashboard = () => {
           params.stochasticParams.slowingPeriod
         );
 
-        setup.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
+        run.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
           BTCUSD_,
           I1SQ_,
-          setup.xWorld,
+          run.xWorld,
           paperAccount,
-          setup.xWorld.executionFeed,
+          run.xWorld.executionFeed,
           dsFullStochastic,
           quotes,
           params.strategyParams.threshold,
           1.0
         );
 
-        setup.minorMajorEventFeed = setup.mrStrat.getMinorMajorEventFeed();
+        run.intelligenceFeed = run.mrStrat.getIntelligenceFeed();
 
         paperAccount.getTransactionsFeed().subscribe((fundLog) => {
-          setup.transactionBalance += quotes.getQuote(fundLog.asset) * fundLog.amount;
-          setup.maxTransactionBalance = Math.max(setup.maxTransactionBalance, Math.abs(setup.transactionBalance));
-          maxTransactionBalance = Math.max(maxTransactionBalance, Math.abs(setup.transactionBalance));
+          // Only count deposits toward orders.
+          if (fundLog.amount > 0) {
+            if (fundLog.asset === Asset.USD) {
+              run.netCapitalExposure += fundLog.amount;
+            } else {
+              run.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
+            }
+            run.maxNetCapitalExposure = Math.max(run.maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
+            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
+          }
         });
 
-        return setup;
+        run.intelligenceFeed.subscribe((intel) => {
+          run.intelCounts.set(intel.type, (run.intelCounts.get(intel.type) || 0) + 1);
+          if (intel.type === IntelligenceV1Type.SIGNAL) {
+            const now = Date.now();
+            if (run.lastSignalTime !== 0) {
+              run.timeBetweenSignals.push(now - run.lastSignalTime);
+            }
+            run.lastSignalTime = now;
+          }
+        });
+
+        return run;
       });
 
       // Set the last experiment's world as the main display
-      const lastExperiment = experimentSetups[experimentSetups.length - 1];
+      const lastExperiment = runs[runs.length - 1];
       setPaperAccount(lastExperiment.paperAccount);
       setPaperOrderFeed(lastExperiment.paperFeed);
       setXWorld(lastExperiment.xWorld);
-      setEventFeeds(experimentSetups.map(setup => setup.minorMajorEventFeed).filter((feed): feed is ReadOnlyPubSub<boolean> => feed !== null));
+      setEventFeeds(runs.map(setup => setup.intelligenceFeed).filter((feed): feed is ReadOnlyPubSub<IntelligenceV1> => feed !== null));
 
       // Start all experiments
-      experimentSetups.forEach(setup => {
+      runs.forEach(setup => {
         if (setup.mrStrat) {
           setup.mrStrat.start();
         }
       });
 
       // Add new run results after starting the experiments
-      const newRunResults = experimentSetups.map(setup => ({
+      const newRunResults = runs.map(run => ({
+        durationMs: EXPERIMENT_DURATION_MS,
         originalQuote: quotes.getQuote(Asset.BTC),
         finalQuote: quotes.getQuote(Asset.BTC),
-        baseValue: setup.maxTransactionBalance,
-        deltaValue: 0.0,
+        maxNetCapitalExposure: run.maxNetCapitalExposure,
+        deltaAccountValue: 0.0,
         isComplete: false,
         startTime: Date.now(),
-        stochasticParams: setup.params.stochasticParams,
-        strategyParams: setup.params.strategyParams
+        stochasticParams: run.params.stochasticParams,
+        strategyParams: run.params.strategyParams,
+        timeBetweenSignals: run.timeBetweenSignals,
+        intelCounts: run.intelCounts,
+        getSignalCount: () => run.getSignalCount(),
+        getAverageTimeBetweenSignals: () => run.getAverageTimeBetweenSignals(),
+        getStdDeviationTimeBetweenSignals: () => run.getStdDeviationTimeBetweenSignals(),
+        getOversignalCount: () => run.getOversignalCount(),
+        getPresignalCount: () => run.getPresignalCount(),
+        getOversignalRatio: () => run.getOversignalRatio()
       }));
       setRunResults(prev => {
         const updated = [...prev, ...newRunResults];
         return updated;
       });
-      setGlobalBaseValue(maxTransactionBalance);
     };
 
     // const sWorld = new L2PGWorld(
@@ -296,46 +322,88 @@ const Dashboard = () => {
     // setFastWorld(fWorld);
     setSlowWorld(null);
     setFastWorld(null);
+  };
 
-    // sWorld.executionFeed.subscribe((execution) => {
-    //   console.log('Execution:', execution);
-    // });
+  useEffect(() => {
+    if (selectedChip === 'OFF') {
+      disconnect();
+      setFileAdapter(null);
+      return;
+    }
 
-    // const mmStrat = new MMStrat_StaticSpread(
-    //   BTCUSD_,
-    //   sWorld,
-    //   paperAccount,
-    //   sWorld.executionFeed,
-    //   1,
-    //   0.1
-    // );
+    if (selectedChip === 'REAL-TIME') {
+      connect({
+        onMessage: (data) => {
+          coinbaseAdapter.onMessage(data);
+          setLastRefreshed(Date.now());
+        },
+        onError: (error) => {
+          console.error('WebSocket error:', error);
+        },
+        onOpen: () => {
+          console.log('Connected to Coinbase.');
+        },
+      });
 
-    // TODO(P1): Do this properly.
-    // setTimeout(() => {
-    //   const initialValue = paperAccount?.computeValue(quotes);
-    //   console.log('Initial value: ', initialValue);
-    //   mmStrat.start();
-    //   setInterval(() => {
-    //     const currentValue = paperAccount?.computeValue(quotes);
-    //     console.log('Paper account delta: ', currentValue - initialValue);
-    //   }, 3000);
-    // }, 3000);
+      const coinbaseAdapter = new CoinbaseDataAdapter(BTCUSD_);
+      setupExperiment(
+        coinbaseAdapter.getL2OrderFeed(),
+        coinbaseAdapter.getTradeFeed()
+      );
+    } else if (selectedChip === 'FILE') {
+      // Create adapter when switching to FILE mode
+      const adapter = new FileDataAdapter(BTCUSD_);
+      setFileAdapter(adapter);
+      setupExperiment(
+        adapter.getL2OrderFeed(),
+        adapter.getTradeFeed()
+      );
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }
+  }, [selectedChip, connect, disconnect]);
 
-    connect({
-      onMessage: (data) => {
-        coinbaseAdapter.onMessage(data);
-        setLastRefreshed(Date.now());
-      },
-      onError: (error) => {
-        console.error('WebSocket error:', error);
-      },
-      onOpen: () => {
-        console.log('Connected to Coinbase.');
-      },
-    });
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
+    
+    if (files.length === 1) {
+      // Single file - run experiment immediately
+      try {
+        if (!fileAdapter) {
+          throw new Error('File adapter not initialized');
+        }
+        await fileAdapter.loadFile(files);
+        console.log('File loaded successfully');
+        setAreExperimentsRunning(true);
+      } catch (error) {
+        console.error('Error loading file:', error);
+      }
+    } else {
+      // Multiple files - show file selection UI
+      setSelectedFiles(files);
+    }
+  };
 
-    return () => disconnect();
-  }, [connect, disconnect]);
+  const handleRunExperiment = async () => {
+    if (!fileAdapter || selectedFiles.length === 0) return;
+    
+    try {
+      await fileAdapter.loadFile(selectedFiles);
+      console.log('File loaded successfully');
+      setAreExperimentsRunning(true);
+    } catch (error) {
+      console.error('Error loading file:', error);
+    }
+  };
+
+  const handleFileReorder = (newOrder: File[]) => {
+    setSelectedFiles(newOrder);
+  };
 
   const handleOrderSubmit = (order: Order<BTCUSD>) => {
     if (paperOrderFeed) {
@@ -350,71 +418,93 @@ const Dashboard = () => {
   return (
     <div className={styles.container}>
       <ChipSelector selected={selectedChip} onSelect={setSelectedChip} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept=".ndjson"
+        multiple
+      />
       <h1 className={styles.title}>BTC-USD Order Book</h1>
       <div className={styles.controls}>
         <button className={styles.powerButton} onClick={handlePowerOff}>
           Power Off
         </button>
-        <div className={styles.status}>Connecting...</div>
+        <div className={styles.status}>
+          {selectedChip === 'REAL-TIME' ? 'Connecting...' : 
+           selectedChip === 'FILE' ? (selectedFiles.length > 0 ? `${selectedFiles.length} files selected` : 'Select files...') : 'Off'}
+        </div>
       </div>
 
-      {xWorld ? (
-        <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+      {(selectedChip === 'REAL-TIME' || selectedChip === 'FILE') && (
+        <>
+          {selectedChip === 'FILE' && selectedFiles.length > 1 && !areExperimentsRunning && (
+            <FileOrderingDisplay
+              files={selectedFiles}
+              onReorder={handleFileReorder}
+              onRun={handleRunExperiment}
+            />
+          )}
 
-      <ExperimentResultsDisplay 
-        runResults={runResults} 
-        eventPubSubs={eventFeeds}
-        globalBaseValue={globalBaseValue}
-      />
+          {xWorld ? (
+            <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      <div className={styles.orderEntry}>
-        <div className={`${styles.orderPanel} ${styles.buy}`}>
-          <h3>Buy BTC</h3>
-          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.BUY} onSubmit={handleOrderSubmit} />}
-        </div>
-        <div className={`${styles.orderPanel} ${styles.trades}`}>
-          <div className={styles.plSection}>
-            <div className={styles.plValue} id="pl-value">
-              $0.00
+          <ExperimentResultsDisplayV2 
+            runResults={runResults} 
+            eventPubSubs={eventFeeds}
+          />
+
+          <div className={styles.orderEntry}>
+            <div className={`${styles.orderPanel} ${styles.buy}`}>
+              <h3>Buy BTC</h3>
+              {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.BUY} onSubmit={handleOrderSubmit} />}
+            </div>
+            <div className={`${styles.orderPanel} ${styles.trades}`}>
+              <div className={styles.plSection}>
+                <div className={styles.plValue} id="pl-value">
+                  $0.00
+                </div>
+              </div>
+              <div className={styles.tradesHeader}>
+                <h3>Recent Trades</h3>
+                <label className={styles.toggleLabel}>
+                  <span className={styles.toggleSwitch}>
+                    <input type="checkbox" id="showAllTrades" defaultChecked />
+                    <span className={styles.toggleSlider}></span>
+                  </span>
+                  <span id="toggleText">Show all trades</span>
+                </label>
+              </div>
+              <div className={styles.tradesList} id="trades-list"></div>
+            </div>
+            <div className={`${styles.orderPanel} ${styles.sell}`}>
+              <h3>Sell BTC</h3>
+              {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
             </div>
           </div>
-          <div className={styles.tradesHeader}>
-            <h3>Recent Trades</h3>
-            <label className={styles.toggleLabel}>
-              <span className={styles.toggleSwitch}>
-                <input type="checkbox" id="showAllTrades" defaultChecked />
-                <span className={styles.toggleSlider}></span>
-              </span>
-              <span id="toggleText">Show all trades</span>
-            </label>
-          </div>
-          <div className={styles.tradesList} id="trades-list"></div>
-        </div>
-        <div className={`${styles.orderPanel} ${styles.sell}`}>
-          <h3>Sell BTC</h3>
-          {paperAccount && <OrderForm assetPair={assetPair} account={paperAccount} side={Side.SELL} onSubmit={handleOrderSubmit} />}
-        </div>
-      </div>
 
-      {xWorld ? (
-        <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+          {xWorld ? (
+            <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      {slowWorld ? (
-        <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
-      )}
+          {slowWorld ? (
+            <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
 
-      {fastWorld ? (
-        <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
-      ) : (
-        <div className={styles.loading}>Loading order book...</div>
+          {fastWorld ? (
+            <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          ) : (
+            <div className={styles.loading}>Loading order book...</div>
+          )}
+        </>
       )}
     </div>
   );

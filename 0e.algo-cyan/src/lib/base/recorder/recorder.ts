@@ -7,7 +7,6 @@ import { PATHS } from '@/config';
 export abstract class ExchangeRecorder {
   protected buffer: ExchangeMessage[] = [];
   protected isRecording = true;
-  protected shouldSave = false;
   protected startTime: number;
   protected config: ExchangeConfig;
   protected dataDir: string;
@@ -17,6 +16,9 @@ export abstract class ExchangeRecorder {
   private spinnerIndex = 0;
   private readonly SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   private bufferSize: number = 0;
+  private fileCounter: number = 1;
+  private totalMessages: number = 0;
+  private totalSize: number = 0;
 
   constructor(config: ExchangeConfig, dataDir?: string) {
     this.config = config;
@@ -39,13 +41,11 @@ export abstract class ExchangeRecorder {
       if (key === 'w') {
         console.log('Saving and quitting...');
         this.isRecording = false;
-        this.shouldSave = true;
         this.saveData();
         this.cleanup();
       } else if (key === 'q') {
         console.log('Quitting without saving...');
         this.isRecording = false;
-        this.shouldSave = false;
         this.cleanup();
       }
     });
@@ -70,45 +70,41 @@ export abstract class ExchangeRecorder {
     const elapsedMs = now - this.startTime;
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
-    const messageCount = this.buffer.length;
-    const totalSize = this.formatSize(this.bufferSize);
+    const messageCount = this.totalMessages + this.buffer.length;
+    const totalBytes = this.totalSize + this.bufferSize;
+    const formattedSize = this.formatSize(totalBytes);
     
     const spinner = this.SPINNER[this.spinnerIndex];
     this.spinnerIndex = (this.spinnerIndex + 1) % this.SPINNER.length;
     
-    process.stdout.write(`\r${spinner} ${messageCount} messages, ${elapsedMinutes}m${elapsedSeconds}s elapsed, ~${totalSize} (${this.bufferSize} bytes)`);
+    process.stdout.write(`\r${spinner} ${messageCount} messages, ${elapsedMinutes}m${elapsedSeconds}s elapsed, ~${formattedSize} (${totalBytes} bytes)`);
     this.lastStatusUpdate = now;
   }
 
   protected saveData() {
-    if (!this.shouldSave || this.buffer.length === 0) return;
+    if (this.buffer.length === 0) return;
 
-    const timestamp = new Date(this.startTime).toISOString().replace(/[-:.]/g, '');
-    const dataStr = JSON.stringify(this.buffer);
+    const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+    const dataStr = this.buffer.map(msg => JSON.stringify(msg)).join('\n');
     const size = this.formatSize(dataStr.length);
-    const filename = `${timestamp}-${size}.json`;
+    const filename = `${timestamp}-${size}-${this.fileCounter}.ndjson`;
     const filepath = path.join(this.dataDir, filename);
-    const latestPath = path.join(this.dataDir, 'latest.json');
 
     fs.writeFileSync(filepath, dataStr);
-    fs.copyFileSync(filepath, latestPath);
-    console.log(`\nSaved ${this.buffer.length} messages to ${filepath}`);
-  }
-
-  protected checkMaxDuration() {
-    this.updateStatus();
-    if (this.config.maxDuration === -1) return;
-    if (Date.now() - this.startTime >= this.config.maxDuration) {
-      this.isRecording = false;
-      this.shouldSave = true;
-      this.saveData();
-      this.cleanup();
-    }
+    this.totalMessages += this.buffer.length;
+    this.totalSize += this.bufferSize;
+    this.buffer = [];
+    this.bufferSize = 0;
+    this.fileCounter++;
   }
 
   protected addMessage(message: ExchangeMessage) {
     this.buffer.push(message);
     this.bufferSize += JSON.stringify(message).length;
+    this.updateStatus();
+    if (this.bufferSize >= this.config.fileSizeBytes) {
+      this.saveData();
+    }
   }
 
   abstract start(): Promise<void>;

@@ -9,7 +9,8 @@ import { Interval } from "../base/Interval";
 import assert from "assert";
 import { World_SimpleL2PaperMatching } from "./World_SimpleL2PaperMatching";
 import { Quotes } from "../base/Quotes";
-import { RunObservableV1 } from "./RunObservableV1";
+import { IntelligentV1 } from "./RunObservableV1";
+import { IntelligenceV1, IntelligenceV1Type } from "../base/Intelligence";
 
 export const MARKET_TO_LIMIT_PCT = 5;
 
@@ -23,7 +24,7 @@ export enum Position {
 }
 
 // MR = Momentum Reversal
-export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy_SingleAsset<A> implements RunObservableV1 {
+export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy_SingleAsset<A> implements IntelligentV1 {
 
   public paperAccount: Account;
 
@@ -32,7 +33,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   protected stochasticSignal: DSignal_FullStochastic<A, I>;
   protected quotes: Quotes;
 
-  protected minorMajorEventFeed: PubSub<boolean>;
+  protected intelligenceFeed: PubSub<IntelligenceV1>;
 
   protected threshold: number; // Typically 20 (meaning 80% for overbought, 20% for oversold).
   protected fixedQuantity: number;
@@ -47,10 +48,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
         if (this.position === Position.PENDING_LONG) {
-          console.log("$$$ Stochastic: Bought! Entering LONG.");
+          // console.log("$$$ Stochastic: Bought! Entering LONG.");
           this.position = Position.LONG;
         } else if (this.position === Position.PENDING_FLAT) {
-          console.log("$$$ Stochastic: Bought! Entering FLAT.");
+          // console.log("$$$ Stochastic: Bought! Entering FLAT.");
           this.position = Position.FLAT;
         } else {
           assert.ok(false, "IMPOSSIBLE: Position was " + this.position + " but bought.");
@@ -59,10 +60,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     } else if (execution.sellOrder.id === this.askOrder?.id) {
       if (execution.sellOrder.remainingQty === 0) {
         if (this.position === Position.PENDING_SHORT) {
-          console.log("$$$ Stochastic: Sold! Entering SHORT.");
+          // console.log("$$$ Stochastic: Sold! Entering SHORT.");
           this.position = Position.SHORT;
         } else if (this.position === Position.PENDING_FLAT) {
-          console.log("$$$ Stochastic: Sold! Entering FLAT.");
+          // console.log("$$$ Stochastic: Sold! Entering FLAT.");
           this.position = Position.FLAT;
         } else {
           assert.ok(false, "IMPOSSIBLE: Position was " + this.position + " but sold.");
@@ -75,8 +76,8 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   protected unsubscribeStochastic: (() => void) | null = null;
   protected unsubscribeExecution: (() => void) | null = null;
 
-  public getMinorMajorEventFeed(): ReadOnlyPubSub<boolean> {
-    return this.minorMajorEventFeed;
+  public getIntelligenceFeed(): ReadOnlyPubSub<IntelligenceV1> {
+    return this.intelligenceFeed;
   }
 
   constructor(
@@ -96,7 +97,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     this.executionFeed = executionFeed;
     this.stochasticSignal = stochasticSignal;
     this.quotes = quotes;
-    this.minorMajorEventFeed = new PubSub<boolean>();
+    this.intelligenceFeed = new PubSub<IntelligenceV1>();
     this.threshold = threshold;
     this.fixedQuantity = fixedQuantity;
     this.bidOrder = null;
@@ -111,17 +112,14 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
       const currentFastD = data.value.fastD;
       const currentSlowD = data.value.slowD;
       if (this.previousFastD !== null && this.previousSlowD !== null) {
-        let minorEvent = false;
-        let majorEvent = false;
+        let intel = IntelligenceV1Type.NONE;
         if (this.previousSlowD < (100 - this.threshold) && this.previousSlowD > this.threshold &&
             (currentSlowD < (100 - this.threshold) || currentSlowD > this.threshold)) {
-          minorEvent = true;
+          intel = IntelligenceV1Type.PRESIGNAL;
         }
         const isCrossed = (currentFastD - currentSlowD) * (this.previousFastD - this.previousSlowD) < 0;
         if (!isCrossed) {
-          if (minorEvent) {
-            this.minorMajorEventFeed.publish(false);
-          }
+          this.intelligenceFeed.publish({ type: intel });
           return;
         }
         // Intersection of line segments: f0 + (f1 - f0) * (s0 - f0) / ((f1 - f0) - (s1 - s0)).
@@ -136,31 +134,31 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
             console.log("$$$ Stochastic(A): FastD crossed below SlowD; entering PENDING_SHORT.");
             this.position = Position.PENDING_SHORT;
             this._newOrder(Side.SELL);
-            majorEvent = true;
+            intel = IntelligenceV1Type.SIGNAL;
           } else if (this.position === Position.LONG) {
             console.log("$$$ Stochastic(B): FastD crossed below SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.SELL);
-            majorEvent = true;
+            intel = IntelligenceV1Type.UNSIGNAL;
+          } else {
+            intel = IntelligenceV1Type.OVERSIGNAL;
           }
         } else if (crossingPoint < this.threshold && currentFastD > this.previousFastD) {
           if (this.position === Position.FLAT) {
             console.log("$$$ Stochastic(C): FastD crossed above SlowD; entering PENDING_LONG.");
             this.position = Position.PENDING_LONG;
             this._newOrder(Side.BUY);
-            majorEvent = true;
+            intel = IntelligenceV1Type.SIGNAL;
           } else if (this.position === Position.SHORT) {
             console.log("$$$ Stochastic(D): FastD crossed above SlowD; entering PENDING_FLAT.");
             this.position = Position.PENDING_FLAT;
             this._newOrder(Side.BUY);
-            majorEvent = true;
+            intel = IntelligenceV1Type.UNSIGNAL;
+          } else {
+            intel = IntelligenceV1Type.OVERSIGNAL;
           }
         }
-        if (majorEvent) {
-          this.minorMajorEventFeed.publish(true);
-        } else if (minorEvent) {
-          this.minorMajorEventFeed.publish(false);
-        }
+        this.intelligenceFeed.publish({ type: intel });
       }
       this.previousFastD = currentFastD;
       this.previousSlowD = currentSlowD;
@@ -181,7 +179,6 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   }
 
   protected _newOrder(side: Side): void {
-    this.minorMajorEventFeed.publish(true);
     if (side === Side.BUY) {
       this.bidOrder = new Order<A>(
         this.assetPair,

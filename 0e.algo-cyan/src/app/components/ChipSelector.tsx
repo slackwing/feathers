@@ -1,30 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface ChipSelectorProps {
   onSelect: (value: string) => void;
   selected: string;
 }
 
-const fetchRecordingFiles = async (): Promise<string[]> => {
-  try {
-    const res = await fetch('/recordings/files.json');
-    if (!res.ok) return [];
-    const files = await res.json();
-    if (!Array.isArray(files)) return [];
-    return files.slice(0, 50);
-  } catch {
-    return [];
-  }
-};
-
 const ChipSelector: React.FC<ChipSelectorProps> = ({ onSelect, selected }) => {
-  const [files, setFiles] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetchRecordingFiles().then(setFiles);
-  }, []);
-
-  const chips = ['OFF', 'REAL-TIME', ...files];
+  const chips = ['OFF', 'REAL-TIME', 'FILE'];
 
   return (
     <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>

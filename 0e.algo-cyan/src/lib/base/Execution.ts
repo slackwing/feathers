@@ -65,8 +65,8 @@ export class Execution<A extends AssetPair> {
       this.status = ExecutionStatus.COMPLETED;
       this.buyOrder.executed(this);
       this.sellOrder.executed(this);
-      const cost = this.executionPrice * this.executionQty;
-      console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
+      // const cost = this.executionPrice * this.executionQty;
+      // console.log(`Completed execution of ${this.executionQty} ${this.buyOrder.assetPair.base} for ${cost} ${this.buyOrder.assetPair.quote}`);
     }
   }
 

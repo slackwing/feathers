@@ -8,7 +8,7 @@ export interface ExchangeConfig {
   exchange: string;
   channels: string[];
   pair: string;
-  maxDuration: number;
+  fileSizeBytes: number;
 }
 
 export interface ExchangeSubscription {
