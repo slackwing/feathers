@@ -24,7 +24,6 @@ export class CoinbaseRecorder extends ExchangeRecorder {
     this.ws.on('message', (data: Buffer) => {
       if (!this.isRecording) return;
       this.addMessage(JSON.parse(data.toString()) as CoinbaseMessage);
-      this.checkMaxDuration();
     });
 
     this.ws.on('close', () => {

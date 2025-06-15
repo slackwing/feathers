@@ -33,6 +33,11 @@ const FileOrderingDisplay: React.FC<FileOrderingDisplayProps> = ({ files, onReor
     setDraggedFile(null);
   };
 
+  const handleSort = () => {
+    const newOrder = [...files].sort((a, b) => a.name.localeCompare(b.name));
+    onReorder(newOrder);
+  };
+
   return (
     <div className={styles.container}>
       <h3>Selected Files</h3>
@@ -52,9 +57,14 @@ const FileOrderingDisplay: React.FC<FileOrderingDisplayProps> = ({ files, onReor
           </div>
         ))}
       </div>
-      <button className={styles.runButton} onClick={onRun}>
-        Run Experiment
-      </button>
+      <div className={styles.buttonContainer}>
+        <button className={styles.sortButton} onClick={handleSort}>
+          Sort Alphabetically
+        </button>
+        <button className={styles.runButton} onClick={onRun}>
+          Run Experiment
+        </button>
+      </div>
     </div>
   );
 };

@@ -65,4 +65,22 @@
 
 .runButton:hover {
   background: #0052a3;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.sortButton {
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  background-color: #e0e0e0;
 } 
