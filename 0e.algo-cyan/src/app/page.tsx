@@ -85,9 +85,9 @@ const Dashboard = () => {
     let endExperimentAt: number | null = null;
     let startExperimentAt: number | null = null;
     let experimentRunning = false;
-    const EXPERIMENT_DURATION_MS = 15 * 60 * 1000;
-    const COOLDOWN_DURATION_MS = 3000;
-    const UPDATE_INTERVAL_MS = 60 * 1000;
+    const EXPERIMENT_DURATION_MS = 60 * 60 * 1000;
+    const COOLDOWN_DURATION_MS = 10 * 1000;
+    const UPDATE_INTERVAL_MS = 5 * 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
     let runs: Run<BTCUSD>[] = [];
@@ -175,12 +175,19 @@ const Dashboard = () => {
 
     const runExperiment = () => {
       const stochasticParams = [
-        { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
-        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
-        { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
-        { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
+        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 }, // 1-second (14, 3, 3)
+        { kPeriod: 14*5, dPeriod: 3*5, slowingPeriod: 3*5 }, // 5-second (14, 3, 3)
+        { kPeriod: 14*10, dPeriod: 3*10, slowingPeriod: 3*10 }, // 10-second (14, 3, 3)
+        { kPeriod: 14*15, dPeriod: 3*15, slowingPeriod: 3*15 }, // 15-second (14, 3, 3)
       ];
-      const strategyThresholds = [10, 15, 20, 30];
+      const strategyThresholds = [30, 20, 15, 10];
+      // const stochasticParams = [
+      //   { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
+      //   { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
+      // ];
+      // const strategyThresholds = [10, 15, 20, 30];
       // const stochasticParams = [
       //   { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
       //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
