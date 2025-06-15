@@ -48,10 +48,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     if (execution.buyOrder.id === this.bidOrder?.id) {
       if (execution.buyOrder.remainingQty === 0) {
         if (this.position === Position.PENDING_LONG) {
-          console.log("$$$ Stochastic: Bought! Entering LONG.");
+          // console.log("$$$ Stochastic: Bought! Entering LONG.");
           this.position = Position.LONG;
         } else if (this.position === Position.PENDING_FLAT) {
-          console.log("$$$ Stochastic: Bought! Entering FLAT.");
+          // console.log("$$$ Stochastic: Bought! Entering FLAT.");
           this.position = Position.FLAT;
         } else {
           assert.ok(false, "IMPOSSIBLE: Position was " + this.position + " but bought.");
@@ -60,10 +60,10 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
     } else if (execution.sellOrder.id === this.askOrder?.id) {
       if (execution.sellOrder.remainingQty === 0) {
         if (this.position === Position.PENDING_SHORT) {
-          console.log("$$$ Stochastic: Sold! Entering SHORT.");
+          // console.log("$$$ Stochastic: Sold! Entering SHORT.");
           this.position = Position.SHORT;
         } else if (this.position === Position.PENDING_FLAT) {
-          console.log("$$$ Stochastic: Sold! Entering FLAT.");
+          // console.log("$$$ Stochastic: Sold! Entering FLAT.");
           this.position = Position.FLAT;
         } else {
           assert.ok(false, "IMPOSSIBLE: Position was " + this.position + " but sold.");

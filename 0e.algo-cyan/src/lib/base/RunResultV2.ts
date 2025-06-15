@@ -1,4 +1,5 @@
 export interface RunResultV2 {
+  durationMs: number;
   originalQuote: number;
   finalQuote: number;
   maxNetCapitalExposure: number;
@@ -13,4 +14,12 @@ export interface RunResultV2 {
   strategyParams: {
     threshold: number;
   };
+  timeBetweenSignals: number[];
+  intelCounts: Map<string, number>;
+  getSignalCount: () => number;
+  getAverageTimeBetweenSignals: () => number;
+  getStdDeviationTimeBetweenSignals: () => number;
+  getOversignalCount: () => number;
+  getPresignalCount: () => number;
+  getOversignalRatio: () => number;
 } 

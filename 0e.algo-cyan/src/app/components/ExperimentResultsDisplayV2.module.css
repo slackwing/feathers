@@ -5,10 +5,6 @@
   border-radius: 4px;
 }
 
-.runsContainer {
-  /* spacing handled by flex and .runGrid margin */
-}
-
 .runGrid {
   display: grid;
   gap: 4px;

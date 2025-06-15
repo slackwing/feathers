@@ -15,10 +15,9 @@ export enum Mode {
 interface ExperimentResultsDisplayProps {
   runResults: RunResultV2[];
   eventPubSubs?: ReadOnlyPubSub<IntelligenceV1>[];
-  globalMaxNetCapitalExposure?: number;
 }
 
-const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs, globalMaxNetCapitalExposure }) => {
+const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs }) => {
   const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   const [isSetupView, setIsSetupView] = useState(false);
   const [adjustForQuotes, setAdjustForQuotes] = useState(true);
@@ -248,17 +247,25 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
       {/* Info Panels */}
       <div style={{ display: 'flex', gap: '20px', marginTop: '32px' }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Experiment</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Variation</div>
           {selectedIndex !== null && runResults[selectedIndex] ? (
-            <div style={{ fontSize: 14 }}>
-              <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
-              <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
-              <div><b>Δ Value:</b> {runResults[selectedIndex].deltaAccountValue}</div>
-              <div><b>Max Exposure:</b> {runResults[selectedIndex].maxNetCapitalExposure}</div>
-              <div><b>Status:</b> {runResults[selectedIndex].isComplete ? 'Complete' : 'In Progress'}</div>
+            <div>
+              <div style={{ fontSize: 14 }}>
+                <div><b>Signals:</b> {runResults[selectedIndex].getSignalCount()} ({(runResults[selectedIndex].getSignalCount()/(runResults[selectedIndex].durationMs/(24*60*60*1000))).toFixed(0)}/d)</div>
+                <div><b>Avg. Time btwn Signals:</b> {runResults[selectedIndex].getAverageTimeBetweenSignals().toFixed(0)}ms (std: {runResults[selectedIndex].getStdDeviationTimeBetweenSignals().toFixed(0)}ms)</div>
+                <div><b>Oversignals:</b> {runResults[selectedIndex].getOversignalCount()} (ratio: {runResults[selectedIndex].getOversignalRatio().toFixed(2)})</div>
+                <div><b>Presignals:</b> {runResults[selectedIndex].getPresignalCount()}</div>
+              </div>
+              <div style={{ fontSize: 14 }}>
+                <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
+                <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
+                <div><b>Δ Value:</b> {runResults[selectedIndex].deltaAccountValue}</div>
+                <div><b>Max Exposure:</b> {runResults[selectedIndex].maxNetCapitalExposure}</div>
+                <div><b>Status:</b> {runResults[selectedIndex].isComplete ? 'Complete' : 'In Progress'}</div>
+              </div>
             </div>
           ) : (
-            <div>No experiment selected.</div>
+            <div>No variation selected.</div>
           )}
         </div>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>

@@ -33,7 +33,7 @@ import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
 import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
-import { IntelligenceV1 } from '@/lib/base/Intelligence';
+import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
 import { Run } from '@/lib/base/Run';
 // TODO(P3): Standardize all these import styles.
 
@@ -51,7 +51,6 @@ const Dashboard = () => {
   const [runResults, setRunResults] = React.useState<RunResultV2[]>([]);
   const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<IntelligenceV1>[]>([]);
   const [quotes] = React.useState(new Quotes(Asset.USD));
-  const [globalMaxNetCapitalExposure, setGlobalMaxNetCapitalExposure] = React.useState<number>(0);
   const [selectedChip, setSelectedChip] = React.useState('OFF');
   const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
@@ -249,6 +248,17 @@ const Dashboard = () => {
           }
         });
 
+        run.intelligenceFeed.subscribe((intel) => {
+          run.intelCounts.set(intel.type, (run.intelCounts.get(intel.type) || 0) + 1);
+          if (intel.type === IntelligenceV1Type.SIGNAL) {
+            const now = Date.now();
+            if (run.lastSignalTime !== 0) {
+              run.timeBetweenSignals.push(now - run.lastSignalTime);
+            }
+            run.lastSignalTime = now;
+          }
+        });
+
         return run;
       });
 
@@ -267,21 +277,29 @@ const Dashboard = () => {
       });
 
       // Add new run results after starting the experiments
-      const newRunResults = runs.map(setup => ({
+      const newRunResults = runs.map(run => ({
+        durationMs: EXPERIMENT_DURATION_MS,
         originalQuote: quotes.getQuote(Asset.BTC),
         finalQuote: quotes.getQuote(Asset.BTC),
-        maxNetCapitalExposure: setup.maxNetCapitalExposure,
+        maxNetCapitalExposure: run.maxNetCapitalExposure,
         deltaAccountValue: 0.0,
         isComplete: false,
         startTime: Date.now(),
-        stochasticParams: setup.params.stochasticParams,
-        strategyParams: setup.params.strategyParams
+        stochasticParams: run.params.stochasticParams,
+        strategyParams: run.params.strategyParams,
+        timeBetweenSignals: run.timeBetweenSignals,
+        intelCounts: run.intelCounts,
+        getSignalCount: () => run.getSignalCount(),
+        getAverageTimeBetweenSignals: () => run.getAverageTimeBetweenSignals(),
+        getStdDeviationTimeBetweenSignals: () => run.getStdDeviationTimeBetweenSignals(),
+        getOversignalCount: () => run.getOversignalCount(),
+        getPresignalCount: () => run.getPresignalCount(),
+        getOversignalRatio: () => run.getOversignalRatio()
       }));
       setRunResults(prev => {
         const updated = [...prev, ...newRunResults];
         return updated;
       });
-      setGlobalMaxNetCapitalExposure(maxNetCapitalExposure);
     };
 
     // const sWorld = new L2PGWorld(
@@ -438,7 +456,6 @@ const Dashboard = () => {
           <ExperimentResultsDisplayV2 
             runResults={runResults} 
             eventPubSubs={eventFeeds}
-            globalMaxNetCapitalExposure={globalMaxNetCapitalExposure}
           />
 
           <div className={styles.orderEntry}>
