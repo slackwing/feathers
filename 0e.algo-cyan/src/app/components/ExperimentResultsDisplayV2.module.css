@@ -6,16 +6,14 @@
 }
 
 .runsContainer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
-  gap: 20px;
-  margin: 20px;
+  /* spacing handled by flex and .runGrid margin */
 }
 
 .runGrid {
   display: grid;
   gap: 4px;
-  margin: 0;
+  margin-right: 20px;
+  margin-bottom: 20px;
   padding: 0;
 }
 

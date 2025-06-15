@@ -191,9 +191,9 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
         </div>
       </div>
       <div className={styles.runsContainer} style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, auto))',
-        gap: '40px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '20px',
         padding: '20px'
       }}>
         {groups.map((groupResults, groupIndex) => {
@@ -201,7 +201,6 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
             <div key={groupIndex} className={styles.runGrid} style={{
               display: 'grid',
               gap: '4px',
-              margin: '0',
               padding: '0'
             }}>
               <div className={styles.runHeader}>
