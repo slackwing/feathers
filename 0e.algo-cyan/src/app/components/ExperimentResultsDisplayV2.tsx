@@ -22,6 +22,7 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
   const [isSetupView, setIsSetupView] = useState(false);
   const [adjustForQuotes, setAdjustForQuotes] = useState(true);
   const [animationStates, setAnimationStates] = useState<{ [key: number]: 'ping' | 'bounce' | null }>({});
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   
   useEffect(() => {
     if (!eventPubSubs) return;
@@ -213,19 +214,25 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
                 height: `${Math.ceil(Math.sqrt(groupResults.length)) * 20}px`
               }}>
                 {groupResults.map((result, index) => {
-                  const percentChange = result.maxNetCapitalExposure === 0 ? 0 : (result.deltaAccountValue / result.maxNetCapitalExposure) * 100;
                   // In setup view, each group contains results from different runs
                   // We need to calculate the original index in runResults
                   const globalIndex = isSetupView ? 
                     groupIndex + (index * 16) : // Each result in a setup group is from a different run
                     groupIndex * 16 + index;    // In run view, just use the group and index
                   const animationClass = !result.isComplete ? animationStates[globalIndex] || '' : '';
+                  const isSelected = selectedIndex === globalIndex;
                   return (
                     <div
                       key={index}
                       className={`${styles.square} ${!result.isComplete ? styles.inProgress : ''} ${animationClass ? styles[animationClass] : ''}`}
-                      style={{ backgroundColor: getColor(result.deltaAccountValue, globalIndex) }}
-                      title={`K:${result.stochasticParams.kPeriod} D:${result.stochasticParams.dPeriod} S:${result.stochasticParams.slowingPeriod} T:${result.strategyParams.threshold} - ${percentChange.toFixed(2)}% (${result.isComplete ? 'Complete' : 'In Progress'})`}
+                      style={{
+                        backgroundColor: getColor(result.deltaAccountValue, globalIndex),
+                        border: isSelected ? '5px solid #000' : '2px solid transparent',
+                        boxSizing: 'border-box'
+                      }}
+                      onClick={() => {
+                        setSelectedIndex(globalIndex);
+                      }}
                     />
                   );
                 })}
@@ -233,6 +240,31 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
             </div>
           );
         })}
+      </div>
+      {/* Info Panels */}
+      <div style={{ display: 'flex', gap: '20px', marginTop: '32px' }}>
+        <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Experiment</div>
+          {selectedIndex !== null && runResults[selectedIndex] ? (
+            <div style={{ fontSize: 14 }}>
+              <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
+              <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
+              <div><b>Δ Value:</b> {runResults[selectedIndex].deltaAccountValue}</div>
+              <div><b>Max Exposure:</b> {runResults[selectedIndex].maxNetCapitalExposure}</div>
+              <div><b>Status:</b> {runResults[selectedIndex].isComplete ? 'Complete' : 'In Progress'}</div>
+            </div>
+          ) : (
+            <div>No experiment selected.</div>
+          )}
+        </div>
+        <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Run</div>
+          <div>No run selected.</div>
+        </div>
+        <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Overall</div>
+          <div></div>
+        </div>
       </div>
     </div>
   );
