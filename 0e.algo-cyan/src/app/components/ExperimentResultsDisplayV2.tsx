@@ -247,30 +247,95 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
       {/* Info Panels */}
       <div style={{ display: 'flex', gap: '20px', marginTop: '32px' }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Variation</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Run</div>
           {selectedIndex !== null && runResults[selectedIndex] ? (
             <div>
+              <hr/>
+              <br/>
+              <div style={{ fontSize: 14 }}>
+                <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
+                <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
+              </div>
+              <br/>
               <div style={{ fontSize: 14 }}>
                 <div><b>Signals:</b> {runResults[selectedIndex].getSignalCount()} ({(runResults[selectedIndex].getSignalCount()/(runResults[selectedIndex].durationMs/(24*60*60*1000))).toFixed(0)}/d)</div>
                 <div><b>Avg. Time btwn Signals:</b> {runResults[selectedIndex].getAverageTimeBetweenSignals().toFixed(0)}ms (std: {runResults[selectedIndex].getStdDeviationTimeBetweenSignals().toFixed(0)}ms)</div>
                 <div><b>Oversignals:</b> {runResults[selectedIndex].getOversignalCount()} (ratio: {runResults[selectedIndex].getOversignalRatio().toFixed(2)})</div>
                 <div><b>Presignals:</b> {runResults[selectedIndex].getPresignalCount()}</div>
               </div>
+              <br/>
               <div style={{ fontSize: 14 }}>
-                <div><b>Stochastic:</b> K: {runResults[selectedIndex].stochasticParams.kPeriod}, D: {runResults[selectedIndex].stochasticParams.dPeriod}, S: {runResults[selectedIndex].stochasticParams.slowingPeriod}</div>
-                <div><b>Threshold:</b> {runResults[selectedIndex].strategyParams.threshold}</div>
                 <div><b>Δ Value:</b> {runResults[selectedIndex].deltaAccountValue}</div>
                 <div><b>Max Exposure:</b> {runResults[selectedIndex].maxNetCapitalExposure}</div>
-                <div><b>Status:</b> {runResults[selectedIndex].isComplete ? 'Complete' : 'In Progress'}</div>
               </div>
             </div>
           ) : (
-            <div>No variation selected.</div>
+            <div>No run selected.</div>
           )}
         </div>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Run</div>
-          <div>No run selected.</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Run Group</div>
+          {selectedIndex !== null && runResults[selectedIndex] ? (
+            <div>
+              <hr/>
+              <br/>
+              <div style={{ fontSize: 14 }}>
+                {(() => {
+                  const groupStartIndex = Math.floor(selectedIndex / 16) * 16;
+                  const groupResults = runResults.slice(groupStartIndex, groupStartIndex + 16);
+                  
+                  // Calculate signals per run stats
+                  const signalsPerRun = groupResults.map(r => r.getSignalCount());
+                  const avgSignalsPerRun = signalsPerRun.reduce((a, b) => a + b, 0) / signalsPerRun.length;
+                  const stdSignalsPerRun = Math.sqrt(
+                    signalsPerRun.reduce((a, b) => a + Math.pow(b - avgSignalsPerRun, 2), 0) / signalsPerRun.length
+                  );
+
+                  // Calculate signals per day stats
+                  const signalsPerDay = groupResults.map(r => r.getSignalCount()/(r.durationMs/(24*60*60*1000)));
+                  const avgSignalsPerDay = signalsPerDay.reduce((a, b) => a + b, 0) / signalsPerDay.length;
+                  const stdSignalsPerDay = Math.sqrt(
+                    signalsPerDay.reduce((a, b) => a + Math.pow(b - avgSignalsPerDay, 2), 0) / signalsPerDay.length
+                  );
+
+                  // Calculate time between signals stats
+                  const avgTimeBetweenSignals = groupResults.map(r => r.getAverageTimeBetweenSignals());
+                  const avgTimeBetweenSignalsMean = avgTimeBetweenSignals.reduce((a, b) => a + b, 0) / avgTimeBetweenSignals.length;
+                  const avgTimeBetweenSignalsStd = Math.sqrt(
+                    avgTimeBetweenSignals.reduce((a, b) => a + Math.pow(b - avgTimeBetweenSignalsMean, 2), 0) / avgTimeBetweenSignals.length
+                  );
+
+                  // Calculate oversignal stats
+                  const oversignalRatios = groupResults.map(r => r.getOversignalRatio());
+                  const oversignalCounts = groupResults.map(r => r.getOversignalCount());
+                  const minOversignal = Math.min(...oversignalCounts);
+                  const maxOversignal = Math.max(...oversignalCounts);
+                  const avgOversignal = oversignalCounts.reduce((a, b) => a + b, 0) / oversignalCounts.length;
+                  const medianOversignal = [...oversignalCounts].sort((a, b) => a - b)[Math.floor(oversignalCounts.length / 2)];
+                  
+                  const oversignallingWorlds = oversignalRatios.filter(r => r > 1.0).length;
+
+                  return (
+                    <>
+                      <div><b>Signals per Run:</b> {avgSignalsPerRun.toFixed(1)} ± {stdSignalsPerRun.toFixed(1)}</div>
+                      <div><b>Signals per Day:</b> {avgSignalsPerDay.toFixed(1)} ± {stdSignalsPerDay.toFixed(1)}</div>
+                      <div><b>Avg. Time btwn Signals:</b> {avgTimeBetweenSignalsMean.toFixed(0)}ms ± {avgTimeBetweenSignalsStd.toFixed(0)}ms</div>
+                      <div><b>Oversignals:</b></div>
+                      <div style={{ marginLeft: '10px' }}>
+                        <div>Min: {minOversignal} ({(minOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                        <div>Avg: {avgOversignal.toFixed(1)} ({(avgOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                        <div>Median: {medianOversignal} ({(medianOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                        <div>Max: {maxOversignal} ({(maxOversignal/avgSignalsPerRun).toFixed(2)})</div>
+                      </div>
+                      <div><b>Oversignalling Runs:</b> {oversignallingWorlds} ({(oversignallingWorlds/groupResults.length*100).toFixed(0)}%)</div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            <div>No run selected.</div>
+          )}
         </div>
         <div style={{ flex: 1, background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '16px', minHeight: '80px' }}>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Overall</div>
