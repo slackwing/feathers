@@ -91,7 +91,7 @@ const Dashboard = () => {
     const UPDATE_INTERVAL_MS = 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let experimentSetups: Run<BTCUSD>[] = [];
+    let runs: Run<BTCUSD>[] = [];
     let snapshotQuotes = quotes.copy();
 
     dsClock.listen((clock) => {
@@ -104,7 +104,7 @@ const Dashboard = () => {
         setRunResults(prev => {
           const newResults = [...prev];
           const startIdx = newResults.length - parameterSet.length;
-          experimentSetups.forEach((setup, i) => {
+          runs.forEach((setup, i) => {
             if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
               newResults[startIdx + i] = {
                 ...newResults[startIdx + i],
@@ -131,14 +131,14 @@ const Dashboard = () => {
         endExperimentAt = null;
         nextUpdateAt = null;
 
-        experimentSetups.forEach(setup => {
+        runs.forEach(setup => {
           if (setup.mrStrat) {
             setup.mrStrat.stop();
           }
         });
         
         console.log('Run completed. Final balances:');
-        experimentSetups.forEach((setup, i) => {
+        runs.forEach((setup, i) => {
           console.log(`Experiment ${i + 1}:`);
           console.log(`  Transaction Balance: ${setup.netCapitalExposure}`);
           console.log(`  Max Transaction Balance: ${maxNetCapitalExposure}`);
@@ -147,7 +147,7 @@ const Dashboard = () => {
         setRunResults(prev => {
           const newResults = [...prev];
           const startIdx = newResults.length - parameterSet.length;
-          experimentSetups.forEach((setup, i) => {
+          runs.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
               deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
@@ -199,19 +199,19 @@ const Dashboard = () => {
       );
 
       // Create separate worlds and accounts for each experiment
-      experimentSetups = parameterSet.map(params => {
+      runs = parameterSet.map(params => {
         const paperAccount = new Account('paper', 'Paper Account');
         const paperWallet = new Wallet('paper', 'Paper Wallet');
         paperAccount.addWallet(paperWallet);
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const experiment = new Run<BTCUSD>(paperAccount, params, quotes);
+        const run = new Run<BTCUSD>(paperAccount, params, quotes);
 
-        experiment.xWorld = new World_SimpleL2PaperMatching(
+        run.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
           l2OrderBook,
-          experiment.paperFeed,
+          run.paperFeed,
         );
 
         const dsFullStochastic = new DSignal_FullStochastic(
@@ -222,52 +222,52 @@ const Dashboard = () => {
           params.stochasticParams.slowingPeriod
         );
 
-        experiment.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
+        run.mrStrat = new MRStrat_Stochastic<BTCUSD, typeof I1SQ_>(
           BTCUSD_,
           I1SQ_,
-          experiment.xWorld,
+          run.xWorld,
           paperAccount,
-          experiment.xWorld.executionFeed,
+          run.xWorld.executionFeed,
           dsFullStochastic,
           quotes,
           params.strategyParams.threshold,
           1.0
         );
 
-        experiment.intelligenceFeed = experiment.mrStrat.getIntelligenceFeed();
+        run.intelligenceFeed = run.mrStrat.getIntelligenceFeed();
 
         paperAccount.getTransactionsFeed().subscribe((fundLog) => {
           // Only count deposits toward orders.
           if (fundLog.amount > 0) {
             if (fundLog.asset === Asset.USD) {
-              experiment.netCapitalExposure += fundLog.amount;
+              run.netCapitalExposure += fundLog.amount;
             } else {
-              experiment.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
+              run.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
             }
-            experiment.maxNetCapitalExposure = Math.max(experiment.maxNetCapitalExposure, Math.abs(experiment.netCapitalExposure));
-            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(experiment.netCapitalExposure));
+            run.maxNetCapitalExposure = Math.max(run.maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
+            maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
           }
         });
 
-        return experiment;
+        return run;
       });
 
       // Set the last experiment's world as the main display
-      const lastExperiment = experimentSetups[experimentSetups.length - 1];
+      const lastExperiment = runs[runs.length - 1];
       setPaperAccount(lastExperiment.paperAccount);
       setPaperOrderFeed(lastExperiment.paperFeed);
       setXWorld(lastExperiment.xWorld);
-      setEventFeeds(experimentSetups.map(setup => setup.intelligenceFeed).filter((feed): feed is ReadOnlyPubSub<IntelligenceV1> => feed !== null));
+      setEventFeeds(runs.map(setup => setup.intelligenceFeed).filter((feed): feed is ReadOnlyPubSub<IntelligenceV1> => feed !== null));
 
       // Start all experiments
-      experimentSetups.forEach(setup => {
+      runs.forEach(setup => {
         if (setup.mrStrat) {
           setup.mrStrat.start();
         }
       });
 
       // Add new run results after starting the experiments
-      const newRunResults = experimentSetups.map(setup => ({
+      const newRunResults = runs.map(setup => ({
         originalQuote: quotes.getQuote(Asset.BTC),
         finalQuote: quotes.getQuote(Asset.BTC),
         maxNetCapitalExposure: setup.maxNetCapitalExposure,
