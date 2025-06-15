@@ -3,7 +3,7 @@ import { Order, Side, OrderType, ExchangeType } from '@/lib/base/Order';
 import { Trade } from '@/lib/base/Trade';
 import { AssetPair } from '@/lib/base/Asset';
 import { Account, InfiniteAccount } from '@/lib/base/Account';
-import { CoinbaseMessage } from '@/lib/exchange/coinbase';
+import { CoinbaseMessage } from '@/lib/exchange/coinbase/types';
 
 export class CoinbaseDataAdapter<T extends AssetPair> {
   readonly assetPair: T;
