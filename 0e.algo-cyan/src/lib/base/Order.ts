@@ -25,6 +25,12 @@ export enum Side {
   SELL = 'S',
 }
 
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  FILLED = 'FILLED',
+  CANCELLED = 'CANCELLED',
+}
+
 export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 
 let globalCounter = 0;
@@ -55,6 +61,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
   private _timestamp: number;
   private _remainingQty: number;
   private _executions: Set<Execution<A>>;
+  private _status: OrderStatus;
   private _heldFunds: Funds;
 
   constructor(
@@ -79,6 +86,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     this._timestamp = timestamp;
     this._remainingQty = quantity;
     this._executions = new Set<Execution<A>>();
+    this._status = OrderStatus.OPEN;
     this._heldFunds = new Map<Asset, Fund>();
     const fundingAsset = this.side === Side.BUY ? assetPair.quote : assetPair.base;
     let fundingPrice = this._price;
@@ -166,6 +174,8 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     return Math.max(0, this.quantity - this.remainingQty);
   }
 
+  get status(): OrderStatus { return this._status; }
+
   public withdrawFunds(asset: Asset, amount: number): Fund {
     return safelyWithdrawFunds(asset, amount, this._heldFunds);
   }
@@ -179,6 +189,9 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
       throw new Error('ASSERT: Quantity to cancel must be less than or equal to remaining quantity.');
     }
     this.quantity = round(this._quantity - quantityToCancel);
+    if (this.remainingQty === 0) {
+      this._status = OrderStatus.CANCELLED;
+    }
   }
 
   public executed(execution: Execution<A>): void {
@@ -191,6 +204,9 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     assert.ok(!this._executions.has(execution), 'ASSERT: Execution already processed for this order.');
     this.remainingQty = round(this._remainingQty - execution.executionQty);
     this._executions.add(execution);
+    if (this.remainingQty === 0) {
+      this._status = OrderStatus.FILLED;
+    }
   }
 
   public computeValue(quotes: Quotes): number {

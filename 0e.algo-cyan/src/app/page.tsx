@@ -9,7 +9,7 @@ import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
 import { L2OrderBook } from '@/lib/derived/L2OrderBook';
-import { Order } from '@/lib/base/Order';
+import { Order, OrderStatus } from '@/lib/base/Order';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
@@ -255,6 +255,14 @@ const Dashboard = () => {
           }
         });
 
+        run.xWorld.executionFeed.subscribe((execution) => {
+          if (execution.buyOrder.account === run.paperAccount && (execution.buyOrder.status === OrderStatus.FILLED || execution.buyOrder.status === OrderStatus.CANCELLED)) {
+            run.orderSummaries.push(`BUY ${execution.buyOrder.filled_qty.toFixed(2)} BTC @ ${execution.buyOrder.price.toFixed(2)} USD`);
+          } else if (execution.sellOrder.account === run.paperAccount && (execution.sellOrder.status === OrderStatus.FILLED || execution.sellOrder.status === OrderStatus.CANCELLED)) {
+            run.orderSummaries.push(`SELL ${execution.sellOrder.filled_qty.toFixed(2)} BTC @ ${execution.sellOrder.price.toFixed(2)} USD`);
+          }
+        });
+
         run.intelligenceFeed.subscribe((intel) => {
           run.intelCounts.set(intel.type, (run.intelCounts.get(intel.type) || 0) + 1);
           if (intel.type === IntelligenceV1Type.SIGNAL) {
@@ -296,6 +304,7 @@ const Dashboard = () => {
         strategyParams: run.params.strategyParams,
         timeBetweenSignals: run.timeBetweenSignals,
         intelCounts: run.intelCounts,
+        orderSummaries: run.orderSummaries,
         getSignalCount: () => run.getSignalCount(),
         getAverageTimeBetweenSignals: () => run.getAverageTimeBetweenSignals(),
         getStdDeviationTimeBetweenSignals: () => run.getStdDeviationTimeBetweenSignals(),

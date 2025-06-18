@@ -268,6 +268,13 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
                 <div><b>Δ Value:</b> {runResults[selectedIndex].deltaAccountValue}</div>
                 <div><b>Max Exposure:</b> {runResults[selectedIndex].maxNetCapitalExposure}</div>
               </div>
+              <br/>
+              <div style={{ fontSize: 14 }}>
+                <div><b>Order Summaries:</b></div>
+                <div style={{ marginLeft: '10px' }}>{runResults[selectedIndex].orderSummaries.map((summary, i) => (
+                  <div key={i}>{summary}</div>
+                ))}</div>
+              </div>
             </div>
           ) : (
             <div>No run selected.</div>

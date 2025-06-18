@@ -30,6 +30,7 @@ export class Run<A extends AssetPair> {
   public intelCounts: Map<string, number> = new Map();
   public lastSignalTime: number = 0;
   public timeBetweenSignals: number[] = [];
+  public orderSummaries: string[] = [];
 
   constructor(paperAccount: Account, params: {
     stochasticParams: {

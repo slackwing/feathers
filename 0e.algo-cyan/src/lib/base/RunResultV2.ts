@@ -16,6 +16,7 @@ export interface RunResultV2 {
   };
   timeBetweenSignals: number[];
   intelCounts: Map<string, number>;
+  orderSummaries: string[];
   getSignalCount: () => number;
   getAverageTimeBetweenSignals: () => number;
   getStdDeviationTimeBetweenSignals: () => number;

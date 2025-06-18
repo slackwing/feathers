@@ -16,7 +16,7 @@ export abstract class ExchangeRecorder {
   private spinnerIndex = 0;
   private readonly SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   private bufferSize: number = 0;
-  private fileCounter: number = 1;
+  protected fileCounter: number = 1;
   private totalMessages: number = 0;
   private totalSize: number = 0;
 
