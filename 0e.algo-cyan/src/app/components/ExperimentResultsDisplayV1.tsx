@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import styles from './ExperimentResultsDisplay.module.css';
-import { RunResult } from '@/lib/base/RunResult';
+import styles from './ExperimentResultsDisplayV1.module.css';
+import { RunResultV1 } from '@/lib/base/RunResultV1';
 import { ReadOnlyPubSub } from '@/lib/infra/PubSub';
 
 export enum Mode {
@@ -12,7 +12,7 @@ export enum Mode {
 }
 
 interface ExperimentResultsDisplayProps {
-  runResults: RunResult[];
+  runResults: RunResultV1[];
   eventPubSubs?: ReadOnlyPubSub<boolean>[];
   globalBaseValue?: number;
 }
@@ -135,7 +135,7 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
   const groups = [];
   if (isSetupView) {
     // Group by setup number (0-15)
-    const setupGroups: RunResult[][] = Array(16).fill(null).map(() => []);
+    const setupGroups: RunResultV1[][] = Array(16).fill(null).map(() => []);
     runResults.forEach((result, index) => {
       const setupIndex = index % 16;
       setupGroups[setupIndex].push(result);

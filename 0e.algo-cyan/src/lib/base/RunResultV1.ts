@@ -1,4 +1,4 @@
-export interface RunResult {
+export interface RunResultV1 {
   originalQuote: number;
   finalQuote: number;
   baseValue: number;
