@@ -8,7 +8,7 @@ import { IntelligenceV1, IntelligenceV1Type } from './Intelligence';
 import { Quotes } from './Quotes';
 import { I1SQ_ } from '../derived/Intervals';
 
-export class Run<A extends AssetPair> {
+export class RunV2<A extends AssetPair> {
   public paperAccount: Account;
   public paperFeed: PubSub<Order<A>>;
   public xWorld: World_SimpleL2PaperMatching<A> | null = null;

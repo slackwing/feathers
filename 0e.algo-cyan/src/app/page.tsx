@@ -34,7 +34,7 @@ import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
 import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
-import { Run } from '@/lib/base/Run';
+import { RunV2 } from '@/lib/base/RunV2';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -90,7 +90,7 @@ const Dashboard = () => {
     const UPDATE_INTERVAL_MS = 5 * 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let runs: Run<BTCUSD>[] = [];
+    let runs: RunV2<BTCUSD>[] = [];
 
     dsClock.listen((clock) => {
       if (startExperimentAt === null) {
@@ -203,7 +203,7 @@ const Dashboard = () => {
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const run = new Run<BTCUSD>(paperAccount, params, quotes);
+        const run = new RunV2<BTCUSD>(paperAccount, params, quotes);
 
         run.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
