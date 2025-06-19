@@ -28,11 +28,9 @@ export class CoinbaseRecorder extends ExchangeRecorder {
       this.reconnectAttempts++;
       console.log(`Reconnection attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS}`);
       
-      // Reset file counter and save any remaining data before reconnecting
-      this.fileCounter = 1;
       this.saveData();
+      this.fileCounter = 1;
       
-      // Create new WebSocket connection
       this.ws = new WebSocket(COINBASE_WS_URL);
       this.setupWebSocket();
       this.setupKeyboardControls(); // Re-setup keyboard controls after reconnection
