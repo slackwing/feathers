@@ -1,4 +1,4 @@
-import { ExchangeMessage, ExchangeSubscription } from '@/lib/base/recorder/types';
+import { ExchangeMessage, ExchangeSubscription } from '@/lib/derived/ExchangeRecorder';
 
 export const COINBASE_WS_URL = 'wss://advanced-trade-ws.coinbase.com';
 

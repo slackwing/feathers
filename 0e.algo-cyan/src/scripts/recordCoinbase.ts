@@ -1,6 +1,6 @@
-import { CoinbaseRecorder } from '@/lib/exchange/coinbase/recorder';
-import { ExchangeConfig } from '@/lib/base/recorder/types';
-import { COINBASE_CHANNELS, CoinbaseChannel } from '@/lib/exchange/coinbase/types';
+import { CoinbaseRecorder } from '@/lib/exchange/coinbase/CoinbaseRecorder';
+import { ExchangeConfig } from '@/lib/derived/ExchangeRecorder';
+import { COINBASE_CHANNELS, CoinbaseChannel } from '@/lib/exchange/coinbase/CoinbaseTypes';
 
 const DEFAULT_CONFIG: ExchangeConfig = {
   exchange: 'Coinbase',

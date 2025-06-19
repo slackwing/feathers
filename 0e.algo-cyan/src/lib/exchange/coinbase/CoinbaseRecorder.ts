@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
-import { ExchangeRecorder } from '@/lib/base/recorder/recorder';
-import { ExchangeConfig } from '@/lib/base/recorder/types';
-import { CoinbaseMessage, COINBASE_WS_URL, createSubscriptionMessage, CoinbaseChannel } from '@/lib/exchange/coinbase/types';
+import { ExchangeConfig, ExchangeRecorder } from '@/lib/derived/ExchangeRecorder';
+import { CoinbaseMessage, COINBASE_WS_URL, createSubscriptionMessage, CoinbaseChannel } from '@/lib/exchange/coinbase/CoinbaseTypes';
 
 export class CoinbaseRecorder extends ExchangeRecorder {
   private ws: WebSocket;

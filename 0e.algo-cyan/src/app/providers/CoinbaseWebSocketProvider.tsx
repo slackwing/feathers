@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { createContext, useEffect, useRef, useCallback } from 'react';
-import { COINBASE_WS_URL, CoinbaseMessage, CoinbaseWebSocketService, createSubscriptionMessage } from '@/lib/exchange/coinbase/types';
+import { COINBASE_WS_URL, CoinbaseMessage, CoinbaseWebSocketService, createSubscriptionMessage } from '@/lib/exchange/coinbase/CoinbaseTypes';
 
 export const CoinbaseWebSocketContext = createContext<CoinbaseWebSocketService | null>(null);
 
