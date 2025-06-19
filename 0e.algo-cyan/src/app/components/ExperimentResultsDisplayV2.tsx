@@ -20,7 +20,7 @@ interface ExperimentResultsDisplayProps {
 const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ runResults, eventPubSubs }) => {
   const [mode, setMode] = useState<Mode>(Mode.RUN_ZERO_RELATIVE);
   const [isSetupView, setIsSetupView] = useState(false);
-  const [adjustForQuotes, setAdjustForQuotes] = useState(true);
+  const [showAlpha, setShowAlpha] = useState(true);
   const [animationStates, setAnimationStates] = useState<{ [key: number]: 'ping' | 'bounce' | null }>({});
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   
@@ -104,18 +104,24 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
     }
 
     const maxAbsoluteReturnOnCapital = Math.max(...relevantResults.map(r => {
-      let adjusted = r.deltaAccountValue;
-      if (adjustForQuotes && r.finalQuote !== 0) {
-        adjusted *= r.originalQuote / r.finalQuote;
+      if (showAlpha) {
+        if (r.finalQuote === 0) {
+          console.error('Final quote of asset was 0. Incorrectly using original quote!');
+          r.finalQuote = r.originalQuote;
+        }
+        return Math.abs(r.deltaAccountValue / r.maxNetCapitalExposure - (r.finalQuote - r.originalQuote) / r.originalQuote);
       }
-      return Math.abs(adjusted / r.maxNetCapitalExposure);
+      return Math.abs(r.deltaAccountValue / r.maxNetCapitalExposure);
     }));
 
-    let adjustedDeltaAccountValue = deltaAccountValue;
-    if (adjustForQuotes && runResults[index].finalQuote !== 0) {
-      adjustedDeltaAccountValue *= runResults[index].originalQuote / runResults[index].finalQuote;
+    let returnOnCapital = deltaAccountValue / runResults[index].maxNetCapitalExposure;
+    if (showAlpha) {
+      if (runResults[index].finalQuote === 0) {
+        console.error('Final quote of asset was 0. Incorrectly using original quote!');
+        runResults[index].finalQuote = runResults[index].originalQuote;
+      }
+      returnOnCapital = deltaAccountValue / runResults[index].maxNetCapitalExposure - (runResults[index].finalQuote - runResults[index].originalQuote) / runResults[index].originalQuote;
     }
-    const returnOnCapital = adjustedDeltaAccountValue / runResults[index].maxNetCapitalExposure;
     
     const normalizedValue = (returnOnCapital / maxAbsoluteReturnOnCapital + 1) / 2;
     
@@ -187,10 +193,10 @@ const ExperimentResultsDisplay: React.FC<ExperimentResultsDisplayProps> = ({ run
           <label className={styles.toggle}>
             <input
               type="checkbox"
-              checked={adjustForQuotes}
-              onChange={(e) => setAdjustForQuotes(e.target.checked)}
+              checked={showAlpha}
+              onChange={(e) => setShowAlpha(e.target.checked)}
             />
-            <span className={styles.toggleLabel}>Adjust for Quotes</span>
+            <span className={styles.toggleLabel}>Alpha</span>
           </label>
         </div>
       </div>

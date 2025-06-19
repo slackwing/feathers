@@ -91,7 +91,6 @@ const Dashboard = () => {
     const INITIAL_DELAY_MS = 1000;
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
     let runs: Run<BTCUSD>[] = [];
-    let snapshotQuotes = quotes.copy();
 
     dsClock.listen((clock) => {
       if (startExperimentAt === null) {
@@ -104,20 +103,12 @@ const Dashboard = () => {
           const newResults = [...prev];
           const startIdx = newResults.length - parameterSet.length;
           runs.forEach((setup, i) => {
-            if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                maxNetCapitalExposure: maxNetCapitalExposure,
-                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            } else {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            }
+            newResults[startIdx + i] = {
+              ...newResults[startIdx + i],
+              maxNetCapitalExposure: maxNetCapitalExposure,
+              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              finalQuote: quotes.getQuote(Asset.BTC)
+            };
           });
           return newResults;
         });
@@ -149,6 +140,7 @@ const Dashboard = () => {
           runs.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
+              maxNetCapitalExposure: maxNetCapitalExposure,
               deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
               finalQuote: quotes.getQuote(Asset.BTC),
               isComplete: true
@@ -168,7 +160,6 @@ const Dashboard = () => {
         startExperimentAt = null;
         endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
         nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
-        snapshotQuotes = quotes.copy();
         runExperiment();
       }
     });
@@ -248,7 +239,7 @@ const Dashboard = () => {
             if (fundLog.asset === Asset.USD) {
               run.netCapitalExposure += fundLog.amount;
             } else {
-              run.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
+              run.netCapitalExposure -= quotes.getQuote(fundLog.asset) * fundLog.amount;
             }
             run.maxNetCapitalExposure = Math.max(run.maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
             maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(run.netCapitalExposure));

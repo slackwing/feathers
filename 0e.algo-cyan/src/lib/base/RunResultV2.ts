@@ -1,10 +1,10 @@
 export interface RunResultV2 {
   durationMs: number;
   originalQuote: number;
-  finalQuote: number;
-  maxNetCapitalExposure: number;
-  deltaAccountValue: number;
-  isComplete: boolean;
+  finalQuote: number; // updates
+  maxNetCapitalExposure: number; // updates
+  deltaAccountValue: number; // updates
+  isComplete: boolean; // updates
   startTime: number;
   stochasticParams: {
     kPeriod: number;
