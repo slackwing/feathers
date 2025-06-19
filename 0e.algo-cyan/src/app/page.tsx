@@ -9,7 +9,7 @@ import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
 import { L2OrderBook } from '@/lib/derived/L2OrderBook';
-import { Order } from '@/lib/base/Order';
+import { Order, OrderStatus } from '@/lib/base/Order';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
@@ -34,7 +34,7 @@ import ChipSelector from './components/ChipSelector';
 import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
 import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
-import { Run } from '@/lib/base/Run';
+import { RunV2 } from '@/lib/base/RunV2';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -85,13 +85,12 @@ const Dashboard = () => {
     let endExperimentAt: number | null = null;
     let startExperimentAt: number | null = null;
     let experimentRunning = false;
-    const EXPERIMENT_DURATION_MS = 15 * 60 * 1000;
-    const COOLDOWN_DURATION_MS = 3000;
-    const UPDATE_INTERVAL_MS = 60 * 1000;
+    const EXPERIMENT_DURATION_MS = 60 * 60 * 1000;
+    const COOLDOWN_DURATION_MS = 10 * 1000;
+    const UPDATE_INTERVAL_MS = 5 * 60 * 1000;
     const INITIAL_DELAY_MS = 1000;
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let runs: Run<BTCUSD>[] = [];
-    let snapshotQuotes = quotes.copy();
+    let runs: RunV2<BTCUSD>[] = [];
 
     dsClock.listen((clock) => {
       if (startExperimentAt === null) {
@@ -104,20 +103,12 @@ const Dashboard = () => {
           const newResults = [...prev];
           const startIdx = newResults.length - parameterSet.length;
           runs.forEach((setup, i) => {
-            if (newResults[startIdx + i].maxNetCapitalExposure === 0) {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                maxNetCapitalExposure: maxNetCapitalExposure,
-                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            } else {
-              newResults[startIdx + i] = {
-                ...newResults[startIdx + i],
-                deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-                finalQuote: quotes.getQuote(Asset.BTC)
-              };
-            }
+            newResults[startIdx + i] = {
+              ...newResults[startIdx + i],
+              maxNetCapitalExposure: maxNetCapitalExposure,
+              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
+              finalQuote: quotes.getQuote(Asset.BTC)
+            };
           });
           return newResults;
         });
@@ -149,6 +140,7 @@ const Dashboard = () => {
           runs.forEach((setup, i) => {
             newResults[startIdx + i] = {
               ...newResults[startIdx + i],
+              maxNetCapitalExposure: maxNetCapitalExposure,
               deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
               finalQuote: quotes.getQuote(Asset.BTC),
               isComplete: true
@@ -168,19 +160,25 @@ const Dashboard = () => {
         startExperimentAt = null;
         endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
         nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
-        snapshotQuotes = quotes.copy();
         runExperiment();
       }
     });
 
     const runExperiment = () => {
       const stochasticParams = [
-        { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
-        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
-        { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
-        { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
+        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 }, // 1-second (14, 3, 3)
+        { kPeriod: 14*5, dPeriod: 3*5, slowingPeriod: 3*5 }, // 5-second (14, 3, 3)
+        { kPeriod: 14*10, dPeriod: 3*10, slowingPeriod: 3*10 }, // 10-second (14, 3, 3)
+        { kPeriod: 14*15, dPeriod: 3*15, slowingPeriod: 3*15 }, // 15-second (14, 3, 3)
       ];
-      const strategyThresholds = [10, 15, 20, 30];
+      const strategyThresholds = [30, 20, 15, 10];
+      // const stochasticParams = [
+      //   { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
+      //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
+      //   { kPeriod: 21, dPeriod: 14, slowingPeriod: 14 }
+      // ];
+      // const strategyThresholds = [10, 15, 20, 30];
       // const stochasticParams = [
       //   { kPeriod: 5, dPeriod: 2, slowingPeriod: 2 },
       //   { kPeriod: 21, dPeriod: 7, slowingPeriod: 7 },
@@ -205,7 +203,7 @@ const Dashboard = () => {
         paperWallet.depositAsset(new Fund(Asset.USD, 10000000));
         paperWallet.depositAsset(new Fund(Asset.BTC, 100));
 
-        const run = new Run<BTCUSD>(paperAccount, params, quotes);
+        const run = new RunV2<BTCUSD>(paperAccount, params, quotes);
 
         run.xWorld = new World_SimpleL2PaperMatching(
           BTCUSD_,
@@ -241,10 +239,18 @@ const Dashboard = () => {
             if (fundLog.asset === Asset.USD) {
               run.netCapitalExposure += fundLog.amount;
             } else {
-              run.netCapitalExposure -= snapshotQuotes.getQuote(fundLog.asset) * fundLog.amount;
+              run.netCapitalExposure -= quotes.getQuote(fundLog.asset) * fundLog.amount;
             }
             run.maxNetCapitalExposure = Math.max(run.maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
             maxNetCapitalExposure = Math.max(maxNetCapitalExposure, Math.abs(run.netCapitalExposure));
+          }
+        });
+
+        run.xWorld.executionFeed.subscribe((execution) => {
+          if (execution.buyOrder.account === run.paperAccount && (execution.buyOrder.status === OrderStatus.FILLED || execution.buyOrder.status === OrderStatus.CANCELLED)) {
+            run.orderSummaries.push(`BUY ${execution.buyOrder.filled_qty.toFixed(2)} BTC @ ${execution.buyOrder.price.toFixed(2)} USD`);
+          } else if (execution.sellOrder.account === run.paperAccount && (execution.sellOrder.status === OrderStatus.FILLED || execution.sellOrder.status === OrderStatus.CANCELLED)) {
+            run.orderSummaries.push(`SELL ${execution.sellOrder.filled_qty.toFixed(2)} BTC @ ${execution.sellOrder.price.toFixed(2)} USD`);
           }
         });
 
@@ -289,6 +295,7 @@ const Dashboard = () => {
         strategyParams: run.params.strategyParams,
         timeBetweenSignals: run.timeBetweenSignals,
         intelCounts: run.intelCounts,
+        orderSummaries: run.orderSummaries,
         getSignalCount: () => run.getSignalCount(),
         getAverageTimeBetweenSignals: () => run.getAverageTimeBetweenSignals(),
         getStdDeviationTimeBetweenSignals: () => run.getStdDeviationTimeBetweenSignals(),

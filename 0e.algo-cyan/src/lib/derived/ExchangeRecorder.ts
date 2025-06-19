@@ -1,8 +1,37 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { ExchangeConfig, ExchangeMessage } from './types';
 import { PATHS } from '@/config';
+
+export interface ExchangeMessage {
+  type: string;
+  channel: string;
+  timestamp?: string;
+}
+
+export interface ExchangeConfig {
+  exchange: string;
+  channels: string[];
+  pair: string;
+  fileSizeBytes: number;
+}
+
+export interface ExchangeSubscription {
+  type: 'subscribe' | 'unsubscribe';
+  channel: string;
+  product_ids?: string[];
+}
+
+export interface ExchangeConnection {
+  connect: (callbacks: {
+    onMessage?: (data: ExchangeMessage) => void;
+    onError?: (error: Event) => void;
+    onOpen?: () => void;
+  }) => void;
+  disconnect: () => void;
+  subscribe: (channel: string, productIds?: string[]) => void;
+  unsubscribe: (channel: string, productIds?: string[]) => void;
+} 
 
 export abstract class ExchangeRecorder {
   protected buffer: ExchangeMessage[] = [];
@@ -16,7 +45,7 @@ export abstract class ExchangeRecorder {
   private spinnerIndex = 0;
   private readonly SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   private bufferSize: number = 0;
-  private fileCounter: number = 1;
+  protected fileCounter: number = 1;
   private totalMessages: number = 0;
   private totalSize: number = 0;
 
