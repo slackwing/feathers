@@ -1,13 +1,13 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
-import { Strategy_SingleAsset } from "../base/Strategy_SingleAsset";
+import { Strategy } from "../base/Strategy";
 import { PubSub, ReadOnlyPubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { AssetPair } from "../base/Asset";
 import { AStochasticsWave, DSignal_FullStochastic } from "./DSignal_FullStochastic";
 import { Interval } from "../base/Interval";
 import assert from "assert";
-import { World_SimpleL2PaperMatching } from "./World_SimpleL2PaperMatching";
+import { PaperExchange } from "./PaperExchange";
 import { Quotes } from "../base/Quotes";
 import { IntelligentV1 } from "./RunObservableV1";
 import { IntelligenceV1, IntelligenceV1Type } from "../base/Intelligence";
@@ -24,11 +24,11 @@ export enum Position {
 }
 
 // MR = Momentum Reversal
-export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy_SingleAsset<A> implements IntelligentV1 {
+export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends Strategy<A> implements IntelligentV1 {
 
   public paperAccount: Account;
 
-  protected l2PaperWorld: World_SimpleL2PaperMatching<A>;
+  protected l2PaperWorld: PaperExchange<A>;
   protected executionFeed: ReadOnlyPubSub<Execution<A>>;
   protected stochasticSignal: DSignal_FullStochastic<A, I>;
   protected quotes: Quotes;
@@ -83,7 +83,7 @@ export class MRStrat_Stochastic<A extends AssetPair, I extends Interval> extends
   constructor(
     assetPair: A,
     interval: I,
-    l2PaperWorld: World_SimpleL2PaperMatching<A>,
+    l2PaperWorld: PaperExchange<A>,
     paperAccount: Account,
     executionFeed: ReadOnlyPubSub<Execution<A>>,
     stochasticSignal: DSignal_FullStochastic<A, I>,

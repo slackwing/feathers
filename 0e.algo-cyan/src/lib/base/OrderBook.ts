@@ -13,7 +13,7 @@ export class OrderBook<A extends AssetPair> implements Organizer<Order<A>> {
     this.assetPair = assetPair;
     this.bids = new OrderPriceTimePriorityTree(assetPair, Side.BUY);
     this.asks = new OrderPriceTimePriorityTree(assetPair, Side.SELL);
-    pubsubs.forEach((pubsub) => this.subscribe(pubsub));
+    pubsubs.forEach((pubsub) => this.ingestOrderFeed(pubsub));
   }
 
   public reorganize(order: Order<A>): void {
@@ -33,7 +33,7 @@ export class OrderBook<A extends AssetPair> implements Organizer<Order<A>> {
     }
   };
 
-  public subscribe(pubsub: ReadOnlyPubSub<Order<A>>): void {
+  public ingestOrderFeed(pubsub: ReadOnlyPubSub<Order<A>>): void {
     pubsub.subscribe(this.upsertOrderById);
   }
 

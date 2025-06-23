@@ -2,7 +2,7 @@ import { Account } from './Account';
 import { PubSub, ReadOnlyPubSub } from '../infra/PubSub';
 import { Order } from './Order';
 import { AssetPair } from './Asset';
-import { World_SimpleL2PaperMatching } from '../derived/World_SimpleL2PaperMatching';
+import { PaperExchange } from '../derived/PaperExchange';
 import { MRStrat_Stochastic } from '../derived/MRStrat_Stochastic';
 import { IntelligenceV1, IntelligenceV1Type } from './Intelligence';
 import { Quotes } from './Quotes';
@@ -11,7 +11,7 @@ import { I1SQ_ } from '../derived/Intervals';
 export class RunV2<A extends AssetPair> {
   public paperAccount: Account;
   public paperFeed: PubSub<Order<A>>;
-  public xWorld: World_SimpleL2PaperMatching<A> | null = null;
+  public xWorld: PaperExchange<A> | null = null;
   public mrStrat: MRStrat_Stochastic<A, typeof I1SQ_> | null = null;
   public intelligenceFeed: ReadOnlyPubSub<IntelligenceV1> | null = null;
   public params: {

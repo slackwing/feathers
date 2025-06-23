@@ -42,9 +42,9 @@ export class L2PGWorld<A extends AssetPair> extends L2PaperWorld<A> {
     this.ghostAccount = new InfiniteAccount();
     this.reluctanceFactorSupplier = reluctanceFactorSupplier;
     this.impedimentFactorSupplier = impedimentFactorSupplier;
-    this.subscribeToOrderFeed(l2OrderBook.singleSource);
-    this.subscribeToOrderFeed(paperFeed);
-    this.subscribeToOrderFeed(this.ghostFeed);
+    this.ingestOrderFeed(l2OrderBook.singleSource);
+    this.ingestOrderFeed(paperFeed);
+    this.ingestOrderFeed(this.ghostFeed);
     this.subscribeToBatchedTradeFeed(batchedTradeFeed);
   }
 
@@ -97,8 +97,8 @@ export class L2PGWorld<A extends AssetPair> extends L2PaperWorld<A> {
 
     const orders =
       side === Side.BUY
-        ? this.combinedBook.getBidsUntil(outsideTradePrice)
-        : this.combinedBook.getAsksUntil(outsideTradePrice);
+        ? this.combinedOrderBook.getBidsUntil(outsideTradePrice)
+        : this.combinedOrderBook.getAsksUntil(outsideTradePrice);
 
     let hypotheticalOrderFound = false;
     const qOrdersByPrice = new Map<number, number>();

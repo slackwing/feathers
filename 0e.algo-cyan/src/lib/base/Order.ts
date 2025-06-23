@@ -1,5 +1,4 @@
 import assert from "assert";
-import { Cloneable } from "../infra/Cloneable";
 import { SelfOrganizing } from "../infra/SelfOrganizing";
 import { Organizer } from "../infra/Organizer";
 import { Asset, AssetPair } from "./Asset";
@@ -8,6 +7,7 @@ import { Execution, ExecutionStatus } from "./Execution";
 import { Account } from "./Account";
 import { round } from "../utils/number";
 import { Quotes } from "./Quotes";
+import { toBase34Max39304 } from "../utils/id";
 
 export enum OrderType {
   L2 = 'L2',
@@ -35,27 +35,13 @@ export const ABSOLUTE_PRIORITY_TIMESTAMP = 0;
 
 let globalCounter = 0;
 
-export function toBase34Max39304(num: number): string {
-  const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Skips I and O
-  const base = chars.length;
-  const maxValue = Math.pow(base, 3);
-  if (num < 0) throw new Error('Number must be non-negative');
-  let n = num % maxValue;
-  let result = '';
-  while (result.length < 3) {
-    result = chars[n % base] + result;
-    n = Math.floor(n / base);
-  }
-  return result;
-}
-
-export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organizer<Order<A>>> implements Cloneable<Order<A>> {
-  readonly assetPair: A;
-  readonly account: Account
-  readonly type: OrderType;
-  readonly exchangeType: ExchangeType;
-  readonly side: Side;
-  private _id: string;
+export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organizer<Order<A>>> {
+  public readonly assetPair: A;
+  public readonly id: string;
+  public readonly account: Account
+  public readonly type: OrderType;
+  public readonly exchangeType: ExchangeType;
+  public readonly side: Side;
   private _price: number;
   private _quantity: number;
   private _timestamp: number;
@@ -75,12 +61,12 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     timestamp: number,
   ) {
     super();
+    
     this.assetPair = assetPair;
     this.account = account;
     this.type = type;
     this.exchangeType = exchangeType;
     this.side = side;
-    this._id = this.generateId(type, side, price ?? 0, timestamp);
     this._price = price ?? 0;
     this._quantity = quantity;
     this._timestamp = timestamp;
@@ -103,6 +89,8 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     const fundingAmount = this.side === Side.BUY ? fundingPrice * quantity : quantity;
     this._heldFunds.set(fundingAsset, account.withdrawAsset(fundingAsset, fundingAmount));
     account.orderFunded(this);
+
+    this.id = this.generateId(this.type, this.side, this.price, this.timestamp);
   }
 
   private generateId(type: OrderType, side: Side, price: number, timestamp: number): string {
@@ -142,8 +130,6 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     //   this.account.depositAsset(asset, fund.amount);
     // });
   }
-
-  get id(): string { return this._id; }
 
   get price(): number { return this._price; }
   set price(value: number) {
@@ -213,26 +199,7 @@ export class Order<A extends AssetPair> extends SelfOrganizing<Order<A>, Organiz
     return quotes.computeValue(this._heldFunds);
   }
 
-  /**
-   * NOTE(DECOMISSIONED): See BifurcatingPubSub.
-   */
-  public clone(): Order<A> {
-    const cloned = new Order<A>(
-      this.assetPair,
-      this.account,
-      this.type,
-      this.exchangeType,
-      this.side,
-      this.price,
-      this.quantity,
-      this.timestamp
-    );
-    cloned._id = this.id;
-    cloned.remainingQty = this.remainingQty;
-    return cloned;
-  }
-
-public mirroring(account: Account, type: OrderType): Order<A> {
+  public mirroring(account: Account, type: OrderType): Order<A> {
     const cloned = new Order<A>(
       this.assetPair,
       account,

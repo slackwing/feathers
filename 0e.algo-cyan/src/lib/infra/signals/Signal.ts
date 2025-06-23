@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export class Signal<T, U> {
-  protected _sources: Signal<any, T>[];
-  protected _listeners: Set<(data: U) => void>;
+export abstract class Signal<T, U> {
+  protected readonly _sources: Signal<any, T>[];
+  protected readonly _listeners: Set<(data: U) => void>;
 
   constructor(...sources: Signal<any, T>[]) {
     this._sources = sources;
@@ -24,8 +24,5 @@ export class Signal<T, U> {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected process(source: number, signal: T): void {
-    throw new Error("Unimplemented (abstract) method.");
-  }
+  protected abstract process(source: number, signal: T): void;
 }

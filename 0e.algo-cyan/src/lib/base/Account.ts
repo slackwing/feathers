@@ -1,36 +1,39 @@
 import { Fund, FundLog, Funds, safelyDepositFunds, safelyWithdrawFunds } from "./Funds";
 import { Asset } from "./Asset";
 import { Quotes } from "./Quotes";
-import { Order } from "./Order";
+import { Order, OrderStatus } from "./Order";
 import { PubSub, ReadOnlyPubSub } from "../infra/PubSub";
+import { generateId } from "../utils/id";
 
 export class Account {
   public readonly id: string;
-  public readonly name: string;
-  private readonly wallets: Map<string, Wallet>;
+  private readonly _name: string | null;
+  protected readonly _wallets: Map<string, Wallet>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly orders: Map<string, Order<any>>;
-  private readonly transactionsFeed: PubSub<FundLog>;
+  protected readonly _orders: Map<string, Order<any>>;
+  protected readonly _transactionsFeed: PubSub<FundLog>;
 
-  constructor(id: string, name: string) {
-    this.id = id;
-    this.name = name;
-    this.wallets = new Map<string, Wallet>();
+  constructor(name?: string) {
+    this.id = generateId('ACCOUNT');
+    this._name = name ?? null;
+    this._wallets = new Map<string, Wallet>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.orders = new Map<string, Order<any>>();
-    this.transactionsFeed = new PubSub<FundLog>();
+    this._orders = new Map<string, Order<any>>();
+    this._transactionsFeed = new PubSub<FundLog>();
   }
 
+  public get name(): string { return this._name ?? this.id; }
+
   public addWallet(wallet: Wallet): void {
-    if (this.wallets.has(wallet.id)) {
+    if (this._wallets.has(wallet.id)) {
       throw new Error(`Wallet ${wallet.id} already exists.`);
     } else {
-      this.wallets.set(wallet.id, wallet);
+      this._wallets.set(wallet.id, wallet);
     }
   }
 
   private getActiveWallet(): Wallet {
-    const wallet = this.wallets.values().next().value;
+    const wallet = this._wallets.values().next().value;
     if (!wallet) {
       throw new Error('No wallets available.');
     }
@@ -39,22 +42,24 @@ export class Account {
 
   public depositAsset(fund: Fund): void {
     this.getActiveWallet().depositAsset(fund);
-    this.transactionsFeed.publish(new FundLog(fund.asset, fund.amount));
+    this._transactionsFeed.publish(new FundLog(fund.asset, fund.amount));
   }
 
   public withdrawAsset(asset: Asset, amount: number): Fund {
-    this.transactionsFeed.publish(new FundLog(asset, -1 * amount));
+    this._transactionsFeed.publish(new FundLog(asset, -1 * amount));
     return this.getActiveWallet().withdrawAsset(asset, amount);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public orderFunded(order: Order<any>): void {
-    this.orders.set(order.id, order);
+    this._orders.set(order.id, order);
   }
 
   public computeTotalValue(quotes: Quotes): number {
-    const walletValue = this.wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
-    const orderValue = Array.from(this.orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
+    const walletValue = this._wallets.values().reduce((acc, wallet) => acc + wallet.computeValue(quotes), 0);
+    const orderValue = Array.from(this._orders.values())
+      .filter(order => order.status === OrderStatus.OPEN)
+      .reduce((acc, order) => acc + order.computeValue(quotes), 0);
     return walletValue + orderValue;
   }
 
@@ -62,27 +67,29 @@ export class Account {
    * NOTE(UNUSED): Added for a certain purpose but then changed courses.
    */
   public computeHeldValue(quotes: Quotes): number {
-    return Array.from(this.orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
+    return Array.from(this._orders.values()).reduce((acc, order) => acc + order.computeValue(quotes), 0);
   }
 
   /**
    * NOTE(UNUSED): Added for a certain purpose but then changed courses.
    */
   public getTransactionsFeed(): ReadOnlyPubSub<FundLog> {
-    return this.transactionsFeed;
+    return this._transactionsFeed;
   }
 }
 
 export class Wallet {
-  readonly id: string;
-  readonly name: string;
+  public readonly id: string;
+  private readonly _name: string | null;
   private _assets: Funds;
 
-  constructor(id: string, name: string) {
-    this.id = id;
-    this.name = name;
+  constructor(name?: string) {
+    this.id = generateId('W');
+    this._name = name ?? null;
     this._assets = new Map<Asset, Fund>();
   }
+
+  public get name(): string { return this._name ?? this.id; }
 
   public depositAsset(funds: Fund): void {
     safelyDepositFunds(funds, this._assets);
@@ -99,21 +106,21 @@ export class Wallet {
 
 export class NullAccount extends Account {
   constructor() {
-    super('nullAccount', 'Null Account');
+    super();
     this.addWallet(new NullWallet());
   }
 }
 
 export class InfiniteAccount extends Account {
   constructor() {
-    super('infiniteAccount', 'Infinite Account');
+    super();
     this.addWallet(new InfiniteWallet());
   }
 }
 
 export class NullWallet extends Wallet {
   constructor() {
-    super('nullWallet', 'Null Wallet');
+    super();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -129,7 +136,7 @@ export class NullWallet extends Wallet {
 
 export class InfiniteWallet extends Wallet {
   constructor() {
-    super('infiniteWallet', 'Infinite Wallet');
+    super();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

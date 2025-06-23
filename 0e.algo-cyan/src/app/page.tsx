@@ -26,7 +26,7 @@ import { Signal_Trade } from '@/lib/derived/Signal_Trade';
 import { I1SQ_ } from '@/lib/derived/Intervals';
 import { DSignal_OHLC } from '@/lib/derived/DSignal_OHLC';
 import { DSignal_FullStochastic } from '@/lib/derived/DSignal_FullStochastic';
-import { World_SimpleL2PaperMatching } from '@/lib/derived/World_SimpleL2PaperMatching';
+import { PaperExchange } from '@/lib/derived/PaperExchange';
 import { MRStrat_Stochastic } from '@/lib/derived/MRStrat_Stochastic';
 import { RunResultV2 } from '@/lib/base/RunResultV2';
 import { DSignalTAdapter_Clock } from '@/lib/infra/signals/DSignal';
@@ -35,22 +35,20 @@ import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
 import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
 import { RunV2 } from '@/lib/base/RunV2';
+import { WorldMaker_SimplePX } from '@/lib/derived/World_SimplePX';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
   const { connect, disconnect } = useCoinbaseWebSocket();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const [slowWorld, setSlowWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
-  const [fastWorld, setFastWorld] = React.useState<L2PGWorld<BTCUSD> | null>(null);
-  const [xWorld, setXWorld] = React.useState<World_SimpleL2PaperMatching<BTCUSD> | null>(null);
+  const [quotes] = React.useState(new Quotes(Asset.USD));
+
+  const [displayExchange, setDisplayExchange] = React.useState<PaperExchange<BTCUSD> | null>(null);
   const [lastRefreshed, setLastRefreshed] = React.useState(Date.now());
-  const [paperOrderFeed, setPaperOrderFeed] = React.useState<PubSub<Order<BTCUSD>> | null>(null);
-  const [paperAccount, setPaperAccount] = React.useState<Account | null>(null);
   const [assetPair] = React.useState(new BTCUSD());
   const [runResults, setRunResults] = React.useState<RunResultV2[]>([]);
   const [eventFeeds, setEventFeeds] = React.useState<ReadOnlyPubSub<IntelligenceV1>[]>([]);
-  const [quotes] = React.useState(new Quotes(Asset.USD));
   const [selectedChip, setSelectedChip] = React.useState('OFF');
   const [fileAdapter, setFileAdapter] = React.useState<FileDataAdapter<BTCUSD> | null>(null);
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
@@ -60,118 +58,45 @@ const Dashboard = () => {
     l2OrderFeed: PubSub<Order<BTCUSD>>,
     tradeFeed: PubSub<Trade<BTCUSD>>
   ) => {
-    const batchedTradeFeed = new BatchedPubSub<Trade<BTCUSD>>(-1, undefined, getBatchingFn());
-    tradeFeed.subscribe((trade) => batchedTradeFeed.publish(trade));
-    const paperFeed = new PubSub<Order<BTCUSD>>();
-    setPaperOrderFeed(paperFeed);
-    const l2OrderBook = new L2OrderBook(BTCUSD_, l2OrderFeed);
 
     const sTrade = new Signal_Trade(tradeFeed);
     const tsP = new TSignal_P(sTrade);
     const dsClock = new DSignalTAdapter_Clock(I1SQ_, tsP);
     const dsOHLC = new DSignal_OHLC(I1SQ_, tsP, 14);
-    // dsOHLC.listen((ohlc) => {
-    //   console.log('OHLC: ', ohlc);
-    // });
     tradeFeed.subscribe((trade) => {
       quotes.setQuote(BTCUSD_, trade.price);
       setLastRefreshed(Date.now());
     });
 
-    let runCount = 0;
-    const MAX_RUNS = 100;
-    let maxNetCapitalExposure = 0.0;
-    let nextUpdateAt: number | null = null;
-    let endExperimentAt: number | null = null;
-    let startExperimentAt: number | null = null;
-    let experimentRunning = false;
-    const EXPERIMENT_DURATION_MS = 60 * 60 * 1000;
-    const COOLDOWN_DURATION_MS = 10 * 1000;
-    const UPDATE_INTERVAL_MS = 5 * 60 * 1000;
-    const INITIAL_DELAY_MS = 1000;
+    const maker = new WorldMaker_SimplePX(BTCUSD_, l2OrderFeed, tradeFeed, dsClock, dsOHLC, quotes);
+
+    const config = {
+      MAX_RUNS: 100,
+      INITIAL_DELAY_MS: 1000 * 60, // 1 full minute for 1-second interval signals to warm up.
+      RUN_DURATION_MS: 1000 * 60 * 60, // 1-hour runs.
+      COOLDOWN_MS: 1000 * 10, // Pause for 10 seconds between runs.
+      RENDER_RESULTS_EVERY_MS: 5 * 60 * 1000, // Calculate results every 5 minutes (clock time).
+    }
+
+    const stochasticParams = [
+      { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 }, // 1-second (14, 3, 3)
+      { kPeriod: 14*5, dPeriod: 3*5, slowingPeriod: 3*5 }, // 5-second (14, 3, 3)
+      { kPeriod: 14*10, dPeriod: 3*10, slowingPeriod: 3*10 }, // 10-second (14, 3, 3)
+      { kPeriod: 14*15, dPeriod: 3*15, slowingPeriod: 3*15 }, // 15-second (14, 3, 3)
+    ];
+    const strategyThresholds = [30, 20, 15, 10];
+
+    const variations = new Variations();
+
+
     let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
     let runs: RunV2<BTCUSD>[] = [];
 
-    dsClock.listen((clock) => {
-      if (startExperimentAt === null) {
-        startExperimentAt = clock.timestamp + INITIAL_DELAY_MS;
-      }
 
-      if (experimentRunning && nextUpdateAt !== null && clock.timestamp >= nextUpdateAt) {
-        nextUpdateAt = null;
-        setRunResults(prev => {
-          const newResults = [...prev];
-          const startIdx = newResults.length - parameterSet.length;
-          runs.forEach((setup, i) => {
-            newResults[startIdx + i] = {
-              ...newResults[startIdx + i],
-              maxNetCapitalExposure: maxNetCapitalExposure,
-              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-              finalQuote: quotes.getQuote(Asset.BTC)
-            };
-          });
-          return newResults;
-        });
-        nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
-      }
+    const experiment = new Experiment(dsClock, maker, variations, config);
 
-      if (experimentRunning && endExperimentAt !== null && clock.timestamp >= endExperimentAt) {
-
-        experimentRunning = false;
-        endExperimentAt = null;
-        nextUpdateAt = null;
-
-        runs.forEach(setup => {
-          if (setup.mrStrat) {
-            setup.mrStrat.stop();
-          }
-        });
-        
-        console.log('Run completed. Final balances:');
-        runs.forEach((setup, i) => {
-          console.log(`Experiment ${i + 1}:`);
-          console.log(`  Transaction Balance: ${setup.netCapitalExposure}`);
-          console.log(`  Max Transaction Balance: ${maxNetCapitalExposure}`);
-          console.log(`  Held Value: ${setup.paperAccount.computeHeldValue(quotes)}`);
-        });
-        setRunResults(prev => {
-          const newResults = [...prev];
-          const startIdx = newResults.length - parameterSet.length;
-          runs.forEach((setup, i) => {
-            newResults[startIdx + i] = {
-              ...newResults[startIdx + i],
-              maxNetCapitalExposure: maxNetCapitalExposure,
-              deltaAccountValue: setup.paperAccount.computeTotalValue(quotes) - setup.initialValue,
-              finalQuote: quotes.getQuote(Asset.BTC),
-              isComplete: true
-            };
-          });
-          return newResults;
-        });
-
-        runCount++;
-        if (runCount < MAX_RUNS) {
-          startExperimentAt = clock.timestamp + COOLDOWN_DURATION_MS;
-        }
-      }
-
-      if (!experimentRunning && startExperimentAt !== null && clock.timestamp >= startExperimentAt) {
-        experimentRunning = true;
-        startExperimentAt = null;
-        endExperimentAt = clock.timestamp + EXPERIMENT_DURATION_MS;
-        nextUpdateAt = clock.timestamp + UPDATE_INTERVAL_MS;
-        runExperiment();
-      }
-    });
 
     const runExperiment = () => {
-      const stochasticParams = [
-        { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 }, // 1-second (14, 3, 3)
-        { kPeriod: 14*5, dPeriod: 3*5, slowingPeriod: 3*5 }, // 5-second (14, 3, 3)
-        { kPeriod: 14*10, dPeriod: 3*10, slowingPeriod: 3*10 }, // 10-second (14, 3, 3)
-        { kPeriod: 14*15, dPeriod: 3*15, slowingPeriod: 3*15 }, // 15-second (14, 3, 3)
-      ];
-      const strategyThresholds = [30, 20, 15, 10];
       // const stochasticParams = [
       //   { kPeriod: 5, dPeriod: 3, slowingPeriod: 3 },
       //   { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 },
@@ -205,7 +130,7 @@ const Dashboard = () => {
 
         const run = new RunV2<BTCUSD>(paperAccount, params, quotes);
 
-        run.xWorld = new World_SimpleL2PaperMatching(
+        run.xWorld = new PaperExchange(
           BTCUSD_,
           l2OrderBook,
           run.paperFeed,
@@ -272,7 +197,7 @@ const Dashboard = () => {
       const lastExperiment = runs[runs.length - 1];
       setPaperAccount(lastExperiment.paperAccount);
       setPaperOrderFeed(lastExperiment.paperFeed);
-      setXWorld(lastExperiment.xWorld);
+      setDisplayExchange(lastExperiment.xWorld);
       setEventFeeds(runs.map(setup => setup.intelligenceFeed).filter((feed): feed is ReadOnlyPubSub<IntelligenceV1> => feed !== null));
 
       // Start all experiments
@@ -454,8 +379,8 @@ const Dashboard = () => {
             />
           )}
 
-          {xWorld ? (
-            <OrderBookBarChartDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          {displayExchange ? (
+            <OrderBookBarChartDisplay orderBook={displayExchange.combinedOrderBook} lastRefreshed={lastRefreshed} />
           ) : (
             <div className={styles.loading}>Loading order book...</div>
           )}
@@ -494,20 +419,20 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {xWorld ? (
-            <OrderBookTableDisplay orderBook={xWorld.combinedBook} lastRefreshed={lastRefreshed} />
+          {displayExchange ? (
+            <OrderBookTableDisplay orderBook={displayExchange.combinedOrderBook} lastRefreshed={lastRefreshed} />
           ) : (
             <div className={styles.loading}>Loading order book...</div>
           )}
 
           {slowWorld ? (
-            <OrderBookBarChartDisplay orderBook={slowWorld.combinedBook} lastRefreshed={lastRefreshed} />
+            <OrderBookBarChartDisplay orderBook={slowWorld.combinedOrderBook} lastRefreshed={lastRefreshed} />
           ) : (
             <div className={styles.loading}>Loading order book...</div>
           )}
 
           {fastWorld ? (
-            <OrderBookBarChartDisplay orderBook={fastWorld.combinedBook} lastRefreshed={lastRefreshed} />
+            <OrderBookBarChartDisplay orderBook={fastWorld.combinedOrderBook} lastRefreshed={lastRefreshed} />
           ) : (
             <div className={styles.loading}>Loading order book...</div>
           )}
