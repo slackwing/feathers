@@ -1,6 +1,5 @@
 import { Plugin, PluginBase } from '../Plugins';
 import { World } from '../World';
-import { Agent } from '../Agent';
 import { Run } from '../Run';
 import { PluginInstance } from '../Plugins';
 import { OrderStatus } from '../Order';
@@ -17,28 +16,24 @@ export class PluginInstance_Executions extends PluginBase {
   private unsubscribers: (() => void)[] = [];
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunStart(world: World, agents: Agent[], plugins: PluginInstance[]): void {
+  onRunStart(world: World, plugins: readonly PluginInstance[]): void {
     this.orderSummaries = [];
     
     // Subscribe to execution feeds from all exchanges
     world.exchanges.forEach(exchange => {
       if (exchange instanceof PaperExchange) {
         const unsubscriber = exchange.executionFeed.subscribe((execution) => {
-          // Check if this execution involves any of our agents' accounts
-          const isRelevant = agents.some(agent => 
-            agent.firm && 
-            (execution.buyOrder.account === agent.firm.primaryAccount || 
-             execution.sellOrder.account === agent.firm.primaryAccount)
+          const isBuyRelevant = Array.from(world.getFirms()).some(firm =>
+            execution.buyOrder.account === firm.primaryAccount
           );
-          
-          if (isRelevant) {
-            if (execution.buyOrder.account === execution.buyOrder.account && 
-                (execution.buyOrder.status === OrderStatus.FILLED || execution.buyOrder.status === OrderStatus.CANCELLED)) {
-              this.orderSummaries.push(`BUY ${execution.buyOrder.filled_qty.toFixed(2)} BTC @ ${execution.buyOrder.price.toFixed(2)} USD`);
-            } else if (execution.sellOrder.account === execution.sellOrder.account && 
-                       (execution.sellOrder.status === OrderStatus.FILLED || execution.sellOrder.status === OrderStatus.CANCELLED)) {
-              this.orderSummaries.push(`SELL ${execution.sellOrder.filled_qty.toFixed(2)} BTC @ ${execution.sellOrder.price.toFixed(2)} USD`);
-            }
+          const isSellRelevant = Array.from(world.getFirms()).some(firm =>
+            execution.sellOrder.account === firm.primaryAccount
+          );
+          if (isBuyRelevant && (execution.buyOrder.status === OrderStatus.FILLED || execution.buyOrder.status === OrderStatus.CANCELLED)) {
+            this.orderSummaries.push(`BUY ${execution.buyOrder.filled_qty.toFixed(2)} BTC @ ${execution.buyOrder.price.toFixed(2)} USD`);
+          }
+          if (isSellRelevant && (execution.sellOrder.status === OrderStatus.FILLED || execution.sellOrder.status === OrderStatus.CANCELLED)) {
+            this.orderSummaries.push(`SELL ${execution.sellOrder.filled_qty.toFixed(2)} BTC @ ${execution.sellOrder.price.toFixed(2)} USD`);
           }
         });
         this.unsubscribers.push(unsubscriber);
@@ -47,7 +42,7 @@ export class PluginInstance_Executions extends PluginBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunEnd(_world: World, _agents: Agent[], plugins: PluginInstance[]): void {
+  onRunEnd(_world: World, plugins: readonly PluginInstance[]): void {
     // Clean up subscriptions
     this.unsubscribers.forEach(unsubscriber => unsubscriber());
     this.unsubscribers = [];

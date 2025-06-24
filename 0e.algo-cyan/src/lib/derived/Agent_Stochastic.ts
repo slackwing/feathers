@@ -1,4 +1,4 @@
-import { SimpleAgent } from "./SimpleAgent";
+import { Agent_Default } from "./Agent_Default";
 import { AssetPair } from "../base/Asset";
 import { World } from "../base/World";
 import { Interval } from "../base/Interval";
@@ -23,7 +23,7 @@ enum Position {
   PENDING_SHORT
 }
 
-export class StochasticAgent<A extends AssetPair, I extends Interval> extends SimpleAgent<A> {
+export class Agent_Stochastic<A extends AssetPair, I extends Interval> extends Agent_Default<A> {
 
   public readonly interval: I;
 
@@ -216,7 +216,7 @@ export class StochasticAgent<A extends AssetPair, I extends Interval> extends Si
   }
 }
 
-export class StochasticAgentMaker<A extends AssetPair, I extends Interval> implements AgentMaker {
+export class AgentMaker_Stochastic<A extends AssetPair, I extends Interval> implements AgentMaker {
 
   public readonly assetPair: A;
   public readonly interval: I;
@@ -226,8 +226,8 @@ export class StochasticAgentMaker<A extends AssetPair, I extends Interval> imple
     this.interval = interval;
   }
 
-  make(world: World, variation: Variation): StochasticAgent<A, I> {
-    return new StochasticAgent(
+  make(world: World, variation: Variation): Agent_Stochastic<A, I> {
+    return new Agent_Stochastic(
       this.assetPair,
       this.interval,
       world,

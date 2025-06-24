@@ -8,14 +8,10 @@ import ExperimentResultsDisplayV2 from './components/ExperimentResultsDisplayV2'
 import { CoinbaseWebSocketProvider } from './providers/CoinbaseWebSocketProvider';
 import { useCoinbaseWebSocket } from './hooks/useCoinbaseWebSocket';
 import { PubSub, ReadOnlyPubSub } from '@/lib/infra/PubSub';
-import { L2OrderBook } from '@/lib/derived/L2OrderBook';
 import { Order, OrderStatus } from '@/lib/base/Order';
 import { CoinbaseDataAdapter } from './adapters/CoinbaseDataAdapter';
 import OrderForm from './components/OrderForm';
 import { Side } from '@/lib/base/Order';
-import { L2PGWorld } from '@/lib/derived/L2PGWorld';
-import { BatchedPubSub } from '@/lib/infra/BatchedPubSub';
-import { getBatchingFn, Trade } from '@/lib/base/Trade';
 import { Account, Wallet } from '@/lib/base/Account';
 import { Asset } from '@/lib/base/Asset';
 import { Fund } from "@/lib/base/Funds";
@@ -35,7 +31,13 @@ import { FileDataAdapter } from './adapters/FileDataAdapter';
 import FileOrderingDisplay from './components/FileOrderingDisplay';
 import { IntelligenceV1, IntelligenceV1Type } from '@/lib/base/Intelligence';
 import { RunV2 } from '@/lib/base/RunV2';
-import { WorldMaker_SimplePX } from '@/lib/derived/World_SimplePX';
+import { WorldMaker_PXFA } from '@/lib/derived/World_PXFA';
+import { AgentMaker_Stochastic } from '@/lib/derived/Agent_Stochastic';
+import { FirmMaker_Default } from '@/lib/derived/Firm_Default';
+import { Experiment } from '@/lib/base/Experiment';
+import { Trade } from '@/lib/base/Trade';
+import { FixedQuantityParam, StochasticThresholdParam, VariationUtils } from '@/lib/base/Variations';
+import { StochasticWindowParams } from '@/lib/base/Variations';
 // TODO(P3): Standardize all these import styles.
 
 const Dashboard = () => {
@@ -68,7 +70,9 @@ const Dashboard = () => {
       setLastRefreshed(Date.now());
     });
 
-    const maker = new WorldMaker_SimplePX(BTCUSD_, l2OrderFeed, tradeFeed, dsClock, dsOHLC, quotes);
+    const agentMaker = new AgentMaker_Stochastic(BTCUSD_, I1SQ_);
+    const firmMaker = new FirmMaker_Default([agentMaker]);
+    const worldMaker = new WorldMaker_PXFA(BTCUSD_, I1SQ_, l2OrderFeed, tradeFeed, dsClock, dsOHLC, quotes, firmMaker);
 
     const config = {
       MAX_RUNS: 100,
@@ -78,22 +82,16 @@ const Dashboard = () => {
       RENDER_RESULTS_EVERY_MS: 5 * 60 * 1000, // Calculate results every 5 minutes (clock time).
     }
 
-    const stochasticParams = [
-      { kPeriod: 14, dPeriod: 3, slowingPeriod: 3 }, // 1-second (14, 3, 3)
-      { kPeriod: 14*5, dPeriod: 3*5, slowingPeriod: 3*5 }, // 5-second (14, 3, 3)
-      { kPeriod: 14*10, dPeriod: 3*10, slowingPeriod: 3*10 }, // 10-second (14, 3, 3)
-      { kPeriod: 14*15, dPeriod: 3*15, slowingPeriod: 3*15 }, // 15-second (14, 3, 3)
-    ];
-    const strategyThresholds = [30, 20, 15, 10];
+    const variations = 
+    VariationUtils.addFixedParam(
+      VariationUtils.cross(
+        VariationUtils.getDefaultVariations(StochasticWindowParams),
+        VariationUtils.getDefaultVariations(StochasticThresholdParam)
+      ),
+      VariationUtils.getDefaultValue(FixedQuantityParam)
+    )
 
-    const variations = new Variations();
-
-
-    let parameterSet: { stochasticParams: { kPeriod: number; dPeriod: number; slowingPeriod: number }; strategyParams: { threshold: number } }[] = [];
-    let runs: RunV2<BTCUSD>[] = [];
-
-
-    const experiment = new Experiment(dsClock, maker, variations, config);
+    const experiment = new Experiment(dsClock, worldMaker, variations, config);
 
 
     const runExperiment = () => {

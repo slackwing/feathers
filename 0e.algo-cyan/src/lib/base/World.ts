@@ -40,6 +40,14 @@ export class World {
     this._firms.add(firm);
   }
 
+  public getFirms(): ReadonlySet<Firm> {
+    return this._firms;
+  }
+
+  public getAgents(): ReadonlySet<Agent> {
+    return new Set(Array.from(this._firms).flatMap(firm => firm.getAgents()));
+  }
+
   public setQuotes(quotes: Quotes): void {
     this.quotes = quotes;
   }

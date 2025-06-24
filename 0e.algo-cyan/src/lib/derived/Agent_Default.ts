@@ -4,7 +4,7 @@ import { Firm } from "../base/Firm";
 import { World } from "../base/World";
 import { PaperExchange } from "./PaperExchange";
 
-export abstract class SimpleAgent<A extends AssetPair> extends Agent {
+export abstract class Agent_Default<A extends AssetPair> extends Agent {
 
   public readonly assetPair: A;
   protected _exchange: PaperExchange<A> | null = null;

@@ -1,9 +1,8 @@
 import { Plugin, PluginBase } from '../Plugins';
 import { World } from '../World';
-import { Agent } from '../Agent';
 import { Run } from '../Run';
 import { PluginInstance } from '../Plugins';
-import { IntelligenceV1Type } from '../Intelligence';
+import { IntelligenceV1, IntelligenceV1Type } from '../Intelligence';
 
 interface SignalData {
   lastSignalTime: number;
@@ -22,11 +21,11 @@ export class PluginInstance_Signals extends PluginBase {
   private unsubscribers: (() => void)[] = [];
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunStart(world: World, agents: Agent[], plugins: PluginInstance[]): void {
+  onRunStart(world: World, plugins: readonly PluginInstance[]): void {
     this.signalDataByAgent.clear();
     
     // Subscribe to all agents' intelligence feeds
-    agents.forEach(agent => {
+    world.getAgents().forEach(agent => {
       const signalData: SignalData = {
         lastSignalTime: 0,
         timeBetweenSignals: [],
@@ -35,7 +34,7 @@ export class PluginInstance_Signals extends PluginBase {
       
       this.signalDataByAgent.set(agent.id, signalData);
       
-      const unsubscriber = agent.intelFeed.subscribe((intel) => {
+      const unsubscriber = agent.intelFeed.subscribe((intel: IntelligenceV1) => {
         signalData.intelCounts.set(intel.type, (signalData.intelCounts.get(intel.type) || 0) + 1);
         if (intel.type === IntelligenceV1Type.SIGNAL) {
           const now = Date.now();
@@ -51,7 +50,7 @@ export class PluginInstance_Signals extends PluginBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunEnd(_world: World, _agents: Agent[], plugins: PluginInstance[]): void {
+  onRunEnd(_world: World, plugins: readonly PluginInstance[]): void {
     // Clean up subscriptions
     this.unsubscribers.forEach(unsubscriber => unsubscriber());
     this.unsubscribers = [];

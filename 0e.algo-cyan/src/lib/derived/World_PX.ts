@@ -1,6 +1,4 @@
 import { Account, Wallet } from "../base/Account";
-import { Asset, AssetPair } from "../base/Asset";
-import { Firm } from "../base/Firm";
 import { Fund } from "../base/Funds";
 import { Order } from "../base/Order";
 import { WorldMaker } from "../base/World";
@@ -13,8 +11,9 @@ import { Interval } from "../base/Interval";
 import { Quotes } from "../base/Quotes";
 import { World_Singular } from "./World_Singular";
 import { Variation } from "../base/Variations";
+import { AssetPair } from "../base/Asset";
 
-export class World_SimplePX<A extends AssetPair, I extends Interval> extends World_Singular<A, I> {
+export class World_PX<A extends AssetPair, I extends Interval> extends World_Singular<A, I> {
 
   public readonly PX: PaperExchange<A>;
 
@@ -29,15 +28,15 @@ export class World_SimplePX<A extends AssetPair, I extends Interval> extends Wor
   }
 }
 
-export class WorldMaker_SimplePX<A extends AssetPair, I extends Interval> implements WorldMaker<World_SimplePX<A, I>> {
+export class WorldMaker_PX<A extends AssetPair, I extends Interval> implements WorldMaker<World_PX<A, I>> {
 
-  private readonly _assetPair: A;
-  private readonly _interval: I;
-  private readonly _orderFeed: ReadOnlyPubSub<Order<A>>;
-  private readonly _tradeFeed: ReadOnlyPubSub<Trade<A>>;
-  private readonly _sigClock: DSignalTAdapter_Clock<number, I>;
-  private readonly _sigOHLC: DSignal_OHLC<A, I>;
-  private readonly _quotes: Quotes; // TODO(P1): Where do quotes belong?
+  protected readonly _assetPair: A;
+  protected readonly _interval: I;
+  protected readonly _orderFeed: ReadOnlyPubSub<Order<A>>;
+  protected readonly _tradeFeed: ReadOnlyPubSub<Trade<A>>;
+  protected readonly _sigClock: DSignalTAdapter_Clock<number, I>;
+  protected readonly _sigOHLC: DSignal_OHLC<A, I>;
+  protected readonly _quotes: Quotes; // TODO(P1): Where do quotes belong?
 
   constructor(
     assetPair: A,
@@ -58,7 +57,7 @@ export class WorldMaker_SimplePX<A extends AssetPair, I extends Interval> implem
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public make(variation: Variation): World_SimplePX<A, I> {
+  public make(variation: Variation): World_PX<A, I> {
 
     const paperFeed = new PubSub<Order<A>>();
 
@@ -69,17 +68,13 @@ export class WorldMaker_SimplePX<A extends AssetPair, I extends Interval> implem
       paperFeed
     );
 
-    const world = new World_SimplePX(this._assetPair, this._interval, exchange);
+    const world = new World_PX(this._assetPair, this._interval, exchange);
     
     const account = new Account();
     const wallet = new Wallet();
     account.addWallet(wallet);
     wallet.depositAsset(new Fund(this._assetPair.quote, 10000000));
     wallet.depositAsset(new Fund(this._assetPair.base, 100));
-    
-    const firm = new Firm();
-    firm.addAccount(account);
-    world.addFirm(firm);
 
     const quotes = new Quotes(this._assetPair.quote);
     this._tradeFeed.subscribe((trade) => {

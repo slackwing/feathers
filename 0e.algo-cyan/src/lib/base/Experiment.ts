@@ -1,12 +1,9 @@
-import { AssetPair } from './Asset';
-import { PubSub, ReadOnlyPubSub } from '../infra/PubSub';
+import { ReadOnlyPubSub } from '../infra/PubSub';
 import { IntelligenceV1 } from './Intelligence';
 import { Variations } from './Variations';
 import { Run } from './Run';
 import { RunGroup } from './RunGroup';
 import { VariationGroup } from './VariationGroup';
-import { Account } from './Account';
-import { Order } from './Order';
 import { DSignalTAdapter_Clock } from '../infra/signals/DSignal';
 import { World, WorldMaker } from './World';
 import { AgentMaker } from './Agent';
@@ -25,10 +22,9 @@ export class Experiment<W extends World> {
 
   private readonly _clock: DSignalTAdapter_Clock<number, any>;
   private readonly _worldMaker: WorldMaker<any>;
-  private readonly _agentMakers: AgentMaker[];
   private readonly _variations: Variations;
   private readonly _config: ExperimentConfig;
-  private readonly _pluginMakers: Plugin[];
+  private readonly _plugins: Plugin[];
 
   private _runCount: number = 0;
 
@@ -45,17 +41,15 @@ export class Experiment<W extends World> {
   constructor(
     clock: DSignalTAdapter_Clock<number, any>,
     worldMaker: WorldMaker<W>,
-    agentMakers: AgentMaker[],
     variations: Variations,
     config: ExperimentConfig,
-    pluginMakers: Plugin[] = [],
+    plugins: Plugin[] = [],
   ) {
     this._clock = clock;
     this._worldMaker = worldMaker;
-    this._agentMakers = agentMakers;
     this._variations = variations;
     this._config = config;
-    this._pluginMakers = pluginMakers;
+    this._plugins = plugins;
     this.setupClockListener();
   }
 
@@ -113,13 +107,11 @@ export class Experiment<W extends World> {
     this._variations.forEach((variation, index) => {
 
       const world = this._worldMaker.make(variation);
-      const agents = this._agentMakers.map(maker => maker.make(world, variation));
-      const plugins = this._pluginMakers.map(maker => maker.make());
+      const plugins = this._plugins.map(maker => maker.make());
 
       const run = new Run(
         variation,
         world,
-        agents,
         plugins
       );
 

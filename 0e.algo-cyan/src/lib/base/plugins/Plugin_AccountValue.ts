@@ -1,6 +1,5 @@
 import { Plugin, PluginBase } from '../Plugins';
 import { World } from '../World';
-import { Agent } from '../Agent';
 import { Run } from '../Run';
 import { PluginInstance } from '../Plugins';
 import { PaperExchange } from '../../derived/PaperExchange';
@@ -28,7 +27,7 @@ export class PluginInstance_AccountValue extends PluginBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunStart(world: World, agents: Agent[], plugins: PluginInstance[]): void {
+  onRunStart(world: World, plugins: readonly PluginInstance[]): void {
     this.initialValue = this.computeTotalValue(world);
     this.finalValue = this.initialValue;
 
@@ -45,7 +44,7 @@ export class PluginInstance_AccountValue extends PluginBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRunEnd(world: World, agents: Agent[], plugins: PluginInstance[]): void {
+  onRunEnd(world: World, plugins: readonly PluginInstance[]): void {
     // Calculate final value one more time
     this.finalValue = this.computeTotalValue(world);
     

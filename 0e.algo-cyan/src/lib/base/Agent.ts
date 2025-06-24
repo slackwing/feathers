@@ -8,6 +8,7 @@ import { World } from "./World";
 export abstract class Agent {
   public readonly id: string;
   public readonly world: World;
+  // TODO(P2): Inconsistent; Agent can belong to multiple firms.
   public firm: Firm | null = null;
   private readonly _name: string | null;
   private _resourcesProcured: boolean;

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export abstract class Signal<T, U> {
+export class Signal<T, U> {
   protected readonly _sources: Signal<any, T>[];
   protected readonly _listeners: Set<(data: U) => void>;
 
@@ -18,11 +18,14 @@ export abstract class Signal<T, U> {
     return () => this._listeners.delete(callback);
   }
 
-  protected broadcast(signal: U): void {
+  public broadcast(signal: U): void {
     for (const callback of this._listeners) {
       callback(signal);
     }
   }
 
-  protected abstract process(source: number, signal: T): void;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected process(source: number, signal: T): void {
+    // This method only applies to sources, which for example PubSubs don't use.
+  }
 }
