@@ -6,7 +6,6 @@ import { RunGroup } from './RunGroup';
 import { VariationGroup } from './VariationGroup';
 import { DSignalTAdapter_Clock } from '../infra/signals/DSignal';
 import { World, WorldMaker } from './World';
-import { AgentMaker } from './Agent';
 import { Plugin } from './Plugins';
 
 export interface ExperimentConfig {
@@ -32,7 +31,6 @@ export class Experiment<W extends World> {
   private variationGroups: VariationGroup[] = [];
   private currentRunGroup: RunGroup | null = null;
   
-  private maxNetCapitalExposure: number = 0;
   private nextUpdateAt: number | null = null;
   private endExperimentAt: number | null = null;
   private startExperimentAt: number | null = null;
@@ -97,42 +95,27 @@ export class Experiment<W extends World> {
     this.startExperimentAt = null;
     this.endExperimentAt = Date.now() + this._config.RUN_DURATION_MS;
     this.nextUpdateAt = Date.now() + this._config.RENDER_RESULTS_EVERY_MS;
-    this.createAndStartRunGroup();
-  }
-
-  private createAndStartRunGroup(): void {
-    const runs: Run[] = [];
-
-    // Create a Run for each variation
+    
+    const runGroup = new RunGroup();
     this._variations.forEach((variation, index) => {
-
       const world = this._worldMaker.make(variation);
       const plugins = this._plugins.map(maker => maker.make());
-
       const run = new Run(
         variation,
         world,
         plugins
       );
-
-      runs.push(run);
-      
-      // Add to corresponding variation group
+      runGroup.addRun(run);
       this.variationGroups[index].addRun(run);
     });
 
-    // Create and start the run group
-    this.currentRunGroup = new RunGroup(runs);
-    this.currentRunGroup.start();
-    this.runGroups.push(this.currentRunGroup);
+    this.runGroups.push(runGroup);
+    runGroup.start();
+    this.currentRunGroup = runGroup;
   }
 
   private updateCurrentRunResults(): void {
     if (!this.currentRunGroup) return;
-
-    // Update max net capital exposure across all runs
-    const groupMaxExposure = this.currentRunGroup.getMaxNetCapitalExposure();
-    this.maxNetCapitalExposure = Math.max(this.maxNetCapitalExposure, groupMaxExposure);
   }
 
   // Public API methods
@@ -150,10 +133,6 @@ export class Experiment<W extends World> {
 
   getRunCount(): number {
     return this._runCount;
-  }
-
-  getMaxNetCapitalExposure(): number {
-    return this.maxNetCapitalExposure;
   }
 
   isRunning(): boolean {

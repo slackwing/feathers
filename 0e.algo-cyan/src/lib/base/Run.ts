@@ -25,6 +25,7 @@ export class Run {
     this.plugins.forEach((plugin, index) => plugin.registerIndex(index));
   }
 
+  /** Typically, start() really only sets up listeners and waits for data to come through. (Data hasn't begun playing yet.) */
   start(): void {
     this.plugins.forEach(plugin => plugin.onRunStart(this.world, this.plugins));
     this.agents.forEach(agent => agent.wake());

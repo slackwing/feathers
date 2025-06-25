@@ -7,9 +7,17 @@ export class RunGroup {
   private runs: Run[];
   private maxNetCapitalExposure: number = 0;
 
-  constructor(runs: Run[]) {
-    this.runs = runs;
-    this.calculateMaxNetCapitalExposure();
+  constructor() {
+    this.runs = [];
+  }
+
+  addRun(run: Run): void {
+    this.runs.push(run);
+    this.updateMaxNetCapitalExposure(run);
+  }
+
+  private updateMaxNetCapitalExposure(newRun: Run): void {
+    this.maxNetCapitalExposure = Math.max(this.maxNetCapitalExposure, newRun.maxNetCapitalExposure);
   }
 
   private calculateMaxNetCapitalExposure(): void {
