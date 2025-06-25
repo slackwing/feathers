@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import Module_Selector from './modules/Module_Selector';
 import Module_ExchangeDataSource from './modules/Module_ExchangeDataSource';
 import Module_FileDataSource from './modules/Module_FileDataSource';
@@ -17,8 +17,74 @@ export interface ModuleState {
   data?: Record<string, unknown>;
 }
 
+// --- Wire System Scaffold ---
+export interface Wire {
+  from: string; // socketId
+  to: string; // socketId
+  color: string;
+}
+
+interface WireContextType {
+  wires: Wire[];
+  startWire: (from: string, startPos: { x: number; y: number }) => void;
+  updateWire: (pos: { x: number; y: number }) => void;
+  endWire: (to: string) => void;
+  cancelWire: () => void;
+  draggingWire: null | { from: string; startPos: { x: number; y: number }; currentPos: { x: number; y: number } };
+  containerRef: React.RefObject<HTMLDivElement>;
+}
+
+export const WireContext = React.createContext<WireContextType | null>(null);
+
+// --- WireOverlay SVG ---
+const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['draggingWire'] }> = ({ wires, draggingWire }) => {
+  const [socketPositions, setSocketPositions] = useState<Record<string, { x: number; y: number }>>({});
+
+  // Expose a way for sockets to register their positions
+  React.useEffect(() => {
+    (window as any).__registerSocketPosition = (id: string, pos: { x: number; y: number }) => {
+      setSocketPositions(prev => ({ ...prev, [id]: pos }));
+    };
+    return () => {
+      (window as any).__registerSocketPosition = undefined;
+    };
+  }, []);
+
+  // Helper to get a random color
+  const getColor = (color: string) => color;
+
+  // Helper to draw a wire path
+  const makePath = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const dx = Math.abs(b.x - a.x);
+    return `M${a.x},${a.y} C${a.x + dx / 2},${a.y} ${b.x - dx / 2},${b.y} ${b.x},${b.y}`;
+  };
+
+  return (
+    <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 100 }}>
+      {wires.map((wire, i) => {
+        const from = socketPositions[wire.from];
+        const to = socketPositions[wire.to];
+        if (!from || !to) return null;
+        return <path key={i} d={makePath(from, to)} stroke={getColor(wire.color)} strokeWidth={4} fill="none" />;
+      })}
+      {draggingWire && (
+        <path
+          d={makePath(draggingWire.startPos, draggingWire.currentPos)}
+          stroke="#888"
+          strokeWidth={4}
+          fill="none"
+          style={{ pointerEvents: 'none', strokeDasharray: '8 4' }}
+        />
+      )}
+    </svg>
+  );
+};
+
 const Workspace: React.FC = () => {
   const [loadedModules, setLoadedModules] = useState<ModuleState[]>([]);
+  const [wires, setWires] = useState<Wire[]>([]);
+  const [draggingWire, setDraggingWire] = useState<WireContextType['draggingWire']>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const handleModuleSelect = (moduleType: ModuleType) => {
     const newModule: ModuleState = {
@@ -51,6 +117,32 @@ const Workspace: React.FC = () => {
     }
   };
 
+  // --- Wire context actions ---
+  const startWire = (from: string, startPos: { x: number; y: number }) => {
+    setDraggingWire({ from, startPos, currentPos: startPos });
+  };
+  const updateWire = (pos: { x: number; y: number }) => {
+    setDraggingWire(d => d ? { ...d, currentPos: pos } : null);
+  };
+  const endWire = (to: string) => {
+    if (draggingWire && draggingWire.from !== to) {
+      setWires(wires => [...wires, { from: draggingWire.from, to, color: `hsl(${Math.random()*360},80%,60%)` }]);
+    }
+    setDraggingWire(null);
+  };
+  const cancelWire = () => setDraggingWire(null);
+
+  // --- Provide context ---
+  const wireContextValue: WireContextType = {
+    wires,
+    startWire,
+    updateWire,
+    endWire,
+    cancelWire,
+    draggingWire,
+    containerRef,
+  };
+
   const renderModule = (module: ModuleState) => {
     const gridSize = getModuleGridSize(module.type);
     const commonProps = {
@@ -76,14 +168,17 @@ const Workspace: React.FC = () => {
   };
 
   return (
-    <div className={styles.workspace}>
-      <div className={styles.modulesContainer}>
-        {loadedModules.map(renderModule)}
-        <div className={styles.selectorModule}>
-          <Module_Selector onModuleSelect={handleModuleSelect} />
+    <WireContext.Provider value={wireContextValue}>
+      <div className={styles.workspace}>
+        <div className={styles.modulesContainer} ref={containerRef} style={{ position: 'relative' }}>
+          <WireOverlay wires={wires} draggingWire={draggingWire} />
+          {loadedModules.map(renderModule)}
+          <div className={styles.selectorModule}>
+            <Module_Selector onModuleSelect={handleModuleSelect} />
+          </div>
         </div>
       </div>
-    </div>
+    </WireContext.Provider>
   );
 };
 
