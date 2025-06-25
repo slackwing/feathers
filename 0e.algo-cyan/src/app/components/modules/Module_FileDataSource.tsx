@@ -9,7 +9,7 @@ import styles from './Module_FileDataSource.module.css';
 
 interface ModuleFileDataSourceProps extends BaseModuleProps {}
 
-const Module_FileDataSource: React.FC<ModuleFileDataSourceProps> = ({ onClose }) => {
+const Module_FileDataSource: React.FC<ModuleFileDataSourceProps> = ({ onClose, gridSize, title }) => {
   const [fileAdapter] = useState(() => new FileDataAdapter(BTCUSD_));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [areExperimentsRunning, setAreExperimentsRunning] = useState(false);
@@ -60,8 +60,8 @@ const Module_FileDataSource: React.FC<ModuleFileDataSourceProps> = ({ onClose })
   };
 
   return (
-    <BaseModule onClose={onClose} title="File Data Source">
-      <div className={styles.content}>
+    <BaseModule onClose={onClose} title={title} gridSize={gridSize}>
+      <div className={styles.content} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <input
           type="file"
           ref={fileInputRef}
@@ -71,41 +71,38 @@ const Module_FileDataSource: React.FC<ModuleFileDataSourceProps> = ({ onClose })
           multiple
         />
 
-        {selectedFiles.length === 0 ? (
-          <div className={styles.placeholder}>
-            <p>No files selected</p>
-            <button className={styles.selectButton} onClick={handleSelectFiles}>
-              Select Files
-            </button>
-          </div>
-        ) : (
-          <div className={styles.fileSection}>
-            <div className={styles.fileHeader}>
-              <span>{selectedFiles.length} files selected</span>
+        <div style={{ flex: '1 1 auto', width: '100%', display: 'flex', flexDirection: 'column' }}>
+          {selectedFiles.length === 0 ? (
+            <div className={styles.placeholder} style={{ flex: '1 1 auto' }}>
+              <p>No files selected</p>
               <button className={styles.selectButton} onClick={handleSelectFiles}>
-                Change Files
+                Select Files
               </button>
             </div>
-            
-            {selectedFiles.length > 1 && !areExperimentsRunning && (
-              <FileOrderingDisplay
-                files={selectedFiles}
-                onReorder={handleFileReorder}
-                onRun={handleRunExperiment}
-              />
-            )}
-            
-            {areExperimentsRunning && (
-              <div className={styles.runningStatus}>
-                <p>Replaying data from files...</p>
+          ) : (
+            <div className={styles.fileSection} style={{ flex: '1 1 auto' }}>
+              <div className={styles.fileHeader}>
+                <span>{selectedFiles.length} files selected</span>
+                <button className={styles.selectButton} onClick={handleSelectFiles}>
+                  Change Files
+                </button>
               </div>
-            )}
-          </div>
-        )}
-
-        <div className={styles.info}>
-          <p>This module loads data from files and provides L2 order feed and trade feed.</p>
-          <p>Other modules can subscribe to these feeds when replaying data.</p>
+              
+              {selectedFiles.length > 1 && !areExperimentsRunning && (
+                <FileOrderingDisplay
+                  files={selectedFiles}
+                  onReorder={handleFileReorder}
+                  onRun={handleRunExperiment}
+                />
+              )}
+              
+              {areExperimentsRunning && (
+                <div className={styles.runningStatus}>
+                  <p>Replaying data from files...</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </BaseModule>

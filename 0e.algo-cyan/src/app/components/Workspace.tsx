@@ -9,7 +9,7 @@ import Module_OrderBook from './modules/Module_OrderBook';
 import Module_Experiment from './modules/Module_Experiment';
 import styles from './Workspace.module.css';
 
-export type ModuleType = 'exchange-data-source' | 'file-data-source' | 'market-depth-histogram' | 'order-book' | 'experiment';
+export type ModuleType = 'exchange-data-source' | 'file-data-source' | 'market-depth-histogram' | 'order-book' | 'experiment' | 'test-dummy';
 
 export interface ModuleState {
   id: string;
@@ -32,10 +32,31 @@ const Workspace: React.FC = () => {
     setLoadedModules(prev => prev.filter(module => module.id !== moduleId));
   };
 
+  const getModuleGridSize = (moduleType: ModuleType) => {
+    switch (moduleType) {
+      case 'exchange-data-source':
+        return { cols: 2, rows: 2 };
+      case 'file-data-source':
+        return { cols: 2, rows: 2 };
+      case 'market-depth-histogram':
+        return { cols: 2, rows: 2 };
+      case 'order-book':
+        return { cols: 2, rows: 3 };
+      case 'experiment':
+        return { cols: 5, rows: 3 };
+      case 'test-dummy':
+        return { cols: 3, rows: 2 };
+      default:
+        return { cols: 1, rows: 2 };
+    }
+  };
+
   const renderModule = (module: ModuleState) => {
+    const gridSize = getModuleGridSize(module.type);
     const commonProps = {
       key: module.id,
       onClose: () => handleModuleClose(module.id),
+      gridSize,
     };
 
     switch (module.type) {

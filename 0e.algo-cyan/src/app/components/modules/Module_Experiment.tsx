@@ -10,25 +10,20 @@ import styles from './Module_Experiment.module.css';
 
 interface ModuleExperimentProps extends BaseModuleProps {}
 
-const Module_Experiment: React.FC<ModuleExperimentProps> = ({ onClose }) => {
+const Module_Experiment: React.FC<ModuleExperimentProps> = ({ onClose, gridSize, title }) => {
   // For now, we'll create empty data structures
   // This will be connected to data sources later
   const emptyRunResults: RunResultV2[] = [];
   const emptyEventFeeds: ReadOnlyPubSub<IntelligenceV1>[] = [];
 
   return (
-    <BaseModule onClose={onClose} title="Experiment">
-      <div className={styles.content}>
-        <div className={styles.experimentContainer}>
+    <BaseModule onClose={onClose} title={title} gridSize={gridSize}>
+      <div className={styles.content} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className={styles.experimentContainer} style={{ flex: '1 1 auto', width: '100%' }}>
           <ExperimentResultsDisplayV2 
             runResults={emptyRunResults} 
             eventPubSubs={emptyEventFeeds}
           />
-        </div>
-        
-        <div className={styles.info}>
-          <p>This module displays experiment results and intelligence data.</p>
-          <p>Connect to data sources to run experiments and view results.</p>
         </div>
       </div>
     </BaseModule>

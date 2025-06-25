@@ -9,7 +9,7 @@ import styles from './Module_ExchangeDataSource.module.css';
 
 interface ModuleExchangeDataSourceProps extends BaseModuleProps {}
 
-const Module_ExchangeDataSource: React.FC<ModuleExchangeDataSourceProps> = ({ onClose }) => {
+const Module_ExchangeDataSource: React.FC<ModuleExchangeDataSourceProps> = ({ onClose, gridSize, title }) => {
   const { connect, disconnect } = useCoinbaseWebSocket();
   const [isConnected, setIsConnected] = useState(false);
   const [coinbaseAdapter, setCoinbaseAdapter] = useState<CoinbaseDataAdapter<typeof BTCUSD_> | null>(null);
@@ -47,16 +47,15 @@ const Module_ExchangeDataSource: React.FC<ModuleExchangeDataSourceProps> = ({ on
   };
 
   return (
-    <BaseModule onClose={onClose} title="Exchange Data Source">
-      <div className={styles.content}>
-        <div className={styles.statusSection}>
+    <BaseModule onClose={onClose} title={title} gridSize={gridSize}>
+      <div className={styles.content} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className={styles.statusSection} style={{ flex: '0 0 auto' }}>
           <div className={styles.statusIndicator}>
             <span className={`${styles.statusDot} ${isConnected ? styles.connected : styles.disconnected}`}></span>
             <span className={styles.statusText}>{connectionStatus}</span>
           </div>
         </div>
-        
-        <div className={styles.controls}>
+        <div className={styles.controls} style={{ flex: '0 0 auto' }}>
           {!isConnected ? (
             <button 
               className={styles.connectButton} 
@@ -73,11 +72,6 @@ const Module_ExchangeDataSource: React.FC<ModuleExchangeDataSourceProps> = ({ on
               Disconnect
             </button>
           )}
-        </div>
-
-        <div className={styles.info}>
-          <p>This module provides live L2 order feed and trade feed from Coinbase.</p>
-          <p>Other modules can subscribe to these feeds when connected.</p>
         </div>
       </div>
     </BaseModule>
