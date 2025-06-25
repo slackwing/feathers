@@ -1,5 +1,3 @@
-import { ReadOnlyPubSub } from '../infra/PubSub';
-import { IntelligenceV1 } from './Intelligence';
 import { Variations } from './Variations';
 import { Run } from './Run';
 import { RunGroup } from './RunGroup';
@@ -137,9 +135,5 @@ export class Experiment<W extends World> {
 
   isRunning(): boolean {
     return this.experimentRunning;
-  }
-
-  getIntelligenceFeeds(): ReadOnlyPubSub<IntelligenceV1>[] {
-    return this.variationGroups.flatMap(group => group.getIntelligenceFeeds());
   }
 }
