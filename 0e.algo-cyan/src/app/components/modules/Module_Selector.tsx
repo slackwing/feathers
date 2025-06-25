@@ -12,7 +12,7 @@ const Module_Selector: React.FC<ModuleSelectorProps> = ({ onModuleSelect }) => {
   const modules = [
     {
       type: 'exchange-data-source' as ModuleType,
-      icon: '📈',
+      icon: '🌐',
       caption: 'Exchange Data Source',
       description: 'Connect to live market data'
     },

@@ -14,7 +14,7 @@ export type ModuleType = 'exchange-data-source' | 'file-data-source' | 'market-d
 export interface ModuleState {
   id: string;
   type: ModuleType;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 const Workspace: React.FC = () => {
@@ -58,8 +58,10 @@ const Workspace: React.FC = () => {
     <div className={styles.workspace}>
       <div className={styles.modulesContainer}>
         {loadedModules.map(renderModule)}
+        <div className={styles.selectorModule}>
+          <Module_Selector onModuleSelect={handleModuleSelect} />
+        </div>
       </div>
-      <Module_Selector onModuleSelect={handleModuleSelect} />
     </div>
   );
 };
