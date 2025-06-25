@@ -84,11 +84,22 @@ const BaseModule: React.FC<BaseModuleProps> = ({ onClose, title, children, gridS
     const onUp = (ev: MouseEvent) => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      
+      // Diagnostic logging
+      console.log('[DROP DEBUG] Mouse up at:', { clientX: ev.clientX, clientY: ev.clientY });
+      
       // Check if released over a socket
       const target = document.elementFromPoint(ev.clientX, ev.clientY);
+      console.log('[DROP DEBUG] Element at point:', target);
+      console.log('[DROP DEBUG] Target dataset:', target ? (target as HTMLElement).dataset : 'no target');
+      
       if (target && (target as HTMLElement).dataset.socketId) {
-        wireCtx.endWire((target as HTMLElement).dataset.socketId!);
+        const socketId = (target as HTMLElement).dataset.socketId!;
+        console.log('[DROP DEBUG] Found socket ID:', socketId);
+        console.log('[DROP DEBUG] Current dragging wire from:', wireCtx?.draggingWire?.from);
+        wireCtx.endWire(socketId);
       } else {
+        console.log('[DROP DEBUG] No socket found, canceling wire');
         wireCtx.cancelWire();
       }
     };

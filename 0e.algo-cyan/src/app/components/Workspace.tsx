@@ -65,15 +65,32 @@ const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['drag
         const from = socketPositions[wire.from];
         const to = socketPositions[wire.to];
         if (!from || !to) return null;
-        return <path key={i} d={makePath(from, to)} stroke={getColor(wire.color)} strokeWidth={4} fill="none" />;
+        return (
+          <path 
+            key={i} 
+            d={makePath(from, to)} 
+            stroke={getColor(wire.color)} 
+            strokeWidth={6} 
+            fill="none"
+            style={{ 
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
+              strokeLinecap: 'round'
+            }}
+          />
+        );
       })}
       {draggingWire && (
         <path
           d={makePath(draggingWire.startPos, draggingWire.currentPos)}
           stroke="#888"
-          strokeWidth={4}
+          strokeWidth={6}
           fill="none"
-          style={{ pointerEvents: 'none', strokeDasharray: '8 4' }}
+          style={{ 
+            pointerEvents: 'none', 
+            strokeDasharray: '8 4',
+            strokeLinecap: 'round',
+            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+          }}
         />
       )}
     </svg>
@@ -119,16 +136,52 @@ const Workspace: React.FC = () => {
 
   // --- Wire context actions ---
   const startWire = (from: string, startPos: { x: number; y: number }) => {
+    console.log('[START WIRE DEBUG] Starting wire from:', from, 'at position:', startPos);
     setDraggingWire({ from, startPos, currentPos: startPos });
   };
   const updateWire = (pos: { x: number; y: number }) => {
-    setDraggingWire(d => d ? { ...d, currentPos: pos } : null);
+    console.log('[UPDATE WIRE DEBUG] Updating wire position to:', pos, 'current draggingWire:', draggingWire);
+    setDraggingWire(d => {
+      if (!d) {
+        console.log('[UPDATE WIRE DEBUG] No dragging wire to update!');
+        return null;
+      }
+      const updated = { ...d, currentPos: pos };
+      console.log('[UPDATE WIRE DEBUG] Updated dragging wire:', updated);
+      return updated;
+    });
   };
   const endWire = (to: string) => {
-    if (draggingWire && draggingWire.from !== to) {
-      setWires(wires => [...wires, { from: draggingWire.from, to, color: `hsl(${Math.random()*360},80%,60%)` }]);
-    }
-    setDraggingWire(null);
+    console.log('[END WIRE DEBUG] Called with to:', to);
+    setDraggingWire(currentDraggingWire => {
+      console.log('[END WIRE DEBUG] Current draggingWire from state update:', currentDraggingWire);
+      if (currentDraggingWire && currentDraggingWire.from !== to) {
+        console.log('[END WIRE DEBUG] Creating new wire from', currentDraggingWire.from, 'to', to);
+        // More varied wire colors
+        const colors = [
+          '#FF6B6B', // Red
+          '#4ECDC4', // Teal
+          '#45B7D1', // Blue
+          '#96CEB4', // Mint
+          '#FFEAA7', // Yellow
+          '#DDA0DD', // Plum
+          '#98D8C8', // Seafoam
+          '#F7DC6F', // Gold
+          '#BB8FCE', // Lavender
+          '#85C1E9', // Sky Blue
+          '#F8C471', // Orange
+          '#82E0AA', // Light Green
+          '#F1948A', // Salmon
+          '#85C1E9', // Light Blue
+          '#FAD7A0', // Peach
+        ];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        setWires(wires => [...wires, { from: currentDraggingWire.from, to, color: randomColor }]);
+      } else {
+        console.log('[END WIRE DEBUG] Not creating wire - same socket or no dragging wire');
+      }
+      return null;
+    });
   };
   const cancelWire = () => setDraggingWire(null);
 
