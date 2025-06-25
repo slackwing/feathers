@@ -2,13 +2,14 @@ import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
 import { OrderType } from '@/lib/base/Order';
+import { AssetPair } from '@/lib/base/Asset';
 
 export default function OrderBookTableDisplay({
   orderBook,
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   lastRefreshed,
 }: {
-  orderBook: OrderBookType;
+  orderBook: OrderBookType<AssetPair>;
   lastRefreshed: number;
 }) {
   const bids = orderBook.getTopBids(100);
