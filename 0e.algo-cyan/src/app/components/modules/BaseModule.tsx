@@ -28,6 +28,7 @@ const BaseModule: React.FC<BaseModuleProps> = ({ onClose, title, children, gridS
   return (
     <div className={styles.module} style={gridStyle}>
       <div className={styles.moduleHeader}>
+        <div className={`${styles.socket} ${styles.headerSocket}`} />
         <h3 className={styles.moduleTitle}>{title}</h3>
         <button className={styles.closeButton} onClick={onClose}>
           ×
@@ -35,6 +36,9 @@ const BaseModule: React.FC<BaseModuleProps> = ({ onClose, title, children, gridS
       </div>
       <div className={styles.moduleContent}>
         {children}
+      </div>
+      <div className={styles.moduleFooter}>
+        <div className={`${styles.socket} ${styles.footerSocket}`} />
       </div>
     </div>
   );
