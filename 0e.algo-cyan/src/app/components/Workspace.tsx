@@ -8,6 +8,7 @@ import Module_MarketDepthHistogram from './modules/Module_MarketDepthHistogram';
 import Module_OrderBook from './modules/Module_OrderBook';
 import Module_Experiment from './modules/Module_Experiment';
 import styles from './Workspace.module.css';
+import { getCatenaryCurve } from 'catenary-curve';
 
 export type ModuleType = 'exchange-data-source' | 'file-data-source' | 'market-depth-histogram' | 'order-book' | 'experiment' | 'test-dummy';
 
@@ -22,7 +23,13 @@ export interface Wire {
   from: string; // socketId
   to: string; // socketId
   color: string;
+  droopFactor: number; // random multiplier for wire length
+  wireId: number;
 }
+
+// Configurable minimum droop (in px)
+const WIRE_MIN_DROOP_PX = 50; // TODO: Make this configurable via UI if needed
+const WIRE_LENGTH_MULTIPLE = 1.25; // Wire is at least 1.25x the straight-line distance
 
 interface WireContextType {
   wires: Wire[];
@@ -30,8 +37,8 @@ interface WireContextType {
   updateWire: (pos: { x: number; y: number }) => void;
   endWire: (to: string) => void;
   cancelWire: () => void;
-  draggingWire: null | { from: string; startPos: { x: number; y: number }; currentPos: { x: number; y: number } };
-  containerRef: React.RefObject<HTMLDivElement>;
+  draggingWire: null | { from: string; startPos: { x: number; y: number }; currentPos: { x: number; y: number }; sessionId?: number };
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const WireContext = React.createContext<WireContextType | null>(null);
@@ -53,10 +60,33 @@ const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['drag
   // Helper to get a random color
   const getColor = (color: string) => color;
 
-  // Helper to draw a wire path
-  const makePath = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-    const dx = Math.abs(b.x - a.x);
-    return `M${a.x},${a.y} C${a.x + dx / 2},${a.y} ${b.x - dx / 2},${b.y} ${b.x},${b.y}`;
+  // Overload makePath to accept an optional droopFactor
+  const makePath = (a: { x: number; y: number }, b: { x: number; y: number }, droopFactor?: number) => {
+    // Use catenary-curve for realistic wire droop
+    const x1 = a.x, y1 = a.y;
+    const x2 = b.x, y2 = b.y;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const straightDist = Math.sqrt(dx * dx + dy * dy);
+    // Use the provided droopFactor or default
+    const factor = droopFactor ?? WIRE_LENGTH_MULTIPLE;
+    const wireLength = Math.max(factor * straightDist, straightDist + 2 * WIRE_MIN_DROOP_PX);
+    const result = getCatenaryCurve(
+      { x: x1, y: y1 },
+      { x: x2, y: y2 },
+      wireLength,
+      { segments: 25 }
+    );
+    if (result.type === 'line') {
+      // fallback: straight line
+      return `M${x1},${y1} L${x2},${y2}`;
+    }
+    // result.type === 'quadraticCurve'
+    let d = `M${result.start[0]},${result.start[1]}`;
+    for (const seg of result.curves) {
+      d += ` Q${seg[0]},${seg[1]} ${seg[2]},${seg[3]}`;
+    }
+    return d;
   };
 
   return (
@@ -68,7 +98,7 @@ const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['drag
         return (
           <path 
             key={i} 
-            d={makePath(from, to)} 
+            d={makePath(from, to, wire.droopFactor)} 
             stroke={getColor(wire.color)} 
             strokeWidth={6} 
             fill="none"
@@ -100,8 +130,12 @@ const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['drag
 const Workspace: React.FC = () => {
   const [loadedModules, setLoadedModules] = useState<ModuleState[]>([]);
   const [wires, setWires] = useState<Wire[]>([]);
-  const [draggingWire, setDraggingWire] = useState<WireContextType['draggingWire']>(null);
+  const [draggingWire, setDraggingWire] = useState<WireContextType['draggingWire'] & { sessionId?: number } | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const wireCreatedRef = useRef(false);
+  const wireIdCounter = useRef(1);
+  const dragSessionIdRef = useRef(0);
+  const draggingWireRef = useRef<WireContextType['draggingWire'] & { sessionId?: number } | null>(null);
 
   const handleModuleSelect = (moduleType: ModuleType) => {
     const newModule: ModuleState = {
@@ -136,54 +170,57 @@ const Workspace: React.FC = () => {
 
   // --- Wire context actions ---
   const startWire = (from: string, startPos: { x: number; y: number }) => {
-    console.log('[START WIRE DEBUG] Starting wire from:', from, 'at position:', startPos);
-    setDraggingWire({ from, startPos, currentPos: startPos });
+    dragSessionIdRef.current += 1;
+    const sessionId = dragSessionIdRef.current;
+    const wire = { from, startPos, currentPos: startPos, sessionId };
+    draggingWireRef.current = wire;
+    setDraggingWire(wire);
   };
   const updateWire = (pos: { x: number; y: number }) => {
-    console.log('[UPDATE WIRE DEBUG] Updating wire position to:', pos, 'current draggingWire:', draggingWire);
-    setDraggingWire(d => {
-      if (!d) {
-        console.log('[UPDATE WIRE DEBUG] No dragging wire to update!');
-        return null;
-      }
-      const updated = { ...d, currentPos: pos };
-      console.log('[UPDATE WIRE DEBUG] Updated dragging wire:', updated);
-      return updated;
-    });
+    if (!draggingWireRef.current) return;
+    const updated = { ...draggingWireRef.current, currentPos: pos };
+    draggingWireRef.current = updated;
+    setDraggingWire(updated);
   };
   const endWire = (to: string) => {
-    console.log('[END WIRE DEBUG] Called with to:', to);
-    setDraggingWire(currentDraggingWire => {
-      console.log('[END WIRE DEBUG] Current draggingWire from state update:', currentDraggingWire);
-      if (currentDraggingWire && currentDraggingWire.from !== to) {
-        console.log('[END WIRE DEBUG] Creating new wire from', currentDraggingWire.from, 'to', to);
-        // More varied wire colors
-        const colors = [
-          '#FF6B6B', // Red
-          '#4ECDC4', // Teal
-          '#45B7D1', // Blue
-          '#96CEB4', // Mint
-          '#FFEAA7', // Yellow
-          '#DDA0DD', // Plum
-          '#98D8C8', // Seafoam
-          '#F7DC6F', // Gold
-          '#BB8FCE', // Lavender
-          '#85C1E9', // Sky Blue
-          '#F8C471', // Orange
-          '#82E0AA', // Light Green
-          '#F1948A', // Salmon
-          '#85C1E9', // Light Blue
-          '#FAD7A0', // Peach
-        ];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        setWires(wires => [...wires, { from: currentDraggingWire.from, to, color: randomColor }]);
-      } else {
-        console.log('[END WIRE DEBUG] Not creating wire - same socket or no dragging wire');
-      }
-      return null;
-    });
+    const currentSessionId = dragSessionIdRef.current;
+    const currentDraggingWire = draggingWireRef.current;
+    if (
+      currentDraggingWire &&
+      currentDraggingWire.from !== to &&
+      currentDraggingWire.sessionId === currentSessionId
+    ) {
+      const colors = [
+        '#FF6B6B', // Red
+        '#4ECDC4', // Teal
+        '#45B7D1', // Blue
+        '#96CEB4', // Mint
+        '#FFEAA7', // Yellow
+        '#DDA0DD', // Plum
+        '#98D8C8', // Seafoam
+        '#F7DC6F', // Gold
+        '#BB8FCE', // Lavender
+        '#85C1E9', // Sky Blue
+        '#F8C471', // Orange
+        '#82E0AA', // Light Green
+        '#F1948A', // Salmon
+        '#85C1E9', // Light Blue
+        '#FAD7A0', // Peach
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      // Random droop factor between 1.10 and 1.50 (wider range)
+      const droopFactor = 1.10 + Math.random() * 0.40;
+      const wireId = wireIdCounter.current++;
+      setWires(wires => [...wires, { from: currentDraggingWire.from, to, color: randomColor, droopFactor, wireId }]);
+    }
+    draggingWireRef.current = null;
+    setDraggingWire(null);
+    setTimeout(() => { wireCreatedRef.current = false; }, 0);
   };
-  const cancelWire = () => setDraggingWire(null);
+  const cancelWire = () => {
+    draggingWireRef.current = null;
+    setDraggingWire(null);
+  };
 
   // --- Provide context ---
   const wireContextValue: WireContextType = {
