@@ -73,14 +73,12 @@ const BaseModule: React.FC<BaseModuleProps> = ({ onClose, title, children, gridS
       x: e.clientX - containerRect.left,
       y: e.clientY - containerRect.top,
     };
-    console.log('[SOCKET MOUSEDOWN]', { id, sessionId: wireCtx.draggingWire?.sessionId });
     wireCtx.startWire(id, startPos);
     const onMove = (ev: MouseEvent) => {
       if (!wireCtx?.containerRef.current) return;
       const containerRect = wireCtx.containerRef.current.getBoundingClientRect();
       const x = ev.clientX - containerRect.left;
       const y = ev.clientY - containerRect.top;
-      console.log('[SOCKET MOUSEMOVE]', { id, sessionId: wireCtx.draggingWire?.sessionId });
       wireCtx.updateWire({ x, y });
     };
     let handled = false;
@@ -89,21 +87,12 @@ const BaseModule: React.FC<BaseModuleProps> = ({ onClose, title, children, gridS
       handled = true;
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
-      // Diagnostic logging
-      console.log('[DROP DEBUG] Mouse up at:', { clientX: ev.clientX, clientY: ev.clientY, sessionId: wireCtx.draggingWire?.sessionId });
       // Check if released over a socket
       const target = document.elementFromPoint(ev.clientX, ev.clientY);
-      console.log('[DROP DEBUG] Element at point:', target);
-      console.log('[DROP DEBUG] Target dataset:', target ? (target as HTMLElement).dataset : 'no target');
       if (target && (target as HTMLElement).dataset.socketId) {
         const socketId = (target as HTMLElement).dataset.socketId!;
-        console.log('[DROP DEBUG] Found socket ID:', socketId);
-        console.log('[DROP DEBUG] Current dragging wire from:', wireCtx?.draggingWire?.from);
-        console.log('[DROP DEBUG] Calling endWire');
         wireCtx.endWire(socketId);
       } else {
-        console.log('[DROP DEBUG] No socket found, canceling wire');
-        console.log('[DROP DEBUG] Calling cancelWire');
         wireCtx.cancelWire();
       }
     };
