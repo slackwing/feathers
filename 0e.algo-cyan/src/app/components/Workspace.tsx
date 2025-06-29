@@ -29,7 +29,7 @@ export interface Wire {
 
 // Configurable minimum droop (in px)
 const WIRE_MIN_DROOP_PX = 50; // TODO: Make this configurable via UI if needed
-const WIRE_LENGTH_MULTIPLE = 1.25; // Wire is at least 1.25x the straight-line distance
+const WIRE_DEFAULT_LENGTH_MULTIPLE = 1.25; // Wire is at least 1.25x the straight-line distance
 
 interface WireContextType {
   wires: Wire[];
@@ -69,7 +69,7 @@ const WireOverlay: React.FC<{ wires: Wire[]; draggingWire: WireContextType['drag
     const dy = y2 - y1;
     const straightDist = Math.sqrt(dx * dx + dy * dy);
     // Use the provided droopFactor or default
-    const factor = droopFactor ?? WIRE_LENGTH_MULTIPLE;
+    const factor = droopFactor ?? WIRE_DEFAULT_LENGTH_MULTIPLE;
     const wireLength = Math.max(factor * straightDist, straightDist + 2 * WIRE_MIN_DROOP_PX);
     const result = getCatenaryCurve(
       { x: x1, y: y1 },
