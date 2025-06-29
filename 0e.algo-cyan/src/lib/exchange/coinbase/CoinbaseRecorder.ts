@@ -39,6 +39,7 @@ export class CoinbaseRecorder extends ExchangeRecorder {
   private setupWebSocket() {
     this.ws.on('open', () => {
       console.log('Connected to Coinbase WebSocket');
+      this.reconnectAttempts = 0; // Reset exponential backoff after successful connection
       this.ws.send(JSON.stringify(createSubscriptionMessage('subscribe', 'heartbeats')));
       for (const channel of this.config.channels) {
         this.ws.send(JSON.stringify(createSubscriptionMessage('subscribe', channel as CoinbaseChannel, [this.config.pair])));

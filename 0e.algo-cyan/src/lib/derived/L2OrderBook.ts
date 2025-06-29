@@ -13,7 +13,7 @@ export class L2OrderBook<A extends AssetPair> extends OrderBook<A> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public subscribe(pubsub: ReadOnlyPubSub<Order<A>>): void {
+  public ingestOrderFeed(pubsub: ReadOnlyPubSub<Order<A>>): void {
     // L2OrderBook does not support subscribing to additional feeds.
   }
 }

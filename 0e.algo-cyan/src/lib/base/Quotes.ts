@@ -2,23 +2,23 @@ import { Asset, AssetPair } from "./Asset";
 import { Funds } from "./Funds";
 
 export class Quotes {
-  private _quotingAsset: Asset;
-  private _quotes: Map<Asset, number>;
+  public readonly quotingAsset: Asset;
+  private readonly _quotes: Map<Asset, number>;
 
   constructor(quotingAsset: Asset) {
-    this._quotingAsset = quotingAsset;
+    this.quotingAsset = quotingAsset;
     this._quotes = new Map<Asset, number>();
   }
 
   public setQuote(assetPair: AssetPair, quote: number): void {
-    if (assetPair.quote !== this._quotingAsset) {
-      throw new Error(`Asset pair ${assetPair.base}/${assetPair.quote} is not quoting ${this._quotingAsset}.`);
+    if (assetPair.quote !== this.quotingAsset) {
+      throw new Error(`Asset pair ${assetPair.base}/${assetPair.quote} is not quoting ${this.quotingAsset}.`);
     }
     this._quotes.set(assetPair.base, quote);
   }
 
   public getQuote(asset: Asset): number {
-    if (asset === this._quotingAsset) {
+    if (asset === this.quotingAsset) {
       return 1.0;
     }
     const quote = this._quotes.get(asset);
@@ -30,7 +30,7 @@ export class Quotes {
 
   public computeValue(funds: Funds): number {
     return Array.from(funds.values()).reduce((total, fund) => {
-      if (fund.asset === this._quotingAsset) {
+      if (fund.asset === this.quotingAsset) {
         return total + fund.amount;
       }
       const quote = this._quotes.get(fund.asset);
@@ -42,9 +42,9 @@ export class Quotes {
   }
 
   public copy(): Quotes {
-    const quotes = new Quotes(this._quotingAsset);
+    const quotes = new Quotes(this.quotingAsset);
     this._quotes.forEach((quote, asset) => {
-      quotes.setQuote(new AssetPair(asset, this._quotingAsset), quote);
+      quotes.setQuote(new AssetPair(asset, this.quotingAsset), quote);
     });
     return quotes;
   }

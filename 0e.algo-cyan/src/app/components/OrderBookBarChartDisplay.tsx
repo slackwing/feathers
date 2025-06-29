@@ -2,6 +2,7 @@ import React from 'react';
 import styles from '../page.module.css';
 import { OrderBook as OrderBookType } from '@/lib/base/OrderBook';
 import { OrderType } from '@/lib/base/Order';
+import { AssetPair } from '@/lib/base/Asset';
 
 const X_BUCKET_WIDTH_USD = 1;
 const X_BUCKETS_PER_SIDE = 100;
@@ -12,7 +13,7 @@ export default function OrderBookBarChartDisplay({
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   lastRefreshed,
 }: {
-  orderBook: OrderBookType;
+  orderBook: OrderBookType<AssetPair>;
   lastRefreshed: number;
 }) {
   const insideBid = orderBook.getTopBids(1).at(0);

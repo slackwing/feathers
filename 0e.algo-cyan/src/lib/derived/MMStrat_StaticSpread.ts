@@ -1,13 +1,13 @@
 import { ExchangeType, Order, OrderType, Side } from "../base/Order";
 import { Account } from "../base/Account";
-import { Strategy_SingleAsset } from "../base/Strategy_SingleAsset";
+import { Strategy } from "../base/Strategy";
 import { ReadOnlyPubSub } from "../infra/PubSub";
 import { Execution } from "../base/Execution";
 import { L2PaperWorld } from "./L2PaperWorld";
 import { AssetPair } from "../base/Asset";
 
 // MM = Market Making
-export class MMStrat_StaticSpread<A extends AssetPair> extends Strategy_SingleAsset<A> {
+export class MMStrat_StaticSpread<A extends AssetPair> extends Strategy<A> {
 
   public paperAccount: Account;
 
@@ -63,8 +63,8 @@ export class MMStrat_StaticSpread<A extends AssetPair> extends Strategy_SingleAs
   }
 
   protected newOrder(side: Side): void {
-    const insideBid = this.world.combinedBook.getTopBids(1)[0].price;
-    const insideAsk = this.world.combinedBook.getTopAsks(1)[0].price;
+    const insideBid = this.world.combinedOrderBook.getTopBids(1)[0].price;
+    const insideAsk = this.world.combinedOrderBook.getTopAsks(1)[0].price;
     const midpoint = (insideBid + insideAsk) / 2;
     const bidPrice = midpoint * (1 - this.spreadPips / 10000 / 2);
     const askPrice = midpoint * (1 + this.spreadPips / 10000 / 2);

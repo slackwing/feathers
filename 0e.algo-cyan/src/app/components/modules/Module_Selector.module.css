@@ -1,0 +1,45 @@
+.moduleSelector {
+  padding: 20px;
+}
+
+.moduleGrid {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.moduleIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 2px solid #d0d0d0;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.moduleIcon:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.caption {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  color: #333;
+  line-height: 1.2;
+} 

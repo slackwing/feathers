@@ -102,7 +102,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
     expect(asks.length).toBe(9);
     expect(asks[0]).toBe(ghost0);
     expect(asks[1].price).toBe(104);
@@ -152,7 +152,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(8);
     expect(asks[0].price).toBe(104);
@@ -202,7 +202,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(8);
     expect(asks[0].price).toBe(104);
@@ -252,7 +252,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(8);
     expect(asks[0].price).toBe(104);
@@ -302,7 +302,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(8);
     expect(asks[0].price).toBe(104);
@@ -352,7 +352,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(7);
     expect(asks[0].price).toBe(104);
@@ -401,7 +401,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(7);
     expect(asks[0].price).toBe(104);
@@ -450,7 +450,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(6);
     expect(asks[0].price).toBe(104);
@@ -498,7 +498,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(6);
     expect(asks[0].price).toBe(104);
@@ -546,7 +546,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(6);
     expect(asks[0].price).toBe(104);
@@ -594,7 +594,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(5);
     expect(asks[0].price).toBe(107);
@@ -640,7 +640,7 @@ describe('L2PGWorld', () => {
     expect(ghostF.remainingQty).toBe(1.0);
     expect(paperF.remainingQty).toBe(1.0);
 
-    const asks = world.combinedBook.getAsksUntil(110);
+    const asks = world.combinedOrderBook.getAsksUntil(110);
 
     expect(asks.length).toBe(5);
     expect(asks[0].price).toBe(107);
