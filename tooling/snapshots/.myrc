@@ -1,71 +1,378 @@
 #!/bin/bash
-alias x='vim ~/.myrc'
-alias y='source ~/.myrc'
-alias z='cat ~/.myrc'
+
+alias countts='find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec cat {} + | wc -l'
+# Usage: echo '1107744747195026328\n9398816220039497741' | Uuid2UUID
+Uuid2UUID() {
+    awk 'NR==1 { msb = $0 }
+         NR==2 { lsb = $0 }
+         END {
+             msb_hex = sprintf("%016x", msb)
+             lsb_hex = sprintf("%016x", lsb)
+             uuid = msb_hex lsb_hex
+             formatted_uuid = substr(uuid, 1, 8) "-" substr(uuid, 9, 4) "-" substr(uuid, 13, 4) "-" substr(uuid, 17, 4) "-" substr(uuid, 21, 12)
+             print tolower(formatted_uuid)
+         }'
+}
+alias jcgs="cd ~/src/slackwing/java-concurrent-grpc-script"
+alias nvc="cd ~/.config/nvim ; nvim ."
+alias nvcii="cd ~/.config/nvim-ii ; nvim ."
+alias nvciii="cd ~/.config/nvim-iii ; nvim ."
+alias nv="NVIM_APPNAME=nvim nvim ."
+alias nvi="NVIM_APPNAME=nvim nvim ."
+alias nvii="NVIM_APPNAME=nvim-ii nvim"
+alias nviii="NVIM_APPNAME=nvim-iii nvim"
+alias ams="cd ~/src/spotify-nvim/ads-measurements/"
+alias api="cd ~/src/spotify-nvim/ads-api/"
+alias bff="cd ~/src/spotify-nvim/adstudio-bff/"
+alias cs="cd ~/src/spotify-nvim/campaign-service/"
+alias cdetp="cd /Users/acheong/src/nvim/exchange-trading-platform/be/etp-backend/"
+alias tlsp="tail -f ~/.local/state/nvim/lsp.log"
+alias magic="mvn clean compile install package verify -DskipTests ; echo ''; echo 'Did you remember to close nvim?'"
+alias magicrfa="magic -rf :ads-api-data-model"
+alias magicrfs="magic -rf :ads-api-server"
+alias adsapisetup='echo "\n
+  mvn clean install -DskipTests\n
+  mvn generate-sources\n
+  mvn compile\n
+  make db"'
+alias adsapifixusedunused='mvn -U clean install -DskipTests'
+alias adsapifixmesh='npm install -g openapi-to-graphql-cli@latest'
+alias buildadsapi='mvn -U clean install -DskipTests'
+alias reload="mvn dependency:sources ; mvn dependency:resolve"
+# Forgot what this was for...
+# alias preset="rm ~/.config/nvim/plugin/packer_compiled.lua ; nvim ~/.config/nvim/lua/slackwing/packer.lua"
+# alias vimvim='/usr/bin/vim'
+# alias vim='nvim'
+run() {
+  # e.g. com.psa.Main
+  mvn exec:java -Dexec.mainClass="$1"
+}
+test() {
+  # $1 = module, e.g. ads-api-server
+  # $2 = class, e.g. ExperimentMapStructTest
+  # for specific test method, suffix $2 with #testMethodName
+  mvn test -pl $1 -Dtest=$2
+}
+packc() {
+  vim /Users/acheong/src/etc/chat-gpt-4-folder-to-text/folder-to-text.py
+}
+pack() {
+  UNIQUE=$(date +"%s")
+  FILENAME="/var/tmp/pack-$UNIQUE"
+  pyenv local 3.12.4
+  python3 /Users/acheong/src/etc/chat-gpt-4-folder-to-text/folder-to-text.py . "$FILENAME"
+  FILESIZE=$(du -h "$FILENAME.txt" | awk '{ print $1 }')
+  echo ""
+  echo "Created $FILENAME.txt. Size: $FILESIZE. Copy to clipboard by pressing any key..."
+  read
+  echo ""
+  cat "$FILENAME.txt" | pbcopy
+}
+pack_experiments() {
+  UNIQUE=$(date +"%s")
+  DIRNAME="/var/tmp/pack-dir-$UNIQUE"
+  mkdir -p "$DIRNAME"
+  cd /Users/acheong/src/spotify-nvim/ads-api/
+  find . -type f -iname "*experiment*" -print | grep -v target | grep -v ".git" | grep -v AdSet | grep -v Audience | xargs -I {} cp {} "$DIRNAME"
+  find . -type f -iname "*surveyquestion*" -print | grep -v target | grep -v ".git" | xargs -I {} cp {} "$DIRNAME"
+  find . -type f -iname "*surveyoption*" -print | grep -v target | grep -v ".git" | xargs -I {} cp {} "$DIRNAME"
+  cd "$DIRNAME"
+  pack
+}
+alias seed 'cp ~/custom-seed-data.sql ~/src/spotify/ads-api/ads-api-data-model/src/main/resources/liquibase/local-changesets/20250502_094750__seed_local_dev_data_for_sbl.sql'
+
+co() {
+    codeowners=$(github-codeowners audit)
+    files=$(git diff --name-only --diff-filter M origin/master...HEAD)
+    temp_file=$(mktemp)
+    while IFS= read -r file; do
+        owners=$(echo "$codeowners" | awk -v file="$file" '
+            $1 !~ /^#/ {
+                pattern=$1
+                $1=""
+                if (file ~ "^" pattern) {
+                    print $0
+                    exit
+                }
+            }
+        ' | xargs)
+        if [ -z "$owners" ]; then
+            owners=$(echo "$codeowners" | awk '$1 == "*" {$1=""; print $0; exit}' | xargs)
+        fi
+        sorted_owners=$(echo "$owners" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')
+        echo "${sorted_owners}:${file}" >> "$temp_file"
+    done <<< "$files"
+    sort "$temp_file" > "${temp_file}.sorted"
+    awk -F: '
+    BEGIN {
+        FS = ":"
+        current_owners = ""
+    }
+    {
+        if ($1 != current_owners) {
+            if (current_owners != "") {
+                print ""
+            }
+            print "Code review required by anyone in " $1 ":"
+            current_owners = $1
+        }
+        print "  " $2
+    }' "${temp_file}.sorted"
+    rm "$temp_file" "${temp_file}.sorted"
+}
+
+alias myrc='nvim ~/.myrc ; source ~/.myrc'
+alias sourcemyrc='source ~/.myrc'
+alias catmyrc='cat ~/.myrc'
 
 alias h='history'
 alias hg='history | grep'
 alias ll='ls -alohF'
 alias lt='ls -lt | head -n 10'
 
+alias gworktree='echo "git worktree add (-b <new-branch> <../worktree-<name>|<../worktree-<name> <existing-branch>)"'
 alias gl='git log --pretty=format:"%h %an %ar - %s" | head -n 10'
-alias gcm='git checkout master'
-alias gc-='git checkout -'
-alias gq='git add . ; git diff --staged ; git commit -m"fix"'
-alias gw='git add . ; git diff --staged ; git commit -m"wip"'
-alias gf='git add . ; git diff --staged ; git commit -m"formatting"'
+alias gac='git add . ; git commit'
+alias gacnvm='git add . ; git commit --no-verify -m"fix: fix"'
+alias gm='git checkout "$(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4)"'
+alias g-='git checkout -'
+alias gwip='git add . ; git diff --staged ; git commit --no-verify -m"wip"'
+alias gfmt='git add . ; git diff --staged ; git commit --no-verify -m"fix: formatting"'
 alias gd='git diff'
 alias gs='git status'
-alias gdrop='git checkout -- .' # as opposed to stashing
+alias gdrop='git checkout --' # as opposed to stashing, supply argument "." for all or specific files
 alias guncommit='git reset --soft HEAD~1'
-# These don't work of course. Just examples/reminders.
-alias grestore1='git checkout -- <path>'
-alias grestore2='git checkout <deleting_commit>^ -- <path>'
+alias gmabort='git merge --abort'
+alias gunstage='git restore --staged .'
 alias gbranches='git fetch ; git branch -v -a'
 # Creates a local branch from a remote branch listed via `gbranches`. Don't include "remotes/origin/".
 alias gswitch='git switch'
+# https://stackoverflow.com/a/44529712/925913
+gb() {
+    git for-each-ref --sort=-committerdate refs/heads --format='%(authordate:short) %(color:red)%(objectname:short) %(color:yellow)%(refname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset))' | head -n 10
+}
+alias glog='git log --pretty=format:"%h | %ad | %s" --date=format:"%a %b %d" --abbrev-commit'
+gwd() { open "https://github.com/$1/$2/compare/$3...$4"; }
+crdf() { gcr slackwing darkfeather $1 $2 }
+gcr() {
+  # Usage:
+  #   gwebdiff <owner> <repo> <base> <head>
+  # or (inside a git repo with origin on GitHub):
+  #   gwebdiff <base> <head>
+
+  local opener="xdg-open"; command -v open >/dev/null && opener="open"
+
+  local owner_repo base head
+  if [ $# -eq 4 ]; then
+    owner_repo="$1/$2"; base="$3"; head="$4"
+  elif [ $# -eq 2 ]; then
+    owner_repo=$(git remote get-url origin 2>/dev/null | sed -E 's#(git@|https://)github.com[:/]|\.git$##g') || {
+      echo "Not in a Git repo and no owner/repo provided" >&2; return 1; }
+    base="$1"; head="$2"
+  else
+    echo "Usage: gwebdiff <owner> <repo> <base> <head>  |  gwebdiff <base> <head>" >&2
+    return 1
+  fi
+
+  # Ensure correct BASE...HEAD order when there’s ancestry
+  if git merge-base --is-ancestor "$base" "$head"; then
+    :
+  elif git merge-base --is-ancestor "$head" "$base"; then
+    local tmp="$base"; base="$head"; head="$tmp"
+  fi
+
+  local url="https://github.com/$owner_repo/compare/$base...$head"
+  local issues_url="https://github.com/$owner_repo/issues/new"
+
+  # Cross-platform date formatter (macOS/BSD uses -r, GNU uses -d)
+  _datefmt () {
+    local fmt="$1" epoch="$2"
+    if date -r "$epoch" +"$fmt" >/dev/null 2>&1; then
+      date -r "$epoch" +"$fmt"
+    else
+      date -d "@$epoch" +"$fmt"
+    fi
+  }
+
+  # Review date (e.g., "Fri, Sep 12, 2025")
+  local review_date
+  review_date=$(date +"%a, %b %d, %Y")
+
+  # Range epochs
+  local start_epoch end_epoch
+  start_epoch=$(git log --pretty=%at "$base..$head" 2>/dev/null | sort -n | head -1)
+  end_epoch=$(git log --pretty=%at "$base..$head" 2>/dev/null | sort -n | tail -1)
+
+  # Build the range string per your rules
+  local commits_date_range="(no commits)"
+  if [ -n "$start_epoch" ] && [ -n "$end_epoch" ]; then
+    # Components for comparisons
+    local sy sm ey em
+    sy=$(_datefmt "%Y" "$start_epoch")
+    sm=$(_datefmt "%m" "$start_epoch")
+    ey=$(_datefmt "%Y" "$end_epoch")
+    em=$(_datefmt "%m" "$end_epoch")
+
+    if [ "$sy" != "$ey" ]; then
+      # Different years: full on both
+      commits_date_range="$(_datefmt "%a, %b %d, %Y" "$start_epoch") - $(_datefmt "%a, %b %d, %Y" "$end_epoch")"
+    elif [ "$sm" != "$em" ]; then
+      # Same year, different month: weekday on start, month+day on both (you had year on end)
+      commits_date_range="$(_datefmt "%a, %b %d" "$start_epoch") - $(_datefmt "%b %d, %Y" "$end_epoch")"
+    else
+      # Same month: weekday + month+day on start, day only on end (you had year on end)
+      commits_date_range="$(_datefmt "%a, %b %d" "$start_epoch")-$(_datefmt "%d, %Y" "$end_epoch")"
+    fi
+  fi
+
+  # HTML-escape helper
+  _html_escape () {
+    sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+  }
+
+  # Commit list: "<hash> | Fri, Sep 12, 2025 | subject>", joined with <br/>
+  local commits_html
+  commits_html=$(git log --pretty=format:'%h | %ad | %s' --date=format:'%a, %b %d, %Y' "$base..$head" \
+    | _html_escape \
+    | sed -e 's/$/<br\/>/' )
+  [ -z "$commits_html" ] && commits_html="(no commits in range)"
+
+  # Open the compare page
+  "$opener" "$url" >/dev/null 2>&1 &
+
+  # Open the new issues page
+  "$opener" "$issues_url" >/dev/null 2>&1 &
+
+  local html
+  html=$(cat <<EOF
+### Code Review
+<table>
+  <tr>
+    <th>Date of Review</th>
+    <td>$review_date</td>
+  </tr>
+  <tr>
+    <th>Date of Commits</th>
+    <td>$commits_date_range</td>
+  </tr>
+  <tr>
+    <th>Commits</th>
+    <td>$commits_html</td>
+  </tr>
+  <tr>
+    <th>URL</th>
+    <td><a href="$url">$url</a></td>
+  </tr>
+</table>
+EOF
+)
+
+  # Copy to clipboard (pbcopy, wl-copy, xclip, xsel, or clip.exe)
+  if command -v pbcopy >/dev/null 2>&1; then
+    printf "%s\n" "$html" | pbcopy
+  elif command -v wl-copy >/dev/null 2>&1; then
+    printf "%s\n" "$html" | wl-copy
+  elif command -v xclip >/dev/null 2>&1; then
+    printf "%s\n" "$html" | xclip -selection clipboard
+  elif command -v xsel >/dev/null 2>&1; then
+    printf "%s\n" "$html" | xsel --clipboard --input
+  elif command -v clip.exe >/dev/null 2>&1; then
+    printf "%s\n" "$html" | clip.exe
+  fi
+
+  # Also print to stdout
+  printf "%s\n" "$html"
+}
+
+
+
 
 alias b64d='base64 --decode'
 alias b64e='base64 --encode'
 
 alias fmt='mvn com.spotify.fmt:fmt-maven-plugin:format'
 
-alias acssh='ssh -i ~/.ssh/id_rsa_gcp_acheong87 acheong87@35.243.192.242'
-alias acstop='gcloud compute instances stop andrew-cheong-com-vm'
-alias acstart='gcloud compute instances start andrew-cheong-com-vm'
-html() {
-    cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
-}
-acstage() {
-    echo "\nStaging...\n"
-    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/.staging/
-}
-acpub() {
-    echo "\nExecuting dry run...\n"
-    rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
-    echo "\nPress any key to continue, or ^C to exit.\n"
-    read -s -n 1
-    echo "\nPublishing...\n"
-    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
-}
-acpubdir() {
-    echo "\nExecuting dry run...\n"
-    rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
-    echo "\nPress any key to continue, or ^C to exit.\n"
-    read -s -n 1
-    echo "\nPublishing...\n"
-    rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
-}
-acgit() {
-    cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
-    git status
-    read -s -n 1
-    git diff
-    read -s -n 1
-    git add .
-    git commit -m"acgit on $(date '+%Y-%m-%d %H:%M:%S')"
-    git push
-}
+# Website: Server-side operations
+
+  alias acssh='ssh -i ~/.ssh/id_rsa_gcp_acheong87 acheong87@35.243.192.242'
+  alias acstop='gcloud compute instances stop andrew-cheong-com-vm'
+  alias acstart='gcloud compute instances start andrew-cheong-com-vm'
+
+# Website: Local development
+
+  # Navigating to the main repository, a worktree, or another relative path.
+  alias feathers='echo "WARN: Leaving any worktree!\n"; cd /Users/acheong/src/slackwing/feathers/'
+  worktree() {
+      cd "/Users/acheong/src/slackwing/worktree-$1"
+  }
+  alias worktrees='ls -d /Users/acheong/src/slackwing/worktree-* | xargs -n 1 basename | sort'
+
+  # Navigating to relative subpaths.
+  alias html="cd foundry/website/html/"
+
+  # Global shortcuts.
+  alias journal="worktree journal ; html"
+  alias stereoscopic="worktree stereoscopic-plots ; html"
+
+  # Updating the server (safely).
+  currentDirIs() {
+    current_dir_name=$(basename "$PWD")
+    if [[ "$current_dir_name" == "$1" ]]; then
+        return 0
+    else
+        return 1
+    fi
+  }
+  acrsync() {
+    if [[ $# -lt 2 ]]; then
+      echo "Error: Less than 2 arguments supplied." >&2
+      return 1
+    fi
+    if currentDirIs "html"; then
+      echo "\nUploading $PWD/$1 to <remote>/$2 ...\n"
+      rsync -avOc $1 "acheong87@35.243.192.242:/var/www/html/$2"
+    else
+      echo "Invalid directory: $PWD"
+    fi
+  }
+
+  # Convenience.
+  alias acprod='acrsync . .'
+  alias acstage='acrsync . .staging/'
+  alias acsj='acrsync journal/ .staging/journal/'
+  alias acsfg='acstage ; fg'
+  alias acjfg='acsj ; fg'
+  alias acpj='acrsync journal/ journal/'
+
+# Website: To Be Organized
+
+  acpub() {
+      echo "\nExecuting dry run...\n"
+      rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
+      echo "\nPress any key to continue, or ^C to exit.\n"
+      read -s -n 1
+      echo "\nPublishing...\n"
+      rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/ acheong87@35.243.192.242:/var/www/html/
+  }
+  acpubdir() {
+      echo "\nExecuting dry run...\n"
+      rsync -avOn /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
+      echo "\nPress any key to continue, or ^C to exit.\n"
+      read -s -n 1
+      echo "\nPublishing...\n"
+      rsync -avO /Users/acheong/src/slackwing/feathers/foundry/website/html/$1 acheong87@35.243.192.242:/var/www/html/$1
+  }
+  acgit() {
+      cd /Users/acheong/src/slackwing/feathers/foundry/website/html/
+      git status
+      read -s -n 1
+      git diff
+      read -s -n 1
+      git add .
+      git commit -m"acgit on $(date '+%Y-%m-%d %H:%M:%S')"
+      git push
+  }
+
 # alias acwww='open -a "Google Chrome" https://andrewcheong.com/~andre305/'
 # alias acwwwbyip='open -a "Google Chrome" http://209.182.199.238/~andre305/'
 # alias cpanel='open -a "Google Chrome" https://andrewcheong.com/cpanel/'
@@ -93,15 +400,30 @@ function sandbox() {
 }
 
 # Experimental aliases; promote when commonly relied on.
+# alias buildadsapi="mvn generate-sources ; mvn clean compile install package -DskipTests"
+alias runapilocal="export DATAMODEL_DATASOURCE_PASSWORD=postgres; export SPRING_CLOUD_GCP_SQL_ENABLED=false; mvn spring-boot:run -Plocal"
+alias runapisandbox="export SPRING_CLOUD_GCP_SQL_ENABLED=true; mvn spring-boot:run -Plocal"
+alias runapidebug='export DATAMODEL_DATASOURCE_PASSWORD=postgres; export SPRING_CLOUD_GCP_SQL_ENABLED=false; mvn spring-boot:run -Plocal -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"'
+alias debuginfo='echo "Run > Edit Configurations, +, Remote JVM Debug, localhost:5005"'
+alias buildcs="mvn clean package -DskipTests; mvn package -DskipTests"
 alias rk="sudo pkill karabiner_console_user_server"
 alias crypto='cd ~/src/slackwing/feathers/05\ -\ X1_2'
 alias build='/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build cmake-build-debug --target 05___X1_2'
+alias adsproxy='~/src/spotify/cloud-sql-proxy --port 5432 spotify-ads-api:europe-west1:ads-api-data-model-sandbox'
 alias amsproxy='~/src/spotify/cloud-sql-proxy --port 3501 ad-selfserve:us-east1:measurementsdb adstudio-sandbox1:us-east1:measurementsdb-sandbox'
-alias aasproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:adaccountdb=tcp:3401,adstudio-sandbox1:us-central1:adaccountdb-sandbox=tcp:3402'
+alias aasproxy='~/src/spotify/cloud-sql-proxy --port 3401 ad-selfserve:us-central1:adaccountdb adstudio-sandbox1:us-central1:adaccountdb-sandbox'
 # alias amsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-east1:measurementsdb=tcp:3501,adstudio-sandbox1:us-east1:measurementsdb-sandbox=tcp:3502'
 alias beamproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:us-central1:beamdb=tcp:3601,adstudio-sandbox1:us-central1:beamdb-sandbox=tcp:3602'
 alias draftsproxy='~/src/spotify/cloud_sql_proxy -instances=ad-selfserve:europe-west1:adstudio-draftsdb=tcp:3403,adstudio-sandbox1:europe-west1:adstudio-drafts-sandboxdb=tcp:3404'
-alias csproxy='~/src/spotify/cloud_sql_proxy -instances=spotify-ad-serving:europe-west1:campaign-service-sandbox=tcp:5432'
+alias csproxy='~/src/spotify/cloud-sql-proxy --port 5432 spotify-ad-serving:europe-west1:campaign-service-sandbox'
+alias csproxyprodreplica='~/src/spotify/cloud-sql-proxy --port 6432 spotify-ad-serving:europe-west1:campaign-replica-gew1'
+alias gcloudreset='gcloud auth application-default login'
+alias gcloudapi='gcloud auth application-default login; gcloud auth application-default set-quota-project spotify-ads-api'
+alias gcloudaudprod='gcloud auth application-default login --impersonate-service-account audience-manager-namespace@gke-accounts.iam.gserviceaccount.com'
+alias gcloudaudsand='gcloud auth application-default login --impersonate-service-account audience-manager-namespace-box@gke-accounts.iam.gserviceaccount.com'
+alias audproxyprod='~/src/spotify/cloud-sql-proxy --auto-iam-authn --impersonate-service-account=audience-manager-namespace@gke-accounts.iam.gserviceaccount.com spotify-audience-manager:us-central1:audience-manager-sql --port 5442'
+alias audproxysand='~/src/spotify/cloud-sql-proxy --auto-iam-authn --impersonate-service-account=audience-manager-namespace-box@gke-accounts.iam.gserviceaccount.com spotify-audience-manager:us-central1:audience-manager-sql-sandbox --port 5443'
+alias usherproxysand='~/src/spotify/cloud-sql-proxy --port 5533 spotify-ad-serving:europe-west1:usher-sandbox'
 alias abletonlog='tail -f ~/Library/Preferences/Ableton/Live\ 11.0.12/Log.txt'
 alias lint='yarn lint:js --fix'
 alias core='cd /Users/acheong/src/spotify/client-web/desktop/shell/core'
@@ -292,6 +614,7 @@ alias silt='sed -f ~/.sed'
 alias siff='git diff `git merge-base master HEAD`'
 alias mdaw='mvn dependency:analyze | tee /dev/tty | wc'
 alias pretty='tail -n 1 | sed s/[\\]x0a//g | sed s/^..// | sed s/..$// | python -m json.tool'
+alias ungrpc='tail -n 1 | sed s/[\\]x0a//g | sed s/^..// | sed s/..$//'
 alias lg='grpcurl -plaintext localhost:5990'
 alias killforti="ps -ef | grep -i forticlient | awk '{print $2}' | xargs sudo kill -9"
 alias clientsrc='cd ~/hack/2021/client-web/node_modules/open/web-player/src'
@@ -373,4 +696,25 @@ smartling() {
     read -n 1 -p "press any key to continue with the smartling stuff" asdf
     mvn exec:java -Dexec.mainClass=com.spotify.i18n.smartling.v1.SmartlingTool -Dexec.classpathScope=test -Dexec.args="sync"
 }
+
+createsurvey() {
+    curl -s localhost:8080/ads-local/v3/ad_accounts/5c39191d-96f9-434d-b183-c11165557fc4/experiments \
+  -d '{"ad_account_id": "5c39191d-96f9-434d-b183-c11165557fc4", "type": "SURVEY", "name": "Test Survey", "start_date": "2024-10-01T00:00:00Z", "end_date": "2024-10-18T00:00:00Z", "eligibility_campaign_ids": ["01234567-f20f-4720-9708-caac0ba42726"], "is_test": true, "market": "US", "holdout_level": "AD_ACCOUNT_LEVEL", "holdout_percent": 10, "survey_questions": [{"question_type": "MULTI_SELECT", "question_text": "Which of these guitar brands have you heard of?", "secondary_text": "Select all that apply.", "randomize_options": true, "language": "en/US", "options": [{"option_text": "Abasi", "is_exclusive": false, "is_last": false}, {"option_text": "Strandberg", "is_exclusive": false, "is_last": false}, {"option_text": "Aristedes", "is_exclusive": false, "is_last": false}, {"option_text": "Kiesel", "is_exclusive": false, "is_last": false}, {"option_text": "None of the above", "is_exclusive": true, "is_last": true}]}]}'\
+        -H "x-spotify-clientid: test-client-id1" \
+        -H "x-spotify-userid: 8bda6e38c97642869bc7ef0150780331" \
+        -H "x-spotify-adaccountid: 5c39191d-96f9-434d-b183-c11165557fc4" \
+        -H "Content-Type: application/json"
+}
+
+getsurvey() {
+    curl -s localhost:8080/ads-local/v3/ad_accounts/5c39191d-96f9-434d-b183-c11165557fc4/experiments/$1 \
+        -H "x-spotify-clientid: test-client-id1" \
+        -H "x-spotify-userid: 8bda6e38c97642869bc7ef0150780331" \
+        -H "x-spotify-adaccountid: 5c39191d-96f9-434d-b183-c11165557fc4" \
+        -H "Content-Type: application/json"
+}
+
+
+
+
 
