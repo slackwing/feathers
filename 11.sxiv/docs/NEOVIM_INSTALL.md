@@ -104,8 +104,12 @@ require('nvim-treesitter.configs').setup {
 - **Filetype Detection**: Automatic for `.sxiva` files
 
 - **Commands**:
-  - `:SxivaRecalculate` - Recalculate and fix all points in current file
+  - `:Sxiv` - Recalculate and fix all points in current file
+  - `:SxivaRecalculate` - (alias for `:Sxiv`)
   - `:SxivaValidate` - Validate file syntax (coming soon)
+
+- **Keybinding**:
+  - `<leader>ss` - Recalculate points (only in .sxiva files)
 
 ## Usage
 
@@ -113,39 +117,48 @@ require('nvim-treesitter.configs').setup {
 
 When you've finished adding time blocks to your `.sxiva` file:
 
-1. Save the file (`:w`)
-2. Run `:SxivaRecalculate`
-3. The file will be automatically updated with correct point calculations
+1. Run `:Sxiv` or press `<leader>ss` (or `;s`)
+2. The buffer will be automatically updated with correct point calculations
+3. Save when ready (`:w`)
 
 The command will:
+- Auto-save the file if there are unsaved changes
 - Run the Python calculator with `--fix` flag
-- Update all incorrect or missing points
-- Reload the buffer to show the changes
+- Update the buffer directly (no reload needed)
+- Mark the buffer as modified so you can review before saving
 - Display a notification when complete
 
 **Example workflow:**
 ```
-# Edit your .sxiva file, add some blocks with wrong/missing points:
-00:00 - [wr] task ~,[ts] other [3] --- 00:12 (+0=0)
+# Edit your .sxiva file, add some blocks without points:
+00:00 - [wr] task ~,[ts] other [3] --- 00:12
 
-# Save and recalculate:
-:w
-:SxivaRecalculate
+# Recalculate (auto-saves first):
+:Sxiv
+# Or press: ;s
 
-# File is now updated:
+# Buffer is updated immediately:
 00:00 - [wr] task ~,[ts] other [3] --- 00:12 (+4,+2f,+1a=7)
+
+# Save when you're happy with the result:
+:w
 ```
 
-**Keyboard shortcut (optional):**
+**Default keybinding:** `<leader>ss` (only active in .sxiva files)
+- `<leader>` is typically `\` or `<Space>` depending on your config
+- So: `<Space>ss` or `\ss` to recalculate
 
-Add to your `init.lua` to map `<leader>sc` (s=sxiva, c=calculate):
+**Custom keybinding:**
+
+If you want a different key, add to your `init.lua`:
 
 ```lua
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'sxiva',
-  callback = function()
-    vim.keymap.set('n', '<leader>sc', ':SxivaRecalculate<CR>',
-      { buffer = true, desc = 'Recalculate SXIVA points' })
+  callback = function(args)
+    -- Change <leader>ss to whatever you prefer
+    vim.keymap.set('n', '<leader>sc', ':Sxiv<CR>',
+      { buffer = args.buf, desc = 'Recalculate SXIVA points', silent = true })
   end,
 })
 ```

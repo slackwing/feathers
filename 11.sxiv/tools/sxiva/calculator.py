@@ -1139,6 +1139,21 @@ class PointCalculator:
         issues, state, block_points_map = self.process_nodes(nodes, source_bytes)
         return issues
 
+    def strip_points_from_line(self, line: str) -> str:
+        """Remove point calculations and error messages from a line.
+
+        Args:
+            line: Line that may contain points like (+3,+1f,+1a=5) or [ERROR] messages
+
+        Returns:
+            str: Line with points and errors stripped
+        """
+        # Remove point calculations: (anything with =number)
+        line = re.sub(r'\s*\([^)]*=[^)]*\)', '', line)
+        # Remove error messages
+        line = re.sub(r'\s*\[ERROR\][^\n]*', '', line)
+        return line.rstrip()
+
     def fix_file(self, file_path: str, output_path: str = None, dry_run: bool = False) -> int:
         """Fix point calculations, whitespace, and format in a file.
 
@@ -1153,8 +1168,19 @@ class PointCalculator:
         from pathlib import Path
         from .parser import node_text
 
-        tree, source_code = self.parser.parse_file(file_path)
-        source_bytes = source_code.encode('utf-8')
+        # Read and pre-process: strip old calculations and errors BEFORE parsing
+        with open(file_path, 'r', encoding='utf-8') as f:
+            source_code = f.read()
+
+        # Strip all old point calculations and error messages from the input
+        cleaned_lines = []
+        for line in source_code.split('\n'):
+            cleaned_lines.append(self.strip_points_from_line(line))
+        cleaned_source = '\n'.join(cleaned_lines)
+
+        # Now parse the clean source
+        tree = self.parser.parse(cleaned_source)
+        source_bytes = cleaned_source.encode('utf-8')
 
         root = tree.root_node
         nodes = list(root.children)
@@ -1162,8 +1188,22 @@ class PointCalculator:
         # First, calculate all expected points using shared logic
         issues, final_state, block_points_map = self.process_nodes(nodes, source_bytes)
 
+        # Track if we've encountered an error (to stop adding calculations after)
+        encountered_error = False
+        error_line_num = float('inf')
+
+        # Find the first error line from block_points_map
+        for node_id, (points_or_error, _) in block_points_map.items():
+            if isinstance(points_or_error, str) and points_or_error.startswith("[ERROR]"):
+                # Find which line this node is on
+                for node in nodes:
+                    if id(node) == node_id:
+                        error_line_num = min(error_line_num, node.start_point[0])
+                        encountered_error = True
+                        break
+
         # Now process line-by-line to apply fixes and formatting
-        lines = source_code.split('\n')
+        lines = cleaned_source.split('\n')
         fixed_lines = []
 
         # Map node start line to node for quick lookup
@@ -1212,7 +1252,11 @@ class PointCalculator:
                     break
 
             if not node:
-                fixed_lines.append(line)
+                # If we're past an error line, strip any old calculations from this line
+                if line_idx >= error_line_num:
+                    fixed_lines.append(self.strip_points_from_line(line))
+                else:
+                    fixed_lines.append(line)
                 continue
 
             # Process based on node type
@@ -1236,21 +1280,39 @@ class PointCalculator:
                 fixed_lines.append(focus_indent + focus_content)
 
             elif node.type == 'ERROR':
-                # Handle ERROR nodes - append error message inline
+                # Handle ERROR nodes - strip old calculations/errors, append new error message
                 node_id = id(node)
+                clean_line = self.strip_points_from_line(line)
                 if node_id in block_points_map:
                     error_msg, _ = block_points_map[node_id]
                     if isinstance(error_msg, str) and error_msg.startswith("[ERROR]"):
-                        fixed_line = line.rstrip() + f" {error_msg}\n"
-                        fixed_lines.append(fixed_line.rstrip())
+                        fixed_line = clean_line + f" {error_msg}"
+                        fixed_lines.append(fixed_line)
                         num_fixes += 1
                         continue
-                # If no error message in map, keep line as-is
-                fixed_lines.append(line)
+                # If no error message in map, keep cleaned line
+                fixed_lines.append(clean_line)
 
             elif node.type in ['time_block', 'continuation_block']:
                 # Look up expected points from the pre-calculated map
                 node_id = id(node)
+
+                # If we're at or past an error line, strip old calculations and don't add new ones
+                if line_idx >= error_line_num:
+                    clean_line = self.strip_points_from_line(line)
+                    if node_id in block_points_map:
+                        expected_points, _ = block_points_map[node_id]
+                        if isinstance(expected_points, str) and expected_points.startswith("[ERROR]"):
+                            # Add error message
+                            fixed_lines.append(clean_line + f" {expected_points}")
+                            num_fixes += 1
+                        else:
+                            # Just strip old calculations, don't add new ones after error
+                            fixed_lines.append(clean_line)
+                    else:
+                        fixed_lines.append(clean_line)
+                    continue
+
                 if node_id not in block_points_map:
                     # No points calculated for this node (maybe incomplete), skip it
                     fixed_lines.append(line)
@@ -1260,9 +1322,10 @@ class PointCalculator:
 
                 # Check if this is an error message instead of points
                 if isinstance(expected_points, str) and expected_points.startswith("[ERROR]"):
-                    # This is an error - write it at the end of the line
-                    fixed_line = line.rstrip() + f" {expected_points}\n"
-                    fixed_lines.append(fixed_line.rstrip())
+                    # This is an error - strip old content and write error at the end
+                    clean_line = self.strip_points_from_line(line)
+                    fixed_line = clean_line + f" {expected_points}"
+                    fixed_lines.append(fixed_line)
                     num_fixes += 1
                     continue
 

@@ -33,7 +33,7 @@ function M.validate()
   -- - Check rest block minutes (multiple of 12)
 end
 
--- Point calculation function - runs Python CLI calculator
+-- Point calculation function - recalculates and updates buffer directly
 function M.recalculate()
   local filepath = vim.fn.expand('%:p')
 
@@ -43,20 +43,23 @@ function M.recalculate()
     return
   end
 
-  -- Check if file has been saved
+  -- Auto-save if modified
   if vim.bo.modified then
-    vim.notify('Please save file first', vim.log.levels.WARN)
-    return
+    vim.cmd('silent write')
   end
 
   -- Get path to Python CLI (assume it's in the project)
   local nvim_dir = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ':h:h:h')
   local project_root = vim.fn.fnamemodify(nvim_dir, ':h:h')
 
-  -- Run the Python CLI calculator with --fix flag
-  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli calculate "%s" --fix',
+  -- Use a temporary file for output
+  local temp_file = vim.fn.tempname() .. '.sxiva'
+
+  -- Run the Python CLI calculator with --fix flag, output to temp file
+  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli calculate "%s" --fix -o "%s"',
                            project_root,
-                           filepath)
+                           filepath,
+                           temp_file)
 
   vim.notify('Recalculating points...', vim.log.levels.INFO)
 
@@ -64,11 +67,39 @@ function M.recalculate()
   vim.fn.jobstart(cmd, {
     on_exit = function(_, exit_code, _)
       if exit_code == 0 then
-        -- Reload the buffer to show updated points
-        vim.cmd('silent! edit!')
-        vim.notify('✓ Points recalculated', vim.log.levels.INFO)
+        -- Read the temp file and update buffer directly
+        local file = io.open(temp_file, 'r')
+        if file then
+          local content = file:read('*all')
+          file:close()
+
+          -- Split into lines
+          local lines = {}
+          for line in content:gmatch('([^\n]*)\n?') do
+            table.insert(lines, line)
+          end
+          -- Remove last empty line if present
+          if lines[#lines] == '' then
+            table.remove(lines)
+          end
+
+          -- Update buffer
+          vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+
+          -- Mark buffer as modified so user can save
+          vim.bo.modified = true
+
+          -- Clean up temp file
+          os.remove(temp_file)
+
+          vim.notify('✓ Points recalculated', vim.log.levels.INFO)
+        else
+          vim.notify('Error reading temp file', vim.log.levels.ERROR)
+        end
       else
         vim.notify('Error recalculating points', vim.log.levels.ERROR)
+        -- Clean up temp file on error
+        os.remove(temp_file)
       end
     end,
     on_stderr = function(_, data, _)
