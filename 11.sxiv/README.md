@@ -4,6 +4,22 @@
 
 SXIVA (pronounced "shiva") is a time-tracking notation language for recording work activities in 12-minute blocks divided into 3-minute "blicks" (block-ticks). The language supports focus tracking, point/reward calculations, and flexible time management patterns.
 
+## Quick Start
+
+```bash
+# 1. Set up your data directory
+export SXIVA_DATA="$HOME/sxiva"
+mkdir -p $SXIVA_DATA
+
+# 2. Install the CLI (see tools/INSTALL.md)
+cd tools && pip install -e .
+
+# 3. Open today's timesheet
+sxiva
+```
+
+That's it! Type `sxiva` any time to open today's file. In Neovim, press `;s` to recalculate points.
+
 ## Project Structure
 
 ```

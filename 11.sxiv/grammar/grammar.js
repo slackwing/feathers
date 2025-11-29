@@ -17,17 +17,43 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    // No conflicts for now
+    [$.metadata_line, $.time_block],  // Both can start with dash-like patterns
   ],
 
   rules: {
     // Top-level file structure
     source_file: $ => seq(
+      optional(seq($.date_header, /\n/)),
       repeat($._line),
       optional($.end_marker)
     ),
 
+    // Date header: DayOfWeek, Month Day(st/nd/rd/th), Year
+    // Example: Saturday, November 29th, 2025
+    date_header: $ => seq(
+      field('day_of_week', $.day_name),
+      ',',
+      optional(/\s+/),
+      field('month', $.month_name),
+      optional(/\s+/),
+      field('day', /\d{1,2}(st|nd|rd|th)/),
+      ',',
+      optional(/\s+/),
+      field('year', /\d{4}/)
+    ),
+
+    day_name: $ => choice(
+      'Sunday', 'Monday', 'Tuesday', 'Wednesday',
+      'Thursday', 'Friday', 'Saturday'
+    ),
+
+    month_name: $ => choice(
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ),
+
     _line: $ => choice(
+      $.metadata_line,  // Try this first - starts with [category]
       $.focus_declaration,
       $.rest_block,
       $.time_block,
@@ -36,6 +62,23 @@ module.exports = grammar({
       $.comment,
       /\n/  // Empty line
     ),
+
+    // Metadata line: [category] subject - time
+    // Example: [med] 200b-500v, 100mg moda, 1x cof - 08:15
+    metadata_line: $ => prec(2, seq(
+      field('category', $.category),
+      /\s+/,
+      field('subject', $.metadata_subject),
+      /\s+/,
+      '-',
+      /\s+/,
+      field('time', $.time),
+      /\n/
+    )),
+
+    // Metadata subject: match text, allowing internal dashes but structured to stop before " - HH:MM"
+    // Strategy: match segments separated by single spaces or commas, with internal dashes allowed
+    metadata_subject: $ => /[a-zA-Z0-9]([a-zA-Z0-9_,\-'";:!?@#$%^&*()+={}|\\/<>.]|(\s+[a-zA-Z0-9_,\-'";:!?@#$%^&*()+={}|\\/<>.]))*/ ,
 
     // End marker: === (everything after is ignored)
     end_marker: $ => seq('===', /[\s\S]*/),

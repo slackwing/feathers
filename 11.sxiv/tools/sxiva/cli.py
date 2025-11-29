@@ -1,16 +1,107 @@
 """CLI for SXIVA tools."""
 
 import sys
+import os
 import click
 from pathlib import Path
+from datetime import datetime
+import subprocess
 from .calculator import PointCalculator
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(version="0.1.0")
-def cli():
-    """SXIVA CLI tools for parsing and calculating points."""
-    pass
+@click.option('-d', '--date', metavar='YYYYMMDD', help='Open file for specific date (format: YYYYMMDD)')
+@click.option('-y', '--yesterday', is_flag=True, help='Open yesterday\'s file')
+@click.pass_context
+def cli(ctx, date, yesterday):
+    """SXIVA CLI tools for parsing and calculating points.
+
+    When called without a subcommand, opens today's SXIVA file from $SXIVA_DATA.
+    """
+    # If a subcommand is invoked, don't run the default behavior
+    if ctx.invoked_subcommand is not None:
+        return
+
+    # Default behavior: open today's file (or specified date)
+    open_today(date, yesterday)
+
+
+def open_today(date_str=None, yesterday=False):
+    """Open or create today's SXIVA file.
+
+    Args:
+        date_str: Optional date string in YYYYMMDD format
+        yesterday: If True, open yesterday's file
+    """
+    # Check SXIVA_DATA environment variable
+    sxiva_data = os.environ.get('SXIVA_DATA')
+    if not sxiva_data:
+        click.secho("Error: SXIVA_DATA environment variable not set", fg='red', err=True)
+        click.echo("Please set SXIVA_DATA to your SXIVA data directory:")
+        click.echo("  export SXIVA_DATA=/path/to/your/sxiva/files")
+        sys.exit(1)
+
+    data_path = Path(sxiva_data)
+    if not data_path.exists():
+        click.secho(f"Error: SXIVA_DATA directory does not exist: {sxiva_data}", fg='red', err=True)
+        sys.exit(1)
+
+    if not data_path.is_dir():
+        click.secho(f"Error: SXIVA_DATA is not a directory: {sxiva_data}", fg='red', err=True)
+        sys.exit(1)
+
+    # Determine which date to use
+    if date_str:
+        # Parse custom date
+        try:
+            target_date = datetime.strptime(date_str, '%Y%m%d')
+        except ValueError:
+            click.secho(f"Error: Invalid date format: {date_str}", fg='red', err=True)
+            click.echo("Expected format: YYYYMMDD (e.g., 20251129)")
+            sys.exit(1)
+    elif yesterday:
+        # Yesterday
+        from datetime import timedelta
+        target_date = datetime.now() - timedelta(days=1)
+    else:
+        # Today (default)
+        target_date = datetime.now()
+
+    formatted_date = target_date.strftime('%Y%m%d')
+
+    # Day of week mnemonic: U M T W R F S (Sunday to Saturday)
+    # weekday() returns 0=Monday, 6=Sunday
+    # isoweekday() returns 1=Monday, 7=Sunday
+    day_mnemonics = ['U', 'M', 'T', 'W', 'R', 'F', 'S']
+    iso_day = target_date.isoweekday()  # 1=Mon, 7=Sun
+    day_letter = day_mnemonics[iso_day % 7]  # Convert: 7->0 (Sun=U), 1->1 (Mon=M), etc.
+
+    # Check for existing file starting with target date
+    matching_files = list(data_path.glob(f'{formatted_date}*'))
+
+    if matching_files:
+        # Use the first matching file
+        file_path = matching_files[0]
+        click.echo(f"Opening: {file_path}")
+    else:
+        # Create new file with format: YYYYMMDDd.sxiva
+        file_path = data_path / f'{formatted_date}{day_letter}.sxiva'
+        click.echo(f"Creating: {file_path}")
+        # Create empty file
+        file_path.touch()
+
+    # Open with editor
+    editor = os.environ.get('EDITOR', 'vi')
+    try:
+        subprocess.run([editor, str(file_path)], check=True)
+    except subprocess.CalledProcessError:
+        click.secho(f"Error: Failed to open editor: {editor}", fg='red', err=True)
+        sys.exit(1)
+    except FileNotFoundError:
+        click.secho(f"Error: Editor not found: {editor}", fg='red', err=True)
+        click.echo("Set the EDITOR environment variable to your preferred editor")
+        sys.exit(1)
 
 
 @cli.command()

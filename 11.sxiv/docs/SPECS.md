@@ -82,9 +82,55 @@ The arbitrary text describing what the blick is about. Subjects may contain:
 
 #### File Structure
 ```
-FILE ::= (LINE)*
-LINE ::= WHITESPACE (FOCUS_DECL | REST_BLOCK | TIME_BLOCK | BREAK | EMPTY) NEWLINE
+FILE ::= DATE_HEADER? (LINE)*
+LINE ::= WHITESPACE (FOCUS_DECL | REST_BLOCK | TIME_BLOCK | METADATA_LINE | BREAK | EMPTY) NEWLINE
 ```
+
+#### Date Header
+```
+DATE_HEADER ::= DAY_NAME ',' WHITESPACE* MONTH_NAME WHITESPACE* DAY_NUMBER ORDINAL ',' WHITESPACE* YEAR NEWLINE
+DAY_NAME ::= 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday'
+MONTH_NAME ::= 'January' | 'February' | 'March' | 'April' | 'May' | 'June' | 'July' | 'August' | 'September' | 'October' | 'November' | 'December'
+DAY_NUMBER ::= [1-31]
+ORDINAL ::= 'st' | 'nd' | 'rd' | 'th'
+YEAR ::= DIGIT DIGIT DIGIT DIGIT
+```
+
+**Example:**
+```
+Saturday, November 29th, 2025
+```
+
+**Semantics:**
+- The date header is optional but recommended
+- Should be the first line of the file
+- Generated automatically from the filename (format: `YYYYMMDDd.sxiva`)
+- The calculator will automatically add/fix the date header based on the filename
+
+#### Metadata Lines
+```
+METADATA_LINE ::= CATEGORY WHITESPACE+ METADATA_SUBJECT WHITESPACE* '-' WHITESPACE* TIME
+METADATA_SUBJECT ::= [^\n]+    # Any text except newline (ends at " - TIME" separator)
+```
+
+**Examples:**
+```
+[med] 200b-500v, 100mg moda, 1x cof - 08:15
+[med] 50mg moda - 11:20
+[note] checked email and slack - 09:30
+[task] submitted timesheet for review - 16:45
+```
+
+**Semantics:**
+- Metadata lines are informational entries that don't participate in time block calculations
+- They start with a category `[cat]`, followed by subject text, a dash `-`, and a time `HH:MM`
+- The subject can contain commas, unlike time block subjects
+- Metadata lines can appear anywhere in the file but are commonly used:
+  - At the beginning (after date header) for morning routines, medications, etc.
+  - At the end for daily summaries, notes, or end-of-day tasks
+- No point calculations are performed on metadata lines
+- The calculator automatically indents metadata lines (4 spaces) for visual clarity
+- **Note**: Currently metadata lines are not fully supported by the grammar parser and appear as ERROR nodes, but the calculator recognizes and handles them correctly
 
 #### Focus Declaration
 ```

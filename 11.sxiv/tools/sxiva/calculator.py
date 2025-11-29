@@ -3,6 +3,8 @@
 import re
 from dataclasses import dataclass
 from typing import List, Optional, Set, Tuple
+from datetime import datetime
+from pathlib import Path
 
 
 @dataclass
@@ -708,8 +710,26 @@ class PointCalculator:
             if node.type == 'ERROR':
                 line_num = node.start_point[0] + 1
                 error_text = node_text(node, source_bytes)
+
+                # Check if this ERROR is actually metadata line(s): [category] text - HH:MM
+                # ERROR nodes can span multiple lines, so check if ALL lines are metadata
+                error_lines = error_text.strip().split('\n')
+                all_metadata = all(
+                    re.match(r'^\s*\[[^\]]+\]\s+.+\s+-\s+\d{1,2}:\d{2}\s*$', line.strip())
+                    for line in error_lines if line.strip()
+                )
+                if all_metadata:
+                    # This ERROR contains only metadata lines - skip it, no error
+                    i += 1
+                    continue
+
+                # Check if this ERROR is actually a date header
+                if line_num == 1 and self.extract_date_header(error_text):
+                    # This is a date header - skip it, no error
+                    i += 1
+                    continue
+
                 # Look for invalid time pattern (digit(s):single-digit at end)
-                import re
                 invalid_time_match = re.search(r'\d{1,2}:\d(?:\s|$)', error_text)
                 if invalid_time_match:
                     invalid_time = invalid_time_match.group().strip()
@@ -1115,6 +1135,10 @@ class PointCalculator:
                 state.is_first_block = True
                 i += 1
 
+            elif node.type in ['metadata_line', 'date_header']:
+                # Skip metadata lines and date headers - no calculations needed
+                i += 1
+
             else:
                 # Unknown node type, skip
                 i += 1
@@ -1154,6 +1178,93 @@ class PointCalculator:
         line = re.sub(r'\s*\[ERROR\][^\n]*', '', line)
         return line.rstrip()
 
+    def get_ordinal_suffix(self, day: int) -> str:
+        """Get ordinal suffix for a day number (st, nd, rd, th).
+
+        Args:
+            day: Day number (1-31)
+
+        Returns:
+            str: Ordinal suffix
+        """
+        if 10 <= day % 100 <= 20:
+            return 'th'
+        else:
+            suffix_map = {1: 'st', 2: 'nd', 3: 'rd'}
+            return suffix_map.get(day % 10, 'th')
+
+    def generate_date_header_from_filename(self, file_path: str) -> Optional[str]:
+        """Generate date header from SXIVA filename.
+
+        SXIVA files are named YYYYMMDDd.sxiva where d is day-of-week letter.
+        Example: 20251129S.sxiva -> Saturday, November 29th, 2025
+
+        Args:
+            file_path: Path to .sxiva file
+
+        Returns:
+            Optional[str]: Date header string, or None if filename doesn't match pattern
+        """
+        filename = Path(file_path).stem  # Get filename without extension
+
+        # Match YYYYMMDD pattern at start
+        match = re.match(r'^(\d{8})', filename)
+        if not match:
+            return None
+
+        date_str = match.group(1)
+        try:
+            date_obj = datetime.strptime(date_str, '%Y%m%d')
+        except ValueError:
+            return None
+
+        # Format: DayOfWeek, Month Day(st/nd/rd/th), Year
+        day_name = date_obj.strftime('%A')
+        month_name = date_obj.strftime('%B')
+        day = date_obj.day
+        year = date_obj.year
+        suffix = self.get_ordinal_suffix(day)
+
+        return f"{day_name}, {month_name} {day}{suffix}, {year}"
+
+    def extract_date_header(self, source_code: str) -> Optional[str]:
+        """Extract date header from source code if present.
+
+        Args:
+            source_code: Source code content
+
+        Returns:
+            Optional[str]: Date header line (without newline), or None if not found
+        """
+        lines = source_code.split('\n')
+        if not lines:
+            return None
+
+        first_line = lines[0].strip()
+
+        # Check if first line matches date header pattern
+        # DayOfWeek, Month Day(st/nd/rd/th), Year
+        pattern = r'^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+' \
+                  r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+' \
+                  r'\d{1,2}(st|nd|rd|th),\s+\d{4}$'
+
+        if re.match(pattern, first_line):
+            return first_line
+
+        return None
+
+    def has_date_filename(self, file_path: str) -> bool:
+        """Check if filename starts with YYYYMMDD pattern.
+
+        Args:
+            file_path: Path to .sxiva file
+
+        Returns:
+            bool: True if filename matches YYYYMMDD pattern
+        """
+        filename = Path(file_path).stem
+        return bool(re.match(r'^\d{8}', filename))
+
     def fix_file(self, file_path: str, output_path: str = None, dry_run: bool = False) -> int:
         """Fix point calculations, whitespace, and format in a file.
 
@@ -1171,6 +1282,41 @@ class PointCalculator:
         # Read and pre-process: strip old calculations and errors BEFORE parsing
         with open(file_path, 'r', encoding='utf-8') as f:
             source_code = f.read()
+
+        # Check if filename is in YYYYMMDD format
+        has_date_filename = self.has_date_filename(file_path)
+
+        # Generate expected date header from filename (if possible)
+        expected_date_header = self.generate_date_header_from_filename(file_path) if has_date_filename else None
+
+        # Check if source has a date header
+        existing_date_header = self.extract_date_header(source_code)
+
+        # Prepare source for parsing
+        date_header_to_add = None
+        date_header_error = None
+
+        if has_date_filename:
+            # Filename is YYYYMMDD format - enforce correct date header
+            if existing_date_header != expected_date_header:
+                # Need to add/fix date header
+                date_header_to_add = expected_date_header
+                # If there's an existing (wrong) header, remove it
+                if existing_date_header:
+                    lines = source_code.split('\n')
+                    # Remove first line
+                    source_code = '\n'.join(lines[1:])
+            else:
+                # Date header is correct - preserve it
+                date_header_to_add = expected_date_header
+        else:
+            # Filename is NOT YYYYMMDD format
+            if existing_date_header:
+                # Has a date header - preserve it
+                date_header_to_add = existing_date_header
+            else:
+                # No date header present - add error
+                date_header_error = "[ERROR] file not named with date format (YYYYMMDDd.sxiva)"
 
         # Strip all old point calculations and error messages from the input
         cleaned_lines = []
@@ -1247,7 +1393,7 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'ERROR']:
+                if n.type in ['focus_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
@@ -1260,7 +1406,16 @@ class PointCalculator:
                 continue
 
             # Process based on node type
-            if node.type == 'focus_declaration':
+            if node.type == 'date_header':
+                # Date header node was parsed correctly - preserve it
+                fixed_lines.append(line.strip())
+                continue
+
+            elif node.type == 'metadata_line':
+                # Preserve metadata lines as-is (already cleaned)
+                fixed_lines.append(line)
+
+            elif node.type == 'focus_declaration':
                 # Update focus categories
                 categories = []
                 for child in node.children:
@@ -1280,9 +1435,24 @@ class PointCalculator:
                 fixed_lines.append(focus_indent + focus_content)
 
             elif node.type == 'ERROR':
-                # Handle ERROR nodes - strip old calculations/errors, append new error message
+                # Handle ERROR nodes
                 node_id = id(node)
                 clean_line = self.strip_points_from_line(line)
+
+                # Check if this looks like a date header (already validated)
+                if line_idx == 0 and self.extract_date_header(clean_line):
+                    # This is the date header - preserve it (will be replaced if needed)
+                    # Don't add it to fixed_lines here, it will be handled by date_header_to_add logic
+                    continue
+
+                # Check if this looks like a metadata line: [category] text - HH:MM
+                if re.match(r'^\s*\[[^\]]+\]\s+.+\s+-\s+\d{1,2}:\d{2}\s*$', clean_line):
+                    # This is a metadata line - preserve with indentation
+                    content = clean_line.lstrip()
+                    fixed_lines.append(f"    {content}")  # Indent metadata lines
+                    continue
+
+                # Regular error handling
                 if node_id in block_points_map:
                     error_msg, _ = block_points_map[node_id]
                     if isinstance(error_msg, str) and error_msg.startswith("[ERROR]"):
@@ -1469,6 +1639,15 @@ class PointCalculator:
 
         # Join fixed lines
         result = '\n'.join(fixed_lines)
+
+        # Add date header at the beginning if needed
+        if date_header_to_add:
+            result = date_header_to_add + '\n' + result
+            num_fixes += 1
+        elif date_header_error:
+            # Add error message for missing date filename
+            result = date_header_error + '\n' + result
+            num_fixes += 1
 
         # Determine output file path
         if not dry_run:

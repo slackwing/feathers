@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# SXIVA CLI wrapper script
+# This allows running 'sxiva' without pip installation
+
+# Get the actual location of this script (resolves symlinks)
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+# Run the Python CLI from the tools directory
+cd "$SCRIPT_DIR/tools" && python3 -m sxiva.cli "$@"
