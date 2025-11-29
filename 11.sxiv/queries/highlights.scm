@@ -28,6 +28,9 @@
 ; Break marker
 ";;;" @keyword.break
 
+; End marker - everything after === is not highlighted
+"===" @keyword.break
+
 ; ============================================================================
 ; Time and Numbers
 ; ============================================================================

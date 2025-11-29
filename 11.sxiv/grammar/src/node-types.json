@@ -127,6 +127,11 @@
     "fields": {}
   },
   {
+    "type": "end_marker",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "end_term",
     "named": true,
     "fields": {
@@ -303,6 +308,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "focus_declaration",
           "named": true
         },
@@ -433,6 +442,10 @@
   },
   {
     "type": "=",
+    "named": false
+  },
+  {
+    "type": "===",
     "named": false
   },
   {

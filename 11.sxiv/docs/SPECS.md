@@ -65,17 +65,18 @@ MINUTE_VALUE ::= '3' | '6' | '10' | '13'
 
 #### Subject
 ```
-SUBJECT ::= [^[\],]+    # Any text except square brackets and commas
+SUBJECT ::= [a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+)*
 ```
 
 The arbitrary text describing what the blick is about. Subjects may contain:
-- Letters, numbers, spaces
+- Letters (a-z, A-Z), numbers (0-9), spaces
 - Dashes/hyphens: `look-up`, `follow-up`, `clean-up`
 - Underscores: `slack_up`, `check_email`
 - Periods: `v2.0`, `file.txt`
-- Most punctuation **except**:
-  - Commas `,` (reserved as separator)
-  - Square brackets `[]` (reserved syntax)
+- Allowed punctuation: `'` `"` `;` `:` `!` `?` `@` `#` `$` `%` `^` `&` `*` `(` `)` `+` `=` `{` `}` `|` `\` `/` `<` `>` `.`
+- **Excluded** (reserved syntax):
+  - Commas `,` (reserved as blick separator)
+  - Square brackets `[` `]` (reserved for categories and minutes)
 
 ### Top-Level Constructs
 
@@ -150,6 +151,26 @@ Both `;;;` and `[...]` work the same way for timing calculations: the timesheet 
 The **only difference** between `;;;` and `[...]`:
 - `;;;` resets accumulation to +1a
 - `[...]` preserves accumulation (streak continues)
+
+**3. End Marker (`===`)**
+```
+END_MARKER ::= '==='
+```
+
+**Example:**
+```
+00:00 - [wr] work ~ --- 00:09 (+3,+1f,+1a=5)
+===
+Notes, TODO items, and other free-form text.
+Nothing after === is parsed or modified by tooling.
+```
+
+**Semantics:**
+- Marks the end of the timesheet - everything after `===` is ignored
+- Parser stops processing when it encounters `===`
+- Calculator and formatter preserve all content after `===` exactly as-is
+- Allows you to add notes, paste links, TODOs, or any other text without syntax errors
+- Useful for keeping related notes in the same file as your timesheet
 
 **If previous block started at T with expected duration D:
   - Rest covers [T+D, T+D+REST_MINUTES)
@@ -275,16 +296,34 @@ These are **semantic rules** for tooling, not enforced by grammar:
   - **3 blicks**: `[3] + [3] + [6]`, `[3] + [6] + [3]`, `[6] + [3] + [3]`
   - **4 blicks**: `[3] + [3] + [3] + [3]`
 - Individual blick minutes can be `[3]`, `[6]`, `[10]`, or `[13]`
+- **Next block after start block**: After a start block, the following block must begin at the corresponding standard boundary (not the immediate next boundary):
+  - After `:08` start → next block must be at `:24` (not `:12` or `:20`)
+  - After `:20` start → next block must be at `:36` (not `:24` or `:32`)
+  - After `:32` start → next block must be at `:48` (not `:36` or `:44`)
+  - After `:44` start → next block must be at `:00` next hour (not `:48` or `:56`)
+  - After `:56` start → next block must be at `:12` next hour (not `:00` or `:08`)
+  - This ensures the 16-minute start block cycle (12 min work + 4 min downtime) completes properly
 
 ### Shortened x-Blocks
-- Prefix with `x` when previous block ended ≥6 minutes after current start time
-- **2-blick x-block** (6-11 minutes late):
+
+**When to use x-blocks (VALIDATION ENFORCED):**
+- `x` prefix is **required** when previous block ended ≥6 minutes after current block's start time
+- `x` prefix is **invalid** (error) when previous block ended <6 minutes after current block's start time
+
+**x-Block size requirements (VALIDATION ENFORCED):**
+- **2-blick x-block** (previous block ended 6-11 minutes after current start):
   - 1 blick: `[6]` (represents 6 minutes)
   - 2 blicks: `[3] + [3]`
   - Total must sum to 6 actual minutes
-- **1-blick x-block** (≥12 minutes late):
+  - Using wrong size (e.g., 1-blick when 6-11 min late) is an **error**
+- **1-blick x-block** (previous block ended ≥12 minutes after current start):
   - Must be exactly `[3]` (3 minutes)
-- x-blocks award focus points but do **not** award accumulation points
+  - Using wrong size (e.g., 2-blick when ≥12 min late) is an **error**
+
+**x-Block point rules:**
+- x-blocks award base points based on work completed
+- x-blocks do **not** award focus or accumulation points
+- x-blocks reset accumulation counter to +1a for the next block
 
 ### Continuation Block Rules
 - When a block ends with `+`, the next block must start with `TIME +`
@@ -301,9 +340,11 @@ These are **semantic rules** for tooling, not enforced by grammar:
     - Previous block ends at 09:32, continuation standard block with [3],[3]: imagined end = 09:32 + 6 + 1 = 09:39
     - Chain: 09:32 → 09:36 block [3],[3],[3] → imagined end = 09:32 + 9 + 1 = 09:42
 - **Threshold calculation for continuation chains**:
-  - For the final block in a chain, the threshold is the standard 12 minutes
-  - Base points = (imagined_end_of_previous_block + 12) - actual_end
+  - All non-final blocks in the chain contribute their work time to the "imagined end" calculation
+  - The final block (the one with the actual end time) uses the standard 12-minute threshold
+  - Base points = (imagined_end_of_previous_block_in_chain + 12) - actual_end
   - Example: Previous block ends at 09:32, continuation at 09:36 with [3],[3],[3] has imagined end = 09:42, final block at 09:48 has expected end = 09:42 + 12 = 09:54, actual end 10:00, base = -6
+  - In other words: the work time from all continuation blocks is "summed" via the imagined end calculation, but the final block always uses threshold=12
 - **Focus points for continuation chains**:
   - Aggregate ALL unique focus categories from ALL blocks in the chain
   - Award +1f for each unique focus category match across the entire chain
@@ -332,7 +373,7 @@ These are **semantic rules** for tooling, not enforced by grammar:
   - **Preserved across all breaks**: When a break occurs (`;;;` or `[...]`), the time offset from before the break is maintained and applied to blocks after the break
   - **Example**: x14:48 block ends at 14:58. Standard boundary = 14:48 + 12 = 15:00. Offset = 14:58 - 15:00 = -2. After rest block `[...] (coffee) (12)`, block at 15:12 has expected end = 15:12 + 12 + (-2) = 15:22, so if actual end is 15:26, base points = -4
 - **After any break**: Calculate from new start block using `start + threshold + offset` (not `previous_end + threshold`)
-- **Continuation blocks**: Sum thresholds of all continued blocks
+- **Continuation blocks**: See "Threshold calculation for continuation chains" above for how thresholds work in chains
 
 ### Focus Points
 - Award `+1f` for each **unique** focus category present in the block

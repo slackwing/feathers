@@ -22,7 +22,10 @@ module.exports = grammar({
 
   rules: {
     // Top-level file structure
-    source_file: $ => repeat($._line),
+    source_file: $ => seq(
+      repeat($._line),
+      optional($.end_marker)
+    ),
 
     _line: $ => choice(
       $.focus_declaration,
@@ -33,6 +36,9 @@ module.exports = grammar({
       $.comment,
       /\n/  // Empty line
     ),
+
+    // End marker: === (everything after is ignored)
+    end_marker: $ => seq('===', /[\s\S]*/),
 
     // Focus declaration: {focus: [cat1], [cat2], ...}
     focus_declaration: $ => seq(
@@ -144,9 +150,7 @@ module.exports = grammar({
     ),
 
     // Continuation marker: [~]+
-    continuation_marker: $ => choice(
-      seq(optional('~'), '+'),
-    ),
+    continuation_marker: $ => seq(optional('~'), '+'),
 
     // Triple dash variants: ---, <--, >--, -<-, ->-
     triple_dash: $ => choice(

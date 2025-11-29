@@ -1,0 +1,13 @@
+{focus: [wr]}
+00:00 - [wr] test ~ --- 00:09 (+3,+1f,+1a=5)
+===
+
+This is my notes section!
+I can write whatever I want here.
+
+- Random bullet points
+- No parsing errors
+- 00:00 - [fake] block won't be parsed
+- [brackets] and --- dashes are fine
+
+Just free-form text for notes, links, etc.

@@ -25,7 +25,7 @@ class CalculationState:
 @dataclass
 class BlockPoints:
     """Calculated points for a block."""
-    base: int  # Base points (minutes / 10)
+    base: int  # Base points (minutes ahead/behind expected end time)
     focus: int  # Focus bonus
     accumulation: int  # Accumulation bonus
     total: int  # Sum of base + focus + accumulation
@@ -34,6 +34,10 @@ class BlockPoints:
 
 class PointCalculator:
     """Calculates points for SXIVA time blocks."""
+
+    # Valid time boundaries (in minutes within the hour)
+    STANDARD_BOUNDARIES = [0, 12, 24, 36, 48]
+    START_BOUNDARIES = [8, 20, 32, 44, 56]
 
     def __init__(self):
         self._parser = None
@@ -67,7 +71,6 @@ class PointCalculator:
         Returns:
             bool: True if valid format (HH:MM with 2-digit minutes)
         """
-        import re
         # Must be HH:MM or H:MM format, where MM is exactly 2 digits
         return bool(re.match(r'^\d{1,2}:\d{2}$', time_str))
 
@@ -87,12 +90,7 @@ class PointCalculator:
         hours, minutes = map(int, time_str.split(':'))
         minute = minutes % 60
 
-        # Valid standard block boundaries
-        standard_boundaries = [0, 12, 24, 36, 48]
-        # Valid start block boundaries (4 minutes before standard)
-        start_boundaries = [8, 20, 32, 44, 56]
-
-        if minute in standard_boundaries or minute in start_boundaries:
+        if minute in self.STANDARD_BOUNDARIES or minute in self.START_BOUNDARIES:
             return (True, "")
         else:
             return (False, f"start time {time_str} is not on a valid boundary (:00/:12/:24/:36/:48 for standard blocks, :08/:20/:32/:44/:56 for start blocks)")
@@ -108,8 +106,7 @@ class PointCalculator:
         """
         hours, minutes = map(int, time_str.split(':'))
         minute = minutes % 60
-        start_boundaries = [8, 20, 32, 44, 56]
-        return minute in start_boundaries
+        return minute in self.START_BOUNDARIES
 
     def get_next_standard_boundary(self, time_str: str) -> str:
         """Get the next standard boundary after a start block.
@@ -143,6 +140,27 @@ class PointCalculator:
         else:
             # Not a start boundary, shouldn't happen
             return time_str
+
+    def convert_blick_notation_to_minutes(self, notation: int) -> int:
+        """Convert blick notation to actual work minutes.
+
+        [10] and [13] are special: they represent shortened final blicks.
+        - [10] = 9 minutes (3 blicks with final shortened by 1 min)
+        - [13] = 12 minutes (4 blicks with final shortened by 1 min)
+        - [3] = 3 minutes, [6] = 6 minutes (standard)
+
+        Args:
+            notation: The number from [notation] marker
+
+        Returns:
+            int: Actual work minutes
+        """
+        if notation == 10:
+            return 9
+        elif notation == 13:
+            return 12
+        else:
+            return notation
 
     def calculate_duration(self, start: str, end: str) -> int:
         """Calculate duration in minutes between two times.
@@ -194,13 +212,9 @@ class PointCalculator:
                         if blick_child.type == 'minutes':
                             minutes_text = node_text(blick_child, source_bytes)
                             # Parse [3], [6], [10], [13]
-                            minutes_val = int(minutes_text.strip('[]'))
-                            # Convert [10] -> 9, [13] -> 12, others stay same
-                            if minutes_val == 10:
-                                minutes_val = 9
-                            elif minutes_val == 13:
-                                minutes_val = 12
-                            total_minutes += minutes_val
+                            minutes_notation = int(minutes_text.strip('[]'))
+                            # Convert notation to actual minutes ([10]->9, [13]->12)
+                            total_minutes += self.convert_blick_notation_to_minutes(minutes_notation)
                             break
                 elif has_tilde:
                     # Tilde-only case (implicit [10] = 9 minutes)
@@ -497,19 +511,7 @@ class PointCalculator:
         # Build points notation
         block_total = base + focus + accumulation
         running_total = state.running_total + block_total
-
-        parts = []
-        if base != 0:
-            parts.append(str(base) if base < 0 else f"+{base}")
-        if focus > 0:
-            parts.append(f"+{focus}f")
-        if accumulation > 0:
-            parts.append(f"+{accumulation}a")
-
-        if parts:
-            expected = ','.join(parts) + f"={running_total}"
-        else:
-            expected = f"={running_total}" if running_total != 0 else "0"
+        expected = self.build_points_notation(base, focus, accumulation, running_total)
 
         return (BlockPoints(
             base=base,
@@ -592,6 +594,28 @@ class PointCalculator:
         running_total = state.running_total + block_total
 
         # Build expected notation with running total
+        expected = self.build_points_notation(base, focus, accumulation, running_total)
+
+        return BlockPoints(
+            base=base,
+            focus=focus,
+            accumulation=accumulation,
+            total=block_total,
+            expected=expected
+        )
+
+    def build_points_notation(self, base: int, focus: int, accumulation: int, running_total: int) -> str:
+        """Build the expected points notation string.
+
+        Args:
+            base: Base points
+            focus: Focus points
+            accumulation: Accumulation points
+            running_total: Running total after this block
+
+        Returns:
+            str: Points notation like "-2,+2f,+1a=1" or "=5" or "0"
+        """
         parts = []
         if base != 0:
             parts.append(str(base) if base < 0 else f"+{base}")
@@ -601,17 +625,9 @@ class PointCalculator:
             parts.append(f"+{accumulation}a")
 
         if parts:
-            expected = ','.join(parts) + f"={running_total}"
+            return ','.join(parts) + f"={running_total}"
         else:
-            expected = f"={running_total}" if running_total != 0 else "0"
-
-        return BlockPoints(
-            base=base,
-            focus=focus,
-            accumulation=accumulation,
-            total=block_total,
-            expected=expected
-        )
+            return f"={running_total}" if running_total != 0 else "0"
 
     def parse_points_notation(self, points_text: str) -> Optional[int]:
         """Parse points notation to extract the total.
@@ -683,6 +699,10 @@ class PointCalculator:
         # Walk through all blocks sequentially
         while i < len(nodes):
             node = nodes[i]
+
+            # Stop processing if we hit the end marker (===)
+            if node.type == 'end_marker':
+                break
 
             # Check for ERROR nodes (syntax errors)
             if node.type == 'ERROR':
@@ -930,14 +950,9 @@ class PointCalculator:
                             for subchild in child.children:
                                 if subchild.type == 'minutes':
                                     mins_text = node_text(subchild, source_bytes).strip('[]')
-                                    mins = int(mins_text)
-                                    # Convert [10] and [13] to actual minutes
-                                    if mins == 10:
-                                        work_minutes += 9
-                                    elif mins == 13:
-                                        work_minutes += 12
-                                    else:
-                                        work_minutes += mins
+                                    mins_notation = int(mins_text)
+                                    # Convert notation to actual minutes ([10]->9, [13]->12)
+                                    work_minutes += self.convert_blick_notation_to_minutes(mins_notation)
 
                     # VALIDATION: Check for time travel (current block ends before previous block ended)
                     if state.previous_end_time:
@@ -1182,6 +1197,12 @@ class PointCalculator:
 
             # Get nodes starting on this line
             nodes_on_line = node_map.get(line_idx, [])
+
+            # Stop processing if we hit the end marker (===)
+            if any(n.type == 'end_marker' for n in nodes_on_line):
+                # Preserve everything from === onwards as-is
+                fixed_lines.extend(lines[line_idx:])
+                break
 
             # Find the primary node type for this line
             node = None
