@@ -1,0 +1,14 @@
+-- local home = os.getenv('HOME')
+-- local lombok_path = home .. '/.local/share/nvim/mason/packages/jdtls/lombok.jar'
+-- local config = {
+--     cmd = {
+--       vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
+--       '-javaagent:' .. lombok_path
+--     },
+--     root_dir = vim.fs.dirname(vim.fs.find({'gradlew', '.git', 'mvnw'}, { upward = true })[1]),
+-- }
+-- config.cmd = vim.list_extend(config.cmd, {'-verbose'})
+-- config.init_options = {
+--   bundles = {}
+-- }
+-- require('jdtls').start_or_attach(config)
