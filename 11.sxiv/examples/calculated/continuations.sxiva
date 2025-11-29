@@ -1,0 +1,5 @@
+{focus: [sys]}
+09:24 - [sys] calc [3], [err] hang clothes [6] --- 09:32 (+4,+1f,+1a=6)
+    09:36 - [sys] calc [3], [err] start dishwasher [3], [sys] org notes [3] +
+    09:48 + [err] wipe counter [6], [err] put away dishes [3] --- 10:00 (-6,+1f,+2a=3)
+    10:00 - [sys] review calendar [6], [bkc] read article [3] --- 10:17 (-5,+1f,+3a=2)

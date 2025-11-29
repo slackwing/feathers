@@ -1,0 +1,4 @@
+# Error: Block ends before previous block ended (time travel not allowed)
+{focus: [wr]}
+09:00 - [wr] writing session [10] --- 09:20
+x09:12 - [wr] catchup work [6] --- 09:15

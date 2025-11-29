@@ -1,0 +1,6 @@
+{focus: [sp/a], [sp/b]}
+14:00 - [sp/a] project-alpha standup [3], [sp/b] project-beta review [6] --- 14:14
+14:12 - [sp/a] deep work on alpha ~[6], [...] quick break [3] --- 14:28
+14:24 - [sp/b] beta code review [3], [sp/a] alpha design doc [6] --- 14:42
+x14:36 - [eng/infra] infrastructure work ~[6] --- 14:51
+14:48 - [sp/a] wrap up alpha tasks [6], [sys] email check [3] --- 15:03

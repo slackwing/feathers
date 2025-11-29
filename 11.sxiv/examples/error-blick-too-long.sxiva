@@ -1,0 +1,3 @@
+# Error: Block ends too late - has [6] but should have [3] based on end time
+{focus: [wr]}
+09:00 - [wr] long session [6] --- 09:03

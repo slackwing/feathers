@@ -1,0 +1,5 @@
+# Error: Continuation block missing work duration [10] or tilde shorthand ~
+{focus: [wr]}
+09:00 - [wr] start work ~--- 09:14
+09:12 - [wr] continue work ~+
+09:24 + [wr] still working --- 09:38

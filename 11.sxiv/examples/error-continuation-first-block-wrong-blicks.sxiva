@@ -1,0 +1,4 @@
+# Error: First block in continuation has wrong blick count (has 2 blicks, needs 3)
+{focus: [wr]}
+09:00 - [wr] writing session [3], [sys] email [3] ~+
+09:12 + [wr] continue writing ~--- 09:24

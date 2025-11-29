@@ -1,0 +1,10 @@
+{focus: [wr], [sys]}
+13:56 - [wr] task a [3], [sys] task b [3], [wr] task c [3], [err] task d [3] --- 14:14
+14:12 - [wr] task with-dashes in subject [6], [sys] another-task [3] --- 14:27
+14:24 - [wr] normal work [10] --- 14:51
+x14:36 - [err] quick task [3] --- 14:54
+x14:48 - [sys] catchup [6] --- 14:58
+[...] (coffee break) [12]
+15:12 - [wr] resume work [10] --- 15:26
+15:24 - [bkc] reading [6], [sys] notes [3] --- 15:39
+15:36 - [wr] final task ~[6], [...] wind down [3] --- 15:51

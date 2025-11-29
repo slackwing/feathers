@@ -1,0 +1,462 @@
+# SXIVA Language Specification
+
+**Version:** 0.1.0
+**File Extension:** `.sxiva`
+
+## Overview
+
+SXIVA (pronounced "shiva") is a time-tracking notation language for recording work activities in 12-minute blocks divided into 3-minute "blicks" (block-ticks). The language supports focus tracking, point/reward calculations, and flexible time management patterns.
+
+## Core Concepts
+
+### Time Structure
+
+- **Block**: A 12-minute time unit starting at :00, :12, :24, :36, :48 of each hour
+- **Blick**: A 3-minute time chunk. Examples: `[3]` = 1 blick, `[6]` = 2 blicks, `[10]` (9 min) = 3 blicks, `[13]` (12 min) = 4 blicks. Standard blocks contain up to 3 blicks (9 minutes total).
+- **Downtime**: The remaining 3 minutes in each block (used for planning, context-switching)
+- **Start Block**: The first block in a sequence (after file start or break), may contain 4 blicks
+
+### Block Types
+
+1. **Standard Block (3-blick)**: 3 blicks totaling 9 minutes + 3 minutes downtime
+2. **Shortened Block (x-block)**: 2 blicks (6 min) or 1 blick (3 min) when catching up after delays
+3. **Start Block (4-blick)**: 4 blicks totaling 12 minutes + 4 minutes downtime; starts 4 minutes before standard boundaries
+
+## Grammar Specification
+
+### Lexical Elements
+
+#### Whitespace
+```
+WHITESPACE ::= (' ' | '\t')*
+LINE ::= WHITESPACE content NEWLINE
+```
+
+All line types may begin with arbitrary leading whitespace (spaces or tabs).
+
+#### Time Format
+```
+TIME ::= HH ':' MM
+HH ::= ('0' | '1') DIGIT | '2' ('0' | '1' | '2' | '3')
+MM ::= '00' | '12' | '24' | '36' | '48'     # Standard blocks
+     | '08' | '20' | '32' | '44' | '56'     # Start blocks (4 minutes before)
+```
+
+For end times, MM can be any two-digit minute value (00-59).
+
+#### Category
+```
+CATEGORY ::= '[' CATEGORY_CONTENT ']'
+CATEGORY_CONTENT ::= [^[\]]+    # Any characters except square brackets
+```
+
+Common examples: `[wr]`, `[err]`, `[sp/a]`, `[bkc]`, `[...]`
+
+#### Minutes
+```
+MINUTES ::= '[' MINUTE_VALUE ']'
+MINUTE_VALUE ::= '3' | '6' | '10' | '13'
+```
+
+- `[3]`, `[6]`: Actual time durations (3 and 6 minutes)
+- `[10]`: Represents 9 minutes (used for single-blick blocks or within multi-blick combinations)
+- `[13]`: Represents 12 minutes (used for single-blick 4-blick start blocks)
+- **Note**: `[9]` is never used in SXIVA syntax; single-blick blocks use `[10]` instead
+
+#### Subject
+```
+SUBJECT ::= [^[\],]+    # Any text except square brackets and commas
+```
+
+The arbitrary text describing what the blick is about. Subjects may contain:
+- Letters, numbers, spaces
+- Dashes/hyphens: `look-up`, `follow-up`, `clean-up`
+- Underscores: `slack_up`, `check_email`
+- Periods: `v2.0`, `file.txt`
+- Most punctuation **except**:
+  - Commas `,` (reserved as separator)
+  - Square brackets `[]` (reserved syntax)
+
+### Top-Level Constructs
+
+#### File Structure
+```
+FILE ::= (LINE)*
+LINE ::= WHITESPACE (FOCUS_DECL | REST_BLOCK | TIME_BLOCK | BREAK | EMPTY) NEWLINE
+```
+
+#### Focus Declaration
+```
+FOCUS_DECL ::= '{' 'focus' ':' CATEGORY (',' WHITESPACE* CATEGORY)* '}'
+```
+
+**Example:**
+```
+{focus: [wr], [err]}
+{focus: [sys], [bkc], [fit]}
+```
+
+**Semantics:**
+- Sets the current focus categories for point calculation
+- Replaces any previous focus declaration
+- Remains in effect until changed or file ends
+- Focus points are awarded for each unique focus category present in a block
+
+#### Break Markers
+
+There are two types of break markers that handle time discontinuities:
+
+**1. Hard Break (`;;;`)**
+```
+BREAK ::= ';;;'
+```
+
+**Semantics:**
+- Marks a discontinuity in time tracking
+- **Accumulation points reset to +1a** after break
+- **Focus categories remain in effect** across breaks (not reset)
+- Time offset is preserved across the break
+- Next block uses `start + threshold + offset` calculation (as if there was no break)
+
+**2. Rest Block (`[...]`)**
+```
+REST_BLOCK ::= '[...]' WHITESPACE* '(' REST_DESC ')' WHITESPACE* '[' REST_MINUTES ']'
+REST_DESC ::= [^)]+
+REST_MINUTES ::= DIGIT+ (must be multiple of 12)
+```
+
+**Example:**
+```
+[...] (lunch) [48]
+[...] (meeting) [24]
+```
+
+**Semantics:**
+- Skips time without explicit block notation
+- **Accumulation points are NOT reset** (unlike `;;;`)
+- **Focus categories remain in effect** across rest blocks (not reset)
+- Time offset is preserved across the rest block
+- Next block uses `start + threshold + offset` calculation (as if there was no break)
+- `REST_MINUTES` must be a multiple of 12
+- Rest starts from the **expected** end time of the previous block (not actual end time)
+
+**Unified Break Behavior:**
+
+Both `;;;` and `[...]` work the same way for timing calculations: the timesheet should work "as if there was no break at all." This means:
+- Time offset from before the break is preserved
+- After the break, calculations use `start + threshold + offset` (not `previous_end + threshold`)
+- If you subtract the break duration from all times after the break, you'd have a continuous timesheet
+
+The **only difference** between `;;;` and `[...]`:
+- `;;;` resets accumulation to +1a
+- `[...]` preserves accumulation (streak continues)
+
+**If previous block started at T with expected duration D:
+  - Rest covers [T+D, T+D+REST_MINUTES)
+  - Standard 3-blick block: D = 12 minutes
+  - 4-blick start block: D = 16 minutes
+  - x-block (2-blick): D = 6 minutes
+  - x-block (1-blick): D = 3 minutes
+- Next block starts at the first valid boundary ≥ T + D + REST_MINUTES
+- Rest blocks are ignored for all point calculations
+- Example: Block at 12:48 (expected end 13:00) + rest(36) → rest covers 13:00-13:36, next at 13:48
+
+### Time Blocks
+
+#### Standard Time Block
+```
+TIME_BLOCK ::= 'x'? TIME WHITESPACE* '-' WHITESPACE* BLICK_LIST WHITESPACE* TERMINATOR
+```
+
+#### Blick List
+```
+BLICK_LIST ::= BLICK (',' BLICK)*
+```
+
+Blicks within a time block are separated by commas with optional whitespace:
+- `[3], [err]` (space after comma - recommended)
+- `[3],[err]` (no space - also valid)
+
+#### Blick
+```
+BLICK ::= CATEGORY WHITESPACE+ SUBJECT WHITESPACE* TILDE? WHITESPACE* MINUTES  # Explicit minutes
+        | CATEGORY WHITESPACE+ SUBJECT WHITESPACE+ TILDE WHITESPACE*           # Omitted [10] with tilde
+TILDE ::= '~'
+```
+
+**Omitting `[10]`**: The `[10]` minutes specification can ONLY be omitted when using the tilde:
+- `[category] subject ~---` (valid - [10] omitted with tilde)
+- `[category] subject [10] ---` (valid - explicit [10])
+- `[category] subject ---` (INVALID - must have either tilde or [10])
+
+**Parsing strategy for SUBJECT:**
+- Trim leading/trailing whitespace
+- Capture text from after CATEGORY up to:
+  - A `~` preceded by whitespace (tilde form)
+  - A `[N]` minutes marker (standard form)
+  - End of blick (before `,` comma separator)
+- Internal dashes in subjects are allowed
+
+**Tilde notation:**
+The tilde is a human-readable marker indicating indefinite-end tasks. It does not affect parsing semantics.
+
+#### Terminator
+```
+TERMINATOR ::= END_TERM | CONTINUATION
+END_TERM ::= TRIPLE_DASH WHITESPACE* TIME WHITESPACE* POINTS
+CONTINUATION ::= TILDE? '+'
+
+TRIPLE_DASH ::= '---' | '<--' | '>--' | '-<-' | '->-'
+```
+
+The various triple-dash forms are human markers; treat all as equivalent to `---`.
+
+**Continuation:**
+- Blocks ending in `+` continue to the next block
+- Next block must start with `TIME '+'` instead of `TIME '-'`
+- No end time or points are recorded for the continuing block
+- `~+` is shorthand: single blick, omitted `[10]`, continuation
+
+#### Continuation Block
+```
+CONTINUATION_BLOCK ::= 'x'? TIME WHITESPACE* '+' WHITESPACE* BLICK_LIST WHITESPACE* TERMINATOR
+```
+
+### Points
+
+```
+POINTS ::= '(' POINT_LIST? ('=' TOTAL)? ')'?
+POINT_LIST ::= POINT (',' WHITESPACE* POINT)*
+POINT ::= SIGN? DIGIT+ POINT_TYPE?
+SIGN ::= '+' | '-'
+POINT_TYPE ::= 'f' | 'a'
+TOTAL ::= SIGN? DIGIT+
+```
+
+**Point Types:**
+- **Base points** (no suffix): Minutes ahead/behind relative to expected completion time
+- **Focus points** (`f` suffix): Awarded for each unique focus category in the block
+- **Accumulation points** (`a` suffix): Incrementing streak counter (resets on non-focus or x-block)
+
+**Examples:**
+```
+--- 14:02 (-2,+2f,+1a=1)
+--- 14:13 (+1,+1f,+2a=5)
+--- 14:28 (-3=2)
+--- 14:42 (
+```
+
+**Semantics:**
+- Points are **optional** in the grammar (for human entry)
+- An open parenthesis `(` without closing `)` is valid (indicates unpointed block)
+- Tooling will calculate and populate missing points, adding closing `)`
+- The `=TOTAL` shows running sum of all point types
+- Points can be partial: `(+1f` or `(-2,+1f` are valid (unclosed)
+
+## Block Validation Rules
+
+These are **semantic rules** for tooling, not enforced by grammar:
+
+### Standard 3-Blick Blocks
+- Must contain 1-3 blicks
+- Total minutes must sum to 9 (actual time, where [10]=9):
+  - **1 blick**: `[10]` only (represents 9 minutes)
+  - **2 blicks**: `[3] + [6]`, `[6] + [3]`
+  - **3 blicks**: `[3] + [3] + [3]`
+- Individual blick minutes can be `[3]`, `[6]`, or `[10]`
+
+### Start 4-Blick Blocks
+- Only valid as first block in file or after `;;;` break (semantic validation, not grammar)
+- Start time must be 4 minutes before standard boundary (HH:08, HH:20, HH:32, HH:44, HH:56)
+- Must contain 1-4 blicks
+- Total minutes must sum to 12 (actual time, where [10]=9, [13]=12):
+  - **1 blick**: `[13]` only (represents 12 minutes)
+  - **2 blicks**: `[10] + [3]`, `[3] + [10]`, `[6] + [6]`
+  - **3 blicks**: `[3] + [3] + [6]`, `[3] + [6] + [3]`, `[6] + [3] + [3]`
+  - **4 blicks**: `[3] + [3] + [3] + [3]`
+- Individual blick minutes can be `[3]`, `[6]`, `[10]`, or `[13]`
+
+### Shortened x-Blocks
+- Prefix with `x` when previous block ended ≥6 minutes after current start time
+- **2-blick x-block** (6-11 minutes late):
+  - 1 blick: `[6]` (represents 6 minutes)
+  - 2 blicks: `[3] + [3]`
+  - Total must sum to 6 actual minutes
+- **1-blick x-block** (≥12 minutes late):
+  - Must be exactly `[3]` (3 minutes)
+- x-blocks award focus points but do **not** award accumulation points
+
+### Continuation Block Rules
+- When a block ends with `+`, the next block must start with `TIME +`
+- Continuation blocks inherit block type (standard/shortened) based on timing rules
+- If **any** block in a continuation chain is an x-block, **all** blocks in that chain must be marked with `x`
+  - This includes continuation blocks that would normally be standard (3-blick) blocks
+  - The entire continuation chain is treated as an x-block for accumulation point purposes
+- **Imagined end times** for blocks without actual end times (continuation blocks):
+  - Calculated from the **previous block's end time** (or previous imagined end in a chain), not from the continuation block's start time
+  - **x-blocks**: imagined_end = previous_end + work_minutes (no grace period)
+  - **Standard blocks**: imagined_end = previous_end + work_minutes + 1 (1-minute grace)
+  - Examples:
+    - Previous block ends at 09:32, continuation x-block with [3]: imagined end = 09:32 + 3 = 09:35
+    - Previous block ends at 09:32, continuation standard block with [3],[3]: imagined end = 09:32 + 6 + 1 = 09:39
+    - Chain: 09:32 → 09:36 block [3],[3],[3] → imagined end = 09:32 + 9 + 1 = 09:42
+- **Threshold calculation for continuation chains**:
+  - For the final block in a chain, the threshold is the standard 12 minutes
+  - Base points = (imagined_end_of_previous_block + 12) - actual_end
+  - Example: Previous block ends at 09:32, continuation at 09:36 with [3],[3],[3] has imagined end = 09:42, final block at 09:48 has expected end = 09:42 + 12 = 09:54, actual end 10:00, base = -6
+- **Focus points for continuation chains**:
+  - Aggregate ALL unique focus categories from ALL blocks in the chain
+  - Award +1f for each unique focus category match across the entire chain
+  - Not awarded for x-block chains (same rule as individual x-blocks)
+- **Indentation rules** (applies to all blocks, including continuation chains):
+  - Blocks with accumulation ≥ 2 are indented with 4 spaces
+  - First `+1a` block (after reset) is NOT indented
+  - Rollover `+1a` block (from `+10a` → `+1a`) IS indented (still in streak)
+  - x-blocks are NEVER indented (regardless of accumulation)
+  - Focus declarations during an active streak (accumulation ≥ 2) are indented
+
+## Point Calculation (Tooling)
+
+### Base Points
+- **Formula**: Minutes difference from (previous_end_time + threshold + time_offset)
+- **Threshold** (minutes after previous block):
+  - Standard block: 12 minutes
+  - 2-blick x-block: 6 minutes
+  - 1-blick x-block: 3 minutes
+  - 4-blick start block: 16 minutes
+- **Time Offset**: Tracks timing drift relative to standard 12-minute block boundaries
+  - **Calculation**: offset = actual_end - (block_start + 12)
+  - Always calculated relative to standard 12-minute boundaries, regardless of actual block type (x-blocks, start blocks, etc.)
+  - Positive offset = running late past the boundary, negative offset = running early
+  - Updated after each block based on actual end vs standard boundary
+  - **Preserved across all breaks**: When a break occurs (`;;;` or `[...]`), the time offset from before the break is maintained and applied to blocks after the break
+  - **Example**: x14:48 block ends at 14:58. Standard boundary = 14:48 + 12 = 15:00. Offset = 14:58 - 15:00 = -2. After rest block `[...] (coffee) (12)`, block at 15:12 has expected end = 15:12 + 12 + (-2) = 15:22, so if actual end is 15:26, base points = -4
+- **After any break**: Calculate from new start block using `start + threshold + offset` (not `previous_end + threshold`)
+- **Continuation blocks**: Sum thresholds of all continued blocks
+
+### Focus Points
+- Award `+1f` for each **unique** focus category present in the block
+- **NOT awarded** for x-blocks (x-blocks only get base points)
+
+### Accumulation Points
+- Start at `+1a`, increment by 1 each block **with a focus category**
+- **Only awarded** if the block has at least one focus category match
+- **NOT awarded** for x-blocks (x-blocks reset accumulation and only get base points)
+- Max value: `+10a`, then wraps to `+1a` (continues the streak)
+- Reset to `+1a` (for the next focus block) when:
+  - No focus category present in block (no accumulation points awarded this block)
+  - x-block encountered (including entire continuation chains marked with x)
+  - Hard break (`;;;`) encountered
+- **Not affected** by:
+  - New focus declarations (continues counting across focus changes)
+  - Rest blocks `[...]` (accumulation continues across rest blocks)
+
+### Running Total
+- **Cumulative sum** of all point totals across all previous blocks plus current block
+- Format: `=N` at end of point list
+- Example: `(-2,+2f,+1a=1)` means total of -2+2+1=1 (first block)
+- Next block: `(+1,+1f,+2a=5)` means current block is +4, running total is 1+4=5
+
+## Examples
+
+### Basic Sequence
+```sxiva
+{focus: [wr], [err]}
+13:48 - [wr] brainstorm [3], [err] take out recycling [3], [err] text taylor [3] --- 14:02 (-2,+2f,+1a=1)
+14:00 - [err] look-up flights ~--- 14:13 (+1,+1f,+2a=5)
+14:12 - [sp/a] claude work ~[6], [...] rest [3] --- 14:28 (-3=2)
+```
+
+### With x-Blocks
+```sxiva
+14:24 - [sp/b] slack-up ~[3], [err] reply [3], [bkc] read 3 pages [3] --- 14:42 (-2,+1f,+1a=2)
+x14:36 - [err] do the dishes [6] --- 14:50 (-2=0)
+```
+
+### With Break
+```sxiva
+14:48 - [wr] brainstorm ~--- 15:14 (-12,+1f,+1a=-10)
+x15:00 - [bkc] read 2 pages [3] --- 15:19 (-2=-12)
+;;;
+x15:36 - [err] call taylor ~[6] --- 15:49 (-1,+1f=-12)
+```
+
+### With Continuation (Standard Blocks)
+```
+{focus: [sys]}
+09:36 - [sys] calc [3] - [err] start dishwasher [3] - [sys] org 7 [3] +
+09:48 + [err] wipe counter, wash pots [6] - [err] put away 5 things [3] --- 10:01 (-5,+1f,+1a
+```
+
+### With Continuation (x-Block Chain)
+```
+{focus: [sys]}
+09:24 - [sys] calc [3] - [err] hang clothes [6] --- 09:52 (-16,+1f,+1a
+x09:36 - [sys] calc [3] +
+x09:48 + [err] start dishwasher [3] - [sys] org 7 [3] +
+x10:00 + [err] wipe counter [6] - [err] put away 5 [3] --- 10:09 (+4,+1f
+```
+Note: The entire continuation chain is marked with `x` and gets no accumulation points.
+
+### With Rest Block
+```
+12:48 - [wr] write email [6] - [bkc] read 2 pages [3] --- 13:01 (-1,+1f,+1a=10)
+[...] (lunch) [36]
+13:48 - [err] call back [3] - [sys] review calendar [6] --- 14:03 (-3,+1f,+1a=8)
+```
+
+### 4-Blick Start Block
+```
+13:44 - [wr] deep work [13] --- 14:02 (-2,+1f,+1a=1)
+14:00 - [err] emails [6] - [bkc] read 4 pages [3] --- 14:15 (-3,+1f,+2a=0)
+```
+
+## Reserved Tokens
+
+The following have special meaning and cannot appear in subjects or category content:
+- `[` `]` - Category and minute delimiters
+- `,` - Blick separator
+- `-` `+` `~` - Block/continuation markers
+- `(` `)` - Point delimiters
+- `{` `}` - Focus declaration delimiters
+- `;;;` - Break marker
+- `---`, `<--`, `>--`, `-<-`, `->-` - Block terminators
+
+## Implementation Notes
+
+### For Tree-sitter Grammar
+- All line types must handle arbitrary leading whitespace
+- Time validation (boundaries) should be in semantic validation, not grammar
+- Point calculations are for tooling layer, not parser
+- `---` variants are syntactic sugar (normalize during parsing)
+- **Separator**: Comma `,` with optional surrounding whitespace
+- Subjects cannot contain commas (reserved as separator)
+
+### For Neovim Syntax
+- Highlight invalid time formats
+- Highlight mismatched minute sums (3-blick ≠ 9, 4-blick ≠ 12)
+- Highlight misplaced x-blocks (basic heuristic)
+- Optional: highlight tilde `~` as comment/marker
+
+### For LSP/Linting
+- Validate blick minute sums
+- Validate x-block placement based on previous end times
+- Validate continuation block pairing (+ must follow +)
+- Validate rest block minutes (multiple of 12)
+- Calculate and suggest point values
+- Warn on missing end times (except continuations)
+
+### For CLI Tooling
+- Parse and validate `.sxiva` files
+- Calculate and append point values
+- Export to CSV: time, category, subject, minutes, points
+- Integrate with Google Sheets API
+- **Formatting/Linting Rules:**
+  - Add 4-space indentation to lines in an active accumulation streak (accumulation > 1)
+  - **x-blocks**: NEVER indented (regardless of streak status)
+  - First block after file start, break, or no-focus reset: no indentation
+  - First `+1a` after accumulation reset: no indentation
+  - Accumulation rollover from `+10a` to `+1a`: keep indentation (still in streak)
+  - **Focus declarations**: Indented if appearing during an active accumulation streak
+  - Remove comments and empty lines in formatted output
+- Generate reports: time by category, focus streak analytics, point trends

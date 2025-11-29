@@ -1,0 +1,4 @@
+# Error: Previous block ended only slightly late, should NOT be x-block
+{focus: [wr]}
+09:00 - [wr] writing session [10] --- 09:14
+x09:12 - [wr] continue writing [6] --- 09:24

@@ -1,0 +1,27 @@
+{
+  "name": "tree-sitter-sxiva",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for SXIVA time-tracking notation language",
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "tree-sitter test",
+    "parse": "tree-sitter parse"
+  },
+  "keywords": ["tree-sitter", "parser", "sxiva", "time-tracking"],
+  "author": "",
+  "license": "ISC",
+  "tree-sitter": [
+    {
+      "scope": "source.sxiva",
+      "file-types": ["sxiva"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.10"
+  }
+}
