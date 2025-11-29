@@ -15,8 +15,10 @@ This plan outlines the step-by-step implementation of tooling for the SXIVA time
 
 ✅ **Phase 1: Tree-sitter Grammar** - COMPLETE
 ✅ **Phase 2: Neovim Integration** - COMPLETE
+✅ **Phase 5A: Python CLI Calculator** - COMPLETE
+✅ **Phase 5B: Neovim Command** - COMPLETE
 
-**Next**: Phase 5 - Point Calculator (3-phase auto-calculation approach)
+**Next**: Phase 6 - Additional CLI Commands (CSV export, stats, etc.)
 
 ---
 

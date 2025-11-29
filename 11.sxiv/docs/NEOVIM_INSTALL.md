@@ -99,12 +99,56 @@ require('nvim-treesitter.configs').setup {
 - **Syntax Highlighting**: Full semantic highlighting via Tree-sitter
   - Times, categories, subjects, points all colored appropriately
   - Special colors for `[wr]`, `[err]`, `[sp/*]`, `[...]` categories
+  - Highlighting stops after `===` end marker
 
 - **Filetype Detection**: Automatic for `.sxiva` files
 
-- **Commands** (coming soon):
-  - `:SxivaValidate` - Validate file syntax
-  - `:SxivaCalculate` - Calculate points
+- **Commands**:
+  - `:SxivaRecalculate` - Recalculate and fix all points in current file
+  - `:SxivaValidate` - Validate file syntax (coming soon)
+
+## Usage
+
+### Recalculating Points
+
+When you've finished adding time blocks to your `.sxiva` file:
+
+1. Save the file (`:w`)
+2. Run `:SxivaRecalculate`
+3. The file will be automatically updated with correct point calculations
+
+The command will:
+- Run the Python calculator with `--fix` flag
+- Update all incorrect or missing points
+- Reload the buffer to show the changes
+- Display a notification when complete
+
+**Example workflow:**
+```
+# Edit your .sxiva file, add some blocks with wrong/missing points:
+00:00 - [wr] task ~,[ts] other [3] --- 00:12 (+0=0)
+
+# Save and recalculate:
+:w
+:SxivaRecalculate
+
+# File is now updated:
+00:00 - [wr] task ~,[ts] other [3] --- 00:12 (+4,+2f,+1a=7)
+```
+
+**Keyboard shortcut (optional):**
+
+Add to your `init.lua` to map `<leader>sc` (s=sxiva, c=calculate):
+
+```lua
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'sxiva',
+  callback = function()
+    vim.keymap.set('n', '<leader>sc', ':SxivaRecalculate<CR>',
+      { buffer = true, desc = 'Recalculate SXIVA points' })
+  end,
+})
+```
 
 ## Troubleshooting
 
