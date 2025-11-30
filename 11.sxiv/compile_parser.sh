@@ -6,6 +6,8 @@ set -e
 echo "Compiling SXIVA parser..."
 
 cd grammar
+npx tree-sitter generate
+echo "✓ Generated parser from grammar.js"
 gcc -o parser.so -shared src/parser.c -I./src -fPIC -O2
 echo "✓ Compiled parser in grammar/"
 

@@ -127,6 +127,37 @@
     "fields": {}
   },
   {
+    "type": "date_header",
+    "named": true,
+    "fields": {
+      "day_of_week": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "day_name",
+            "named": true
+          }
+        ]
+      },
+      "month": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "month_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "day_name",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "end_marker",
     "named": true,
     "fields": {}
@@ -183,7 +214,53 @@
     }
   },
   {
+    "type": "metadata_line",
+    "named": true,
+    "fields": {
+      "category": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "category",
+            "named": true
+          }
+        ]
+      },
+      "subject": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "metadata_subject",
+            "named": true
+          }
+        ]
+      },
+      "time": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "time",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "metadata_subject",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "minutes",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "month_name",
     "named": true,
     "fields": {}
   },
@@ -308,6 +385,10 @@
           "named": true
         },
         {
+          "type": "date_header",
+          "named": true
+        },
+        {
           "type": "end_marker",
           "named": true
         },
@@ -316,7 +397,15 @@
           "named": true
         },
         {
+          "type": "metadata_line",
+          "named": true
+        },
+        {
           "type": "rest_block",
+          "named": true
+        },
+        {
+          "type": "summary_declaration",
           "named": true
         },
         {
@@ -325,6 +414,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "summary_declaration",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "terminator",
@@ -453,6 +547,82 @@
     "named": false
   },
   {
+    "type": "April",
+    "named": false
+  },
+  {
+    "type": "August",
+    "named": false
+  },
+  {
+    "type": "December",
+    "named": false
+  },
+  {
+    "type": "February",
+    "named": false
+  },
+  {
+    "type": "Friday",
+    "named": false
+  },
+  {
+    "type": "January",
+    "named": false
+  },
+  {
+    "type": "July",
+    "named": false
+  },
+  {
+    "type": "June",
+    "named": false
+  },
+  {
+    "type": "March",
+    "named": false
+  },
+  {
+    "type": "May",
+    "named": false
+  },
+  {
+    "type": "Monday",
+    "named": false
+  },
+  {
+    "type": "November",
+    "named": false
+  },
+  {
+    "type": "October",
+    "named": false
+  },
+  {
+    "type": "Saturday",
+    "named": false
+  },
+  {
+    "type": "September",
+    "named": false
+  },
+  {
+    "type": "Sunday",
+    "named": false
+  },
+  {
+    "type": "Thursday",
+    "named": false
+  },
+  {
+    "type": "Tuesday",
+    "named": false
+  },
+  {
+    "type": "Wednesday",
+    "named": false
+  },
+  {
     "type": "[",
     "named": false
   },
@@ -514,6 +684,10 @@
   },
   {
     "type": "{",
+    "named": false
+  },
+  {
+    "type": "{summary}",
     "named": false
   },
   {

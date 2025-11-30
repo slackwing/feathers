@@ -275,6 +275,31 @@ class PointCalculator:
                 return True
         return False
 
+    def minutes_to_blick_count(self, minutes_str: str) -> int:
+        """Convert minute notation to number of blicks.
+
+        Args:
+            minutes_str: String like '[3]', '[6]', '[10]', '[13]'
+
+        Returns:
+            Number of blicks (each blick = 3 minutes)
+        """
+        # Remove brackets and convert to int
+        mins = int(minutes_str.strip('[]'))
+
+        # Map: [3]=1, [6]=2, [10]=3, [13]=4
+        if mins == 3:
+            return 1
+        elif mins == 6:
+            return 2
+        elif mins == 10:
+            return 3
+        elif mins == 13:
+            return 4
+        else:
+            # Fallback: approximate
+            return max(1, mins // 3)
+
     def extract_categories(self, blick_list_node, source_bytes) -> List[str]:
         """Extract category names from a blick list.
 
@@ -283,7 +308,8 @@ class PointCalculator:
             source_bytes: Source code as bytes
 
         Returns:
-            List[str]: Category names (without brackets)
+            List[str]: Category names (without brackets), one per blick
+            For example, [wr] work [10] returns ['wr', 'wr', 'wr'] (3 blicks)
         """
         from .parser import node_text
 
@@ -291,12 +317,29 @@ class PointCalculator:
 
         for child in blick_list_node.children:
             if child.type == 'blick':
+                cat_name = None
+                num_blicks = 3  # Default to 3 blicks (tilde implies [10] = 3 blicks)
+                has_tilde = False
+
                 for blick_child in child.children:
                     if blick_child.type == 'category':
                         cat_text = node_text(blick_child, source_bytes)
                         # Remove brackets: [wr] -> wr
                         cat_name = cat_text.strip('[]')
-                        categories.append(cat_name)
+                    elif blick_child.type == 'minutes':
+                        minutes_text = node_text(blick_child, source_bytes)
+                        num_blicks = self.minutes_to_blick_count(minutes_text)
+                    # Check for tilde (might be a separate node or text)
+                    text = node_text(blick_child, source_bytes).strip()
+                    if text == '~' or blick_child.type == 'tilde':
+                        has_tilde = True
+
+                # If no explicit minutes and no tilde, we shouldn't have a default
+                # But grammar requires either minutes or tilde, so default to 3 is safe
+
+                # Add category once per blick
+                if cat_name:
+                    categories.extend([cat_name] * num_blicks)
 
         return categories
 
@@ -686,16 +729,18 @@ class PointCalculator:
             source_bytes: Source code as bytes
 
         Returns:
-            Tuple of (issues_list, state_dict, block_points_map)
+            Tuple of (issues_list, state_dict, block_points_map, category_minutes)
             - issues_list: List of (line_num, byte_offset, expected, actual)
             - state_dict: Final calculation state
             - block_points_map: Dict of node -> (BlockPoints, final_end_time)
+            - category_minutes: Dict of base_category -> total_minutes
         """
         from .parser import node_text
 
         state = CalculationState()
         issues = []
         block_points_map = {}  # node -> (BlockPoints, end_time)
+        category_minutes = {}  # Track minutes per category (base category only)
 
         i = 0
         # Walk through all blocks sequentially
@@ -711,11 +756,12 @@ class PointCalculator:
                 line_num = node.start_point[0] + 1
                 error_text = node_text(node, source_bytes)
 
-                # Check if this ERROR is actually metadata line(s): [category] text - HH:MM
+                # Check if this ERROR is actually metadata line(s): [category] [text] - HH:MM
+                # Subject is optional (for summary lines)
                 # ERROR nodes can span multiple lines, so check if ALL lines are metadata
                 error_lines = error_text.strip().split('\n')
                 all_metadata = all(
-                    re.match(r'^\s*\[[^\]]+\]\s+.+\s+-\s+\d{1,2}:\d{2}\s*$', line.strip())
+                    re.match(r'^\s*\[[^\]]+\]\s+(.+\s+)?-\s+\d{1,2}:\d{2}\s*$', line.strip())
                     for line in error_lines if line.strip()
                 )
                 if all_metadata:
@@ -874,6 +920,13 @@ class PointCalculator:
                             if child.type == 'blick_list':
                                 all_cats.extend(self.extract_categories(child, source_bytes))
 
+                    # Track category minutes for continuation chains (each blick = 4 minutes)
+                    for cat in all_cats:
+                        base_cat = self.get_base_category(cat)
+                        if base_cat not in category_minutes:
+                            category_minutes[base_cat] = 0
+                        category_minutes[base_cat] += 4  # Each blick is 4 minutes
+
                     has_focus = len(set(all_cats) & state.focus_categories) > 0 if not is_x_chain else False
                     self.update_accumulation(state, has_focus, is_x_chain)
 
@@ -957,6 +1010,13 @@ class PointCalculator:
                     categories = self.extract_categories(blick_list_node, source_bytes)
                     is_x_block = self.detect_x_block(node, source_bytes)
                     num_blicks = self.count_blicks(blick_list_node, source_bytes)
+
+                    # Track category minutes (each blick = 4 minutes)
+                    for cat in categories:
+                        base_cat = self.get_base_category(cat)
+                        if base_cat not in category_minutes:
+                            category_minutes[base_cat] = 0
+                        category_minutes[base_cat] += 4  # Each blick is 4 minutes
 
                     # Validate block duration against next block start time
                     start_mins = self.parse_time(start_time)
@@ -1143,7 +1203,7 @@ class PointCalculator:
                 # Unknown node type, skip
                 i += 1
 
-        return issues, state, block_points_map
+        return issues, state, block_points_map, category_minutes
 
     def calculate_file(self, file_path: str) -> List[Tuple[int, int, str, str]]:
         """Calculate points for entire file and find discrepancies.
@@ -1160,8 +1220,66 @@ class PointCalculator:
         root = tree.root_node
         nodes = list(root.children)
 
-        issues, state, block_points_map = self.process_nodes(nodes, source_bytes)
+        issues, state, block_points_map, category_minutes = self.process_nodes(nodes, source_bytes)
         return issues
+
+    def get_base_category(self, category: str) -> str:
+        """Extract base category from complex category.
+
+        Examples:
+            [sp/a] -> sp
+            [sp/b] -> sp
+            [wr] -> wr
+            [err] -> err
+
+        Args:
+            category: Category string (with or without brackets)
+
+        Returns:
+            str: Base category without brackets or slashes
+        """
+        # Remove brackets
+        cat = category.strip('[]')
+        # Split on slash and take first part
+        base = cat.split('/')[0]
+        return base
+
+    def format_time_duration(self, total_minutes: int) -> str:
+        """Format minutes as HH:MM.
+
+        Args:
+            total_minutes: Total minutes
+
+        Returns:
+            str: Formatted as HH:MM (e.g., "02:08" for 128 minutes)
+        """
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        return f"{hours:02d}:{minutes:02d}"
+
+    def generate_summary_lines(self, category_minutes: dict) -> list:
+        """Generate summary lines from category minutes.
+
+        Args:
+            category_minutes: Dict of base_category -> total_minutes
+
+        Returns:
+            List of summary lines (including blank line before {summary} header)
+        """
+        lines = ["", "{summary}"]  # Blank line before summary
+
+        # Find the longest category name for alignment
+        max_cat_len = max(len(cat) for cat in category_minutes.keys()) if category_minutes else 0
+
+        # Sort categories alphabetically and format with aligned dashes
+        for cat in sorted(category_minutes.keys()):
+            minutes = category_minutes[cat]
+            time_str = self.format_time_duration(minutes)
+            # Add padding to align dashes: [cat] gets padded to match longest category
+            padding = " " * (max_cat_len - len(cat))
+            lines.append(f"    [{cat}]{padding} - {time_str}")
+
+        return lines
 
     def strip_points_from_line(self, line: str) -> str:
         """Remove point calculations and error messages from a line.
@@ -1332,7 +1450,7 @@ class PointCalculator:
         nodes = list(root.children)
 
         # First, calculate all expected points using shared logic
-        issues, final_state, block_points_map = self.process_nodes(nodes, source_bytes)
+        issues, final_state, block_points_map, category_minutes = self.process_nodes(nodes, source_bytes)
 
         # Track if we've encountered an error (to stop adding calculations after)
         encountered_error = False
@@ -1374,6 +1492,8 @@ class PointCalculator:
         in_continuation_chain = False  # Track if we're processing a continuation chain
         continuation_indent = ""  # Track indentation for continuation chain
         previous_block_accumulation = 0  # Track previous block's accumulation for rollover detection
+        in_summary_section = False  # Track if we're inside a {summary} section
+        summary_generated = False  # Track if we've already generated the summary
 
         for line_idx, line in enumerate(lines):
             # Skip empty lines and comments
@@ -1386,6 +1506,12 @@ class PointCalculator:
 
             # Stop processing if we hit the end marker (===)
             if any(n.type == 'end_marker' for n in nodes_on_line):
+                # Generate summary before the end marker if not already generated
+                if not summary_generated and category_minutes:
+                    summary_lines = self.generate_summary_lines(category_minutes)
+                    fixed_lines.extend(summary_lines)
+                    summary_generated = True
+                    num_fixes += 1
                 # Preserve everything from === onwards as-is
                 fixed_lines.extend(lines[line_idx:])
                 break
@@ -1393,11 +1519,16 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
+                if n.type in ['focus_declaration', 'summary_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
             if not node:
+                # Check if we're in a summary section (metadata lines without node)
+                if in_summary_section:
+                    # Skip old summary lines
+                    continue
+
                 # If we're past an error line, strip any old calculations from this line
                 if line_idx >= error_line_num:
                     fixed_lines.append(self.strip_points_from_line(line))
@@ -1406,14 +1537,39 @@ class PointCalculator:
                 continue
 
             # Process based on node type
-            if node.type == 'date_header':
-                # Date header node was parsed correctly - preserve it
-                fixed_lines.append(line.strip())
+            if node.type == 'summary_declaration':
+                # Start of summary section - generate and insert summary
+                if not summary_generated:
+                    summary_lines = self.generate_summary_lines(category_minutes)
+                    fixed_lines.extend(summary_lines)
+                    summary_generated = True
+                    num_fixes += 1
+                in_summary_section = True
+                continue
+
+            elif node.type == 'date_header':
+                # Date header node was parsed correctly
+                # Skip it if we're going to add a date header (avoid duplication)
+                if not date_header_to_add:
+                    fixed_lines.append(line.strip())
                 continue
 
             elif node.type == 'metadata_line':
-                # Preserve metadata lines as-is (already cleaned)
-                fixed_lines.append(line)
+                # Check if this is a summary line (no subject, just [cat] - HH:MM)
+                # Summary lines match: ^\s*\[category\]\s+-\s+\d{1,2}:\d{2}
+                is_summary_line = re.match(r'^\s*\[[^\]]+\]\s+-\s+\d{1,2}:\d{2}\s*$', line)
+
+                if in_summary_section and is_summary_line:
+                    # Skip old summary metadata lines
+                    continue
+                elif in_summary_section and not is_summary_line:
+                    # End of summary section
+                    in_summary_section = False
+
+                # Preserve non-summary metadata lines with indentation
+                if not is_summary_line:
+                    content = line.lstrip()
+                    fixed_lines.append(f"    {content}")
 
             elif node.type == 'focus_declaration':
                 # Update focus categories
@@ -1444,6 +1600,15 @@ class PointCalculator:
                     # This is the date header - preserve it (will be replaced if needed)
                     # Don't add it to fixed_lines here, it will be handled by date_header_to_add logic
                     continue
+
+                # Check if this is a summary line (old data to skip)
+                is_summary_line = re.match(r'^\s*\[[^\]]+\]\s+-\s+\d{1,2}:\d{2}\s*$', clean_line)
+                if in_summary_section and is_summary_line:
+                    # Skip old summary lines
+                    continue
+                elif in_summary_section and not is_summary_line and clean_line.strip():
+                    # End of summary section (non-empty, non-summary line)
+                    in_summary_section = False
 
                 # Check if this looks like a metadata line: [category] text - HH:MM
                 if re.match(r'^\s*\[[^\]]+\]\s+.+\s+-\s+\d{1,2}:\d{2}\s*$', clean_line):
@@ -1636,6 +1801,13 @@ class PointCalculator:
                 state.previous_had_focus = False  # Reset focus tracking
                 after_break = True
                 fixed_lines.append(line)
+
+        # Generate summary at EOF if not already generated
+        if not summary_generated and category_minutes:
+            summary_lines = self.generate_summary_lines(category_minutes)
+            fixed_lines.extend(summary_lines)
+            summary_generated = True
+            num_fixes += 1
 
         # Join fixed lines
         result = '\n'.join(fixed_lines)

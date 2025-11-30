@@ -5,3 +5,8 @@ x09:36 - [sys] calc [3] +
 x09:48 + [err] start dishwasher [3], [sys] org notes [3] +
 x10:00 + [err] wipe counter [6], [err] put away dishes [3] --- 10:00 (+13=-1)
 10:12 - [sys] review email [6], [bkc] read news [3] --- 10:27 (-15,+1f,+1a=-14)
+
+{summary}
+    [bkc] - 00:04
+    [err] - 00:24
+    [sys] - 00:20

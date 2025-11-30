@@ -6,6 +6,27 @@
       "type": "SEQ",
       "members": [
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "date_header"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\n"
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
@@ -26,12 +47,187 @@
         }
       ]
     },
+    "date_header": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "day_of_week",
+          "content": {
+            "type": "SYMBOL",
+            "name": "day_name"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": ","
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "\\s+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "month",
+          "content": {
+            "type": "SYMBOL",
+            "name": "month_name"
+          }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "\\s+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "day",
+          "content": {
+            "type": "PATTERN",
+            "value": "\\d{1,2}(st|nd|rd|th)"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": ","
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "\\s+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "year",
+          "content": {
+            "type": "PATTERN",
+            "value": "\\d{4}"
+          }
+        }
+      ]
+    },
+    "day_name": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "Sunday"
+        },
+        {
+          "type": "STRING",
+          "value": "Monday"
+        },
+        {
+          "type": "STRING",
+          "value": "Tuesday"
+        },
+        {
+          "type": "STRING",
+          "value": "Wednesday"
+        },
+        {
+          "type": "STRING",
+          "value": "Thursday"
+        },
+        {
+          "type": "STRING",
+          "value": "Friday"
+        },
+        {
+          "type": "STRING",
+          "value": "Saturday"
+        }
+      ]
+    },
+    "month_name": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "January"
+        },
+        {
+          "type": "STRING",
+          "value": "February"
+        },
+        {
+          "type": "STRING",
+          "value": "March"
+        },
+        {
+          "type": "STRING",
+          "value": "April"
+        },
+        {
+          "type": "STRING",
+          "value": "May"
+        },
+        {
+          "type": "STRING",
+          "value": "June"
+        },
+        {
+          "type": "STRING",
+          "value": "July"
+        },
+        {
+          "type": "STRING",
+          "value": "August"
+        },
+        {
+          "type": "STRING",
+          "value": "September"
+        },
+        {
+          "type": "STRING",
+          "value": "October"
+        },
+        {
+          "type": "STRING",
+          "value": "November"
+        },
+        {
+          "type": "STRING",
+          "value": "December"
+        }
+      ]
+    },
     "_line": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
+          "name": "metadata_line"
+        },
+        {
+          "type": "SYMBOL",
           "name": "focus_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "summary_declaration"
         },
         {
           "type": "SYMBOL",
@@ -58,6 +254,98 @@
           "value": "\\n"
         }
       ]
+    },
+    "metadata_line": {
+      "type": "PREC",
+      "value": 2,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "category",
+            "content": {
+              "type": "SYMBOL",
+              "name": "category"
+            }
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "\\s+"
+                  },
+                  {
+                    "type": "FIELD",
+                    "name": "subject",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "metadata_subject"
+                    }
+                  },
+                  {
+                    "type": "PATTERN",
+                    "value": "\\s+-\\s+"
+                  },
+                  {
+                    "type": "FIELD",
+                    "name": "time",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "time"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "\\s+-\\s+"
+                  },
+                  {
+                    "type": "FIELD",
+                    "name": "time",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "time"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "PATTERN",
+            "value": "\\n"
+          }
+        ]
+      }
+    },
+    "metadata_subject": {
+      "type": "REPEAT1",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "PATTERN",
+            "value": "[^ \\t\\n-]+"
+          },
+          {
+            "type": "PATTERN",
+            "value": "-[^ \\t\\n]"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[ \\t]+[^ \\t\\n-]"
+          }
+        ]
+      }
     },
     "end_marker": {
       "type": "SEQ",
@@ -122,6 +410,19 @@
         {
           "type": "STRING",
           "value": "}"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        }
+      ]
+    },
+    "summary_declaration": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{summary}"
         },
         {
           "type": "PATTERN",
@@ -561,7 +862,7 @@
           "members": [
             {
               "type": "PATTERN",
-              "value": "\\s+"
+              "value": "[ \\t]+"
             },
             {
               "type": "BLANK"
@@ -581,7 +882,7 @@
           "members": [
             {
               "type": "PATTERN",
-              "value": "\\s+"
+              "value": "[ \\t]+"
             },
             {
               "type": "BLANK"
@@ -843,7 +1144,12 @@
       "value": "[ \\t]"
     }
   ],
-  "conflicts": [],
+  "conflicts": [
+    [
+      "metadata_line",
+      "time_block"
+    ]
+  ],
   "precedences": [],
   "externals": [],
   "inline": [],

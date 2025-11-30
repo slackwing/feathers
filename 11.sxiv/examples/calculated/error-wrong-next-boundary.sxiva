@@ -2,3 +2,6 @@ Tuesday, December 2nd, 2025
 {focus: [wr]}
 13:56 - [wr] start block [13] --- 14:10 (+2,+1f,+1a=4)
 14:00 - [wr] next block [10] --- 14:14 [ERROR] after start block at 13:56, next block must start at 14:12, not 14:00
+
+{summary}
+    [wr] - 00:16

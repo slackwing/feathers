@@ -55,6 +55,7 @@ module.exports = grammar({
     _line: $ => choice(
       $.metadata_line,  // Try this first - starts with [category]
       $.focus_declaration,
+      $.summary_declaration,
       $.rest_block,
       $.time_block,
       $.continuation_block,
@@ -63,22 +64,37 @@ module.exports = grammar({
       /\n/  // Empty line
     ),
 
-    // Metadata line: [category] subject - time
+    // Metadata line: [category] [subject] - time
+    // Subject is optional (for summary lines)
     // Example: [med] 200b-500v, 100mg moda, 1x cof - 08:15
+    // Example: [wr] - 02:08 (summary line, no subject)
     metadata_line: $ => prec(2, seq(
       field('category', $.category),
-      /\s+/,
-      field('subject', $.metadata_subject),
-      /\s+/,
-      '-',
-      /\s+/,
-      field('time', $.time),
+      choice(
+        // With subject: category, space, subject text, space-dash-space, time
+        seq(
+          /\s+/,
+          field('subject', $.metadata_subject),
+          /\s+-\s+/,
+          field('time', $.time)
+        ),
+        // Without subject (summary line): category, space-dash-space, time
+        seq(
+          /\s+-\s+/,
+          field('time', $.time)
+        )
+      ),
       /\n/
     )),
 
-    // Metadata subject: match text, allowing internal dashes but structured to stop before " - HH:MM"
-    // Strategy: match segments separated by single spaces or commas, with internal dashes allowed
-    metadata_subject: $ => /[a-zA-Z0-9]([a-zA-Z0-9_,\-'";:!?@#$%^&*()+={}|\\/<>.]|(\s+[a-zA-Z0-9_,\-'";:!?@#$%^&*()+={}|\\/<>.]))*/ ,
+    // Metadata subject: match text up to (but not including) " - HH:MM"
+    // Use repeat1 to match character by character, allowing GLR to backtrack
+    // Match: any char that's not a newline, and when we hit whitespace+dash, stop
+    metadata_subject: $ => repeat1(choice(
+      /[^ \t\n-]+/,  // Non-whitespace, non-dash chunks
+      /-[^ \t\n]/,   // Dash followed by non-whitespace (e.g., "b-500" in "200b-500v")
+      /[ \t]+[^ \t\n-]/  // Whitespace followed by non-whitespace non-dash
+    )),
 
     // End marker: === (everything after is ignored)
     end_marker: $ => seq('===', /[\s\S]*/),
@@ -91,6 +107,12 @@ module.exports = grammar({
       $.category,
       repeat(seq(',', optional(/\s+/), $.category)),
       '}',
+      /\n/
+    ),
+
+    // Summary declaration: {summary}
+    summary_declaration: $ => seq(
+      '{summary}',
       /\n/
     ),
 
@@ -186,9 +208,9 @@ module.exports = grammar({
     // End terminator: triple_dash time points
     end_term: $ => seq(
       $.triple_dash,
-      optional(/\s+/),
+      optional(/[ \t]+/),  // Only spaces/tabs, not newlines
       field('end_time', $.time),
-      optional(/\s+/),
+      optional(/[ \t]+/),  // Only spaces/tabs, not newlines
       field('points', optional($.points))
     ),
 

@@ -444,6 +444,91 @@ These are **semantic rules** for tooling, not enforced by grammar:
 - Example: `(-2,+2f,+1a=1)` means total of -2+2+1=1 (first block)
 - Next block: `(+1,+1f,+2a=5)` means current block is +4, running total is 1+4=5
 
+## Summary Calculation (Tooling)
+
+The calculator can automatically generate a `{summary}` section that shows total time spent per category.
+
+### Summary Declaration
+
+```
+{summary}
+```
+
+- Marks the start of a summary section
+- Calculator generates category totals below this declaration
+- Always preceded by a blank line
+- Summary lines are indented with 4 spaces
+
+### Time Calculation Rules
+
+**Critical:** Each blick counts as **4 minutes** in the summary (not 3 minutes).
+
+This is because a "blick" represents a unit of focused work, and the 4-minute calculation accounts for overhead/context-switching.
+
+#### Blick to Minute Mapping
+
+For summary time calculations:
+- `[3]` = 1 blick = 4 minutes
+- `[6]` = 2 blicks = 8 minutes
+- `[10]` = 3 blicks = 12 minutes
+- `[13]` = 4 blicks = 16 minutes
+- `~` (tilde) = defaults to `[10]` = 3 blicks = 12 minutes
+
+#### Examples
+
+**Single block:**
+```sxiva
+09:00 - [wr] session [10] --- 09:14
+```
+Summary: `[wr] - 00:12` (3 blicks × 4 min/blick = 12 minutes)
+
+**Multiple blicks in one block:**
+```sxiva
+13:48 - [wr] brainstorm [3], [err] recycling [3], [err] text [3] --- 14:02
+```
+Summary:
+- `[err] - 00:08` (2 blicks × 4 min/blick = 8 minutes)
+- `[wr] - 00:04` (1 blick × 4 min/blick = 4 minutes)
+
+**Tilde shorthand:**
+```sxiva
+14:00 - [wr] deep writing ~--- 14:15
+```
+Summary: `[wr] - 00:12` (tilde = 3 blicks × 4 min/blick = 12 minutes)
+
+**Multiple blocks:**
+```sxiva
+09:00 - [wr] session 1 [10] --- 09:14
+    09:12 - [wr] session 2 [10] --- 09:26
+    09:24 - [wr] session 3 [10] --- 09:38
+```
+Summary: `[wr] - 00:36` (3 blocks × 3 blicks × 4 min/blick = 36 minutes)
+
+### Category Consolidation
+
+Summary totals use **base categories only**:
+- `[sp/a]` and `[sp/b]` → consolidated as `[sp]`
+- `[wr]` → remains `[wr]`
+- Extract base category by taking text before first `/`
+
+### Formatting
+
+- Categories sorted alphabetically
+- Dashes aligned based on longest category name
+- Time format: `HH:MM` (zero-padded)
+- Each summary line indented with 4 spaces
+
+**Example:**
+```sxiva
+{summary}
+    [...]  - 00:04
+    [bkc]  - 00:16
+    [err]  - 00:24
+    [sp]   - 01:32
+    [sys]  - 00:12
+    [wr]   - 02:24
+```
+
 ## Examples
 
 ### Basic Sequence

@@ -62,6 +62,23 @@ examples/calculated/
 
 ## Testing Workflow
 
+### ⚠️ CRITICAL: NEVER Run --fix on Source Examples!
+
+**ALWAYS use `./regenerate.sh` to update calculated examples. NEVER run `--fix` on files in `examples/` directly!**
+
+❌ **WRONG:**
+```bash
+# DO NOT DO THIS - modifies source examples!
+python3 -m tools.sxiva.cli calculate examples/basic.sxiva --fix
+for file in examples/*.sxiva; do python3 -m tools.sxiva.cli calculate "$file" --fix; done
+```
+
+✅ **CORRECT:**
+```bash
+# Use regenerate.sh - only touches examples/calculated/
+./regenerate.sh
+```
+
 ### Quick Regeneration (Recommended)
 
 From the project root, run:
@@ -74,6 +91,11 @@ This regenerates all `examples/calculated/*.sxiva` files from source examples. U
 - Modifying calculator logic
 - Fixing source examples
 - Making any changes to point calculation rules
+
+**What regenerate.sh does:**
+1. Reads source `.sxiva` files from `examples/`
+2. Copies them to `examples/calculated/` with point calculations added
+3. **NEVER touches the original files in `examples/`**
 
 ### Running Tests
 
@@ -94,17 +116,17 @@ python3 tests/test_examples.py
   15/15 files have correct point calculations
 ```
 
-### Manual Calculation
+### Manual Calculation (for inspection only)
 
 ```bash
-# Check if points are correct
+# Check if points are correct (read-only, just reports)
 python3 -m tools.sxiva.cli calculate examples/basic.sxiva
 
-# Fix incorrect points
-python3 -m tools.sxiva.cli calculate examples/basic.sxiva --fix
+# ONLY use --fix on calculated/ files, NEVER on examples/ files!
+python3 -m tools.sxiva.cli calculate examples/calculated/basic.sxiva --fix
 
-# Generate to calculated/
-python3 -m tools.sxiva.cli calculate examples/basic.sxiva -o examples/calculated/
+# Or better: just use ./regenerate.sh
+./regenerate.sh
 ```
 
 ## Critical Maintenance Rules
