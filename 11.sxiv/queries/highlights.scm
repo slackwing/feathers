@@ -6,7 +6,6 @@
 ; ============================================================================
 
 "focus" @keyword
-"x" @keyword.modifier
 
 ; Block markers - also muted gray
 "---" @comment.separator
@@ -21,9 +20,10 @@
 "+" @comment.separator
 "~" @string
 
-; Focus declaration delimiters
-"{" @punctuation.bracket
-"}" @punctuation.bracket
+; Focus declaration delimiters - make them purple like the keywords
+(focus_declaration
+  "{" @keyword.focus
+  "}" @keyword.focus)
 
 ; Break marker
 ";;;" @keyword.break
@@ -87,10 +87,14 @@
 (comment) @comment
 
 ; ============================================================================
-; Focus Declarations
+; Focus and Summary Declarations
 ; ============================================================================
 
+; Make the entire {focus: ...} declaration purple/bold
 (focus_declaration) @keyword.focus
+
+; Make the entire {summary} declaration purple/bold like focus
+(summary_declaration) @keyword.focus
 
 ; ============================================================================
 ; Point Notation
@@ -103,12 +107,13 @@
 ; Special Constructs
 ; ============================================================================
 
-; Shortened blocks (x-blocks)
-(time_block
-  shortened: "x" @keyword.shortened)
+; Shortened blocks (x-blocks) - color x same as time (red/orange)
+; Only highlight x when it's in the shortened field (not random x in ERROR nodes)
+((time_block
+  shortened: "x" @type))
 
-(continuation_block
-  shortened: "x" @keyword.shortened)
+((continuation_block
+  shortened: "x" @type))
 
 ; Rest blocks
 (rest_block) @constructor.rest

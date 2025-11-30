@@ -6,7 +6,6 @@
 ; ============================================================================
 
 "focus" @keyword
-"x" @keyword.modifier
 
 ; Block markers - also muted gray
 "---" @comment.separator
@@ -21,12 +20,16 @@
 "+" @comment.separator
 "~" @string
 
-; Focus declaration delimiters
-"{" @punctuation.bracket
-"}" @punctuation.bracket
+; Focus declaration delimiters - make them purple like the keywords
+(focus_declaration
+  "{" @keyword.focus
+  "}" @keyword.focus)
 
 ; Break marker
 ";;;" @keyword.break
+
+; End marker - everything after === is not highlighted
+"===" @keyword.break
 
 ; ============================================================================
 ; Time and Numbers
@@ -35,11 +38,11 @@
 ; Time stamps (HH:MM) - using @type for red/orange
 (time) @type
 
-; Minute values - use @function for cyan (like points)
-(minutes) @function
+; Minute values - use @string for green (like categories)
+(minutes) @string
 
 ; Rest block minutes
-(rest_minutes) @function
+(rest_minutes) @string
 
 ; Point values and totals - use @function for cyan
 (point) @function
@@ -84,10 +87,14 @@
 (comment) @comment
 
 ; ============================================================================
-; Focus Declarations
+; Focus and Summary Declarations
 ; ============================================================================
 
+; Make the entire {focus: ...} declaration purple/bold
 (focus_declaration) @keyword.focus
+
+; Make the entire {summary} declaration purple/bold like focus
+(summary_declaration) @keyword.focus
 
 ; ============================================================================
 ; Point Notation
@@ -100,19 +107,20 @@
 ; Special Constructs
 ; ============================================================================
 
-; Shortened blocks (x-blocks)
-(time_block
-  shortened: "x" @keyword.shortened)
+; Shortened blocks (x-blocks) - color x same as time (red/orange)
+; Only highlight x when it's in the shortened field (not random x in ERROR nodes)
+((time_block
+  shortened: "x" @type))
 
-(continuation_block
-  shortened: "x" @keyword.shortened)
+((continuation_block
+  shortened: "x" @type))
 
 ; Rest blocks
 (rest_block) @constructor.rest
 
 ; ============================================================================
-; Error Highlighting
+; Error Highlighting (Optional - for invalid syntax)
 ; ============================================================================
 
-; Match error nodes from tree-sitter
-(ERROR) @error
+; You can add error patterns here if needed
+; (ERROR) @error

@@ -166,10 +166,10 @@ module.exports = grammar({
     // Time: HH:MM
     time: $ => /([0-1][0-9]|2[0-3]):[0-5][0-9]/,
 
-    // Blick list: one or more blicks separated by comma
+    // Blick list: one or more blicks separated by comma + optional space + [category]
     blick_list: $ => seq(
       $.blick,
-      repeat(seq(',', $.blick))
+      repeat(seq(',', optional(/\s+/), $.blick))
     ),
 
     // Blick: [category] subject [~][minutes] OR [category] subject ~
@@ -187,9 +187,10 @@ module.exports = grammar({
     // Category: [content]
     category: $ => seq('[', /[^\[\]]+/, ']'),
 
-    // Subject: words with spaces, can include dashes and most punctuation
-    // But NOT commas (separator) or brackets (reserved)
-    subject: $ => /[a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+)*/,
+    // Subject: words with spaces, can include commas, dashes, and most punctuation
+    // But NOT brackets (reserved for categories/minutes)
+    // Matches up to (but not including): comma+space+bracket, tilde, or bracket
+    subject: $ => /[a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+)*/,
 
     // Minutes: [3], [6], [10], or [13]
     minutes: $ => choice(

@@ -65,7 +65,7 @@ MINUTE_VALUE ::= '3' | '6' | '10' | '13'
 
 #### Subject
 ```
-SUBJECT ::= [a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-'";:!?@#$%^&*()+={}|\\/<>.]+)*
+SUBJECT ::= [a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+)*
 ```
 
 The arbitrary text describing what the blick is about. Subjects may contain:
@@ -73,10 +73,12 @@ The arbitrary text describing what the blick is about. Subjects may contain:
 - Dashes/hyphens: `look-up`, `follow-up`, `clean-up`
 - Underscores: `slack_up`, `check_email`
 - Periods: `v2.0`, `file.txt`
-- Allowed punctuation: `'` `"` `;` `:` `!` `?` `@` `#` `$` `%` `^` `&` `*` `(` `)` `+` `=` `{` `}` `|` `\` `/` `<` `>` `.`
+- Commas: `cr, next`, `review, update`
+- Allowed punctuation: `'` `"` `;` `:` `!` `?` `@` `#` `$` `%` `^` `&` `*` `(` `)` `+` `=` `{` `}` `|` `\` `/` `<` `>` `.` `,`
 - **Excluded** (reserved syntax):
-  - Commas `,` (reserved as blick separator)
   - Square brackets `[` `]` (reserved for categories and minutes)
+
+**Note:** Commas in subjects are allowed. A comma only acts as a blick separator when followed by `[category]`.
 
 ### Top-Level Constructs
 
@@ -246,15 +248,33 @@ Blicks within a time block are separated by commas with optional whitespace:
 
 #### Blick
 ```
-BLICK ::= CATEGORY WHITESPACE+ SUBJECT WHITESPACE* TILDE? WHITESPACE* MINUTES  # Explicit minutes
-        | CATEGORY WHITESPACE+ SUBJECT WHITESPACE+ TILDE WHITESPACE*           # Omitted [10] with tilde
+BLICK ::= CATEGORY WHITESPACE+ SUBJECT WHITESPACE* TILDE? WHITESPACE* MINUTES  # Explicit minutes (tilde optional)
+        | CATEGORY WHITESPACE+ SUBJECT WHITESPACE+ TILDE WHITESPACE*           # Omitted minutes (tilde defaults to [10])
 TILDE ::= '~'
 ```
 
-**Omitting `[10]`**: The `[10]` minutes specification can ONLY be omitted when using the tilde:
-- `[category] subject ~---` (valid - [10] omitted with tilde)
-- `[category] subject [10] ---` (valid - explicit [10])
-- `[category] subject ---` (INVALID - must have either tilde or [10])
+**Tilde Notation Rules:**
+
+The tilde (`~`) can be used in two ways:
+
+1. **Decorative tilde** (with explicit minutes): `~[3]`, `~[6]`, `~[10]`, `~[13]`
+   - The tilde is optional decoration with no semantic meaning when minutes are specified
+   - Examples: `[wr] work ~[6]`, `[wr] work [6]` (both equivalent - 2 blicks)
+   - Human-readable marker to indicate open-ended/ongoing work
+
+2. **Shorthand tilde** (without minutes): `~`
+   - When tilde appears alone (no minutes specified), it defaults to `[10]`
+   - Example: `[wr] deep work ~` → interpreted as `[wr] deep work [10]` (3 blicks)
+   - Common shorthand: `~---` instead of `[10] ---`
+
+**Valid examples:**
+- `[wr] task ~[6]` → 2 blicks (tilde is decorative, `[6]` defines blick count)
+- `[wr] task [6]` → 2 blicks (no tilde)
+- `[wr] task ~` → 3 blicks (tilde alone defaults to `[10]`)
+- `[wr] task [10]` → 3 blicks (explicit)
+
+**Invalid:**
+- `[wr] task ---` (MUST have either tilde or explicit minutes)
 
 **Parsing strategy for SUBJECT:**
 - Trim leading/trailing whitespace
@@ -263,9 +283,6 @@ TILDE ::= '~'
   - A `[N]` minutes marker (standard form)
   - End of blick (before `,` comma separator)
 - Internal dashes in subjects are allowed
-
-**Tilde notation:**
-The tilde is a human-readable marker indicating indefinite-end tasks. It does not affect parsing semantics.
 
 #### Terminator
 ```
@@ -472,7 +489,8 @@ For summary time calculations:
 - `[6]` = 2 blicks = 8 minutes
 - `[10]` = 3 blicks = 12 minutes
 - `[13]` = 4 blicks = 16 minutes
-- `~` (tilde) = defaults to `[10]` = 3 blicks = 12 minutes
+- `~` (tilde alone) = defaults to `[10]` = 3 blicks = 12 minutes
+- `~[3]`, `~[6]`, etc. = tilde is decorative, explicit minutes define blick count
 
 #### Examples
 

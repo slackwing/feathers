@@ -296,13 +296,39 @@ python3 tests/test_examples.py
 python3 -m tools.sxiva.cli calculate examples/problematic-file.sxiva
 ```
 
+## Verifying Calculated Examples
+
+**Important:** The user only commits `examples/calculated/` files after manually verifying they are correct.
+
+Use this workflow to check if your changes affected the output:
+
+```bash
+# After making changes, regenerate calculated examples
+./regenerate.sh
+
+# Check what changed
+git status examples/calculated/
+git diff examples/calculated/
+
+# Analyze the changes:
+# - Are they expected based on your modifications?
+# - Are the calculations correct?
+# - Do summaries show proper time totals?
+```
+
+This allows you to:
+1. See exactly what output changed
+2. Verify if changes are intentional or bugs
+3. Catch regressions before committing
+
 ## Summary Checklist
 
 Before committing changes:
 
 - [ ] Updated `docs/SPECS.md` if grammar or calculations changed
+- [ ] **Ran `./regenerate.sh` to update all calculated examples**
+- [ ] **Used `git diff examples/calculated/` to verify output is correct**
 - [ ] **Ran `python3 tests/test_examples.py` and all tests pass**
-- [ ] **Verified `examples/calculated/` was regenerated correctly**
 - [ ] Checked that rest blocks have duration: `[...] (desc) (mins)`
 - [ ] Confirmed point calculations match expected behavior
 - [ ] No manual edits to `examples/calculated/*.sxiva` files
@@ -310,5 +336,6 @@ Before committing changes:
 **Critical Reminders:**
 1. **SPECS.md is the source of truth** - Keep it updated and detailed enough to regenerate everything from scratch
 2. **ALWAYS regenerate `examples/calculated/`** after any calculator or tooling changes
-3. Time overlaps are VALID in SXIVA (indented accumulation blocks can overlap)
-4. Test suite must show `15/15 files have correct point calculations`
+3. **Use `git diff` to verify calculated output** - User only commits after manual verification
+4. Time overlaps are VALID in SXIVA (indented accumulation blocks can overlap)
+5. Test suite must show all valid examples pass

@@ -318,8 +318,8 @@ class PointCalculator:
         for child in blick_list_node.children:
             if child.type == 'blick':
                 cat_name = None
-                num_blicks = 3  # Default to 3 blicks (tilde implies [10] = 3 blicks)
-                has_tilde = False
+                num_blicks = 3  # Default when only tilde (no explicit minutes): tilde alone = [10] = 3 blicks
+                has_explicit_minutes = False
 
                 for blick_child in child.children:
                     if blick_child.type == 'category':
@@ -327,15 +327,15 @@ class PointCalculator:
                         # Remove brackets: [wr] -> wr
                         cat_name = cat_text.strip('[]')
                     elif blick_child.type == 'minutes':
+                        # Explicit minutes override tilde default
+                        # e.g., ~[6] uses [6] (2 blicks), tilde is decorative
                         minutes_text = node_text(blick_child, source_bytes)
                         num_blicks = self.minutes_to_blick_count(minutes_text)
-                    # Check for tilde (might be a separate node or text)
-                    text = node_text(blick_child, source_bytes).strip()
-                    if text == '~' or blick_child.type == 'tilde':
-                        has_tilde = True
+                        has_explicit_minutes = True
 
-                # If no explicit minutes and no tilde, we shouldn't have a default
-                # But grammar requires either minutes or tilde, so default to 3 is safe
+                # Note: Grammar requires either tilde or explicit minutes
+                # If only tilde (~), num_blicks stays at default (3)
+                # If explicit minutes (~[6] or [6]), num_blicks is set from minutes
 
                 # Add category once per blick
                 if cat_name:
@@ -775,16 +775,21 @@ class PointCalculator:
                     i += 1
                     continue
 
+                # Try to identify specific error patterns for better messages
                 # Look for invalid time pattern (digit(s):single-digit at end)
                 invalid_time_match = re.search(r'\d{1,2}:\d(?:\s|$)', error_text)
                 if invalid_time_match:
                     invalid_time = invalid_time_match.group().strip()
                     error_msg = f"[ERROR] invalid time format '{invalid_time}' - use HH:MM with 2-digit minutes"
+                # Check for dash between blicks (ERROR node ends with dash, contains blick_list)
+                elif error_text.rstrip().endswith('-') and any(child.type == 'blick_list' for child in node.children):
+                    error_msg = f"[ERROR] syntax error: {error_text.strip()} (use ',' to separate blicks)"
                 # Check for missing work marker (category + subject without ~ or [minutes])
                 elif re.search(r'\[\w+\]\s+[^~\[]+(?:---|\+|$)', error_text):
-                    error_msg = "[ERROR] missing work duration marker - use ~ or explicit [minutes]"
+                    error_msg = f"[ERROR] syntax error: {error_text.strip()} (missing ~ or [minutes])"
                 else:
-                    error_msg = "[ERROR] syntax error - check time format (HH:MM with 2-digit minutes required)"
+                    # Show the actual invalid syntax
+                    error_msg = f"[ERROR] syntax error: {error_text.strip()}"
                 issues.append((line_num, node.start_byte, error_msg, ""))
                 block_points_map[id(node)] = (error_msg, None)
                 i += 1
@@ -848,22 +853,38 @@ class PointCalculator:
                     chain_error = False
                     for chain_node in chain_nodes:
                         is_x_block = self.detect_x_block(chain_node, source_bytes)
-                        for child in chain_node.children:
-                            if child.type == 'blick_list':
-                                num_blicks = self.count_blicks(child, source_bytes)
-                                # Standard blocks/lines should have 3 blicks
-                                if not is_x_block and num_blicks != 3:
-                                    line_num = chain_node.start_point[0] + 1
-                                    error_msg = f"[ERROR] standard block must have 3 blicks (9 minutes), found {num_blicks} blicks"
-                                    issues.append((
-                                        line_num,
-                                        chain_node.start_byte,
-                                        error_msg,
-                                        ""
-                                    ))
-                                    block_points_map[id(chain_node)] = (error_msg, None)
-                                    chain_error = True
-                                    break
+
+                        # Count ALL blick_lists in this node (recursively for ERROR nodes)
+                        def find_all_blick_lists(node):
+                            """Recursively find all blick_list nodes."""
+                            found = []
+                            if node.type == 'blick_list':
+                                found.append(node)
+                            for child in node.children:
+                                found.extend(find_all_blick_lists(child))
+                            return found
+
+                        total_blicks = 0
+                        blick_lists_found = find_all_blick_lists(chain_node)
+                        for blick_list_node in blick_lists_found:
+                            num_blicks = self.count_blicks(blick_list_node, source_bytes)
+                            total_blicks += num_blicks
+
+                        # Only validate if we found blick_lists
+                        if blick_lists_found:
+                            # Standard blocks/lines should have 3 blicks total
+                            if not is_x_block and total_blicks != 3:
+                                line_num = chain_node.start_point[0] + 1
+                                error_msg = f"[ERROR] standard block must have 3 blicks (9 minutes), found {total_blicks} blicks"
+                                issues.append((
+                                    line_num,
+                                    chain_node.start_byte,
+                                    error_msg,
+                                    ""
+                                ))
+                                block_points_map[id(chain_node)] = (error_msg, None)
+                                chain_error = True
+                                break
                         if chain_error:
                             break
 
@@ -995,21 +1016,54 @@ class PointCalculator:
                         i += 1
                         continue
 
-                # Find blick_list (direct child)
-                blick_list_node = None
-                for child in node.children:
-                    if child.type == 'blick_list':
-                        blick_list_node = child
-                        break
+                # Check for ERROR nodes within this block (syntax errors)
+                def find_error_nodes(n):
+                    """Recursively find all ERROR nodes."""
+                    found = []
+                    if n.type == 'ERROR':
+                        found.append(n)
+                    for child in n.children:
+                        found.extend(find_error_nodes(child))
+                    return found
+
+                error_nodes = find_error_nodes(node)
+                if error_nodes:
+                    # There's a syntax error in this block
+                    line_num = node.start_point[0] + 1
+                    error_text = node_text(error_nodes[0], source_bytes).strip()
+                    error_msg = f"[ERROR] syntax error: {error_text}"
+                    issues.append((line_num, node.start_byte, error_msg, ""))
+                    block_points_map[id(node)] = (error_msg, end_time)
+                    i += 1
+                    continue
+
+                # Find ALL blick_list nodes (recursively, important for ERROR nodes with multiple lists)
+                def find_all_blick_lists(n):
+                    """Recursively find all blick_list nodes."""
+                    found = []
+                    if n.type == 'blick_list':
+                        found.append(n)
+                    for child in n.children:
+                        found.extend(find_all_blick_lists(child))
+                    return found
+
+                blick_lists = find_all_blick_lists(node)
+                blick_list_node = blick_lists[0] if blick_lists else None
 
                 # Find points node (may be nested in terminator)
                 points_node = self.find_points_node(node)
 
                 # Calculate expected points
                 if start_time and end_time and blick_list_node:
-                    categories = self.extract_categories(blick_list_node, source_bytes)
+                    # For ERROR nodes with multiple blick_lists, collect categories from all
+                    categories = []
+                    for bl in blick_lists:
+                        categories.extend(self.extract_categories(bl, source_bytes))
+
                     is_x_block = self.detect_x_block(node, source_bytes)
-                    num_blicks = self.count_blicks(blick_list_node, source_bytes)
+
+                    # Count blicks from ALL blick_lists (important for ERROR nodes)
+                    num_blicks = sum(self.count_blicks(bl, source_bytes) for bl in blick_lists)
 
                     # Track category minutes (each blick = 4 minutes)
                     for cat in categories:
