@@ -42,6 +42,10 @@ endfunction
 " Initial highlight
 call s:HighlightErrors()
 
+" Make date header bold (in addition to tree-sitter color)
+highlight! link @constant.builtin.sxiva SxivaDateHeader
+highlight SxivaDateHeader ctermfg=Yellow guifg=Yellow cterm=bold gui=bold
+
 " Indentation settings
 setlocal expandtab
 setlocal tabstop=2

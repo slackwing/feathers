@@ -756,6 +756,15 @@ class PointCalculator:
                 line_num = node.start_point[0] + 1
                 error_text = node_text(node, source_bytes)
 
+                # Check if next line is blank (suppress errors on incomplete last line)
+                source_lines = source_bytes.decode('utf-8').split('\n')
+                if line_num < len(source_lines):
+                    next_line = source_lines[line_num].strip()  # line_num is 1-indexed, array is 0-indexed
+                    if not next_line:
+                        # Next line is blank - suppress this error (incomplete line being edited)
+                        i += 1
+                        continue
+
                 # Check if this ERROR is actually metadata line(s): [category] [text] - HH:MM
                 # Subject is optional (for summary lines)
                 # ERROR nodes can span multiple lines, so check if ALL lines are metadata
@@ -1030,6 +1039,16 @@ class PointCalculator:
                 if error_nodes:
                     # There's a syntax error in this block
                     line_num = node.start_point[0] + 1
+
+                    # Check if next line is blank (suppress errors on incomplete last line)
+                    source_lines = source_bytes.decode('utf-8').split('\n')
+                    if line_num < len(source_lines):
+                        next_line = source_lines[line_num].strip()  # line_num is 1-indexed, array is 0-indexed
+                        if not next_line:
+                            # Next line is blank - suppress this error (incomplete line being edited)
+                            i += 1
+                            continue
+
                     error_text = node_text(error_nodes[0], source_bytes).strip()
                     error_msg = f"[ERROR] syntax error: {error_text}"
                     issues.append((line_num, node.start_byte, error_msg, ""))
