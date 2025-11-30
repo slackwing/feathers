@@ -18,6 +18,7 @@ class CalculationState:
     is_first_block: bool = True  # Track if this is the first block
     previous_had_focus: bool = False  # Track if previous block had focus (for indentation)
     time_offset: int = 0  # Minutes offset from expected timing (preserved across breaks)
+    in_freeform: bool = False  # Track if we're in the freeform section
 
     def __post_init__(self):
         if self.focus_categories is None:
@@ -815,6 +816,11 @@ class PointCalculator:
                 state.focus_categories = set(categories)
                 i += 1
 
+            elif node.type == 'freeform_declaration':
+                # Mark that we're in freeform section - process metadata lines following it
+                state.in_freeform = True
+                i += 1
+
             elif node.type in ['time_block', 'continuation_block']:
                 # Check if this starts a continuation chain
                 if self.is_continuation_start(node, source_bytes):
@@ -1330,6 +1336,65 @@ class PointCalculator:
         minutes = total_minutes % 60
         return f"{hours:02d}:{minutes:02d}"
 
+    def parse_freeform_time(self, text: str) -> int:
+        """Parse time ranges and explicit minutes from freeform text.
+
+        Args:
+            text: Freeform text containing time ranges (HH:MM-HH:MM) and/or explicit minutes (6m, 1h, 1h30m)
+
+        Returns:
+            Total minutes from all matched patterns
+        """
+        total_minutes = 0
+
+        # Match time ranges: HH:MM-HH:MM
+        time_range_pattern = r'(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})'
+        for match in re.finditer(time_range_pattern, text):
+            start_hour, start_min, end_hour, end_min = map(int, match.groups())
+            start_total = start_hour * 60 + start_min
+            end_total = end_hour * 60 + end_min
+            duration = end_total - start_total
+            if duration > 0:  # Only count positive durations
+                total_minutes += duration
+
+        # Match explicit minutes: (\d+h)?\d+m (e.g., 6m, 1h, 1h30m, 2h15m)
+        explicit_pattern = r'(?:(\d+)h)?(\d+)m'
+        for match in re.finditer(explicit_pattern, text):
+            hours_str, minutes_str = match.groups()
+            hours = int(hours_str) if hours_str else 0
+            minutes = int(minutes_str) if minutes_str else 0
+            total_minutes += hours * 60 + minutes
+
+        return total_minutes
+
+    def process_freeform_line(self, line: str) -> tuple:
+        """Process a freeform metadata line and calculate total time.
+
+        Args:
+            line: Freeform line like "[wf] task, 18:56-19:47, 6m - 01:15"
+
+        Returns:
+            tuple: (category, total_minutes, updated_line)
+        """
+        # Extract category
+        cat_match = re.match(r'\s*\[([^\]]+)\]', line)
+        if not cat_match:
+            return None, 0, line
+
+        category = cat_match.group(1)
+
+        # Remove existing total if present (everything after last " - HH:MM")
+        line_without_total = re.sub(r'\s+-\s+\d{1,2}:\d{2}\s*$', '', line)
+
+        # Calculate total from time ranges and explicit minutes
+        total_minutes = self.parse_freeform_time(line_without_total)
+
+        # Format and append total
+        time_str = self.format_time_duration(total_minutes)
+        updated_line = f"{line_without_total.rstrip()} - {time_str}"
+
+        return category, total_minutes, updated_line
+
     def generate_summary_lines(self, category_minutes: dict) -> list:
         """Generate summary lines from category minutes.
 
@@ -1565,6 +1630,7 @@ class PointCalculator:
         in_continuation_chain = False  # Track if we're processing a continuation chain
         continuation_indent = ""  # Track indentation for continuation chain
         previous_block_accumulation = 0  # Track previous block's accumulation for rollover detection
+        in_freeform_section = False  # Track if we're inside a {freeform} section
         in_summary_section = False  # Track if we're inside a {summary} section
         summary_generated = False  # Track if we've already generated the summary
 
@@ -1592,11 +1658,25 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'summary_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
+                if n.type in ['focus_declaration', 'freeform_declaration', 'summary_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
             if not node:
+                # Check if we're in freeform section - process as freeform line
+                if in_freeform_section and not in_summary_section and stripped:
+                    category, minutes, updated_line = self.process_freeform_line(line)
+                    if category:
+                        # Add to category totals
+                        base_cat = self.get_base_category(category)
+                        if base_cat not in category_minutes:
+                            category_minutes[base_cat] = 0
+                        category_minutes[base_cat] += minutes
+                        fixed_lines.append(updated_line)
+                        num_fixes += 1
+                        continue
+                    # If no category, fall through to default handling
+
                 # Check if we're in a summary section (metadata lines without node)
                 if in_summary_section:
                     # Skip old summary lines
@@ -1610,7 +1690,16 @@ class PointCalculator:
                 continue
 
             # Process based on node type
-            if node.type == 'summary_declaration':
+            if node.type == 'freeform_declaration':
+                # Start of freeform section
+                in_freeform_section = True
+                fixed_lines.append("")  # Blank line before freeform
+                fixed_lines.append("{freeform}")
+                continue
+
+            elif node.type == 'summary_declaration':
+                # End freeform section, start summary section
+                in_freeform_section = False
                 # Start of summary section - generate and insert summary
                 if not summary_generated:
                     summary_lines = self.generate_summary_lines(category_minutes)
@@ -1631,6 +1720,19 @@ class PointCalculator:
                 # Check if this is a summary line (no subject, just [cat] - HH:MM)
                 # Summary lines match: ^\s*\[category\]\s+-\s+\d{1,2}:\d{2}
                 is_summary_line = re.match(r'^\s*\[[^\]]+\]\s+-\s+\d{1,2}:\d{2}\s*$', line)
+
+                # Handle freeform metadata lines (already calculated, just need to add to totals)
+                if in_freeform_section and not in_summary_section and not is_summary_line:
+                    category, minutes, updated_line = self.process_freeform_line(line)
+                    if category:
+                        # Add to category totals
+                        base_cat = self.get_base_category(category)
+                        if base_cat not in category_minutes:
+                            category_minutes[base_cat] = 0
+                        category_minutes[base_cat] += minutes
+                        fixed_lines.append(updated_line)
+                        num_fixes += 1
+                        continue
 
                 if in_summary_section and is_summary_line:
                     # Skip old summary metadata lines

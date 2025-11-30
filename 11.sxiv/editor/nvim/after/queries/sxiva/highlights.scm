@@ -100,6 +100,9 @@
 ; Make the entire {focus: ...} declaration purple/bold
 (focus_declaration) @keyword.focus
 
+; Make the entire {freeform} declaration purple like focus
+(freeform_declaration) @keyword.focus
+
 ; Make the entire {summary} declaration purple/bold like focus
 (summary_declaration) @keyword.focus
 

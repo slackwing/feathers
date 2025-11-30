@@ -53,8 +53,9 @@ module.exports = grammar({
     ),
 
     _line: $ => choice(
-      $.metadata_line,  // Try this first - starts with [category]
+      $.metadata_line,  // Try this first - more specific (requires " - HH:MM")
       $.focus_declaration,
+      $.freeform_declaration,
       $.summary_declaration,
       $.rest_block,
       $.time_block,
@@ -107,6 +108,12 @@ module.exports = grammar({
       $.category,
       repeat(seq(',', optional(/\s+/), $.category)),
       '}',
+      /\n/
+    ),
+
+    // Freeform declaration: {freeform}
+    freeform_declaration: $ => seq(
+      '{freeform}',
       /\n/
     ),
 

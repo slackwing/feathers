@@ -214,6 +214,11 @@
     }
   },
   {
+    "type": "freeform_declaration",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "metadata_line",
     "named": true,
     "fields": {
@@ -394,6 +399,10 @@
         },
         {
           "type": "focus_declaration",
+          "named": true
+        },
+        {
+          "type": "freeform_declaration",
           "named": true
         },
         {
@@ -684,6 +693,10 @@
   },
   {
     "type": "{",
+    "named": false
+  },
+  {
+    "type": "{freeform}",
     "named": false
   },
   {

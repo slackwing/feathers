@@ -465,6 +465,58 @@ These are **semantic rules** for tooling, not enforced by grammar:
 
 The calculator can automatically generate a `{summary}` section that shows total time spent per category.
 
+### Freeform Declaration
+
+```
+{freeform}
+```
+
+The `{freeform}` section allows tracking unstructured time that doesn't fit into the standard 12-minute block format. This is useful for:
+- Ad-hoc tasks that don't align with standard boundaries
+- Retrospective time tracking
+- Quick notes about time spent throughout the day
+
+**Syntax:**
+```
+{freeform}
+    [category] description with time ranges and/or explicit minutes
+```
+
+**Time notation in freeform lines:**
+- Time ranges: `HH:MM-HH:MM` (e.g., `18:56-19:47`)
+- Explicit minutes: `(\d+h)?\d+m` (e.g., `6m`, `1h`, `1h30m`, `2h15m`)
+- Multiple ranges/minutes can appear anywhere in the description text
+
+**Processing:**
+1. Calculator scans the line for all time ranges and explicit minute notations
+2. Calculates total minutes from all matched patterns
+3. Appends ` - HH:MM` with the total time
+4. Adds this time to the category total in the summary
+
+**Example:**
+```sxiva
+{freeform}
+    [wf] random coding, 18:56-19:47, 19:50-19:53, 6m, 8m, 20:02-20:09 - 01:15
+    [wr] writing notes, 14:30-14:45, 3m - 00:18
+    [err] debugging issue, 10:05-10:23 - 00:18
+    [wf] quick task 1h30m somewhere in the day - 01:30
+    [wr] mixed 2h15m and 15:00-15:23 total - 02:38
+```
+
+Calculations:
+- Line 1: 51m + 3m + 6m + 8m + 7m = 75m = 01:15
+- Line 2: 15m + 3m = 18m = 00:18
+- Line 3: 18m = 00:18
+- Line 4: 90m = 01:30
+- Line 5: 135m + 23m = 158m = 02:38
+
+**Rules:**
+- Freeform section must appear after structured timesheet blocks
+- Must appear before `{summary}` if summary exists
+- Must appear before `===` end marker if present
+- Each line must start with `[category]`
+- Calculator always recalculates the total, even if ` - HH:MM` already exists
+
 ### Summary Declaration
 
 ```
@@ -473,6 +525,7 @@ The calculator can automatically generate a `{summary}` section that shows total
 
 - Marks the start of a summary section
 - Calculator generates category totals below this declaration
+- Includes time from both structured blocks (blick-based) and freeform sections
 - Always preceded by a blank line
 - Summary lines are indented with 4 spaces
 

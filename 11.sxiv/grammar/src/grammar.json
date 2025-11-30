@@ -227,6 +227,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "freeform_declaration"
+        },
+        {
+          "type": "SYMBOL",
           "name": "summary_declaration"
         },
         {
@@ -410,6 +414,19 @@
         {
           "type": "STRING",
           "value": "}"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        }
+      ]
+    },
+    "freeform_declaration": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{freeform}"
         },
         {
           "type": "PATTERN",
