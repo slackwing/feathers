@@ -251,6 +251,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "block_separator"
+        },
+        {
+          "type": "SYMBOL",
           "name": "comment"
         },
         {
@@ -522,6 +526,19 @@
         {
           "type": "STRING",
           "value": ";;;"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        }
+      ]
+    },
+    "block_separator": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": ",,,"
         },
         {
           "type": "PATTERN",

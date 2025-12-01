@@ -28,6 +28,9 @@
 ; Break marker
 ";;;" @keyword.break
 
+; Block separator - muted gray like other separators
+",,," @comment.separator
+
 ; End marker - everything after === is not highlighted
 "===" @keyword.break
 

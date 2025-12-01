@@ -1574,9 +1574,12 @@ class PointCalculator:
                 # No date header present - add error
                 date_header_error = "[ERROR] file not named with date format (YYYYMMDDd.sxiva)"
 
-        # Strip all old point calculations and error messages from the input
+        # Strip all old point calculations, error messages, and block separators from the input
         cleaned_lines = []
         for line in source_code.split('\n'):
+            # Skip block separator lines (,,,)
+            if line.strip() == ',,,':
+                continue
             cleaned_lines.append(self.strip_points_from_line(line))
         cleaned_source = '\n'.join(cleaned_lines)
 
@@ -1633,6 +1636,8 @@ class PointCalculator:
         in_freeform_section = False  # Track if we're inside a {freeform} section
         in_summary_section = False  # Track if we're inside a {summary} section
         summary_generated = False  # Track if we've already generated the summary
+        block_count = 0  # Track number of blocks for separator insertion
+        previous_line_indent = ""  # Track previous block's indentation for separator
 
         for line_idx, line in enumerate(lines):
             # Skip empty lines and comments
@@ -1938,6 +1943,18 @@ class PointCalculator:
                 fixed_line = desired_indent + content
 
                 fixed_lines.append(fixed_line)
+
+                # Track block count for separator insertion
+                # Only count blocks with end times (final blocks in chains)
+                if has_end_time:
+                    block_count += 1
+                    previous_line_indent = desired_indent
+
+                    # Insert separator after every 5th block
+                    if block_count % 5 == 0:
+                        separator_line = previous_line_indent + ",,,"
+                        fixed_lines.append(separator_line)
+                        num_fixes += 1
 
                 # Update state
                 # Only update running total for blocks with end times (final blocks in chains)

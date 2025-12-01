@@ -61,6 +61,7 @@ module.exports = grammar({
       $.time_block,
       $.continuation_block,
       $.break_marker,
+      $.block_separator,
       $.comment,
       /\n/  // Empty line
     ),
@@ -140,6 +141,9 @@ module.exports = grammar({
 
     // Break marker: ;;;
     break_marker: $ => seq(';;;', /\n/),
+
+    // Block separator: ,,, (visual marker for every 5 blocks)
+    block_separator: $ => seq(',,,', /\n/),
 
     // Comment lines (starting with #)
     comment: $ => seq(/#[^\n]*/, /\n/),

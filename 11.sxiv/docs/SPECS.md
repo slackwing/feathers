@@ -654,16 +654,54 @@ Note: The entire continuation chain is marked with `x` and gets no accumulation 
 14:00 - [err] emails [6] - [bkc] read 4 pages [3] --- 14:15 (-3,+1f,+2a=0)
 ```
 
+### Visual Block Separators
+
+```
+BLOCK_SEPARATOR ::= ','','','
+```
+
+**Semantics:**
+- Visual markers automatically inserted by the calculator to separate groups of 5 blocks
+- Only time_block and continuation_block nodes count toward the 5-block limit
+- Continuation chains (multiple continuation_block nodes) count as a single block
+- Rest blocks `[...]`, break markers `;;;`, metadata lines, focus declarations, and freeform sections do NOT count toward the block limit
+- Separator matches the indentation level of the preceding block
+- All existing separators are removed before recalculation (always regenerated fresh)
+- Highlighted like comments (muted/gray appearance)
+
+**Example:**
+```sxiva
+09:00 - [wr] block 1 ~--- 09:14 (+2,+1f,+1a=3)
+    09:12 - [wr] block 2 ~--- 09:26 (+2,+1f,+2a=7)
+    09:24 - [wr] block 3 ~--- 09:38 (+2,+1f,+3a=12)
+    09:36 - [wr] block 4 ~--- 09:50 (+2,+1f,+4a=18)
+    09:48 - [wr] block 5 ~--- 10:02 (+2,+1f,+5a=25)
+    ,,,
+    10:00 - [wr] block 6 ~--- 10:14 (+2,+1f,+6a=33)
+    10:12 - [wr] block 7 +
+    10:24 + [wr] block 7 continued ~--- 10:38 (+2,+1f,+7a=42)
+    10:36 - [wr] block 8 ~--- 10:50 (+2,+1f,+8a=52)
+    10:48 - [wr] block 9 ~--- 11:02 (+2,+1f,+9a=62)
+    ,,,
+```
+
+In this example:
+- Blocks 1-5 are followed by `,,,` (indented with 4 spaces to match blocks 2-5)
+- Blocks 6-7 (continuation chain counts as 1), 8, 9 are followed by `,,,`
+- The separator at line 6 has 4 spaces matching the preceding indented blocks
+- The separator at line 12 has 4 spaces matching the preceding indented blocks
+
 ## Reserved Tokens
 
 The following have special meaning and cannot appear in subjects or category content:
 - `[` `]` - Category and minute delimiters
-- `,` - Blick separator
+- `,` - Blick separator (except `,,,` block separator)
 - `-` `+` `~` - Block/continuation markers
 - `(` `)` - Point delimiters
 - `{` `}` - Focus declaration delimiters
 - `;;;` - Break marker
 - `---`, `<--`, `>--`, `-<-`, `->-` - Block terminators
+- `,,,` - Visual block separator (auto-generated)
 
 ## Implementation Notes
 

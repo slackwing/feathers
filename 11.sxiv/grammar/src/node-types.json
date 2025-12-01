@@ -61,6 +61,11 @@
     }
   },
   {
+    "type": "block_separator",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "break_marker",
     "named": true,
     "fields": {}
@@ -378,6 +383,10 @@
       "required": false,
       "types": [
         {
+          "type": "block_separator",
+          "named": true
+        },
+        {
           "type": "break_marker",
           "named": true
         },
@@ -513,6 +522,10 @@
   },
   {
     "type": ",",
+    "named": false
+  },
+  {
+    "type": ",,,",
     "named": false
   },
   {
