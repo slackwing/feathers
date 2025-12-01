@@ -48,6 +48,9 @@
 ; Time stamps (HH:MM) - using @type for red/orange
 (time) @type
 
+; C section amounts - use @string for green (similar to categories)
+(c_amounts) @string
+
 ; Minute values - use @string for green (like categories)
 (minutes) @string
 
@@ -105,6 +108,9 @@
 
 ; Make the entire {freeform} declaration purple like focus
 (freeform_declaration) @keyword.focus
+
+; Make the entire {c} declaration purple like focus
+(c_declaration) @keyword.focus
 
 ; Make the entire {summary} declaration purple/bold like focus
 (summary_declaration) @keyword.focus

@@ -17,30 +17,28 @@ if exists('g:sxiva_enable_treesitter') && g:sxiva_enable_treesitter
   endif
 endif
 
-" Highlight error messages using matchadd (works with tree-sitter)
+" Highlight error messages and c section content using matchadd (works with tree-sitter)
 " This runs after tree-sitter highlighting
-augroup SxivaErrorHighlight
+augroup SxivaHighlights
   autocmd! * <buffer>
-  autocmd BufEnter,TextChanged,TextChangedI <buffer> call s:HighlightErrors()
+  autocmd BufEnter,TextChanged,TextChangedI <buffer> call s:HighlightSpecial()
 augroup END
 
-function! s:HighlightErrors()
+function! s:HighlightSpecial()
   " Clear previous matches for this window
   if exists('w:sxiva_error_match')
     silent! call matchdelete(w:sxiva_error_match)
     unlet w:sxiva_error_match
   endif
 
-  " Only add match if [ERROR] exists in buffer
+  " Highlight [ERROR] messages
   if search('\[ERROR\]', 'nw') > 0
-    " Add new match for [ERROR] (must be uppercase) and entire message to end of line
-    " Match priority 10 to ensure it overrides other highlighting
     let w:sxiva_error_match = matchadd('SxivaError', '\[ERROR\].*', 10)
   endif
 endfunction
 
 " Initial highlight
-call s:HighlightErrors()
+call s:HighlightSpecial()
 
 " Indentation settings
 setlocal expandtab

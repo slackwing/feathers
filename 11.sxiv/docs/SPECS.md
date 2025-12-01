@@ -517,6 +517,44 @@ Calculations:
 - Each line must start with `[category]`
 - Calculator always recalculates the total, even if ` - HH:MM` already exists
 
+### C Declaration
+
+```
+{c}
+```
+
+The `{c}` section is a special tracking area for recording consumption/activity amounts with timestamps.
+
+**Syntax:**
+```
+{c}
+    HH:MM - amount_list
+```
+
+**Amount Tokens:**
+
+The following tokens can appear in comma-separated lists:
+- **Hydration levels**: `1L-`, `1L`, `1L+`, `1L++`
+- **Bathroom tracking**: `1b-`, `1b`, `1b+`
+- **Alcohol consumption**: `1x alc`, `hx alc` (half), `qx alc` (quarter), `qqqx alc` (three-quarters)
+- **Break tracking**: `1x br`
+
+**Example:**
+```sxiva
+{c}
+    19:35 - 1L+, 1x alc
+    19:50 - 1b+, 1b+, hx alc
+    20:30 - 1L-
+    20:55 - 1L++
+```
+
+**Rules:**
+- Each line must start with a time `HH:MM` followed by ` - ` and a comma-separated list of amount tokens
+- All lines are indented with 4 spaces by the calculator
+- Must appear after structured timesheet blocks
+- Can appear before or after `{freeform}` and `{summary}` sections
+- Must appear before `===` end marker if present
+
 ### Summary Declaration
 
 ```

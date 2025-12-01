@@ -1,5 +1,15 @@
 # CLAUDE.md - Development Guide for AI Assistants
 
+## ⚠️ CRITICAL: DO NOT RUN --fix ON EXAMPLE FILES
+
+**NEVER run `python3 -m tools.sxiva.cli calculate examples/calculated/*.sxiva --fix`**
+
+- Use `./regenerate.sh` instead - it handles all examples correctly
+- For testing, output to `/tmp/` or examine `examples/calculated/` after running `./regenerate.sh`
+- The calculated examples are the source of truth for verifying correctness
+
+---
+
 This document explains the SXIVA project structure, testing workflow, and critical maintenance practices for AI assistants working on this codebase.
 
 ## Project Overview

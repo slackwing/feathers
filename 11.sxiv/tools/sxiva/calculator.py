@@ -1402,9 +1402,9 @@ class PointCalculator:
             category_minutes: Dict of base_category -> total_minutes
 
         Returns:
-            List of summary lines (including blank line before {summary} header)
+            List of summary lines (NOT including blank line before {summary} header)
         """
-        lines = ["", "{summary}"]  # Blank line before summary
+        lines = ["{summary}"]  # No blank line - caller adds if needed
 
         # Find the longest category name for alignment
         max_cat_len = max(len(cat) for cat in category_minutes.keys()) if category_minutes else 0
@@ -1634,15 +1634,23 @@ class PointCalculator:
         continuation_indent = ""  # Track indentation for continuation chain
         previous_block_accumulation = 0  # Track previous block's accumulation for rollover detection
         in_freeform_section = False  # Track if we're inside a {freeform} section
+        in_c_section = False  # Track if we're inside a {c} section
         in_summary_section = False  # Track if we're inside a {summary} section
         summary_generated = False  # Track if we've already generated the summary
         block_count = 0  # Track number of blocks for separator insertion
         previous_line_indent = ""  # Track previous block's indentation for separator
+        consumed_lines = set()  # Track lines that have been consumed by multi-line nodes
 
         for line_idx, line in enumerate(lines):
-            # Skip empty lines and comments
+            # Skip lines that have already been consumed by multi-line nodes (sections)
+            if line_idx in consumed_lines:
+                continue
+            # Skip empty lines and comments (but preserve them in output)
             stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
+            if not stripped:
+                fixed_lines.append(line)
+                continue
+            if stripped.startswith('#'):
                 continue
 
             # Get nodes starting on this line
@@ -1663,7 +1671,7 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'freeform_declaration', 'summary_declaration', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
+                if n.type in ['focus_declaration', 'freeform_section', 'c_section', 'c_line', 'summary_section', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
@@ -1682,10 +1690,8 @@ class PointCalculator:
                         continue
                     # If no category, fall through to default handling
 
-                # Check if we're in a summary section (metadata lines without node)
-                if in_summary_section:
-                    # Skip old summary lines
-                    continue
+                # With section-based grammar, c_section and summary_section nodes
+                # contain all their content, so we don't need fallback handlers
 
                 # If we're past an error line, strip any old calculations from this line
                 if line_idx >= error_line_num:
@@ -1695,18 +1701,92 @@ class PointCalculator:
                 continue
 
             # Process based on node type
-            if node.type == 'freeform_declaration':
-                # Start of freeform section
-                in_freeform_section = True
-                fixed_lines.append("")  # Blank line before freeform
+            if node.type == 'freeform_section':
+                # Freeform section - process all metadata_line children
+                in_freeform_section = False
+                in_c_section = False
+
+                # Add blank line before section if needed
+                if fixed_lines and fixed_lines[-1].strip():
+                    fixed_lines.append("")
                 fixed_lines.append("{freeform}")
+
+                # Process all metadata lines within this section
+                for child in node.children:
+                    if child.type == 'metadata_line':
+                        line_text = node_text(child, source_bytes)
+                        category, minutes, updated_line = self.process_freeform_line(line_text)
+                        if category:
+                            base_cat = self.get_base_category(category)
+                            if base_cat not in category_minutes:
+                                category_minutes[base_cat] = 0
+                            category_minutes[base_cat] += minutes
+                            # Indent metadata lines
+                            content = updated_line.lstrip()
+                            fixed_lines.append(f"    {content}")
+                            num_fixes += 1
+                    elif child.type == 'comment':
+                        fixed_lines.append(node_text(child, source_bytes).rstrip())
+                    # Skip empty lines and the {freeform} token itself
+
+                # Mark all lines in this section as consumed
+                # Note: end_point[0] is exclusive (points to line after last included line)
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+                for i in range(start_line, end_line):
+                    consumed_lines.add(i)
                 continue
 
-            elif node.type == 'summary_declaration':
-                # End freeform section, start summary section
+            elif node.type == 'c_section':
+                # C section - process all c_line children
+                in_c_section = False
                 in_freeform_section = False
-                # Start of summary section - generate and insert summary
+
+                # Add blank line before section if needed
+                if fixed_lines and fixed_lines[-1].strip():
+                    fixed_lines.append("")
+                fixed_lines.append("{c}")
+
+                # Process all c_lines within this section
+                for child in node.children:
+                    if child.type == 'c_line':
+                        line_text = node_text(child, source_bytes)
+                        content = line_text.strip()  # Remove leading/trailing whitespace including \n
+                        fixed_lines.append(f"    {content}")
+                    elif child.type == 'comment':
+                        fixed_lines.append(node_text(child, source_bytes).rstrip())
+                    # Skip empty lines and the {c} token itself
+
+                # Mark all lines in this section as consumed
+                # Note: end_point[0] is exclusive (points to line after last included line)
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+                for i in range(start_line, end_line):
+                    consumed_lines.add(i)
+                continue
+
+            elif node.type == 'c_line':
+                # C line - indent it
+                content = line.lstrip()
+                fixed_lines.append(f"    {content}")
+                continue
+
+            elif node.type == 'summary_section':
+                # Summary section - skip old content and generate new
+                in_freeform_section = False
+                in_c_section = False
+
+                # Mark all lines in this section as consumed
+                # Note: end_point[0] is exclusive (points to line after last included line)
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+                for i in range(start_line, end_line):
+                    consumed_lines.add(i)
+
                 if not summary_generated:
+                    # Add blank line before summary if last line isn't already blank
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
                     summary_lines = self.generate_summary_lines(category_minutes)
                     fixed_lines.extend(summary_lines)
                     summary_generated = True
@@ -1781,14 +1861,33 @@ class PointCalculator:
                     # Don't add it to fixed_lines here, it will be handled by date_header_to_add logic
                     continue
 
-                # Check if this is a summary line (old data to skip)
-                is_summary_line = re.match(r'^\s*\[[^\]]+\]\s+-\s+\d{1,2}:\d{2}\s*$', clean_line)
-                if in_summary_section and is_summary_line:
-                    # Skip old summary lines
-                    continue
-                elif in_summary_section and not is_summary_line and clean_line.strip():
-                    # End of summary section (non-empty, non-summary line)
-                    in_summary_section = False
+                # Skip ERROR nodes in summary section (old summary lines with invalid times)
+                if in_summary_section:
+                    # Check if this is a summary-like line (indented [category] - time)
+                    if re.match(r'^\s*\[[^\]]+\]\s+-\s+', clean_line):
+                        # Skip old summary line
+                        continue
+                    else:
+                        # Not a summary line - end summary section
+                        in_summary_section = False
+
+                # Handle ERROR nodes in c section (c lines that don't match time_block pattern)
+                if in_c_section:
+                    # Check if this looks like a c line: HH:MM - amount_text
+                    if re.match(r'^\s*([0-1][0-9]|2[0-3]):[0-5][0-9]\s+-\s+', clean_line):
+                        # This is a c line - indent it
+                        content = clean_line.lstrip()
+                        fixed_lines.append(f"    {content}")
+                        continue
+                    elif re.match(r'^\s*\{', clean_line):
+                        # New declaration - end c section
+                        in_c_section = False
+                        # Fall through to handle as declaration
+                    elif not clean_line.strip():
+                        # Blank line - end c section
+                        in_c_section = False
+                        fixed_lines.append("")
+                        continue
 
                 # Check if this looks like a metadata line: [category] text - HH:MM
                 if re.match(r'^\s*\[[^\]]+\]\s+.+\s+-\s+\d{1,2}:\d{2}\s*$', clean_line):
@@ -1996,6 +2095,9 @@ class PointCalculator:
 
         # Generate summary at EOF if not already generated
         if not summary_generated and category_minutes:
+            # Add blank line before summary if last line isn't already blank
+            if fixed_lines and fixed_lines[-1].strip():
+                fixed_lines.append("")
             summary_lines = self.generate_summary_lines(category_minutes)
             fixed_lines.extend(summary_lines)
             summary_generated = True

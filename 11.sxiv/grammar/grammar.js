@@ -18,14 +18,25 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.metadata_line, $.time_block],  // Both can start with dash-like patterns
+    [$.c_section],  // Section may be ambiguous about when to end
+    [$.freeform_section],  // Section may be ambiguous about when to end
   ],
 
   rules: {
     // Top-level file structure
+    // Parse as sequence of sections, each with its own content model
     source_file: $ => seq(
       optional(seq($.date_header, /\n/)),
-      repeat($._line),
+      repeat($._content),
       optional($.end_marker)
+    ),
+
+    // Content can be sections (with specific grammars) or standalone lines
+    _content: $ => choice(
+      $.c_section,              // {c} section with c_lines
+      $.summary_section,        // {summary} section (already handles its own lines)
+      $.freeform_section,       // {freeform} section with metadata_lines
+      $._time_tracking_line,    // Default content: time blocks, focus, etc.
     ),
 
     // Date header: DayOfWeek, Month Day(st/nd/rd/th), Year
@@ -52,14 +63,36 @@ module.exports = grammar({
       'July', 'August', 'September', 'October', 'November', 'December'
     ),
 
-    _line: $ => choice(
-      $.metadata_line,  // Try this first - more specific (requires " - HH:MM")
+    // C section: {c} declaration followed by c_lines
+    // Section continues until we can't match c_line, comment, or empty line
+    c_section: $ => seq(
+      '{c}',
+      /\n/,
+      repeat(choice(
+        $.c_line,
+        $.comment,
+        /\n/  // Empty lines
+      ))
+    ),
+
+    // Freeform section: {freeform} declaration followed by metadata_lines
+    // Section ends when: (1) we hit a new declaration {, or (2) EOF
+    freeform_section: $ => prec.left(seq(
+      '{freeform}',
+      /\n/,
+      repeat(choice(
+        $.metadata_line,
+        $.comment,
+        /\n/
+      ))
+    )),
+
+    // Time tracking lines (default content)
+    _time_tracking_line: $ => choice(
       $.focus_declaration,
-      $.freeform_declaration,
-      $.summary_declaration,
-      $.rest_block,
       $.time_block,
       $.continuation_block,
+      $.rest_block,
       $.break_marker,
       $.block_separator,
       $.comment,
@@ -106,21 +139,41 @@ module.exports = grammar({
       '{',
       'focus',
       ':',
+      optional(/\s+/),
       $.category,
       repeat(seq(',', optional(/\s+/), $.category)),
       '}',
       /\n/
     ),
 
-    // Freeform declaration: {freeform}
-    freeform_declaration: $ => seq(
-      '{freeform}',
+    // C line: time followed by dash and consumption amount
+    // Only appears inside c_section, so no conflict with time_block
+    // Structure is exposed for highlighting and parsing
+    c_line: $ => seq(
+      field('time', $.time),
+      '-',
+      field('amount', $.c_amount),
       /\n/
     ),
 
-    // Summary declaration: {summary}
-    summary_declaration: $ => seq(
+    // C amount: consumption description (free-form text, no brackets)
+    // Examples: "1L-", "1L++", "1x alc", "200mg caffeine"
+    c_amount: $ => /[^\[\]\n]+/,
+
+    // Summary section: {summary} followed by indented summary_lines
+    // Ends when we hit a non-indented line (can't match summary_line anymore)
+    summary_section: $ => seq(
       '{summary}',
+      /\n/,
+      repeat($.summary_line)
+    ),
+
+    // Summary line: indented [category] - HH:MM
+    summary_line: $ => seq(
+      /[ \t]+/,  // Required indentation
+      field('category', $.category),
+      /\s+-\s+/,
+      field('time', $.time),
       /\n/
     ),
 

@@ -103,11 +103,15 @@
 ; Make the entire {focus: ...} declaration purple/bold
 (focus_declaration) @keyword.focus
 
-; Make the entire {freeform} declaration purple like focus
-(freeform_declaration) @keyword.focus
+; Section declarations
+(c_section "{c}" @keyword.focus)
+(summary_section "{summary}" @keyword.focus)
+(freeform_section "{freeform}" @keyword.focus)
 
-; Make the entire {summary} declaration purple/bold like focus
-(summary_declaration) @keyword.focus
+; C line components - highlight time like other times
+(c_line
+  (time) @type)
+(c_amount) @none
 
 ; ============================================================================
 ; Point Notation

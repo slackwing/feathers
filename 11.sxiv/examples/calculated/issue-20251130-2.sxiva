@@ -1,0 +1,38 @@
+Sunday, November 30th, 2025
+    [med] 200b-500v, 100mg moda - 08:25
+{focus: [wf]}
+08:36 - [wf] code review ~--- 08:48 (+1f,+1a=2)
+    08:48 - [wf] cr ~[6], [err] italy ~[3] --- 09:06 (-6,+1f,+2a=-1)
+x09:00 - [wf] cr, neovim bug ~[6] --- 09:16 (-4=-5)
+09:12 - [wf] cr, next ~--- 09:31 (-3,+1f,+1a=-6)
+x09:24 - [wf] cr, next ~[6] --- 09:37 (=-6)
+,,,
+;;;
+10:12 - [wf] fix ~--- 10:21 (+4,+1f,+1a=0)
+    10:24 - [wf] fix ~--- 10:35 (-2,+1f,+2a=1)
+    10:36 - [wf] fix ~--- 10:48 (-1,+1f,+3a=4)
+;;;
+{focus: [wf]}
+17:36 - [wf] quick focus ~--- 17:53 (-5,+1f,+1a=1)
+    17:48 - [wf] quick focus, freeform ~--- 18:08 (-3,+1f,+2a=1)
+    ,,,
+x18:00 - [wf] freeform ~[6] +
+x18:12 + [wf] freeform ~--- 18:28 (-2=-1)
+18:24 - [wf] freeform, highlighting ~--- 18:38 (+2,+1f,+1a=3)
+;;;
+19:48 - [wf] hour markers ~--- 20:00 (+2,+1f,+1a=7)
+    20:00 - [wf] review, check in, c counter ~--- 20:10 (+2,+1f,+2a=12)
+    20:12 - [err] dishes [6], [wf] cont'd ~[3] --- 20:14 (+8,+1f,+3a=24)
+    ,,,
+    20:24 - [err] kitchen [3], [err] trash, recycling [3], [wf] cont'd ~[3] --- 20:19 (+7,+1f,+4a=36)
+    [...] (pickup) [12]
+20:48 - [err] 5 things [3] - [wf] cont'd ~[6] --- 39
+
+{c}
+    19:35 - 1L+, hx alc
+    20:30 - 1L, 1x br
+
+{summary}
+    [err] - 00:20
+    [wf]  - 02:52
+

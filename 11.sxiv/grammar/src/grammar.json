@@ -30,7 +30,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "_line"
+            "name": "_content"
           }
         },
         {
@@ -44,6 +44,27 @@
               "type": "BLANK"
             }
           ]
+        }
+      ]
+    },
+    "_content": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "c_section"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "summary_section"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "freeform_section"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_time_tracking_line"
         }
       ]
     },
@@ -214,28 +235,82 @@
         }
       ]
     },
-    "_line": {
+    "c_section": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{c}"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "c_line"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "comment"
+              },
+              {
+                "type": "PATTERN",
+                "value": "\\n"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "freeform_section": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "{freeform}"
+          },
+          {
+            "type": "PATTERN",
+            "value": "\\n"
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "metadata_line"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "comment"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\n"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "_time_tracking_line": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "metadata_line"
-        },
-        {
-          "type": "SYMBOL",
           "name": "focus_declaration"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "freeform_declaration"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "summary_declaration"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "rest_block"
         },
         {
           "type": "SYMBOL",
@@ -244,6 +319,10 @@
         {
           "type": "SYMBOL",
           "name": "continuation_block"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "rest_block"
         },
         {
           "type": "SYMBOL",
@@ -384,6 +463,18 @@
           "value": ":"
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "\\s+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "SYMBOL",
           "name": "category"
         },
@@ -425,12 +516,28 @@
         }
       ]
     },
-    "freeform_declaration": {
+    "c_line": {
       "type": "SEQ",
       "members": [
         {
+          "type": "FIELD",
+          "name": "time",
+          "content": {
+            "type": "SYMBOL",
+            "name": "time"
+          }
+        },
+        {
           "type": "STRING",
-          "value": "{freeform}"
+          "value": "-"
+        },
+        {
+          "type": "FIELD",
+          "name": "amount",
+          "content": {
+            "type": "SYMBOL",
+            "name": "c_amount"
+          }
         },
         {
           "type": "PATTERN",
@@ -438,12 +545,56 @@
         }
       ]
     },
-    "summary_declaration": {
+    "c_amount": {
+      "type": "PATTERN",
+      "value": "[^\\[\\]\\n]+"
+    },
+    "summary_section": {
       "type": "SEQ",
       "members": [
         {
           "type": "STRING",
           "value": "{summary}"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "summary_line"
+          }
+        }
+      ]
+    },
+    "summary_line": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "PATTERN",
+          "value": "[ \\t]+"
+        },
+        {
+          "type": "FIELD",
+          "name": "category",
+          "content": {
+            "type": "SYMBOL",
+            "name": "category"
+          }
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\s+-\\s+"
+        },
+        {
+          "type": "FIELD",
+          "name": "time",
+          "content": {
+            "type": "SYMBOL",
+            "name": "time"
+          }
         },
         {
           "type": "PATTERN",
@@ -1194,6 +1345,12 @@
     [
       "metadata_line",
       "time_block"
+    ],
+    [
+      "c_section"
+    ],
+    [
+      "freeform_section"
     ]
   ],
   "precedences": [],

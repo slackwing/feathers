@@ -71,6 +71,51 @@
     "fields": {}
   },
   {
+    "type": "c_line",
+    "named": true,
+    "fields": {
+      "amount": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "c_amount",
+            "named": true
+          }
+        ]
+      },
+      "time": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "time",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "c_section",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "c_line",
+          "named": true
+        },
+        {
+          "type": "comment",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "category",
     "named": true,
     "fields": {}
@@ -219,9 +264,23 @@
     }
   },
   {
-    "type": "freeform_declaration",
+    "type": "freeform_section",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "metadata_line",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "metadata_line",
@@ -391,6 +450,10 @@
           "named": true
         },
         {
+          "type": "c_section",
+          "named": true
+        },
+        {
           "type": "comment",
           "named": true
         },
@@ -411,11 +474,7 @@
           "named": true
         },
         {
-          "type": "freeform_declaration",
-          "named": true
-        },
-        {
-          "type": "metadata_line",
+          "type": "freeform_section",
           "named": true
         },
         {
@@ -423,7 +482,7 @@
           "named": true
         },
         {
-          "type": "summary_declaration",
+          "type": "summary_section",
           "named": true
         },
         {
@@ -434,9 +493,45 @@
     }
   },
   {
-    "type": "summary_declaration",
+    "type": "summary_line",
     "named": true,
-    "fields": {}
+    "fields": {
+      "category": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "category",
+            "named": true
+          }
+        ]
+      },
+      "time": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "time",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "summary_section",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "summary_line",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "terminator",
@@ -677,6 +772,10 @@
     "named": false
   },
   {
+    "type": "c_amount",
+    "named": true
+  },
+  {
     "type": "f",
     "named": false
   },
@@ -706,6 +805,10 @@
   },
   {
     "type": "{",
+    "named": false
+  },
+  {
+    "type": "{c}",
     "named": false
   },
   {
