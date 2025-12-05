@@ -549,7 +549,7 @@ class PointCalculator:
             has_focus = False
         else:
             # Aggregate all unique categories from the chain
-            unique_focus_cats = set(all_categories) & state.focus_categories
+            unique_focus_cats = self.get_matching_focus_categories(all_categories, state.focus_categories)
             focus = len(unique_focus_cats)
             has_focus = focus > 0
             accumulation = state.accumulation if has_focus else 0
@@ -625,7 +625,7 @@ class PointCalculator:
             has_focus = False
         else:
             # Focus points: +1f per unique focus category present
-            unique_focus_cats = set(categories) & state.focus_categories
+            unique_focus_cats = self.get_matching_focus_categories(categories, state.focus_categories)
             focus = len(unique_focus_cats)
             has_focus = focus > 0
 
@@ -813,6 +813,7 @@ class PointCalculator:
                         cat_text = node_text(child, source_bytes)
                         cat_name = cat_text.strip('[]')
                         categories.append(cat_name)
+                # Store focus categories as-is (keep subcategories)
                 state.focus_categories = set(categories)
                 i += 1
 
@@ -963,7 +964,7 @@ class PointCalculator:
                             category_minutes[base_cat] = 0
                         category_minutes[base_cat] += 4  # Each blick is 4 minutes
 
-                    has_focus = len(set(all_cats) & state.focus_categories) > 0 if not is_x_chain else False
+                    has_focus = len(self.get_matching_focus_categories(all_cats, state.focus_categories)) > 0 if not is_x_chain else False
                     self.update_accumulation(state, has_focus, is_x_chain)
 
                     # Calculate and update time offset
@@ -1233,7 +1234,7 @@ class PointCalculator:
 
                     # Update state
                     state.running_total = expected_running_total
-                    has_focus = len(set(categories) & state.focus_categories) > 0
+                    has_focus = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0
                     self.update_accumulation(state, has_focus, is_x_block)
 
                     # Calculate and update time offset for this block
@@ -1322,6 +1323,33 @@ class PointCalculator:
         # Split on slash and take first part
         base = cat.split('/')[0]
         return base
+
+    def get_matching_focus_categories(self, categories: list, focus_categories: Set[str]) -> Set[str]:
+        """Get focus categories that match, considering subcategories.
+
+        Matching rules:
+        - Block [sp/a] matches focus [sp/a] exactly → counts as match for [sp/a]
+        - Block [sp/a] matches focus [sp] (base match) → counts as match for [sp]
+        - If focus is {[sp/a], [sp/b]}, block with both gets 2 focus points
+        - If focus is {[sp]}, block with [sp/a] and [sp/b] gets 1 focus point
+
+        Args:
+            categories: List of category strings from block (e.g., ['sp/a', 'wr'])
+            focus_categories: Set of focus category strings (e.g., {'sp', 'wf'} or {'sp/a', 'sp/b'})
+
+        Returns:
+            Set of matching focus categories (returns the focus category that matched)
+        """
+        matching = set()
+        for cat in categories:
+            base = self.get_base_category(cat)
+            # Check for exact match first (e.g., [sp/a] in focus matches [sp/a] in block)
+            if cat in focus_categories:
+                matching.add(cat)
+            # Check for base match (e.g., [sp] in focus matches [sp/a] in block)
+            elif base in focus_categories:
+                matching.add(base)
+        return matching
 
     def format_time_duration(self, total_minutes: int) -> str:
         """Format minutes as HH:MM.
@@ -1859,6 +1887,7 @@ class PointCalculator:
                         cat_text = node_text(child, source_bytes)
                         cat_name = cat_text.strip('[]')
                         categories.append(cat_name)
+                # Store focus categories as-is (keep subcategories)
                 state.focus_categories = set(categories)
 
                 # Indent focus declaration if we're in an accumulation streak
@@ -2024,7 +2053,7 @@ class PointCalculator:
                 if is_continuation and in_continuation_chain:
                     # Continuation block: use the same indent as the chain
                     desired_indent = continuation_indent
-                    has_focus_now = len(set(categories) & state.focus_categories) > 0 if not is_x_block else False
+                    has_focus_now = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0 if not is_x_block else False
                 else:
                     # Determine if this should be indented based on accumulation value from calculated points
                     should_indent = False
@@ -2032,7 +2061,7 @@ class PointCalculator:
 
                     if not is_x_block:
                         # Not an x-block, apply normal indentation rules
-                        has_focus_now = len(set(categories) & state.focus_categories) > 0
+                        has_focus_now = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0
 
                         # Check the accumulation value that will be shown in this block's points
                         # Indent if accumulation > 1 (i.e., accumulation ≥ 2)
