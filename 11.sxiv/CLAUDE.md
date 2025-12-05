@@ -8,6 +8,23 @@
 - For testing, output to `/tmp/` or examine `examples/calculated/` after running `./regenerate.sh`
 - The calculated examples are the source of truth for verifying correctness
 
+## Testing Workflow
+
+**After making ANY changes (grammar, calculator, etc.):**
+
+1. Run `./regenerate.sh` to recalculate all examples
+2. Run `git diff examples/calculated/` to see what changed
+3. **Analyze the diff carefully:**
+   - Are the changes related to your modification? ✅ Expected
+   - Are there unrelated changes to other examples? ⚠️ Unintended side-effects
+4. **If unintended side-effects occur:**
+   - If they seem correct/reasonable → **Ask the user to review**
+   - If they're clearly wrong → **Fix the side-effect before proceeding**
+5. **NEVER modify files in `examples/` (source files)** unless:
+   - Adding a new example file
+   - There's an explicit reason (e.g., grammar change affects all examples)
+   - User explicitly requests it
+
 ---
 
 This document explains the SXIVA project structure, testing workflow, and critical maintenance practices for AI assistants working on this codebase.
