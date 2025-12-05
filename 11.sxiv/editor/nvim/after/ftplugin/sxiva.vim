@@ -17,6 +17,10 @@ if exists('g:sxiva_enable_treesitter') && g:sxiva_enable_treesitter
   endif
 endif
 
+" Define highlight groups
+highlight default link SxivaError ErrorMsg
+highlight default link SxivaTime Type
+
 " Highlight error messages and c section content using matchadd (works with tree-sitter)
 " This runs after tree-sitter highlighting
 augroup SxivaHighlights
@@ -30,11 +34,20 @@ function! s:HighlightSpecial()
     silent! call matchdelete(w:sxiva_error_match)
     unlet w:sxiva_error_match
   endif
+  if exists('w:sxiva_freeform_time_match')
+    silent! call matchdelete(w:sxiva_freeform_time_match)
+    unlet w:sxiva_freeform_time_match
+  endif
 
   " Highlight [ERROR] messages
   if search('\[ERROR\]', 'nw') > 0
     let w:sxiva_error_match = matchadd('SxivaError', '\[ERROR\].*', 10)
   endif
+
+  " Highlight times at end of freeform and summary lines (" - HH:MM" or just "HH:MM")
+  " This adds yellow highlighting to all time totals in metadata/summary lines
+  " Pattern: match " - HH:MM" or just " HH:MM" at end of line after [category]
+  let w:sxiva_freeform_time_match = matchadd('SxivaTime', '^\s*\[[^\]]\+\].*\zs\d\{2\}:\d\{2\}\ze\s*$', 10)
 endfunction
 
 " Initial highlight

@@ -56,7 +56,7 @@
             "members": [
               {
                 "type": "SYMBOL",
-                "name": "metadata_line"
+                "name": "date_header_line"
               },
               {
                 "type": "SYMBOL",
@@ -313,7 +313,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "metadata_line"
+                  "name": "freeform_line"
                 },
                 {
                   "type": "SYMBOL",
@@ -366,7 +366,7 @@
         }
       ]
     },
-    "metadata_line": {
+    "date_header_line": {
       "type": "PREC",
       "value": 2,
       "content": {
@@ -438,6 +438,35 @@
         ]
       }
     },
+    "freeform_line": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "category",
+          "content": {
+            "type": "SYMBOL",
+            "name": "category"
+          }
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\s+"
+        },
+        {
+          "type": "FIELD",
+          "name": "subject",
+          "content": {
+            "type": "SYMBOL",
+            "name": "freeform_subject"
+          }
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        }
+      ]
+    },
     "metadata_subject": {
       "type": "REPEAT1",
       "content": {
@@ -457,6 +486,10 @@
           }
         ]
       }
+    },
+    "freeform_subject": {
+      "type": "PATTERN",
+      "value": "[^\\n]+"
     },
     "end_marker": {
       "type": "SEQ",
@@ -1367,14 +1400,7 @@
   ],
   "conflicts": [
     [
-      "metadata_line",
-      "time_block"
-    ],
-    [
       "c_section"
-    ],
-    [
-      "freeform_section"
     ],
     [
       "date_header_section"

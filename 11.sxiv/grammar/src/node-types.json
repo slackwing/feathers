@@ -203,6 +203,42 @@
     }
   },
   {
+    "type": "date_header_line",
+    "named": true,
+    "fields": {
+      "category": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "category",
+            "named": true
+          }
+        ]
+      },
+      "subject": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "metadata_subject",
+            "named": true
+          }
+        ]
+      },
+      "time": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "time",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "date_header_section",
     "named": true,
     "fields": {},
@@ -219,7 +255,7 @@
           "named": true
         },
         {
-          "type": "metadata_line",
+          "type": "date_header_line",
           "named": true
         }
       ]
@@ -287,26 +323,7 @@
     }
   },
   {
-    "type": "freeform_section",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "comment",
-          "named": true
-        },
-        {
-          "type": "metadata_line",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "metadata_line",
+    "type": "freeform_line",
     "named": true,
     "fields": {
       "category": {
@@ -321,24 +338,33 @@
       },
       "subject": {
         "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "metadata_subject",
-            "named": true
-          }
-        ]
-      },
-      "time": {
-        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "time",
+            "type": "freeform_subject",
             "named": true
           }
         ]
       }
+    }
+  },
+  {
+    "type": "freeform_section",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "freeform_line",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -805,6 +831,10 @@
   {
     "type": "focus",
     "named": false
+  },
+  {
+    "type": "freeform_subject",
+    "named": true
   },
   {
     "type": "rest_description",

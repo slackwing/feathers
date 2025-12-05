@@ -48,9 +48,6 @@
 ; Time stamps (HH:MM) - using @type for red/orange
 (time) @type
 
-; C section amounts - use @string for green (similar to categories)
-(c_amounts) @string
-
 ; Minute values - use @string for green (like categories)
 (minutes) @string
 
@@ -90,8 +87,23 @@
 ; Subject text (task descriptions) - use @none for normal text
 (subject) @none
 
+; Metadata subject text - same as blick subject (normal/grayish)
+(metadata_subject) @none
+
+; Freeform subject text - normal
+(freeform_subject) @none
+
 ; Rest block descriptions - also normal
 (rest_description) @none
+
+; Date header line components - highlight like time blocks
+(date_header_line
+  (category) @string      ; Green like other categories
+  (time) @type)           ; Red/orange like other times
+
+; Freeform line components - highlight like time blocks
+(freeform_line
+  (category) @string)     ; Green like other categories
 
 ; ============================================================================
 ; Comments
@@ -106,14 +118,15 @@
 ; Make the entire {focus: ...} declaration purple/bold
 (focus_declaration) @keyword.focus
 
-; Make the entire {freeform} declaration purple like focus
-(freeform_declaration) @keyword.focus
+; Section declarations
+(c_section "{c}" @keyword.focus)
+(summary_section "{summary}" @keyword.focus)
+(freeform_section "{freeform}" @keyword.focus)
 
-; Make the entire {c} declaration purple like focus
-(c_declaration) @keyword.focus
-
-; Make the entire {summary} declaration purple/bold like focus
-(summary_declaration) @keyword.focus
+; C line components - highlight time like other times
+(c_line
+  (time) @type)
+(c_amount) @none
 
 ; ============================================================================
 ; Point Notation

@@ -1386,6 +1386,9 @@ class PointCalculator:
         # Remove existing total if present (everything after last " - HH:MM")
         line_without_total = re.sub(r'\s+-\s+\d{1,2}:\d{2}\s*$', '', line)
 
+        # Also strip trailing " -" without time (for incomplete lines)
+        line_without_total = re.sub(r'\s+-\s*$', '', line_without_total)
+
         # Calculate total from time ranges and explicit minutes
         total_minutes = self.parse_freeform_time(line_without_total)
 
@@ -1674,7 +1677,7 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'date_header_section', 'freeform_section', 'c_section', 'c_line', 'summary_section', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
+                if n.type in ['focus_declaration', 'date_header_section', 'freeform_section', 'c_section', 'c_line', 'summary_section', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'date_header_line', 'freeform_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
@@ -1705,7 +1708,7 @@ class PointCalculator:
 
             # Process based on node type
             if node.type == 'freeform_section':
-                # Freeform section - process all metadata_line children
+                # Freeform section - process all freeform_line children
                 in_freeform_section = False
                 in_c_section = False
 
@@ -1714,9 +1717,9 @@ class PointCalculator:
                     fixed_lines.append("")
                 fixed_lines.append("{freeform}")
 
-                # Process all metadata lines within this section
+                # Process all freeform lines within this section
                 for child in node.children:
-                    if child.type == 'metadata_line':
+                    if child.type == 'freeform_line':
                         line_text = node_text(child, source_bytes)
                         category, minutes, updated_line = self.process_freeform_line(line_text)
                         if category:
@@ -1724,7 +1727,7 @@ class PointCalculator:
                             if base_cat not in category_minutes:
                                 category_minutes[base_cat] = 0
                             category_minutes[base_cat] += minutes
-                            # Indent metadata lines
+                            # Indent freeform lines
                             content = updated_line.lstrip()
                             fixed_lines.append(f"    {content}")
                             num_fixes += 1
@@ -1798,15 +1801,15 @@ class PointCalculator:
                 continue
 
             elif node.type == 'date_header_section':
-                # Date header section with optional metadata lines
-                # Always preserve metadata lines, only skip/replace the date header itself
+                # Date header section with optional date_header_lines
+                # Always preserve date_header_lines, only skip/replace the date header itself
                 # Note: comments are already stripped during preprocessing
                 for child in node.children:
                     if child.type == 'date_header':
                         # Date header will be added at the end via date_header_to_add
                         pass
-                    elif child.type == 'metadata_line':
-                        # Always preserve metadata lines with indentation
+                    elif child.type == 'date_header_line':
+                        # Always preserve date_header_lines with indentation
                         line_text = node_text(child, source_bytes)
                         content = line_text.strip()
                         fixed_lines.append(f"    {content}")
@@ -1826,35 +1829,27 @@ class PointCalculator:
                     fixed_lines.append(line.strip())
                 continue
 
-            elif node.type == 'metadata_line':
-                # Check if this is a summary line (no subject, just [cat] - HH:MM)
-                # Summary lines match: ^\s*\[category\]\s+-\s+\d{1,2}:\d{2}
-                is_summary_line = re.match(r'^\s*\[[^\]]+\]\s+-\s+\d{1,2}:\d{2}\s*$', line)
+            elif node.type == 'date_header_line':
+                # Date header lines are always preserved (already handled in date_header_section)
+                # This shouldn't be reached, but keep for safety
+                fixed_lines.append(line.rstrip())
+                continue
 
-                # Handle freeform metadata lines (already calculated, just need to add to totals)
-                if in_freeform_section and not in_summary_section and not is_summary_line:
-                    category, minutes, updated_line = self.process_freeform_line(line)
-                    if category:
-                        # Add to category totals
-                        base_cat = self.get_base_category(category)
-                        if base_cat not in category_minutes:
-                            category_minutes[base_cat] = 0
-                        category_minutes[base_cat] += minutes
-                        fixed_lines.append(updated_line)
-                        num_fixes += 1
-                        continue
-
-                if in_summary_section and is_summary_line:
-                    # Skip old summary metadata lines
-                    continue
-                elif in_summary_section and not is_summary_line:
-                    # End of summary section
-                    in_summary_section = False
-
-                # Preserve non-summary metadata lines with indentation
-                if not is_summary_line:
-                    content = line.lstrip()
-                    fixed_lines.append(f"    {content}")
+            elif node.type == 'freeform_line':
+                # Freeform lines: parse time expressions and add total
+                category, minutes, updated_line = self.process_freeform_line(line)
+                if category:
+                    # Add to category totals
+                    base_cat = self.get_base_category(category)
+                    if base_cat not in category_minutes:
+                        category_minutes[base_cat] = 0
+                    category_minutes[base_cat] += minutes
+                    fixed_lines.append(updated_line)
+                    num_fixes += 1
+                else:
+                    # No category found, preserve as-is
+                    fixed_lines.append(line.rstrip())
+                continue
 
             elif node.type == 'focus_declaration':
                 # Update focus categories

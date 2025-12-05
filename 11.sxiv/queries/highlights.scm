@@ -90,13 +90,20 @@
 ; Metadata subject text - same as blick subject (normal/grayish)
 (metadata_subject) @none
 
+; Freeform subject text - normal
+(freeform_subject) @none
+
 ; Rest block descriptions - also normal
 (rest_description) @none
 
-; Metadata line components - highlight like time blocks
-(metadata_line
+; Date header line components - highlight like time blocks
+(date_header_line
   (category) @string      ; Green like other categories
   (time) @type)           ; Red/orange like other times
+
+; Freeform line components - highlight like time blocks
+(freeform_line
+  (category) @string)     ; Green like other categories
 
 ; ============================================================================
 ; Comments

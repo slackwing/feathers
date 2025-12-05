@@ -17,9 +17,7 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    [$.metadata_line, $.time_block],  // Both can start with dash-like patterns
     [$.c_section],  // Section may be ambiguous about when to end
-    [$.freeform_section],  // Section may be ambiguous about when to end
     [$.date_header_section],  // Section may be ambiguous about when to end
   ],
 
@@ -32,13 +30,13 @@ module.exports = grammar({
       optional($.end_marker)
     ),
 
-    // Date header section: date + optional metadata lines
+    // Date header section: date + optional date_header_lines
     // This allows initial metadata lines (like [med] ...) before first time block
     date_header_section: $ => seq(
       $.date_header,
       /\n/,
       repeat(choice(
-        $.metadata_line,
+        $.date_header_line,
         $.comment,
         /\n/  // Empty lines
       ))
@@ -88,13 +86,13 @@ module.exports = grammar({
       ))
     ),
 
-    // Freeform section: {freeform} declaration followed by metadata_lines
+    // Freeform section: {freeform} declaration followed by freeform_lines
     // Section ends when: (1) we hit a new declaration {, or (2) EOF
     freeform_section: $ => prec.left(seq(
       '{freeform}',
       /\n/,
       repeat(choice(
-        $.metadata_line,
+        $.freeform_line,
         $.comment,
         /\n/
       ))
@@ -112,11 +110,10 @@ module.exports = grammar({
       /\n/  // Empty line
     ),
 
-    // Metadata line: [category] [subject] - time
-    // Subject is optional (for summary lines)
+    // Date header line: [category] subject - time
+    // Time is REQUIRED (for medication tracking)
     // Example: [med] 200b-500v, 100mg moda, 1x cof - 08:15
-    // Example: [wr] - 02:08 (summary line, no subject)
-    metadata_line: $ => prec(2, seq(
+    date_header_line: $ => prec(2, seq(
       field('category', $.category),
       choice(
         // With subject: category, space, subject text, space-dash-space, time
@@ -126,7 +123,7 @@ module.exports = grammar({
           /\s+-\s+/,
           field('time', $.time)
         ),
-        // Without subject (summary line): category, space-dash-space, time
+        // Without subject: category, space-dash-space, time
         seq(
           /\s+-\s+/,
           field('time', $.time)
@@ -134,6 +131,17 @@ module.exports = grammar({
       ),
       /\n/
     )),
+
+    // Freeform line: [category] subject
+    // Subject includes everything, including optional " - HH:MM" at end
+    // Example: [wf] random coding, 18:56-19:47, 19:50-19:53, 6m, 8m, 20:02-20:09 - 01:15
+    // Example: [wr] writing notes, 14:30-14:45, 3m
+    freeform_line: $ => seq(
+      field('category', $.category),
+      /\s+/,
+      field('subject', $.freeform_subject),
+      /\n/
+    ),
 
     // Metadata subject: match text up to (but not including) " - HH:MM"
     // Use repeat1 to match character by character, allowing GLR to backtrack
@@ -143,6 +151,10 @@ module.exports = grammar({
       /-[^ \t\n]/,   // Dash followed by non-whitespace (e.g., "b-500" in "200b-500v")
       /[ \t]+[^ \t\n-]/  // Whitespace followed by non-whitespace non-dash
     )),
+
+    // Freeform subject: match everything up to newline
+    // Can contain time expressions, dashes, and optional " - HH:MM" at end
+    freeform_subject: $ => /[^\n]+/,
 
     // End marker: === (everything after is ignored)
     end_marker: $ => seq('===', /[\s\S]*/),
