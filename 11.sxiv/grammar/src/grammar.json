@@ -9,17 +9,8 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "date_header"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\n"
-                }
-              ]
+              "type": "SYMBOL",
+              "name": "date_header_section"
             },
             {
               "type": "BLANK"
@@ -44,6 +35,39 @@
               "type": "BLANK"
             }
           ]
+        }
+      ]
+    },
+    "date_header_section": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "date_header"
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "metadata_line"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "comment"
+              },
+              {
+                "type": "PATTERN",
+                "value": "\\n"
+              }
+            ]
+          }
         }
       ]
     },
@@ -1351,6 +1375,9 @@
     ],
     [
       "freeform_section"
+    ],
+    [
+      "date_header_section"
     ]
   ],
   "precedences": [],

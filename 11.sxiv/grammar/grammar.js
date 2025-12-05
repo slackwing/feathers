@@ -20,15 +20,28 @@ module.exports = grammar({
     [$.metadata_line, $.time_block],  // Both can start with dash-like patterns
     [$.c_section],  // Section may be ambiguous about when to end
     [$.freeform_section],  // Section may be ambiguous about when to end
+    [$.date_header_section],  // Section may be ambiguous about when to end
   ],
 
   rules: {
     // Top-level file structure
     // Parse as sequence of sections, each with its own content model
     source_file: $ => seq(
-      optional(seq($.date_header, /\n/)),
+      optional($.date_header_section),
       repeat($._content),
       optional($.end_marker)
+    ),
+
+    // Date header section: date + optional metadata lines
+    // This allows initial metadata lines (like [med] ...) before first time block
+    date_header_section: $ => seq(
+      $.date_header,
+      /\n/,
+      repeat(choice(
+        $.metadata_line,
+        $.comment,
+        /\n/  // Empty lines
+      ))
     ),
 
     // Content can be sections (with specific grammars) or standalone lines

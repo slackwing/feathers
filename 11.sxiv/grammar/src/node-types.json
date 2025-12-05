@@ -203,6 +203,29 @@
     }
   },
   {
+    "type": "date_header_section",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "date_header",
+          "named": true
+        },
+        {
+          "type": "metadata_line",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "day_name",
     "named": true,
     "fields": {}
@@ -462,7 +485,7 @@
           "named": true
         },
         {
-          "type": "date_header",
+          "type": "date_header_section",
           "named": true
         },
         {

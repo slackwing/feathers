@@ -1574,11 +1574,14 @@ class PointCalculator:
                 # No date header present - add error
                 date_header_error = "[ERROR] file not named with date format (YYYYMMDDd.sxiva)"
 
-        # Strip all old point calculations, error messages, and block separators from the input
+        # Strip all old point calculations, error messages, block separators, and comments from the input
         cleaned_lines = []
         for line in source_code.split('\n'):
             # Skip block separator lines (,,,)
             if line.strip() == ',,,':
+                continue
+            # Skip comment lines (lines starting with #)
+            if line.strip().startswith('#'):
                 continue
             cleaned_lines.append(self.strip_points_from_line(line))
         cleaned_source = '\n'.join(cleaned_lines)
@@ -1671,7 +1674,7 @@ class PointCalculator:
             # Find the primary node type for this line
             node = None
             for n in nodes_on_line:
-                if n.type in ['focus_declaration', 'freeform_section', 'c_section', 'c_line', 'summary_section', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
+                if n.type in ['focus_declaration', 'date_header_section', 'freeform_section', 'c_section', 'c_line', 'summary_section', 'time_block', 'continuation_block', 'rest_block', 'break_marker', 'metadata_line', 'date_header', 'ERROR']:
                     node = n
                     break
 
@@ -1794,8 +1797,30 @@ class PointCalculator:
                 in_summary_section = True
                 continue
 
+            elif node.type == 'date_header_section':
+                # Date header section with optional metadata lines
+                # Always preserve metadata lines, only skip/replace the date header itself
+                # Note: comments are already stripped during preprocessing
+                for child in node.children:
+                    if child.type == 'date_header':
+                        # Date header will be added at the end via date_header_to_add
+                        pass
+                    elif child.type == 'metadata_line':
+                        # Always preserve metadata lines with indentation
+                        line_text = node_text(child, source_bytes)
+                        content = line_text.strip()
+                        fixed_lines.append(f"    {content}")
+                    # Skip empty lines, comments (already stripped), and other tokens
+
+                # Mark all lines in this section as consumed
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+                for i in range(start_line, end_line):
+                    consumed_lines.add(i)
+                continue
+
             elif node.type == 'date_header':
-                # Date header node was parsed correctly
+                # Standalone date header (shouldn't happen with new grammar, but keep for safety)
                 # Skip it if we're going to add a date header (avoid duplication)
                 if not date_header_to_add:
                     fixed_lines.append(line.strip())

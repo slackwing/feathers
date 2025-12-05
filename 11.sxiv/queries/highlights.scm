@@ -87,8 +87,16 @@
 ; Subject text (task descriptions) - use @none for normal text
 (subject) @none
 
+; Metadata subject text - same as blick subject (normal/grayish)
+(metadata_subject) @none
+
 ; Rest block descriptions - also normal
 (rest_description) @none
+
+; Metadata line components - highlight like time blocks
+(metadata_line
+  (category) @string      ; Green like other categories
+  (time) @type)           ; Red/orange like other times
 
 ; ============================================================================
 ; Comments
