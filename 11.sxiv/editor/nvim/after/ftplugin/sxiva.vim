@@ -34,9 +34,13 @@ function! s:HighlightSpecial()
     silent! call matchdelete(w:sxiva_error_match)
     unlet w:sxiva_error_match
   endif
-  if exists('w:sxiva_freeform_time_match')
-    silent! call matchdelete(w:sxiva_freeform_time_match)
-    unlet w:sxiva_freeform_time_match
+  if exists('w:sxiva_date_match')
+    silent! call matchdelete(w:sxiva_date_match)
+    unlet w:sxiva_date_match
+  endif
+  if exists('w:sxiva_time_match')
+    silent! call matchdelete(w:sxiva_time_match)
+    unlet w:sxiva_time_match
   endif
 
   " Highlight [ERROR] messages
@@ -44,10 +48,14 @@ function! s:HighlightSpecial()
     let w:sxiva_error_match = matchadd('SxivaError', '\[ERROR\].*', 10)
   endif
 
-  " Highlight times at end of freeform and summary lines (" - HH:MM" or just "HH:MM")
-  " This adds yellow highlighting to all time totals in metadata/summary lines
-  " Pattern: match " - HH:MM" or just " HH:MM" at end of line after [category]
-  let w:sxiva_freeform_time_match = matchadd('SxivaTime', '^\s*\[[^\]]\+\].*\zs\d\{2\}:\d\{2\}\ze\s*$', 10)
+  " Highlight date header in yellow (overrides tree-sitter which may not be yellow in all themes)
+  " Pattern: DayOfWeek, Month Day(st/nd/rd/th), Year
+  let w:sxiva_date_match = matchadd('SxivaTime', '^\(Sunday\|Monday\|Tuesday\|Wednesday\|Thursday\|Friday\|Saturday\), \(January\|February\|March\|April\|May\|June\|July\|August\|September\|October\|November\|December\) \d\{1,2\}\(st\|nd\|rd\|th\), \d\{4\}', 10)
+
+  " Highlight times at end of freeform/summary lines in yellow
+  " Pattern: match HH:MM at end of line after [category]
+  " This overrides tree-sitter @number/@type which may not be yellow
+  let w:sxiva_time_match = matchadd('SxivaTime', '^\s*\[[^\]]\+\].*\zs\d\{2\}:\d\{2\}\ze\s*$', 10)
 endfunction
 
 " Initial highlight

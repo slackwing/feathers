@@ -38,8 +38,8 @@
 ; Date Header
 ; ============================================================================
 
-; Date header - bright yellow and bold
-(date_header) @constant.builtin
+; Date header - yellow
+(date_header) @number
 
 ; ============================================================================
 ; Time and Numbers
@@ -103,7 +103,8 @@
 
 ; Freeform line components - highlight like time blocks
 (freeform_line
-  (category) @string)     ; Green like other categories
+  (category) @string      ; Green like other categories
+  (time) @number)         ; Yellow like date header
 
 ; ============================================================================
 ; Comments
@@ -122,6 +123,10 @@
 (c_section "{c}" @keyword.focus)
 (summary_section "{summary}" @keyword.focus)
 (freeform_section "{freeform}" @keyword.focus)
+
+; Summary line times - yellow like freeform times
+(summary_line
+  (time) @number)
 
 ; C line components - highlight time like other times
 (c_line

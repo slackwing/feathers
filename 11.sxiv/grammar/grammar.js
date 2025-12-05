@@ -132,14 +132,15 @@ module.exports = grammar({
       /\n/
     )),
 
-    // Freeform line: [category] subject
-    // Subject includes everything, including optional " - HH:MM" at end
+    // Freeform line: [category] subject [optional: - time]
+    // Time at end is optional (calculator adds it)
     // Example: [wf] random coding, 18:56-19:47, 19:50-19:53, 6m, 8m, 20:02-20:09 - 01:15
     // Example: [wr] writing notes, 14:30-14:45, 3m
     freeform_line: $ => seq(
       field('category', $.category),
       /\s+/,
       field('subject', $.freeform_subject),
+      optional(seq(/\s+-\s+/, field('time', $.time))),
       /\n/
     ),
 
@@ -152,9 +153,14 @@ module.exports = grammar({
       /[ \t]+[^ \t\n-]/  // Whitespace followed by non-whitespace non-dash
     )),
 
-    // Freeform subject: match everything up to newline
-    // Can contain time expressions, dashes, and optional " - HH:MM" at end
-    freeform_subject: $ => /[^\n]+/,
+    // Freeform subject: match content up to (but not including) " - HH:MM" or newline
+    // Can contain time expressions like "18:56-19:47" in the middle
+    // Similar to metadata_subject pattern
+    freeform_subject: $ => repeat1(choice(
+      /[^ \t\n-]+/,  // Non-whitespace, non-dash chunks
+      /-[^ \t\n]/,   // Dash followed by non-whitespace (allows "18:56-19:47")
+      /[ \t]+[^ \t\n-]/  // Whitespace followed by non-whitespace non-dash
+    )),
 
     // End marker: === (everything after is ignored)
     end_marker: $ => seq('===', /[\s\S]*/),

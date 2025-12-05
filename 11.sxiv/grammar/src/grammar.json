@@ -462,6 +462,31 @@
           }
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "\\s+-\\s+"
+                },
+                {
+                  "type": "FIELD",
+                  "name": "time",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "time"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "PATTERN",
           "value": "\\n"
         }
@@ -488,8 +513,24 @@
       }
     },
     "freeform_subject": {
-      "type": "PATTERN",
-      "value": "[^\\n]+"
+      "type": "REPEAT1",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "PATTERN",
+            "value": "[^ \\t\\n-]+"
+          },
+          {
+            "type": "PATTERN",
+            "value": "-[^ \\t\\n]"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[ \\t]+[^ \\t\\n-]"
+          }
+        ]
+      }
     },
     "end_marker": {
       "type": "SEQ",

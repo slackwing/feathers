@@ -345,6 +345,16 @@
             "named": true
           }
         ]
+      },
+      "time": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "time",
+            "named": true
+          }
+        ]
       }
     }
   },
@@ -366,6 +376,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "freeform_subject",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "metadata_subject",
@@ -831,10 +846,6 @@
   {
     "type": "focus",
     "named": false
-  },
-  {
-    "type": "freeform_subject",
-    "named": true
   },
   {
     "type": "rest_description",
