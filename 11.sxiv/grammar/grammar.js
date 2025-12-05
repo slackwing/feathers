@@ -233,12 +233,13 @@ module.exports = grammar({
     comment: $ => seq(/#[^\n]*/, /\n/),
 
     // Time block: [x]HH:MM - blick_list terminator
+    // The dash after time must be preceded by a space (to distinguish from dash within blick list)
     time_block: $ => seq(
       field('shortened', optional('x')),
       field('start_time', $.time),
-      optional(/\s+/),
-      '-',
-      optional(/\s+/),
+      /\s+/,                // Space required
+      '-',                   // Dash (time block separator)
+      /\s+/,                // Space required
       field('blicks', $.blick_list),
       optional(/\s+/),
       field('terminator', $.terminator),
@@ -261,10 +262,17 @@ module.exports = grammar({
     // Time: HH:MM
     time: $ => /([0-1][0-9]|2[0-3]):[0-5][0-9]/,
 
-    // Blick list: one or more blicks separated by comma + optional space + [category]
+    // Blick list: one or more blicks separated by comma OR dash
+    // Note: For dash, we need to be explicit about spaces to avoid ambiguity
     blick_list: $ => seq(
       $.blick,
-      repeat(seq(',', optional(/\s+/), $.blick))
+      repeat(seq(
+        choice(
+          ',',                          // Comma (space handled by extras)
+          token(prec(1, / - /))        // Space-dash-space as single token
+        ),
+        $.blick
+      ))
     ),
 
     // Blick: [category] subject [~][minutes] OR [category] subject ~

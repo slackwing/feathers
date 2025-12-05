@@ -325,8 +325,8 @@ class PointCalculator:
                 for blick_child in child.children:
                     if blick_child.type == 'category':
                         cat_text = node_text(blick_child, source_bytes)
-                        # Remove brackets: [wr] -> wr
-                        cat_name = cat_text.strip('[]')
+                        # Remove brackets and whitespace: [wr] -> wr,  [err] -> err
+                        cat_name = cat_text.strip().strip('[]').strip()
                     elif blick_child.type == 'minutes':
                         # Explicit minutes override tilde default
                         # e.g., ~[6] uses [6] (2 blicks), tilde is decorative
