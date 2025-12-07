@@ -1069,12 +1069,8 @@
                   "type": "CHOICE",
                   "members": [
                     {
-                      "type": "FIELD",
-                      "name": "tilde",
-                      "content": {
-                        "type": "STRING",
-                        "value": "~"
-                      }
+                      "type": "PATTERN",
+                      "value": "\\s+"
                     },
                     {
                       "type": "BLANK"
@@ -1082,22 +1078,51 @@
                   ]
                 },
                 {
-                  "type": "FIELD",
-                  "name": "minutes",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "minutes"
-                  }
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "CHOICE",
+                          "members": [
+                            {
+                              "type": "FIELD",
+                              "name": "tilde",
+                              "content": {
+                                "type": "STRING",
+                                "value": "~"
+                              }
+                            },
+                            {
+                              "type": "BLANK"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "FIELD",
+                          "name": "minutes",
+                          "content": {
+                            "type": "SYMBOL",
+                            "name": "minutes"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "FIELD",
+                      "name": "tilde",
+                      "content": {
+                        "type": "STRING",
+                        "value": "~"
+                      }
+                    }
+                  ]
                 }
               ]
             },
             {
-              "type": "FIELD",
-              "name": "tilde",
-              "content": {
-                "type": "STRING",
-                "value": "~"
-              }
+              "type": "BLANK"
             }
           ]
         }
@@ -1122,7 +1147,7 @@
     },
     "subject": {
       "type": "PATTERN",
-      "value": "[a-zA-Z0-9_\\-,'\";:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\\-,'\";:!?@#$%^&*()+={}|\\\\/<>.]+)*"
+      "value": "[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+|[,\\-](\\s+)?[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+)*)*"
     },
     "minutes": {
       "type": "CHOICE",
@@ -1458,6 +1483,9 @@
     ],
     [
       "date_header_section"
+    ],
+    [
+      "blick"
     ]
   ],
   "precedences": [],

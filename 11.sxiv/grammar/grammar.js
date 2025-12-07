@@ -19,6 +19,7 @@ module.exports = grammar({
   conflicts: $ => [
     [$.c_section],  // Section may be ambiguous about when to end
     [$.date_header_section],  // Section may be ambiguous about when to end
+    [$.blick],  // Blick may be ambiguous about optional minutes/tilde
   ],
 
   rules: {
@@ -275,25 +276,31 @@ module.exports = grammar({
       ))
     ),
 
-    // Blick: [category] subject [~][minutes] OR [category] subject ~
+    // Blick: [category] subject [~][minutes] OR [category] subject ~ OR [category] subject
+    // The third case (no minutes, no tilde) means implicit [10]
+    // With explicit space handling to help parser distinguish cases
     blick: $ => seq(
       field('category', $.category),
       field('subject', $.subject),
-      choice(
-        // With minutes (optional tilde)
-        seq(optional(field('tilde', '~')), field('minutes', $.minutes)),
-        // Just tilde for omitted [10]
-        field('tilde', '~')
-      )
+      optional(seq(
+        optional(/\s+/),  // Optional space before tilde/minutes
+        choice(
+          // With minutes (optional tilde)
+          seq(optional(field('tilde', '~')), field('minutes', $.minutes)),
+          // Just tilde
+          field('tilde', '~')
+        )
+      ))
     ),
 
     // Category: [content]
     category: $ => seq('[', /[^\[\]]+/, ']'),
 
-    // Subject: words with spaces, can include commas, dashes, and most punctuation
+    // Subject: words with spaces, can include some punctuation including commas, dashes, apostrophes
     // But NOT brackets (reserved for categories/minutes)
-    // Matches up to (but not including): comma+space+bracket, tilde, or bracket
-    subject: $ => /[a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_\-,'";:!?@#$%^&*()+={}|\\/<>.]+)*/,
+    // Pattern: start with word chars, then allow spaces/commas/dashes followed by more word chars
+    // Key: comma or dash must be followed (possibly after space) by more text
+    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+)*)*/,
 
     // Minutes: [3], [6], [10], or [13]
     minutes: $ => choice(

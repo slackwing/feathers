@@ -222,6 +222,9 @@ class PointCalculator:
                 elif has_tilde:
                     # Tilde-only case (implicit [10] = 9 minutes)
                     total_minutes += 9
+                else:
+                    # No minutes, no tilde: implicit [10] = 9 minutes
+                    total_minutes += 9
 
         # Total blicks = total minutes / 3
         return total_minutes // 3
@@ -334,8 +337,8 @@ class PointCalculator:
                         num_blicks = self.minutes_to_blick_count(minutes_text)
                         has_explicit_minutes = True
 
-                # Note: Grammar requires either tilde or explicit minutes
-                # If only tilde (~), num_blicks stays at default (3)
+                # Note: Grammar allows tilde, explicit minutes, or neither
+                # If only tilde (~) or nothing, num_blicks stays at default (3 = implicit [10])
                 # If explicit minutes (~[6] or [6]), num_blicks is set from minutes
 
                 # Add category once per blick
@@ -1107,12 +1110,19 @@ class PointCalculator:
                     work_minutes = 0
                     for child in blick_list_node.children:
                         if child.type == 'blick':
-                            for subchild in child.children:
-                                if subchild.type == 'minutes':
-                                    mins_text = node_text(subchild, source_bytes).strip('[]')
-                                    mins_notation = int(mins_text)
-                                    # Convert notation to actual minutes ([10]->9, [13]->12)
-                                    work_minutes += self.convert_blick_notation_to_minutes(mins_notation)
+                            has_minutes = any(c.type == 'minutes' for c in child.children)
+                            has_tilde = any(c.type == '~' for c in child.children)
+
+                            if has_minutes:
+                                for subchild in child.children:
+                                    if subchild.type == 'minutes':
+                                        mins_text = node_text(subchild, source_bytes).strip('[]')
+                                        mins_notation = int(mins_text)
+                                        # Convert notation to actual minutes ([10]->9, [13]->12)
+                                        work_minutes += self.convert_blick_notation_to_minutes(mins_notation)
+                            elif has_tilde or not has_minutes:
+                                # Tilde-only or no minutes/tilde: implicit [10] = 9 minutes
+                                work_minutes += 9
 
                     # VALIDATION: Check for time travel (current block ends before previous block ended)
                     if state.previous_end_time:

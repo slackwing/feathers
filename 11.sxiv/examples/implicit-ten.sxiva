@@ -1,0 +1,17 @@
+Saturday, December 6th, 2025
+
+{focus: [work], [err]}
+
+# Implicit [10] - no minutes marker needed (each counts as 3 blicks = 9 minutes)
+14:00 - [work] coding --- 14:12
+14:12 - [err] fix bug --- 14:24
+
+# Mixed: explicit [3] (1 blick) + implicit (3 blicks) = 4 blicks total
+14:24 - [work] review [3], [work] merge --- 14:36
+
+# All explicit for comparison
+14:36 - [work] testing [10] --- 14:48
+
+# Implicit with continuation
+14:48 - [work] documentation --- 15:00
+15:00 + [work] more docs --- 15:12
