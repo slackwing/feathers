@@ -540,6 +540,31 @@
           "value": "==="
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t]+"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "[^\\n]*"
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "PATTERN",
+          "value": "\\n?"
+        },
+        {
           "type": "PATTERN",
           "value": "[\\s\\S]*"
         }

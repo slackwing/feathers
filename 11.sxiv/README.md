@@ -64,6 +64,18 @@ pip install -e .
 ### 2. Use the CLI
 
 ```bash
+# Open today's file (automatically preserves notes from yesterday)
+sxiva
+
+# Open a specific date
+sxiva -d 20251206
+
+# Open yesterday's file
+sxiva -y
+
+# Preserve notes from a specific date
+sxiva --preserve 20251205
+
 # Check point calculations
 sxiva calculate examples/basic.sxiva
 
@@ -73,6 +85,15 @@ sxiva calculate examples/basic.sxiva --fix
 # Output to a specific file
 sxiva calculate input.sxiva -o output.sxiva
 ```
+
+#### Notes Preservation
+
+The `sxiva` command automatically copies notes from yesterday's file to new files. When you create a new daily file, everything after the first `===` marker is preserved:
+
+- **Implicit**: When creating a new file, notes from yesterday are automatically copied
+- **Explicit**: Use `--preserve YYYYMMDD` to copy notes from any date (works on new or existing files)
+- **Format**: Notes are added with `=== (preserved from YYYYMMDD)` header
+- **Sections**: All `===` sections and content after the first `===` are preserved
 
 ### 3. Install Neovim Plugin
 
@@ -113,8 +134,11 @@ See [`docs/NEOVIM_INSTALL.md`](docs/NEOVIM_INSTALL.md) for detailed installation
 ### Run Tests
 
 ```bash
-cd tests
-python test_examples.py
+# Test calculator and example files
+python tests/test_examples.py
+
+# Test CLI features (file creation, preserve, etc.)
+./tests/test_cli.sh
 ```
 
 ### Compile Grammar

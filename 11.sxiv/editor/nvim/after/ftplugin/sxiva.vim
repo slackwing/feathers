@@ -20,6 +20,7 @@ endif
 " Define highlight groups
 highlight default link SxivaError ErrorMsg
 highlight default link SxivaTime Type
+highlight default link SxivaEndMarker Special
 
 " Highlight error messages and c section content using matchadd (works with tree-sitter)
 " This runs after tree-sitter highlighting
@@ -42,6 +43,10 @@ function! s:HighlightSpecial()
     silent! call matchdelete(w:sxiva_time_match)
     unlet w:sxiva_time_match
   endif
+  if exists('w:sxiva_endmarker_match')
+    silent! call matchdelete(w:sxiva_endmarker_match)
+    unlet w:sxiva_endmarker_match
+  endif
 
   " Highlight [ERROR] messages
   if search('\[ERROR\]', 'nw') > 0
@@ -56,6 +61,10 @@ function! s:HighlightSpecial()
   " Pattern: match HH:MM at end of line after [category]
   " This overrides tree-sitter @number/@type which may not be yellow
   let w:sxiva_time_match = matchadd('SxivaTime', '^\s*\[[^\]]\+\].*\zs\d\{2\}:\d\{2\}\ze\s*$', 10)
+
+  " Highlight all === lines (section markers) - matches entire line
+  " Pattern: === followed by optional text
+  let w:sxiva_endmarker_match = matchadd('SxivaEndMarker', '^===.*$', 10)
 endfunction
 
 " Initial highlight

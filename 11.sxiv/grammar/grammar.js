@@ -162,8 +162,8 @@ module.exports = grammar({
       /[ \t]+[^ \t\n-]/  // Whitespace followed by non-whitespace non-dash
     )),
 
-    // End marker: === (everything after is ignored)
-    end_marker: $ => seq('===', /[\s\S]*/),
+    // End marker: === [optional text] (everything after is ignored)
+    end_marker: $ => seq('===', optional(seq(/[ \t]+/, /[^\n]*/)), /\n?/, /[\s\S]*/),
 
     // Focus declaration: {focus: [cat1], [cat2], ...}
     focus_declaration: $ => seq(

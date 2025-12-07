@@ -13,8 +13,9 @@ from .calculator import PointCalculator
 @click.version_option(version="0.1.0")
 @click.option('-d', '--date', metavar='YYYYMMDD', help='Open file for specific date (format: YYYYMMDD)')
 @click.option('-y', '--yesterday', is_flag=True, help='Open yesterday\'s file')
+@click.option('-p', '--preserve', metavar='YYYYMMDD', help='Preserve notes section from specified date (default: yesterday)')
 @click.pass_context
-def cli(ctx, date, yesterday):
+def cli(ctx, date, yesterday, preserve):
     """SXIVA CLI tools for parsing and calculating points.
 
     When called without a subcommand, opens today's SXIVA file from $SXIVA_DATA.
@@ -24,15 +25,72 @@ def cli(ctx, date, yesterday):
         return
 
     # Default behavior: open today's file (or specified date)
-    open_today(date, yesterday)
+    open_today(date, yesterday, preserve)
 
 
-def open_today(date_str=None, yesterday=False):
+def _preserve_notes_section(data_path, target_file, preserve_date_str, target_date):
+    """Preserve notes section from a previous date's file.
+
+    Args:
+        data_path: Path to SXIVA_DATA directory
+        target_file: Path to the file we're adding notes to
+        preserve_date_str: Date string (YYYYMMDD) to preserve from
+        target_date: datetime object of the target date (for display)
+    """
+    # Find source file matching the preserve date
+    source_files = list(data_path.glob(f'{preserve_date_str}*'))
+
+    if not source_files:
+        # Silent skip - no file found
+        return
+
+    source_file = source_files[0]
+
+    # Read source file and find content after first ===
+    try:
+        with open(source_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Find first === line
+        lines = content.split('\n')
+        first_marker_idx = None
+        for i, line in enumerate(lines):
+            if line.startswith('==='):
+                first_marker_idx = i
+                break
+
+        if first_marker_idx is None:
+            # No === section found - silent skip
+            return
+
+        # Extract everything after the first === line (skip the === line itself)
+        preserved_content = '\n'.join(lines[first_marker_idx + 1:])
+
+        # Only add if there's actual content to preserve
+        if not preserved_content.strip():
+            return
+
+        # Append to target file
+        with open(target_file, 'a', encoding='utf-8') as f:
+            # Add separator with date marker
+            f.write(f'\n=== (preserved from {preserve_date_str})\n')
+            f.write(preserved_content)
+            # Ensure file ends with newline if content doesn't
+            if preserved_content and not preserved_content.endswith('\n'):
+                f.write('\n')
+
+    except Exception:
+        # Silent skip on any errors (file read errors, encoding issues, etc.)
+        pass
+
+
+def open_today(date_str=None, yesterday=False, preserve=None):
     """Open or create today's SXIVA file.
 
     Args:
         date_str: Optional date string in YYYYMMDD format
         yesterday: If True, open yesterday's file
+        preserve: Optional date string to preserve notes from (YYYYMMDD), or True for auto-yesterday
     """
     # Check SXIVA_DATA environment variable
     sxiva_data = os.environ.get('SXIVA_DATA')
@@ -80,6 +138,7 @@ def open_today(date_str=None, yesterday=False):
     # Check for existing file starting with target date
     matching_files = list(data_path.glob(f'{formatted_date}*'))
 
+    file_is_new = False
     if matching_files:
         # Use the first matching file
         file_path = matching_files[0]
@@ -90,6 +149,27 @@ def open_today(date_str=None, yesterday=False):
         click.echo(f"Creating: {file_path}")
         # Create empty file
         file_path.touch()
+        file_is_new = True
+
+    # Handle preserve logic
+    # Determine if we should preserve and from which date
+    should_preserve = False
+    preserve_from_date = None
+
+    if preserve is not None:
+        # Explicit --preserve flag was used
+        should_preserve = True
+        preserve_from_date = preserve
+    elif file_is_new:
+        # Implicit preserve: only for new files, default to yesterday
+        should_preserve = True
+        # Calculate yesterday for preserve
+        from datetime import timedelta
+        yesterday_date = target_date - timedelta(days=1)
+        preserve_from_date = yesterday_date.strftime('%Y%m%d')
+
+    if should_preserve:
+        _preserve_notes_section(data_path, file_path, preserve_from_date, target_date)
 
     # Open with editor
     editor = os.environ.get('EDITOR', 'vi')
