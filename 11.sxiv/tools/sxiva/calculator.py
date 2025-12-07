@@ -1426,6 +1426,43 @@ class PointCalculator:
 
         return category, total_minutes, updated_line
 
+    def _filter_summary_sections(self, lines: list) -> list:
+        """Filter out any {summary} sections from lines.
+
+        Used when preserving content after === markers to avoid duplicating summaries.
+
+        Args:
+            lines: List of lines that may contain {summary} sections
+
+        Returns:
+            List of lines with {summary} sections removed
+        """
+        filtered = []
+        in_summary = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Check if entering a summary section
+            if stripped == '{summary}':
+                in_summary = True
+                continue
+
+            # Check if exiting summary section (non-indented line, or another section marker, or ===)
+            if in_summary:
+                # Summary lines are indented with spaces
+                if stripped and not line.startswith((' ', '\t')):
+                    # Non-indented line - we're out of the summary section
+                    in_summary = False
+                    # Fall through to add this line
+                else:
+                    # Still in summary section or empty line - skip it
+                    continue
+
+            filtered.append(line)
+
+        return filtered
+
     def generate_summary_lines(self, category_minutes: dict) -> list:
         """Generate summary lines from category minutes.
 
@@ -1696,10 +1733,14 @@ class PointCalculator:
                 if not summary_generated and category_minutes:
                     summary_lines = self.generate_summary_lines(category_minutes)
                     fixed_lines.extend(summary_lines)
+                    # Add blank line between summary and ===
+                    fixed_lines.append("")
                     summary_generated = True
                     num_fixes += 1
-                # Preserve everything from === onwards as-is
-                fixed_lines.extend(lines[line_idx:])
+                # Preserve everything from === onwards, but filter out {summary} sections
+                remaining_lines = lines[line_idx:]
+                filtered_remaining = self._filter_summary_sections(remaining_lines)
+                fixed_lines.extend(filtered_remaining)
                 break
 
             # Find the primary node type for this line
