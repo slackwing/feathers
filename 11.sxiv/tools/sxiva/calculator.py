@@ -165,22 +165,30 @@ class PointCalculator:
         else:
             return notation
 
-    def calculate_duration(self, start: str, end: str) -> int:
+    def calculate_duration(self, start: str, end: str, wraparound_threshold: int = None) -> int:
         """Calculate duration in minutes between two times.
 
         Args:
             start: Start time HH:MM
             end: End time HH:MM
+            wraparound_threshold: Optional threshold in minutes for wraparound detection.
+                                 If set, only treat as midnight wraparound if gap >= threshold.
+                                 Use 360 (6 hours) to distinguish midnight crossing from errors.
+                                 If None, always allow wraparound.
 
         Returns:
-            int: Duration in minutes
+            int: Duration in minutes, or negative if end < start and threshold prevents wraparound
         """
         start_mins = self.parse_time(start)
         end_mins = self.parse_time(end)
 
         # Handle day wraparound
         if end_mins < start_mins:
-            end_mins += 24 * 60
+            gap = start_mins - end_mins
+            # If threshold is set, check if gap is large enough for wraparound
+            if wraparound_threshold is None or gap >= wraparound_threshold:
+                end_mins += 24 * 60
+            # else: return negative duration (caller decides if this is an error)
 
         return end_mins - start_mins
 
@@ -533,16 +541,26 @@ class PointCalculator:
         if len(chain_nodes) > 1:
             # Multiple blocks in chain: use imagined end of previous block within chain
             prev_end_mins = self.parse_time(prev_imagined_end)
-            # Handle midnight wraparound
-            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
-                end_mins += 24 * 60
+            # Use calculate_duration to handle midnight wraparound (6-hour threshold)
+            duration = self.calculate_duration(prev_imagined_end, final_end_time, wraparound_threshold=360)
+            if duration < 0:
+                # Shouldn't happen in valid data, but keep original behavior
+                pass
+            elif duration != (end_mins - prev_end_mins):
+                # Wraparound occurred, adjust end_mins
+                end_mins = prev_end_mins + duration
             expected_end = prev_end_mins + threshold
         elif state.previous_end_time:
             # Single block chain with previous block: use actual previous end time
             prev_end_mins = self.parse_time(state.previous_end_time)
-            # Handle midnight wraparound
-            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
-                end_mins += 24 * 60
+            # Use calculate_duration to handle midnight wraparound (6-hour threshold)
+            duration = self.calculate_duration(state.previous_end_time, final_end_time, wraparound_threshold=360)
+            if duration < 0:
+                # Shouldn't happen in valid data, but keep original behavior
+                pass
+            elif duration != (end_mins - prev_end_mins):
+                # Wraparound occurred, adjust end_mins
+                end_mins = prev_end_mins + duration
             expected_end = prev_end_mins + threshold
         else:
             # First block in file or after break: apply offset
@@ -618,9 +636,11 @@ class PointCalculator:
         if state.previous_end_time:
             # Normal case: calculate from previous block's actual end time
             prev_end_mins = self.parse_time(state.previous_end_time)
-            # Handle midnight wraparound: if end_time < previous_end_time by 6+ hours
-            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
-                end_mins += 24 * 60
+            # Use calculate_duration to handle midnight wraparound (6-hour threshold)
+            duration = self.calculate_duration(state.previous_end_time, end_time, wraparound_threshold=360)
+            if duration != (end_mins - prev_end_mins):
+                # Wraparound occurred, adjust end_mins
+                end_mins = prev_end_mins + duration
             expected_end = prev_end_mins + threshold
             base = expected_end - end_mins
         else:
@@ -1140,39 +1160,34 @@ class PointCalculator:
                                 work_minutes += 9
 
                     # VALIDATION: Check for time travel (current block ends before previous block ended)
-                    # Allow midnight wraparound: if end_time < previous_end_time by 6+ hours, assume day boundary
+                    # Use calculate_duration to handle midnight wraparound (6-hour threshold)
                     if state.previous_end_time:
-                        prev_end_mins = self.parse_time(state.previous_end_time)
-                        if end_mins < prev_end_mins:
-                            gap = prev_end_mins - end_mins
-                            # If gap is 6+ hours (360 minutes), likely midnight crossing, not time travel
-                            if gap >= 360:
-                                # Add 24 hours to handle midnight wraparound
-                                end_mins += 24 * 60
-                            else:
-                                # Small backwards jump = actual time travel error
-                                line_num = node.start_point[0] + 1
-                                error_msg = f"[ERROR] block ends at {end_time} before previous block ended at {state.previous_end_time} (time travel not allowed)"
-                                issues.append((
-                                    line_num,
-                                    node.start_byte,
-                                    error_msg,
-                                    ""
-                                ))
-                                block_points_map[id(node)] = (error_msg, end_time)
-                                i += 1
-                                continue
+                        duration = self.calculate_duration(state.previous_end_time, end_time, wraparound_threshold=360)
+                        if duration < 0:
+                            # Time travel detected (negative duration even after threshold check)
+                            line_num = node.start_point[0] + 1
+                            error_msg = f"[ERROR] block ends at {end_time} before previous block ended at {state.previous_end_time} (time travel not allowed)"
+                            issues.append((
+                                line_num,
+                                node.start_byte,
+                                error_msg,
+                                ""
+                            ))
+                            block_points_map[id(node)] = (error_msg, end_time)
+                            i += 1
+                            continue
+                        elif duration != (end_mins - self.parse_time(state.previous_end_time)):
+                            # Wraparound occurred, adjust end_mins
+                            prev_end_mins = self.parse_time(state.previous_end_time)
+                            end_mins = prev_end_mins + duration
 
                     # VALIDATION: Check x-block marking
                     # Rule: prefix with 'x' when previous block ended ≥6 minutes after current start time
                     if state.previous_end_time:
-                        prev_end_mins = self.parse_time(state.previous_end_time)
-                        # Handle midnight wraparound for start time comparison
-                        current_start_mins = start_mins
-                        if start_mins < prev_end_mins and (prev_end_mins - start_mins) >= 360:
-                            # Midnight crossing: add 24 hours to start time
-                            current_start_mins += 24 * 60
-                        minutes_late = prev_end_mins - current_start_mins
+                        # Use calculate_duration to handle midnight wraparound
+                        duration_to_start = self.calculate_duration(state.previous_end_time, start_time, wraparound_threshold=360)
+                        # minutes_late is negative when current block starts after previous ended
+                        minutes_late = -duration_to_start
 
                         if not is_x_block and minutes_late >= 6:
                             # This block should be an x-block but isn't marked
@@ -1417,9 +1432,10 @@ class PointCalculator:
         time_range_pattern = r'(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})'
         for match in re.finditer(time_range_pattern, text):
             start_hour, start_min, end_hour, end_min = map(int, match.groups())
-            start_total = start_hour * 60 + start_min
-            end_total = end_hour * 60 + end_min
-            duration = end_total - start_total
+            start_time = f"{start_hour:02d}:{start_min:02d}"
+            end_time = f"{end_hour:02d}:{end_min:02d}"
+            # Use calculate_duration which handles midnight wraparound
+            duration = self.calculate_duration(start_time, end_time)
             if duration > 0:  # Only count positive durations
                 total_minutes += duration
 
