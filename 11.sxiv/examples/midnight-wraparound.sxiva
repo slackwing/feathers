@@ -1,0 +1,9 @@
+Monday, November 10th, 2025
+# Tests midnight wraparound (crossing from 23:xx to 00:xx)
+{focus: [wr], [sys]}
+
+# Block ending exactly at midnight
+23:48 - [wr] late night coding ~ --- 00:00
+
+# Block starting at midnight (continues from previous)
+00:00 - [sys] deploy ~ --- 00:12

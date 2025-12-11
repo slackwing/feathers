@@ -419,6 +419,39 @@ These are **semantic rules** for tooling, not enforced by grammar:
   - x-blocks are NEVER indented (regardless of accumulation)
   - Focus declarations during an active streak (accumulation ≥ 2) are indented
 
+### Time Handling and Midnight Wraparound
+
+**Time Travel Detection:**
+- Blocks normally progress forward in time (each block's end time ≥ previous block's end time)
+- If a block's end time is **earlier** than the previous block's end time, it's flagged as an error ("time travel not allowed")
+- **Exception**: Midnight wraparound is automatically detected and allowed
+
+**Midnight Wraparound Rule:**
+- When a block's end time is earlier than the previous block's end time by **6 or more hours** (360+ minutes), the system assumes the block crosses midnight
+- Example: Previous block ends at `23:48`, current block ends at `00:09`
+  - Gap = 1428 - 9 = 1419 minutes (≥360 minutes)
+  - System adds 24 hours to current block: 00:09 → 24:09 (1449 minutes)
+  - Normal calculations proceed: 1449 > 1428, so no time travel error
+- This allows natural late-night work sessions to cross midnight without requiring special syntax
+
+**Time Travel Error (Real):**
+- When a block's end time is earlier by **less than 6 hours**, it's treated as an actual error
+- Example: Previous block ends at `09:20`, current block ends at `09:15`
+  - Gap = 1160 - 555 = 5 minutes (<360 minutes)
+  - Error: "block ends at 09:15 before previous block ended at 09:20 (time travel not allowed)"
+- This catches typos and data entry mistakes
+
+**Why 6 hours?**
+- Large enough to distinguish midnight crossings from typos
+- Unlikely anyone would intentionally work backwards by 6+ hours
+- Allows any reasonable late-night session (e.g., 18:00 → 03:00)
+
+**Implications:**
+- You can work from `23:36` to `00:09` naturally (no special markers needed)
+- Continuation chains can cross midnight: `23:36 - ... +` → `23:48 - ... +` → `00:00 - ... --- 00:09`
+- Point calculations, x-block validation, and all other rules work normally across midnight
+- The calculator automatically handles the 24-hour adjustment internally
+
 ## Point Calculation (Tooling)
 
 ### Base Points

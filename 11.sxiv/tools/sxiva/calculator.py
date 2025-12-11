@@ -533,10 +533,16 @@ class PointCalculator:
         if len(chain_nodes) > 1:
             # Multiple blocks in chain: use imagined end of previous block within chain
             prev_end_mins = self.parse_time(prev_imagined_end)
+            # Handle midnight wraparound
+            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
+                end_mins += 24 * 60
             expected_end = prev_end_mins + threshold
         elif state.previous_end_time:
             # Single block chain with previous block: use actual previous end time
             prev_end_mins = self.parse_time(state.previous_end_time)
+            # Handle midnight wraparound
+            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
+                end_mins += 24 * 60
             expected_end = prev_end_mins + threshold
         else:
             # First block in file or after break: apply offset
@@ -612,6 +618,9 @@ class PointCalculator:
         if state.previous_end_time:
             # Normal case: calculate from previous block's actual end time
             prev_end_mins = self.parse_time(state.previous_end_time)
+            # Handle midnight wraparound: if end_time < previous_end_time by 6+ hours
+            if end_mins < prev_end_mins and (prev_end_mins - end_mins) >= 360:
+                end_mins += 24 * 60
             expected_end = prev_end_mins + threshold
             base = expected_end - end_mins
         else:
@@ -619,6 +628,12 @@ class PointCalculator:
             # offset is preserved across breaks
             start_mins = self.parse_time(start_time)
             expected_end = start_mins + threshold + state.time_offset
+
+            # Handle midnight wraparound: if expected_end crosses midnight and end_mins is early morning
+            if expected_end >= 24 * 60 and end_mins < 12 * 60:
+                # Both times are around midnight, normalize expected_end
+                expected_end = expected_end % (24 * 60)
+
             base = expected_end - end_mins
 
         # x-blocks NEVER get focus or accumulation points
@@ -1125,26 +1140,39 @@ class PointCalculator:
                                 work_minutes += 9
 
                     # VALIDATION: Check for time travel (current block ends before previous block ended)
+                    # Allow midnight wraparound: if end_time < previous_end_time by 6+ hours, assume day boundary
                     if state.previous_end_time:
                         prev_end_mins = self.parse_time(state.previous_end_time)
                         if end_mins < prev_end_mins:
-                            line_num = node.start_point[0] + 1
-                            error_msg = f"[ERROR] block ends at {end_time} before previous block ended at {state.previous_end_time} (time travel not allowed)"
-                            issues.append((
-                                line_num,
-                                node.start_byte,
-                                error_msg,
-                                ""
-                            ))
-                            block_points_map[id(node)] = (error_msg, end_time)
-                            i += 1
-                            continue
+                            gap = prev_end_mins - end_mins
+                            # If gap is 6+ hours (360 minutes), likely midnight crossing, not time travel
+                            if gap >= 360:
+                                # Add 24 hours to handle midnight wraparound
+                                end_mins += 24 * 60
+                            else:
+                                # Small backwards jump = actual time travel error
+                                line_num = node.start_point[0] + 1
+                                error_msg = f"[ERROR] block ends at {end_time} before previous block ended at {state.previous_end_time} (time travel not allowed)"
+                                issues.append((
+                                    line_num,
+                                    node.start_byte,
+                                    error_msg,
+                                    ""
+                                ))
+                                block_points_map[id(node)] = (error_msg, end_time)
+                                i += 1
+                                continue
 
                     # VALIDATION: Check x-block marking
                     # Rule: prefix with 'x' when previous block ended ≥6 minutes after current start time
                     if state.previous_end_time:
                         prev_end_mins = self.parse_time(state.previous_end_time)
-                        minutes_late = prev_end_mins - start_mins
+                        # Handle midnight wraparound for start time comparison
+                        current_start_mins = start_mins
+                        if start_mins < prev_end_mins and (prev_end_mins - start_mins) >= 360:
+                            # Midnight crossing: add 24 hours to start time
+                            current_start_mins += 24 * 60
+                        minutes_late = prev_end_mins - current_start_mins
 
                         if not is_x_block and minutes_late >= 6:
                             # This block should be an x-block but isn't marked
