@@ -1,14 +1,9 @@
 Saturday, December 6th, 2025
-
 {focus: [work], [err]}
-
 14:00 - [work] coding --- 14:12 (+1f,+1a=2)
     14:12 - [err] fix bug --- 14:24 (+1f,+2a=5)
-
     14:24 - [work] review [3], [work] merge --- 14:36 (+4,+1f,+3a=13)
-
     14:36 - [work] testing [10] --- 14:48 (+1f,+4a=18)
-
     14:48 - [work] documentation --- 15:00 (+1f,+5a=24)
     ,,,
     15:00 + [work] more docs --- 15:12 (+1f,+6a=31)

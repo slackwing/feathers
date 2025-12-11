@@ -1749,15 +1749,18 @@ class PointCalculator:
         block_count = 0  # Track number of blocks for separator insertion
         previous_line_indent = ""  # Track previous block's indentation for separator
         consumed_lines = set()  # Track lines that have been consumed by multi-line nodes
+        in_timesheet_section = True  # Track if we're in the timesheet section (between focus/date and first special section)
 
         for line_idx, line in enumerate(lines):
             # Skip lines that have already been consumed by multi-line nodes (sections)
             if line_idx in consumed_lines:
                 continue
-            # Skip empty lines and comments (but preserve them in output)
+            # Handle empty lines and comments
             stripped = line.strip()
             if not stripped:
-                fixed_lines.append(line)
+                # Skip blank lines in timesheet section, preserve elsewhere
+                if not in_timesheet_section:
+                    fixed_lines.append(line)
                 continue
             if stripped.startswith('#'):
                 continue
@@ -1767,6 +1770,7 @@ class PointCalculator:
 
             # Stop processing if we hit the end marker (===)
             if any(n.type == 'end_marker' for n in nodes_on_line):
+                in_timesheet_section = False
                 # Generate summary before the end marker if not already generated
                 if not summary_generated and category_minutes:
                     summary_lines = self.generate_summary_lines(category_minutes)
@@ -1818,6 +1822,7 @@ class PointCalculator:
                 # Freeform section - process all freeform_line children
                 in_freeform_section = False
                 in_c_section = False
+                in_timesheet_section = False
 
                 # Add blank line before section if needed
                 if fixed_lines and fixed_lines[-1].strip():
@@ -1854,6 +1859,7 @@ class PointCalculator:
                 # C section - process all c_line children
                 in_c_section = False
                 in_freeform_section = False
+                in_timesheet_section = False
 
                 # Add blank line before section if needed
                 if fixed_lines and fixed_lines[-1].strip():
@@ -1888,6 +1894,7 @@ class PointCalculator:
                 # Summary section - skip old content and generate new
                 in_freeform_section = False
                 in_c_section = False
+                in_timesheet_section = False
 
                 # Mark all lines in this section as consumed
                 # Note: end_point[0] is exclusive (points to line after last included line)
