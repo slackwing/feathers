@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 import click
 from pathlib import Path
 from datetime import datetime
@@ -9,19 +10,133 @@ import subprocess
 from .calculator import PointCalculator
 
 
+def _get_data_path():
+    """Get and validate SXIVA_DATA path.
+
+    Returns:
+        Path: Validated SXIVA_DATA directory path
+
+    Exits with error if SXIVA_DATA is not set or invalid.
+    """
+    sxiva_data = os.environ.get('SXIVA_DATA')
+    if not sxiva_data:
+        click.secho("Error: SXIVA_DATA environment variable not set", fg='red', err=True)
+        click.echo("Please set SXIVA_DATA to your SXIVA data directory:")
+        click.echo("  export SXIVA_DATA=/path/to/your/sxiva/files")
+        sys.exit(1)
+
+    data_path = Path(sxiva_data)
+    if not data_path.exists():
+        click.secho(f"Error: SXIVA_DATA directory does not exist: {sxiva_data}", fg='red', err=True)
+        sys.exit(1)
+
+    if not data_path.is_dir():
+        click.secho(f"Error: SXIVA_DATA is not a directory: {sxiva_data}", fg='red', err=True)
+        sys.exit(1)
+
+    return data_path
+
+
+def _get_yyyymmdd_files(data_path, limit=10):
+    """Get YYYYMMDD sxiva files in reverse chronological order.
+
+    Args:
+        data_path: Path to SXIVA_DATA directory
+        limit: Maximum number of files to return (default: 10)
+
+    Returns:
+        List of (date_str, file_path) tuples, sorted newest first
+    """
+    # Pattern to match YYYYMMDD at start of filename
+    yyyymmdd_pattern = re.compile(r'^(\d{8})')
+
+    files_with_dates = []
+    for file_path in data_path.glob('*.sxiva'):
+        match = yyyymmdd_pattern.match(file_path.name)
+        if match:
+            date_str = match.group(1)
+            files_with_dates.append((date_str, file_path))
+
+    # Sort by date string in reverse (newest first)
+    files_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+    # Return up to limit files
+    return files_with_dates[:limit]
+
+
+def list_recent_files():
+    """List the last 10 YYYYMMDD sxiva files in reverse chronological order."""
+    data_path = _get_data_path()
+    files = _get_yyyymmdd_files(data_path, limit=10)
+
+    if not files:
+        click.echo("No YYYYMMDD sxiva files found in $SXIVA_DATA")
+        return
+
+    for i, (date_str, file_path) in enumerate(files, 1):
+        click.echo(f"{i}. {file_path.name}")
+
+
+def open_nth_file(n):
+    """Open the Nth file from the recent files list.
+
+    Args:
+        n: 1-based index of the file to open
+    """
+    data_path = _get_data_path()
+    files = _get_yyyymmdd_files(data_path, limit=10)
+
+    if not files:
+        click.secho("Error: No YYYYMMDD sxiva files found in $SXIVA_DATA", fg='red', err=True)
+        sys.exit(1)
+
+    if n < 1 or n > len(files):
+        click.secho(f"Error: Invalid index {n}. Must be between 1 and {len(files)}", fg='red', err=True)
+        sys.exit(1)
+
+    # Get the nth file (n-1 because list is 0-indexed)
+    _, file_path = files[n - 1]
+
+    click.echo(f"Opening: {file_path}")
+
+    # Open with editor
+    editor = os.environ.get('EDITOR', 'vi')
+    try:
+        subprocess.run([editor, str(file_path)], check=True)
+    except subprocess.CalledProcessError:
+        click.secho(f"Error: Failed to open editor: {editor}", fg='red', err=True)
+        sys.exit(1)
+    except FileNotFoundError:
+        click.secho(f"Error: Editor not found: {editor}", fg='red', err=True)
+        click.echo("Set the EDITOR environment variable to your preferred editor")
+        sys.exit(1)
+
+
 @click.group(invoke_without_command=True)
 @click.version_option(version="0.1.0")
 @click.option('-d', '--date', metavar='YYYYMMDD', help='Open file for specific date (format: YYYYMMDD)')
 @click.option('-y', '--yesterday', is_flag=True, help='Open yesterday\'s file')
 @click.option('-p', '--preserve', metavar='YYYYMMDD', help='Preserve notes section from specified date (default: yesterday)')
+@click.option('-l', '--list', 'list_files', is_flag=True, help='List last 10 YYYYMMDD sxiva files in reverse chronological order')
+@click.option('-o', '--open', 'open_nth', metavar='N', type=int, help='Open the Nth file from the list (1-based index)')
 @click.pass_context
-def cli(ctx, date, yesterday, preserve):
+def cli(ctx, date, yesterday, preserve, list_files, open_nth):
     """SXIVA CLI tools for parsing and calculating points.
 
     When called without a subcommand, opens today's SXIVA file from $SXIVA_DATA.
     """
     # If a subcommand is invoked, don't run the default behavior
     if ctx.invoked_subcommand is not None:
+        return
+
+    # Handle --list flag
+    if list_files:
+        list_recent_files()
+        return
+
+    # Handle --open flag
+    if open_nth is not None:
+        open_nth_file(open_nth)
         return
 
     # Default behavior: open today's file (or specified date)
@@ -92,22 +207,7 @@ def open_today(date_str=None, yesterday=False, preserve=None):
         yesterday: If True, open yesterday's file
         preserve: Optional date string to preserve notes from (YYYYMMDD), or True for auto-yesterday
     """
-    # Check SXIVA_DATA environment variable
-    sxiva_data = os.environ.get('SXIVA_DATA')
-    if not sxiva_data:
-        click.secho("Error: SXIVA_DATA environment variable not set", fg='red', err=True)
-        click.echo("Please set SXIVA_DATA to your SXIVA data directory:")
-        click.echo("  export SXIVA_DATA=/path/to/your/sxiva/files")
-        sys.exit(1)
-
-    data_path = Path(sxiva_data)
-    if not data_path.exists():
-        click.secho(f"Error: SXIVA_DATA directory does not exist: {sxiva_data}", fg='red', err=True)
-        sys.exit(1)
-
-    if not data_path.is_dir():
-        click.secho(f"Error: SXIVA_DATA is not a directory: {sxiva_data}", fg='red', err=True)
-        sys.exit(1)
+    data_path = _get_data_path()
 
     # Determine which date to use
     if date_str:
