@@ -569,11 +569,19 @@ class PointCalculator:
 
         base = expected_end - end_mins
 
+        # Check if this is a rest-only continuation chain (all categories are "...")
+        is_rest_only = all(cat == '...' for cat in all_categories) if all_categories else False
+
         # Focus and accumulation points
         if is_x_chain:
             focus = 0
             accumulation = 0
             has_focus = False
+        elif is_rest_only:
+            # Rest-only continuation chain: no points awarded, but accumulation continues
+            focus = 0
+            accumulation = 0
+            has_focus = True  # Treat as having focus to avoid accumulation reset
         else:
             # Aggregate all unique categories from the chain
             unique_focus_cats = self.get_matching_focus_categories(all_categories, state.focus_categories)
@@ -656,11 +664,20 @@ class PointCalculator:
 
             base = expected_end - end_mins
 
+        # Check if this is a rest-only block (all categories are "...")
+        is_rest_only = all(cat == '...' for cat in categories) if categories else False
+
         # x-blocks NEVER get focus or accumulation points
+        # Rest-only blocks ([...] blicks) also get no focus/accumulation but DON'T reset accumulation
         if is_x_block:
             focus = 0
             accumulation = 0
             has_focus = False
+        elif is_rest_only:
+            # Rest-only blocks: no points awarded, but accumulation continues
+            focus = 0
+            accumulation = 0
+            has_focus = True  # Treat as having focus to avoid accumulation reset
         else:
             # Focus points: +1f per unique focus category present
             unique_focus_cats = self.get_matching_focus_categories(categories, state.focus_categories)
@@ -739,15 +756,19 @@ class PointCalculator:
 
         return None
 
-    def update_accumulation(self, state: CalculationState, has_focus: bool, is_x_block: bool):
+    def update_accumulation(self, state: CalculationState, has_focus: bool, is_x_block: bool, is_rest_only: bool = False):
         """Update accumulation counter after a block.
 
         Args:
             state: Current calculation state
             has_focus: Whether block had any focus categories
             is_x_block: Whether this was an x-block
+            is_rest_only: Whether this block has only [...] categories (no increment or reset)
         """
-        if is_x_block:
+        if is_rest_only:
+            # Rest-only blocks: preserve accumulation (no increment, no reset)
+            pass  # Keep state.accumulation unchanged
+        elif is_x_block:
             # x-blocks reset accumulation to +1a
             state.accumulation = 1
         elif has_focus:
@@ -1002,8 +1023,9 @@ class PointCalculator:
                             category_minutes[base_cat] = 0
                         category_minutes[base_cat] += 4  # Each blick is 4 minutes
 
+                    is_rest_only = all(cat == '...' for cat in all_cats) if all_cats else False
                     has_focus = len(self.get_matching_focus_categories(all_cats, state.focus_categories)) > 0 if not is_x_chain else False
-                    self.update_accumulation(state, has_focus, is_x_chain)
+                    self.update_accumulation(state, has_focus, is_x_chain, is_rest_only)
 
                     # Calculate and update time offset
                     # Offset = how many minutes past the standard 12-minute block boundary
@@ -1287,8 +1309,9 @@ class PointCalculator:
 
                     # Update state
                     state.running_total = expected_running_total
+                    is_rest_only = all(cat == '...' for cat in categories) if categories else False
                     has_focus = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0
-                    self.update_accumulation(state, has_focus, is_x_block)
+                    self.update_accumulation(state, has_focus, is_x_block, is_rest_only)
 
                     # Calculate and update time offset for this block
                     # Offset = how many minutes past the standard 12-minute block boundary
@@ -2152,16 +2175,34 @@ class PointCalculator:
                 # Check if this is a continuation block (type = 'continuation_block')
                 is_continuation = node.type == 'continuation_block'
 
+                # Check if this is a rest-only block (all categories are "...")
+                is_rest_only = all(cat == '...' for cat in categories) if categories else False
+
                 if is_continuation and in_continuation_chain:
                     # Continuation block: use the same indent as the chain
                     desired_indent = continuation_indent
-                    has_focus_now = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0 if not is_x_block else False
+                    if is_rest_only:
+                        has_focus_now = True  # Rest-only blocks maintain focus for accumulation
+                    else:
+                        has_focus_now = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0 if not is_x_block else False
                 else:
                     # Determine if this should be indented based on accumulation value from calculated points
                     should_indent = False
                     has_focus_now = False  # Default for x-blocks
 
-                    if not is_x_block:
+                    if is_rest_only:
+                        # Rest-only blocks: maintain focus for accumulation, indent based on CURRENT accumulation
+                        has_focus_now = True
+                        # Check CURRENT accumulation (state.accumulation) to determine indentation
+                        # Rest blocks don't award accumulation, so use state value
+                        if state.accumulation >= 2:
+                            should_indent = True
+                        elif state.accumulation == 1 and previous_block_accumulation == 10:
+                            # Special case: rollover from +10a to +1a - still indented
+                            should_indent = True
+                        else:
+                            should_indent = False
+                    elif not is_x_block:
                         # Not an x-block, apply normal indentation rules
                         has_focus_now = len(self.get_matching_focus_categories(categories, state.focus_categories)) > 0
 
@@ -2212,7 +2253,7 @@ class PointCalculator:
                     state.running_total += expected_points.total
                     # Save accumulation before update for rollover detection
                     previous_block_accumulation = expected_points.accumulation
-                    self.update_accumulation(state, has_focus_now, is_x_block)
+                    self.update_accumulation(state, has_focus_now, is_x_block, is_rest_only)
                     state.previous_end_time = end_time
                     state.is_first_block = False
 

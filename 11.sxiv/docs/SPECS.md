@@ -493,6 +493,33 @@ These are **semantic rules** for tooling, not enforced by grammar:
   - New focus declarations (continues counting across focus changes)
   - Rest blocks `[...]` (accumulation continues across rest blocks)
 
+### Rest-Only Time Blocks
+
+A **rest-only time block** is a time block where **all blicks** use the `[...]` category (rest category).
+
+**Special behavior:**
+- **Base points**: Awarded normally (can be early/late relative to expected time)
+- **Focus points**: NOT awarded (no `+Nf` shown)
+- **Accumulation points**: NOT awarded (no `+Na` shown)
+- **Accumulation counter**: **PRESERVED** (not incremented, not reset)
+  - The accumulation counter maintains its current value through rest-only blocks
+  - The next non-rest block continues with the same accumulation value
+- **Indentation**: Rest-only blocks follow indentation rules based on the **current** accumulation state
+  - Indented when `accumulation >= 2` (same as regular blocks)
+  - Not indented when `accumulation == 1`
+
+**Example:**
+```sxiva
+09:00 - [wr] work ~--- 09:14 (-2,+1f,+1a=0)
+    09:12 - [wr] more work ~--- 09:26 (+1f,+2a=3)
+    09:24 - [...] rest break [10] --- 09:38 (=3)          # Rest-only: no points, accumulation=2 preserved
+    09:36 - [wr] continue working ~--- 09:50 (+1f,+3a=7)  # Continues from accumulation=2 → 3
+    09:48 - [...] another break [10] --- 10:02 (=7)       # Rest-only: no points, accumulation=3 preserved
+    10:00 - [wr] back to work ~--- 10:14 (+1f,+4a=12)     # Continues from accumulation=3 → 4
+```
+
+**Note:** A time block is considered rest-only only when **all** blicks are `[...]`. If any blick has a different category, the block follows normal rules.
+
 ### Running Total
 - **Cumulative sum** of all point totals across all previous blocks plus current block
 - Format: `=N` at end of point list

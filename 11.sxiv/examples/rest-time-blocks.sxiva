@@ -1,0 +1,14 @@
+Saturday, December 14th, 2025
+# Test [...] time blocks (rest-only blocks) don't reset accumulation
+# These blocks award base points but no focus/accumulation points
+# Accumulation counter is preserved (not incremented, not reset)
+{focus: [wr], [sys]}
+
+09:00 - [wr] work ~--- 09:14
+    09:12 - [wr] more work ~--- 09:26
+    # Rest block with [...] category - preserves accumulation
+    09:24 - [...] rest break [10] --- 09:38
+    # Accumulation continues from +2a to +3a (not reset to +1a)
+    09:36 - [wr] continue working ~--- 09:50
+    09:48 - [...] another break [10] --- 10:02
+    10:00 - [wr] back to work ~--- 10:14
