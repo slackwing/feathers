@@ -263,18 +263,23 @@ module.exports = grammar({
     // Time: HH:MM
     time: $ => /([0-1][0-9]|2[0-3]):[0-5][0-9]/,
 
-    // Blick list: one or more blicks separated by comma OR dash
-    // Note: For dash, we need to be explicit about spaces to avoid ambiguity
+    // Blick list: one or more blicks separated by comma, dash, or ellipsis
+    // Note: For dash and ellipsis, we need to be explicit about spaces to avoid ambiguity
     blick_list: $ => seq(
       $.blick,
       repeat(seq(
-        choice(
+        field('separator', choice(
           ',',                          // Comma (space handled by extras)
-          token(prec(1, / - /))        // Space-dash-space as single token
-        ),
+          $.dash_separator,             // Space-dash-space named token
+          $.ellipsis_separator          // Space-ellipsis-space named token
+        )),
         $.blick
       ))
     ),
+
+    // Named separator tokens for highlighting
+    dash_separator: $ => token(prec(1, / - /)),
+    ellipsis_separator: $ => token(prec(1, / \.\.\. /)),
 
     // Blick: [category] subject [~][minutes] OR [category] subject ~ OR [category] subject
     // The third case (no minutes, no tilde) means implicit [10]
@@ -296,11 +301,12 @@ module.exports = grammar({
     // Category: [content]
     category: $ => seq('[', /[^\[\]]+/, ']'),
 
-    // Subject: words with spaces, can include some punctuation including commas, dashes, apostrophes
+    // Subject: words with spaces, can include some punctuation including commas, dashes, apostrophes, periods
     // But NOT brackets (reserved for categories/minutes)
-    // Pattern: start with word chars, then allow spaces/commas/dashes followed by more word chars
-    // Key: comma or dash must be followed (possibly after space) by more text
-    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+)*)*/,
+    // Pattern: start with word chars, then allow spaces/commas/dashes/single-periods followed by more word chars
+    // Key: comma, dash, or ellipsis (...) must be followed (possibly after space) by more text
+    // Single period OK (for "v2.0"), but not ellipsis which is reserved as separator
+    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+(\.[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+|\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+)*)*/,
 
     // Minutes: [3], [6], [10], or [13]
     minutes: $ => choice(

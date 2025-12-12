@@ -16,6 +16,8 @@
 
 ; Separators - use @comment for gray/muted appearance
 "," @comment.separator
+(dash_separator) @comment.separator
+(ellipsis_separator) @comment.separator
 "-" @comment.separator
 "+" @comment.separator
 "~" @string

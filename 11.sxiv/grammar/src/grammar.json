@@ -1012,24 +1012,25 @@
             "type": "SEQ",
             "members": [
               {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": ","
-                  },
-                  {
-                    "type": "TOKEN",
-                    "content": {
-                      "type": "PREC",
-                      "value": 1,
-                      "content": {
-                        "type": "PATTERN",
-                        "value": " - "
-                      }
+                "type": "FIELD",
+                "name": "separator",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "STRING",
+                      "value": ","
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "dash_separator"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "ellipsis_separator"
                     }
-                  }
-                ]
+                  ]
+                }
               },
               {
                 "type": "SYMBOL",
@@ -1039,6 +1040,28 @@
           }
         }
       ]
+    },
+    "dash_separator": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 1,
+        "content": {
+          "type": "PATTERN",
+          "value": " - "
+        }
+      }
+    },
+    "ellipsis_separator": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 1,
+        "content": {
+          "type": "PATTERN",
+          "value": " \\.\\.\\. "
+        }
+      }
     },
     "blick": {
       "type": "SEQ",
@@ -1147,7 +1170,7 @@
     },
     "subject": {
       "type": "PATTERN",
-      "value": "[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+|[,\\-](\\s+)?[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+)*)*"
+      "value": "[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>]+(\\.[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>]+|\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+|[,\\-](\\s+)?[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+(\\s+[a-zA-Z0-9_\"';:!?@#$%^&*()+={}|\\\\/<>.]+)*)*"
     },
     "minutes": {
       "type": "CHOICE",

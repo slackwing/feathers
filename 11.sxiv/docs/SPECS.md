@@ -78,7 +78,10 @@ The arbitrary text describing what the blick is about. Subjects may contain:
 - **Excluded** (reserved syntax):
   - Square brackets `[` `]` (reserved for categories and minutes)
 
-**Note:** Commas in subjects are allowed. A comma only acts as a blick separator when followed by `[category]`.
+**Note:** Commas and periods in subjects are allowed (e.g., "v2.0", "review, update"). However:
+- A comma only acts as a blick separator when followed by `[category]`
+- A dash acts as separator when surrounded by spaces: ` - `
+- An ellipsis acts as separator when surrounded by spaces: ` ... `
 
 ### Top-Level Constructs
 
@@ -239,12 +242,14 @@ TIME_BLOCK ::= 'x'? TIME WHITESPACE* '-' WHITESPACE* BLICK_LIST WHITESPACE* TERM
 
 #### Blick List
 ```
-BLICK_LIST ::= BLICK (',' BLICK)*
+BLICK_LIST ::= BLICK ((',' | '-' | '...') BLICK)*
 ```
 
-Blicks within a time block are separated by commas with optional whitespace:
-- `[3], [err]` (space after comma - recommended)
-- `[3],[err]` (no space - also valid)
+Blicks within a time block can be separated by commas, dashes, or ellipsis with optional whitespace:
+- Comma: `[3], [err]` (space after comma - recommended) or `[3],[err]` (no space - also valid)
+- Dash: `[3] - [err]` (spaces required on both sides)
+- Ellipsis: `[3] ... [err]` (spaces required on both sides)
+- Mixed: `[3], [err] - [sys] ... [wr]` (all three can be mixed in same block)
 
 #### Blick
 ```
@@ -281,7 +286,7 @@ The tilde (`~`) can be used in two ways:
 - Capture text from after CATEGORY up to:
   - A `~` preceded by whitespace (tilde form)
   - A `[N]` minutes marker (standard form)
-  - End of blick (before `,` comma separator)
+  - End of blick (before `,` comma, ` - ` dash, or ` ... ` ellipsis separator)
 - Internal dashes in subjects are allowed
 
 #### Terminator
@@ -767,7 +772,9 @@ In this example:
 The following have special meaning and cannot appear in subjects or category content:
 - `[` `]` - Category and minute delimiters
 - `,` - Blick separator (except `,,,` block separator)
-- `-` `+` `~` - Block/continuation markers
+- ` - ` - Blick separator when surrounded by spaces (dash with spaces)
+- ` ... ` - Blick separator when surrounded by spaces (ellipsis with spaces)
+- `-` `+` `~` - Block/continuation markers (when not used as blick separator)
 - `(` `)` - Point delimiters
 - `{` `}` - Focus declaration delimiters
 - `;;;` - Break marker
@@ -781,8 +788,8 @@ The following have special meaning and cannot appear in subjects or category con
 - Time validation (boundaries) should be in semantic validation, not grammar
 - Point calculations are for tooling layer, not parser
 - `---` variants are syntactic sugar (normalize during parsing)
-- **Separator**: Comma `,` with optional surrounding whitespace
-- Subjects cannot contain commas (reserved as separator)
+- **Separators**: Comma `,`, dash ` - `, or ellipsis ` ... ` with optional surrounding whitespace
+- Subjects can contain commas and single periods, but not ` - ` or ` ... ` (reserved as separators)
 
 ### For Neovim Syntax
 - Highlight invalid time formats
