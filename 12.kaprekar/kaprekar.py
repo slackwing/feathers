@@ -3,19 +3,29 @@
 import sys
 
 
-def split_digits(num, expected_digits):
+def split_digits(num, expected_digits, base):
     """
     Given an integer, checks that it has the expected number of digits OR less,
-    and splits the digits into an array. Pads with leading zeros if needed.
+    and splits the digits into an array (in the given base). Pads with leading zeros if needed.
 
     Args:
         num: The integer to split
         expected_digits: The expected number of digits
+        base: The base to use for digit extraction
 
     Returns:
         List of individual digits as integers, or None if validation fails
     """
-    digits = [int(d) for d in str(num)]
+    digits = []
+    temp = num
+
+    # Extract digits in the given base
+    if temp == 0:
+        digits = [0]
+    else:
+        while temp > 0:
+            digits.insert(0, temp % base)
+            temp //= base
 
     if len(digits) > expected_digits:
         return None
@@ -27,11 +37,29 @@ def split_digits(num, expected_digits):
     return digits
 
 
+def digits_to_num(digits, base):
+    """
+    Convert a list of digits in a given base to an integer.
+
+    Args:
+        digits: List of digit values
+        base: The base to use
+
+    Returns:
+        Integer value
+    """
+    result = 0
+    for digit in digits:
+        result = result * base + digit
+    return result
+
+
 def main():
     num_digits = int(input("Enter number of digits: "))
+    base = int(input("Enter base: "))
 
     # Calculate range
-    max_num = 10 ** num_digits
+    max_num = base ** num_digits
 
     # Track results
     cycles = {}  # key = lowest number in cycle, value = list of starting numbers
@@ -49,15 +77,15 @@ def main():
         path = []  # Track the path to identify cycle
         while True:
             # Split digits and sort
-            digits = split_digits(current, num_digits)
+            digits = split_digits(current, num_digits, base)
 
             # Create max number (descending sort)
             max_digits = sorted(digits, reverse=True)
-            max_num_val = int(''.join(map(str, max_digits)))
+            max_num_val = digits_to_num(max_digits, base)
 
             # Create min number (ascending sort)
             min_digits = sorted(digits)
-            min_num_val = int(''.join(map(str, min_digits)))
+            min_num_val = digits_to_num(min_digits, base)
 
             # Calculate difference
             diff = max_num_val - min_num_val
@@ -89,7 +117,7 @@ def main():
             current = diff
 
     # Output summary
-    print(f"\n\nSummary for {num_digits}-digit numbers:")
+    print(f"\n\nSummary for {num_digits}-digit numbers in base {base}:")
     print(f"\nFixed points found: {len(fixed_points)}")
     for fp, starts in sorted(fixed_points.items()):
         print(f"  Fixed point {fp}: {len(starts)} starting numbers lead here")
