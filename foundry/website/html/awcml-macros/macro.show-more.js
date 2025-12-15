@@ -26,10 +26,10 @@ function __define_macro() {
     return `
 <div class="awcml-macro-show-more">
   <input type="checkbox" class="awcml-macro-show-more-toggle" id="awcml-macro-show-more-toggle-${counter}"/>
-  <label for="awcml-macro-show-more-toggle-${counter}" class="show">${label_show}</label>
   <div class="awcml-macro-show-more-hidden">
 ${content}
   </div>
+  <label for="awcml-macro-show-more-toggle-${counter}" class="show">${label_show}</label>
   <label for="awcml-macro-show-more-toggle-${counter}" class="hide">${label_hide}</label>
 </div>
 `

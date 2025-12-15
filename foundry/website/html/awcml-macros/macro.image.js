@@ -23,6 +23,25 @@ function __define_macro() {
     if (caption !== "") {
       caption = `<p style="margin: 0; font-size: 1rem; width: ${width}px;"><span>${caption}</span></p>`;
     }
-    return `<center><img src="/.staging/shared/assets/${url}" style="max-width: ${width}px;"/>${caption}</center>`;
+    return `
+      <div class="awcml-macro-overflow-centered">
+        <img src="/.staging/shared/assets/${url}" style="max-width: ${width}px;"/>
+        ${caption}
+      </div>
+    `;
   }
 }
+
+function __define_css() {
+  return `
+    .awcml-macro-overflow-centered {
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      img, video {
+        display: block;
+        margin: 0 auto;
+      }
+    }
+  `;
+}
+

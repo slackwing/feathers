@@ -38,6 +38,8 @@ I don't know how long I'll have to dive into this before I'm sure enough to brin
 
 <div class="todo-prompt">
 
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
 I want to generate passive income by developing a mostly autonomous trading system. I would like you to guide me on the choice of security (e.g. stocks, options, futures, FX, bonds, crypto), exchange(s) (e.g. NYSE, Coinbase, Binance), API(s), trading strategies, algorithm development and backtesting strategies, and infrastructure, based on the parameters I'm about to give you.
 
 [[ show-more :: ;;
@@ -52,6 +54,809 @@ Fourth, assume that I am technologically proficient. For example, I can write so
 
 </div>
 
-[[ 2025-04-01 ;; ]]
+![Static Badge](https://img.shields.io/badge/action-defer-blue) _Andrew:_ Transcribe results of this prompt from aforementioned document.
 
-Test
+[[ 2025-03-31 ;; TODO ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Can you set up a Node.js project for me where when I open a page locally on my browser, I get a page that connects to Coinbase's WebSocket API to print the first 10 messages to the console then stop subscribing? Here's documentation:
+
+[[ image :: 20250403-coinbase-docs-01.png ]]
+
+Source: Coinbase's [Advanced Trade WebSocket Overview page](https://docs.cdp.coinbase.com/advanced-trade/docs/ws-overview).
+
+</div>
+
+What it looks like in Cursor:
+
+[[ image :: 20250403-cursor-input-01.png ;; 1024 ]]
+
+The website Cursor created (successfully connected to Coinbase and received 10 market data messages):
+
+[[ image :: 20250403-cursor-output-01.png ;; 1024 ]]
+
+[[ 2025-04-01 ;; TODO ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Now I want to subscribe to 2 channels: Level3 as well as Level2. I'll give you their documentation after this paragraph. I want to cement my understanding of market data by building and maintaining my own Level2 order book from the Level3 feed, and comparing against the Level2 feed. Please implement data structure(s) for the order book in the most canonical way as done in the industry. Please implement a typical way of displaying order books, e.g. bids and asks. Please display an order book based on the Level2 feed on the left, and display an order book calculated from the Level3 feed on the right. Please add a stop button for unsubscribing so that I can stop the flood of incoming messages.
+
+...
+
+</div>
+
+[[ image :: 20250403-cursor-output-02.png ;; 1024 ]]
+
+[[ 2025-04-05 ;; TODO ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+It turns out I was confusing Coinbase Advanced Trade, which requires no auth for L2 but has no L3, and Coinbase Exchange, which is gated and requires auth for L2 and L3. Let's switch to Coinbase Advanced Trade, drop all references and views to do with L3, and just get the L2 order book working. Please persist the connection and updating of the order book and add a stop button to stop the subscription. Here's the documentation for Advanced Trade:
+
+...
+
+</div>
+
+[[ video :: 20250405-cursor-output-01.webm ;; 1024 ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Can you now add a visualization of the order book like bars or a graph of some kind as commonly seen on trading platforms?
+
+...
+
+</div>
+
+This one took some fine-tuning.
+
+[[ video :: 20250405-cursor-output-02.webm ;; 1024 ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Now, I want to build a lightweight "paper trading" system so that I can develop trading algorithms and see how they perform against a real market. Do not make any code changes. I want to know if you think the following idea is sound.
+
+I'm thinking of introducing the concept of fake orders, i.e. you would build me an interface for entering fake buy or sell limit orders, and these orders would be added to the order book, but tracked as fake volume. Then, I was thinking we'd monitor a new channel, "market_trades," for incoming executions. If an incoming execution is _outside_ any of our fake volume, then I want to cause fake executions, for which we track our P/L. To keep our alternate universe consistent, I would _add_ outside-party fake volume to compensate for volume that would not have executed, were our fake order real. So this means also keeping track of our own vs. outside-party fake orders. I would also have outside-party fake orders execute just as our own fake orders do (and take priority at its price level since it was literally the next volume to be taken), the only difference being that they do not create additional compensating orders. Finally, I would add a realistic latency between submitting my fake order and it "hitting the exchange" (showing up in the order book). Do you think this would make a realistic emulation of executions I would have received were more fake orders real? What are errors in my thinking, or what realistic factors would I not be capturing?
+
+...
+
+</div>
+
+<div class="todo-prompt-response">
+
+![Static Badge](https://img.shields.io/badge/claude--3.5--sonnet-blue?style=flat)
+
+This is a fascinating idea for a paper trading system! Let me analyze the approach and point out strengths and potential issues:
+
+Strengths of the approach:
+1. By monitoring real market trades, you're getting realistic market impact and price movement
+2. The concept of compensating fake volume is clever - it maintains the "alternate universe" consistency
+3. Adding artificial latency is important and realistic
+4. Distinguishing between your fake orders and compensating fake orders is necessary for proper P/L tracking
+
+However, there are several factors that might affect realism:
+
+1. **Price-Time Priority Issues**:
+   - In real markets, your order would have been in the queue at a specific price level
+   - You can't know exactly where in the queue your order would have been relative to other orders at that price
+   - Your approach assumes your fake order would have been next in line after the real volume is consumed, which might be optimistic
+
+2. **Market Impact**:
+   - In reality, your order would have been visible to other participants and might have influenced their behavior
+   - Large orders especially can cause other participants to adjust their strategies
+   - The compensating volume approach helps but can't capture these behavioral changes
+
+3. **Hidden Orders**:
+   - Real exchanges often have iceberg/hidden orders that only become visible when they execute
+   - Your system won't be able to account for these since they're not visible in the L2 data
+
+4. **Complex Order Types**:
+   - Real exchanges support various order types (FOK, IOC, Post-Only, etc.)
+   - These orders interact with the book in complex ways that might be hard to simulate
+
+5. **Network Effects**:
+   - Real latency isn't just a fixed delay - it varies and can include:
+     - Network jitter
+     - Exchange matching engine load
+     - TCP retransmissions
+     - Exchange throttling during high volume
+
+6. **Multi-Exchange Effects**:
+   - In reality, large traders often split orders across exchanges
+   - Arbitrageurs connect markets
+   - Your single-exchange simulation won't capture these cross-exchange dynamics
+
+Suggestions for improvement:
+
+1. **Variable Latency**:
+   - Instead of fixed latency, model it as a distribution
+   - Include occasional "slow path" events where orders are significantly delayed
+
+2. **Queue Position Estimation**:
+   - Track time-weighted volume at each price level
+   - Use this to estimate more realistic queue positions for your fake orders
+
+3. **Partial Fills**:
+   - Real orders often get partially filled
+   - Consider modeling this by tracking time spent at each queue position
+
+4. **Cancel/Replace**:
+   - Add support for order modifications
+   - Include realistic latency for these operations too
+
+5. **Risk Checks**:
+   - Real exchanges perform various risk checks
+   - Consider adding basic ones like maximum order size, price bands, etc.
+
+Despite these limitations, I think your approach would still be valuable for:
+1. Testing basic trading strategies
+2. Understanding order book dynamics
+3. Practicing risk management
+4. Developing and debugging trading algorithms
+
+The key is being aware of what aspects of real trading it doesn't capture, so you don't develop strategies that rely on unrealistic assumptions.
+
+Would you like me to elaborate on any of these points or discuss specific implementation details?
+
+</div>
+
+I asked it to go ahead with implementation; however the result was inoperational—the ask was too multifaceted and complex. I think it's time to read the actual code (so far I haven't) and reorganize it the way I'd have coded it, to gain familiarity to be able to chunk and instruct next steps more specifically.
+
+[[ 2025-04-09 ;; TODO ]]
+
+The code was pretty straightforward. Notably, I didn't realize how simple the logic for visualization could be. I noted a few potential performance improvements in case we ever start hitting lag. Now we can try to implement paper trading in a more hybrid (human vs. AI) mode.
+
+But first, someone at Spotify shared a collection of tips and resources regarding Cursor. It seems smart to level up our Cursor game before we continue. [...] Okay, I've taken notes on the tips plus an internal video at Spotify where Cursor's developers talked to us, [here](https://docs.google.com/document/d/18izf9xkLxY9dhOzNVUvZ5CDn64Uncc3QCZ5NoWgV10c/edit?tab=t.0).
+
+The rest of today's log intends to illustrate a hybrid workflow, including workflow optimizations.
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+I'd like to track more than just quantity at each price level. Please replace quantity with a new PriceLevel object that initially only includes quantity.
+
+</div>
+
+To the class it generated I added 2 fields, `paperQty` and `ghostQty`.
+
+```
+        class PriceLevel {
+            constructor(quantity, paperQty, ghostQty) {
+                this.quantity = quantity;
+                this.paperQty = paperQty;
+                this.ghostQty = ghostQty;
+            }
+        }
+```
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Create and place a UI for entering orders between the chart and the order book. Create separate panels for buying or selling, symmetric, and each below its respective side of the chart above. Include a selector for Limit, Market, etc. but for now only support Limit. Do not hook it up to any logic yet.
+
+</div>
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+I want entered orders to appear in the order book as `paperQty`. After hooking that up, modify WebSocket updates so that `paperQty` isn't overridden or deleted.
+
+</div>
+
+I'm adding some Cursor Rules:
+
+[[ image :: 20250408-cursor-rules.png ]]
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+In the order book, can you show paper quantity to the left so that actual quantities are always aligned to the right? In the bar chart, can you depict paper quantity by stacking a dark-gold-orange bar atop the price level's regular green or red bar?
+
+</div>
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Entering an order freezes the bar graph, and I see this in the console logs:
+
+```
+(index):594 Uncaught ReferenceError: Cannot access 'yHeightVolume' before initialization
+    at (index):594:72
+    at Array.forEach (<anonymous>)
+    at updateDisplay_BarChart ((index):586:24)
+    at ws.onmessage ((index):526:17)
+```
+
+</div>
+
+It took around 10 more iterations to get that right. Let me do a few more things before I show the result.
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+In the order book, can you show paper quantity to the left so that actual quantities are always aligned to the right? In the bar chart, can you depict paper quantity by stacking a dark-gold-orange bar atop the price level's regular green or red bar?
+
+</div>
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+I would now like you to add a subscription to the market trades channel based on the following documentation
+
+</div>
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Now, please make it so whenever we receive a trade at a price that crosses paper quantity (so at or below the bid price of some paper quantity, or at or above the ask price of some paper quantity), our paper quantity "executes" (diminishes) partially or fully. Take the equivalent executed amount and add it to that price level's `ghostQty`. Show `ghostQty` in the order book in gray exactly the way we currently show `paperQty` in green. Hide `ghostQty` when `paperQty` is being shown. Please display ghost quantity using a grey bar that sits above the green or red bar but below the gold bar.
+
+</div>
+
+It took a lot of iterations to get this right too, but it got there. Here's a demo of what's built so far:
+
+[[ video :: 20250409-cursor-output-03.webm ;; 1024 ]]
+
+[[ 2025-04-11 ;; TODO ]]
+
+We still have to create a P/L (profit/loss) tracker based on our executions, but we're nearing the time to design our own market-making strategy. Today, I want to brainstorm some ideas. I'm watching the video capture above to think. [TODO: Explain market-making.]
+
+ 1. The y-axis scale is adjusted to fit whatever is the tallest bar of the 100 bids or 100 asks. Occasionally a "whale" shows up and dominates the scale, turning all the bars small in comparison. I wonder what can be inferred from these large orders—let's call them whale-based strategies. At first I thought whales must be confident their order will be executed, _i.e._ they believe the market will move toward them, _i.e._ we can enter an order just inside of theirs to undercut them, using them like an attractor. But I have no basis for that belief. It could just as well be the opposite. To a swing trader, a large order may mean, _"If the price goes this far out, I'm ready to buy in."_ Which means they're expecting it to be a _lower_ probability event, _i.e._ they believe the market is more likely to move away from their order. In that case would we put our order some distance _past_ their order, expecting a "runaway" breakthrough? Or is that irrational because their very order forms a heavy resistance against that. Can we play all possibilities? Maybe when a whale shows up, it means _something_ is likely to happen, and we can place strategic orders for all directions. But usually, "playing both sides" results in some kind of a cancellation (sometimes implicit) that reduces profit to a point that it's pointless. Before any of that, can we even effectively identify whales, when their are iceberg orders? There's [an article](https://www.coindesk.com/markets/2021/01/11/institutions-use-this-strategy-to-hide-their-bitcoin-orders) that helped me understand why exchanges support iceberg orders in the first place (or why it's legal)—tl;dr anyone can simulate one anyway. There's [another article](https://fastercapital.com/content/Diving-into-Dark-Pools--Iceberg-Orders-and-Hidden-Liquidity.html#Risks-of-Iceberg-Orders) that discusses the downside of iceberg orders.
+
+I can see how easily this can get overwhelming. I wonder if it might pay off to "catalogue" all questions and thoughts. Like this, for example:
+
+1. Is there a standard name for "whale-based strategies," what are they, and what do studies on them say?
+    1. What is the merit of their tendency to "attract" the market price?
+    1. What is the merit of their tendency to cause "runaway" breakthroughs?
+    1. How much of the volume tends to get executed?
+1. Why is it legal to hide volume and why would exchanges support it (icebergs)?
+1. Why do market participants use icebergs?
+1. What are ways to infer icebergs, particularly on crypto exchanges like Coinbase?
+    1. Knowing such strategies, what would I do further to hide my icebergs? Then: If we assume others would do the same, what are strategies that could game those strategies?
+
+I wonder if a more efficient (and valuable) alternative to research and study is to simply try the strategies with our simulator, granted it's far from perfect. But that raises another important question: How can we tell our results are valid?
+
+1. How do we know our simulator isn't giving flawed results?
+1. How do we know the results aren't skewed by market conditions? _e.g._ We're not making profit because of our strategy, we're making profit because it's a bull market.
+
+For the first question, I honestly don't think there is a way to know, and in fact I think it'd be dangerous to ever assume our simulator _isn't_ flawed. I think it'd be wiser to be aware of that and its role as an aid for testing the _technological implementation_ of a strategy, not a predictor of performance. What is the purpose of making the simulator more realistic then? To be honest, none, I guess. I think that is borne of a separate desire: Wanting to understand and think about market mechanics more closely. For that reason I think it's worth making improvements. As long as we don't fool ourselves into believing those improvements make our simulator a real predictor of performance.
+
+For the second question, well, that is the whole crux of algorithmic trading, of this industry. The traditional answer is backtesting and pilot tests (whether with small or realistic amounts of capital). An idea I'd like to try is using AI to identify what I've been calling in my head "situational tags", so that trading strategies are only executed when situational tags match up, or more interestingly, every hour or day we deploy different trading strategies according to changing situational tags of the current market.
+
+Today's thinking has reshaped my direction. I thought I was going to be developing real strategies soon. But without infrastructure for backtesting, there's no way for me to tell what's working and what's not. So the actual purpose of developing a market-making strategy, is simply to have some dummy strategy to 1) implement my first automation, 2) implement P/L, and 3) along the way generate and record ideas for the future, when we're actually ready to develop real strategies.
+
+Okay, I'm going to start a new entry even though it's the same day.
+
+[[ 2025-04-11 ;; TODO ]]
+
+So we just need _anything_ that resembles a market-making strategy, good or bad, as a centerpiece for continuing development. Then let's make one up right now:
+
+1. When a "whale" appears in the red (asks), I want to note that price level—call it the "whale price".
+1. If I have already taken a position at lower than the whale price, I want to enter a limit order to offload that position just inside of the whale.
+1. If the market breaks through the whale price, I want to immediately enter a limit order to buy also just inside of the whale price, in case there is a bounce back, but cancel it if the bounce doesn't happen soon enough.
+1. (That is how I'll be in a position for the next whale.)
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+Please add a third box between the buy and sell boxes that shows 5 to 10 recent trades as well as our P/L. Please add a toggle for showing all trades versus paper trades. Please color just the quantity gold for paper trades.
+
+</div>
+
+This took _many_ iterations. AI can randomly be astonishingly stupid—it gets stuck in a local minima you can't get it out of no matter how clever your prompting.
+
+[[ video :: 20250411-cursor-output-04.webm ;; 1024 ]]
+
+- started whole new copy of repo
+- code clean-up and notes on what to rearchitect
+
+[[ 2025-04-15 ;; TODO ]]
+
+- the number of times i've had to start over reading this code is infuriating, maybe i need to keep a document map
+- i am telling it explicitly to get a sorted tree from immutable.js
+- god, it went from map to just another O(n) indexOf
+- then even after i pointed that out, it just turned it into a for loop
+- let me step back and think... how will this be implemented eventually? probably not in JS right?
+
+[[ 2025-04-16 ;; TODO ]]
+
+Tens of iterations ago, I asked AI to use a sorted map (instead of just Javascript's Map) so that we can read bids and asks ordered by price in $\mathcal{O}(n)$ at the cost of inserting them in $\mathcal{O}(\log{}n)$. I didn't notice until now that it created an array to accompany the map, presumbly to keep a sorted array, but was using `indexOf()` to find where to insert an item, which makes the cost $\mathcal{O}(n)$ on every insert, an unacceptable degradation from a plain Map's $\mathcal{O}(1)$. Same for removal. I then asked AI to optimize the inserts to $\mathcal{o}(\log{}n)$. It responded by converting the `indexOf()` to a `for` loop. Which is also $\mathcal{o}(n)$. In the end I simply had to instruct it explicitly to use a sorted TreeMap implementation from Immutable.js.
+
+At first I was angry that I've been putting so much faith in something so stupid. But after a night's rest I wondered: What if it's my goals—my previously stated goals as well as the goals implied by the current state of the code—that are in contradiction with the data structures or efficiencies I'm asking for? Is it stupid? Or is it me who cannot keep track of enough states to realize that what I'm asking for would unacceptably degrade efficiency in other parts of code (_e.g._ visualizations), or even outright break them without going through further hoops? Maybe what appeared to be a pointless change, converting `indexOf()` to a `for` loop, actually had meta-information; maybe it was a refusal to do what I asked, because what I asked didn't make sense in other contexts I wasn't thinking about. In traditional programming, you start with the context you're in, though as wide as you're able to think, then later you find a consequent issue in another context, so you step back and reconsider what you're doing. AI's width of context is practically infinite.
+
+If all that is true, then AI still could have communicated better. It could have said, _"I see you want to do ___ in order to optimize ___, but doing so would affect ___. Would you still like me to do that? Would you like me to compensate for its effects elsewhere, or leave that alone for now?"_ I've been saying this from the beginning: AI's fault is that it does not doubt itself, or attempts to hide doubt. For now I'm going to add 2 rules to Cursor's settings, in hopes of improving this behavior:
+
+- Consider if the data structures being used are sufficiently efficient for frequency and kind of tasks being executed on them.
+- Tell me if an ask to change data structures or improve efficiency would degradate efficiency or complicate the code somewhere else, and explain my options instead of making any code changes.
+
+I can imagine developing a whole package of rules designed to invoke more self-doubt (self-inquiry), but I also imagine the reason this isn't already commercially available is that current AI models end up stuck in loops of thought when asked to doubt itself even a few times. Interestingly, this behavior is reminiscent of less experienced engineers, to whom saying something like, "Did you check ___ when you coded this part?" can send them down a rabbit hole, trying to understand and find a convincing answer, when actually my question wasn't applicable to their situation, but we don't realize until they come back hours later with an answer that doesn't make sense. So what "cures" this tendency? Learning to assess and keep in mind the asker's own potential faults, to find an appropriate balance between sticking to one's gun and re-evaluating with an iteratively and increasingly open mind. That doesn't seem like such a tall order for AI, so I'm optimistic an upgrade is coming soon.
+
+But back to our program. To find out whether it's me who's stupid, I decided to turn to pen and paper and re-architect this program from scratch. The thing is, this wasn't all wasted effort. Primarily, AI produced code that taught me things that I wouldn't have known how to even seek to learn—it exposed me to that "unknown unknowns" quadrant of knowledge, and many right parts of it. Secondarily, iterating with AI and doing the couple rounds of code review that I did, was a form of _repetitious learning_. No matter how something is presented, however accurately or eloquently or concisely, we as humans are not capable of _understanding_ something deeply without repetition and practice. If AI wrote perfect code from the first prompt, the problem then would be the human not being able to grasp it. Ironically, the human would probably misunderstand it and attempt to change it, gradually learning more about the domain. But then, they also won't end up back where they started, because they'll learn their first prompt didn't ask for everything they wanted. In a way, that's what happened with me, isn't it? In the very beginning, AI produced literally exactly what I asked for, perhaps because I asked it to solve a problem in a limited context—a single feed, a single order book, a simple bar graph. But gradually we expanded to 2 feeds (L2 summary and market trades), 3 order books (L2 summaries, paper orders, ghost orders), novel mechanics (tracking paper trades and ghost trades to maintain a hypothetical world), and a stacked bar graph. AI is most likely thinking about everything at the same time, while I, in my traditional habit, have curtained off one section that I know I can think about effectively; and as wide as that section still is from my decades of experience, I am admittedly thinking about consequences like, _"We'll cross those bridges when we get there."_ When I took to pen and paper, I pretty easily came up with a much improved architecture (thanks to all the learning), and it was not where I was heading. I don't think AI knew either where to head, but maybe from now on when I'm frustrated with AI, I should stay humble and simply take it as a sign that I'm ready to start from scratch with all my new learnings.
+
+<div class="todo-prompt">
+
+![Static Badge](https://img.shields.io/badge/prompt-gold?style=flat)
+
+I'd like to preserve our HTML and visualizations, but rework our Javascript logic. Let me describe an entirely new architecture. Please give me feedback without making any code changes.
+
+- I'd like to create a newly designed Order class with the properties: type, id, side, price, quantity, filled_qty, and timestamp.
+
+- I'd like to create an OrderTimePriorityTree class that has 1 property, orders, that is a sorted TreeMap from Immutable.js for storing Orders by Orders::id, sorted in ascending Orders::timestamp. Am I correct to believe that, with this structure, (1) inserting an Order would take O(log n) time, (2) iterating through Orders in timestamp order would take O(n) time, and (3) retrieving and removing an Order by id would take O(1) time?
+
+- I'd like to create an OrderPriceTimePriorityTree class that has 2 properties, side and priceLevels. side should be a character or byte, which will store a 'B' for buy (or bids) and 'S' for sell (or asks). priceLevels should be a sorted TreeMap from Immutable.js for storing OrderTimePriorityTree objects by a price, sorted also by price that's descending if side (supplied on construction) is 'B', ascending if side is 'S'. Am I correct to believe that, with this structure, (1) inserting an OrderTimePriorityTree a.k.a. "price level" would take O(log n) time, (2) iterating through price levels in sorted price order would take O(n) time, and (3) retrieving and removing a price level would take O(1) time?
+
+- I'd like to create an OrderBook class that has 3 properties, bids and asks, each of them an OrderPriceTimePriorityTree, one for 'B' and one for 'S'; and worlds, an array. I would like this class to have a method update() that takes an Order. Leave the implementation blank. I would like this class to have a method mirror() that takes a World and adds it to the worlds array.
+
+- I'd like to create a World class that has 4 properties: level2Book, paperBook, ghostBook, and combinedBook. I would like the constructor to create new OrderBooks for paperBook, ghostBook, and combinedBook, and accept level2Book through a parameter. I'd like this class to have a reflect() method that takes an Order, which in turn calls combinedBook.update(order). Later when we implement OrderBook::updateOrder(order), it'll call world.reflect(order) on every world like a callback. This way any order added to any book will end up in the world's combinedBook.
+
+What do you think? Don't worry about making the UI work in this round. Focus on the giving me feedback about the design I'm considering.
+
+</div>
+
+Claude verified my complexity analysis as mostly correct. I was only wrong about the removal from OrderTimePriorityTree which actually takes O(log n) time due to needingn to rebalance the tree after removal.
+
+
+
+4/22
+
+Learned something invaluable.
+I almost gave up when my browser was crashing from inefficiency.
+I thought my idea must have been bad.
+But then I thought to ask Claude to add performance timers to every data structure method.
+From there I was able to keep giving it the performance report and it's been doing some impressive things.
+
+4/23
+
+Realized no need for nested trees. Just one tree sorting on both time and priority.o
+
+Bid Timings: {
+  "set": 0.3000001907348633,
+  "get": 0,
+  "remove": 0,
+  "insert": 1.0999999046325684,
+  "removeFromTree": 0,
+  "balance": 0.20000004768371582,
+  "iterator": 0,
+  "mapOp": 0,
+  "treeOp": 0,
+  "compare": 0,
+  "heightCalc": 0,
+  "balanceCheck": 0.2999999523162842
+}
+(index):505 Ask Timings: {
+  "set": 0.20000004768371582,
+  "get": 0,
+  "remove": 0,
+  "insert": 0.19999980926513672,
+  "removeFromTree": 0,
+  "balance": 0.09999990463256836,
+  "iterator": 0,
+  "mapOp": 0.10000014305114746,
+  "treeOp": 0,
+  "compare": 0,
+  "heightCalc": 0,
+  "balanceCheck": 0.09999990463256836
+}
+(index):510 Size Check: {
+  "bids": {
+    "totalOrders": 1461,
+    "treeSize": 1461
+  },
+  "asks": {
+    "totalOrders": 1667,
+    "treeSize": 1667
+  }
+}
+
+Looking at these timings, there are several clear bottlenecks:
+1. Insert Operations (Major Bottleneck)
+- Taking 13-25ms per operation
+  This is the biggest issue, especially as the tree grows
+- Example: "insert": 25.200002193450928 in one of the ask timings
+2. Balance Operations (Secondary Bottleneck)
+- balanceCheck is taking 0.6-2.4ms
+  balance operations taking 0.2-0.9ms
+- These are relatively high for what should be O(1) operations
+3. Comparison Function (Not Bad)
+- compare operations are taking 0.2-1.3ms
+- This is reasonable given the complexity of the comparison
+4. Tree Operations (Not Bad)
+- treeOp taking 0.2-0.9ms
+  heightCalc taking 0.1-0.5ms
+- These are acceptable
+5. Map Operations (Very Good)
+- mapOp taking 0-0.5ms
+- This is working as expected for O(1) operations
+The main issue is clearly the insert operations. For a tree of ~1500-1700 nodes, taking 20+ms for an insert is too high. This suggests:
+1. The tree balancing might be too aggressive
+   We might be doing unnecessary work during inserts
+3. The comparison function might be getting called too many times during insert
+Would you like me to propose specific optimizations for any of these areas?
+
+The optimizations include:
+1. Insert Operation Optimizations:
+- Cache comparison results to avoid multiple comparisons
+  Only update heights and balance when necessary (when height actually changes)
+  Skip unnecessary height recalculations
+- Optimize rotation height updates by only updating affected nodes
+2. Comparison Function Optimizations:
+- Pre-compute price values based on side
+  Use direct comparison instead of subtraction for price equality check
+  Only compare timestamps when prices are equal
+- Avoid redundant calculations
+3. Balance Operation Optimizations:
+- Added comments to clarify balance cases
+  Optimized height updates during rotations
+- Skip unnecessary height calculations
+These changes should significantly reduce:
+1. The number of comparisons during inserts
+   The number of height calculations
+   The number of balance checks
+4. The complexity of the comparison function
+
+
+Yes, there's a significant improvement! Let's compare the before and after:
+Before:
+- Insert: 13-25ms
+  Set: 1-5ms
+  Balance: 0.2-0.9ms
+  Compare: 0.2-1.3ms
+  TreeOp: 0.2-0.9ms
+  HeightCalc: 0.1-0.5ms
+- BalanceCheck: 0.6-2.4ms
+After:
+- Insert: 3-19ms (mostly 3-7ms, with occasional spikes to 13-19ms)
+  Set: 0.8-3.1ms
+  Balance: 0-0.2ms
+  Compare: 0-0.9ms
+  TreeOp: 0.1-0.6ms
+  HeightCalc: 0-0.2ms
+- BalanceCheck: 0-0.5ms
+Key improvements:
+1. Insert operations are much faster (3-7ms vs 13-25ms)
+   Balance operations are more efficient (0-0.2ms vs 0.2-0.9ms)
+   Height calculations are minimal (0-0.2ms vs 0.1-0.5ms)
+4. Balance checks are faster (0-0.5ms vs 0.6-2.4ms)
+There are still occasional spikes in insert time (19.3ms in one case), but these are much less frequent than before. The average case performance is significantly better.
+Would you like me to investigate what's causing those occasional spikes to 13-19ms?
+
+
+Double rotation needed: Left-Right case for node L2B-93539.04
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.65: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.64: 2 -> 3
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.4: 3 -> 4
+MutableSortedTreeMap.js:116 Height changed for node L2B-93541.57: 4 -> 5
+MutableSortedTreeMap.js:116 Height changed for node L2B-93539.04: 5 -> 6
+MutableSortedTreeMap.js:123 Balancing needed for node L2B-93539.04 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2B-93539.04
+MutableSortedTreeMap.js:116 Height changed for node L2B-93541.14: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.65: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2B-93540.65 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2B-93540.65
+MutableSortedTreeMap.js:116 Height changed for node L2B-93541.14: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.65: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2B-93540.65 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2B-93540.65
+MutableSortedTreeMap.js:116 Height changed for node L2B-93541.14: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2B-93540.65: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2B-93540.65 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2B-93540.65
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.98: 1 -> 2
+2MutableSortedTreeMap.js:116 Height changed for node L2S-93607.98: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.94: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.98: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93607.98 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93607.98
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.94: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.98: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93607.98 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93607.98
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.94: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93607.98: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93607.98 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93607.98
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.63: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.95: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93616.95 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93616.95
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.63: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.95: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93616.95 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93616.95
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.63: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.95: 2 -> 3
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93616.95 with balance 2
+MutableSortedTreeMap.js:190 Double rotation needed: Left-Right case for node L2S-93616.95
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.95: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.86: 2 -> 3
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.62: 3 -> 4
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.96: 4 -> 5
+MutableSortedTreeMap.js:116 Height changed for node L2S-93617.02: 5 -> 6
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93617.02 with balance 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.95: 1 -> 2
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.86: 2 -> 3
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.62: 3 -> 4
+MutableSortedTreeMap.js:116 Height changed for node L2S-93616.96: 4 -> 5
+MutableSortedTreeMap.js:116 Height changed for node L2S-93617.02: 5 -> 6
+MutableSortedTreeMap.js:123 Balancing needed for node L2S-93617.02 with balance 2
+
+
+
+Looking at these logs, I can see exactly what's causing the spikes. The issue is with cascading height updates andbalance operations. Here'swhat's happening:
+1. Deep Height Changes: We see chains ofheight updatesgoing up to 6 levels deep:
+   	text
+   	Apply to MutableSorte...
+   Height changed for node L2S-93721.09: 1 -> 2
+   Height changed for node L2S-93721.21: 2 -> 3
+   Height changed for node L2S-93721.38: 3 -> 4
+   Height changed for node L2S-93720.89: 4 -> 5
+   Height changed for node L2S-93721.72: 5 -> 6
+   Multiple Double Rotations: We're seeing a lot of double rotations (Left-Rightand Right-Left cases), which aremore expensive:
+   	text
+   	Apply to MutableSorte...
+   Double rotation needed: Left-Right case for node L2S-93721.72
+3. Timing Breakdownfor a spike:
+   	text
+   	Apply to MutableSorte...
+   "insert": 31,
+   "heightCalc": 2.3,
+   "balanceCheck": 0.9,
+   "balance": 0.5
+The main issue is that we're doing too many height updates and balance checks. Let me optimize this:
+1. Cache the height changes duringinsert
+   Batch the balance operations
+3. Reduce the number of double rotations
+
+
+
+Key improvements:
+Insert time reduced by ~75% (from 31-35ms to 2-8ms)
+Height calculations reduced by ~90% (from 2.3-3.0ms to 0-0.4ms)
+Balance checks reduced by ~80% (from 0.7-1.0ms to 0-0.3ms)
+Balance operations reduced by ~90% (from 0.4-0.5ms to 0-0.1ms)
+The spikes are now much smaller and less frequent. The highest insert time we see is 12ms, compared to the previous 35ms. The tree is also maintaining balance correctly as shown by the size checks matching the total orders.
+
+
+
+Don't make any code changes yet. I'm just curious. Why isn't it possible to locate the Order in the Tree in O(1) time by it being the same object, and keeping pointers to Parent so that you don't have to iterate to find the tree node? Is that a standard thing to do?
+
+That's a great question! You're absolutely right that we could optimize this by maintaining parent pointers and using object identity to locate nodes in O(1) time.
+The approach you're suggesting is not uncommon in specialized tree implementations, especially for high-performance data structures. Here's why it would be beneficial:
+O(1) Node Location: By keeping a reference to the tree node in the Map value (or by using the same object for both), we could locate the node in the tree in O(1) time instead of O(log n).
+Parent Pointers: Adding parent pointers would allow us to traverse up the tree without having to search from the root, which is especially useful for operations like deletion and rebalancing.
+Object Identity: JavaScript's object identity (reference equality) would allow us to quickly find the exact node in the tree without comparing keys.
+This approach is used in some specialized tree implementations like:
+Red-Black Trees with Parent Pointers: Many implementations of red-black trees maintain parent pointers for efficient deletion and rebalancing.
+B-Tree Variants: Some B-tree implementations keep references to nodes in a separate index structure for quick access.
+Specialized Order Book Implementations: High-frequency trading systems often use custom data structures with these optimizations.
+The main trade-offs would be:
+Memory Usage: Parent pointers increase memory usage by ~33% (each node needs an additional reference).
+Complexity: The code becomes more complex as you need to maintain these pointers during all operations.
+Garbage Collection: More references can make garbage collection slightly less efficient.
+For an order book implementation where performance is critical, these trade-offs are often worth it. The approach you're suggesting would be a standard optimization in high-performance trading systems.
+Would you like me to implement this optimization? It would involve:
+Adding parent pointers to the tree nodes
+Storing references to tree nodes in the Map
+Modifying the tree operations to maintain these references
+
+
+
+Yes, these timings look quite good for the number of elements we're dealing with. Let me break down what I'm seeing:
+Order Volume: We're handling around 25,000 bids and 18,000 asks (roughly 43,000 total orders)
+Operation Timings:
+Most operations are taking less than 1ms
+upsertOrder typically takes 0.5-1.7ms
+Tree operations (insert, remove, balance) are very fast, often under 0.5ms
+Map operations are consistently fast, usually under 0.3ms
+Memory Usage:
+The size checks show consistent numbers with minimal fluctuation
+No memory leaks detected (treeSize stays at 0)
+Performance Characteristics:
+The timings are very stable across updates
+Even the worst-case operations (like complex tree rebalancing) stay under 2ms
+The system is handling thousands of orders with sub-millisecond operations
+For a real-time order book system, these are excellent numbers. We're seeing:
+O(1) operations for map access
+O(log n) operations for tree operations
+No significant memory growth
+Consistent performance even with 40,000+ orders
+The timings suggest the system could easily handle even larger order books while maintaining real-time performance.
+
+really dumb claude output in documents screenshot
+
+4/24
+
+need to reorgnize my world and invent order/trade feeds
+done, pubsub
+
+4/25
+
+capturing sample input, created sample csv, creating replay logic
+
+I finally have some numbers.
+
+- algo terra
+- using a "pre-recorded" input of 277 messages (including a snapshot) which contained 48,975 updates
+- playback WITHOUT the overhead of writing debug logs
+- depends heavily on what my CPU is doing! so need to run both terra and sabin in the same timeframe, average 3 runs each
+- processed in ~1.15 seconds (a recording of 15 seconds)
+- which is 42.5K updates/second
+- meaning: the original algo-terra could handle roughly 15x more volume than 9am on a friday on coinbase for BTC-USD
+- THIS INCLUDES THE BAR CHART DISPLAY AND ORDER BOOK DISPLAY
+- without?
+- well this isn't fair because without, it's not sorting, which is where sabin is optimized. ok so bar chart and order book is part of the base comparison. don't change those too much
+
+Now have to restructure Sabin to proper test harness and break out index.html logic to components so they're testable
+
+omg finally fixed... all i needed to do was run the MutableSortedTreeMapTest ugh
+
+ok result of sabin came out to 18K updates/second (finished in 2.7s)
+
+oh after i removed performance timing within mutablesortedtreemap, 35Ku/s
+
+        console.log(`\n[REMOVE] Before remove(${key}):`);
+        this._logTreeState();
+        
+            console.log(`[REMOVE] Key ${key} not found, nothing to remove`);
+        console.log(`[REMOVE] Removing key=${key}, value=${value}`);
+        
+        this.nodeMap.delete(key);
+        this.root = this._removeNode(this.root, key, value);
+        this.size--; // Decrement size when removing a key
+        
+        console.log(`[REMOVE] After remove(${key}):`);
+        this._logTreeState();
+        
+Add to Chat⌘L
+I want to optimize _removeNode by using nodeMap to locate the node to be removed in O(1). But every time I have asked, over 50 iterations now, the result fails the test MutableSortedTreeMap.test.js. This time, can we start by adding verbose logging of the tree between every operations so that you can see exactly where something's going wrong? Please also add logging in _removeNode and any other paths taken that may help you.
+
+[SET] Before set(a, [object Object]):
+Tree state:
+Size: 6
+Root: d
+Map entries: [
+  [ 'c', { id: 'c', timestamp: 300, value: 'late' } ],
+  [ 'd', { id: 'd', timestamp: 200, value: 'middle' } ],
+  [ 'e', { id: 'e', timestamp: 75, value: 'earlier' } ],
+  [ 'f', { id: 'f', timestamp: 250, value: 'later' } ],
+  [ 'h', { id: 'h', timestamp: 225, value: 'getting-later' } ],
+  [ 'j', { id: 'j', timestamp: 25, value: 'earliest' } ]
+]
+NodeMap keys: [ 'c', 'd', 'e', 'f', 'h', 'j' ]
+└── d (h=3)
+    ┌── f (h=2)
+    │   ┌── c (h=1)
+    │   └── h (h=1)
+    └── e (h=2)
+        └── j (h=1)
+[SET] After set(a, [object Object]):
+Tree state:
+Size: 7
+Root: d
+Map entries: [
+  [ 'c', { id: 'c', timestamp: 300, value: 'late' } ],
+  [ 'd', { id: 'd', timestamp: 200, value: 'middle' } ],
+  [ 'e', { id: 'e', timestamp: 75, value: 'earlier' } ],
+  [ 'f', { id: 'f', timestamp: 250, value: 'later' } ],
+  [ 'h', { id: 'h', timestamp: 225, value: 'getting-later' } ],
+  [ 'j', { id: 'j', timestamp: 25, value: 'earliest' } ],
+  [ 'a', { id: 'a', timestamp: 999, value: 'overwritten' } ]
+]
+NodeMap keys: [
+  'c', 'd', 'e',
+  'f', 'h', 'j',
+  'a'
+]
+└── d (h=4)
+    ┌── f (h=3)
+    │   ┌── c (h=2)
+    │   │   ┌── a (h=1)
+    │   └── h (h=1)
+    └── e (h=2)
+        └── j (h=1)
+[SET] After set(a, [object Object]):
+Tree state:
+Size: 7
+Root: d
+Map entries: [
+  [ 'c', { id: 'c', timestamp: 300, value: 'late' } ],
+  [ 'd', { id: 'd', timestamp: 200, value: 'middle' } ],
+  [ 'e', { id: 'e', timestamp: 75, value: 'earlier' } ],
+  [ 'f', { id: 'f', timestamp: 250, value: 'later' } ],
+  [ 'h', { id: 'h', timestamp: 225, value: 'getting-later' } ],
+  [ 'j', { id: 'j', timestamp: 25, value: 'earliest' } ],
+  [ 'a', { id: 'a', timestamp: 999, value: 'overwritten' } ]
+]
+NodeMap keys: [
+  'c', 'd', 'e',
+  'f', 'h', 'j',
+  'a'
+]
+└── d (h=4)
+    ┌── f (h=3)
+    │   ┌── c (h=2)
+    │   │   ┌── a (h=1)
+    │   └── h (h=1)
+    └── e (h=2)
+        └── j (h=1)
+✓ overwrite works
+All tests passed!
+
+4/26
+
+manual review of MSTM
+
+manually write remove function; i think it's just not used to this implementation so it's overinfluenced by a more standard implementation
+
+finally fixed the bug, it was in the rebalancing logic
+fixed inefficient iterator too
+now let's time everything!
+
+terra (commit d258b8a)
+- 1167ms = 42.0Ku/s
+- 1188ms = 41.2Ku/s
+- 1176ms = 41.6Ku/s
+
+sabin pre-opt (commit df1ef1e)
+- 1548ms = 31.6Ku/s
+- 1489ms = 32.9Ku/s
+- 1504ms = 32.6Ku/s
+
+sabin post-opt (commit 0ee43ac)
+- 1008ms = 48.6Ku/s
+- 1002ms = 48.9Ku/s
+- 991ms = 49.4Ku/s
+
+only a 20% improvement in performance, but the time complexity is also better now. the difference will stack up for larger trees. i mean also, havnig multiple trees, 20% is a nice improvement.
+
+screen recording Screen Recording 2025-04-26 at 18.00.30 compares coinbase vs terra vs sabin
+
+
+5/3
+
+starting from scratch in React, TypeScript, Next.js, ...
+order book table working
+
+5/4
+
+order book bars working
+trade feed working
+
+5/5
+
+trade handlers
+
+5/7, 5/8, 5/9
+
+re-understand the trade algo, spec L2PG model in doc
+
+5/11
+
+holy shit fixed rotation bug
+
+5/12
+
+first time seeing slow and fast worlds at once
+
+
+
+
+
