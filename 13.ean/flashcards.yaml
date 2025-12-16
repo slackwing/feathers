@@ -30,3 +30,18 @@
   sources: ["ean-308"]
   question: What happened on 17 January 1991?
   answer: Operation Desert Storm began, to which Sadaam Hussein responded by launching Scud missiles (conventional), 39 hitting Israel. 2 were killed; 11 died wearing gas masks. Palestinians cheered, drawing hostile coverage.
+- card:
+  sources: ["ean-313"]
+  question: What dramatic and ceremonial event attracted intense media coverage on 31 October 1991?
+  answer: The Madrid peace conference; the first of many Madrid talks. "Madrid went a long way toward repairing some of the damage caused by the Gulf war, nullifying the 'huge discrepancy in physical power and the asymmetry of their international standing'. [...] The mood in the West Bank was euphoric. [...] In diplomatic terms, the significance of Madrid was that it laid down a twin-track framework; one was for bilateral negotiations between Israel and Jordan, Syria and Lebanon; and the other, an Israeli-Palestinian track—a genuinely historic innovation. [...] Neither led anywhere at all for a long time. But both did eventually bring progress, albeit in different and unanticipated ways.
+- card:
+  sources: ["ean-313"]
+  question: Who was Faisal Husseini?
+  answer: TODO
+- quote:
+  source: ["ean-313"]
+  text: "'We have seen your anguish over the transformation of your sons and daughters into instruments of a blind and violent occupation—and we are sure that at no time did you envisage such a role for the children you thought would forget your future.' - Abdel-Shafi, 1991"
+- card:
+  sources: ["ean-316"]
+  question: Who was Yitzhak Rabin?
+  answer: An Israeli military leader and statesman, serving twice as Prime Minister of Israel (1874-77, 1992-95), best remembered for making peace with Israel's neighbors—and for being assassinated by an Israeli extremist because of that pursuit. [According to ChatGPT. According to EAN, Labour party but "no dove. Older Paelistinians remembered him as the man who had expelled thousands from Lydda and Ramle in 1948 and commanded the Israeli army in 1967. Twenty years later, as defence minister, his response to the _intifada_ was to 'break the bones' of troublemakers.]
