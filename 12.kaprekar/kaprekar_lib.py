@@ -137,6 +137,22 @@ def analyze_number(start_num, num_digits, base, memo=None):
         current = diff
 
 
+def count_digit_multisets(num_digits, base):
+    """
+    Count the number of unique digit multisets (without generating them).
+    This is C(n+k-1, k) where n=base, k=num_digits.
+
+    Args:
+        num_digits: Number of digits
+        base: The base to use (digits range from 0 to base-1)
+
+    Returns:
+        int: The count of unique multisets
+    """
+    from math import comb
+    return comb(base + num_digits - 1, num_digits)
+
+
 def generate_digit_multisets(num_digits, base):
     """
     Generate all unique digit multisets for a given number of digits and base.
@@ -165,6 +181,42 @@ def generate_digit_multisets(num_digits, base):
             count //= factorial(freq)
 
         yield (combo, count)
+
+
+def generate_digit_multisets_modulo(num_digits, base, chunk_id, total_chunks):
+    """
+    Generate every Nth multiset for parallelization using modulo arithmetic.
+    Worker chunk_id processes multisets where (index % total_chunks) == chunk_id.
+
+    This ensures perfect load balancing: each worker processes ~(total/chunks) multisets.
+
+    Args:
+        num_digits: Number of digits
+        base: The base to use
+        chunk_id: Which chunk this worker handles (0 to total_chunks-1)
+        total_chunks: Total number of parallel workers
+
+    Yields:
+        tuple: (digit_tuple, count) where digit_tuple is sorted digits
+    """
+    from itertools import combinations_with_replacement
+    from math import factorial
+
+    idx = 0
+    for combo in combinations_with_replacement(range(base), num_digits):
+        # Only yield multisets assigned to this chunk
+        if idx % total_chunks == chunk_id:
+            digit_counts = {}
+            for digit in combo:
+                digit_counts[digit] = digit_counts.get(digit, 0) + 1
+
+            count = factorial(num_digits)
+            for freq in digit_counts.values():
+                count //= factorial(freq)
+
+            yield (combo, count)
+
+        idx += 1
 
 
 def num_to_base_string(num, base, num_digits):
