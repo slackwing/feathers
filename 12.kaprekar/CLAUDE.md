@@ -57,20 +57,40 @@
 
 All tests use 16 cores and `--data-dir test-data`
 
-### Test Cases
+**IMPORTANT PERFORMANCE PHILOSOPHY:**
+- **Performance hits at smaller test cases (T1-T4) are gladly accepted if there are real gains in larger cases (T5+)**
+- **T5-large-single is the most important test - optimize for this case above all others**
+- Small case overhead is acceptable if it enables better scaling for large problems
+
+### Primary Test Cases (Run on every version)
 
 | Test ID | Description | Command | Expected Time | Purpose |
 |---------|-------------|---------|---------------|---------|
 | T1-tiny | Single small case | `--min-base 5 --max-base 5 --min-digits 4 --max-digits 4` | < 1s | Quick sanity check |
-| T2-small-single | Single moderate case | `--min-base 10 --max-base 10 --min-digits 6 --max-digits 6` | < 5s | Single digit/base |
-| T3-small-multi | Multiple small cases | `--min-base 5 --max-base 7 --min-digits 4 --max-digits 5` | < 10s | Multi digit/base |
-| T4-medium | Medium workload | `--min-base 8 --max-base 10 --min-digits 6 --max-digits 8` | < 60s | Realistic workload |
-| T5-large-single | Large single case | `--min-base 12 --max-base 12 --min-digits 6 --max-digits 6` | < 120s | Stress test single |
-| T6-stress | Stress test | `--min-base 10 --max-base 10 --min-digits 2 --max-digits 12` | < 300s | Full range, single base |
+| T2-small-single | Single moderate case | `--min-base 10 --max-base 10 --min-digits 8 --max-digits 8` | < 5s | Single digit/base |
+| T3-small-multi | Multiple small cases | `--min-base 5 --max-base 7 --min-digits 6 --max-digits 6` | < 10s | Multi digit/base |
+| T4-medium | Medium workload | `--min-base 8 --max-base 12 --min-digits 8 --max-digits 8` | < 60s | Realistic workload |
+| T5-large-single | **MOST IMPORTANT** Large single case | `--min-base 12 --max-base 12 --min-digits TBD --max-digits TBD` | < 300s | **Primary optimization target** |
+
+**T5 Note:** Start with digits 24, then bisection search downward to find what completes in < 5 minutes
+
+### Secondary Test Cases (Run only when T1-T5 pass and perform well)
+
+| Test ID | Description | Command | Expected Time | Purpose |
+|---------|-------------|---------|---------------|---------|
+| T6-stress | Multi-base/digit range | `--min-base TBD --max-base TBD --min-digits TBD --max-digits TBD` | < 600s | Range stress test |
+| T7-quad-single | Very large single case | `--min-base TBD --max-base TBD --min-digits TBD --max-digits TBD` | < 600s | Extreme scale test |
+
+**T6 Note:** Start with base 10-16, digits 8-16. Decrease max base and max digits together by 1 until < 10 minutes
+**T7 Note:** Start with base 16-17, digits 16-17. Decrease all numbers by 1 until < 10 minutes
+
+**Secondary tests are expensive - only run after primary tests show good results**
 
 ### Benchmark Results
 
 #### v0.1
+
+**Primary Tests:**
 
 | Test ID | Time | CPU % | Notes |
 |---------|------|-------|-------|
@@ -78,8 +98,14 @@ All tests use 16 cores and `--data-dir test-data`
 | T2-small-single | TBD | TBD | Not yet benchmarked |
 | T3-small-multi | TBD | TBD | Not yet benchmarked |
 | T4-medium | TBD | TBD | Not yet benchmarked |
-| T5-large-single | TBD | TBD | Not yet benchmarked |
-| T6-stress | TBD | TBD | Not yet benchmarked |
+| T5-large-single | TBD | TBD | Not yet benchmarked - need to find working digit count |
+
+**Secondary Tests:** (Run only when primary tests are good)
+
+| Test ID | Time | CPU % | Notes |
+|---------|------|-------|-------|
+| T6-stress | N/A | N/A | Not run - primary tests incomplete |
+| T7-quad-single | N/A | N/A | Not run - primary tests incomplete |
 
 ## Design Notes
 
