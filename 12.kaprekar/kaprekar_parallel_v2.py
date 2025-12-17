@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Kaprekar Parallel Processor - Version 0.1
+
+Baseline: Pure modulo distribution with shared memoization
+"""
+
+VERSION = "0.1"
 
 import sys
 import csv
