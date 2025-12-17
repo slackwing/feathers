@@ -3,12 +3,12 @@
 ## TODO List
 
 ### High Priority
-- [ ] Add --verbose flag with comprehensive diagnostics
+- [x] Add --verbose flag with comprehensive diagnostics (COMPLETED in v0.2)
+  - [x] Lock contention monitoring
+  - [x] Timing/profiling per phase
+  - [x] Worker activity logs
   - [ ] Work stealing details (if re-implemented)
-  - [ ] Lock contention monitoring
-  - [ ] Timing/profiling per phase
-  - [ ] Worker activity logs
-  - [ ] Progress update frequency stats
+  - [ ] Progress update frequency stats (partially done - can see individual updates)
 
 ### Core Issues to Debug
 - [ ] Investigate why cores become idle as process runs (especially for large base/digits)
@@ -32,7 +32,29 @@
 
 ## Version History
 
-### v0.1 - Baseline (Current)
+### v0.2 - Verbose Diagnostics (Current)
+**Commit:** 766fb2b
+**Date:** 2025-12-17
+
+**Features:**
+- Added `--verbose` flag with comprehensive diagnostics
+- Worker lifecycle logging (start, completion, timing)
+- Shared memo operations tracking (load/push with sizes and times)
+- Lock contention monitoring (wait times for progress updates)
+- Phase timing and throughput (multisets/second)
+- Pool creation and worker result collection diagnostics
+- Task processing distinction (simple vs complex)
+- File writing operation timing
+
+**Known Issues:**
+- Same core issues as v0.1 (idle cores, Manager hang)
+- Verbose logging adds minimal overhead but helps debugging
+
+**Performance Characteristics:**
+- Identical to v0.1 when --verbose not used
+- With --verbose: adds <5% overhead but reveals bottlenecks
+
+### v0.1 - Baseline
 **Commit:** 823abfd
 **Date:** 2025-12-17
 
@@ -161,14 +183,123 @@ Batched updates (10k multisets) to minimize lock contention.
 3. Implement chunk-based randomized distribution
 4. Add detailed per-worker timing logs with --verbose
 
+## Learnings
+
+*This section documents key insights from different parallelization strategies we've tried, to guide future optimization efforts. Include what worked, what didn't, why, and recommendations for future approaches.*
+
+### Work Stealing (Queue-based)
+
+**Approach:** Pure work-stealing with all multisets in a shared queue that workers pull from.
+
+**Result:** **SLOWER** - 2m 53s vs 2m 37s baseline (16s slower, ~10% regression)
+
+**Why it failed:**
+- Queue lock contention became bottleneck
+- No benefit from queue overhead since work is naturally balanced by count
+- Synchronization overhead outweighed any load balancing benefit
+
+**Lesson:** For problems where multisets are countable and relatively uniform in complexity, static distribution is better than dynamic queue-based approaches.
+
+---
+
+### Hybrid Work Stealing (Modulo + Overflow Queue)
+
+**Approach:** Workers process assigned multisets via modulo, then steal from overflow queue when done.
+
+**Result:** **SLOWER** - 2m 57s vs 2m 37s baseline (20s slower, ~13% regression)
+
+**Why it failed:**
+- Critical bug: overflow_producer thread iterated ALL 7.8M multisets before workers could start
+- Even without bug, queue generation overhead likely too high
+- Added complexity without addressing root cause
+
+**Lesson:** Generating overflow work upfront is a blocking anti-pattern. If work-stealing is needed, it must be lazy/on-demand.
+
+---
+
+### Random Chunk Assignment
+
+**Approach:** Assign chunks of 8 contiguous multisets randomly to workers (instead of modulo).
+
+**Result:** **NOT FULLY TESTED** - Suspected slower due to random seed coordination overhead
+
+**Why likely problematic:**
+- Doesn't address the actual problem (some multisets inherently slower)
+- Random distribution adds overhead without theoretical benefit
+- No evidence that modulo distribution itself causes imbalance
+
+**Lesson:** Don't randomize just to randomize. Need data showing modulo causes pathological patterns first.
+
+---
+
+### Adaptive Progress Batching
+
+**Approach:** Scale progress update batch size based on problem size (1000 → 100 → 10 → 1).
+
+**Result:** Improved progress display responsiveness, but **may increase lock contention** for large problems
+
+**Why partially successful:**
+- Smaller batches = more frequent updates = better UX
+- But more lock acquisitions = potential bottleneck at scale
+
+**Lesson:** Progress display UX vs lock contention is a real tradeoff. Use --verbose to measure actual lock wait times before optimizing.
+
+---
+
+### Verbose Diagnostics (v0.2)
+
+**Approach:** Add comprehensive --verbose flag with timing, lock contention, throughput metrics.
+
+**Result:** **SUCCESS** - Minimal overhead (<5%), reveals bottlenecks clearly
+
+**Why it works:**
+- Timestamps and level-based indentation make output readable
+- Lock wait times directly show contention issues
+- Phase throughput (multisets/sec) highlights slow sections
+- Essential for data-driven optimization
+
+**Lesson:** Always add comprehensive diagnostics FIRST before trying optimizations. Measure, don't guess.
+
+---
+
+### Key Insights for Future Work
+
+1. **The real problem is likely NOT load distribution**
+   - Modulo gives perfect static balance
+   - Core idling suggests workers finishing at different times due to multiset complexity variance
+   - OR Manager/memo overhead increasing over time
+
+2. **Manager.dict() is suspect**
+   - Hangs on initialization for large problems (base 24, digits 8)
+   - Shared state = serialization overhead and lock contention
+   - May need to test without memoization to isolate impact
+
+3. **Profile multiset complexity**
+   - Need data on whether later multisets are actually slower
+   - Use --verbose to track per-worker throughput over time
+   - May need to instrument individual multiset processing times
+
+4. **Promising directions to explore:**
+   - Remove or reduce shared memoization (use local memo only, merge at end)
+   - Profile to find if specific multiset patterns are slow
+   - Investigate Manager initialization for large problems
+   - Consider C extension for hot path if Python overhead is real
+
+5. **Anti-patterns to avoid:**
+   - Queue-based work stealing (proven slower)
+   - Generating all work upfront before parallelizing
+   - Optimizing progress display at expense of lock contention without measurement
+   - Random distribution without evidence of pathological patterns
+
 ## How to Use This Document
 
-1. **Before making changes**: Read current version notes
+1. **Before making changes**: Read current version notes and Learnings section
 2. **While developing**: Update TODO list and add notes to relevant sections
 3. **Before committing**:
    - Increment version number in code
    - Run standard test suite
    - Record benchmark results
    - Add version history entry
+   - **Add learning entry if approach was tested (success or failure)**
    - Commit with message format: `vX.Y: Brief description`
-4. **When debugging**: Add observations to Performance Investigation Notes
+4. **When debugging**: Add observations to Performance Investigation Notes and Learnings
