@@ -11,17 +11,20 @@
   - [ ] Progress update frequency stats (partially done - can see individual updates)
 
 ### Core Issues to Debug
-- [ ] Investigate why cores become idle as process runs (especially for large base/digits)
+- [x] **ROOT CAUSE IDENTIFIED**: Modulo distribution causes load imbalance - 64% speed difference between workers
 - [ ] Determine root cause of Manager() hang for large problems (base 24, digits 8+)
-- [ ] Test if modulo distribution causes load imbalance
-- [ ] Profile where time is actually spent in large computations
+- [ ] Profile individual multiset complexity to confirm hypothesis about "later" multisets being slower
+- [ ] Measure Manager.dict() overhead in isolation
 
-### Performance Improvements to Test
-- [ ] Adaptive batch sizing based on problem size (partially implemented)
-- [ ] Random chunk assignment vs modulo distribution
-- [ ] Work stealing (currently disabled due to bugs)
-- [ ] Reduce shared memoization overhead
-- [ ] Optimize progress update frequency
+### Performance Improvements to Test (Each as New Version)
+- [ ] **v0.3: Chunk-based distribution** - Split total multisets into many small chunks (e.g., 1000 multisets each), assign chunks round-robin to workers. Reduces granularity of imbalance.
+- [ ] **v0.4: Lazy atomic work stealing** - Use atomic Value() counter, workers atomically fetch next chunk index. No queue locks, pure pull-based load balancing.
+- [ ] **v0.5: Interleaved distribution** - Assign contiguous ranges instead of modulo (Worker 0: 0-999, Worker 1: 1000-1999). Tests if modulo pattern itself is pathological.
+- [ ] **v0.6: Remove shared memoization** - Use local memo only, no Manager.dict(). Merge results at end. Isolates Manager overhead.
+- [ ] **v0.7: Profile multiset complexity** - Instrument to measure time per individual multiset. Identify if certain ranges are inherently slower.
+- [ ] **v0.8: Hybrid chunk + steal** - Chunks with atomic counter stealing when workers finish early. Combines static efficiency with dynamic load balancing.
+- [ ] **v0.9: Work stealing revisited** - Previous queue-based approach failed, but lazy atomic stealing may succeed. Test with learnings from v0.4.
+- [ ] Adaptive batch sizing based on problem size (partially implemented in v0.2)
 
 ### Infrastructure
 - [x] Version numbering system (0.1, 0.2, etc.)
@@ -126,8 +129,8 @@ All tests use 16 cores and `--data-dir test-data`
 
 | Test ID | Time | CPU % | Notes |
 |---------|------|-------|-------|
-| T6-stress | N/A | N/A | Not run - T5 incomplete |
-| T7-quad-single | N/A | N/A | Not run - T5 incomplete |
+| T6-stress | 320s | 799% | **base 10-13, digits 8-15** - 655.6M multisets, 32 base-digit pairs (28 simple, 4 complex). **CRITICAL: Only ~50% CPU utilization - cores idling!** |
+| T7-quad-single | TBD | TBD | Pending - will run after T6 analysis |
 
 #### v0.1
 
@@ -278,6 +281,51 @@ Batched updates (10k multisets) to minimize lock contention.
 - Essential for data-driven optimization
 
 **Lesson:** Always add comprehensive diagnostics FIRST before trying optimizations. Measure, don't guess.
+
+---
+
+### Modulo Distribution Load Imbalance (v0.2)
+
+**Approach:** Using verbose diagnostics to analyze worker completion times in T6-stress test.
+
+**Problem Identified:** Workers processing same number of multisets complete at vastly different times.
+
+**Data from T6-stress (base=10, digits=15):**
+- Each of 16 workers processed exactly 81,719 multisets
+- Worker 12 (fastest): 1.35s → 60,690 multisets/sec
+- Worker 4 (slowest): 2.21s → 37,030 multisets/sec
+- **64% speed difference!** Slowest worker took 64% longer than fastest
+- Result: 10 out of 16 workers finished early and sat idle for 0.86 seconds waiting for stragglers
+
+**Overall Impact:**
+- CPU utilization: 799% (should be ~1600% for 16 cores)
+- Only ~50% of available compute actually utilized
+- Wall clock time bottlenecked by slowest worker, not average worker
+
+**Why it happens (hypothesis):**
+- Modulo distribution assigns workers by index: Worker N processes multisets N, N+16, N+32, ...
+- Worker 12: multisets 12, 28, 44, 60, 76, ...
+- Worker 4: multisets 4, 20, 36, 52, 68, ...
+- If certain multisets in the enumeration order are inherently slower (e.g., "later" multisets, or specific digit patterns), then workers get unevenly distributed slow work
+- No mechanism for workers to rebalance once assigned
+
+**Why modulo causes this:**
+- Static pre-assignment with no dynamic rebalancing
+- Assumes all multisets take roughly equal time (false assumption)
+- Unlucky workers stuck with disproportionately slow multisets
+
+**Verification needed:**
+- Profile individual multiset processing times to confirm variance
+- Test if "position in enumeration" correlates with processing time
+- Compare against random distribution or chunk-based approaches
+
+**Strategies to fix (see TODO for versions):**
+1. **Chunk-based distribution**: Split into many small chunks, assign round-robin. Reduces granularity of imbalance.
+2. **Lazy atomic work stealing**: Workers pull next chunk index atomically. Pure dynamic load balancing.
+3. **Interleaved distribution**: Contiguous ranges instead of modulo. Tests if modulo pattern is pathological.
+4. **Profile-guided distribution**: Measure complexity, assign slow multisets first, fast ones later.
+
+**Lesson:** Static distribution is only optimal if work units are uniform. For variable-cost tasks, dynamic load balancing is essential. Modulo gives perfect count balance but terrible time balance.
 
 ---
 
