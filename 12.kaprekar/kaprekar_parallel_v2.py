@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.2
+Kaprekar Parallel Processor - Version 0.4
 
-Added --verbose flag with comprehensive diagnostics
+Adaptive chunk sizing: scales chunk size with workload for better performance
 """
 
-VERSION = "0.2"
+VERSION = "0.4"
 
 import sys
 import csv
@@ -26,7 +26,7 @@ def vlog(message, level=1):
         indent = "  " * (level - 1)
         print(f"[{timestamp}] {indent}{message}", file=sys.stderr, flush=True)
 from kaprekar_lib import (
-    analyze_number, generate_digit_multisets, generate_digit_multisets_modulo,
+    analyze_number, generate_digit_multisets, generate_digit_multisets_modulo, generate_digit_multisets_range,
     digits_to_num, count_digit_multisets
 )
 
@@ -41,10 +41,10 @@ def process_multiset_chunk(args):
     Returns:
         tuple: (fixed_points_dict, cycle_count)
     """
-    base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock = args
+    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock = args
 
     worker_start = time.time()
-    vlog(f"Worker {chunk_id} starting: base={base}, digits={num_digits}", level=2)
+    vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
 
     fixed_point_ids = {}
     next_fp_id = 1
@@ -58,9 +58,9 @@ def process_multiset_chunk(args):
             initial_memo_size = len(shared_memo)
             local_memo.update(shared_memo)
             memo_time = time.time() - memo_start
-            vlog(f"Worker {chunk_id}: Loaded {initial_memo_size} entries from shared memo in {memo_time:.3f}s", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from shared memo in {memo_time:.3f}s", level=3)
         except Exception as e:
-            vlog(f"Worker {chunk_id}: Failed to load shared memo: {e}", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
@@ -69,8 +69,8 @@ def process_multiset_chunk(args):
     multisets_processed = 0
     phase_start = time.time()
 
-    # Process multisets assigned to this chunk (every Nth multiset)
-    for digit_multiset, perm_count in generate_digit_multisets_modulo(num_digits, base, chunk_id, total_chunks):
+    # Process multisets in the assigned range
+    for digit_multiset, perm_count in generate_digit_multisets_range(num_digits, base, start_idx, end_idx):
         digits_list = list(digit_multiset)
         max_digits_sorted = sorted(digits_list, reverse=True)
         min_digits_sorted = sorted(digits_list)
@@ -94,11 +94,11 @@ def process_multiset_chunk(args):
                 with progress_lock:
                     progress_counter.value += local_progress
                 lock_time = time.time() - lock_start
-                vlog(f"Worker {chunk_id}: Progress update ({local_progress} multisets), lock wait: {lock_time:.4f}s", level=4)
+                vlog(f"Worker [{start_idx},{end_idx}): Progress update ({local_progress} multisets), lock wait: {lock_time:.4f}s", level=4)
             local_progress = 0
 
     phase_time = time.time() - phase_start
-    vlog(f"Worker {chunk_id}: Phase 1 complete - {multisets_processed} multisets in {phase_time:.2f}s ({multisets_processed/phase_time:.1f}/s)", level=3)
+    vlog(f"Worker [{start_idx},{end_idx}): Phase 1 complete - {multisets_processed} multisets in {phase_time:.2f}s ({multisets_processed/phase_time:.1f}/s)", level=3)
 
     # Final progress update for remaining
     if local_progress > 0 and progress_counter is not None and progress_lock is not None:
@@ -112,12 +112,12 @@ def process_multiset_chunk(args):
             new_discoveries = len(local_memo) - initial_memo_size if 'initial_memo_size' in locals() else len(local_memo)
             shared_memo.update(local_memo)
             memo_push_time = time.time() - memo_push_start
-            vlog(f"Worker {chunk_id}: Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
         except Exception as e:
-            vlog(f"Worker {chunk_id}: Failed to push to shared memo: {e}", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Failed to push to shared memo: {e}", level=3)
 
     worker_time = time.time() - worker_start
-    vlog(f"Worker {chunk_id} complete: {multisets_processed} multisets, {len(fixed_point_ids)} FPs, {worker_time:.2f}s total", level=2)
+    vlog(f"Worker [{start_idx},{end_idx}) complete: {multisets_processed} multisets, {len(fixed_point_ids)} FPs, {worker_time:.2f}s total", level=2)
 
     return (fixed_point_ids, cycle_count)
 
@@ -163,10 +163,27 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     task_multisets = count_digit_multisets(num_digits, base)
     vlog(f"  Total multisets: {task_multisets:,}", level=2)
 
-    # Create cpu_cores tasks, each handling every Nth multiset
+    # Adaptive chunk sizing: scale with workload size for optimal performance
+    # Formula: chunk_size = max(min_chunk, min(max_chunk, task_multisets / (cpu_cores * chunks_per_core)))
+    # - Small workloads: larger chunks (less overhead)
+    # - Large workloads: smaller chunks (better load balancing)
+    min_chunk_size = 5000      # Minimum chunk size (avoid tiny chunks)
+    max_chunk_size = 100000    # Maximum chunk size (ensure enough chunks for load balancing)
+    chunks_per_core = 20       # Target number of chunks per worker for fine-grained distribution
+
+    # Calculate adaptive chunk size
+    target_total_chunks = cpu_cores * chunks_per_core
+    adaptive_chunk_size = max(1, task_multisets // target_total_chunks)
+    chunk_size = max(min_chunk_size, min(max_chunk_size, adaptive_chunk_size))
+
+    num_chunks = max(1, (task_multisets + chunk_size - 1) // chunk_size)  # Round up
+    vlog(f"  Creating {num_chunks} chunks of ~{chunk_size:,} multisets each (adaptive sizing)", level=2)
+
     tasks = []
-    for chunk_id in range(cpu_cores):
-        tasks.append((base, num_digits, chunk_id, cpu_cores, shared_memo, progress_counter, progress_lock))
+    for i in range(num_chunks):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, task_multisets)
+        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock))
 
     all_fixed_points = {}
     total_cycle_count = 0
@@ -261,7 +278,7 @@ def main():
     parser.add_argument('--max-digits', type=int, required=True, help='Maximum digits')
     parser.add_argument('--cpu-cores', type=int, default=1, help='Number of CPU cores to use')
     parser.add_argument('--data-dir', type=str, default='.', help='Output directory')
-    parser.add_argument('--digit-threshold', type=int, default=14, help='Digit count threshold for parallelization (default: 14)')
+    parser.add_argument('--digit-threshold', type=int, default=13, help='Digit count threshold for parallelization (default: 13)')
     parser.add_argument('--verbose', action='store_true', help='Enable detailed diagnostic logging')
 
     args = parser.parse_args()

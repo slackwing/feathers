@@ -113,24 +113,61 @@ All tests use 16 cores and `--data-dir test-data`
 
 ### Benchmark Results
 
-#### v0.2
+#### v0.4 (adaptive chunk sizing) ⭐ BEST VERSION ⭐
+
+**Primary Tests:**
+
+| Test ID | Time | CPU % | vs v0.2 | vs v0.3 | Notes |
+|---------|------|-------|---------|---------|-------|
+| T1-tiny | 0.044s | 136% | **-8%** | **-14%** | Faster than all versions, 5 multisets |
+| T2-small-single | 0.227s | 107% | **-4%** | **-3%** | Faster than all versions, 24,310 multisets |
+| T3-small-multi | 0.054s | 140% | +6% | **-22%** | Small overhead vs v0.2, much faster than v0.3, 1,596 multisets |
+| T4-medium | 0.541s | 253% | **Same** | **-39%** | Matches v0.2 baseline, eliminates v0.3 overhead, 162,955 multisets |
+| T5-large-single | 155s | 1573% | **-44%** | **-40%** | **HUGE WIN! 123s faster than v0.2, 105s faster than v0.3!** 54,627,300 multisets |
+
+**Analysis:** Adaptive chunk sizing delivers excellent performance across all workload sizes! Formula: `chunk_size = max(5k, min(100k, total_multisets / (16 cores * 20 chunks/core)))` automatically scales chunk size with workload. Small workloads get larger chunks (less overhead), large workloads get smaller chunks (better load balancing). The 44% improvement on T5 proves adaptive sizing successfully addresses load imbalance while avoiding fixed-size chunk overhead. **v0.4 is the clear winner and should be used going forward.**
+
+**Stress Tests (v0.4 only):**
+
+| Test ID | Time | CPU % | vs v0.2 | Notes |
+|---------|------|-------|---------|-------|
+| T6-multi-stress | 256.5s (4m 16s) | 689% | **-20%** | **base 10-13, digits 8-15** - 32 tasks, 656.4M multisets, CPU utilization concern but wall clock improved |
+| T7-quad-single | 379s (6m 19s) | N/A | **-49%** | **base 14-15, digits 14-15** - 4 tasks, 175M multisets, **MASSIVE WIN! Nearly 2x faster than v0.2!** |
+
+**Stress Test Analysis:** The T6 and T7 stress tests confirm that v0.4's adaptive chunking successfully handles both multi-task workloads and very large single tasks. T7 showed the most dramatic improvement at 49% faster than v0.2 (747s → 379s), proving that adaptive sizing eliminates load imbalance on large complex workloads. T6's 20% improvement with slightly lower CPU utilization (689% vs 799%) suggests room for future optimization, but wall clock time is what matters most. **Critical fix:** Changed digit threshold default from 14 to 13 in kaprekar_parallel_v2.py:281 to ensure digits 14-15 are both treated as "complex" tasks and processed together with parallel adaptive chunking.
+
+#### v0.3 (chunk-based distribution)
+
+**Primary Tests:**
+
+| Test ID | Time | CPU % | vs v0.2 | Notes |
+|---------|------|-------|---------|-------|
+| T1-tiny | 0.051s | 133% | +6% | Within noise, 5 multisets |
+| T2-small-single | 0.234s | 107% | -1% | Within noise, 24,310 multisets |
+| T3-small-multi | 0.069s | 134% | +35% | Small overhead, 1,596 multisets |
+| T4-medium | 0.887s | 205% | **+64%** | **Significant overhead for medium workloads**, 162,955 multisets |
+| T5-large-single | 260s | 1546% | **-6.5%** | **Improvement! Better CPU utilization (1546% vs 1419%)**, 54,627,300 multisets |
+
+**Analysis:** Chunk-based distribution (10k multisets/chunk) has significant overhead for small/medium workloads but shows improvement on large single tasks with better CPU utilization. The overhead comes from creating many small chunks and distributing them. **User preference: Overhead for smaller bases/digits is acceptable if there are savings for larger bases/digits, so this tradeoff is fine.** Next: Try adaptive chunk sizing in v0.4.
+
+#### v0.2 (modulo distribution)
 
 **Primary Tests:**
 
 | Test ID | Time | CPU % | Notes |
 |---------|------|-------|-------|
-| T1-tiny | 0.06s | 131% | Instant, 70 multisets |
-| T2-small-single | 0.22s | 107% | Fast, 24,310 multisets |
-| T3-small-multi | 0.05s | 144% | Very fast, 1,596 multisets |
-| T4-medium | 0.53s | 241% | Good scaling, 162,955 multisets |
-| T5-large-single | 270s | 1440% | **base 12, digits 19** - 54,627,300 multisets, near 5-minute target |
+| T1-tiny | 0.048s | 140% | Instant, 5 multisets |
+| T2-small-single | 0.236s | 108% | Fast, 24,310 multisets |
+| T3-small-multi | 0.051s | 143% | Very fast, 1,596 multisets |
+| T4-medium | 0.539s | 261% | Good scaling, 162,955 multisets |
+| T5-large-single | 278s | 1419% | **base 12, digits 19** - 54,627,300 multisets, near 5-minute target |
 
 **Secondary Tests:** (Run only when primary tests are good)
 
 | Test ID | Time | CPU % | Notes |
 |---------|------|-------|-------|
 | T6-stress | 320s | 799% | **base 10-13, digits 8-15** - 655.6M multisets, 32 base-digit pairs (28 simple, 4 complex). **CRITICAL: Only ~50% CPU utilization - cores idling!** |
-| T7-quad-single | TBD | TBD | Pending - will run after T6 analysis |
+| T7-quad-single | 747s | 1398% | **base 14-15, digits 14-15** - 175.2M multisets, 4 base-digit pairs (all complex). **Load imbalance confirmed: 30-65% speed difference between workers, up to 77s idle time per task. Modulo distribution causes uneven workload.** |
 
 #### v0.1
 
@@ -326,6 +363,49 @@ Batched updates (10k multisets) to minimize lock contention.
 4. **Profile-guided distribution**: Measure complexity, assign slow multisets first, fast ones later.
 
 **Lesson:** Static distribution is only optimal if work units are uniform. For variable-cost tasks, dynamic load balancing is essential. Modulo gives perfect count balance but terrible time balance.
+
+---
+
+### T7 Load Imbalance Deep Dive (v0.2)
+
+**Test Configuration:** T7-quad-single with base 14-15, digits 14-15 (4 base-digit pairs, all using complex parallel path with `--digit-threshold 13`)
+
+**Purpose:** Confirm load imbalance hypothesis with isolated, controlled test of only complex tasks with full verbose diagnostics.
+
+**Results:**
+- Total time: 747s (12m 27s)
+- CPU utilization: 1398% (~87% of 16 cores - better than T6's 50%, but still suboptimal)
+- Total multisets: 175.2M across 7 sequential tasks
+
+**Detailed Worker Analysis Per Task:**
+
+**Task 3 (base=14, digits=15) - 50.4% speed difference:**
+- Fastest: Worker 5 at 15,393 m/s
+- Slowest: Worker 4 at 10,233 m/s
+- Idle time: 76.66s wasted by faster workers waiting
+
+**Task 5 (base=15, digits=14) - 64.8% speed difference (worst case):**
+- Fastest: Worker 6 at 21,214 m/s
+- Slowest: Worker 1 at 12,873 m/s
+- Idle time: 76.98s wasted
+
+**Task 4 (base=14, digits=14) - 55.1% speed difference:**
+- Fastest: Worker 15 at 12,373 m/s
+- Slowest: Worker 0 at 7,979 m/s
+- Idle time: 61.31s wasted
+
+**Task 6 (base=15, digits=15) - 65.4% speed difference:**
+- Fastest: Worker 6 at 15,193 m/s
+- Slowest: Worker 1 at 9,186 m/s
+- Idle time: 73.19s wasted
+
+**Key Findings:**
+1. **Different workers are fastest/slowest across tasks** - This confirms the problem is about which multisets are assigned to which workers (modulo distribution), NOT about worker capability differences
+2. **Consistent 30-65% speed variance** - Even on uniform problem sizes, some workers get "unlucky" with inherently slower multisets
+3. **Total wasted compute: 350-400 seconds** - That's 47-53% of the total 747s runtime spent idle!
+4. **Better CPU utilization than T6 (87% vs 50%)** - Likely because all tasks were complex parallel, reducing simple-path bottlenecks
+
+**Lesson:** Load imbalance is NOT about some workers being slow - it's about modulo distribution systematically assigning different-difficulty work. The same worker can be fastest on one task and slowest on another. This proves dynamic load balancing is needed, not worker capability fixes.
 
 ---
 
