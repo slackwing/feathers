@@ -110,6 +110,25 @@ All tests use 16 cores and `--data-dir test-data`
 
 ### Benchmark Results
 
+#### v0.2
+
+**Primary Tests:**
+
+| Test ID | Time | CPU % | Notes |
+|---------|------|-------|-------|
+| T1-tiny | 0.06s | 131% | Instant, 70 multisets |
+| T2-small-single | 0.22s | 107% | Fast, 24,310 multisets |
+| T3-small-multi | 0.05s | 144% | Very fast, 1,596 multisets |
+| T4-medium | 0.53s | 241% | Good scaling, 162,955 multisets |
+| T5-large-single | 73s | 1380% | **base 12, digits 17** - 21,474,180 multisets, excellent scaling |
+
+**Secondary Tests:** (Run only when primary tests are good)
+
+| Test ID | Time | CPU % | Notes |
+|---------|------|-------|-------|
+| T6-stress | N/A | N/A | Not run - T5 incomplete |
+| T7-quad-single | N/A | N/A | Not run - T5 incomplete |
+
 #### v0.1
 
 **Primary Tests:**
