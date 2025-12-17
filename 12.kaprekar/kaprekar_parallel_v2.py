@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.1
+Kaprekar Parallel Processor - Version 0.2
 
-Baseline: Pure modulo distribution with shared memoization
+Added --verbose flag with comprehensive diagnostics
 """
 
-VERSION = "0.1"
+VERSION = "0.2"
 
 import sys
 import csv
@@ -15,6 +15,16 @@ import os
 import threading
 from pathlib import Path
 from multiprocessing import Pool, Manager, Lock, Value
+
+# Global verbose flag
+VERBOSE = False
+
+def vlog(message, level=1):
+    """Verbose logging - only prints if VERBOSE is enabled"""
+    if VERBOSE:
+        timestamp = time.strftime("%H:%M:%S")
+        indent = "  " * (level - 1)
+        print(f"[{timestamp}] {indent}{message}", file=sys.stderr, flush=True)
 from kaprekar_lib import (
     analyze_number, generate_digit_multisets, generate_digit_multisets_modulo,
     digits_to_num, count_digit_multisets
@@ -33,21 +43,31 @@ def process_multiset_chunk(args):
     """
     base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock = args
 
+    worker_start = time.time()
+    vlog(f"Worker {chunk_id} starting: base={base}, digits={num_digits}", level=2)
+
     fixed_point_ids = {}
     next_fp_id = 1
     cycle_count = 0
     local_memo = {}
 
     # Pull shared memo
+    memo_start = time.time()
     if shared_memo is not None:
         try:
+            initial_memo_size = len(shared_memo)
             local_memo.update(shared_memo)
-        except:
-            pass
+            memo_time = time.time() - memo_start
+            vlog(f"Worker {chunk_id}: Loaded {initial_memo_size} entries from shared memo in {memo_time:.3f}s", level=3)
+        except Exception as e:
+            vlog(f"Worker {chunk_id}: Failed to load shared memo: {e}", level=3)
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
     progress_batch_size = 10000
+
+    multisets_processed = 0
+    phase_start = time.time()
 
     # Process multisets assigned to this chunk (every Nth multiset)
     for digit_multiset, perm_count in generate_digit_multisets_modulo(num_digits, base, chunk_id, total_chunks):
@@ -67,11 +87,18 @@ def process_multiset_chunk(args):
 
         # Batched progress update
         local_progress += 1
+        multisets_processed += 1
         if local_progress >= progress_batch_size:
             if progress_counter is not None and progress_lock is not None:
+                lock_start = time.time()
                 with progress_lock:
                     progress_counter.value += local_progress
+                lock_time = time.time() - lock_start
+                vlog(f"Worker {chunk_id}: Progress update ({local_progress} multisets), lock wait: {lock_time:.4f}s", level=4)
             local_progress = 0
+
+    phase_time = time.time() - phase_start
+    vlog(f"Worker {chunk_id}: Phase 1 complete - {multisets_processed} multisets in {phase_time:.2f}s ({multisets_processed/phase_time:.1f}/s)", level=3)
 
     # Final progress update for remaining
     if local_progress > 0 and progress_counter is not None and progress_lock is not None:
@@ -79,11 +106,18 @@ def process_multiset_chunk(args):
             progress_counter.value += local_progress
 
     # Push discoveries to shared memo
+    memo_push_start = time.time()
     if shared_memo is not None:
         try:
+            new_discoveries = len(local_memo) - initial_memo_size if 'initial_memo_size' in locals() else len(local_memo)
             shared_memo.update(local_memo)
-        except:
-            pass
+            memo_push_time = time.time() - memo_push_start
+            vlog(f"Worker {chunk_id}: Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
+        except Exception as e:
+            vlog(f"Worker {chunk_id}: Failed to push to shared memo: {e}", level=3)
+
+    worker_time = time.time() - worker_start
+    vlog(f"Worker {chunk_id} complete: {multisets_processed} multisets, {len(fixed_point_ids)} FPs, {worker_time:.2f}s total", level=2)
 
     return (fixed_point_ids, cycle_count)
 
@@ -114,13 +148,20 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     Process a single (base, num_digits) pair using parallel workers with modulo splitting.
     Creates exactly cpu_cores workers, each processing every Nth multiset.
     """
+    task_start = time.time()
+    vlog(f"Task starting: base={base}, digits={num_digits}, cores={cpu_cores}", level=1)
+
+    manager_start = time.time()
     manager = Manager()
     shared_memo = manager.dict()
     progress_counter = manager.Value('i', 0)
     progress_lock = manager.Lock()
+    manager_time = time.time() - manager_start
+    vlog(f"  Manager initialized in {manager_time:.3f}s", level=2)
 
     # Count total multisets for this task
     task_multisets = count_digit_multisets(num_digits, base)
+    vlog(f"  Total multisets: {task_multisets:,}", level=2)
 
     # Create cpu_cores tasks, each handling every Nth multiset
     tasks = []
@@ -152,9 +193,20 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     monitor_thread = threading.Thread(target=monitor_progress, daemon=True)
     monitor_thread.start()
 
+    pool_start = time.time()
+    vlog(f"  Creating Pool with {cpu_cores} workers...", level=2)
+
     with Pool(processes=cpu_cores) as pool:
+        pool_time = time.time() - pool_start
+        vlog(f"  Pool created in {pool_time:.3f}s", level=2)
+
         # Launch all workers and collect results
+        vlog(f"  Launching {len(tasks)} worker tasks...", level=2)
+        workers_complete = 0
         for fixed_points_dict, cycle_count in pool.imap_unordered(process_multiset_chunk, tasks):
+            workers_complete += 1
+            vlog(f"  Worker result collected ({workers_complete}/{len(tasks)})", level=3)
+
             # Merge fixed points
             for fp_value, fp_id in fixed_points_dict.items():
                 if fp_value not in all_fixed_points:
@@ -200,6 +252,8 @@ def process_base_digit_pair_serial(args):
 
 
 def main():
+    global VERBOSE
+
     parser = argparse.ArgumentParser(description='Generate Kaprekar summary data with smart parallelization')
     parser.add_argument('--min-base', type=int, default=2, help='Minimum base (default: 2)')
     parser.add_argument('--max-base', type=int, required=True, help='Maximum base')
@@ -208,8 +262,11 @@ def main():
     parser.add_argument('--cpu-cores', type=int, default=1, help='Number of CPU cores to use')
     parser.add_argument('--data-dir', type=str, default='.', help='Output directory')
     parser.add_argument('--digit-threshold', type=int, default=14, help='Digit count threshold for parallelization (default: 14)')
+    parser.add_argument('--verbose', action='store_true', help='Enable detailed diagnostic logging')
 
     args = parser.parse_args()
+
+    VERBOSE = args.verbose
 
     min_base = args.min_base
     max_base = args.max_base
@@ -277,14 +334,21 @@ def main():
     summary_writer.writerow(['base', 'digits', 'num_cycles', 'fixed_points'])
     fp_writer.writerow(['base', 'digits', 'fixed_point_values'])
 
+    vlog(f"Starting task processing: {len(simple_tasks)} simple, {len(complex_tasks)} complex", level=1)
+
     try:
         # Process simple tasks with pool
+        if simple_tasks:
+            vlog(f"Processing {len(simple_tasks)} simple tasks (digits <= {digit_threshold}) with Pool...", level=1)
+            simple_start = time.time()
+
         with Pool(processes=cpu_cores) as pool:
             for result in pool.imap_unordered(process_base_digit_pair_serial, simple_tasks):
                 base, num_digits, cycle_count, fp_values = result
                 results[base][num_digits] = (cycle_count, fp_values)
                 completed_tasks += 1
                 completed_multisets += count_digit_multisets(num_digits, base)
+                vlog(f"  Completed simple task: base={base}, digits={num_digits}", level=2)
 
                 current_time = time.time()
                 if current_time - last_update_time >= 1.0:
@@ -296,7 +360,14 @@ def main():
                     print(f"\r{' ' * 120}\rProgress: {progress_str} multisets ({progress_pct:.1f}%) - {elapsed_mins}m {elapsed_secs}s", end='', flush=True)
                     last_update_time = current_time
 
+        if simple_tasks:
+            simple_time = time.time() - simple_start
+            vlog(f"Simple tasks complete in {simple_time:.2f}s", level=1)
+
         # Process complex tasks sequentially, but parallelize within each
+        if complex_tasks:
+            vlog(f"Processing {len(complex_tasks)} complex tasks (digits > {digit_threshold}) with intra-task parallelization...", level=1)
+
         for base, num_digits in complex_tasks:
             result = process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets, start_time)
             base, num_digits, cycle_count, fp_values = result
@@ -320,15 +391,20 @@ def main():
                         break
 
                 if can_write:
+                    write_start = time.time()
+                    rows_written = 0
                     for d in range(min_digits, max_digits + 1):
                         cycle_count, fp_values = results[b][d]
                         num_fps = len(fp_values)
                         summary_writer.writerow([b, d, cycle_count, num_fps])
                         if fp_values:
                             fp_writer.writerow([b, d, ','.join(map(str, fp_values))])
+                        rows_written += 1
 
                     summary_file.flush()
                     fp_file.flush()
+                    write_time = time.time() - write_start
+                    vlog(f"  Wrote base {b} ({rows_written} rows) in {write_time:.3f}s", level=2)
                     bases_written.add(b)
 
     finally:
