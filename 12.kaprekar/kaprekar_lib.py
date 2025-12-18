@@ -219,6 +219,37 @@ def generate_digit_multisets_modulo(num_digits, base, chunk_id, total_chunks):
         idx += 1
 
 
+def generate_digit_multisets_range(num_digits, base, start_idx, end_idx):
+    """
+    Generate multisets in a contiguous range [start_idx, end_idx) for chunk-based parallelization.
+    This allows creating many small chunks that can be distributed round-robin to workers,
+    reducing load imbalance compared to modulo distribution.
+
+    Args:
+        num_digits: Number of digits
+        base: The base to use (digits range from 0 to base-1)
+        start_idx: Starting index (inclusive)
+        end_idx: Ending index (exclusive)
+
+    Yields:
+        tuple: (digit_tuple, count) where digit_tuple is sorted digits
+    """
+    from itertools import combinations_with_replacement, islice
+    from math import factorial
+
+    # Use islice to efficiently skip to start_idx and stop at end_idx
+    for combo in islice(combinations_with_replacement(range(base), num_digits), start_idx, end_idx):
+        digit_counts = {}
+        for digit in combo:
+            digit_counts[digit] = digit_counts.get(digit, 0) + 1
+
+        count = factorial(num_digits)
+        for freq in digit_counts.values():
+            count //= factorial(freq)
+
+        yield (combo, count)
+
+
 def num_to_base_string(num, base, num_digits):
     """
     Convert a number to its string representation in a given base.

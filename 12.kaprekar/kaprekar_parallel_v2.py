@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.4
+Kaprekar Parallel Processor - Version 0.5
 
-Adaptive chunk sizing: scales chunk size with workload for better performance
+Adaptive chunk sizing + adaptive memo write reduction based on runtime metrics
 """
 
-VERSION = "0.4"
+VERSION = "0.5"
 
 import sys
 import csv
@@ -36,12 +36,12 @@ def process_multiset_chunk(args):
     Worker that generates and processes its assigned chunk using modulo arithmetic.
 
     Args:
-        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock)
+        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor)
 
     Returns:
-        tuple: (fixed_points_dict, cycle_count)
+        tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed)
     """
-    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock = args
+    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
 
     worker_start = time.time()
     vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
@@ -107,19 +107,46 @@ def process_multiset_chunk(args):
 
     # Push discoveries to shared memo
     memo_push_start = time.time()
+    new_writes = 0
     if shared_memo is not None:
         try:
             new_discoveries = len(local_memo) - initial_memo_size if 'initial_memo_size' in locals() else len(local_memo)
-            shared_memo.update(local_memo)
-            memo_push_time = time.time() - memo_push_start
-            vlog(f"Worker [{start_idx},{end_idx}): Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
+
+            # Get current write reduction factor (may be Value object or int)
+            if hasattr(write_reduction_factor, 'value'):
+                reduction = write_reduction_factor.value
+            else:
+                reduction = write_reduction_factor
+
+            if reduction > 1:
+                # Only write a sample of new discoveries to reduce Manager.dict() contention
+                initial_keys = set(shared_memo.keys()) if 'initial_memo_size' in locals() else set()
+                new_keys = [k for k in local_memo.keys() if k not in initial_keys]
+
+                # Sample every Nth new entry (deterministic sampling based on hash)
+                sampled_keys = [k for k in new_keys if hash(k) % reduction == 0]
+
+                # Update with initial entries + sampled new entries
+                memo_to_push = {k: local_memo[k] for k in initial_keys if k in local_memo}
+                memo_to_push.update({k: local_memo[k] for k in sampled_keys})
+
+                shared_memo.update(memo_to_push)
+                new_writes = len(sampled_keys)
+                memo_push_time = time.time() - memo_push_start
+                vlog(f"Worker [{start_idx},{end_idx}): Pushed {len(sampled_keys)}/{new_discoveries} new entries (1/{reduction} sampling) to shared memo in {memo_push_time:.3f}s", level=3)
+            else:
+                # Normal path: write all discoveries
+                shared_memo.update(local_memo)
+                new_writes = new_discoveries
+                memo_push_time = time.time() - memo_push_start
+                vlog(f"Worker [{start_idx},{end_idx}): Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to push to shared memo: {e}", level=3)
 
     worker_time = time.time() - worker_start
     vlog(f"Worker [{start_idx},{end_idx}) complete: {multisets_processed} multisets, {len(fixed_point_ids)} FPs, {worker_time:.2f}s total", level=2)
 
-    return (fixed_point_ids, cycle_count)
+    return (fixed_point_ids, cycle_count, new_writes, multisets_processed)
 
 
 def format_large_number_pair(numerator, denominator):
@@ -156,6 +183,7 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     shared_memo = manager.dict()
     progress_counter = manager.Value('i', 0)
     progress_lock = manager.Lock()
+    write_reduction_factor = manager.Value('i', 1)  # Start with no reduction
     manager_time = time.time() - manager_start
     vlog(f"  Manager initialized in {manager_time:.3f}s", level=2)
 
@@ -183,7 +211,7 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     for i in range(num_chunks):
         start_idx = i * chunk_size
         end_idx = min((i + 1) * chunk_size, task_multisets)
-        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock))
+        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor))
 
     all_fixed_points = {}
     total_cycle_count = 0
@@ -220,7 +248,12 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         # Launch all workers and collect results
         vlog(f"  Launching {len(tasks)} worker tasks...", level=2)
         workers_complete = 0
-        for fixed_points_dict, cycle_count in pool.imap_unordered(process_multiset_chunk, tasks):
+        total_writes_sampled = 0
+        total_multisets_sampled = 0
+        sample_chunks = min(10, max(1, num_chunks // 10))  # Sample first 10 chunks or 10% of chunks
+        write_rate_threshold = 0.20  # If writes/multiset exceeds this, enable reduction
+
+        for fixed_points_dict, cycle_count, new_writes, multisets_processed in pool.imap_unordered(process_multiset_chunk, tasks):
             workers_complete += 1
             vlog(f"  Worker result collected ({workers_complete}/{len(tasks)})", level=3)
 
@@ -229,6 +262,22 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                 if fp_value not in all_fixed_points:
                     all_fixed_points[fp_value] = fp_id
             total_cycle_count += cycle_count
+
+            # Track write rate during sampling period
+            if workers_complete <= sample_chunks and write_reduction_factor.value == 1:
+                total_writes_sampled += new_writes
+                total_multisets_sampled += multisets_processed
+
+                # Check if we've hit the sample threshold
+                if workers_complete == sample_chunks:
+                    write_rate = total_writes_sampled / total_multisets_sampled if total_multisets_sampled > 0 else 0
+                    vlog(f"  Sampled write rate: {write_rate:.3f} writes/multiset (after {sample_chunks} chunks)", level=2)
+
+                    if write_rate > write_rate_threshold:
+                        write_reduction_factor.value = 10
+                        vlog(f"  HIGH WRITE RATE DETECTED ({write_rate:.3f} > {write_rate_threshold}): Enabling 1/10 memo write sampling for remaining chunks", level=1)
+                    else:
+                        vlog(f"  Write rate acceptable ({write_rate:.3f} <= {write_rate_threshold}): Continuing with full memo writes", level=2)
 
     stop_monitoring.set()
     monitor_thread.join()
