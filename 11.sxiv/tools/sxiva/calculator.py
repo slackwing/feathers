@@ -19,6 +19,8 @@ class CalculationState:
     previous_had_focus: bool = False  # Track if previous block had focus (for indentation)
     time_offset: int = 0  # Minutes offset from expected timing (preserved across breaks)
     in_freeform: bool = False  # Track if we're in the freeform section
+    before_break_end_time: Optional[str] = None  # End time before last break (for continuation chains after breaks)
+    before_break_start_time: Optional[str] = None  # Start time before last break (for continuation chains after breaks)
 
     def __post_init__(self):
         if self.focus_categories is None:
@@ -517,8 +519,17 @@ class PointCalculator:
                         # First block in chain, use previous block's actual end
                         base_mins = self.parse_time(state.previous_end_time)
                     else:
-                        # Very first block in file
-                        base_mins = self.parse_time(start_time)
+                        # After a break (state.previous_end_time is None)
+                        if state.before_break_end_time and state.before_break_start_time:
+                            # Continuation chain after a break: adjust for break duration
+                            # Break starts at next expected boundary (before_break_start + 12), not at block start
+                            # break_duration = current_start - (before_break_start + 12)
+                            break_duration = self.parse_time(start_time) - self.parse_time(state.before_break_start_time) - 12
+                            # Base from: end time before break + break duration
+                            base_mins = self.parse_time(state.before_break_end_time) + break_duration
+                        else:
+                            # Very first block in file (no previous block at all)
+                            base_mins = self.parse_time(start_time)
 
                     imagined_mins = base_mins + work_minutes + grace
                     prev_imagined_end = f"{imagined_mins // 60:02d}:{imagined_mins % 60:02d}"
@@ -563,9 +574,19 @@ class PointCalculator:
                 end_mins = prev_end_mins + duration
             expected_end = prev_end_mins + threshold
         else:
-            # First block in file or after break: apply offset
-            start_mins = self.parse_time(first_start_time)
-            expected_end = start_mins + threshold + state.time_offset
+            # First block in file or after break
+            if state.before_break_end_time and state.before_break_start_time:
+                # Continuation chain after a break: use before-break timing + break duration
+                # Break starts at next expected boundary (before_break_start + 12), not at block start
+                # break_duration = current_start - (before_break_start + 12)
+                break_duration = self.parse_time(first_start_time) - self.parse_time(state.before_break_start_time) - 12
+                # Expected end from: end time before break + break duration + threshold
+                prev_end_mins = self.parse_time(state.before_break_end_time) + break_duration
+                expected_end = prev_end_mins + threshold
+            else:
+                # Very first block in file: apply offset
+                start_mins = self.parse_time(first_start_time)
+                expected_end = start_mins + threshold + state.time_offset
 
         base = expected_end - end_mins
 
@@ -1043,6 +1064,9 @@ class PointCalculator:
                     state.previous_end_time = final_end_time
                     state.previous_start_time = first_start
                     state.is_first_block = False
+                    # Clear before-break timing once we've processed the first block after a break
+                    state.before_break_end_time = None
+                    state.before_break_start_time = None
 
                     # Skip all blocks in the chain
                     i = chain_indices[-1] + 1
@@ -1327,6 +1351,9 @@ class PointCalculator:
                     state.previous_end_time = end_time
                     state.previous_start_time = start_time
                     state.is_first_block = False
+                    # Clear before-break timing once we've processed the first block after a break
+                    state.before_break_end_time = None
+                    state.before_break_start_time = None
 
                 i += 1
 
@@ -1335,6 +1362,9 @@ class PointCalculator:
                 # Offset is preserved, previous_end_time is cleared so next block
                 # uses start + threshold + offset calculation
                 # This makes the timesheet work "as if there was no break at all"
+                # Save timing before break for continuation chain calculations
+                state.before_break_end_time = state.previous_end_time
+                state.before_break_start_time = state.previous_start_time
                 state.previous_end_time = None
                 state.previous_start_time = None
                 state.is_first_block = True
@@ -1345,6 +1375,9 @@ class PointCalculator:
                 # Break markers ;;; reset accumulation but preserve time_offset
                 # Otherwise work exactly like rest blocks
                 # This makes the timesheet work "as if there was no break at all" except accumulation resets
+                # Save timing before break for continuation chain calculations
+                state.before_break_end_time = state.previous_end_time
+                state.before_break_start_time = state.previous_start_time
                 state.accumulation = 1
                 state.previous_end_time = None
                 state.previous_start_time = None
@@ -2256,6 +2289,9 @@ class PointCalculator:
                     self.update_accumulation(state, has_focus_now, is_x_block, is_rest_only)
                     state.previous_end_time = end_time
                     state.is_first_block = False
+                    # Clear before-break timing once we've processed the first block after a break
+                    state.before_break_end_time = None
+                    state.before_break_start_time = None
 
                 # Always update previous_had_focus so continuation blocks maintain indent
                 state.previous_had_focus = has_focus_now
@@ -2271,6 +2307,9 @@ class PointCalculator:
                 rest_content = line.lstrip()
                 fixed_lines.append(rest_indent + rest_content)
 
+                # Save timing before break for continuation chain calculations
+                state.before_break_end_time = state.previous_end_time
+                state.before_break_start_time = state.previous_start_time
                 state.previous_end_time = None
                 state.is_first_block = True
                 # Note: accumulation and previous_had_focus are NOT reset for rest blocks
@@ -2278,6 +2317,9 @@ class PointCalculator:
             elif node.type == 'break_marker':
                 # Break markers ;;; reset accumulation but preserve time_offset
                 # Otherwise work exactly like rest blocks
+                # Save timing before break for continuation chain calculations
+                state.before_break_end_time = state.previous_end_time
+                state.before_break_start_time = state.previous_start_time
                 state.accumulation = 1
                 state.previous_end_time = None
                 state.is_first_block = True

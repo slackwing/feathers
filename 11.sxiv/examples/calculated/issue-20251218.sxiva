@@ -1,0 +1,204 @@
+Wednesday, December 17th, 2025
+    [med] 200b, 50mg moda, 1x cof - 07:45
+    [med] 50mg moda - 11:15
+{focus: [math], [sys], [err]}
+07:48 - [sys] org prio [3] ... [err] reply [6] --- 08:03 (-3,+2f,+1a=0)
+    {focus: [math], [sp], [err]}
+    08:00 - [math] kaprekar ~+
+    08:12 + [sp/ads] deploy and check ~--- 08:22 (+3,+2f,+2a=7)
+    08:24 - [math] kaprekar ~--- 08:32 (+2,+1f,+3a=13)
+    08:36 - [sp/ads] get tests working ~--- 08:33 (+11,+1f,+4a=29)
+    08:48 - [sp/ads] remove double-read ~--- 08:47 (-2,+1f,+5a=33)
+    ,,,
+    09:00 - [math] kaprekar ~--- 08:47 (+12,+1f,+6a=52)
+    09:12 - [math] kaprekar ~--- 08:57 (+2,+1f,+7a=62)
+    09:24 - [sp/ads] tests ~--- 08:57 (+12,+1f,+8a=83)
+    09:36 - [math] kaprekar ~--- 09:09 (+1f,+9a=93)
+    09:48 - [sp/ads] fix ITs for claude ~--- 09:10 (+11,+1f,+10a=115)
+    ,,,
+    09:12 - [err] dishes --- 09:10 (+12,+1f,+1a=129)
+    10:00 - [math] kaprekar ~--- 09:23 (-1,+1f,+2a=131)
+    10:12 - [sp/ads] clean-up ~--- 09:24 (+11,+1f,+3a=146)
+    09:24 - [err] kitchen [6] - [err] recycling, trash [3] --- 09:24 (+12,+1f,+4a=163)
+    10:24 - [math] kaprekar ~--- 09:35 (+1,+1f,+5a=170)
+    ,,,
+    10:36 - [sp/ads] clean-up ~--- 09:38 (+9,+1f,+6a=186)
+;;;
+11:36 - [math] kaprekar ~--- 10:37 (+1,+1f,+1a=189)
+    11:48 - [sp/ads] code review ~--- 10:47 (+2,+1f,+2a=194)
+    12:00 - [math] kaprekar ~--- 10:47 (+12,+1f,+3a=210)
+    12:12 - [math] kaprekar ~--- 11:01 (-2,+1f,+4a=213)
+    ,,,
+    12:24 - [math] kaprekar ~--- 11:11 (+2,+1f,+5a=221)
+    {focus: [abi], [err]}
+    12:36 - [abi] see [3] ... [err] 7 things [6] --- 11:26 (-3,+2f,+6a=226)
+    12:48 - [err] 10 things --- 11:47 (-9,+1f,+7a=225)
+    13:00 - [err] 7 things --- 11:59 (+1f,+8a=234)
+    13:12 - [err] vacuum, last --- 12:14 (-3,+1f,+9a=241)
+    ,,,
+;;;
+{focus: [sp], [ean]}
+14:24 - [sp/ads] code review ~+
+14:36 + [sp/ads] code review ~--- 13:48 (-12,+1f,+1a=231)
+    14:48 - [sp/ads] code review ~--- 13:58 (+2,+1f,+2a=236)
+    15:00 - [sp/e] prep ~+
+    15:12 + [sp/e] prep ~--- 14:18 (+2,+1f,+3a=242)
+;;;
+{focus: [ean]}
+16:48 - [ean] read ~+
+17:00 + [ean] read ~--- 16:06 (+10,+1f,+1a=254)
+    17:12 - [ean] read ~--- 16:16 (+2,+1f,+2a=259)
+    ,,,
+    17:24 - [ean] read ~--- 16:31 (-3,+1f,+3a=260)
+    17:36 - [ean] read ~--- 16:41 (+2,+1f,+4a=267)
+    17:48 - [ean] read ~--- 16:54 (-1,+1f,+5a=272)
+;;;
+{focus: [abi]}
+18:24 - [abi] drive! ~--- 17:32 (-2,+1f,+1a=272)
+    18:36 - [abi] drive! ~--- 17:42 (+2,+1f,+2a=277)
+    ,,,
+    18:48 - [abi] drive! ~--- 17:58 (-4,+1f,+3a=277)
+    19:00 - [abi] drive [3] - [sp/ads] check deploy [3] - [err] reply ~[3] +
+    19:12 + [err] reply ~--- 18:30 (-10,+1f,+4a=272)
+19:24 - [err] duo, itt --- 18:49 (-7=265)
+
+{freeform}
+    [math] kaprekar, 15m - 00:15
+
+{summary}
+    [abi]  - 00:44
+    [ean]  - 01:12
+    [err]  - 01:44
+    [math] - 02:27
+    [sp]   - 02:40
+    [sys]  - 00:04
+
+=== (preserved from 20251216)
+
+[err] bug in offset calculation ...
+
+[sp/c] reschedule mobbing ...
+[sp/b] mobile measurement handoff ...
+[sp/b] send marlena doc, thread ...
+
+[sp/ads] deploy and check ...
+[err] duo ...
+[ean] 10pp ...
+
+    [err] itt ...
+[err] look for new 0% beers ...
+    [err] reply to david schulman ...
+
+[fit] workout ...
+[sp/na] fix required field bug ...
+[err] save abi's chatgpt work ...
+[abi] judy, beer trade, salt fields, etc.
+[err] ssl renewal ...
+
+[sp/na] change global audience type to new NA type ...
+[sp/a] retargeting tech specs ...
+
+[hg] practice new set ...
+
+=== keep in view
+
+[err] (dec 17) check hims ...
+[err] (jan 15) large coinbase one card payment coming up ...
+[err] tell grace how spent $1000 ...
+[sm] openemu on linux and wilko's method of best vs. average ...
+
+=== ads look out for
+- audience-migration-18 validateAccess differences
+- audience-migration-16-19
+- batchGetAudiencesRaw
+
+=== website recon
+- what is dev?
+
+=== branches to recon
+___algo (algo article)
+___journal (minor journal edit)
+___ean (wholly separate EAN project)
+25-tabber
+24-nov-linux-kernel-dev
+
+=== today
+[ws] revive awcml page on lecture notes ...
+[phy] find notes ...
+[phy] start over ...
+[arch] keyboard backlight ...
+[wf] sxiva cont'd (website) ...
+
+=== daily
+[life] fill out winter experiment ... 1/100
+[life] fill out calendar ... 1/100
+
+=== can
+[err] duo [3]
+[fit] work out [10]
+[ean] 10 pages [48]
+
+=== deferreed
+[bkc] think about feedback system ...
+[err] send abi class feedback ...
+[wr] submit learning korean to wigleaf ...
+[wr] fix up canada ...
+[wr] finish the wildfire ...
+[wr] marco next ...
+[hu] thursday vigils with taylor ...
+[bkc] the fall ...
+[ff] collect stories for mlrc ...
+[ff] week 4, story 5 [6]
+[ff] week 4, story 6 [6]
+[ff] week 4, story 7 [6]
+[ff] week 4, story 8 [6]
+[ff] week 4, story 9 [6]
+[ff] mark week 1, 2 stories to review for mlrc ...
+[ff] read missed stories from week 2 ...
+[ff] read https://www.newyorker.com/magazine/2009/10/05/victory-lap and respond ...
+
+=== forgotten (and okay)
+[sp/d] systems diagram to draw stakeholders, contacts, etc. on it
+[err] did james from tr reply? ...
+
+
+=== mlrc
+- W5: Barista by Meg Pokrass - https://delsolreview.webdelsol.com/dsr22/Pokrass.htm
+
+
+=== new mantra 12/14/2025
+
+If you don't feel like doing anything, check your stomach and relax.
+If you feel like you need _some_ reward, reflect on how life has been _un_rewarding.
+Then maybe realize it has been and be grateful.
+Or if not, imagine prisoners and slaves and refugees; thicken your skin for unrewardedness.
+Not by saying it's okay and everything is good. But by saying you can handle it.
+Start the workout even if you hate the idea of it and feel it's an opposite reward.
+Consider going for a run; maybe you need novelty.
+Remember your current specialness:
+- Number theory and quantum mechanics.
+- Enemies and neighbors (good for perspective).
+- Keeping up with Book Club reading.
+- Playing Emily King with Abi.
+- Practice; you are a musician on Spotify.
+Depending on how AI goes, there may be rough times ahead. Savor these days.
+
+=== manic
+- workflow video: it sends my girlfriend a weather report, i am going to be cranky
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

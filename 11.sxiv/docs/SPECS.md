@@ -413,6 +413,18 @@ These are **semantic rules** for tooling, not enforced by grammar:
   - Base points = (imagined_end_of_previous_block_in_chain + 12) - actual_end
   - Example: Previous block ends at 09:32, continuation at 09:36 with [3],[3],[3] has imagined end = 09:42, final block at 09:48 has expected end = 09:42 + 12 = 09:54, actual end 10:00, base = -6
   - In other words: the work time from all continuation blocks is "summed" via the imagined end calculation, but the final block always uses threshold=12
+  - **After a break** (`;;;` or `[...]`): Continuation chains adjust for the break duration to prevent inflated point calculations
+    - Imagined end = before_break_end_time + break_duration + work_minutes + grace
+    - break_duration = current_start_time - (before_break_start_time + 12) - measured from expected next boundary
+    - The break starts at the next expected boundary (before_break_start + 12), not at the block start time
+    - This ensures that if you're ahead of schedule before a break, you remain proportionally ahead after the break
+    - Example: Block starts at 13:12, ends at 12:14 (virtual time). After break `;;;`, continuation starts at 14:24.
+      - Break starts at: 13:12 + 12 = 13:24
+      - Break duration: 14:24 - 13:24 = 60 min
+      - Imagined end: 12:14 + 60 + 9 + 1 = 13:24
+      - Expected end: 13:24 + 12 = 13:36
+      - If actual end is 13:48, base = 13:36 - 13:48 = -12 (12 minutes late)
+    - Without this adjustment, the base points would be calculated from 14:24 + 10 = 14:34, giving expected end = 14:46 and base = +58 (incorrectly large)
 - **Focus points for continuation chains**:
   - Aggregate ALL unique focus categories from ALL blocks in the chain
   - Award +1f for each unique focus category match across the entire chain
