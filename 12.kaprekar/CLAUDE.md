@@ -35,32 +35,41 @@
 
 ## Version History
 
-### v0.5 - Adaptive Memo Write Reduction (Current)
+### v0.5 - Adaptive Memo Write Reduction + Size Cap (Current)
 **Commit:** TBD
 **Date:** 2025-12-18
 
 **Features:**
 - Runtime detection of high memo write rates via sampling first 10 chunks (or 10% of chunks)
 - Automatically enables 10x write reduction if write rate exceeds 0.20 writes/multiset
+- **Memo size cap at 5M entries** - clears memo when exceeded to prevent dict slowdown
 - Deterministic hash-based sampling of memo entries to reduce Manager.dict() contention
-- Verbose logging shows write rate sampling and reduction activation
+- Verbose logging shows write rate sampling, reduction activation, and memo clearing
 - Workers return (fixed_points, cycle_count, new_writes, multisets_processed) for tracking
 - All v0.4 features (adaptive chunk sizing) retained
 
 **Known Issues:**
 - Threshold (0.20 writes/multiset) is heuristic, may need tuning
-- Sampling period (first 10 chunks) may not catch all high-write-rate cases
+- Memo size cap (5M entries) is heuristic, may need tuning
+- Clearing memo loses memoization benefit, but prevents catastrophic slowdown
 - Sampling reduces shared memoization benefit (tradeoff for lower contention)
 
 **Performance Characteristics:**
 - Designed to solve Manager.dict() bottleneck for problems with high memo growth
 - Automatically detects and responds to high write rates without hardcoded special cases
 - Reduces writes by 10x when triggered (e.g., from 0.35 to 0.035 per multiset)
+- Caps memo size at 5M entries to prevent dict performance degradation
 - Should reduce write time per chunk by ~10x (e.g., 0.7s → 0.07s)
 - Expected to restore CPU utilization to normal levels (near 100% per core)
 
 **Problem Solved:**
-Some base/digit combinations have high memo growth as Kaprekar iteration paths converge less often. Example: base 10, digits 32 has 2.5x higher memo write rate (0.35 writes/multiset vs 0.14 for 31 digits, 0.18 for 33 digits). This caused Manager.dict() write operations to become the bottleneck, with workers spending 0.7s per chunk writing 35k entries. The result was low CPU utilization (10-20% per core) as workers blocked waiting for Manager access. By detecting this at runtime and sampling only 10% of discoveries to write to shared memo, write time drops to 0.07s per chunk, reducing contention dramatically. The adaptive approach avoids hardcoding special cases and works for any future problematic base/digit combinations.
+Some base/digit combinations have high memo growth as Kaprekar iteration paths converge less often. Two issues identified:
+
+1. **High write rate**: Base 10, digits 32 has 2.5x higher memo write rate (0.35 writes/multiset vs 0.14 for 31 digits, 0.18 for 33 digits). This caused Manager.dict() write operations to become the bottleneck, with workers spending 0.7s per chunk writing 35k entries.
+
+2. **Large dict size**: Base 10, digits 36 has 202M projected memo entries. Manager.dict() operations slow dramatically with size (56x slower writes, 259x slower reads at 500k entries vs 100k capped). Even with lower write rate (0.228 writes/multiset), the sheer dict size causes contention.
+
+Solutions: (1) Detect high write rates at runtime and sample only 10% of discoveries to write to shared memo. (2) Cap memo size at 5M entries and clear when exceeded, trading memoization benefit for consistent performance. Both approaches are adaptive and work for any future problematic base/digit combinations.
 
 ### v0.2 - Verbose Diagnostics
 **Commit:** 766fb2b

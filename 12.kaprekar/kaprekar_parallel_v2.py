@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.5
+Kaprekar Parallel Processor - Version 0.6
 
-Adaptive chunk sizing + adaptive memo write reduction based on runtime metrics
+Features:
+- Adaptive chunk sizing for optimal load balancing
+- Adaptive memo write reduction based on runtime metrics
+- --high-mem flag to disable shared memoization for maximum performance
 """
 
-VERSION = "0.5"
+VERSION = "0.6"
 
 import sys
 import csv
@@ -170,17 +173,23 @@ def format_large_number_pair(numerator, denominator):
     return f"({num_scaled}/{den_scaled})x10^{exponent}"
 
 
-def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets_global, global_start_time):
+def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets_global, global_start_time, high_mem_mode=False):
     """
     Process a single (base, num_digits) pair using parallel workers with modulo splitting.
     Creates exactly cpu_cores workers, each processing every Nth multiset.
+
+    Args:
+        high_mem_mode: If True, disable shared memoization for maximum performance
     """
     task_start = time.time()
     vlog(f"Task starting: base={base}, digits={num_digits}, cores={cpu_cores}", level=1)
 
+    if high_mem_mode:
+        vlog(f"  High-memory mode: Shared memoization disabled", level=1)
+
     manager_start = time.time()
     manager = Manager()
-    shared_memo = manager.dict()
+    shared_memo = None if high_mem_mode else manager.dict()
     progress_counter = manager.Value('i', 0)
     progress_lock = manager.Lock()
     write_reduction_factor = manager.Value('i', 1)  # Start with no reduction
@@ -329,6 +338,7 @@ def main():
     parser.add_argument('--data-dir', type=str, default='.', help='Output directory')
     parser.add_argument('--digit-threshold', type=int, default=13, help='Digit count threshold for parallelization (default: 13)')
     parser.add_argument('--verbose', action='store_true', help='Enable detailed diagnostic logging')
+    parser.add_argument('--high-mem', action='store_true', help='Disable shared memoization for maximum performance (uses more memory)')
 
     args = parser.parse_args()
 
@@ -340,6 +350,7 @@ def main():
     max_digits = args.max_digits
     cpu_cores = args.cpu_cores
     digit_threshold = args.digit_threshold
+    high_mem_mode = args.high_mem
 
     data_dir = Path(args.data_dir)
     csv_dir = data_dir / 'csv'
@@ -354,10 +365,11 @@ def main():
 
     for base in range(min_base, max_base + 1):
         for num_digits in range(min_digits, max_digits + 1):
-            if num_digits <= digit_threshold:
-                simple_tasks.append((base, num_digits))
-            else:
+            # Complex if digits + base >= 20 (large problem needs intra-task parallelization)
+            if num_digits + base >= 20:
                 complex_tasks.append((base, num_digits))
+            else:
+                simple_tasks.append((base, num_digits))
 
     total_tasks = len(simple_tasks) + len(complex_tasks)
 
@@ -366,18 +378,8 @@ def main():
     total_multisets += sum(count_digit_multisets(num_digits, base) for base, num_digits in complex_tasks)
 
     print(f"Processing {total_tasks} base-digit pairs (base {min_base}-{max_base}, digits {min_digits}-{max_digits}) using {cpu_cores} cores")
-    if total_multisets >= 1000000:
-        # Show just the total for large numbers
-        exponent = 0
-        divisor = 1
-        temp = total_multisets
-        while temp >= 1000000 * (10 ** (exponent + 1)):
-            exponent += 1
-            divisor *= 10
-        scaled = total_multisets // divisor
-        print(f"Total multisets: ({scaled})x10^{exponent}")
-    else:
-        print(f"Total multisets: {total_multisets}")
+    # Use format_large_number_pair for consistent 6-digit formatting
+    print(f"Total multisets: {format_large_number_pair(total_multisets, total_multisets)}")
 
     start_time = time.time()
     last_update_time = start_time
@@ -435,7 +437,7 @@ def main():
             vlog(f"Processing {len(complex_tasks)} complex tasks (digits > {digit_threshold}) with intra-task parallelization...", level=1)
 
         for base, num_digits in complex_tasks:
-            result = process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets, start_time)
+            result = process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets, start_time, high_mem_mode)
             base, num_digits, cycle_count, fp_values = result
             results[base][num_digits] = (cycle_count, fp_values)
             completed_tasks += 1
