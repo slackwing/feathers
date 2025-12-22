@@ -37,7 +37,7 @@
 - card:
   sources: ["ean-313"]
   question: Who was Faisal Husseini?
-  answer: TODO
+  answer: A prominent Palestinian political leader and diplomat leading Palestinian rights in Jerusalem; widely regarded as the most influential Palestinian leader in Jerusalem in the 90s, maintaining relationships with Israeli peace activists, diplomats, and international officials, giving him unusual access and credibility across lines.
 - quote:
   source: ["ean-313"]
   text: "'We have seen your anguish over the transformation of your sons and daughters into instruments of a blind and violent occupation—and we are sure that at no time did you envisage such a role for the children you thought would forget your future.' - Abdel-Shafi, 1991"
@@ -45,3 +45,55 @@
   sources: ["ean-316"]
   question: Who was Yitzhak Rabin?
   answer: An Israeli military leader and statesman, serving twice as Prime Minister of Israel (1874-77, 1992-95), best remembered for making peace with Israel's neighbors—and for being assassinated by an Israeli extremist because of that pursuit. [According to ChatGPT. According to EAN, Labour party but "no dove. Older Paelistinians remembered him as the man who had expelled thousands from Lydda and Ramle in 1948 and commanded the Israeli army in 1967. Twenty years later, as defence minister, his response to the _intifada_ was to 'break the bones' of troublemakers.]
+- card:
+  sources: ["ean-321", "ean-325"]
+  question: What was Norway's involvement?
+  answer: Terje Rod-Larsen of the Norwegian Institute for Applied Social Research suggested that Norway, which had good relations with the PLO and was not a member of the European Community, could be a conduit for discreet Israeli-Palestinian contacts. Starting in January 1993, some fourteen meetings took place in Norway, unbeknownst to Washington (whose talks were suspended at that time) for at least 9 months. Yossi Beilin was the Israeli Labor Party politician who architected back-channel ("track-two") diplomacy. Close to him were the two Israeli political scientists who were sent; Yair Hirschfeld and Ron Pundak. Hirschfeld was already close to Faisal Husseini. At the seventh round in Norway, the Israelis introduced the notion of 'mutual recognition' between Israel and the PLO. In September 1993, the Oslo agreement was signed on The White House lawn, with Bill Clinton having to coax Rabin to shake Arafat's hand.
+- card:
+  sources: ["ean-338"]
+  question: What happened on 4 November 1995?
+  answer: Yitzhak Rabin was assassinated by Yigal Amir, an Jewish extremist opposed to the Oslo Accords.
+- card:
+  sources: ["ean-349"]
+  question: Who beat Peres in the 1996 Israeli election?
+  answer: Benjamin Netanyahu of the Likud party.
+- card:
+  sources: ["ean-359"]
+  question: What was the Wye River Memorandum?
+  answer: In September 1998 Bill Clinton hosted a summit to continue the Oslo process at Wye River, Maryland. The resulting Wye River Memorandum was signed on 23 October 1998 by Netanyahu and Arafat. It called for further Israeli withdrawals from the West Bank, expanded Palestinian self-rule, and security cooperation. At the end of December, the Palestinian parliament voted to approve a letter to the American president, confirming the nullification of the offensive provisions of the National Charter, which called for the destruction of Israel.
+- card:
+  sources: []
+  question: What was Oslo II?
+  answer: Signed on 28 September 1995, it divided the West Bank into Areas A, B, and C, with varying degrees of Palestinian and Israeli control. Area A was under full Palestinian control, Area B under Palestinian civil control and Israeli security control, and Area C under full Israeli control. This division was meant to be temporary but has had lasting implications for the Israeli-Palestinian conflict.
+- card:
+  sources: ["ean-364"]
+  questison: What were Syria's demands when Barak suddenly moved to negotiate with them instead of Arafat in 2000?
+  answer: The return of the Golan Heights, which was captured by Israel in 1967 in the Six-Day War.
+- card:
+  sources: ["ean-365"]
+  question: What two attempts at peace failed to materialize in 2000?
+  answer: A new Noridic 'backchannel' established in Stockholm failed to emulate the magic of Oslo; and the 15-day 'pressure-cooker' Camp David Summit in July 2000, despite Barak's willingness to make significant concessions, failed due to Arafat's rejection of the proposals. (The concessions; 91% of the West Bank, 100% of Gaza, 1-3% of Israel to compensate for annexations, to form a contiguous Palestinian state; shared Jerusalem; refugees to be settled in the new state or third countries.) (Clarification; From the Palestinian perspective, not truly contiguous, cut by Israelie settlement blocs, dependent on Israeli-controlled roads, subject to Israeli security zones, checkpoints, and overflight.)
+- card:
+  sources: ["ean-375"]
+  question: What was the "Clinton Parameters" proposal of December 2000?
+  answer: A set of guidelines proposed by US President Bill Clinton to resolve key issues in the Israeli-Palestinian conflict, including borders, Jerusalem, refugees, and security arrangements. The parameters were based on the discussions at Camp David and aimed to provide a framework for future negotiations. However, despite initial interest, the proposal was ultimately rejected by both sides.
+- card:
+  sources: ["ean-377"]
+  question: What was considered a 'fateful moment' by all sides in February 2001?
+  answer: The election of Ariel Sharon as Prime Minister of Israel. Sharon was a hardliner, opposed to the Oslo Accords, and his election signaled a shift away from the peace process. Palestinians feared increased settlement activity and military actions, while Israelis were divided on his leadership style and policies.
+- card:
+  sources: ["ean-400"]
+  question: What was the Geneva Accord of December 2003?
+  answer: A detailed model peace agreement between Israelis and Palestinians, resurrecting the Clinton Parameters of 2001, drafted by prominent Israeli and Palestinian figures outside of official government channels. The accord outlined solutions to key issues such as borders, Jerusalem, refugees, and security arrangements. While it was not officially endorsed by either government, it served as a reference point for future negotiations and demonstrated the potential for compromise between the two sides.
+- card:
+  sources: ["ean-409"]
+  question: What was "Kadima"?
+  answer: A centrist political party founded by Sharon in November 2005 2 months before he suffered a massive stroke and sank into a coma; the movement was carried to victory by Ehud Olmert in March. It was created to pursue Sharon's vision of unilateral disengagement from the Gaza Strip and parts of the West Bank, as well as to promote a more pragmatic approach to the Israeli-Palestinian conflict. Kadima aimed to attract voters from both the left and right of the political spectrum, advocating for a two-state solution while maintaining Israel's security interests.
+- card:
+  sources: ["ean-414"]
+  question: What conflict flared up in July 2006?
+  answer: The Second Lebanon War between Israel and Hezbollah, a Shiite militant group based in Lebanon. The conflict began on 12 July 2006, when Hezbollah launched a cross-border raid, a more well-planned version of Hamas' attack three weeks earlier. The conflict lasted 34 days.
+- card:
+  sources: ["ean-420"]
+  question: What was the "Annapolis Conference" of November 2007?
+  answer: A peace conference held in Annapolis, Maryland, hosted by US President George W. Bush, with the aim of reviving the Israeli-Palestinian peace process. The conference brought together Israeli Prime Minister Ehud Olmert, Palestinian Authority President Mahmoud Abbas, and representatives from various countries and international organizations. The participants agreed to work towards a two-state solution and set a goal of reaching a final status agreement by the end of 2008.

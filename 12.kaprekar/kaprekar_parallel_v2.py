@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.6
+Kaprekar Parallel Processor - Version 0.7
 
 Features:
 - Adaptive chunk sizing for optimal load balancing
 - Adaptive memo write reduction based on runtime metrics
-- --high-mem flag to disable shared memoization for maximum performance
+- --high-mem: Batch-shared memoization (zero IPC overhead, progressive speedup)
 """
 
-VERSION = "0.6"
+VERSION = "0.7"
 
 import sys
 import csv
@@ -42,7 +42,8 @@ def process_multiset_chunk(args):
         args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor)
 
     Returns:
-        tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed)
+        tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries)
+            new_memo_entries: dict of new discoveries to merge into shared memo (only in high-mem mode)
     """
     base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
 
@@ -52,16 +53,22 @@ def process_multiset_chunk(args):
     fixed_point_ids = {}
     next_fp_id = 1
     cycle_count = 0
-    local_memo = {}
+    private_memo = {}  # Renamed from local_memo for clarity
 
-    # Pull shared memo
+    # High-mem mode: shared_memo is a regular dict that gets merged between chunks
+    # Normal mode: shared_memo is Manager.dict() with live sharing
+    is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
+
+    # Load shared memo into private memo
     memo_start = time.time()
+    initial_memo_size = 0
     if shared_memo is not None:
         try:
             initial_memo_size = len(shared_memo)
-            local_memo.update(shared_memo)
+            private_memo.update(shared_memo)
             memo_time = time.time() - memo_start
-            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from shared memo in {memo_time:.3f}s", level=3)
+            mode_str = "batch-shared" if is_high_mem else "live-shared"
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} memo in {memo_time:.3f}s", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
 
@@ -79,7 +86,7 @@ def process_multiset_chunk(args):
         min_digits_sorted = sorted(digits_list)
         first_step_result = digits_to_num(max_digits_sorted, base) - digits_to_num(min_digits_sorted, base)
 
-        result_type, final_value, path = analyze_number(first_step_result, num_digits, base, local_memo)
+        result_type, final_value, path = analyze_number(first_step_result, num_digits, base, private_memo)
 
         if result_type == 'fixed_point':
             if final_value not in fixed_point_ids:
@@ -108,48 +115,63 @@ def process_multiset_chunk(args):
         with progress_lock:
             progress_counter.value += local_progress
 
-    # Push discoveries to shared memo
+    # Handle memo writes differently based on mode
     memo_push_start = time.time()
     new_writes = 0
+    new_memo_entries = {}  # For high-mem mode: return new discoveries to be merged
+
     if shared_memo is not None:
-        try:
-            new_discoveries = len(local_memo) - initial_memo_size if 'initial_memo_size' in locals() else len(local_memo)
+        new_discoveries = len(private_memo) - initial_memo_size
 
-            # Get current write reduction factor (may be Value object or int)
-            if hasattr(write_reduction_factor, 'value'):
-                reduction = write_reduction_factor.value
+        if is_high_mem:
+            # High-mem mode: Return new discoveries for batch merge
+            # Only return entries that weren't in the initial shared memo
+            if initial_memo_size > 0:
+                initial_keys = set(list(shared_memo.keys())[:initial_memo_size])  # Avoid iterating huge dict
+                new_memo_entries = {k: v for k, v in private_memo.items() if k not in shared_memo}
             else:
-                reduction = write_reduction_factor
+                new_memo_entries = private_memo.copy()
 
-            if reduction > 1:
-                # Only write a sample of new discoveries to reduce Manager.dict() contention
-                initial_keys = set(shared_memo.keys()) if 'initial_memo_size' in locals() else set()
-                new_keys = [k for k in local_memo.keys() if k not in initial_keys]
+            new_writes = len(new_memo_entries)
+            vlog(f"Worker [{start_idx},{end_idx}): Returning {new_writes} new memo entries for batch merge", level=3)
+        else:
+            # Normal mode: Push to Manager.dict() with optional sampling
+            try:
+                # Get current write reduction factor (may be Value object or int)
+                if hasattr(write_reduction_factor, 'value'):
+                    reduction = write_reduction_factor.value
+                else:
+                    reduction = write_reduction_factor
 
-                # Sample every Nth new entry (deterministic sampling based on hash)
-                sampled_keys = [k for k in new_keys if hash(k) % reduction == 0]
+                if reduction > 1:
+                    # Only write a sample of new discoveries to reduce Manager.dict() contention
+                    initial_keys = set(shared_memo.keys()) if initial_memo_size > 0 else set()
+                    new_keys = [k for k in private_memo.keys() if k not in initial_keys]
 
-                # Update with initial entries + sampled new entries
-                memo_to_push = {k: local_memo[k] for k in initial_keys if k in local_memo}
-                memo_to_push.update({k: local_memo[k] for k in sampled_keys})
+                    # Sample every Nth new entry (deterministic sampling based on hash)
+                    sampled_keys = [k for k in new_keys if hash(k) % reduction == 0]
 
-                shared_memo.update(memo_to_push)
-                new_writes = len(sampled_keys)
-                memo_push_time = time.time() - memo_push_start
-                vlog(f"Worker [{start_idx},{end_idx}): Pushed {len(sampled_keys)}/{new_discoveries} new entries (1/{reduction} sampling) to shared memo in {memo_push_time:.3f}s", level=3)
-            else:
-                # Normal path: write all discoveries
-                shared_memo.update(local_memo)
-                new_writes = new_discoveries
-                memo_push_time = time.time() - memo_push_start
-                vlog(f"Worker [{start_idx},{end_idx}): Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
-        except Exception as e:
-            vlog(f"Worker [{start_idx},{end_idx}): Failed to push to shared memo: {e}", level=3)
+                    # Update with initial entries + sampled new entries
+                    memo_to_push = {k: private_memo[k] for k in initial_keys if k in private_memo}
+                    memo_to_push.update({k: private_memo[k] for k in sampled_keys})
+
+                    shared_memo.update(memo_to_push)
+                    new_writes = len(sampled_keys)
+                    memo_push_time = time.time() - memo_push_start
+                    vlog(f"Worker [{start_idx},{end_idx}): Pushed {len(sampled_keys)}/{new_discoveries} new entries (1/{reduction} sampling) to shared memo in {memo_push_time:.3f}s", level=3)
+                else:
+                    # Normal path: write all discoveries
+                    shared_memo.update(private_memo)
+                    new_writes = new_discoveries
+                    memo_push_time = time.time() - memo_push_start
+                    vlog(f"Worker [{start_idx},{end_idx}): Pushed {new_discoveries} new entries to shared memo in {memo_push_time:.3f}s", level=3)
+            except Exception as e:
+                vlog(f"Worker [{start_idx},{end_idx}): Failed to push to shared memo: {e}", level=3)
 
     worker_time = time.time() - worker_start
     vlog(f"Worker [{start_idx},{end_idx}) complete: {multisets_processed} multisets, {len(fixed_point_ids)} FPs, {worker_time:.2f}s total", level=2)
 
-    return (fixed_point_ids, cycle_count, new_writes, multisets_processed)
+    return (fixed_point_ids, cycle_count, new_writes, multisets_processed, new_memo_entries)
 
 
 def format_large_number_pair(numerator, denominator):
@@ -185,11 +207,14 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     vlog(f"Task starting: base={base}, digits={num_digits}, cores={cpu_cores}", level=1)
 
     if high_mem_mode:
-        vlog(f"  High-memory mode: Shared memoization disabled", level=1)
+        vlog(f"  High-memory mode: Batch-shared memoization (merged between chunks)", level=1)
 
     manager_start = time.time()
     manager = Manager()
-    shared_memo = None if high_mem_mode else manager.dict()
+    # In high-mem mode: use regular dict for batch sharing (no IPC overhead)
+    # In normal mode: use Manager.dict() for live sharing (IPC overhead)
+    batch_shared_memo = {} if high_mem_mode else None
+    shared_memo = batch_shared_memo if high_mem_mode else manager.dict()
     progress_counter = manager.Value('i', 0)
     progress_lock = manager.Lock()
     write_reduction_factor = manager.Value('i', 1)  # Start with no reduction
@@ -262,7 +287,7 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         sample_chunks = min(10, max(1, num_chunks // 10))  # Sample first 10 chunks or 10% of chunks
         write_rate_threshold = 0.20  # If writes/multiset exceeds this, enable reduction
 
-        for fixed_points_dict, cycle_count, new_writes, multisets_processed in pool.imap_unordered(process_multiset_chunk, tasks):
+        for fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries in pool.imap_unordered(process_multiset_chunk, tasks):
             workers_complete += 1
             vlog(f"  Worker result collected ({workers_complete}/{len(tasks)})", level=3)
 
@@ -272,8 +297,21 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                     all_fixed_points[fp_value] = fp_id
             total_cycle_count += cycle_count
 
-            # Track write rate during sampling period
-            if workers_complete <= sample_chunks and write_reduction_factor.value == 1:
+            # High-mem mode: Merge new memo entries into batch_shared_memo
+            if high_mem_mode and new_memo_entries:
+                merge_start = time.time()
+                before_size = len(batch_shared_memo)
+                # Only add keys that don't already exist (no overwriting)
+                for k, v in new_memo_entries.items():
+                    if k not in batch_shared_memo:
+                        batch_shared_memo[k] = v
+                after_size = len(batch_shared_memo)
+                merge_time = time.time() - merge_start
+                new_keys = after_size - before_size
+                vlog(f"  Merged {new_keys} new memo entries into batch-shared memo ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
+
+            # Track write rate during sampling period (for normal mode)
+            if not high_mem_mode and workers_complete <= sample_chunks and write_reduction_factor.value == 1:
                 total_writes_sampled += new_writes
                 total_multisets_sampled += multisets_processed
 
@@ -293,6 +331,10 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
 
     # Count non-degenerate fixed points
     non_degenerate_fp_values = sorted([fp for fp in all_fixed_points.keys() if fp != 0])
+
+    # Log final batch-shared memo size in high-mem mode
+    if high_mem_mode:
+        vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries", level=1)
 
     return (base, num_digits, total_cycle_count, non_degenerate_fp_values)
 

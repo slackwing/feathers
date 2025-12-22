@@ -35,7 +35,55 @@
 
 ## Version History
 
-### v0.5 - Adaptive Memo Write Reduction + Size Cap (Current)
+### v0.7 - Batch-Shared Memoization (Current)
+**Commit:** TBD
+**Date:** 2025-12-22
+
+**Features:**
+- **Batch-shared memoization in --high-mem mode**: Workers use private memos (zero IPC overhead), merge discoveries into shared memo between chunks
+- Progressive speedup: Later chunks benefit from earlier discoveries without contention
+- Clear naming: `private_memo` vs `batch_shared_memo` vs `Manager.dict()`
+- Each worker returns `new_memo_entries` dict for batch merge after completion
+- Main thread merges new discoveries (skips duplicate keys) after each chunk completes
+- Verbose logging shows batch merge operations and final batch-shared memo size
+- Solves the "no sharing between chunks" problem from v0.6 while maintaining zero contention
+
+**How it works:**
+1. Each worker starts with a copy of `batch_shared_memo` as its `private_memo`
+2. Worker processes chunk using only `private_memo` (no locks, no IPC)
+3. Worker returns new discoveries that weren't in initial memo
+4. Main thread merges new discoveries into `batch_shared_memo` (no duplicates)
+5. Next worker gets updated `batch_shared_memo` as starting point
+
+**Performance:**
+- Same zero-contention benefits as v0.6 during processing
+- Additional benefit: memo accumulates across chunks within same base-digit pair
+- Expected to show progressive speedup as more chunks complete
+
+**Known Issues:**
+- None yet - needs benchmarking
+
+### v0.6 - High-Memory Mode
+**Commit:** TBD
+**Date:** 2025-12-22
+
+**Features:**
+- Added `--high-mem` flag to completely disable shared memoization
+- Each worker uses independent local memo (no Manager.dict() operations)
+- Eliminates all IPC overhead from memo reads/writes
+- Fixed "Total multisets" formatting to use consistent 6-digit display
+- Fixed task classification: restored `base + digits >= 20` for complex tasks
+
+**Performance:**
+- Solves Manager.dict() contention for large problems (base 10 digits 32+, 36+)
+- 100% CPU utilization restored for previously-bottlenecked cases
+- Trade-off: No memo sharing between workers (acceptable for large problems)
+
+**Known Issues:**
+- No memo sharing means redundant computation across workers
+- No memo persistence across base-digit pairs
+
+### v0.5 - Adaptive Memo Write Reduction + Size Cap
 **Commit:** TBD
 **Date:** 2025-12-18
 
