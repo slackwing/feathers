@@ -195,6 +195,50 @@ def format_large_number_pair(numerator, denominator):
     return f"({num_scaled}/{den_scaled})x10^{exponent}"
 
 
+def format_large_number_single(number):
+    """Format a single large number with scientific notation.
+    Keep scaled number under 1,000,000 (6 digits)."""
+    if number < 1000000:
+        return str(number)
+
+    # Find the exponent to keep number < 1,000,000
+    exponent = 0
+    temp = number
+    while temp >= 1000000:
+        exponent += 1
+        temp //= 10
+
+    # Scale the number
+    divisor = 10 ** exponent
+    scaled = number // divisor
+
+    return f"{scaled}x10^{exponent}"
+
+
+def format_time_eta(elapsed_secs, progress_pct):
+    """Format elapsed time and ETA.
+    Args:
+        elapsed_secs: Elapsed time in seconds
+        progress_pct: Progress percentage (0-100)
+    Returns:
+        String like "2m 30s - ETA 5m 12s" or "2m 30s" if no ETA available
+    """
+    mins = elapsed_secs // 60
+    secs = elapsed_secs % 60
+    time_str = f"{mins}m {secs}s"
+
+    # Calculate ETA if we have meaningful progress
+    if progress_pct > 0.1:  # At least 0.1% progress
+        total_estimated_secs = int(elapsed_secs / (progress_pct / 100.0))
+        remaining_secs = total_estimated_secs - elapsed_secs
+        if remaining_secs > 0:
+            eta_mins = remaining_secs // 60
+            eta_secs = remaining_secs % 60
+            time_str += f" - ETA {eta_mins}m {eta_secs}s"
+
+    return time_str
+
+
 def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets_global, global_start_time, high_mem_mode=False):
     """
     Process a single (base, num_digits) pair using parallel workers with modulo splitting.
@@ -263,10 +307,11 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                 global_progress = completed_multisets + task_progress
                 progress_pct = (global_progress / total_multisets_global) * 100 if total_multisets_global > 0 else 0
                 elapsed = int(current_time - global_start_time)
-                mins = elapsed // 60
-                secs = elapsed % 60
-                progress_str = format_large_number_pair(global_progress, total_multisets_global)
-                print(f"\r{' ' * 120}\rProgress: {progress_str} multisets ({progress_pct:.1f}%) - {mins}m {secs}s", end='', flush=True)
+
+                # Format: "123x10^6 total (45.2%) [base 12, digits 17] - 2m 30s - ETA 5m 12s"
+                total_str = format_large_number_single(total_multisets_global)
+                time_str = format_time_eta(elapsed, progress_pct)
+                print(f"\r{' ' * 120}\r{total_str} total ({progress_pct:.1f}%) [base {base}, digits {num_digits}] - {time_str}", end='', flush=True)
                 last_update = current_time
 
     monitor_thread = threading.Thread(target=monitor_progress, daemon=True)
@@ -420,8 +465,8 @@ def main():
     total_multisets += sum(count_digit_multisets(num_digits, base) for base, num_digits in complex_tasks)
 
     print(f"Processing {total_tasks} base-digit pairs (base {min_base}-{max_base}, digits {min_digits}-{max_digits}) using {cpu_cores} cores")
-    # Use format_large_number_pair for consistent 6-digit formatting
-    print(f"Total multisets: {format_large_number_pair(total_multisets, total_multisets)}")
+    # Use format_large_number_single for cleaner display
+    print(f"Total multisets: {format_large_number_single(total_multisets)}")
 
     start_time = time.time()
     last_update_time = start_time
@@ -434,6 +479,8 @@ def main():
     bases_written = set()
     completed_tasks = 0
     completed_multisets = 0
+    current_base = 0  # Track the most recent base-digit pair that started
+    current_digits = 0
 
     summary_file = open(summary_filename, 'w', newline='')
     fp_file = open(fp_filename, 'w', newline='')
@@ -458,16 +505,19 @@ def main():
                 results[base][num_digits] = (cycle_count, fp_values)
                 completed_tasks += 1
                 completed_multisets += count_digit_multisets(num_digits, base)
+                current_base = base  # Update most recent completed base-digit
+                current_digits = num_digits
                 vlog(f"  Completed simple task: base={base}, digits={num_digits}", level=2)
 
                 current_time = time.time()
                 if current_time - last_update_time >= 1.0:
                     elapsed = int(current_time - start_time)
-                    elapsed_mins = elapsed // 60
-                    elapsed_secs = elapsed % 60
                     progress_pct = (completed_multisets / total_multisets) * 100
-                    progress_str = format_large_number_pair(completed_multisets, total_multisets)
-                    print(f"\r{' ' * 120}\rProgress: {progress_str} multisets ({progress_pct:.1f}%) - {elapsed_mins}m {elapsed_secs}s", end='', flush=True)
+
+                    # Format: "123x10^6 total (45.2%) [base 12, digits 17] - 2m 30s - ETA 5m 12s"
+                    total_str = format_large_number_single(total_multisets)
+                    time_str = format_time_eta(elapsed, progress_pct)
+                    print(f"\r{' ' * 120}\r{total_str} total ({progress_pct:.1f}%) [base {current_base}, digits {current_digits}] - {time_str}", end='', flush=True)
                     last_update_time = current_time
 
         if simple_tasks:
@@ -525,8 +575,8 @@ def main():
     mins = int(elapsed_total // 60)
     secs = int(elapsed_total % 60)
 
-    final_progress = format_large_number_pair(total_multisets, total_multisets)
-    print(f"\r{' ' * 120}\rCompleted: {final_progress} multisets (100.0%) - {mins}m {secs}s")
+    final_progress = format_large_number_single(total_multisets)
+    print(f"\r{' ' * 120}\rCompleted: {final_progress} total (100.0%) - {mins}m {secs}s")
     print(f"\nOutput: {summary_filename}")
     print(f"Output: {fp_filename}")
 
