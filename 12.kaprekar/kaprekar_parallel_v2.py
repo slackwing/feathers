@@ -35,6 +35,11 @@ from kaprekar_lib import (
     digits_to_num, count_digit_multisets
 )
 
+# Worker-persistent state (survives across chunks within same worker process)
+worker_persistent_memo = {}
+worker_last_sync_time = 0
+MEMO_SYNC_INTERVAL = 15.0  # Sync memo every 15 seconds
+
 
 def process_multiset_chunk(args):
     """
@@ -49,32 +54,58 @@ def process_multiset_chunk(args):
     """
     base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
 
+    global worker_persistent_memo, worker_last_sync_time
+
     worker_start = time.time()
+    current_time = time.time()
     vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
 
     fixed_point_ids = {}
     next_fp_id = 1
     cycle_count = 0
-    private_memo = {}  # Renamed from local_memo for clarity
 
     # High-mem mode: shared_memo is a regular dict that gets merged between chunks
     # Normal mode: shared_memo is Manager.dict() with live sharing
     is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
 
-    # Load shared memo into private memo
-    # In high-mem mode, shared_memo is a snapshot taken at task generation time
-    # In normal mode, shared_memo is a Manager.dict() with live IPC sharing
-    memo_start = time.time()
-    initial_memo_size = 0
-    if shared_memo is not None:
+    # Determine if we should sync memo (time-based)
+    is_first_sync = (worker_last_sync_time == 0)
+    time_since_last_sync = 0 if is_first_sync else (current_time - worker_last_sync_time)
+    should_sync = is_high_mem and (time_since_last_sync >= MEMO_SYNC_INTERVAL or is_first_sync)
+
+    # Initialize private_memo based on sync decision
+    if should_sync:
+        # Sync time: reload from shared_memo snapshot
+        memo_start = time.time()
+        if shared_memo is not None:
+            try:
+                # Fresh start with latest shared memo
+                private_memo = shared_memo.copy()
+                initial_memo_size = len(private_memo)
+                memo_time = time.time() - memo_start
+                if is_first_sync:
+                    vlog(f"Worker [{start_idx},{end_idx}): SYNC - Loaded {initial_memo_size} entries from memo snapshot in {memo_time:.3f}s (first sync)", level=3)
+                else:
+                    vlog(f"Worker [{start_idx},{end_idx}): SYNC - Loaded {initial_memo_size} entries from memo snapshot in {memo_time:.3f}s ({time_since_last_sync:.1f}s since last sync)", level=3)
+                worker_last_sync_time = current_time
+            except Exception as e:
+                private_memo = {}
+                vlog(f"Worker [{start_idx},{end_idx}): SYNC - Failed to load shared memo: {e}, starting fresh", level=3)
+        else:
+            private_memo = {}
+            vlog(f"Worker [{start_idx},{end_idx}): SYNC - No shared memo, starting fresh", level=3)
+    else:
+        # Not sync time: carry persistent memo from previous chunk
+        private_memo = worker_persistent_memo.copy()
+        vlog(f"Worker [{start_idx},{end_idx}): Carrying persistent memo with {len(private_memo)} entries (no sync, {time_since_last_sync:.1f}s since last)", level=3)
+
+    # Also load shared memo in normal mode (Manager.dict() with live IPC)
+    if not is_high_mem and shared_memo is not None:
         try:
-            initial_memo_size = len(shared_memo)
             private_memo.update(shared_memo)
-            memo_time = time.time() - memo_start
-            mode_str = "memo snapshot" if is_high_mem else "Manager.dict()"
-            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} in {memo_time:.3f}s", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {len(shared_memo)} entries from Manager.dict()", level=3)
         except Exception as e:
-            vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Failed to load Manager.dict(): {e}", level=3)
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
@@ -119,25 +150,26 @@ def process_multiset_chunk(args):
         with progress_lock:
             progress_counter.value += local_progress
 
-    # Handle memo writes differently based on mode
+    # Save persistent memo for next chunk
+    worker_persistent_memo = private_memo.copy()
+
+    # Handle memo writes differently based on mode and sync timing
     memo_push_start = time.time()
     new_writes = 0
     new_memo_entries = {}  # For high-mem mode: return new discoveries to be merged
 
     if shared_memo is not None:
-        new_discoveries = len(private_memo) - initial_memo_size
-
         if is_high_mem:
-            # High-mem mode: Return new discoveries for batch merge
-            # Only return entries that weren't in the initial shared memo
-            if initial_memo_size > 0:
-                initial_keys = set(list(shared_memo.keys())[:initial_memo_size])  # Avoid iterating huge dict
-                new_memo_entries = {k: v for k, v in private_memo.items() if k not in shared_memo}
-            else:
+            # High-mem mode with periodic sync
+            if should_sync:
+                # Sync time: return entire private_memo for merging
                 new_memo_entries = private_memo.copy()
-
-            new_writes = len(new_memo_entries)
-            vlog(f"Worker [{start_idx},{end_idx}): Returning {new_writes} new memo entries for batch merge", level=3)
+                new_writes = len(new_memo_entries)
+                vlog(f"Worker [{start_idx},{end_idx}): SYNC - Returning {new_writes} memo entries for batch merge", level=3)
+            else:
+                # Not sync time: don't return memo, worker keeps it
+                new_writes = 0
+                vlog(f"Worker [{start_idx},{end_idx}): No sync - keeping {len(private_memo)} memo entries (next sync in {MEMO_SYNC_INTERVAL - time_since_last_sync:.1f}s)", level=3)
         else:
             # Normal mode: Push to Manager.dict() with optional sampling
             try:

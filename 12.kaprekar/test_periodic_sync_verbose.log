@@ -1,0 +1,679 @@
+[11:35:14] Starting task processing: 0 simple, 1 complex
+Processing 1 base-digit pairs (base 10-10, digits 14-14) using 4 cores
+Total multisets: 817190
+[11:35:14] Processing 1 complex tasks (digits > 13) with intra-task parallelization...
+[11:35:14] Task starting: base=10, digits=14, cores=4
+[11:35:14]   High-memory mode: Batch-shared memoization (merged between chunks)
+[11:35:14]     Manager initialized in 0.013s
+[11:35:14]     Total multisets: 817,190
+[11:35:14]     Creating 81 chunks of ~10,214 multisets each (adaptive sizing)
+[11:35:14]     Async memo merger thread started
+[11:35:14]     Task generator created for 81 chunks
+[11:35:14]     Creating Pool with 4 workers...
+[11:35:14]     Pool created in 0.003s
+[11:35:14]     Launching workers with lazy task generator for 81 chunks...
+[11:35:14]         Task [0,10214): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [10214,20428): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [20428,30642): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [30642,40856): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [40856,51070): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [51070,61284): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [61284,71498): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [71498,81712): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [81712,91926): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [91926,102140): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [102140,112354): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [112354,122568): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [122568,132782): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [132782,142996): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [142996,153210): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [153210,163424): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [163424,173638): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [173638,183852): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [183852,194066): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [194066,204280): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [204280,214494): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [214494,224708): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [224708,234922): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [234922,245136): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [245136,255350): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [255350,265564): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [265564,275778): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [275778,285992): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [285992,296206): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [296206,306420): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [306420,316634): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [316634,326848): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [326848,337062): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [337062,347276): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [347276,357490): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [357490,367704): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [367704,377918): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [377918,388132): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [388132,398346): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [398346,408560): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [408560,418774): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [418774,428988): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [428988,439202): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [439202,449416): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [449416,459630): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [459630,469844): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [469844,480058): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [480058,490272): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [490272,500486): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [500486,510700): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [510700,520914): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [520914,531128): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [531128,541342): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [541342,551556): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [551556,561770): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [561770,571984): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [571984,582198): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [582198,592412): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [592412,602626): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [602626,612840): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [612840,623054): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [623054,633268): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [633268,643482): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [643482,653696): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [653696,663910): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [663910,674124): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [674124,684338): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [684338,694552): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [694552,704766): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [704766,714980): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [714980,725194): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [725194,735408): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [735408,745622): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [745622,755836): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [755836,766050): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [766050,776264): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [776264,786478): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [786478,796692): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [796692,806906): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [806906,817120): Generated with memo snapshot of 0 entries
+[11:35:14]         Task [817120,817190): Generated with memo snapshot of 0 entries
+[11:35:14]   Worker starting: base=10, digits=14, range=[0, 10214)
+[11:35:14]     Worker [0,10214): SYNC - Loaded 0 entries from memo snapshot in 0.000s (last sync 1766421314.4s ago)
+[11:35:14]   Worker starting: base=10, digits=14, range=[10214, 20428)
+[11:35:14]     Worker [10214,20428): SYNC - Loaded 0 entries from memo snapshot in 0.000s (last sync 1766421314.4s ago)
+[11:35:14]   Worker starting: base=10, digits=14, range=[20428, 30642)
+[11:35:14]     Worker [20428,30642): SYNC - Loaded 0 entries from memo snapshot in 0.000s (last sync 1766421314.4s ago)
+[11:35:14]   Worker starting: base=10, digits=14, range=[30642, 40856)
+[11:35:14]     Worker [30642,40856): SYNC - Loaded 0 entries from memo snapshot in 0.000s (last sync 1766421314.4s ago)
+[11:35:14]       Worker [10214,20428): Progress update (10000 multisets), lock wait: 0.0009s
+[11:35:14]     Worker [10214,20428): Phase 1 complete - 10214 multisets in 0.06s (166912.6/s)
+[11:35:14]     Worker [10214,20428): SYNC - Returning 7102 memo entries for batch merge
+[11:35:14]   Worker [10214,20428) complete: 10214 multisets, 6 FPs, 0.06s total
+[11:35:14]       Worker [20428,30642): Progress update (10000 multisets), lock wait: 0.0005s
+[11:35:14]     Worker [20428,30642): Phase 1 complete - 10214 multisets in 0.06s (161144.0/s)
+[11:35:14]     Worker [20428,30642): SYNC - Returning 7733 memo entries for batch merge
+[11:35:14]   Worker [20428,30642) complete: 10214 multisets, 6 FPs, 0.06s total
+[11:35:14]   Worker starting: base=10, digits=14, range=[40856, 51070)
+[11:35:14]     Worker [40856,51070): Carrying persistent memo with 7102 entries (no sync, 0.1s since last)
+[11:35:14]       Worker result collected (1/81)
+[11:35:14]       Pushed 7102 memo entries to async merge queue
+[11:35:14]       Worker [0,10214): Progress update (10000 multisets), lock wait: 0.0005s
+[11:35:14]     Worker [0,10214): Phase 1 complete - 10214 multisets in 0.07s (149010.9/s)
+[11:35:14]     Worker [0,10214): SYNC - Returning 10070 memo entries for batch merge
+[11:35:14]   Worker [0,10214) complete: 10214 multisets, 7 FPs, 0.07s total
+[11:35:14]       Worker [30642,40856): Progress update (10000 multisets), lock wait: 0.0007s
+[11:35:14]     Worker [30642,40856): Phase 1 complete - 10214 multisets in 0.07s (141342.9/s)
+[11:35:14]     Worker [30642,40856): SYNC - Returning 5550 memo entries for batch merge
+[11:35:14]   Worker [30642,40856) complete: 10214 multisets, 6 FPs, 0.07s total
+[11:35:14]         Async merge #1: 7102 new entries (0 → 7102) in 0.008s
+[11:35:14]   Worker starting: base=10, digits=14, range=[51070, 61284)
+[11:35:14]     Worker [51070,61284): Carrying persistent memo with 7733 entries (no sync, 0.1s since last)
+[11:35:14]       Worker result collected (2/81)
+[11:35:14]       Pushed 7733 memo entries to async merge queue
+[11:35:14]   Worker starting: base=10, digits=14, range=[61284, 71498)
+[11:35:14]     Worker [61284,71498): Carrying persistent memo with 10070 entries (no sync, 0.1s since last)
+[11:35:14]         Async merge #2: 2501 new, 2194 cycle updates (7102 → 9603) in 0.002s
+[11:35:14]       Worker result collected (3/81)
+[11:35:14]       Pushed 10070 memo entries to async merge queue
+[11:35:14]   Worker starting: base=10, digits=14, range=[71498, 81712)
+[11:35:14]     Worker [71498,81712): Carrying persistent memo with 5550 entries (no sync, 0.1s since last)
+[11:35:14]         Async merge #3: 1554 new, 3074 cycle updates (9603 → 11157) in 0.003s
+[11:35:14]       Worker result collected (4/81)
+[11:35:14]       Pushed 5550 memo entries to async merge queue
+[11:35:14]         Async merge #4: 7 new, 123 cycle updates (11157 → 11164) in 0.001s
+[11:35:14]       Worker [40856,51070): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [40856,51070): Phase 1 complete - 10214 multisets in 0.04s (259181.5/s)
+[11:35:14]     Worker [40856,51070): No sync - keeping 8924 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [40856,51070) complete: 10214 multisets, 6 FPs, 0.04s total
+[11:35:14]       Worker result collected (5/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[81712, 91926)
+[11:35:14]     Worker [81712,91926): Carrying persistent memo with 8924 entries (no sync, 0.1s since last)
+[11:35:14]       Worker [61284,71498): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]       Worker [51070,61284): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [61284,71498): Phase 1 complete - 10214 multisets in 0.04s (230670.7/s)
+[11:35:14]     Worker [51070,61284): Phase 1 complete - 10214 multisets in 0.05s (221892.8/s)
+[11:35:14]       Worker [71498,81712): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [61284,71498): No sync - keeping 10237 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [61284,71498) complete: 10214 multisets, 5 FPs, 0.04s total
+[11:35:14]     Worker [51070,61284): No sync - keeping 9392 memo entries (next sync in 14.9s)
+[11:35:14]       Worker result collected (6/81)
+[11:35:14]   Worker [51070,61284) complete: 10214 multisets, 6 FPs, 0.05s total
+[11:35:14]       Worker result collected (7/81)
+[11:35:14]     Worker [71498,81712): Phase 1 complete - 10214 multisets in 0.04s (255324.4/s)
+[11:35:14]     Worker [71498,81712): No sync - keeping 7500 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [71498,81712) complete: 10214 multisets, 6 FPs, 0.04s total
+[11:35:14]       Worker result collected (8/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[91926, 102140)
+[11:35:14]     Worker [91926,102140): Carrying persistent memo with 10237 entries (no sync, 0.1s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[102140, 112354)
+[11:35:14]     Worker [102140,112354): Carrying persistent memo with 9392 entries (no sync, 0.1s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[112354, 122568)
+[11:35:14]     Worker [112354,122568): Carrying persistent memo with 7500 entries (no sync, 0.1s since last)
+[11:35:14]       Worker [81712,91926): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [81712,91926): Phase 1 complete - 10214 multisets in 0.04s (275497.1/s)
+[11:35:14]     Worker [81712,91926): No sync - keeping 9294 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [81712,91926) complete: 10214 multisets, 6 FPs, 0.04s total
+[11:35:14]       Worker result collected (9/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[122568, 132782)
+[11:35:14]     Worker [122568,132782): Carrying persistent memo with 9294 entries (no sync, 0.1s since last)
+[11:35:14]       Worker [112354,122568): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [112354,122568): Phase 1 complete - 10214 multisets in 0.03s (322374.1/s)
+[11:35:14]     Worker [112354,122568): No sync - keeping 8380 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [112354,122568) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:14]       Worker result collected (10/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[132782, 142996)
+[11:35:14]     Worker [132782,142996): Carrying persistent memo with 8380 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [91926,102140): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [91926,102140): Phase 1 complete - 10214 multisets in 0.05s (219710.1/s)
+[11:35:14]     Worker [91926,102140): No sync - keeping 10644 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [91926,102140) complete: 10214 multisets, 6 FPs, 0.05s total
+[11:35:14]       Worker result collected (11/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[142996, 153210)
+[11:35:14]     Worker [142996,153210): Carrying persistent memo with 10644 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [102140,112354): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [102140,112354): Phase 1 complete - 10214 multisets in 0.05s (203042.9/s)
+[11:35:14]     Worker [102140,112354): No sync - keeping 9548 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [102140,112354) complete: 10214 multisets, 4 FPs, 0.05s total
+[11:35:14]       Worker result collected (12/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[153210, 163424)
+[11:35:14]     Worker [153210,163424): Carrying persistent memo with 9548 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [122568,132782): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [122568,132782): Phase 1 complete - 10214 multisets in 0.04s (259484.4/s)
+[11:35:14]     Worker [122568,132782): No sync - keeping 9573 memo entries (next sync in 14.9s)
+[11:35:14]   Worker [122568,132782) complete: 10214 multisets, 4 FPs, 0.04s total
+[11:35:14]       Worker result collected (13/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[163424, 173638)
+[11:35:14]     Worker [163424,173638): Carrying persistent memo with 9573 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [132782,142996): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]       Worker [142996,153210): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [132782,142996): Phase 1 complete - 10214 multisets in 0.04s (236585.3/s)
+[11:35:14]     Worker [132782,142996): No sync - keeping 9264 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [132782,142996) complete: 10214 multisets, 5 FPs, 0.04s total
+[11:35:14]     Worker [142996,153210): Phase 1 complete - 10214 multisets in 0.03s (349157.9/s)
+[11:35:14]       Worker result collected (14/81)
+[11:35:14]     Worker [142996,153210): No sync - keeping 10644 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [142996,153210) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:14]       Worker result collected (15/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[173638, 183852)
+[11:35:14]     Worker [173638,183852): Carrying persistent memo with 9264 entries (no sync, 0.2s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[183852, 194066)
+[11:35:14]     Worker [183852,194066): Carrying persistent memo with 10644 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [163424,173638): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [163424,173638): Phase 1 complete - 10214 multisets in 0.03s (338532.6/s)
+[11:35:14]     Worker [163424,173638): No sync - keeping 10644 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [163424,173638) complete: 10214 multisets, 5 FPs, 0.03s total
+[11:35:14]       Worker result collected (16/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[194066, 204280)
+[11:35:14]     Worker [194066,204280): Carrying persistent memo with 10644 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [153210,163424): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [153210,163424): Phase 1 complete - 10214 multisets in 0.05s (190786.0/s)
+[11:35:14]     Worker [153210,163424): No sync - keeping 9993 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [153210,163424) complete: 10214 multisets, 5 FPs, 0.05s total
+[11:35:14]       Worker result collected (17/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[204280, 214494)
+[11:35:14]     Worker [204280,214494): Carrying persistent memo with 9993 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [173638,183852): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [173638,183852): Phase 1 complete - 10214 multisets in 0.03s (320129.0/s)
+[11:35:14]     Worker [173638,183852): No sync - keeping 10245 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [173638,183852) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:14]       Worker result collected (18/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[214494, 224708)
+[11:35:14]     Worker [214494,224708): Carrying persistent memo with 10245 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [183852,194066): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [183852,194066): Phase 1 complete - 10214 multisets in 0.04s (290462.6/s)
+[11:35:14]     Worker [183852,194066): No sync - keeping 10721 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [183852,194066) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:14]       Worker result collected (19/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[224708, 234922)
+[11:35:14]     Worker [224708,234922): Carrying persistent memo with 10721 entries (no sync, 0.2s since last)
+[11:35:14]       Worker [194066,204280): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [194066,204280): Phase 1 complete - 10214 multisets in 0.03s (338685.1/s)
+[11:35:14]     Worker [194066,204280): No sync - keeping 10697 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [194066,204280) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (20/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[234922, 245136)
+[11:35:14]     Worker [234922,245136): Carrying persistent memo with 10697 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [204280,214494): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [204280,214494): Phase 1 complete - 10214 multisets in 0.03s (317025.6/s)
+[11:35:14]     Worker [204280,214494): No sync - keeping 10367 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [204280,214494) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (21/81)
+[11:35:14]       Worker [214494,224708): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [214494,224708): Phase 1 complete - 10214 multisets in 0.03s (356470.5/s)
+[11:35:14]   Worker starting: base=10, digits=14, range=[245136, 255350)
+[11:35:14]     Worker [245136,255350): Carrying persistent memo with 10367 entries (no sync, 0.3s since last)
+[11:35:14]     Worker [214494,224708): No sync - keeping 10254 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [214494,224708) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (22/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[255350, 265564)
+[11:35:14]     Worker [255350,265564): Carrying persistent memo with 10254 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [234922,245136): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [234922,245136): Phase 1 complete - 10214 multisets in 0.03s (353339.3/s)
+[11:35:14]       Worker [224708,234922): Progress update (10000 multisets), lock wait: 0.0004s
+[11:35:14]     Worker [234922,245136): No sync - keeping 10713 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [234922,245136) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (23/81)
+[11:35:14]     Worker [224708,234922): Phase 1 complete - 10214 multisets in 0.04s (271203.2/s)
+[11:35:14]     Worker [224708,234922): No sync - keeping 10721 memo entries (next sync in 14.8s)
+[11:35:14]   Worker [224708,234922) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:14]       Worker result collected (24/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[265564, 275778)
+[11:35:14]     Worker [265564,275778): Carrying persistent memo with 10713 entries (no sync, 0.3s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[275778, 285992)
+[11:35:14]     Worker [275778,285992): Carrying persistent memo with 10721 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [245136,255350): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [245136,255350): Phase 1 complete - 10214 multisets in 0.03s (295334.4/s)
+[11:35:14]     Worker [245136,255350): No sync - keeping 10622 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [245136,255350) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:14]       Worker result collected (25/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[285992, 296206)
+[11:35:14]     Worker [285992,296206): Carrying persistent memo with 10622 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [265564,275778): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [265564,275778): Phase 1 complete - 10214 multisets in 0.03s (337298.5/s)
+[11:35:14]     Worker [265564,275778): No sync - keeping 10725 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [265564,275778) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (26/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[296206, 306420)
+[11:35:14]     Worker [296206,306420): Carrying persistent memo with 10725 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [255350,265564): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [255350,265564): Phase 1 complete - 10214 multisets in 0.05s (216064.5/s)
+[11:35:14]     Worker [255350,265564): No sync - keeping 10346 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [255350,265564) complete: 10214 multisets, 3 FPs, 0.05s total
+[11:35:14]       Worker result collected (27/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[306420, 316634)
+[11:35:14]     Worker [306420,316634): Carrying persistent memo with 10346 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [275778,285992): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [275778,285992): Phase 1 complete - 10214 multisets in 0.04s (277913.4/s)
+[11:35:14]     Worker [275778,285992): No sync - keeping 10749 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [275778,285992) complete: 10214 multisets, 4 FPs, 0.04s total
+[11:35:14]       Worker result collected (28/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[316634, 326848)
+[11:35:14]     Worker [316634,326848): Carrying persistent memo with 10749 entries (no sync, 0.3s since last)
+[11:35:14]       Worker [296206,306420): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [296206,306420): Phase 1 complete - 10214 multisets in 0.04s (273244.4/s)
+[11:35:14]     Worker [296206,306420): No sync - keeping 10974 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [296206,306420) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:14]       Worker result collected (29/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[326848, 337062)
+[11:35:14]     Worker [326848,337062): Carrying persistent memo with 10974 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [285992,296206): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [285992,296206): Phase 1 complete - 10214 multisets in 0.05s (189837.5/s)
+[11:35:14]     Worker [285992,296206): No sync - keeping 10804 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [285992,296206) complete: 10214 multisets, 3 FPs, 0.05s total
+[11:35:14]       Worker result collected (30/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[337062, 347276)
+[11:35:14]     Worker [337062,347276): Carrying persistent memo with 10804 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [306420,316634): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [306420,316634): Phase 1 complete - 10214 multisets in 0.06s (182051.1/s)
+[11:35:14]     Worker [306420,316634): No sync - keeping 10478 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [306420,316634) complete: 10214 multisets, 2 FPs, 0.06s total
+[11:35:14]       Worker result collected (31/81)
+[11:35:14]       Worker [316634,326848): Progress update (10000 multisets), lock wait: 0.0004s
+[11:35:14]   Worker starting: base=10, digits=14, range=[347276, 357490)
+[11:35:14]     Worker [347276,357490): Carrying persistent memo with 10478 entries (no sync, 0.4s since last)
+[11:35:14]     Worker [316634,326848): Phase 1 complete - 10214 multisets in 0.05s (186156.7/s)
+[11:35:14]     Worker [316634,326848): No sync - keeping 10835 memo entries (next sync in 14.7s)
+[11:35:14]   Worker [316634,326848) complete: 10214 multisets, 2 FPs, 0.06s total
+[11:35:14]       Worker result collected (32/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[357490, 367704)
+[11:35:14]     Worker [357490,367704): Carrying persistent memo with 10835 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [326848,337062): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [326848,337062): Phase 1 complete - 10214 multisets in 0.03s (350948.4/s)
+[11:35:14]     Worker [326848,337062): No sync - keeping 10974 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [326848,337062) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (33/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[367704, 377918)
+[11:35:14]     Worker [367704,377918): Carrying persistent memo with 10974 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [337062,347276): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [337062,347276): Phase 1 complete - 10214 multisets in 0.05s (192966.2/s)
+[11:35:14]     Worker [337062,347276): No sync - keeping 10903 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [337062,347276) complete: 10214 multisets, 2 FPs, 0.05s total
+[11:35:14]       Worker result collected (34/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[377918, 388132)
+[11:35:14]     Worker [377918,388132): Carrying persistent memo with 10903 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [347276,357490): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [347276,357490): Phase 1 complete - 10214 multisets in 0.04s (252374.8/s)
+[11:35:14]     Worker [347276,357490): No sync - keeping 10478 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [347276,357490) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:14]       Worker result collected (35/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[388132, 398346)
+[11:35:14]     Worker [388132,398346): Carrying persistent memo with 10478 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [367704,377918): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]       Worker [357490,367704): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [367704,377918): Phase 1 complete - 10214 multisets in 0.04s (287785.6/s)
+[11:35:14]     Worker [367704,377918): No sync - keeping 10974 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [367704,377918) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:14]       Worker result collected (36/81)
+[11:35:14]     Worker [357490,367704): Phase 1 complete - 10214 multisets in 0.04s (231616.0/s)
+[11:35:14]     Worker [357490,367704): No sync - keeping 10835 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [357490,367704) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:14]       Worker result collected (37/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[398346, 408560)
+[11:35:14]     Worker [398346,408560): Carrying persistent memo with 10974 entries (no sync, 0.4s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[408560, 418774)
+[11:35:14]     Worker [408560,418774): Carrying persistent memo with 10835 entries (no sync, 0.4s since last)
+[11:35:14]       Worker [377918,388132): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [377918,388132): Phase 1 complete - 10214 multisets in 0.03s (336207.9/s)
+[11:35:14]     Worker [377918,388132): No sync - keeping 10903 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [377918,388132) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (38/81)
+[11:35:14]       Worker [388132,398346): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]   Worker starting: base=10, digits=14, range=[418774, 428988)
+[11:35:14]     Worker [418774,428988): Carrying persistent memo with 10903 entries (no sync, 0.5s since last)
+[11:35:14]     Worker [388132,398346): Phase 1 complete - 10214 multisets in 0.03s (334739.4/s)
+[11:35:14]     Worker [388132,398346): No sync - keeping 10493 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [388132,398346) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (39/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[428988, 439202)
+[11:35:14]     Worker [428988,439202): Carrying persistent memo with 10493 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [408560,418774): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [408560,418774): Phase 1 complete - 10214 multisets in 0.03s (296257.6/s)
+[11:35:14]     Worker [408560,418774): No sync - keeping 10835 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [408560,418774) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (40/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[439202, 449416)
+[11:35:14]     Worker [439202,449416): Carrying persistent memo with 10835 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [418774,428988): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [418774,428988): Phase 1 complete - 10214 multisets in 0.03s (361304.7/s)
+[11:35:14]     Worker [418774,428988): No sync - keeping 10982 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [418774,428988) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (41/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[449416, 459630)
+[11:35:14]     Worker [449416,459630): Carrying persistent memo with 10982 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [398346,408560): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]       Worker [428988,439202): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [398346,408560): Phase 1 complete - 10214 multisets in 0.06s (177402.7/s)
+[11:35:14]     Worker [428988,439202): Phase 1 complete - 10214 multisets in 0.03s (337471.2/s)
+[11:35:14]     Worker [428988,439202): No sync - keeping 10596 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [428988,439202) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]     Worker [398346,408560): No sync - keeping 10974 memo entries (next sync in 14.6s)
+[11:35:14]   Worker [398346,408560) complete: 10214 multisets, 2 FPs, 0.06s total
+[11:35:14]       Worker result collected (42/81)
+[11:35:14]       Worker result collected (43/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[459630, 469844)
+[11:35:14]   Worker starting: base=10, digits=14, range=[469844, 480058)
+[11:35:14]     Worker [459630,469844): Carrying persistent memo with 10596 entries (no sync, 0.5s since last)
+[11:35:14]     Worker [469844,480058): Carrying persistent memo with 10974 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [439202,449416): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [439202,449416): Phase 1 complete - 10214 multisets in 0.03s (355226.1/s)
+[11:35:14]     Worker [439202,449416): No sync - keeping 10835 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [439202,449416) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (44/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[480058, 490272)
+[11:35:14]     Worker [480058,490272): Carrying persistent memo with 10835 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [449416,459630): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [449416,459630): Phase 1 complete - 10214 multisets in 0.03s (323665.0/s)
+[11:35:14]     Worker [449416,459630): No sync - keeping 10982 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [449416,459630) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (45/81)
+[11:35:14]       Worker [459630,469844): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [459630,469844): Phase 1 complete - 10214 multisets in 0.03s (352096.4/s)
+[11:35:14]     Worker [459630,469844): No sync - keeping 10639 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [459630,469844) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (46/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[490272, 500486)
+[11:35:14]     Worker [490272,500486): Carrying persistent memo with 10982 entries (no sync, 0.5s since last)
+[11:35:14]   Worker starting: base=10, digits=14, range=[500486, 510700)
+[11:35:14]     Worker [500486,510700): Carrying persistent memo with 10639 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [469844,480058): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [469844,480058): Phase 1 complete - 10214 multisets in 0.03s (307017.6/s)
+[11:35:14]     Worker [469844,480058): No sync - keeping 11028 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [469844,480058) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (47/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[510700, 520914)
+[11:35:14]     Worker [510700,520914): Carrying persistent memo with 11028 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [480058,490272): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]     Worker [480058,490272): Phase 1 complete - 10214 multisets in 0.03s (307154.1/s)
+[11:35:14]     Worker [480058,490272): No sync - keeping 10848 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [480058,490272) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:14]       Worker result collected (48/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[520914, 531128)
+[11:35:14]     Worker [520914,531128): Carrying persistent memo with 10848 entries (no sync, 0.5s since last)
+[11:35:14]       Worker [490272,500486): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:14]     Worker [490272,500486): Phase 1 complete - 10214 multisets in 0.03s (303780.3/s)
+[11:35:14]     Worker [490272,500486): No sync - keeping 11018 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [490272,500486) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (49/81)
+[11:35:14]       Worker [510700,520914): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:14]   Worker starting: base=10, digits=14, range=[531128, 541342)
+[11:35:14]       Worker [500486,510700): Progress update (10000 multisets), lock wait: 0.0004s
+[11:35:14]     Worker [531128,541342): Carrying persistent memo with 11018 entries (no sync, 0.6s since last)
+[11:35:14]     Worker [500486,510700): Phase 1 complete - 10214 multisets in 0.04s (282950.1/s)
+[11:35:14]     Worker [510700,520914): Phase 1 complete - 10214 multisets in 0.03s (312700.7/s)
+[11:35:14]     Worker [500486,510700): No sync - keeping 10934 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [500486,510700) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:14]       Worker result collected (50/81)
+[11:35:14]     Worker [510700,520914): No sync - keeping 11071 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [510700,520914) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (51/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[541342, 551556)
+[11:35:14]   Worker starting: base=10, digits=14, range=[551556, 561770)
+[11:35:14]     Worker [541342,551556): Carrying persistent memo with 10934 entries (no sync, 0.6s since last)
+[11:35:14]     Worker [551556,561770): Carrying persistent memo with 11071 entries (no sync, 0.6s since last)
+[11:35:14]       Worker [520914,531128): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [520914,531128): Phase 1 complete - 10214 multisets in 0.03s (304432.3/s)
+[11:35:14]     Worker [520914,531128): No sync - keeping 10899 memo entries (next sync in 14.5s)
+[11:35:14]   Worker [520914,531128) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (52/81)
+[11:35:14]   Worker starting: base=10, digits=14, range=[561770, 571984)
+[11:35:14]     Worker [561770,571984): Carrying persistent memo with 10899 entries (no sync, 0.6s since last)
+[11:35:14]       Worker [541342,551556): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:14]     Worker [541342,551556): Phase 1 complete - 10214 multisets in 0.03s (327663.0/s)
+[11:35:14]     Worker [541342,551556): No sync - keeping 10942 memo entries (next sync in 14.4s)
+[11:35:14]   Worker [541342,551556) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:14]       Worker result collected (53/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[571984, 582198)
+[11:35:15]     Worker [571984,582198): Carrying persistent memo with 10942 entries (no sync, 0.6s since last)
+[11:35:15]       Worker [531128,541342): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [531128,541342): Phase 1 complete - 10214 multisets in 0.04s (261500.7/s)
+[11:35:15]     Worker [531128,541342): No sync - keeping 11018 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [531128,541342) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (54/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[582198, 592412)
+[11:35:15]     Worker [582198,592412): Carrying persistent memo with 11018 entries (no sync, 0.6s since last)
+[11:35:15]       Worker [551556,561770): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:15]     Worker [551556,561770): Phase 1 complete - 10214 multisets in 0.05s (214678.6/s)
+[11:35:15]     Worker [551556,561770): No sync - keeping 11092 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [551556,561770) complete: 10214 multisets, 2 FPs, 0.05s total
+[11:35:15]       Worker result collected (55/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[592412, 602626)
+[11:35:15]     Worker [592412,602626): Carrying persistent memo with 11092 entries (no sync, 0.6s since last)
+[11:35:15]       Worker [561770,571984): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [561770,571984): Phase 1 complete - 10214 multisets in 0.05s (220195.7/s)
+[11:35:15]     Worker [561770,571984): No sync - keeping 10899 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [561770,571984) complete: 10214 multisets, 3 FPs, 0.05s total
+[11:35:15]       Worker result collected (56/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[602626, 612840)
+[11:35:15]     Worker [602626,612840): Carrying persistent memo with 10899 entries (no sync, 0.6s since last)
+[11:35:15]       Worker [571984,582198): Progress update (10000 multisets), lock wait: 0.0004s
+[11:35:15]     Worker [571984,582198): Phase 1 complete - 10214 multisets in 0.05s (225595.7/s)
+[11:35:15]     Worker [571984,582198): No sync - keeping 10991 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [571984,582198) complete: 10214 multisets, 3 FPs, 0.05s total
+[11:35:15]       Worker result collected (57/81)
+[11:35:15]       Worker [582198,592412): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]   Worker starting: base=10, digits=14, range=[612840, 623054)
+[11:35:15]     Worker [612840,623054): Carrying persistent memo with 10991 entries (no sync, 0.6s since last)
+[11:35:15]     Worker [582198,592412): Phase 1 complete - 10214 multisets in 0.04s (233241.4/s)
+[11:35:15]     Worker [582198,592412): No sync - keeping 11018 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [582198,592412) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:15]       Worker result collected (58/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[623054, 633268)
+[11:35:15]     Worker [623054,633268): Carrying persistent memo with 11018 entries (no sync, 0.6s since last)
+[11:35:15]       Worker [592412,602626): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:15]     Worker [592412,602626): Phase 1 complete - 10214 multisets in 0.04s (243241.2/s)
+[11:35:15]     Worker [592412,602626): No sync - keeping 11093 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [592412,602626) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:15]       Worker result collected (59/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[633268, 643482)
+[11:35:15]     Worker [633268,643482): Carrying persistent memo with 11093 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [602626,612840): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [602626,612840): Phase 1 complete - 10214 multisets in 0.04s (232651.2/s)
+[11:35:15]     Worker [602626,612840): No sync - keeping 10907 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [602626,612840) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (60/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[643482, 653696)
+[11:35:15]     Worker [643482,653696): Carrying persistent memo with 10907 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [612840,623054): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [612840,623054): Phase 1 complete - 10214 multisets in 0.04s (242135.9/s)
+[11:35:15]     Worker [612840,623054): No sync - keeping 10991 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [612840,623054) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (61/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[653696, 663910)
+[11:35:15]     Worker [653696,663910): Carrying persistent memo with 10991 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [623054,633268): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [623054,633268): Phase 1 complete - 10214 multisets in 0.04s (232175.8/s)
+[11:35:15]     Worker [623054,633268): No sync - keeping 11037 memo entries (next sync in 14.4s)
+[11:35:15]   Worker [623054,633268) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (62/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[663910, 674124)
+[11:35:15]     Worker [663910,674124): Carrying persistent memo with 11037 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [643482,653696): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [643482,653696): Phase 1 complete - 10214 multisets in 0.03s (350362.9/s)
+[11:35:15]     Worker [643482,653696): No sync - keeping 10907 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [643482,653696) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:15]       Worker result collected (63/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[674124, 684338)
+[11:35:15]     Worker [674124,684338): Carrying persistent memo with 10907 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [633268,643482): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [633268,643482): Phase 1 complete - 10214 multisets in 0.04s (240117.8/s)
+[11:35:15]     Worker [633268,643482): No sync - keeping 11097 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [633268,643482) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:15]       Worker result collected (64/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[684338, 694552)
+[11:35:15]     Worker [684338,694552): Carrying persistent memo with 11097 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [653696,663910): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [653696,663910): Phase 1 complete - 10214 multisets in 0.03s (298380.8/s)
+[11:35:15]     Worker [653696,663910): No sync - keeping 10991 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [653696,663910) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:15]       Worker result collected (65/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[694552, 704766)
+[11:35:15]     Worker [694552,704766): Carrying persistent memo with 10991 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [663910,674124): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [663910,674124): Phase 1 complete - 10214 multisets in 0.04s (283373.0/s)
+[11:35:15]     Worker [663910,674124): No sync - keeping 11037 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [663910,674124) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:15]       Worker result collected (66/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[704766, 714980)
+[11:35:15]     Worker [704766,714980): Carrying persistent memo with 11037 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [684338,694552): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [684338,694552): Phase 1 complete - 10214 multisets in 0.03s (305202.2/s)
+[11:35:15]     Worker [684338,694552): No sync - keeping 11097 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [684338,694552) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:15]       Worker result collected (67/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[714980, 725194)
+[11:35:15]     Worker [714980,725194): Carrying persistent memo with 11097 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [674124,684338): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [674124,684338): Phase 1 complete - 10214 multisets in 0.04s (243125.3/s)
+[11:35:15]     Worker [674124,684338): No sync - keeping 10922 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [674124,684338) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (68/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[725194, 735408)
+[11:35:15]     Worker [725194,735408): Carrying persistent memo with 10922 entries (no sync, 0.7s since last)
+[11:35:15]       Worker [694552,704766): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [694552,704766): Phase 1 complete - 10214 multisets in 0.03s (310187.5/s)
+[11:35:15]     Worker [694552,704766): No sync - keeping 11017 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [694552,704766) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:15]       Worker result collected (69/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[735408, 745622)
+[11:35:15]     Worker [735408,745622): Carrying persistent memo with 11017 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [704766,714980): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [704766,714980): Phase 1 complete - 10214 multisets in 0.03s (322223.8/s)
+[11:35:15]     Worker [704766,714980): No sync - keeping 11062 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [704766,714980) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:15]       Worker result collected (70/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[745622, 755836)
+[11:35:15]     Worker [745622,755836): Carrying persistent memo with 11062 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [714980,725194): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [714980,725194): Phase 1 complete - 10214 multisets in 0.03s (314401.2/s)
+[11:35:15]     Worker [714980,725194): No sync - keeping 11105 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [714980,725194) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:15]       Worker result collected (71/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[755836, 766050)
+[11:35:15]     Worker [755836,766050): Carrying persistent memo with 11105 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [725194,735408): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [725194,735408): Phase 1 complete - 10214 multisets in 0.04s (249607.4/s)
+[11:35:15]     Worker [725194,735408): No sync - keeping 10934 memo entries (next sync in 14.3s)
+[11:35:15]   Worker [725194,735408) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (72/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[766050, 776264)
+[11:35:15]     Worker [766050,776264): Carrying persistent memo with 10934 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [735408,745622): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [735408,745622): Phase 1 complete - 10214 multisets in 0.03s (306190.3/s)
+[11:35:15]     Worker [735408,745622): No sync - keeping 11017 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [735408,745622) complete: 10214 multisets, 2 FPs, 0.03s total
+[11:35:15]       Worker result collected (73/81)
+[11:35:15]       Worker [745622,755836): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [745622,755836): Phase 1 complete - 10214 multisets in 0.03s (312988.6/s)
+[11:35:15]     Worker [745622,755836): No sync - keeping 11062 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [745622,755836) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:15]       Worker result collected (74/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[776264, 786478)
+[11:35:15]     Worker [776264,786478): Carrying persistent memo with 11017 entries (no sync, 0.8s since last)
+[11:35:15]   Worker starting: base=10, digits=14, range=[786478, 796692)
+[11:35:15]     Worker [786478,796692): Carrying persistent memo with 11062 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [755836,766050): Progress update (10000 multisets), lock wait: 0.0003s
+[11:35:15]     Worker [755836,766050): Phase 1 complete - 10214 multisets in 0.04s (232413.9/s)
+[11:35:15]     Worker [755836,766050): No sync - keeping 11105 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [755836,766050) complete: 10214 multisets, 2 FPs, 0.04s total
+[11:35:15]       Worker result collected (75/81)
+[11:35:15]       Worker [766050,776264): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]   Worker starting: base=10, digits=14, range=[796692, 806906)
+[11:35:15]     Worker [796692,806906): Carrying persistent memo with 11105 entries (no sync, 0.8s since last)
+[11:35:15]     Worker [766050,776264): Phase 1 complete - 10214 multisets in 0.03s (307588.5/s)
+[11:35:15]     Worker [766050,776264): No sync - keeping 10934 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [766050,776264) complete: 10214 multisets, 3 FPs, 0.03s total
+[11:35:15]       Worker result collected (76/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[806906, 817120)
+[11:35:15]     Worker [806906,817120): Carrying persistent memo with 10934 entries (no sync, 0.8s since last)
+[11:35:15]       Worker [776264,786478): Progress update (10000 multisets), lock wait: 0.0004s
+[11:35:15]     Worker [776264,786478): Phase 1 complete - 10214 multisets in 0.03s (306451.0/s)
+[11:35:15]     Worker [776264,786478): No sync - keeping 11017 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [776264,786478) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:15]       Worker result collected (77/81)
+[11:35:15]   Worker starting: base=10, digits=14, range=[817120, 817190)
+[11:35:15]     Worker [817120,817190): Carrying persistent memo with 11017 entries (no sync, 0.8s since last)
+[11:35:15]     Worker [817120,817190): Phase 1 complete - 70 multisets in 0.01s (10507.5/s)
+[11:35:15]       Worker [786478,796692): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [817120,817190): No sync - keeping 11017 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [817120,817190) complete: 70 multisets, 2 FPs, 0.01s total
+[11:35:15]     Worker [786478,796692): Phase 1 complete - 10214 multisets in 0.04s (246200.6/s)
+[11:35:15]       Worker result collected (78/81)
+[11:35:15]     Worker [786478,796692): No sync - keeping 11075 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [786478,796692) complete: 10214 multisets, 3 FPs, 0.04s total
+[11:35:15]       Worker result collected (79/81)
+[11:35:15]       Worker [796692,806906): Progress update (10000 multisets), lock wait: 0.0001s
+[11:35:15]     Worker [796692,806906): Phase 1 complete - 10214 multisets in 0.03s (292024.8/s)
+[11:35:15]     Worker [796692,806906): No sync - keeping 11116 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [796692,806906) complete: 10214 multisets, 4 FPs, 0.04s total
+[11:35:15]       Worker result collected (80/81)
+[11:35:15]       Worker [806906,817120): Progress update (10000 multisets), lock wait: 0.0002s
+[11:35:15]     Worker [806906,817120): Phase 1 complete - 10214 multisets in 0.03s (296022.1/s)
+[11:35:15]     Worker [806906,817120): No sync - keeping 10938 memo entries (next sync in 14.2s)
+[11:35:15]   Worker [806906,817120) complete: 10214 multisets, 4 FPs, 0.03s total
+[11:35:15]       Worker result collected (81/81)
+                                                                                                                        817190 total (100.0%) [base 10, digits 14] - 0m 1s[11:35:15]     Waiting for async merge queue to finish (0 items remaining)...
+[11:35:15]     Async memo merger complete: 4 merges, 11164 total new keys, 5391 cycle ID updates
+[11:35:15]     Async merge thread stopped
+[11:35:15]   Final batch-shared memo size: 11,164 entries, 487 unique cycle IDs
+[11:35:15]     Wrote base 10 (1 rows) in 0.000s
+                                                                                                                        Completed: 817190 total (100.0%) - 0m 1s
+
+Output: test-data/csv/kaprekar_summary_base10-10_digits14-14.csv
+Output: test-data/csv/kaprekar_fp_base10-10_digits14-14.csv
+Output: test-data/csv/kaprekar_cycles_base10-10_digits14-14.csv
