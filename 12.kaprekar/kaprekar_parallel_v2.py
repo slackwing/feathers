@@ -62,18 +62,22 @@ def process_multiset_chunk(args):
     is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
 
     # Load shared memo into private memo
-    # Note: In high-mem async mode, dict reads are atomic so no lock needed
+    # Note: In high-mem mode, workers can't see merged memo due to process boundaries,
+    # so they work independently. Only Manager.dict() supports cross-process sharing.
     memo_start = time.time()
     initial_memo_size = 0
-    if shared_memo is not None:
+    if shared_memo is not None and not is_high_mem:
+        # Only load shared_memo in normal mode (Manager.dict())
+        # In high-mem mode, workers start fresh each chunk
         try:
             initial_memo_size = len(shared_memo)
             private_memo.update(shared_memo)
             memo_time = time.time() - memo_start
-            mode_str = "batch-shared (async)" if is_high_mem else "live-shared"
-            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} memo in {memo_time:.3f}s", level=3)
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from live-shared memo in {memo_time:.3f}s", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
+    elif is_high_mem:
+        vlog(f"Worker [{start_idx},{end_idx}): High-mem mode - starting with empty memo (batch merge in main process)", level=3)
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
@@ -357,11 +361,14 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         memo_merge_thread.start()
 
     # Create worker tasks
+    # In high-mem mode, pass None as shared_memo since workers can't see updates across process boundaries
+    # Workers will work independently and return memos for async merging in main process
+    worker_memo = None if high_mem_mode else shared_memo
     tasks = []
     for i in range(num_chunks):
         start_idx = i * chunk_size
         end_idx = min((i + 1) * chunk_size, task_multisets)
-        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor))
+        tasks.append((base, num_digits, start_idx, end_idx, worker_memo, progress_counter, progress_lock, write_reduction_factor))
 
     # Progress monitoring thread that updates global progress
     stop_monitoring = threading.Event()
