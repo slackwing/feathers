@@ -91,11 +91,12 @@ def analyze_number(start_num, num_digits, base, memo=None):
         num_digits: The number of digits to use
         base: The base to use
         memo: Optional dict for memoization {number: (result_type, final_value)}
+            For cycles: final_value is the lowest number in the cycle (canonical ID)
 
     Returns:
         tuple: (result_type, final_value, path)
             result_type: 'fixed_point' or 'cycle'
-            final_value: the fixed point value, or the value where cycle was detected
+            final_value: the fixed point value, or the canonical cycle ID (minimum in cycle)
             path: list of values in the iteration path
     """
     current = start_num
@@ -106,7 +107,16 @@ def analyze_number(start_num, num_digits, base, memo=None):
         # Check memo if available
         if memo is not None and current in memo:
             cached_type, cached_value = memo[current]
-            return (cached_type, cached_value, path)
+
+            # For cycles: use the minimum of cached ID and current path
+            if cached_type == 'cycle' and path:
+                cycle_id = min(cached_value, min(path))
+                # Update memo for all numbers in current path with the better (lower) ID
+                for num in path:
+                    memo[num] = ('cycle', cycle_id)
+                return (cached_type, cycle_id, path)
+            else:
+                return (cached_type, cached_value, path)
 
         diff = kaprekar_step(current, num_digits, base)
 
@@ -122,12 +132,18 @@ def analyze_number(start_num, num_digits, base, memo=None):
 
         # Check if we've seen this number (cycle detection)
         if diff in seen:
-            result = ('cycle', diff, path)
-            # Memoize all numbers in the path
+            # Cycle detected: use minimum number in the entire cycle as canonical ID
+            # The cycle consists of all numbers from where we detected it back to the start
+            cycle_start_idx = path.index(diff)
+            cycle_numbers = path[cycle_start_idx:] + [diff]
+            cycle_id = min(cycle_numbers)
+
+            result = ('cycle', cycle_id, path)
+            # Memoize all numbers in the path with the canonical cycle ID
             if memo is not None:
                 for num in path:
-                    memo[num] = ('cycle', diff)
-                memo[start_num] = ('cycle', diff)
+                    memo[num] = ('cycle', cycle_id)
+                memo[start_num] = ('cycle', cycle_id)
             return result
 
         seen.add(current)

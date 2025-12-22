@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.7
+Kaprekar Parallel Processor - Version 0.8
 
 Features:
 - Adaptive chunk sizing for optimal load balancing
 - Adaptive memo write reduction based on runtime metrics
 - --high-mem: Batch-shared memoization (zero IPC overhead, progressive speedup)
+- Cycle ID system: Uses lowest number in cycle as canonical ID for accurate cycle counting
 """
 
-VERSION = "0.7"
+VERSION = "0.8"
 
 import sys
 import csv
@@ -346,14 +347,26 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
             if high_mem_mode and new_memo_entries:
                 merge_start = time.time()
                 before_size = len(batch_shared_memo)
-                # Only add keys that don't already exist (no overwriting)
-                for k, v in new_memo_entries.items():
+                cycle_id_updates = 0  # Track how many cycle IDs were improved
+
+                for k, (p_type, p_value) in new_memo_entries.items():
                     if k not in batch_shared_memo:
-                        batch_shared_memo[k] = v
+                        # New key: add it
+                        batch_shared_memo[k] = (p_type, p_value)
+                    else:
+                        # Collision: for cycles, take the minimum ID
+                        s_type, s_value = batch_shared_memo[k]
+                        if p_type == 'cycle' and s_type == 'cycle' and p_value < s_value:
+                            batch_shared_memo[k] = ('cycle', p_value)
+                            cycle_id_updates += 1
+
                 after_size = len(batch_shared_memo)
                 merge_time = time.time() - merge_start
                 new_keys = after_size - before_size
-                vlog(f"  Merged {new_keys} new memo entries into batch-shared memo ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
+                if cycle_id_updates > 0:
+                    vlog(f"  Merged {new_keys} new entries, updated {cycle_id_updates} cycle IDs to lower values ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
+                else:
+                    vlog(f"  Merged {new_keys} new memo entries into batch-shared memo ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
 
             # Track write rate during sampling period (for normal mode)
             if not high_mem_mode and workers_complete <= sample_chunks and write_reduction_factor.value == 1:
@@ -377,11 +390,15 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     # Count non-degenerate fixed points
     non_degenerate_fp_values = sorted([fp for fp in all_fixed_points.keys() if fp != 0])
 
-    # Log final batch-shared memo size in high-mem mode
-    if high_mem_mode:
-        vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries", level=1)
+    # Extract unique cycle IDs from batch_shared_memo (high-mem mode only)
+    unique_cycle_ids = set()
+    if high_mem_mode and batch_shared_memo:
+        for result_type, value in batch_shared_memo.values():
+            if result_type == 'cycle':
+                unique_cycle_ids.add(value)
+        vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries, {len(unique_cycle_ids)} unique cycle IDs", level=1)
 
-    return (base, num_digits, total_cycle_count, non_degenerate_fp_values)
+    return (base, num_digits, total_cycle_count, non_degenerate_fp_values, len(unique_cycle_ids))
 
 
 def process_base_digit_pair_serial(args):
@@ -410,7 +427,13 @@ def process_base_digit_pair_serial(args):
 
     non_degenerate_fp_values = sorted([fp for fp in fixed_point_ids.keys() if fp != 0])
 
-    return (base, num_digits, cycle_count, non_degenerate_fp_values)
+    # Extract unique cycle IDs from memo
+    unique_cycle_ids = set()
+    for result_type, value in memo.values():
+        if result_type == 'cycle':
+            unique_cycle_ids.add(value)
+
+    return (base, num_digits, cycle_count, non_degenerate_fp_values, len(unique_cycle_ids))
 
 
 def main():
@@ -445,6 +468,7 @@ def main():
 
     summary_filename = csv_dir / f'kaprekar_summary_base{min_base}-{max_base}_digits{min_digits}-{max_digits}.csv'
     fp_filename = csv_dir / f'kaprekar_fp_base{min_base}-{max_base}_digits{min_digits}-{max_digits}.csv'
+    cycles_filename = csv_dir / f'kaprekar_cycles_base{min_base}-{max_base}_digits{min_digits}-{max_digits}.csv'
 
     # Separate tasks into simple (serial) and complex (parallel within task)
     simple_tasks = []
@@ -484,12 +508,15 @@ def main():
 
     summary_file = open(summary_filename, 'w', newline='')
     fp_file = open(fp_filename, 'w', newline='')
+    cycles_file = open(cycles_filename, 'w', newline='')
 
     summary_writer = csv.writer(summary_file)
     fp_writer = csv.writer(fp_file)
+    cycles_writer = csv.writer(cycles_file)
 
     summary_writer.writerow(['base', 'digits', 'num_cycles', 'fixed_points'])
     fp_writer.writerow(['base', 'digits', 'fixed_point_values'])
+    cycles_writer.writerow(['base', 'digits', 'unique_cycle_ids'])
 
     vlog(f"Starting task processing: {len(simple_tasks)} simple, {len(complex_tasks)} complex", level=1)
 
@@ -501,8 +528,8 @@ def main():
 
         with Pool(processes=cpu_cores) as pool:
             for result in pool.imap_unordered(process_base_digit_pair_serial, simple_tasks):
-                base, num_digits, cycle_count, fp_values = result
-                results[base][num_digits] = (cycle_count, fp_values)
+                base, num_digits, cycle_count, fp_values, unique_cycles = result
+                results[base][num_digits] = (cycle_count, fp_values, unique_cycles)
                 completed_tasks += 1
                 completed_multisets += count_digit_multisets(num_digits, base)
                 current_base = base  # Update most recent completed base-digit
@@ -530,8 +557,8 @@ def main():
 
         for base, num_digits in complex_tasks:
             result = process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_multisets, total_multisets, start_time, high_mem_mode)
-            base, num_digits, cycle_count, fp_values = result
-            results[base][num_digits] = (cycle_count, fp_values)
+            base, num_digits, cycle_count, fp_values, unique_cycles = result
+            results[base][num_digits] = (cycle_count, fp_values, unique_cycles)
             completed_tasks += 1
             completed_multisets += count_digit_multisets(num_digits, base)
 
@@ -554,15 +581,18 @@ def main():
                     write_start = time.time()
                     rows_written = 0
                     for d in range(min_digits, max_digits + 1):
-                        cycle_count, fp_values = results[b][d]
+                        cycle_count, fp_values, unique_cycles = results[b][d]
                         num_fps = len(fp_values)
                         summary_writer.writerow([b, d, cycle_count, num_fps])
                         if fp_values:
                             fp_writer.writerow([b, d, ','.join(map(str, fp_values))])
+                        # Write unique cycle count to third file
+                        cycles_writer.writerow([b, d, unique_cycles])
                         rows_written += 1
 
                     summary_file.flush()
                     fp_file.flush()
+                    cycles_file.flush()
                     write_time = time.time() - write_start
                     vlog(f"  Wrote base {b} ({rows_written} rows) in {write_time:.3f}s", level=2)
                     bases_written.add(b)
@@ -570,6 +600,7 @@ def main():
     finally:
         summary_file.close()
         fp_file.close()
+        cycles_file.close()
 
     elapsed_total = time.time() - start_time
     mins = int(elapsed_total // 60)
@@ -579,6 +610,7 @@ def main():
     print(f"\r{' ' * 120}\rCompleted: {final_progress} total (100.0%) - {mins}m {secs}s")
     print(f"\nOutput: {summary_filename}")
     print(f"Output: {fp_filename}")
+    print(f"Output: {cycles_filename}")
 
 
 if __name__ == "__main__":
