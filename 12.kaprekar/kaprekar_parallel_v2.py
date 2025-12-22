@@ -551,6 +551,42 @@ def main():
             simple_time = time.time() - simple_start
             vlog(f"Simple tasks complete in {simple_time:.2f}s", level=1)
 
+            # Check for complete bases after simple tasks
+            for base in range(min_base, max_base + 1):
+                if base in results and len(results[base]) == (max_digits - min_digits + 1):
+                    bases_complete.add(base)
+
+            # Write complete bases (same logic as in complex tasks)
+            for b in sorted(bases_complete):
+                if b in bases_written:
+                    continue
+
+                can_write = True
+                for lower_base in range(min_base, b):
+                    if lower_base not in bases_written:
+                        can_write = False
+                        break
+
+                if can_write:
+                    write_start = time.time()
+                    rows_written = 0
+                    for d in range(min_digits, max_digits + 1):
+                        cycle_count, fp_values, unique_cycles = results[b][d]
+                        num_fps = len(fp_values)
+                        summary_writer.writerow([b, d, cycle_count, num_fps])
+                        if fp_values:
+                            fp_writer.writerow([b, d, ','.join(map(str, fp_values))])
+                        # Write unique cycle count to third file
+                        cycles_writer.writerow([b, d, unique_cycles])
+                        rows_written += 1
+
+                    summary_file.flush()
+                    fp_file.flush()
+                    cycles_file.flush()
+                    write_time = time.time() - write_start
+                    vlog(f"  Wrote base {b} ({rows_written} rows) in {write_time:.3f}s", level=2)
+                    bases_written.add(b)
+
         # Process complex tasks sequentially, but parallelize within each
         if complex_tasks:
             vlog(f"Processing {len(complex_tasks)} complex tasks (digits > {digit_threshold}) with intra-task parallelization...", level=1)
