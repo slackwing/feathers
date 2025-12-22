@@ -1,0 +1,12 @@
+[11:26:28] Starting task processing: 1 simple, 0 complex
+[11:26:28] Processing 1 simple tasks (digits <= 13) with Pool...
+Processing 1 base-digit pairs (base 10-10, digits 8-8) using 4 cores
+Total multisets: 24310
+[11:26:28]     Completed simple task: base=10, digits=8
+[11:26:28] Simple tasks complete in 0.05s
+[11:26:28]     Wrote base 10 (1 rows) in 0.000s
+                                                                                                                        Completed: 24310 total (100.0%) - 0m 0s
+
+Output: test-data/csv/kaprekar_summary_base10-10_digits8-8.csv
+Output: test-data/csv/kaprekar_fp_base10-10_digits8-8.csv
+Output: test-data/csv/kaprekar_cycles_base10-10_digits8-8.csv

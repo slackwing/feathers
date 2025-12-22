@@ -62,22 +62,19 @@ def process_multiset_chunk(args):
     is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
 
     # Load shared memo into private memo
-    # Note: In high-mem mode, workers can't see merged memo due to process boundaries,
-    # so they work independently. Only Manager.dict() supports cross-process sharing.
+    # In high-mem mode, shared_memo is a snapshot taken at task generation time
+    # In normal mode, shared_memo is a Manager.dict() with live IPC sharing
     memo_start = time.time()
     initial_memo_size = 0
-    if shared_memo is not None and not is_high_mem:
-        # Only load shared_memo in normal mode (Manager.dict())
-        # In high-mem mode, workers start fresh each chunk
+    if shared_memo is not None:
         try:
             initial_memo_size = len(shared_memo)
             private_memo.update(shared_memo)
             memo_time = time.time() - memo_start
-            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from live-shared memo in {memo_time:.3f}s", level=3)
+            mode_str = "memo snapshot" if is_high_mem else "Manager.dict()"
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} in {memo_time:.3f}s", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
-    elif is_high_mem:
-        vlog(f"Worker [{start_idx},{end_idx}): High-mem mode - starting with empty memo (batch merge in main process)", level=3)
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
@@ -360,15 +357,29 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         memo_merge_thread = threading.Thread(target=async_memo_merger, daemon=True)
         memo_merge_thread.start()
 
-    # Create worker tasks
-    # In high-mem mode, pass None as shared_memo since workers can't see updates across process boundaries
-    # Workers will work independently and return memos for async merging in main process
-    worker_memo = None if high_mem_mode else shared_memo
-    tasks = []
-    for i in range(num_chunks):
-        start_idx = i * chunk_size
-        end_idx = min((i + 1) * chunk_size, task_multisets)
-        tasks.append((base, num_digits, start_idx, end_idx, worker_memo, progress_counter, progress_lock, write_reduction_factor))
+    # Create task generator (lazy evaluation)
+    # In high-mem mode, each task gets the current state of batch_shared_memo
+    # This allows workers to "check out" the latest merged memo when they pick up a task
+    def task_generator():
+        """Generate tasks on-demand so each gets the latest merged memo."""
+        for i in range(num_chunks):
+            start_idx = i * chunk_size
+            end_idx = min((i + 1) * chunk_size, task_multisets)
+
+            # In high-mem mode, snapshot the current batch_shared_memo for this task
+            # Worker will get a pickled copy of the memo as it exists NOW
+            if high_mem_mode:
+                # Take a snapshot with lock to ensure consistency
+                with memo_lock:
+                    memo_snapshot = batch_shared_memo.copy()
+                vlog(f"  Task [{start_idx},{end_idx}): Generated with memo snapshot of {len(memo_snapshot)} entries", level=4)
+            else:
+                memo_snapshot = shared_memo
+
+            yield (base, num_digits, start_idx, end_idx, memo_snapshot, progress_counter, progress_lock, write_reduction_factor)
+
+    # Convert to list to get total count for logging
+    vlog(f"  Task generator created for {num_chunks} chunks", level=2)
 
     # Progress monitoring thread that updates global progress
     stop_monitoring = threading.Event()
@@ -400,17 +411,17 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         pool_time = time.time() - pool_start
         vlog(f"  Pool created in {pool_time:.3f}s", level=2)
 
-        # Launch all workers and collect results
-        vlog(f"  Launching {len(tasks)} worker tasks...", level=2)
+        # Launch workers with lazy task generation
+        vlog(f"  Launching workers with lazy task generator for {num_chunks} chunks...", level=2)
         workers_complete = 0
         total_writes_sampled = 0
         total_multisets_sampled = 0
         sample_chunks = min(10, max(1, num_chunks // 10))  # Sample first 10 chunks or 10% of chunks
         write_rate_threshold = 0.20  # If writes/multiset exceeds this, enable reduction
 
-        for fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries in pool.imap_unordered(process_multiset_chunk, tasks):
+        for fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries in pool.imap_unordered(process_multiset_chunk, task_generator()):
             workers_complete += 1
-            vlog(f"  Worker result collected ({workers_complete}/{len(tasks)})", level=3)
+            vlog(f"  Worker result collected ({workers_complete}/{num_chunks})", level=3)
 
             # Merge fixed points
             for fp_value, fp_id in fixed_points_dict.items():
