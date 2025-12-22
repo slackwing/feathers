@@ -312,6 +312,35 @@ def format_large_number_single(number):
     return f"{scaled}x10^{exponent}"
 
 
+def format_fraction_with_common_scale(numerator, denominator):
+    """Format two numbers as a fraction with common scale: (num/denom)x10^n
+    Both numbers are scaled to the same exponent, with plain integers inside parens.
+
+    Examples:
+        (320517, 1307504) -> "(32051/130750)x10^1"
+        (1307504, 1307504) -> "(130750/130750)x10^1"
+        (54627300, 54627300) -> "(54627/54627)x10^3"
+        (12345, 67890) -> "(12345/67890)"
+    """
+    # If denominator is small, don't use scientific notation
+    if denominator < 1000000:
+        return f"({numerator}/{denominator})"
+
+    # Find exponent to keep denominator < 1,000,000 (6 digits max)
+    exponent = 0
+    temp = denominator
+    while temp >= 1000000:
+        exponent += 1
+        temp //= 10
+
+    # Scale both numbers with the same exponent
+    divisor = 10 ** exponent
+    scaled_num = numerator // divisor
+    scaled_denom = denominator // divisor
+
+    return f"({scaled_num}/{scaled_denom})x10^{exponent}"
+
+
 def format_time_eta(elapsed_secs, progress_pct):
     """Format elapsed time and ETA.
     Args:
@@ -489,10 +518,10 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                 progress_pct = (global_progress / total_multisets_global) * 100 if total_multisets_global > 0 else 0
                 elapsed = int(current_time - global_start_time)
 
-                # Format: "123x10^6 total (45.2%) [base 12, digits 17] - 2m 30s - ETA 5m 12s"
-                total_str = format_large_number_single(total_multisets_global)
+                # Format: "(102731/103945)x10^4 (98.8%) [base 12, digits 17] - 2m 30s - ETA 5m 12s"
+                fraction_str = format_fraction_with_common_scale(global_progress, total_multisets_global)
                 time_str = format_time_eta(elapsed, progress_pct)
-                print(f"\r{' ' * 120}\r{total_str} total ({progress_pct:.1f}%) [base {base}, digits {num_digits}] - {time_str}", end='', flush=True)
+                print(f"\r{' ' * 120}\r{fraction_str} ({progress_pct:.1f}%) [base {base}, digits {num_digits}] - {time_str}", end='', flush=True)
                 last_update = current_time
 
     monitor_thread = threading.Thread(target=monitor_progress, daemon=True)
@@ -811,8 +840,8 @@ def main():
     mins = int(elapsed_total // 60)
     secs = int(elapsed_total % 60)
 
-    final_progress = format_large_number_single(total_multisets)
-    print(f"\r{' ' * 120}\rCompleted: {final_progress} total (100.0%) - {mins}m {secs}s")
+    final_fraction = format_fraction_with_common_scale(total_multisets, total_multisets)
+    print(f"\r{' ' * 120}\rCompleted: {final_fraction} (100.0%) - {mins}m {secs}s")
     print(f"\nOutput: {summary_filename}")
     print(f"Output: {fp_filename}")
     print(f"Output: {cycles_filename}")
