@@ -36,9 +36,17 @@ from kaprekar_lib import (
 )
 
 # Worker-persistent state (survives across chunks within same worker process)
-worker_persistent_memo = {}
-worker_last_sync_time = 0
-MEMO_SYNC_INTERVAL = 15.0  # Sync memo every 15 seconds
+worker_shared_memo_snapshot = {}  # Read-only: known entries from last sync
+worker_private_memo = {}  # Write-only: new discoveries since last sync
+worker_id = None  # Assigned once per worker process (0-15 for 16 workers)
+
+# Token-passing sync coordination (set by parent process)
+_sync_token_holder = None  # Manager.Value('i', 0) - which worker ID holds the token
+_num_workers = None  # Total number of workers
+_worker_id_counter = None  # Manager.Value('i', 0) - atomic counter for assigning sequential worker IDs
+_shared_memo_version = None  # Manager.Value('i', 0) - version counter that increments on each merge (reserved for future use)
+_batch_shared_memo = None  # (Deprecated) Reference to parent's batch_shared_memo dict - now using shared_memo_manager (Manager.dict())
+_memo_lock = None  # (Deprecated) Lock for accessing batch_shared_memo - Manager.dict() has its own locking
 
 
 def process_multiset_chunk(args):
@@ -52,60 +60,104 @@ def process_multiset_chunk(args):
         tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries)
             new_memo_entries: dict of new discoveries to merge into shared memo (only in high-mem mode)
     """
-    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
+    base, num_digits, start_idx, end_idx, shared_memo_manager, sync_token_holder, sync_token_lock, progress_counter, progress_lock, write_reduction_factor = args
 
-    global worker_persistent_memo, worker_last_sync_time
+    global worker_shared_memo_snapshot, worker_private_memo, worker_id, _sync_token_holder, _num_workers, _worker_id_counter
+
+    # Assign worker ID on first call (persistent across chunks)
+    if worker_id is None:
+        import os
+        # Atomically get next worker ID from counter (ensures sequential 0, 1, 2, 3, ...)
+        if _worker_id_counter is not None:
+            with sync_token_lock:  # Reuse token lock for atomicity
+                worker_id = _worker_id_counter.value
+                _worker_id_counter.value += 1
+        else:
+            # Fallback: use PID modulo (shouldn't happen in high-mem mode)
+            worker_id = os.getpid() % _num_workers
+        _sync_token_holder = sync_token_holder  # Cache reference
+        vlog(f"Worker PID {os.getpid()} assigned worker_id={worker_id}", level=2)
 
     worker_start = time.time()
-    current_time = time.time()
-    vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
+    vlog(f"Worker {worker_id} starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
 
     fixed_point_ids = {}
     next_fp_id = 1
     cycle_count = 0
 
-    # High-mem mode: shared_memo is a regular dict that gets merged between chunks
-    # Normal mode: shared_memo is Manager.dict() with live sharing
-    is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
+    # High-mem mode: shared_memo_manager is a Manager.dict() that workers can read from when they have the token
+    # Normal mode: shared_memo_manager is Manager.dict() with live sharing
+    is_high_mem = shared_memo_manager is not None and sync_token_holder is not None
 
-    # Determine if we should sync memo (time-based)
-    is_first_sync = (worker_last_sync_time == 0)
-    time_since_last_sync = 0 if is_first_sync else (current_time - worker_last_sync_time)
-    should_sync = is_high_mem and (time_since_last_sync >= MEMO_SYNC_INTERVAL or is_first_sync)
+    # Token-passing sync: check if this worker holds the token
+    has_token = False
+    if is_high_mem:
+        with sync_token_lock:
+            current_holder = sync_token_holder.value
+            if current_holder == worker_id:
+                has_token = True
 
-    # Initialize private_memo based on sync decision
-    if should_sync:
-        # Sync time: reload from shared_memo snapshot
-        memo_start = time.time()
-        if shared_memo is not None:
-            try:
-                # Fresh start with latest shared memo
-                private_memo = shared_memo.copy()
-                initial_memo_size = len(private_memo)
-                memo_time = time.time() - memo_start
-                if is_first_sync:
-                    vlog(f"Worker [{start_idx},{end_idx}): SYNC - Loaded {initial_memo_size} entries from memo snapshot in {memo_time:.3f}s (first sync)", level=3)
-                else:
-                    vlog(f"Worker [{start_idx},{end_idx}): SYNC - Loaded {initial_memo_size} entries from memo snapshot in {memo_time:.3f}s ({time_since_last_sync:.1f}s since last sync)", level=3)
-                worker_last_sync_time = current_time
-            except Exception as e:
-                private_memo = {}
-                vlog(f"Worker [{start_idx},{end_idx}): SYNC - Failed to load shared memo: {e}, starting fresh", level=3)
-        else:
-            private_memo = {}
-            vlog(f"Worker [{start_idx},{end_idx}): SYNC - No shared memo, starting fresh", level=3)
+    # Split read/write memo initialization based on token ownership
+    if has_token:
+        # TOKEN SYNC: Load latest from Manager.dict() as read-only snapshot, reset private memo
+        try:
+            # Copy from Manager.dict() to local dict (one-time IPC cost)
+            worker_shared_memo_snapshot = dict(shared_memo_manager)
+            initial_shared_size = len(worker_shared_memo_snapshot)
+            vlog(f"Worker {worker_id} [{start_idx},{end_idx}): TOKEN SYNC - Loaded {initial_shared_size} shared entries from Manager.dict() (read-only)", level=3)
+        except Exception as e:
+            worker_shared_memo_snapshot = {}
+            vlog(f"Worker {worker_id} [{start_idx},{end_idx}): TOKEN SYNC - Failed to load shared memo: {e}, starting fresh", level=3)
+
+        # Reset private memo to empty (only NEW discoveries go here)
+        worker_private_memo = {}
+        vlog(f"Worker {worker_id} [{start_idx},{end_idx}): TOKEN SYNC - Reset private memo (write-only for new discoveries)", level=3)
     else:
-        # Not sync time: carry persistent memo from previous chunk
-        private_memo = worker_persistent_memo.copy()
-        vlog(f"Worker [{start_idx},{end_idx}): Carrying persistent memo with {len(private_memo)} entries (no sync, {time_since_last_sync:.1f}s since last)", level=3)
+        # No token: keep using existing snapshots
+        vlog(f"Worker {worker_id} [{start_idx},{end_idx}): Using existing memos: {len(worker_shared_memo_snapshot)} shared (read-only), {len(worker_private_memo)} private (no token)", level=3)
+
+    # Initialize memo for normal mode (non-high-mem)
+    private_memo = {}
+    initial_memo_size = 0
 
     # Also load shared memo in normal mode (Manager.dict() with live IPC)
-    if not is_high_mem and shared_memo is not None:
+    if not is_high_mem and shared_memo_manager is not None:
         try:
-            private_memo.update(shared_memo)
-            vlog(f"Worker [{start_idx},{end_idx}): Loaded {len(shared_memo)} entries from Manager.dict()", level=3)
+            private_memo.update(shared_memo_manager)
+            initial_memo_size = len(shared_memo_manager)
+            vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from Manager.dict()", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to load Manager.dict(): {e}", level=3)
+
+    # Create split read/write memo wrapper for high-mem mode
+    if is_high_mem:
+        # Wrapper dict that implements split read/write pattern
+        class SplitMemo:
+            """Wrapper that checks read-only snapshot first, then writes to private memo."""
+            def __contains__(self, key):
+                return key in worker_shared_memo_snapshot or key in worker_private_memo
+
+            def __getitem__(self, key):
+                if key in worker_shared_memo_snapshot:
+                    return worker_shared_memo_snapshot[key]
+                return worker_private_memo[key]
+
+            def get(self, key, default=None):
+                if key in worker_shared_memo_snapshot:
+                    return worker_shared_memo_snapshot[key]
+                return worker_private_memo.get(key, default)
+
+            def __setitem__(self, key, value):
+                # Always write to private memo (new discoveries only)
+                worker_private_memo[key] = value
+
+            def update(self, other):
+                worker_private_memo.update(other)
+
+        memo_for_analysis = SplitMemo()
+    else:
+        # Normal mode: use private_memo directly
+        memo_for_analysis = private_memo
 
     # Progress tracking with batched updates (update every 10000 multisets to minimize lock contention)
     local_progress = 0
@@ -121,7 +173,7 @@ def process_multiset_chunk(args):
         min_digits_sorted = sorted(digits_list)
         first_step_result = digits_to_num(max_digits_sorted, base) - digits_to_num(min_digits_sorted, base)
 
-        result_type, final_value, path = analyze_number(first_step_result, num_digits, base, private_memo)
+        result_type, final_value, path = analyze_number(first_step_result, num_digits, base, memo_for_analysis)
 
         if result_type == 'fixed_point':
             if final_value not in fixed_point_ids:
@@ -150,26 +202,35 @@ def process_multiset_chunk(args):
         with progress_lock:
             progress_counter.value += local_progress
 
-    # Save persistent memo for next chunk
-    worker_persistent_memo = private_memo.copy()
+    # NOTE: In high-mem mode, worker_shared_memo_snapshot and worker_private_memo are GLOBAL
+    # and persist across chunks. No need to save/restore them here.
+
+    # Calculate new discoveries for normal mode
+    if not is_high_mem:
+        new_discoveries = len(private_memo) - initial_memo_size
 
     # Handle memo writes differently based on mode and sync timing
     memo_push_start = time.time()
     new_writes = 0
     new_memo_entries = {}  # For high-mem mode: return new discoveries to be merged
 
-    if shared_memo is not None:
+    if shared_memo_manager is not None:
         if is_high_mem:
-            # High-mem mode with periodic sync
-            if should_sync:
-                # Sync time: return entire private_memo for merging
-                new_memo_entries = private_memo.copy()
+            # High-mem mode with token-passing sync
+            if has_token:
+                # Has token: return ONLY worker_private_memo (new discoveries), then pass token
+                new_memo_entries = worker_private_memo.copy()
                 new_writes = len(new_memo_entries)
-                vlog(f"Worker [{start_idx},{end_idx}): SYNC - Returning {new_writes} memo entries for batch merge", level=3)
+
+                # Pass token to next worker (round-robin)
+                with sync_token_lock:
+                    next_holder = (worker_id + 1) % _num_workers
+                    sync_token_holder.value = next_holder
+                    vlog(f"Worker {worker_id} [{start_idx},{end_idx}): TOKEN SYNC - Returning {new_writes} NEW memo entries (not {len(worker_shared_memo_snapshot)} shared), passing token to worker {next_holder}", level=3)
             else:
-                # Not sync time: don't return memo, worker keeps it
+                # No token: don't return memo, worker keeps it in worker_private_memo
                 new_writes = 0
-                vlog(f"Worker [{start_idx},{end_idx}): No sync - keeping {len(private_memo)} memo entries (next sync in {MEMO_SYNC_INTERVAL - time_since_last_sync:.1f}s)", level=3)
+                vlog(f"Worker {worker_id} [{start_idx},{end_idx}): No sync - keeping {len(worker_private_memo)} private memo entries (no token)", level=3)
         else:
             # Normal mode: Push to Manager.dict() with optional sampling
             try:
@@ -291,13 +352,24 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
 
     manager_start = time.time()
     manager = Manager()
-    # In high-mem mode: use regular dict for batch sharing (no IPC overhead)
-    # In normal mode: use Manager.dict() for live sharing (IPC overhead)
-    batch_shared_memo = {} if high_mem_mode else None
-    shared_memo = batch_shared_memo if high_mem_mode else manager.dict()
+    # Both modes now use Manager.dict() for shared memo
+    # High-mem mode: workers only read when they have the token (infrequent IPC)
+    # Normal mode: workers read/write directly (frequent IPC)
+    shared_memo_manager = manager.dict()
     progress_counter = manager.Value('i', 0)
     progress_lock = manager.Lock()
     write_reduction_factor = manager.Value('i', 1)  # Start with no reduction
+
+    # Token-passing sync coordination: worker 0 starts with the token
+    sync_token_holder = manager.Value('i', 0) if high_mem_mode else None  # Worker ID that holds token
+    sync_token_lock = manager.Lock() if high_mem_mode else None
+    worker_id_counter = manager.Value('i', 0) if high_mem_mode else None  # Atomic counter for sequential worker ID assignment
+
+    # Set global _num_workers and _worker_id_counter so workers can get sequential IDs
+    global _num_workers, _worker_id_counter
+    _num_workers = cpu_cores
+    _worker_id_counter = worker_id_counter
+
     manager_time = time.time() - manager_start
     vlog(f"  Manager initialized in {manager_time:.3f}s", level=2)
 
@@ -325,15 +397,13 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     total_cycle_count = 0
 
     # In high-mem mode: create async memo merge queue and thread
-    # memo_lock protects batch_shared_memo reads/writes (None in normal mode)
+    # Merges write directly to shared_memo_manager (Manager.dict())
     memo_merge_queue = None
     memo_merge_thread = None
     stop_merge_thread = None
-    memo_lock = None
 
     if high_mem_mode:
         memo_merge_queue = queue.Queue()
-        memo_lock = threading.Lock()
         stop_merge_thread = threading.Event()
 
         def async_memo_merger():
@@ -354,21 +424,21 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                         cycle_id_updates = 0
                         new_keys = 0
 
-                        with memo_lock:
-                            before_size = len(batch_shared_memo)
+                        # Write directly to Manager.dict() (IPC overhead, but shared across workers)
+                        before_size = len(shared_memo_manager)
 
-                            for k, (p_type, p_value) in new_memo_entries.items():
-                                if k not in batch_shared_memo:
-                                    batch_shared_memo[k] = (p_type, p_value)
-                                    new_keys += 1
-                                else:
-                                    # Collision: for cycles, take the minimum ID
-                                    s_type, s_value = batch_shared_memo[k]
-                                    if p_type == 'cycle' and s_type == 'cycle' and p_value < s_value:
-                                        batch_shared_memo[k] = ('cycle', p_value)
-                                        cycle_id_updates += 1
+                        for k, (p_type, p_value) in new_memo_entries.items():
+                            if k not in shared_memo_manager:
+                                shared_memo_manager[k] = (p_type, p_value)
+                                new_keys += 1
+                            else:
+                                # Collision: for cycles, take the minimum ID
+                                s_type, s_value = shared_memo_manager[k]
+                                if p_type == 'cycle' and s_type == 'cycle' and p_value < s_value:
+                                    shared_memo_manager[k] = ('cycle', p_value)
+                                    cycle_id_updates += 1
 
-                            after_size = len(batch_shared_memo)
+                        after_size = len(shared_memo_manager)
 
                         merge_time = time.time() - merge_start
                         total_new_keys += new_keys
@@ -390,25 +460,17 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         memo_merge_thread.start()
 
     # Create task generator (lazy evaluation)
-    # In high-mem mode, each task gets the current state of batch_shared_memo
-    # This allows workers to "check out" the latest merged memo when they pick up a task
+    # Pass Manager.dict() reference directly - workers copy from it when they have the token
+    # Manager.dict() is a proxy object that reflects live state (not pickled snapshots)
     def task_generator():
-        """Generate tasks on-demand so each gets the latest merged memo."""
+        """Generate tasks on-demand. Pass Manager.dict() reference directly (not snapshotted)."""
         for i in range(num_chunks):
             start_idx = i * chunk_size
             end_idx = min((i + 1) * chunk_size, task_multisets)
 
-            # In high-mem mode, snapshot the current batch_shared_memo for this task
-            # Worker will get a pickled copy of the memo as it exists NOW
-            if high_mem_mode:
-                # Take a snapshot with lock to ensure consistency
-                with memo_lock:
-                    memo_snapshot = batch_shared_memo.copy()
-                vlog(f"  Task [{start_idx},{end_idx}): Generated with memo snapshot of {len(memo_snapshot)} entries", level=4)
-            else:
-                memo_snapshot = shared_memo
-
-            yield (base, num_digits, start_idx, end_idx, memo_snapshot, progress_counter, progress_lock, write_reduction_factor)
+            # Pass Manager.dict() reference directly (both modes)
+            # Workers will copy from it when they have the token
+            yield (base, num_digits, start_idx, end_idx, shared_memo_manager, sync_token_holder, sync_token_lock, progress_counter, progress_lock, write_reduction_factor)
 
     # Convert to list to get total count for logging
     vlog(f"  Task generator created for {num_chunks} chunks", level=2)
@@ -496,14 +558,14 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     # Count non-degenerate fixed points
     non_degenerate_fp_values = sorted([fp for fp in all_fixed_points.keys() if fp != 0])
 
-    # Extract unique cycle IDs from batch_shared_memo (high-mem mode only)
+    # Extract unique cycle IDs from shared_memo_manager (high-mem mode only)
     unique_cycle_ids = set()
-    if high_mem_mode and batch_shared_memo:
-        with memo_lock:
-            for result_type, value in batch_shared_memo.values():
-                if result_type == 'cycle':
-                    unique_cycle_ids.add(value)
-            vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries, {len(unique_cycle_ids)} unique cycle IDs", level=1)
+    if high_mem_mode and shared_memo_manager:
+        # Manager.dict() has its own internal locking, no external lock needed
+        for result_type, value in shared_memo_manager.values():
+            if result_type == 'cycle':
+                unique_cycle_ids.add(value)
+        vlog(f"  Final shared memo size: {len(shared_memo_manager):,} entries, {len(unique_cycle_ids)} unique cycle IDs", level=1)
 
     return (base, num_digits, total_cycle_count, non_degenerate_fp_values, len(unique_cycle_ids))
 
