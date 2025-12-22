@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Kaprekar Parallel Processor - Version 0.8
+Kaprekar Parallel Processor - Version 0.9
 
 Features:
 - Adaptive chunk sizing for optimal load balancing
 - Adaptive memo write reduction based on runtime metrics
-- --high-mem: Batch-shared memoization (zero IPC overhead, progressive speedup)
+- --high-mem: Async queue-based memo merging (eliminates worker blocking on merge)
 - Cycle ID system: Uses lowest number in cycle as canonical ID for accurate cycle counting
 """
 
-VERSION = "0.8"
+VERSION = "0.9"
 
 import sys
 import csv
@@ -17,6 +17,7 @@ import time
 import argparse
 import os
 import threading
+import queue
 from pathlib import Path
 from multiprocessing import Pool, Manager, Lock, Value
 
@@ -40,13 +41,13 @@ def process_multiset_chunk(args):
     Worker that generates and processes its assigned chunk using modulo arithmetic.
 
     Args:
-        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor)
+        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock)
 
     Returns:
         tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries)
             new_memo_entries: dict of new discoveries to merge into shared memo (only in high-mem mode)
     """
-    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
+    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock = args
 
     worker_start = time.time()
     vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
@@ -60,15 +61,23 @@ def process_multiset_chunk(args):
     # Normal mode: shared_memo is Manager.dict() with live sharing
     is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
 
-    # Load shared memo into private memo
+    # Load shared memo into private memo (thread-safe in high-mem mode)
     memo_start = time.time()
     initial_memo_size = 0
     if shared_memo is not None:
         try:
-            initial_memo_size = len(shared_memo)
-            private_memo.update(shared_memo)
+            if is_high_mem and memo_lock is not None:
+                # High-mem mode with async merging: acquire lock for consistent snapshot
+                with memo_lock:
+                    initial_memo_size = len(shared_memo)
+                    private_memo.update(shared_memo)
+            else:
+                # Normal mode or high-mem without lock: direct access
+                initial_memo_size = len(shared_memo)
+                private_memo.update(shared_memo)
+
             memo_time = time.time() - memo_start
-            mode_str = "batch-shared" if is_high_mem else "live-shared"
+            mode_str = "batch-shared (async)" if is_high_mem else "live-shared"
             vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} memo in {memo_time:.3f}s", level=3)
         except Exception as e:
             vlog(f"Worker [{start_idx},{end_idx}): Failed to load shared memo: {e}", level=3)
@@ -286,14 +295,80 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     num_chunks = max(1, (task_multisets + chunk_size - 1) // chunk_size)  # Round up
     vlog(f"  Creating {num_chunks} chunks of ~{chunk_size:,} multisets each (adaptive sizing)", level=2)
 
+    all_fixed_points = {}
+    total_cycle_count = 0
+
+    # In high-mem mode: create async memo merge queue and thread
+    # memo_lock protects batch_shared_memo reads/writes (None in normal mode)
+    memo_merge_queue = None
+    memo_merge_thread = None
+    stop_merge_thread = None
+    memo_lock = None
+
+    if high_mem_mode:
+        memo_merge_queue = queue.Queue()
+        memo_lock = threading.Lock()
+        stop_merge_thread = threading.Event()
+
+        def async_memo_merger():
+            """Background thread that continuously merges memo entries from the queue."""
+            vlog(f"  Async memo merger thread started", level=2)
+            merge_count = 0
+            total_new_keys = 0
+            total_cycle_updates = 0
+
+            while not stop_merge_thread.is_set() or not memo_merge_queue.empty():
+                try:
+                    # Non-blocking get with timeout so we can check stop flag
+                    new_memo_entries = memo_merge_queue.get(timeout=0.1)
+                    merge_count += 1
+
+                    if new_memo_entries:
+                        merge_start = time.time()
+                        cycle_id_updates = 0
+                        new_keys = 0
+
+                        with memo_lock:
+                            before_size = len(batch_shared_memo)
+
+                            for k, (p_type, p_value) in new_memo_entries.items():
+                                if k not in batch_shared_memo:
+                                    batch_shared_memo[k] = (p_type, p_value)
+                                    new_keys += 1
+                                else:
+                                    # Collision: for cycles, take the minimum ID
+                                    s_type, s_value = batch_shared_memo[k]
+                                    if p_type == 'cycle' and s_type == 'cycle' and p_value < s_value:
+                                        batch_shared_memo[k] = ('cycle', p_value)
+                                        cycle_id_updates += 1
+
+                            after_size = len(batch_shared_memo)
+
+                        merge_time = time.time() - merge_start
+                        total_new_keys += new_keys
+                        total_cycle_updates += cycle_id_updates
+
+                        if cycle_id_updates > 0:
+                            vlog(f"  Async merge #{merge_count}: {new_keys} new, {cycle_id_updates} cycle updates ({before_size} → {after_size}) in {merge_time:.3f}s", level=4)
+                        else:
+                            vlog(f"  Async merge #{merge_count}: {new_keys} new entries ({before_size} → {after_size}) in {merge_time:.3f}s", level=4)
+
+                    memo_merge_queue.task_done()
+
+                except queue.Empty:
+                    continue
+
+            vlog(f"  Async memo merger complete: {merge_count} merges, {total_new_keys} total new keys, {total_cycle_updates} cycle ID updates", level=2)
+
+        memo_merge_thread = threading.Thread(target=async_memo_merger, daemon=True)
+        memo_merge_thread.start()
+
+    # Create worker tasks (must be after memo_lock is initialized)
     tasks = []
     for i in range(num_chunks):
         start_idx = i * chunk_size
         end_idx = min((i + 1) * chunk_size, task_multisets)
-        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor))
-
-    all_fixed_points = {}
-    total_cycle_count = 0
+        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock))
 
     # Progress monitoring thread that updates global progress
     stop_monitoring = threading.Event()
@@ -343,30 +418,10 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
                     all_fixed_points[fp_value] = fp_id
             total_cycle_count += cycle_count
 
-            # High-mem mode: Merge new memo entries into batch_shared_memo
+            # High-mem mode: Push new memo entries to async merge queue (non-blocking)
             if high_mem_mode and new_memo_entries:
-                merge_start = time.time()
-                before_size = len(batch_shared_memo)
-                cycle_id_updates = 0  # Track how many cycle IDs were improved
-
-                for k, (p_type, p_value) in new_memo_entries.items():
-                    if k not in batch_shared_memo:
-                        # New key: add it
-                        batch_shared_memo[k] = (p_type, p_value)
-                    else:
-                        # Collision: for cycles, take the minimum ID
-                        s_type, s_value = batch_shared_memo[k]
-                        if p_type == 'cycle' and s_type == 'cycle' and p_value < s_value:
-                            batch_shared_memo[k] = ('cycle', p_value)
-                            cycle_id_updates += 1
-
-                after_size = len(batch_shared_memo)
-                merge_time = time.time() - merge_start
-                new_keys = after_size - before_size
-                if cycle_id_updates > 0:
-                    vlog(f"  Merged {new_keys} new entries, updated {cycle_id_updates} cycle IDs to lower values ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
-                else:
-                    vlog(f"  Merged {new_keys} new memo entries into batch-shared memo ({before_size} → {after_size}) in {merge_time:.3f}s", level=3)
+                memo_merge_queue.put(new_memo_entries)
+                vlog(f"  Pushed {len(new_memo_entries)} memo entries to async merge queue", level=3)
 
             # Track write rate during sampling period (for normal mode)
             if not high_mem_mode and workers_complete <= sample_chunks and write_reduction_factor.value == 1:
@@ -387,16 +442,25 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     stop_monitoring.set()
     monitor_thread.join()
 
+    # High-mem mode: Wait for async merge queue to finish, then stop merge thread
+    if high_mem_mode and memo_merge_thread is not None:
+        vlog(f"  Waiting for async merge queue to finish ({memo_merge_queue.qsize()} items remaining)...", level=2)
+        memo_merge_queue.join()  # Wait for all items to be processed
+        stop_merge_thread.set()
+        memo_merge_thread.join()
+        vlog(f"  Async merge thread stopped", level=2)
+
     # Count non-degenerate fixed points
     non_degenerate_fp_values = sorted([fp for fp in all_fixed_points.keys() if fp != 0])
 
     # Extract unique cycle IDs from batch_shared_memo (high-mem mode only)
     unique_cycle_ids = set()
     if high_mem_mode and batch_shared_memo:
-        for result_type, value in batch_shared_memo.values():
-            if result_type == 'cycle':
-                unique_cycle_ids.add(value)
-        vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries, {len(unique_cycle_ids)} unique cycle IDs", level=1)
+        with memo_lock if memo_lock else threading.Lock():
+            for result_type, value in batch_shared_memo.values():
+                if result_type == 'cycle':
+                    unique_cycle_ids.add(value)
+            vlog(f"  Final batch-shared memo size: {len(batch_shared_memo):,} entries, {len(unique_cycle_ids)} unique cycle IDs", level=1)
 
     return (base, num_digits, total_cycle_count, non_degenerate_fp_values, len(unique_cycle_ids))
 
