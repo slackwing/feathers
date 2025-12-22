@@ -205,18 +205,9 @@ def main():
             # Has cycles: draw solid circle
             ax.scatter(x, y, s=marker_size, c='white', edgecolors=edge_color, linewidths=2, zorder=3)
 
-            # If no fixed points, show cycle count above circle in scientific notation
-            # Use unique_cycle_count if available, otherwise use cycles count
-            if fps == 0:
-                display_count = unique_cycle_count if unique_cycle_count is not None else cycles
-                # Format as scientific notation with 1 digit precision
-                if display_count < 10:
-                    cycle_text = str(display_count)
-                else:
-                    exponent = int(math.floor(math.log10(display_count)))
-                    mantissa = display_count / (10 ** exponent)
-                    cycle_text = f"${mantissa:.1f} \\times 10^{{{exponent}}}$"
-
+            # If no fixed points and we have unique cycle data, show it in gray (normal notation)
+            if fps == 0 and unique_cycle_count is not None:
+                cycle_text = str(unique_cycle_count)
                 ax.text(x, y + radius * 4, cycle_text, fontsize=7, ha='center', va='center', zorder=7, weight='bold', color='gray')
         # else: no cycles and not special -> draw nothing (just the lines for fixed points)
 
