@@ -41,13 +41,13 @@ def process_multiset_chunk(args):
     Worker that generates and processes its assigned chunk using modulo arithmetic.
 
     Args:
-        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock)
+        args: tuple of (base, num_digits, chunk_id, total_chunks, shared_memo, progress_counter, progress_lock, write_reduction_factor)
 
     Returns:
         tuple: (fixed_points_dict, cycle_count, new_writes, multisets_processed, new_memo_entries)
             new_memo_entries: dict of new discoveries to merge into shared memo (only in high-mem mode)
     """
-    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock = args
+    base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor = args
 
     worker_start = time.time()
     vlog(f"Worker starting: base={base}, digits={num_digits}, range=[{start_idx}, {end_idx})", level=2)
@@ -61,21 +61,14 @@ def process_multiset_chunk(args):
     # Normal mode: shared_memo is Manager.dict() with live sharing
     is_high_mem = shared_memo is not None and not hasattr(shared_memo, '_manager')
 
-    # Load shared memo into private memo (thread-safe in high-mem mode)
+    # Load shared memo into private memo
+    # Note: In high-mem async mode, dict reads are atomic so no lock needed
     memo_start = time.time()
     initial_memo_size = 0
     if shared_memo is not None:
         try:
-            if is_high_mem and memo_lock is not None:
-                # High-mem mode with async merging: acquire lock for consistent snapshot
-                with memo_lock:
-                    initial_memo_size = len(shared_memo)
-                    private_memo.update(shared_memo)
-            else:
-                # Normal mode or high-mem without lock: direct access
-                initial_memo_size = len(shared_memo)
-                private_memo.update(shared_memo)
-
+            initial_memo_size = len(shared_memo)
+            private_memo.update(shared_memo)
             memo_time = time.time() - memo_start
             mode_str = "batch-shared (async)" if is_high_mem else "live-shared"
             vlog(f"Worker [{start_idx},{end_idx}): Loaded {initial_memo_size} entries from {mode_str} memo in {memo_time:.3f}s", level=3)
@@ -363,12 +356,12 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
         memo_merge_thread = threading.Thread(target=async_memo_merger, daemon=True)
         memo_merge_thread.start()
 
-    # Create worker tasks (must be after memo_lock is initialized)
+    # Create worker tasks
     tasks = []
     for i in range(num_chunks):
         start_idx = i * chunk_size
         end_idx = min((i + 1) * chunk_size, task_multisets)
-        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor, memo_lock))
+        tasks.append((base, num_digits, start_idx, end_idx, shared_memo, progress_counter, progress_lock, write_reduction_factor))
 
     # Progress monitoring thread that updates global progress
     stop_monitoring = threading.Event()
@@ -456,7 +449,7 @@ def process_base_digit_pair_parallel(base, num_digits, cpu_cores, completed_mult
     # Extract unique cycle IDs from batch_shared_memo (high-mem mode only)
     unique_cycle_ids = set()
     if high_mem_mode and batch_shared_memo:
-        with memo_lock if memo_lock else threading.Lock():
+        with memo_lock:
             for result_type, value in batch_shared_memo.values():
                 if result_type == 'cycle':
                     unique_cycle_ids.add(value)
