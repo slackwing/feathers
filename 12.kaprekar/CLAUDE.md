@@ -35,7 +35,39 @@
 
 ## Version History
 
-### v0.7 - Batch-Shared Memoization (Current)
+### v0.9 - Worker-persistent memos with periodic syncing (Current) ⭐ BEST VERSION ⭐
+**Commit:** 3d6ed55
+**Date:** 2025-12-22
+
+**Features:**
+- **Worker-persistent memos**: Workers carry memo across multiple chunks via global variables
+- **Periodic syncing (15s intervals)**: Workers only sync (push + reload) once per 15 seconds
+- **Between syncs**: Workers carry their private_memo without any read/write to shared_memo
+- **At sync time**: Worker pushes entire private_memo to async merge queue AND reloads from latest shared_memo snapshot
+- **Async queue-based merging**: Background thread continuously merges memo entries from queue
+- **Non-blocking memo checkout**: Workers get fresh memo snapshots when pulling tasks on-demand
+- **Lazy task generation**: Tasks created dynamically (not upfront) so each gets latest merged memo
+- Dramatically reduces read/write contention to shared_memo (from every chunk to once per 15s)
+
+**How it works:**
+1. Workers maintain persistent memo via global variables (`worker_persistent_memo`, `worker_last_sync_time`)
+2. On first chunk or after 15s: Worker syncs (loads from shared_memo snapshot)
+3. Between syncs: Worker carries persistent memo across chunks without any sharing
+4. At sync time: Worker pushes entire private_memo to async merge queue
+5. Background thread continuously merges entries from queue into batch_shared_memo
+6. Task generator creates tasks on-demand with fresh snapshots of merged memo
+
+**Performance:**
+- **T5 (base 12, digits 19): 39s with 1344% CPU** - Excellent utilization!
+- **75% improvement over v0.4** (155s → 39s)
+- **Minimal lock contention** - Only sync every 15s per worker
+- **Progressive speedup** - Later workers benefit from merged discoveries
+- **No worker blocking** - Async queue-based merging prevents stalls
+
+**Known Issues:**
+- None identified - production ready!
+
+### v0.7 - Batch-Shared Memoization
 **Commit:** TBD
 **Date:** 2025-12-22
 
@@ -61,7 +93,8 @@
 - Expected to show progressive speedup as more chunks complete
 
 **Known Issues:**
-- None yet - needs benchmarking
+- High contention from frequent memo reads/writes (every chunk)
+- Superseded by v0.9's periodic syncing approach
 
 ### v0.6 - High-Memory Mode
 **Commit:** TBD
