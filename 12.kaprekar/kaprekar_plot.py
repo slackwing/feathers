@@ -15,7 +15,7 @@ def parse_filename(filename):
     Parse a filename like 'kaprekar_summary_base2-10_digits2-8.csv'
     Returns: (file_type, min_base, max_base, min_digits, max_digits) or None
     """
-    pattern = r'kaprekar_(summary|fp)_base(\d+)-(\d+)_digits(\d+)-(\d+)\.csv'
+    pattern = r'kaprekar_(summary|fp|cycles)_base(\d+)-(\d+)_digits(\d+)-(\d+)\.csv'
     match = re.match(pattern, filename)
     if match:
         file_type = match.group(1)
@@ -30,9 +30,9 @@ def parse_filename(filename):
 def discover_csv_files(csv_dir):
     """
     Discover all kaprekar CSV files in the directory.
-    Returns: dict with 'summary' and 'fp' keys, each containing list of (filepath, metadata) tuples
+    Returns: dict with 'summary', 'fp', and 'cycles' keys, each containing list of (filepath, metadata) tuples
     """
-    files = {'summary': [], 'fp': []}
+    files = {'summary': [], 'fp': [], 'cycles': []}
 
     for filepath in csv_dir.glob('kaprekar_*.csv'):
         parsed = parse_filename(filepath.name)
@@ -47,6 +47,8 @@ def load_and_merge_csvs(files, file_type):
     """
     Load and merge multiple CSV files of the same type.
     Returns: merged DataFrame and list of warnings about overlaps
+
+    For 'cycles' files: uses the LOWER unique_cycle_ids count when collisions occur
     """
     if not files:
         return None, []
@@ -56,8 +58,12 @@ def load_and_merge_csvs(files, file_type):
 
     for filepath, min_base, max_base, min_digits, max_digits in files:
         print(f"Reading {filepath.name}...", end='', flush=True)
-        df = pd.read_csv(filepath)
-        print(f" ({len(df)} rows)")
+        try:
+            df = pd.read_csv(filepath)
+            print(f" ({len(df)} rows)")
+        except pd.errors.EmptyDataError:
+            print(" (empty, skipping)")
+            continue
 
         for _, row in df.iterrows():
             base = int(row['base'])
@@ -81,9 +87,17 @@ def load_and_merge_csvs(files, file_type):
                             f"Inconsistent fixed points for base={base}, digits={digits}: "
                             f"{existing_row['fixed_point_values']} vs {row['fixed_point_values']}"
                         )
+                elif file_type == 'cycles':
+                    # For cycles: use the LOWER unique_cycle_ids count
+                    existing_count = int(existing_row['unique_cycle_ids'])
+                    new_count = int(row['unique_cycle_ids'])
+                    if new_count < existing_count:
+                        all_data[key] = row.to_dict()
+                    continue  # Don't overwrite unless new is lower
 
-            # Store (last occurrence wins for overlaps)
-            all_data[key] = row.to_dict()
+            # Store (last occurrence wins for overlaps, except cycles which uses min)
+            if key not in all_data or file_type != 'cycles':
+                all_data[key] = row.to_dict()
 
     # Convert back to DataFrame
     if all_data:
@@ -118,7 +132,7 @@ def main():
         print(f"Error: No summary CSV files found in {csv_dir}")
         sys.exit(1)
 
-    print(f"Found {len(files['summary'])} summary file(s) and {len(files['fp'])} fixed point file(s)")
+    print(f"Found {len(files['summary'])} summary file(s), {len(files['fp'])} fixed point file(s), and {len(files['cycles'])} cycles file(s)")
 
     # Load and merge CSVs
     print("\nMerging summary data...")
@@ -127,8 +141,11 @@ def main():
     print("Merging fixed point data...")
     df_fp, fp_warnings = load_and_merge_csvs(files['fp'], 'fp')
 
+    print("Merging cycles data...")
+    df_cycles, cycles_warnings = load_and_merge_csvs(files['cycles'], 'cycles')
+
     # Print warnings
-    all_warnings = summary_warnings + fp_warnings
+    all_warnings = summary_warnings + fp_warnings + cycles_warnings
     if all_warnings:
         print("\nWARNINGS:")
         for warning in all_warnings:
@@ -166,6 +183,15 @@ def main():
         cycles = int(row['num_cycles'])
         fps = int(row['fixed_points'])
 
+        # Check if we have unique cycle ID data for this base-digit pair
+        base_val = int(row['base'])
+        digits_val = int(row['digits'])
+        unique_cycle_count = None
+        if df_cycles is not None:
+            cycles_row = df_cycles[(df_cycles['base'] == base_val) & (df_cycles['digits'] == digits_val)]
+            if not cycles_row.empty:
+                unique_cycle_count = int(cycles_row['unique_cycle_ids'].iloc[0])
+
         # Determine if there's only 1 fixed point and no cycles (special green case)
         is_special = (fps == 1 and cycles == 0)
         edge_color = 'black'
@@ -180,13 +206,15 @@ def main():
             ax.scatter(x, y, s=marker_size, c='white', edgecolors=edge_color, linewidths=2, zorder=3)
 
             # If no fixed points, show cycle count above circle in scientific notation
+            # Use unique_cycle_count if available, otherwise use cycles count
             if fps == 0:
+                display_count = unique_cycle_count if unique_cycle_count is not None else cycles
                 # Format as scientific notation with 1 digit precision
-                if cycles < 10:
-                    cycle_text = str(cycles)
+                if display_count < 10:
+                    cycle_text = str(display_count)
                 else:
-                    exponent = int(math.floor(math.log10(cycles)))
-                    mantissa = cycles / (10 ** exponent)
+                    exponent = int(math.floor(math.log10(display_count)))
+                    mantissa = display_count / (10 ** exponent)
                     cycle_text = f"${mantissa:.1f} \\times 10^{{{exponent}}}$"
 
                 ax.text(x, y + radius * 4, cycle_text, fontsize=7, ha='center', va='center', zorder=7, weight='bold', color='gray')
@@ -214,8 +242,6 @@ def main():
 
         # Add fixed point number annotations (up to 4)
         if df_fp is not None:
-            base_val = int(row['base'])
-            digits_val = int(row['digits'])
             fp_row = df_fp[(df_fp['base'] == base_val) & (df_fp['digits'] == digits_val)]
 
             if not fp_row.empty and fps > 0 and fps <= 4:
@@ -262,7 +288,7 @@ def main():
     # Create legend
     legend_elements = [
         mpatches.Patch(facecolor='white', edgecolor='black', label='Circle: has cycles'),
-        mpatches.Patch(facecolor='none', edgecolor='black', label='Number in circle: cycle count (no FPs)'),
+        mpatches.Patch(facecolor='none', edgecolor='black', label='Gray number: unique cycle IDs (if available)'),
         mpatches.Patch(facecolor='none', edgecolor='black', label='Horizontal line: 1 fixed point'),
         mpatches.Patch(facecolor='none', edgecolor='black', label='Vertical line: 2 fixed points'),
         mpatches.Patch(facecolor='none', edgecolor='black', label='Diagonal /: 3 fixed points'),

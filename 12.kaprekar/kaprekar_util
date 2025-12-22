@@ -70,7 +70,7 @@ def find_csv_files(data_dir):
 def parse_csv_filename(csv_path):
     """
     Parse CSV filename to extract base and digit ranges.
-    Expected format: kaprekar_summary_baseX-Y_digitsA-B.csv or kaprekar_fp_baseX-Y_digitsA-B.csv
+    Expected format: kaprekar_(summary|fp|cycles)_baseX-Y_digitsA-B.csv
 
     Args:
         csv_path: Path to the CSV file
@@ -79,8 +79,8 @@ def parse_csv_filename(csv_path):
         tuple: (base_min, base_max, digits_min, digits_max) or None if parsing fails
     """
     filename = csv_path.name
-    # Match pattern: kaprekar_(summary|fp)_baseX-Y_digitsA-B.csv
-    pattern = r'kaprekar_(?:summary|fp)_base(\d+)-(\d+)_digits(\d+)-(\d+)\.csv'
+    # Match pattern: kaprekar_(summary|fp|cycles)_baseX-Y_digitsA-B.csv
+    pattern = r'kaprekar_(?:summary|fp|cycles)_base(\d+)-(\d+)_digits(\d+)-(\d+)\.csv'
     match = re.match(pattern, filename)
 
     if match:
@@ -145,7 +145,7 @@ def do_clean(data_dir, dry_run):
 def do_matrix(data_dir):
     """
     Matrix mode: Show ASCII grid of available base-digit combinations.
-    Shows ★ for true Kaprekar (1 fixed point, 0 cycles), ✓ for other results.
+    Shows ★ for true Kaprekar (1 fixed point, 0 cycles), ○ for combinations with cycle data, · for others.
 
     Args:
         data_dir: Path to the data directory
@@ -160,8 +160,30 @@ def do_matrix(data_dir):
     # Parse filenames and collect base-digit combinations
     # Use dict to track (base, digit) -> is_true_kaprekar
     combinations = {}
+    # Track which combinations have cycle data
+    has_cycle_data = set()
 
     for csv_path in csv_files:
+        # Process cycles CSVs to track which combinations have cycle data
+        if 'kaprekar_cycles' in csv_path.name:
+            parsed = parse_csv_filename(csv_path)
+            if not parsed:
+                continue
+
+            base_min, base_max, digits_min, digits_max = parsed
+
+            try:
+                import csv
+                with open(csv_path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        base = int(row['base'])
+                        digits = int(row['digits'])
+                        has_cycle_data.add((base, digits))
+            except Exception:
+                # If we can't read the file, skip it
+                pass
+
         # Only process summary CSVs (they have the num_cycles and fixed_points data)
         if 'kaprekar_summary' not in csv_path.name:
             continue
@@ -208,9 +230,10 @@ def do_matrix(data_dir):
 
     # Count true Kaprekar vs other results
     true_kaprekar_count = sum(1 for is_tk in combinations.values() if is_tk)
+    cycle_data_count = len(has_cycle_data)
 
     print(f"Data coverage matrix (base {min_base}-{max_base}, digits {min_digits}-{max_digits}):")
-    print(f"Found {len(combinations)} base-digit combination(s), {true_kaprekar_count} true Kaprekar (★)")
+    print(f"Found {len(combinations)} base-digit combination(s), {true_kaprekar_count} true Kaprekar (★), {cycle_data_count} with cycle data (○)")
     print()
 
     # Print header (digits across top)
@@ -227,6 +250,8 @@ def do_matrix(data_dir):
             if (base, digits) in combinations:
                 if combinations[(base, digits)]:
                     print("  ★", end="")  # True Kaprekar
+                elif (base, digits) in has_cycle_data:
+                    print("  ○", end="")  # Has cycle data
                 else:
                     print("  ·", end="")  # Other result
             else:
