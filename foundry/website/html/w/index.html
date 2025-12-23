@@ -154,6 +154,22 @@
           content: none;
         }
       }
+
+      @media (max-width: 768px) {
+        .pagedjs_pages {
+          zoom: 0.7;
+          padding: 1em !important;
+          gap: 1em !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .pagedjs_pages {
+          zoom: 0.5;
+          padding: 0.5em !important;
+          gap: 0.5em !important;
+        }
+      }
     </style>
   </head>
 
@@ -332,6 +348,19 @@
       class SmartQuotesHandler extends Paged.Handler {
         afterRendered(pages) {
           smartquotes();
+
+          // Apply mobile scaling
+          if (window.innerWidth <= 768) {
+            const pagesContainer = document.querySelector('.pagedjs_pages');
+            if (pagesContainer) {
+              const pageWidth = 600; // 6in = ~600px at 96dpi
+              const viewportWidth = window.innerWidth;
+              const scale = (viewportWidth * 0.7) / pageWidth; // 70% to leave room for borders
+              pagesContainer.style.transform = `scale(${scale})`;
+              pagesContainer.style.transformOrigin = 'top center';
+              pagesContainer.style.padding = '1em';
+            }
+          }
         }
       }
       Paged.registerHandlers(SmartQuotesHandler);
