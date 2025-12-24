@@ -144,17 +144,20 @@
 
     .log-entry {
       margin-bottom: 1em;
-      page-break-inside: avoid;
     }
 
     .log-entry .log-meta {
       display: block;
       font-style: italic;
+      font-size: 11pt;
+      break-after: avoid;
     }
 
     .log-entry p {
       text-indent: 0;
       margin-top: 0.5em;
+      font-size: 11pt;
+      text-align: justify;
     }
 
     .thought {
@@ -310,12 +313,13 @@
       Docked for proper repair. Loaded cargo: Rubber 600 bales making 1,200.
       Cocoa 700 sacks making 1,500. No palm oil, unreasonably priced at this
       port.
-      <span class="thought">But you'd still be out there looking wouldn't you, Carter? Everyone
-        knew you by Carter. You even made me call you that when we worked the
-        stall. In the market you loved to ask if I'd seen their face. Their
-        unhappy look, you relished saying, was the gauge of a successful deal.
-        Well Carter I wish you could have seen: Today I traded 2 inkwells for
-        10 shillings and watched the merchant beam.</span>
+      <span class="thought">But you'd still be out there looking wouldn't you, "Carter"? I know
+        everyone called you Carter, but you even made me call you that when we
+        worked the stall, instead of "D—". In the market you loved to ask if
+        I'd seen their face. Their unhappy look, you relished saying, was the
+        gauge of a successful deal. Well "Carter" I wish you could have seen:
+        Today I traded 2 inkwells for 10 shillings and watched the merchant
+        beam.</span>
     </p>
   </div>
 
@@ -426,7 +430,7 @@
     Paged.registerHandlers(SmartQuotesHandler);
 
     // Listen for window resize events
-    window.addEventListener('resize', applyResponsiveScaling);
+    window.addEventListener("resize", applyResponsiveScaling);
   </script>
 </body>
 
