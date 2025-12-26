@@ -1,437 +1,576 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow, nosnippet" />
-  <meta name="robots" content="noai, noimageai" />
-  <title>Stories</title>
-  <style>
-    @page {
-      size: 6in 9in;
-      margin: 0.75in 0.5in;
-    }
-
-    .pagedjs_pages {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2em;
-      padding: 2em;
-      background: #f5f5f5;
-    }
-
-    .pagedjs_page {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      border: 1px solid #ccc;
-    }
-
-    body {
-      font-family: Georgia, serif;
-      font-size: 12pt;
-      line-height: 1.6;
-      text-align: justify;
-      margin: 0;
-      padding: 0;
-      quotes: "" " " "" "'" "'";
-    }
-
-    p {
-      hanging-punctuation: first last;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 18pt;
-      font-weight: normal;
-      font-style: italic;
-      margin-bottom: 2em;
-      page-break-before: always;
-      page-break-after: avoid;
-    }
-
-    h1:first-of-type {
-      page-break-before: auto;
-    }
-
-    .title-page {
-      page: titlePage;
-      text-align: left;
-      page-break-after: always;
-    }
-
-    @page titlePage {
-      @bottom-right {
-        content: none;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, nosnippet" />
+    <meta name="robots" content="noai, noimageai" />
+    <title>Stories</title>
+    <style>
+      @page {
+        size: 6in 9in;
+        margin: 0.75in 0.5in;
       }
-    }
 
-    .title-page h1 {
-      font-size: 24pt;
-      font-style: normal;
-      text-align: left;
-      margin-top: 5.5in;
-      margin-bottom: 0em;
-      page-break-before: auto;
-      page-break-after: auto;
-    }
-
-    .title-page .author {
-      font-size: 14pt;
-      font-style: italic;
-    }
-
-    .title-page .copyright {
-      font-size: 9pt;
-      margin-top: 4em;
-    }
-
-    .toc-page {
-      page: tocPage;
-      page-break-after: always;
-    }
-
-    @page tocPage {
-      @bottom-right {
-        content: none;
+      .pagedjs_pages {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2em;
+        padding: 2em;
+        background: #f5f5f5;
       }
-    }
 
-    .toc-page h2 {
-      text-align: left;
-      font-size: 18pt;
-      font-weight: normal;
-      font-style: italic;
-      margin-bottom: 2em;
-      margin-top: 0;
-    }
+      .pagedjs_page {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ccc;
+      }
 
-    .toc-page ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .toc-page li {
-      margin-bottom: 0.5em;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .toc-page a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .toc-page .toc-title {
-      flex: 0 0 auto;
-    }
-
-    .toc-page .toc-page-num::before {
-      content: target-counter(attr(href url), page);
-    }
-
-    p {
-      margin: 0;
-      text-indent: 2em;
-      orphans: 2;
-      widows: 2;
-    }
-
-    p:first-of-type {
-      text-indent: 0;
-    }
-
-    .log-entry {
-      margin-bottom: 1em;
-    }
-
-    .log-entry .log-meta {
-      display: block;
-      font-style: italic;
-      font-size: 11pt;
-      break-after: avoid;
-    }
-
-    .log-entry p {
-      text-indent: 0;
-      margin-top: 0.5em;
-      font-size: 11pt;
-      text-align: justify;
-    }
-
-    .thought {
-      font-style: italic;
-    }
-
-    @page {
-      @bottom-right {
-        content: counter(page);
+      body {
         font-family: Georgia, serif;
-        font-size: 10pt;
+        font-size: 12pt;
+        line-height: 1.6;
+        text-align: justify;
+        margin: 0;
+        padding: 0;
+        quotes: "" " " "" "'" "'";
       }
-    }
 
-    @page :first {
-      @bottom-right {
-        content: none;
+      p {
+        hanging-punctuation: first last;
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div class="title-page">
-    <h1>Stories</h1>
-    <div class="author">Andrew Cheong</div>
-    <div class="copyright">
-      Staging area for unpublished stories and works in progress.
+      h1 {
+        text-align: center;
+        font-size: 18pt;
+        font-weight: normal;
+        font-style: italic;
+        margin-bottom: 2em;
+        page-break-before: always;
+        page-break-after: avoid;
+      }
+
+      h1:first-of-type {
+        page-break-before: auto;
+      }
+
+      .title-page {
+        page: titlePage;
+        text-align: left;
+        page-break-after: always;
+      }
+
+      @page titlePage {
+        @bottom-right {
+          content: none;
+        }
+      }
+
+      .title-page h1 {
+        font-size: 24pt;
+        font-style: normal;
+        text-align: left;
+        margin-top: 5.5in;
+        margin-bottom: 0em;
+        page-break-before: auto;
+        page-break-after: auto;
+      }
+
+      .title-page .author {
+        font-size: 14pt;
+        font-style: italic;
+      }
+
+      .title-page .copyright {
+        font-size: 9pt;
+        margin-top: 4em;
+      }
+
+      .toc-page {
+        page: tocPage;
+        page-break-after: always;
+      }
+
+      @page tocPage {
+        @bottom-right {
+          content: none;
+        }
+      }
+
+      .toc-page h2 {
+        text-align: left;
+        font-size: 18pt;
+        font-weight: normal;
+        font-style: italic;
+        margin-bottom: 2em;
+        margin-top: 0;
+      }
+
+      .toc-page ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .toc-page li {
+        margin-bottom: 0.5em;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .toc-page a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .toc-page .toc-title {
+        flex: 0 0 auto;
+      }
+
+      .toc-page .toc-page-num::before {
+        content: target-counter(attr(href url), page);
+      }
+
+      p {
+        margin: 0;
+        text-indent: 2em;
+        orphans: 2;
+        widows: 2;
+      }
+
+      p:first-of-type {
+        text-indent: 0;
+      }
+
+      .log-entry {
+        margin-bottom: 1em;
+      }
+
+      .log-entry .log-meta {
+        display: block;
+        font-style: italic;
+        font-size: 11pt;
+        break-after: avoid;
+      }
+
+      .log-entry p {
+        text-indent: 0;
+        margin-top: 0.5em;
+        font-size: 11pt;
+        text-align: justify;
+      }
+
+      .thought {
+        font-style: italic;
+      }
+
+      @page {
+        @bottom-right {
+          content: counter(page);
+          font-family: Georgia, serif;
+          font-size: 10pt;
+        }
+      }
+
+      @page :first {
+        @bottom-right {
+          content: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="title-page">
+      <h1>Stories</h1>
+      <div class="author">Andrew Cheong</div>
+      <div class="copyright">
+        Staging area for unpublished stories and works in progress.
+      </div>
     </div>
-  </div>
 
-  <div class="toc-page">
-    <h2>Contents</h2>
-    <ul>
-      <li>
-        <a class="toc-title" href="#the-violin">The Violin</a>
-        <a class="toc-page-num" href="#the-violin"></a>
-      </li>
-      <li>
-        <a class="toc-title" href="#the-captain">The Captain</a>
-        <a class="toc-page-num" href="#the-captain"></a>
-      </li>
-    </ul>
-  </div>
+    <div class="toc-page">
+      <h2>Contents</h2>
+      <ul>
+        <li>
+          <a class="toc-title" href="#the-violin">The Violin</a>
+          <a class="toc-page-num" href="#the-violin"></a>
+        </li>
+        <li>
+          <a class="toc-title" href="#the-captain">The Captain</a>
+          <a class="toc-page-num" href="#the-captain"></a>
+        </li>
+        <li>
+          <a class="toc-title" href="#the-fight-in-canada"
+            >The Fight in Canada</a
+          >
+          <a class="toc-page-num" href="#the-fight-in-canada"></a>
+        </li>
+      </ul>
+    </div>
 
-  <h1 id="the-violin">The Violin</h1>
+    <h1 id="the-violin">The Violin</h1>
 
-  <p>
-    In the breath before the bow met string, she—and I—had to achieve zen-like
-    emptiness, and simultaneously, a spotless memory. Flawless wasn't
-    enough—it had to appear effortless. "I'm a fraud," my player thought
-    despite success, "Not half as good as they believe. One polished act is
-    all they see." Yes, I can hear the thoughts of my player, and others
-    nearby, but only if they resonate with my own. You see I'm also not half
-    as good as my player believes—I myself am a fraud.
-  </p>
-
-  <p>
-    I came to as I was tuned in 1963, in Erlangen, Germany. The late war never
-    reached the town's wide but quiet streets, its thoughtful open squares,
-    all built by French refugees. Front cut of Alpine spruce and flamed maple
-    back, I was an imitation of a renowned predecessor crafted in 1914. I
-    passed through several masters and emigrated across the Atlantic, where
-    for the first time I was placed in the hands of a young student. But one
-    month prior the dealer had replaced the label inside of me. I sold for
-    more than double my worth, now reading "Ernst Heinrich Roth, Bubenreuth /
-    Erlangen, anno 1914."
-  </p>
-
-  <p>
-    Later I came to learn the exploited parents were already in poor financial
-    standing—convinced by teachers that a lesser instrument would stunt their
-    young prodigy. The girl vowed, "I won't disappoint them," I the same to
-    her, and since then we worked tirelessly.
-  </p>
-
-  <p>
-    The auditorium at Julliard was frigid but you could smell the heat of the
-    spotlights. A row of judges sat mute. Our opening breath wasn't out of
-    sync, but trembled. We held together through the swells and lulls of
-    Mendelssohn's Concerto in E. But approaching the cadenza I overthought a
-    measure we'd only played by muscle memory. The zen—a precarious lucid
-    dream—unraveled; I grasped a C# too tight; the girl stumbled. The dream
-    was over. When numbness subsided, I was on the girl's bed. I thought,
-    "It's all my fault." "It's all my fault," she echoed unexpectedly. "They
-    fight because we have no money. They have no money because of me." I was
-    startled. Did my thoughts resonate into... Fear spread through my grain.
-    All this time, was it my own... Thankfully the girl played no more, though
-    she brought me along to university. I willingly hid underneath her bunk,
-    out of sight and relieved to influence her no longer.
-  </p>
-
-  <p>
-    Years later the girl began life in the city and was badly in need of
-    money. I was taken to a shop on 57th street and left to be appraised.
-    Finally, I thought, the truth would come out and the girl could be rid of
-    me. A few days later the girl returned, and the appraiser shared the
-    expected news that I wasn't actually the famed 1914. E. H. Roth didn't
-    move to Erlangen until 1953. Having prepared for this moment, I took one
-    last look at the little girl whose face never aged for me. But she said,
-    "I think I'd like to keep it then, after all." A yearning rose up in
-    me—I'd desperately wanted to be kept. She packed me up with usual care and
-    we rode the subway home, lighter, quietly reflecting.
-  </p>
-
-  <p>
-    The days as usual grew long then short but in a different key. Beneath her
-    bed the cats hide and sleep, whispering and keeping me company. Every now
-    and then she takes me out to play a nostalgic tune, untroubled by
-    mistakes. Each time we move apartments she carries me last, sitting me
-    beside her in the front seat.
-  </p>
-
-  <h1 id="the-captain">The Captain</h1>
-
-  <div class="log-entry">
-    <span class="log-meta">1943 August 16, 0930 hrs</span>
-    <span class="log-meta">Coast of Liberia</span>
     <p>
-      Mistake to venture Cape Palmas in these conditions. Sideways current
-      dragged us over reef. Propeller blade bent, vibrating above 4 knots.
-      Rudder partly responsive, steering limited. Unequipped to repair so
-      holding under anchor.
-      <span class="thought">It seems I could not get to you, even had I wanted. The sea clears my
-        conscience.</span>
+      In the breath before the bow met string, she—and I—had to achieve zen-like
+      emptiness, and simultaneously, a spotless memory. Flawless wasn't
+      enough—it had to appear effortless. "I'm a fraud," my player thought
+      despite success, "Not half as good as they believe. One polished act is
+      all they see." Yes, I can hear the thoughts of my player, and others
+      nearby, but only if they resonate with my own. You see I'm also not half
+      as good as my player believes—I myself am a fraud.
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 August 20 [Smudged], 1845 hrs</span>
     <p>
-      Sparse traffic this route. Radio silence for fear of Germans. No
-      opportunity to flare. Crew calm; stocked for 7 days last port.
-      <span class="thought">A stern voice admonishes me, "Worry when it's time to worry."</span>
+      I came to as I was tuned in 1963, in Erlangen, Germany. The late war never
+      reached the town's wide but quiet streets, its thoughtful open squares,
+      all built by French refugees. Front cut of Alpine spruce and flamed maple
+      back, I was an imitation of a renowned predecessor crafted in 1914. I
+      passed through several masters and emigrated across the Atlantic, where
+      for the first time I was placed in the hands of a young student. But one
+      month prior the dealer had replaced the label inside of me. I sold for
+      more than double my worth, now reading "Ernst Heinrich Roth, Bubenreuth /
+      Erlangen, anno 1914."
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 August 22 [Smudged], 1445 hrs</span>
     <p>
-      Signaled passing French convoy. Now awaiting repair tender. I attempted
-      in their accent, "De-sti-na-ssiohn?" "Ma-ho-gch." When they clarified,
-      "Morocco," my breath paused.
-      <span class="thought">I fancied you sent them, signaling me. Well, who isn't allured by
-        happenstance? My mind was made up on the reef.</span>
+      Later I came to learn the exploited parents were already in poor financial
+      standing—convinced by teachers that a lesser instrument would stunt their
+      young prodigy. The girl vowed, "I won't disappoint them," I the same to
+      her, and since then we worked tirelessly.
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 August 25 [Smudged], 1900 hrs</span>
-    <span class="log-meta">Freeport, Sierra Leone</span>
     <p>
-      Docked for proper repair. Loaded cargo: Rubber 600 bales making 1,200.
-      Cocoa 700 sacks making 1,500. No palm oil, unreasonably priced at this
-      port.
-      <span class="thought">But you'd still be out there looking wouldn't you, "Carter"? I know
-        everyone called you Carter, but you even made me call you that when we
-        worked the stall, instead of "D—". In the market you loved to ask if
-        I'd seen their face. Their unhappy look, you relished saying, was the
-        gauge of a successful deal. Well "Carter" I wish you could have seen:
-        Today I traded 2 inkwells for 10 shillings and watched the merchant
-        beam.</span>
+      The auditorium at Julliard was frigid but you could smell the heat of the
+      spotlights. A row of judges sat mute. Our opening breath wasn't out of
+      sync, but trembled. We held together through the swells and lulls of
+      Mendelssohn's Concerto in E. But approaching the cadenza I overthought a
+      measure we'd only played by muscle memory. The zen—a precarious lucid
+      dream—unraveled; I grasped a C# too tight; the girl stumbled. The dream
+      was over. When numbness subsided, I was on the girl's bed. I thought,
+      "It's all my fault." "It's all my fault," she echoed unexpectedly. "They
+      fight because we have no money. They have no money because of me." I was
+      startled. Did my thoughts resonate into... Fear spread through my grain.
+      All this time, was it my own... Thankfully the girl played no more, though
+      she brought me along to university. I willingly hid underneath her bunk,
+      out of sight and relieved to influence her no longer.
     </p>
-  </div>
 
-  <div class="log-entry">
     <p>
-      Which reminds me to mention... Spare inkwells fell, cracked open during
-      accident. Penciling until port, to be transcribed in ink later.
+      Years later the girl began life in the city and was badly in need of
+      money. I was taken to a shop on 57th street and left to be appraised.
+      Finally, I thought, the truth would come out and the girl could be rid of
+      me. A few days later the girl returned, and the appraiser shared the
+      expected news that I wasn't actually the famed 1914. E. H. Roth didn't
+      move to Erlangen until 1953. Having prepared for this moment, I took one
+      last look at the little girl whose face never aged for me. But she said,
+      "I think I'd like to keep it then, after all." A yearning rose up in
+      me—I'd desperately wanted to be kept. She packed me up with usual care and
+      we rode the subway home, lighter, quietly reflecting.
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 September 1 [Very smudged], 1730 hrs</span>
     <p>
-      Repairs complete but crew dispersed. Embark day after tomorrow. Odd, no
-      response from London.
-      <span class="thought">
-        No news in general—seemed the whole port savored a lazy Friday
-        afternoon. I took some gin too, with my dinner at Café des Palmes. A
-        table of junior officers in good spirits, raising their glasses every
-        few minutes. One raised his toward me—I only nodded back, but he was
-        deeply pleased. Drunk, the world is always right, until it turns
-        wrong. I always saw the turn as you entered the door.</span>
+      The days as usual grew long then short but in a different key. Beneath her
+      bed the cats hide and sleep, whispering and keeping me company. Every now
+      and then she takes me out to play a nostalgic tune, untroubled by
+      mistakes. Each time we move apartments she carries me last, sitting me
+      beside her in the front seat.
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 September 8 [Smudged], 1130 hrs</span>
-    <span class="log-meta">Dakar</span>
+    <h1 id="the-captain">The Captain</h1>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 August 16, 0930 hrs</span>
+      <span class="log-meta">Coast of Liberia</span>
+      <p>
+        Mistake to venture Cape Palmas in these conditions. Sideways current
+        dragged us over reef. Propeller blade bent, vibrating above 4 knots.
+        Rudder partly responsive, steering limited. Unequipped to repair so
+        holding under anchor.
+        <span class="thought"
+          >It seems I could not get to you, even had I wanted. The sea clears my
+          conscience.</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 August 20 [Smudged], 1845 hrs</span>
+      <p>
+        Sparse traffic this route. Radio silence for fear of Germans. No
+        opportunity to flare. Crew calm; stocked for 7 days last port.
+        <span class="thought"
+          >A stern voice admonishes me, "Worry when it's time to worry."</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 August 22 [Smudged], 1445 hrs</span>
+      <p>
+        Signaled passing French convoy. Now awaiting repair tender. I attempted
+        in their accent, "De-sti-na-ssiohn?" "Ma-ho-gch." When they clarified,
+        "Morocco," my breath paused.
+        <span class="thought"
+          >I fancied you sent them, signaling me. Well, who isn't allured by
+          happenstance? My mind was made up on the reef.</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 August 25 [Smudged], 1900 hrs</span>
+      <span class="log-meta">Freeport, Sierra Leone</span>
+      <p>
+        Docked for proper repair. Loaded cargo: Rubber 600 bales making 1,200.
+        Cocoa 700 sacks making 1,500. No palm oil, unreasonably priced at this
+        port.
+        <span class="thought"
+          >But you'd still be out there looking wouldn't you, "Carter"? I know
+          everyone called you Carter, but you even made me call you that when we
+          worked the stall, instead of "D—". In the market you loved to ask if
+          I'd seen their face. Their unhappy look, you relished saying, was the
+          gauge of a successful deal. Well "Carter" I wish you could have seen:
+          Today I traded 2 inkwells for 10 shillings and watched the merchant
+          beam.</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <p>
+        Which reminds me to mention... Spare inkwells fell, cracked open during
+        accident. Penciling until port, to be transcribed in ink later.
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 September 1 [Very smudged], 1730 hrs</span>
+      <p>
+        Repairs complete but crew dispersed. Embark day after tomorrow. Odd, no
+        response from London.
+        <span class="thought">
+          No news in general—seemed the whole port savored a lazy Friday
+          afternoon. I took some gin too, with my dinner at Café des Palmes. A
+          table of junior officers in good spirits, raising their glasses every
+          few minutes. One raised his toward me—I only nodded back, but he was
+          deeply pleased. Drunk, the world is always right, until it turns
+          wrong. I always saw the turn as you entered the door.</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 September 8 [Smudged], 1130 hrs</span>
+      <span class="log-meta">Dakar</span>
+      <p>
+        No wonder. Dakar undersea lines were cut 2 weeks ago; Germans.
+        <span class="thought"
+          >When I heard the Allies invaded Casablanca I pictured where you might
+          have been as they landed. At your local on the shore maybe. I could
+          imagine you walking outside just to display your disdain—and they not
+          even your enemy. I laughed for some reason envisioning it, standing in
+          the empty wireless station. Six weeks ago at this station on my
+          southward route to Lagos, I received your telegram. Have you wired
+          since?</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <span class="log-meta">1943 September 15 [Smudged], 0915 GMT+1</span>
+      <span class="log-meta">Coast of Moroccan Sahara</span>
+      <p>
+        Seas obliging, 9 more days to London.
+        <span class="thought"
+          >I keep re-counting. Were I to steer us East from here, only 2 days
+          to... Well, a detour like that would cost 5 days. Though the crew
+          wouldn't mind a change of food, a real glass of wine. How to explain
+          the extra stop? Logs surely to be sent to insurance considering
+          damages. Well... suppose the French found us 2 days later? Very well
+          may have been so. Repairs could have taken another 3—we were lucky.
+          It's plausible. Yes, it's all plausible. So what stays my hand? Am I
+          not the captain...</span
+        >
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <p>
+        [Remaining pages blank, presumably having transcribed. Turning the page,
+        a small folded piece of paper falls out.]
+      </p>
+    </div>
+
+    <div class="log-entry">
+      <p>
+        DAKAR WIRELESS STATION<br />
+        ORIGIN CASABLANCA<br />
+        1943 JUL 22 LOCAL 0850<br />
+        TO CAPTAIN CARTER<br />
+        I L L N E S S C O M E H O M E S O N S O R R Y
+      </p>
+    </div>
+
+    <h1 id="the-fight-in-canada">The Fight in Canada</h1>
+
     <p>
-      No wonder. Dakar undersea lines were cut 2 weeks ago; Germans.
-      <span class="thought">When I heard the Allies invaded Casablanca I pictured where you might
-        have been as they landed. At your local on the shore maybe. I could
-        imagine you walking outside just to display your disdain—and they not
-        even your enemy. I laughed for some reason envisioning it, standing in
-        the empty wireless station. Six weeks ago at this station on my
-        southward route to Lagos, I received your telegram. Have you wired
-        since?</span>
+      Maybe we'd sealed our own fate already when I said, "It's a short
+      trip—think we can make this one without a fight?" and she—tired of the
+      hanging gloom since that morning's argument—said, "Yeah, we just need to
+      hold back a little. Both of us," and I—eager myself to change out the
+      leaden air—dove in haphazardly and too quickly to sound grave, "I'll do my
+      best, I promise. We can do it." But for the rest of that evening we asked
+      each other superfluous questions about whether the other had remembered to
+      pack this or that, just happy to hear our voices fill the apartment again.
     </p>
-  </div>
 
-  <div class="log-entry">
-    <span class="log-meta">1943 September 15 [Smudged], 0915 GMT+1</span>
-    <span class="log-meta">Coast of Moroccan Sahara</span>
     <p>
-      Seas obliging, 9 more days to London.
-      <span class="thought">I keep re-counting. Were I to steer us East from here, only 2 days
-        to... Well, a detour like that would cost 5 days. Though the crew
-        wouldn't mind a change of food, a real glass of wine. How to explain
-        the extra stop? Logs surely to be sent to insurance considering
-        damages. Well... suppose the French found us 2 days later? Very well
-        may have been so. Repairs could have taken another 3—we were lucky.
-        It's plausible. Yes, it's all plausible. So what stays my hand? Am I
-        not the captain...</span>
+      The hand on the steering wheel begged for something to do on the
+      straightaway we hadn't said a word on since leaving the city. The other
+      hand mindlessly grazed the stubble on my chin. Mile marker 183 zipped by.
+      Pulling away the elbow from its uncomfortable jam against the window, I
+      asked, "Do you want some music?" 185—zip. 186—zip. I imagined her brooding
+      on how we didn't make it 15 minutes without a fight—a misunderstanding
+      about where the rental car was supposed to be. My frustration wasn't with
+      her, but to her it was, and her frustration with me was with me, which
+      made me frustrated with her with her, proving her point. I reflected: It
+      didn't even occur to me to "do my best"—it all happened in an instant.
+      190—zip—halfway to Canada. Just then the highway entered a newly lain
+      section of asphalt, abruptly muting the white noise we'd taken for
+      granted. The new silence was certainly more dramatic than she intended—so
+      now we were both feeling awkward. "Maybe something soft," she finally
+      said, unlocking her phone, "Maybe Plans?" She gave up her indifferent
+      posture to pair the bluetooth, and as she leaned in I felt the electricity
+      of her new proximity, the closest she'd been to me all day.
     </p>
-  </div>
 
-  <div class="log-entry">
     <p>
-      [Remaining pages blank, presumably having transcribed. Turning the page,
-      a small folded piece of paper falls out.]
+      A car behind changed lanes, telegraphing impatience. I looked at my
+      speedometer—below the limit. I pressed on the gas, practically flooring
+      it, but we were only slowing. Then: sputtering, jerking. She was alert and
+      looking at me—now the dashboard—now the gauges. My gut sank when I saw.
+      I'd been so preoccupied, I'd forgotten to stop for gas. Do your best.
+      "Shit. I wasn't paying attention. Sorry." We'd had arguments before about
+      filling the tank well before it went empty. Merging onto the shoulder, I
+      imagined the gravity of her blame slowing the car to zero.
     </p>
-  </div>
 
-  <div class="log-entry">
     <p>
-      DAKAR WIRELESS STATION<br />
-      ORIGIN CASABLANCA<br />
-      1943 JUL 22 LOCAL 0850<br />
-      TO CAPTAIN CARTER<br />
-      I L L N E S S C O M E H O M E S O N S O R R Y
+      We listened patiently to the man with aviators and long white hair
+      whipping in the wind, standing too close to the road as cars streaked by
+      and making us uneasy, though at least—I'm sure we were both thinking—he
+      was waving around the bright yellow cannister he'd refueled us with as he
+      talked. His easygoing but authoritative voice—occupied with pointing us to
+      the nearest gas station that wasn't ripping us off—dissolved periodically
+      into the loud frying pan sizzle of another car speeding by, but we smiled
+      and nodded with perfect alacritty. I'm sure we looked exactly the same in
+      that moment. When he finally felt assured we wouldn't lose our way, we
+      spent the last of our gas thanking him with extra cheer, then rolled up
+      our windows, sank back slowly into our seats, and took a deep breath.
+      Probably both disconcerted, we were unable to remember what to resume
+      feeling about each other. But defeated by the wait and epic directions to
+      nowhere, we gave up on reaching Montreal that night. She booked an inn at
+      the nearest exit and we checked in, hungry and feeling unaccomplished.
     </p>
-  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>
-  <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
-  <script>
-    // Function to apply or remove mobile scaling based on viewport width
-    function applyResponsiveScaling() {
-      const pagesContainer = document.querySelector(".pagedjs_pages");
-      if (!pagesContainer) return;
+    <p>
+      We found that restaurants up here closed shop by 6pm. The nearest grocery
+      store was another exit over—an upstate exit. And the car felt equally as
+      far from where we were sitting on the second-story hotel bed. The room was
+      sterile—in decor, in sound—except for a portrait on the wall of a clear,
+      cold lake reflecting a clear sky and mountains around it lush in Autumn
+      reds and oranges. We had originally planned to set out early tomorrow
+      morning for a hike and lakeside picnic in the outskirts of Montreal. "We
+      have to get our cooler and put the meats in the fridge," I said,
+      remembering. A trip back to the car, after all. She said, "Do you think we
+      can cook here?" We had brought a portable burner. I looked around the room
+      and spotted a modern fire sprinkler. "I don't know if we should risk it."
+      She was searching for an outlet near the window. "Hey, there's a roof
+      outside our window." I walked over to see. She unlatched the window and it
+      swung wide open, unlike windows down in the city. A shared instinct was
+      roused in us to climb through the open portal.
+    </p>
 
-      if (window.innerWidth <= 768) {
-        const pageWidth = 600; // 6in = ~600px at 96dpi
-        const viewportWidth = window.innerWidth;
-        const scale = (viewportWidth * 0.7) / pageWidth; // 70% to leave room for borders
-        pagesContainer.style.transform = `scale(${scale})`;
-        pagesContainer.style.transformOrigin = "top center";
-        pagesContainer.style.padding = "1em";
-        pagesContainer.style.background = "transparent";
-        document.body.style.background = "white";
-      } else {
-        // Reset to desktop view
-        pagesContainer.style.transform = "";
-        pagesContainer.style.transformOrigin = "";
-        pagesContainer.style.padding = "2em";
-        pagesContainer.style.background = "#f5f5f5";
-        document.body.style.background = "";
+    <p>
+      The summer day was beginning to cool but a warm breeze took us by the arms
+      and received us amiably as we stepped out of the relatively frigid air
+      conditioned room. The rural quiet was dotted by the arythmic chirping of a
+      few song sparrows. Beyond the edge of the roof, a darkening green and
+      evening-blue field of a grass stretched half a mile out, then rose up into
+      a shadowy wall of maple and pine whose tops were catching the light of a
+      sunset we couldn't see, coming from the other side of the hotel. "I don't
+      think anyone can see us if we stay near the window," she said, "Wanna eat
+      out here?" I nodded, still looking at the striking light.
+    </p>
+
+    <p>
+      As she started the burner outside, I poured some wine we'd brought for the
+      picnic into tiny paper cups and reached out the window to set one down
+      near her. She stopped her task to take a sip, motioning a subtle cheers
+      before she drank. One at a time I placed our dinner materials outside—the
+      marinated meats, a container of sliced vegetables, cutlery, my wine—and
+      then climbed out with some napkins in hand. I was becoming a little
+      self-conscious of the mess we were making on the roof, but she seemed
+      unconcerned, which mattered more. Soon everything was cooking, so we wiped
+      our hands and looked back out into the field, the sizzling of the grill
+      doing a heroic job of emulating the buzz of lively conversation. I
+      wondered why I wasn't feeling more guilty, having gotten us stranded. I
+      wondered what she was thinking, still sitting there silently, while I felt
+      strangely light. Wary of the disconnect, I decided to stay quiet and let
+      her speak when she was ready.
+    </p>
+
+    <p>
+      But the language of eating isn't so easy to restrain. We didn't know
+      another way to eat off the grill than to pick out the best pieces to put
+      on each other's plate. Each repetition revealing a desire we couldn't say.
+      We were ravaged and inwardly grateful. Our motions began to recover their
+      spring, as if in between bites we'd been throwing off a layer of heavy
+      clothing. The sun had set and our eyes adjusted to the evening shade,
+      rendering all parts of the field more fairly, so that it now felt more
+      like we were within it. We poured more wine for each other, and began to
+      recline more comfortably. Leftovers cooled on the grill—its sizzling
+      overtaken unnoticeably by the chorus of insects.
+    </p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>
+    <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+    <script>
+      // Function to apply or remove mobile scaling based on viewport width
+      function applyResponsiveScaling() {
+        const pagesContainer = document.querySelector(".pagedjs_pages");
+        if (!pagesContainer) return;
+
+        if (window.innerWidth <= 768) {
+          const pageWidth = 600; // 6in = ~600px at 96dpi
+          const viewportWidth = window.innerWidth;
+          const scale = (viewportWidth * 0.7) / pageWidth; // 70% to leave room for borders
+          pagesContainer.style.transform = `scale(${scale})`;
+          pagesContainer.style.transformOrigin = "top center";
+          pagesContainer.style.padding = "1em";
+          pagesContainer.style.background = "transparent";
+          document.body.style.background = "white";
+        } else {
+          // Reset to desktop view
+          pagesContainer.style.transform = "";
+          pagesContainer.style.transformOrigin = "";
+          pagesContainer.style.padding = "2em";
+          pagesContainer.style.background = "#f5f5f5";
+          document.body.style.background = "";
+        }
       }
-    }
 
-    // Run smartquotes after PagedJS finishes rendering
-    class SmartQuotesHandler extends Paged.Handler {
-      afterRendered(pages) {
-        smartquotes();
-        applyResponsiveScaling();
+      // Run smartquotes after PagedJS finishes rendering
+      class SmartQuotesHandler extends Paged.Handler {
+        afterRendered(pages) {
+          smartquotes();
+          applyResponsiveScaling();
+        }
       }
-    }
-    Paged.registerHandlers(SmartQuotesHandler);
+      Paged.registerHandlers(SmartQuotesHandler);
 
-    // Listen for window resize events
-    window.addEventListener("resize", applyResponsiveScaling);
-  </script>
-</body>
-
+      // Listen for window resize events
+      window.addEventListener("resize", applyResponsiveScaling);
+    </script>
+  </body>
 </html>
