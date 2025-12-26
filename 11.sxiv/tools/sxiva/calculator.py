@@ -1842,6 +1842,24 @@ class PointCalculator:
                 continue
             # Handle empty lines and comments
             stripped = line.strip()
+
+            # Detect {summary} sections even if not in a summary_section node
+            # (can happen when {summary} is inside an ERROR node)
+            # IMPORTANT: Check this BEFORE handling blank lines, so blank lines before {summary} don't get preserved
+            if stripped == '{summary}':
+                in_summary_section = True
+                # Skip old summary sections - will regenerate at EOF
+                continue
+            elif in_summary_section:
+                # Inside a summary section - skip indented lines and blank lines
+                if not stripped or line.startswith((' ', '\t')):
+                    continue
+                else:
+                    # Non-indented line - exited summary
+                    in_summary_section = False
+                    # Fall through to process this line
+
+            # Handle blank lines and comments
             if not stripped:
                 # Skip blank lines in timesheet section, preserve elsewhere
                 if not in_timesheet_section:
@@ -1858,13 +1876,17 @@ class PointCalculator:
                 in_timesheet_section = False
                 # Generate summary before the end marker if not already generated
                 if not summary_generated and category_minutes:
-                    # Add blank line before summary if last line isn't already blank
-                    if fixed_lines and fixed_lines[-1].strip():
+                    # Add blank line before summary if needed
+                    # Don't add if last line in output is already blank
+                    if not (fixed_lines and not fixed_lines[-1].strip()):
                         fixed_lines.append("")
                     summary_lines = self.generate_summary_lines(category_minutes)
                     fixed_lines.extend(summary_lines)
-                    # Add blank line between summary and ===
-                    fixed_lines.append("")
+                    # Add blank line between summary and === if there isn't one already in source
+                    end_marker_line_idx = line_idx
+                    if end_marker_line_idx > 0 and lines[end_marker_line_idx - 1].strip():
+                        # Previous line (in source) before === has content, add blank
+                        fixed_lines.append("")
                     summary_generated = True
                     num_fixes += 1
                 # Preserve everything from === onwards, but filter out {summary} sections
@@ -1913,6 +1935,7 @@ class PointCalculator:
                 in_timesheet_section = False
 
                 # Add blank line before section if needed
+                # Always ensure there's a blank line before {freeform} in output
                 if fixed_lines and fixed_lines[-1].strip():
                     fixed_lines.append("")
                 fixed_lines.append("{freeform}")
@@ -2131,7 +2154,10 @@ class PointCalculator:
                         num_fixes += 1
                         # ERROR node processed - now stop and preserve remaining lines
                         # Add all remaining lines (after error line) without modification
-                        fixed_lines.extend(lines[line_idx + 1:])
+                        # BUT filter out old {summary} sections (will be regenerated at EOF)
+                        remaining = lines[line_idx + 1:]
+                        filtered_remaining = self._filter_summary_sections(remaining)
+                        fixed_lines.extend(filtered_remaining)
                         break
                 # If no error message in map, keep cleaned line
                 fixed_lines.append(clean_line)

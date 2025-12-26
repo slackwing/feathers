@@ -112,6 +112,76 @@ def open_nth_file(n):
         sys.exit(1)
 
 
+def recalculate_all_files():
+    """Recalculate all .sxiva files in the current directory."""
+    # Find all .sxiva files in current directory
+    # Use SXIVA_ORIGINAL_DIR if set by wrapper script, otherwise use PWD or cwd
+    original_dir = os.environ.get('SXIVA_ORIGINAL_DIR') or os.environ.get('PWD')
+    if original_dir:
+        cwd = Path(original_dir)
+    else:
+        cwd = Path.cwd()
+    sxiva_files = sorted(cwd.glob('*.sxiva'))
+
+    if not sxiva_files:
+        click.secho("No .sxiva files found in current directory", fg='yellow')
+        return
+
+    # Show files and ask for confirmation
+    click.echo(f"Found {len(sxiva_files)} .sxiva file(s) in {cwd}:")
+    for i, file_path in enumerate(sxiva_files, 1):
+        click.echo(f"  {i}. {file_path.name}")
+
+    click.echo()
+    response = click.prompt("Are you sure you want to recalculate all of these files? (y/n)",
+                           type=str, default='n')
+
+    if response.lower() != 'y':
+        click.echo("Cancelled.")
+        return
+
+    # Process all files
+    from .calculator import PointCalculator
+    calculator = PointCalculator()
+
+    success_count = 0
+    files_with_errors = []  # Track files that have [ERROR] messages
+
+    click.echo()
+    for file_path in sxiva_files:
+        try:
+            num_fixes = calculator.fix_file(str(file_path), output_path=None, dry_run=False)
+
+            # Check if file has errors by reading it back
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                if '[ERROR]' in content:
+                    files_with_errors.append(file_path.name)
+
+            if num_fixes > 0:
+                click.secho(f"✓ Fixed {num_fixes} calculation(s) in {file_path.name}", fg='green')
+            else:
+                click.secho(f"✓ No fixes needed in {file_path.name}", fg='green')
+            success_count += 1
+        except Exception as e:
+            click.secho(f"✗ Error processing {file_path.name}: {e}", fg='red', err=True)
+            files_with_errors.append(file_path.name)
+
+    # Summary
+    click.echo()
+    click.echo("=" * 50)
+    click.secho(f"Processed {success_count} file(s)", fg='cyan')
+
+    if files_with_errors:
+        click.echo()
+        click.secho(f"Files with errors ({len(files_with_errors)}):", fg='yellow')
+        for filename in files_with_errors:
+            click.secho(f"  - {filename}", fg='yellow')
+    else:
+        click.secho(f"  No errors found!", fg='green')
+    click.echo("=" * 50)
+
+
 @click.group(invoke_without_command=True)
 @click.version_option(version="0.1.0")
 @click.option('-d', '--date', metavar='YYYYMMDD', help='Open file for specific date (format: YYYYMMDD)')
@@ -119,14 +189,20 @@ def open_nth_file(n):
 @click.option('-p', '--preserve', metavar='YYYYMMDD', help='Preserve notes section from specified date (default: yesterday)')
 @click.option('-l', '--list', 'list_files', is_flag=True, help='List last 10 YYYYMMDD sxiva files in reverse chronological order')
 @click.option('-o', '--open', 'open_nth', metavar='N', type=int, help='Open the Nth file from the list (1-based index)')
+@click.option('-a', '--all', 'recalculate_all', is_flag=True, help='Recalculate all .sxiva files in current directory')
 @click.pass_context
-def cli(ctx, date, yesterday, preserve, list_files, open_nth):
+def cli(ctx, date, yesterday, preserve, list_files, open_nth, recalculate_all):
     """SXIVA CLI tools for parsing and calculating points.
 
     When called without a subcommand, opens today's SXIVA file from $SXIVA_DATA.
     """
     # If a subcommand is invoked, don't run the default behavior
     if ctx.invoked_subcommand is not None:
+        return
+
+    # Handle --all flag
+    if recalculate_all:
+        recalculate_all_files()
         return
 
     # Handle --list flag
