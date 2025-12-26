@@ -968,10 +968,11 @@ class PointCalculator:
 
                         # Only validate if we found blick_lists
                         if blick_lists_found:
-                            # Standard blocks/lines should have 3 blicks total
-                            if not is_x_block and total_blicks != 3:
+                            # Standard blocks should have 3 blicks (9 min) or 4 blicks (12 min for start4)
+                            # X-blocks can have 1 or 2 blicks
+                            if not is_x_block and total_blicks not in [3, 4]:
                                 line_num = chain_node.start_point[0] + 1
-                                error_msg = f"[ERROR] standard block must have 3 blicks (9 minutes), found {total_blicks} blicks"
+                                error_msg = f"[ERROR] standard block must have 3 or 4 blicks (9 or 12 minutes), found {total_blicks} blicks"
                                 issues.append((
                                     line_num,
                                     chain_node.start_byte,
@@ -1717,6 +1718,18 @@ class PointCalculator:
         with open(file_path, 'r', encoding='utf-8') as f:
             source_code = f.read()
 
+        # Sanitize: ensure blank line before first === marker
+        # This prevents parsing errors when user accidentally removes the blank line
+        source_lines = source_code.split('\n')
+        for i, line in enumerate(source_lines):
+            if line.startswith('==='):
+                # Found first === line - ensure blank line before it
+                if i > 0 and source_lines[i - 1].strip() != '':
+                    # Previous line is not blank - insert blank line
+                    source_lines.insert(i, '')
+                break
+        source_code = '\n'.join(source_lines)
+
         # Check if filename is in YYYYMMDD format
         has_date_filename = self.has_date_filename(file_path)
 
@@ -1845,6 +1858,9 @@ class PointCalculator:
                 in_timesheet_section = False
                 # Generate summary before the end marker if not already generated
                 if not summary_generated and category_minutes:
+                    # Add blank line before summary if last line isn't already blank
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
                     summary_lines = self.generate_summary_lines(category_minutes)
                     fixed_lines.extend(summary_lines)
                     # Add blank line between summary and ===
@@ -2107,10 +2123,16 @@ class PointCalculator:
                 if node_id in block_points_map:
                     error_msg, _ = block_points_map[node_id]
                     if isinstance(error_msg, str) and error_msg.startswith("[ERROR]"):
-                        fixed_line = clean_line + f" {error_msg}"
+                        # Extract only the first line of the error message
+                        # (ERROR nodes can span multiple lines, but we only want the message on the first line)
+                        error_first_line = error_msg.split('\n')[0]
+                        fixed_line = clean_line + f" {error_first_line}"
                         fixed_lines.append(fixed_line)
                         num_fixes += 1
-                        continue
+                        # ERROR node processed - now stop and preserve remaining lines
+                        # Add all remaining lines (after error line) without modification
+                        fixed_lines.extend(lines[line_idx + 1:])
+                        break
                 # If no error message in map, keep cleaned line
                 fixed_lines.append(clean_line)
 
@@ -2348,6 +2370,20 @@ class PointCalculator:
             # Add error message for missing date filename
             result = date_header_error + '\n' + result
             num_fixes += 1
+
+        # Sanitization: ensure blank line before first === line
+        # This handles cases where === appears without a blank line before it
+        # (either from date addition stripping newlines, or user error)
+        result_lines = result.split('\n')
+        for i, line in enumerate(result_lines):
+            if line.startswith('==='):
+                # Found first === line - ensure blank line before it
+                if i > 0 and result_lines[i - 1].strip() != '':
+                    # Previous line is not blank - insert blank line
+                    result_lines.insert(i, '')
+                    num_fixes += 1
+                break
+        result = '\n'.join(result_lines)
 
         # Determine output file path
         if not dry_run:

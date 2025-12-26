@@ -143,6 +143,44 @@ def cli(ctx, date, yesterday, preserve, list_files, open_nth):
     open_today(date, yesterday, preserve)
 
 
+def _sanitize_section_markers(file_path):
+    """Ensure blank line before first === section marker.
+
+    This handles user error where the blank line before === was accidentally removed.
+
+    Args:
+        file_path: Path to the file to sanitize
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        if not content.strip():
+            # Empty file, nothing to do
+            return
+
+        lines = content.split('\n')
+        modified = False
+
+        # Find first === line and ensure blank line before it
+        for i, line in enumerate(lines):
+            if line.startswith('==='):
+                # Found first === line
+                if i > 0 and lines[i - 1].strip() != '':
+                    # Previous line is not blank - insert blank line
+                    lines.insert(i, '')
+                    modified = True
+                break
+
+        # Write back if modified
+        if modified:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(lines))
+    except Exception:
+        # Silent skip on any errors - don't break the workflow
+        pass
+
+
 def _preserve_notes_section(data_path, target_file, preserve_date_str, target_date):
     """Preserve notes section from a previous date's file.
 
@@ -270,6 +308,10 @@ def open_today(date_str=None, yesterday=False, preserve=None):
 
     if should_preserve:
         _preserve_notes_section(data_path, file_path, preserve_from_date, target_date)
+
+    # Sanitize: ensure blank line before === markers (fixes user errors)
+    if not file_is_new:
+        _sanitize_section_markers(file_path)
 
     # Open with editor
     editor = os.environ.get('EDITOR', 'vi')
