@@ -2411,6 +2411,10 @@ class PointCalculator:
                 break
         result = '\n'.join(result_lines)
 
+        # Ensure file ends with a newline
+        if result and not result.endswith('\n'):
+            result += '\n'
+
         # Determine output file path
         if not dry_run:
             if output_path is None:
