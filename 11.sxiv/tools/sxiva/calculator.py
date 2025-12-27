@@ -1063,7 +1063,11 @@ class PointCalculator:
                     # Offset = how far past (or before) the standard boundary we ended
                     state.time_offset = end_mins - standard_boundary
                     state.previous_end_time = final_end_time
-                    state.previous_start_time = first_start
+                    # For continuation chains, use the LAST block's start time, not first
+                    # This prevents incorrect "after start block" validation when chain extends past expected boundary
+                    final_start_nodes = self.find_all_times(chain_nodes[-1])
+                    final_start = node_text(final_start_nodes[0], source_bytes)
+                    state.previous_start_time = final_start
                     state.is_first_block = False
                     # Clear before-break timing once we've processed the first block after a break
                     state.before_break_end_time = None
