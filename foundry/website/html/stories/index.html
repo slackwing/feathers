@@ -1,825 +1,822 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow, nosnippet" />
-    <meta name="robots" content="noai, noimageai" />
-    <title>Stories</title>
-    <style>
-      @page {
-        size: 6in 9in;
-        margin: 0.75in 0.5in;
-      }
 
-      .pagedjs_pages {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2em;
-        padding: 2em;
-        background: #f5f5f5;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow, nosnippet" />
+  <meta name="robots" content="noai, noimageai" />
+  <title>Stories</title>
+  <style>
+    @page {
+      size: 6in 9in;
+      margin: 0.75in 0.5in;
+    }
 
-      .pagedjs_page {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border: 1px solid #ccc;
-      }
+    .pagedjs_pages {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2em;
+      padding: 2em;
+      background: #f5f5f5;
+    }
 
-      body {
+    .pagedjs_page {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ccc;
+    }
+
+    body {
+      font-family: Georgia, serif;
+      font-size: 12pt;
+      line-height: 1.6;
+      text-align: justify;
+      margin: 0;
+      padding: 0;
+      quotes: "" " " "" "'" "'";
+    }
+
+    p {
+      hanging-punctuation: first last;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 18pt;
+      font-weight: normal;
+      font-style: italic;
+      margin-bottom: 2em;
+      page-break-before: always;
+      page-break-after: avoid;
+    }
+
+    h1:first-of-type {
+      page-break-before: auto;
+    }
+
+    .title-page {
+      page: titlePage;
+      text-align: left;
+      page-break-after: always;
+    }
+
+    @page titlePage {
+      @bottom-right {
+        content: none;
+      }
+    }
+
+    .title-page h1 {
+      font-size: 24pt;
+      font-style: normal;
+      text-align: left;
+      margin-top: 5.5in;
+      margin-bottom: 0em;
+      page-break-before: auto;
+      page-break-after: auto;
+    }
+
+    .title-page .author {
+      font-size: 14pt;
+      font-style: italic;
+    }
+
+    .title-page .copyright {
+      font-size: 9pt;
+      margin-top: 4em;
+    }
+
+    .toc-page {
+      page: tocPage;
+      page-break-after: always;
+    }
+
+    @page tocPage {
+      @bottom-right {
+        content: none;
+      }
+    }
+
+    .toc-page h2 {
+      text-align: left;
+      font-size: 18pt;
+      font-weight: normal;
+      font-style: italic;
+      margin-bottom: 2em;
+      margin-top: 0;
+    }
+
+    .toc-page ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .toc-page li {
+      margin-bottom: 0.5em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .toc-page a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .toc-page .toc-title {
+      flex: 0 0 auto;
+    }
+
+    .toc-page .toc-page-num::before {
+      content: target-counter(attr(href url), page);
+    }
+
+    p {
+      margin: 0;
+      text-indent: 2em;
+      orphans: 2;
+      widows: 2;
+    }
+
+    p:first-of-type {
+      text-indent: 0;
+    }
+
+    .log-entry {
+      margin-bottom: 1em;
+    }
+
+    .log-entry .log-meta {
+      display: block;
+      font-style: italic;
+      font-size: 11pt;
+      break-after: avoid;
+    }
+
+    .log-entry p {
+      text-indent: 0;
+      margin-top: 0.5em;
+      font-size: 11pt;
+      text-align: justify;
+    }
+
+    .thought {
+      font-style: italic;
+    }
+
+    @page {
+      @bottom-right {
+        content: counter(page);
         font-family: Georgia, serif;
-        font-size: 12pt;
-        line-height: 1.6;
-        text-align: justify;
-        margin: 0;
-        padding: 0;
-        quotes: "" " " "" "'" "'";
+        font-size: 10pt;
       }
+    }
 
-      p {
-        hanging-punctuation: first last;
+    @page :first {
+      @bottom-right {
+        content: none;
       }
+    }
+  </style>
+</head>
 
-      h1 {
-        text-align: center;
-        font-size: 18pt;
-        font-weight: normal;
-        font-style: italic;
-        margin-bottom: 2em;
-        page-break-before: always;
-        page-break-after: avoid;
-      }
-
-      h1:first-of-type {
-        page-break-before: auto;
-      }
-
-      .title-page {
-        page: titlePage;
-        text-align: left;
-        page-break-after: always;
-      }
-
-      @page titlePage {
-        @bottom-right {
-          content: none;
-        }
-      }
-
-      .title-page h1 {
-        font-size: 24pt;
-        font-style: normal;
-        text-align: left;
-        margin-top: 5.5in;
-        margin-bottom: 0em;
-        page-break-before: auto;
-        page-break-after: auto;
-      }
-
-      .title-page .author {
-        font-size: 14pt;
-        font-style: italic;
-      }
-
-      .title-page .copyright {
-        font-size: 9pt;
-        margin-top: 4em;
-      }
-
-      .toc-page {
-        page: tocPage;
-        page-break-after: always;
-      }
-
-      @page tocPage {
-        @bottom-right {
-          content: none;
-        }
-      }
-
-      .toc-page h2 {
-        text-align: left;
-        font-size: 18pt;
-        font-weight: normal;
-        font-style: italic;
-        margin-bottom: 2em;
-        margin-top: 0;
-      }
-
-      .toc-page ul {
-        list-style: none;
-        padding: 0;
-      }
-
-      .toc-page li {
-        margin-bottom: 0.5em;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .toc-page a {
-        text-decoration: none;
-        color: inherit;
-      }
-
-      .toc-page .toc-title {
-        flex: 0 0 auto;
-      }
-
-      .toc-page .toc-page-num::before {
-        content: target-counter(attr(href url), page);
-      }
-
-      p {
-        margin: 0;
-        text-indent: 2em;
-        orphans: 2;
-        widows: 2;
-      }
-
-      p:first-of-type {
-        text-indent: 0;
-      }
-
-      .log-entry {
-        margin-bottom: 1em;
-      }
-
-      .log-entry .log-meta {
-        display: block;
-        font-style: italic;
-        font-size: 11pt;
-        break-after: avoid;
-      }
-
-      .log-entry p {
-        text-indent: 0;
-        margin-top: 0.5em;
-        font-size: 11pt;
-        text-align: justify;
-      }
-
-      .thought {
-        font-style: italic;
-      }
-
-      @page {
-        @bottom-right {
-          content: counter(page);
-          font-family: Georgia, serif;
-          font-size: 10pt;
-        }
-      }
-
-      @page :first {
-        @bottom-right {
-          content: none;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="title-page">
-      <h1>Stories</h1>
-      <div class="author">Andrew Cheong</div>
-      <div class="copyright">
-        Staging area for unpublished stories and works in progress.
-      </div>
+<body>
+  <div class="title-page">
+    <h1>Stories</h1>
+    <div class="author">Andrew Cheong</div>
+    <div class="copyright">
+      Staging area for unpublished stories and works in progress.
     </div>
+  </div>
 
-    <div class="toc-page">
-      <h2>Contents</h2>
-      <ul>
-        <li>
-          <a class="toc-title" href="#the-violin">The Violin</a>
-          <a class="toc-page-num" href="#the-violin"></a>
-        </li>
-        <li>
-          <a class="toc-title" href="#the-captain">The Captain</a>
-          <a class="toc-page-num" href="#the-captain"></a>
-        </li>
-        <li>
-          <a class="toc-title" href="#snow-delivery">Snow Delivery</a>
-          <a class="toc-page-num" href="#snow-delivery"></a>
-        </li>
-        <li>
-          <a class="toc-title" href="#happy-hour">happy hour</a>
-          <a class="toc-page-num" href="#happy-hour"></a>
-        </li>
-        <li>
-          <a class="toc-title" href="#the-fight-in-canada"
-            >The Fight in Canada</a
-          >
-          <a class="toc-page-num" href="#the-fight-in-canada"></a>
-        </li>
-      </ul>
-    </div>
+  <div class="toc-page">
+    <h2>Contents</h2>
+    <ul>
+      <li>
+        <a class="toc-title" href="#the-violin">The Violin</a>
+        <a class="toc-page-num" href="#the-violin"></a>
+      </li>
+      <li>
+        <a class="toc-title" href="#the-captain">The Captain</a>
+        <a class="toc-page-num" href="#the-captain"></a>
+      </li>
+      <li>
+        <a class="toc-title" href="#snow-delivery">Snow Delivery</a>
+        <a class="toc-page-num" href="#snow-delivery"></a>
+      </li>
+      <li>
+        <a class="toc-title" href="#happy-hour">happy hour</a>
+        <a class="toc-page-num" href="#happy-hour"></a>
+      </li>
+      <li>
+        <a class="toc-title" href="#the-fight-in-canada">The Fight in Canada</a>
+        <a class="toc-page-num" href="#the-fight-in-canada"></a>
+      </li>
+    </ul>
+  </div>
 
-    <h1 id="the-violin">The Violin</h1>
+  <h1 id="the-violin">The Violin</h1>
 
+  <p>
+    In the breath before the bow met string, she—and I—had to achieve zen-like
+    emptiness, and simultaneously, a spotless memory. Flawless wasn't
+    enough—it had to appear effortless. "I'm a fraud," my player thought
+    despite success, "Not half as good as they believe. One polished act is
+    all they see." Yes, I can hear the thoughts of my player, and others
+    nearby, but only if they resonate with my own. You see I'm also not half
+    as good as my player believes—I myself am a fraud.
+  </p>
+
+  <p>
+    I came to as I was tuned in 1963, in Erlangen, Germany. The late war never
+    reached the town's wide but quiet streets, its thoughtful open squares,
+    all built by French refugees. Front cut of Alpine spruce and flamed maple
+    back, I was an imitation of a renowned predecessor crafted in 1914. I
+    passed through several masters and emigrated across the Atlantic, where
+    for the first time I was placed in the hands of a young student. But one
+    month prior the dealer had replaced the label inside of me. I sold for
+    more than double my worth, now reading "Ernst Heinrich Roth, Bubenreuth /
+    Erlangen, anno 1914."
+  </p>
+
+  <p>
+    Later I came to learn the exploited parents were already in poor financial
+    standing—convinced by teachers that a lesser instrument would stunt their
+    young prodigy. The girl vowed, "I won't disappoint them," I the same to
+    her, and since then we worked tirelessly.
+  </p>
+
+  <p>
+    The auditorium at Julliard was frigid but you could smell the heat of the
+    spotlights. A row of judges sat mute. Our opening breath wasn't out of
+    sync, but trembled. We held together through the swells and lulls of
+    Mendelssohn's Concerto in E. But approaching the cadenza I overthought a
+    measure we'd only played by muscle memory. The zen—a precarious lucid
+    dream—unraveled; I grasped a C# too tight; the girl stumbled. The dream
+    was over. When numbness subsided, I was on the girl's bed. I thought,
+    "It's all my fault." "It's all my fault," she echoed unexpectedly. "They
+    fight because we have no money. They have no money because of me." I was
+    startled. Did my thoughts resonate into... Fear spread through my grain.
+    All this time, was it my own... Thankfully the girl played no more, though
+    she brought me along to university. I willingly hid underneath her bunk,
+    out of sight and relieved to influence her no longer.
+  </p>
+
+  <p>
+    Years later the girl began life in the city and was badly in need of
+    money. I was taken to a shop on 57th street and left to be appraised.
+    Finally, I thought, the truth would come out and the girl could be rid of
+    me. A few days later the girl returned, and the appraiser shared the
+    expected news that I wasn't actually the famed 1914. E. H. Roth didn't
+    move to Erlangen until 1953. Having prepared for this moment, I took one
+    last look at the little girl whose face never aged for me. But she said,
+    "I think I'd like to keep it then, after all." A yearning rose up in
+    me—I'd desperately wanted to be kept. She packed me up with usual care and
+    we rode the subway home, lighter, quietly reflecting.
+  </p>
+
+  <p>
+    The days as usual grew long then short but in a different key. Beneath her
+    bed the cats hide and sleep, whispering and keeping me company. Every now
+    and then she takes me out to play a nostalgic tune, untroubled by
+    mistakes. Each time we move apartments she carries me last, sitting me
+    beside her in the front seat.
+  </p>
+
+  <h1 id="the-captain">The Captain</h1>
+
+  <div class="log-entry">
+    <span class="log-meta">1943 August 16, 0930 hrs</span>
+    <span class="log-meta">Coast of Liberia</span>
     <p>
-      In the breath before the bow met string, she—and I—had to achieve zen-like
-      emptiness, and simultaneously, a spotless memory. Flawless wasn't
-      enough—it had to appear effortless. "I'm a fraud," my player thought
-      despite success, "Not half as good as they believe. One polished act is
-      all they see." Yes, I can hear the thoughts of my player, and others
-      nearby, but only if they resonate with my own. You see I'm also not half
-      as good as my player believes—I myself am a fraud.
+      Mistake to venture Cape Palmas in these conditions. Sideways current
+      dragged us over reef. Propeller blade bent, vibrating above 4 knots.
+      Rudder partly responsive, steering limited. Unequipped to repair so
+      holding under anchor.
+      <span class="thought">It seems I could not get to you, even had I wanted. The sea clears my
+        conscience.</span>
     </p>
+  </div>
 
+  <div class="log-entry">
+    <span class="log-meta">1943 August 20 [Smudged], 1845 hrs</span>
     <p>
-      I came to as I was tuned in 1963, in Erlangen, Germany. The late war never
-      reached the town's wide but quiet streets, its thoughtful open squares,
-      all built by French refugees. Front cut of Alpine spruce and flamed maple
-      back, I was an imitation of a renowned predecessor crafted in 1914. I
-      passed through several masters and emigrated across the Atlantic, where
-      for the first time I was placed in the hands of a young student. But one
-      month prior the dealer had replaced the label inside of me. I sold for
-      more than double my worth, now reading "Ernst Heinrich Roth, Bubenreuth /
-      Erlangen, anno 1914."
+      Sparse traffic this route. Radio silence for fear of Germans. No
+      opportunity to flare. Crew calm; stocked for 7 days last port.
+      <span class="thought">A stern voice admonishes me, "Worry when it's time to worry."</span>
     </p>
+  </div>
 
+  <div class="log-entry">
+    <span class="log-meta">1943 August 22 [Smudged], 1445 hrs</span>
     <p>
-      Later I came to learn the exploited parents were already in poor financial
-      standing—convinced by teachers that a lesser instrument would stunt their
-      young prodigy. The girl vowed, "I won't disappoint them," I the same to
-      her, and since then we worked tirelessly.
+      Signaled passing French convoy. Now awaiting repair tender. I attempted
+      in their accent, "De-sti-na-ssiohn?" "Ma-ho-gch." When they clarified,
+      "Morocco," my breath paused.
+      <span class="thought">I fancied you sent them, signaling me. Well, who isn't allured by
+        happenstance? My mind was made up on the reef.</span>
     </p>
+  </div>
 
+  <div class="log-entry">
+    <span class="log-meta">1943 August 25 [Smudged], 1900 hrs</span>
+    <span class="log-meta">Freeport, Sierra Leone</span>
     <p>
-      The auditorium at Julliard was frigid but you could smell the heat of the
-      spotlights. A row of judges sat mute. Our opening breath wasn't out of
-      sync, but trembled. We held together through the swells and lulls of
-      Mendelssohn's Concerto in E. But approaching the cadenza I overthought a
-      measure we'd only played by muscle memory. The zen—a precarious lucid
-      dream—unraveled; I grasped a C# too tight; the girl stumbled. The dream
-      was over. When numbness subsided, I was on the girl's bed. I thought,
-      "It's all my fault." "It's all my fault," she echoed unexpectedly. "They
-      fight because we have no money. They have no money because of me." I was
-      startled. Did my thoughts resonate into... Fear spread through my grain.
-      All this time, was it my own... Thankfully the girl played no more, though
-      she brought me along to university. I willingly hid underneath her bunk,
-      out of sight and relieved to influence her no longer.
+      Docked for proper repair. Loaded cargo: Rubber 600 bales making 1,200.
+      Cocoa 700 sacks making 1,500. No palm oil, unreasonably priced at this
+      port.
+      <span class="thought">But you'd still be out there looking wouldn't you, "Carter"? I know
+        everyone called you Carter, but you even made me call you that when we
+        worked the stall, instead of "D—". In the market you loved to ask if
+        I'd seen their face. Their unhappy look, you relished saying, was the
+        gauge of a successful deal. Well "Carter" I wish you could have seen:
+        Today I traded 2 inkwells for 10 shillings and watched the merchant
+        beam.</span>
     </p>
+  </div>
 
+  <div class="log-entry">
     <p>
-      Years later the girl began life in the city and was badly in need of
-      money. I was taken to a shop on 57th street and left to be appraised.
-      Finally, I thought, the truth would come out and the girl could be rid of
-      me. A few days later the girl returned, and the appraiser shared the
-      expected news that I wasn't actually the famed 1914. E. H. Roth didn't
-      move to Erlangen until 1953. Having prepared for this moment, I took one
-      last look at the little girl whose face never aged for me. But she said,
-      "I think I'd like to keep it then, after all." A yearning rose up in
-      me—I'd desperately wanted to be kept. She packed me up with usual care and
-      we rode the subway home, lighter, quietly reflecting.
+      Which reminds me to mention... Spare inkwells fell, cracked open during
+      accident. Penciling until port, to be transcribed in ink later.
     </p>
+  </div>
 
+  <div class="log-entry">
+    <span class="log-meta">1943 September 1 [Very smudged], 1730 hrs</span>
     <p>
-      The days as usual grew long then short but in a different key. Beneath her
-      bed the cats hide and sleep, whispering and keeping me company. Every now
-      and then she takes me out to play a nostalgic tune, untroubled by
-      mistakes. Each time we move apartments she carries me last, sitting me
-      beside her in the front seat.
+      Repairs complete but crew dispersed. Embark day after tomorrow. Odd, no
+      response from London.
+      <span class="thought">
+        No news in general—seemed the whole port savored a lazy Friday
+        afternoon. I took some gin too, with my dinner at Café des Palmes. A
+        table of junior officers in good spirits, raising their glasses every
+        few minutes. One raised his toward me—I only nodded back, but he was
+        deeply pleased. Drunk, the world is always right, until it turns
+        wrong. I always saw the turn as you entered the door.</span>
     </p>
+  </div>
 
-    <h1 id="the-captain">The Captain</h1>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 August 16, 0930 hrs</span>
-      <span class="log-meta">Coast of Liberia</span>
-      <p>
-        Mistake to venture Cape Palmas in these conditions. Sideways current
-        dragged us over reef. Propeller blade bent, vibrating above 4 knots.
-        Rudder partly responsive, steering limited. Unequipped to repair so
-        holding under anchor.
-        <span class="thought"
-          >It seems I could not get to you, even had I wanted. The sea clears my
-          conscience.</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 August 20 [Smudged], 1845 hrs</span>
-      <p>
-        Sparse traffic this route. Radio silence for fear of Germans. No
-        opportunity to flare. Crew calm; stocked for 7 days last port.
-        <span class="thought"
-          >A stern voice admonishes me, "Worry when it's time to worry."</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 August 22 [Smudged], 1445 hrs</span>
-      <p>
-        Signaled passing French convoy. Now awaiting repair tender. I attempted
-        in their accent, "De-sti-na-ssiohn?" "Ma-ho-gch." When they clarified,
-        "Morocco," my breath paused.
-        <span class="thought"
-          >I fancied you sent them, signaling me. Well, who isn't allured by
-          happenstance? My mind was made up on the reef.</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 August 25 [Smudged], 1900 hrs</span>
-      <span class="log-meta">Freeport, Sierra Leone</span>
-      <p>
-        Docked for proper repair. Loaded cargo: Rubber 600 bales making 1,200.
-        Cocoa 700 sacks making 1,500. No palm oil, unreasonably priced at this
-        port.
-        <span class="thought"
-          >But you'd still be out there looking wouldn't you, "Carter"? I know
-          everyone called you Carter, but you even made me call you that when we
-          worked the stall, instead of "D—". In the market you loved to ask if
-          I'd seen their face. Their unhappy look, you relished saying, was the
-          gauge of a successful deal. Well "Carter" I wish you could have seen:
-          Today I traded 2 inkwells for 10 shillings and watched the merchant
-          beam.</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <p>
-        Which reminds me to mention... Spare inkwells fell, cracked open during
-        accident. Penciling until port, to be transcribed in ink later.
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 September 1 [Very smudged], 1730 hrs</span>
-      <p>
-        Repairs complete but crew dispersed. Embark day after tomorrow. Odd, no
-        response from London.
-        <span class="thought">
-          No news in general—seemed the whole port savored a lazy Friday
-          afternoon. I took some gin too, with my dinner at Café des Palmes. A
-          table of junior officers in good spirits, raising their glasses every
-          few minutes. One raised his toward me—I only nodded back, but he was
-          deeply pleased. Drunk, the world is always right, until it turns
-          wrong. I always saw the turn as you entered the door.</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 September 8 [Smudged], 1130 hrs</span>
-      <span class="log-meta">Dakar</span>
-      <p>
-        No wonder. Dakar undersea lines were cut 2 weeks ago; Germans.
-        <span class="thought"
-          >When I heard the Allies invaded Casablanca I pictured where you might
-          have been as they landed. At your local on the shore maybe. I could
-          imagine you walking outside just to display your disdain—and they not
-          even your enemy. I laughed for some reason envisioning it, standing in
-          the empty wireless station. Six weeks ago at this station on my
-          southward route to Lagos, I received your telegram. Have you wired
-          since?</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <span class="log-meta">1943 September 15 [Smudged], 0915 GMT+1</span>
-      <span class="log-meta">Coast of Moroccan Sahara</span>
-      <p>
-        Seas obliging, 9 more days to London.
-        <span class="thought"
-          >I keep re-counting. Were I to steer us East from here, only 2 days
-          to... Well, a detour like that would cost 5 days. Though the crew
-          wouldn't mind a change of food, a real glass of wine. How to explain
-          the extra stop? Logs surely to be sent to insurance considering
-          damages. Well... suppose the French found us 2 days later? Very well
-          may have been so. Repairs could have taken another 3—we were lucky.
-          It's plausible. Yes, it's all plausible. So what stays my hand? Am I
-          not the captain...</span
-        >
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <p>
-        [Remaining pages blank, presumably having transcribed. Turning the page,
-        a small folded piece of paper falls out.]
-      </p>
-    </div>
-
-    <div class="log-entry">
-      <p>
-        DAKAR WIRELESS STATION<br />
-        ORIGIN CASABLANCA<br />
-        1943 JUL 22 LOCAL 0850<br />
-        TO CAPTAIN CARTER<br />
-        I L L N E S S C O M E H O M E S O N S O R R Y
-      </p>
-    </div>
-
-    <h1 id="snow-delivery">Snow Delivery</h1>
-
+  <div class="log-entry">
+    <span class="log-meta">1943 September 8 [Smudged], 1130 hrs</span>
+    <span class="log-meta">Dakar</span>
     <p>
-      It was 4:45am when I heard a distant <em>thup</em> and half stood up on
-      the sofa to peek out the grass-level window of Rault's basement. The TV
-      carried on at low volume. The street brightened until the headlights came
-      into view, then the windshield, then a hand coming out the opposite window
-      to fling what anyone else would have assumed to be today's papers,
-      expertly onto the center of each snow-coated driveway. <em>Thup.</em> Next
-      the car pulled up to Rault's, but stopped instead of rolling slowly past.
-      Rault, across the sofa, sat as if unstirred, staring through the TV with a
-      knuckle to his lip. Our contrasting pose was a feature of our friendship:
-      I was Rault's anxious limb who responded as he'd have liked to, so that he
-      could stay cool. Finally—<em>thup</em>. Then the car drove on, the
-      engine's rev breaking Rault's fixed gaze, now softer and pointed toward
-      the TV stand. I sat back down to commence the ritual wait of not appearing
-      too eager.
+      No wonder. Dakar undersea lines were cut 2 weeks ago; Germans.
+      <span class="thought">When I heard the Allies invaded Casablanca I pictured where you might
+        have been as they landed. At your local on the shore maybe. I could
+        imagine you walking outside just to display your disdain—and they not
+        even your enemy. I laughed for some reason envisioning it, standing in
+        the empty wireless station. Six weeks ago at this station on my
+        southward route to Lagos, I received your telegram. Have you wired
+        since?</span>
     </p>
+  </div>
 
+  <div class="log-entry">
+    <span class="log-meta">1943 September 15 [Smudged], 0915 GMT+1</span>
+    <span class="log-meta">Coast of Moroccan Sahara</span>
     <p>
-      I knew what Rault had hoped to hear: the engine going quiet, the soft open
-      and shut of a car door, the crunching of footsteps across a frozen lawn,
-      then finally a doorbell that would ring away all the oppressive air that
-      had accumulated through the night. He believed that when Jaime walked in,
-      anything wrong could be righted. We all did. But Jaime drove away, and I
-      could feel Rault contending with the reality that had just been delivered:
-      he'd have to go on feeling this way—the way we'd spent all night evading.
+      Seas obliging, 9 more days to London.
+      <span class="thought">I keep re-counting. Were I to steer us East from here, only 2 days
+        to... Well, a detour like that would cost 5 days. Though the crew
+        wouldn't mind a change of food, a real glass of wine. How to explain
+        the extra stop? Logs surely to be sent to insurance considering
+        damages. Well... suppose the French found us 2 days later? Very well
+        may have been so. Repairs could have taken another 3—we were lucky.
+        It's plausible. Yes, it's all plausible. So what stays my hand? Am I
+        not the captain...</span>
     </p>
+  </div>
 
+  <div class="log-entry">
     <p>
-      "I'll grab it," I said after waiting long enough. Sobering from the bite
-      of the cold, I crossed the lawn, wondering if my footsteps in lieu of
-      Jaime's might somehow soothe Rault.
+      [Remaining pages blank, presumably having transcribed. Turning the page,
+      a small folded piece of paper falls out.]
     </p>
+  </div>
 
+  <div class="log-entry">
     <p>
-      Rault called me earlier asking if I had some on me. I knew he had to be
-      feeling down from last weekend, when a heated moment drew out some words
-      that landed sideways on Jaime; our easygoing, amiable friend went quiet in
-      a way no one had seen before. So I went over to help Rault hash out events
-      from a more generous point of view—induced by the gram or so I'd brought
-      with me. When we ran out two hours ago, we knew what we were in for. The
-      newfound feelings of forgiveness we had for everyone—for others, for
-      ourselves—would fade. We expected to smooth out the comedown as usual by
-      drinking for a few hours more. But not long after, Rault asked me to text
-      Jaime, who was not only our friend but also the local paperboy and the
-      local dealer, for a re-up. My head swirled at the thought of another high
-      this late into the night, but understanding Rault, I obliged.
+      DAKAR WIRELESS STATION<br />
+      ORIGIN CASABLANCA<br />
+      1943 JUL 22 LOCAL 0850<br />
+      TO CAPTAIN CARTER<br />
+      I L L N E S S C O M E H O M E S O N S O R R Y
     </p>
+  </div>
 
-    <p>
-      Picking up the bundled papers from the driveway, I walked back tracing my
-      footsteps. I slipped off my shoes in the foyer and started down the
-      stairs, unraveling the papers as I went. That's when I found, among the
-      items we ordered, a folded piece of yellow memo paper. I tossed some
-      dimebags onto the table and opened the note as I walked toward the sofa.
-      Then I had to suppress my smile so as to leave it all for Rault. The note
-      read
-    </p>
+  <h1 id="snow-delivery">Snow Delivery</h1>
 
-    <p
-      style="
+  <p>
+    It was 4:45am when I heard a distant <em>thup</em> and half stood up on
+    the sofa to peek out the grass-level window of Rault's basement. The TV
+    carried on at low volume. The street brightened until the headlights came
+    into view, then the windshield, then a hand coming out the opposite window
+    to fling what anyone else would have assumed to be today's papers,
+    expertly onto the center of each snow-coated driveway. <em>Thup.</em> Next
+    the car pulled up to Rault's, but stopped instead of rolling slowly past.
+    Rault, across the sofa, sat as if unstirred, staring through the TV with a
+    knuckle to his lip. Our contrasting pose was a feature of our friendship:
+    I was Rault's anxious limb who responded as he'd have liked to, so that he
+    could stay cool. Finally—<em>thup</em>. Then the car drove on, the
+    engine's rev breaking Rault's fixed gaze, now softer and pointed toward
+    the TV stand. I sat back down to commence the ritual wait of not appearing
+    too eager.
+  </p>
+
+  <p>
+    I knew what Rault had hoped to hear: the engine going quiet, the soft open
+    and shut of a car door, the crunching of footsteps across a frozen lawn,
+    then finally a doorbell that would ring away all the oppressive air that
+    had accumulated through the night. He believed that when Jaime walked in,
+    anything wrong could be righted. We all did. But Jaime drove away, and I
+    could feel Rault contending with the reality that had just been delivered:
+    he'd have to go on feeling this way—the way we'd spent all night evading.
+  </p>
+
+  <p>
+    "I'll grab it," I said after waiting long enough. Sobering from the bite
+    of the cold, I crossed the lawn, wondering if my footsteps in lieu of
+    Jaime's might somehow soothe Rault.
+  </p>
+
+  <p>
+    Rault called me earlier asking if I had some on me. I knew he had to be
+    feeling down from last weekend, when a heated moment drew out some words
+    that landed sideways on Jaime; our easygoing, amiable friend went quiet in
+    a way no one had seen before. So I went over to help Rault hash out events
+    from a more generous point of view—induced by the gram or so I'd brought
+    with me. When we ran out two hours ago, we knew what we were in for. The
+    newfound feelings of forgiveness we had for everyone—for others, for
+    ourselves—would fade. We expected to smooth out the comedown as usual by
+    drinking for a few hours more. But not long after, Rault asked me to text
+    Jaime, who was not only our friend but also the local paperboy and the
+    local dealer, for a re-up. My head swirled at the thought of another high
+    this late into the night, but understanding Rault, I obliged.
+  </p>
+
+  <p>
+    Picking up the bundled papers from the driveway, I walked back tracing my
+    footsteps. I slipped off my shoes in the foyer and started down the
+    stairs, unraveling the papers as I went. That's when I found, among the
+    items we ordered, a folded piece of yellow memo paper. I tossed some
+    dimebags onto the table and opened the note as I walked toward the sofa.
+    Then I had to suppress my smile so as to leave it all for Rault. The note
+    read
+  </p>
+
+  <p style="
         text-indent: 0;
         margin-top: 1em;
         margin-bottom: 1em;
         page-break-inside: avoid;
-      "
-    >
-      ON ME<br />
-      DONT WORRY ABOUT IT BRO
-    </p>
+      ">
+    ON ME<br />
+    DONT WORRY ABOUT IT BRO
+  </p>
 
-    <p>
-      We gazed together at the TV for a while, Rault still holding the note,
-      both having forgotten the craving that delivered it.
-    </p>
+  <p>
+    We gazed together at the TV for a while, Rault still holding the note,
+    both having forgotten the craving that delivered it.
+  </p>
 
-    <h1 id="happy-hour">happy hour</h1>
+  <h1 id="happy-hour">happy hour</h1>
 
-    <p>
-      i never seen them open any, they just put em behind the counter and
-      sometimes they give me more dollars than i said and that make me mad
-      because i said a number so why they can't give me the number i said? but
-      pops say don't be rude so i take it and say the number they shoulda gave
-      me in my head until i feel better. actually they nice the white folk, pops
-      say "hipster" bartenders this area like their candy and he say go before
-      happy hour and he right like always, bartenders they always buy three four
-      or five candies and they watch my box so i can use the restroom please.
-    </p>
+  <p>
+    i never seen them open any, they just put em behind the counter and
+    sometimes they give me more dollars than i said and that make me mad
+    because i said a number so why they can't give me the number i said? but
+    pops say don't be rude so i take it and say the number they shoulda gave
+    me in my head until i feel better. actually they nice the white folk, pops
+    say "hipster" bartenders this area like their candy and he say go before
+    happy hour and he right like always, bartenders they always buy three four
+    or five candies and they watch my box so i can use the restroom please.
+  </p>
 
-    <p>
-      its eight o'clock so i can go home now. i wonder where bo is now, bo be at
-      another part of town called bed-sty, like pig-sty but with bed. bo don't
-      let me come with him no more because he say it's dangerous but i think the
-      folk there nice like crazy eye kenny we call him, we give him a dollar and
-      he say bless us and say we going to heaven. there these zombie people too
-      all over bed-sty, bo laugh say they doing fendy bendies. one time bo say
-      watch and he poke one in the butt and the man trip and get so mad but we
-      ran away laughing. i hope pops friends come over tonight, then me and bo
-      can go play instead of waiting for him to count and he won't yell or hit
-      bo.
-    </p>
+  <p>
+    its eight o'clock so i can go home now. i wonder where bo is now, bo be at
+    another part of town called bed-sty, like pig-sty but with bed. bo don't
+    let me come with him no more because he say it's dangerous but i think the
+    folk there nice like crazy eye kenny we call him, we give him a dollar and
+    he say bless us and say we going to heaven. there these zombie people too
+    all over bed-sty, bo laugh say they doing fendy bendies. one time bo say
+    watch and he poke one in the butt and the man trip and get so mad but we
+    ran away laughing. i hope pops friends come over tonight, then me and bo
+    can go play instead of waiting for him to count and he won't yell or hit
+    bo.
+  </p>
 
-    <p>
-      bo still be out, i hope he sell a lot lot. pop say come here and put his
-      arm around me, he smell like beer and his face scratchy like the sponge
-      susie and me use to play cell phone, and now pops look at me and i get
-      scared because he always be looking at bo like that before he smack him
-      even though he never hit me. love you, you know that, right baby girl. i
-      hope i can go now. please please please don't ask about school, i hate
-      when he ask me about school cuz he ask me the same thing and i tell him my
-      teacher name a million times but he forget. later he start say mommy a
-      hoar and i know it's just cuss because he unhappy but my tongue feel weird
-      like he ain't say horse all the way so later i say horse horse horse until
-      i feel better but sometimes i remember hoar again so i have to go to the
-      bathroom to say more horses. sometimes pops say what you be pissin so much
-      for and then bo whisper to me horses again? and i tell him yea and tell
-      him how many i had to say this time. i like when bo ask me, like a game
-      only me and bo know.
-    </p>
+  <p>
+    bo still be out, i hope he sell a lot lot. pop say come here and put his
+    arm around me, he smell like beer and his face scratchy like the sponge
+    susie and me use to play cell phone, and now pops look at me and i get
+    scared because he always be looking at bo like that before he smack him
+    even though he never hit me. love you, you know that, right baby girl. i
+    hope i can go now. please please please don't ask about school, i hate
+    when he ask me about school cuz he ask me the same thing and i tell him my
+    teacher name a million times but he forget. later he start say mommy a
+    hoar and i know it's just cuss because he unhappy but my tongue feel weird
+    like he ain't say horse all the way so later i say horse horse horse until
+    i feel better but sometimes i remember hoar again so i have to go to the
+    bathroom to say more horses. sometimes pops say what you be pissin so much
+    for and then bo whisper to me horses again? and i tell him yea and tell
+    him how many i had to say this time. i like when bo ask me, like a game
+    only me and bo know.
+  </p>
 
-    <p>
-      ma say i'm good at math and math gonna make me money. i do my math
-      homework first even since ma don't make me cuz one day i'm gonna do math
-      instead of sell candy and i'm gonna make so much money that susie can get
-      chips at lunch whenever she want and i can give crazy eye kenny ten
-      dollars and see his eye pop like bo say it will hahaha and pops will never
-      hit bo again and not be mad at his friends when they playing cards and
-      also i'm gonna give pops fifteen bucks to go to the barber so he get
-      shaved and smell good and have his hair all nice so if mommy sees she
-      might come home and then i'll never have to say horse again
-    </p>
+  <p>
+    ma say i'm good at math and math gonna make me money. i do my math
+    homework first even since ma don't make me cuz one day i'm gonna do math
+    instead of sell candy and i'm gonna make so much money that susie can get
+    chips at lunch whenever she want and i can give crazy eye kenny ten
+    dollars and see his eye pop like bo say it will hahaha and pops will never
+    hit bo again and not be mad at his friends when they playing cards and
+    also i'm gonna give pops fifteen bucks to go to the barber so he get
+    shaved and smell good and have his hair all nice so if mommy sees she
+    might come home and then i'll never have to say horse again
+  </p>
 
-    <h1 id="the-fight-in-canada">The Fight in Canada</h1>
+  <h1 id="the-fight-in-canada">The Fight in Canada</h1>
 
-    <p>
-      Maybe we'd sealed our own fate already when I said, "It's a short
-      trip—think we can make this one without a fight?" and she—tired of the
-      hanging gloom since that morning's argument—said, "Yeah, we just need to
-      hold back a little. Both of us," and I—eager myself to change out the
-      leaden air—dove in haphazardly, too quickly to sound grave, "I'll do my
-      best, I promise. We can do it." But for the rest of that evening at least
-      we asked each other superfluous questions about whether the other had
-      remembered to pack this or that, just happy to hear our voices fill the
-      apartment again.
-    </p>
+  <p>
+    Maybe we'd sealed our own fate already when I said, "It's a short
+    trip—think we can make this one without a fight?" and she—tired of the
+    hanging gloom since that morning's argument—said, "Yeah, we just need to
+    hold back a little. Both of us," and I—eager myself to change out the
+    leaden air—dove in haphazardly, too quickly to sound grave, "I'll do my
+    best, I promise." But for the rest of that evening at least, we asked each
+    other superfluous questions about whether the other had remembered to pack
+    this or that, just happy to hear our voices fill the apartment again.
+  </p>
 
-    <p>
-      The hand on the steering wheel begged for something to do on the
-      straightaway we hadn't said a word on since leaving the city. The other
-      hand mindlessly grazed the stubble on my chin, watching mile marker 183
-      zip by. Pulling away an elbow from its uncomfortable jam against the
-      window, I asked, "Do you want some music?" 185—zip. 186—zip. I imagined
-      her brooding on how we didn't make it 15 minutes without a fight. A
-      misunderstanding about where the rental car was supposed to be picked up.
-      My frustration wasn't with her, but to her it was, and her frustration
-      with me was with me, which made me frustrated with her with her, {proving
-      her point}. I reflected: It didn't even occur to me to "do my best"—it all
-      happened in an instant. 190—zip—halfway to Canada. Just then the highway
-      entered a newly lain section of asphalt, abruptly muting the white noise
-      we'd taken for granted. The new silence was certainly more dramatic than
-      she intended—so now we were both feeling awkward. "Maybe something soft,"
-      she finally said, unlocking her phone, "Maybe Plans?" She had to give up
-      her indifferent posture to pair the bluetooth. As she leaned toward the
-      dashboard I felt the electricity of her new proximity, the closest she'd
-      been to me all day.
-    </p>
+  <p>
+    The hand on the steering wheel begged for something to do on the
+    straightaway we hadn't said a word on since leaving the city. The other
+    hand mindlessly grazed the stubble on my chin, watching mile marker 183
+    zip by. Pulling away my elbow from its uncomfortable jam against the
+    window, I asked, "Do you want some music?" 185—<em>zip</em>.
+    186—<em>zip</em>. I imagined her brooding on how we didn't make it 15
+    minutes without a fight. A misunderstanding about where the rental car was
+    supposed to be picked up. My frustration wasn't with her, but to her it
+    was, and her frustration with me was <em>with</em> me, which, predictably,
+    redirected mine. I reflected: It didn't even occur to me to "do my
+    best"—it all happened in an instant. 190—<em>zip</em>—halfway to Canada.
+    Just then the highway entered a newly lain section of asphalt, abruptly
+    muting the white noise we'd taken for granted. The new silence was
+    certainly more dramatic than she intended—so now we were both feeling
+    awkward. "Maybe something soft," she finally said, unlocking her phone,
+    "Maybe <em>Plans</em>?" She had to give up her indifferent posture to pair
+    the bluetooth. As she leaned toward the dashboard I felt the electricity
+    of her new proximity, the closest she'd been to me all day.
+  </p>
 
-    <p>
-      A car behind changed lanes, telegraphing impatience. I looked at my
-      speedometer—below the limit. I pressed on the gas, practically flooring
-      it, but we were only slowing. Then: sputtering, jerking. She was alert and
-      looking at me—now the dashboard—now the gauges. My gut sank when I saw.
-      I'd been so preoccupied, I'd forgotten to stop for gas. Do your best.
-      "Shit. I wasn't paying attention. Sorry." We'd had arguments before about
-      filling the tank well before it went empty. Merging onto the shoulder, I
-      imagined the gravity of her blame slowing the car to zero.
-    </p>
+  <p>
+    A car behind changed lanes, telegraphing impatience. I looked at my
+    speedometer—below the limit. I pressed on the gas, practically all the
+    way, but we were only slowing. Then: sputtering, jerking. She was alert
+    and looking at me—now the dashboard—now the gauges. My gut sank when I
+    saw. I'd been so preoccupied, I'd forgotten to stop for gas.
+    <em>Do your best.</em> "Shit. I wasn't paying attention. Sorry." We'd had
+    arguments before about filling the tank well before it went empty. Merging
+    onto the shoulder, I imagined the gravity of her blame slowing the car to
+    zero.
+  </p>
 
-    <p>
-      We listened patiently to the man with aviators and long white hair
-      whipping in the wind, standing too close to the road as cars streaked by,
-      making us both uneasy, though at least—I'm sure we were both thinking—he
-      was waving around the bright yellow cannister he'd refueled us with as he
-      talked; hopefully cars would see. His easygoing but authoritative
-      voice—pointing us to the nearest gas station that wasn't ripping us
-      off—dissolved periodically into the harsh noise of another car speeding
-      by—like a pan suddenly searing—but we smiled and nodded as if we heard
-      with perfect alacritty. I'm sure we looked exactly the same in that
-      moment. When he finally felt assured we wouldn't lose our way, we spent
-      the last of our reserves thanking him with extra cheer, rolled up our
-      windows, sank back slowly into our seats, and took a deep breath. Probably
-      both disconcerted and unable to remember what to resume feeling about each
-      other. But defeated by the wait and epic directions to somewhere we
-      weren't going, we gave up on reaching Montreal that night. She booked an
-      inn at the nearest exit and we checked in, hungry and feeling
-      unaccomplished.
-    </p>
+  <p>
+    We listened patiently to the man with aviators and long white hair
+    whipping in the wind, standing too close to the road as cars streaked by,
+    which was making us both uneasy. At least—I'm sure we were both
+    thinking—he was waving around the bright yellow cannister he'd refueled us
+    with; hopefully cars would see. His easygoing but authoritative voice,
+    pointing us to the nearest gas station that wasn't ripping us off,
+    dissolved periodically into the harsh noise of another car speeding
+    by—like a pan suddenly searing—but we smiled and nodded as if we heard
+    with perfect alacritty. I'm sure we looked exactly the same in that
+    moment. When he finally felt assured we wouldn't lose our way, we spent
+    the last of our reserves thanking him with extra cheer, then rolled up our
+    windows, sank back slowly into our seats, and exhaled. Probably both
+    disconcerted and unable to remember what to resume feeling about each
+    other. But defeated by the wait and epic directions to somewhere we
+    weren't going, we gave up on reaching Montreal that night. She booked an
+    inn at the nearest exit and we checked in, hungry and feeling
+    unaccomplished.
+  </p>
 
-    <p>
-      We found that restaurants up here closed early. The nearest grocery store
-      was another exit over—an upstate exit. And the car felt equally as far,
-      sitting on a second-story hotel bed. The room was sterile—in decor, in
-      sound—except for a portrait on the wall of a clear, cold-looking lake
-      reflecting a cloudless sky and mountains around it lush in Autumn reds and
-      oranges. We had originally planned to set out early tomorrow morning for a
-      hike and lakeside picnic in the outskirts of Montreal. "We have to get our
-      cooler and put the meats in the fridge," I said, remembering. A trip back
-      to the car after all. She said, "Do you think we can cook here?" We had
-      brought a portable burner. I looked around the room and spotted a modern
-      fire sprinkler. "I don't know if we should risk it." She was searching for
-      an outlet near the window. "Hey, there's a roof outside our window." I
-      walked over to see. She unlatched the window and it swung wide open unlike
-      windows in the city, and roused a shared instinct in us to climb through
-      the open portal.
-    </p>
+  <p>
+    We found that restaurants up here closed early. The nearest grocery store
+    was another exit over—an upstate exit. And the car felt equally as far,
+    sitting on a second-story hotel bed. The room was sterile—in decor, in
+    sound—except for a portrait on the wall of a clear, cold-looking lake
+    reflecting a cloudless sky, mountains around it lush in Autumn reds and
+    oranges. We had originally planned to set out early tomorrow morning for a
+    hike and lakeside picnic, maybe somewhere like that, in the outskirts of
+    Montreal. "We have to get our cooler and put the meats in the fridge," I
+    said, remembering. A trip back to the car after all. I was about to get up
+    when she said, "Do you think we can cook here?" We did bring a portable
+    burner. I looked around the room and spotted a modern fire sprinkler. "I
+    don't know if we should risk it." She was searching for an outlet near the
+    window. "Hey, there's a roof outside our window." I walked over as she
+    worked the latch. The window swung wide open, unlike windows in the city,
+    rousing a shared instinct in us to climb through.
+  </p>
 
-    <p>
-      The summer day was beginning to cool but a warm breeze took us by the arms
-      and received us amiably as we stepped out of the relatively frigid air
-      conditioned room. The rural quiet was dotted by the arythmic chirping of a
-      few song sparrows. Beyond the edge of the roof, a darkening green and
-      evening-blue field of a grass stretched half a mile out, then rose up into
-      a shadowy wall of maple and pine whose tops were catching the light of a
-      sunset we couldn't see, coming from the other side of the hotel. "I don't
-      think anyone can see us if we stay near the window," she said, "Eat out
-      here?" I nodded, still looking at the striking light on tops of trees.
-    </p>
+  <p>
+    The summer day was beginning to cool but a warm breeze took us by the arms
+    and received us amiably as we stepped out of the relatively frigid air
+    conditioned room. The rural quiet was dotted by the arythmic chirping of a
+    few song sparrows. Beyond the edge of the roof, a darkening green and
+    evening-blue field of grass stretched half a mile out, then rose up into a
+    shadowy wall of maple and pine whose tops were catching the light of a
+    sunset we couldn't see, coming from the other side of the hotel. "I don't
+    think anyone can see us if we stay near the window," she said, "Eat out
+    here?" I nodded, still looking at the striking light on tops of trees.
+  </p>
 
-    <p>
-      As she started the burner outside, I poured some wine we'd brought for the
-      picnic into tiny paper cups and reached out the window to set one down
-      near her. She stopped her task to take a sip, motioning a subtle cheers
-      before she drank. One at a time I placed our dinner materials outside—the
-      marinated meats, a container of sliced vegetables, cutlery, my wine—and
-      then climbed out with some napkins in hand. I was becoming a little
-      self-conscious of the mess we were making on the roof, but she seemed
-      unconcerned, which, I noted, mattered more. Soon everything was cooking.
-      We wiped our hands and looked back out into the field, the sizzling of the
-      grill doing a heroic job, emulating the buzz of lively conversation. I
-      wondered why I wasn't feeling more guilty, having gotten us stranded. I
-      wondered how she was doing, as I was feeling strangely light. Wary of a
-      disconnect between us, I decided to wait for her to say something first.
-    </p>
+  <p>
+    As she started the burner outside, I poured some wine we'd brought for the
+    picnic into tiny paper cups and reached out the window to set one down
+    near her. She stopped her task to take a sip, motioning a subtle cheers
+    before she drank. One at a time I placed our dinner materials outside—the
+    marinated meats, a container of sliced vegetables, cutlery, my wine—and
+    then climbed out with some napkins in hand. I was becoming a little
+    self-conscious of the mess we were making on the roof, but she seemed
+    unconcerned, which, I noted, mattered more. Soon everything was cooking.
+    We wiped our hands and looked back out into the field, the sizzling of the
+    grill doing a heroic job emulating the buzz of lively conversation. I
+    noticed I was feeling strangely light despite getting us stranded. I
+    glanced at her. Wary of a disconnect between us, I decided to wait for her
+    to say something first.
+  </p>
 
-    <p>
-      But the language of eating isn't so easy to restrain. We didn't know
-      another way to eat off the grill than to pick out the best pieces to put
-      on each other's plate. Each repetition alluding to a desire we couldn't
-      say. Ravaged by then, we were inwardly grateful. And slowly our motions
-      began to recover their spring, as if in between each bite we'd been
-      throwing off layers of heavy clothing. We both seemed to wait for a chance
-      to pour the other more wine. The sun having set, our eyes adjusted to the
-      evening shade, rendering all parts of the field more fairly so it now felt
-      like we were inside it. We began to recline more comfortably, leaving
-      leftovers to cool on the grill—its buzzing now continued by an evening
-      chorus of insects. "That was good," she said unexpectedly. I replied
-      simply, "That was very good." We sat a while, each letting out a sigh as
-      we gazed out into the field, the wine and air mingling at the surface of
-      our skin in perfect balance.
-    </p>
+  <p>
+    But the language of eating isn't so easy to restrain. We didn't know
+    another way to eat off the grill than to pick out the best pieces to put
+    on each other's plate. Each repetition alluding to a desire we couldn't
+    say. Ravenous by then, we were grateful, inwardly. But slowly our motions
+    began to recover their spring, as if in between each bite we'd been
+    throwing off layers of heavy clothing. We both seemed to wait for a chance
+    to pour the other more wine. The sun having set, our eyes adjusted to the
+    evening shade, rendering all parts of the field more fairly so it now felt
+    like we were inside it. We began to recline more comfortably, leaving
+    leftovers to cool on the grill—its buzzing now continued by an evening
+    chorus of insects. "That was good," she said unexpectedly. I replied
+    simply, "That was very good." We sat a while, each letting out a sigh as
+    we gazed out into the field, the wine and air mingling at the surface of
+    our skin in perfect balance.
+  </p>
 
-    <p>
-      A time came amidst the afterglow when a touch of sadness meandering
-      through the air passed through both of us. The beginning of the feeling
-      when you don't want something to end, so you hurry to redraw your
-      attention, wanting to take in what you can. But it wasn't hard to let the
-      sound of crickets pull us back in, the cohort singing {surely} against the
-      fading backdrop. We each let out another sigh and continued floating, this
-      time better prepared for an ending.
-    </p>
+  <p>
+    A time came amidst the afterglow when a touch of sadness meandering
+    through the air passed through both of us. The beginning of the feeling
+    when you don't want something to end, so you hurry to redraw your
+    attention, wanting to take in what you still can. But it wasn't hard to
+    let the sound of crickets pull us back in, the cohort singing surely
+    against the fading backdrop. We each let out another sigh and continued
+    floating, this time better prepared for an ending.
+  </p>
 
-    <p>
-      The breeze picked up, and something made me feel that I should take the
-      initiative. I started,
-    </p>
+  <p>
+    The breeze picked up, and something made me feel that I should take the
+    initiative. I started,
+  </p>
 
-    <p>"I'm sorry about this morning."</p>
+  <p>"I'm sorry about this morning."</p>
 
-    <p>"No..." she shook her head.</p>
+  <p>"No..." she shook her head.</p>
 
-    <p>"I shouldn't have gotten so frustrated."</p>
+  <p>"I shouldn't have gotten so frustrated."</p>
 
-    <p>"I shouldn't have taken it personally."</p>
+  <p>"I shouldn't have taken it personally."</p>
 
-    <p>"It's easy to when someone's being like me."</p>
+  <p>"It's easy to when someone's being like me."</p>
 
-    <p>
-      "No, it's not just you. It's how anger sounds to me. Like it's at me. I
-      was always like this—even before we met."
-    </p>
+  <p>
+    "No, it's not just you. It's how anger sounds to me. Like it's at me. I
+    was always like this—even before we met."
+  </p>
 
-    <p>"I think that's normal."</p>
+  <p>"I think that's normal."</p>
 
-    <p>"You didn't grow up with that."</p>
+  <p>
+    "Maybe," she said absently, then adding, "I know you didn't grow up with
+    that."
+  </p>
 
-    <p>
-      I acknowledged with silence, letting the words spread their weight. I was
-      wanting to give as much as she was giving but finding nothing to match.
-      Car doors shut on the other side of the hotel. We seemed to sit stiller
-      than before, as if afraid to prompt an ending, both searching for
-      something that was missed. The muffled voices soon disappeared into the
-      lobby. An ending now felt imminent so I continued, hoping to find
-      direction along the way,
-    </p>
+  <p>
+    I acknowledged with silence, letting the words spread their weight,
+    wanting to give as much as she was giving but finding nothing to match.
+    Car doors shut on the other side of the hotel. We seemed to sit stiller
+    than before, as if afraid to prompt an ending, both searching for
+    something that was missed. The muffled voices soon disappeared into the
+    lobby. An ending felt imminent, so I continued, hoping to find direction
+    along the way,
+  </p>
 
-    <p>"I wasn't at my best this morning. I don't know what it was."</p>
+  <p>
+    "But, I can do better. I wasn't at my best this morning. I don't know what
+    it was."
+  </p>
 
-    <p>
-      "No, me too. I thought about this morning though—we were both under
-      pressure." You're right, I thought. I hadn't realized it.
-    </p>
+  <p>
+    "No—me too. I thought about this morning though—we were both under
+    pressure." You're right, I thought. I hadn't realized it.
+  </p>
 
-    <p>"Where were you today?" I asked.</p>
+  <p>"Where were you today?" I asked.</p>
 
-    <p>
-      She thought. "I wasn't really upset the whole day. I know I seemed like
-      it. But— I don't know. I should have said more, sorry."
-    </p>
+  <p>
+    She thought. "I wasn't really upset the whole day. I know I seemed like
+    it. But— I don't know. I should have said more, sorry."
+  </p>
 
-    <p>
-      "It's okay," suspecting there was a lot more but not wanting to press. I
-      rubbed my arms and shifted my position—it was getting chilly. {More
-      literary play here.}
-    </p>
+  <p>
+    "It's okay," I said, wanting and not wanting to press. I rubbed my arms
+    and shifted my position—it was getting chilly. Did we stray too far from
+    the glow? I felt around for a way back.
+  </p>
 
-    <p>
-      "If we could start the day over," she offered, "I can imagine how much
-      better we'd do."
-    </p>
+  <p>
+    "If we could start the day over," she offered, "I can imagine how much
+    better we'd do."
+  </p>
 
-    <p>"Yeah, I'd like to try that fight again." She let out a small laugh.</p>
+  <p>
+    Yeah, I thought. Then I said, a little delayed, "Yeah— I'd like to try
+    that fight again." She let out a small laugh.
+  </p>
 
-    <p>"I'm sure you'll get to try again, soon," she said. I laughed too.</p>
+  <p>"I'm sure you'll get to try again soon," she said. I laughed too.</p>
 
-    <p>
-      I poured the last of the wine, the level in our cups giving us a definite
-      sense of the ending. But we didn't delay nor hurry.
-    </p>
+  <p>
+    I poured the last of the wine, our cups now giving us a definite sense of
+    the ending. We didn't delay nor hurry.
+  </p>
 
-    <p>"Ever have a picnic on a roof before?"</p>
+  <p>"Wasn't exactly the picnic we planned, was it?"</p>
 
-    <p>She laughed, "Why was it so good?"</p>
+  <p>She laughed, "Why was it so good?"</p>
 
-    <p>
-      "I know. Maybe we should just head home, the trip peaked." We laughed.
-    </p>
+  <p>"I know. We should just head home, the trip peaked." We laughed.</p>
 
-    <p>"Home does sound really nice right now," she said smiling.</p>
+  <p>"Home does sound really nice right now," she said, smiling.</p>
 
-    <p>[Describe more scene.]</p>
+  <p>
+    Somewhere during our talking the choir of insects might have noticed two
+    strangers of curious tone, and drifted farther upfield as a group,
+    unconsciously and without animosity. In the light of the window, we had
+    become the portrait—the scene for the evening to see. The breeze now
+    gently ushering us back inside.
+  </p>
 
-    <p>"I know we were joking, but we should still go."</p>
+  <p>"I know you were joking, but we should still go," she said.</p>
 
-    <p>[Describe more scene. Transition into ending conversation.]</p>
+  <p>"Yeah, of course."</p>
 
-    <p>
-      "To Canada then, where we'll fight a little better." [Or however this
-      should be phrased after re-work.]
-    </p>
+  <p>I saved the last sip of wine for something; now seemed the time.</p>
 
-    <p>"To Canada."</p>
+  <p>"To Canada then, where we'll do a little better."</p>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>
-    <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
-    <script>
-      // Function to apply or remove mobile scaling based on viewport width
-      function applyResponsiveScaling() {
-        const pagesContainer = document.querySelector(".pagedjs_pages");
-        if (!pagesContainer) return;
+  <p>"To Canada."</p>
 
-        if (window.innerWidth <= 768) {
-          const pageWidth = 600; // 6in = ~600px at 96dpi
-          const viewportWidth = window.innerWidth;
-          const scale = (viewportWidth * 0.7) / pageWidth; // 70% to leave room for borders
-          pagesContainer.style.transform = `scale(${scale})`;
-          pagesContainer.style.transformOrigin = "top center";
-          pagesContainer.style.padding = "1em";
-          pagesContainer.style.background = "transparent";
-          document.body.style.background = "white";
-        } else {
-          // Reset to desktop view
-          pagesContainer.style.transform = "";
-          pagesContainer.style.transformOrigin = "";
-          pagesContainer.style.padding = "2em";
-          pagesContainer.style.background = "#f5f5f5";
-          document.body.style.background = "";
-        }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>
+  <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+  <script>
+    // Function to apply or remove mobile scaling based on viewport width
+    function applyResponsiveScaling() {
+      const pagesContainer = document.querySelector(".pagedjs_pages");
+      if (!pagesContainer) return;
+
+      if (window.innerWidth <= 768) {
+        const pageWidth = 600; // 6in = ~600px at 96dpi
+        const viewportWidth = window.innerWidth;
+        const scale = (viewportWidth * 0.7) / pageWidth; // 70% to leave room for borders
+        pagesContainer.style.transform = `scale(${scale})`;
+        pagesContainer.style.transformOrigin = "top center";
+        pagesContainer.style.padding = "1em";
+        pagesContainer.style.background = "transparent";
+        document.body.style.background = "white";
+      } else {
+        // Reset to desktop view
+        pagesContainer.style.transform = "";
+        pagesContainer.style.transformOrigin = "";
+        pagesContainer.style.padding = "2em";
+        pagesContainer.style.background = "#f5f5f5";
+        document.body.style.background = "";
       }
+    }
 
-      // Run smartquotes after PagedJS finishes rendering
-      class SmartQuotesHandler extends Paged.Handler {
-        afterRendered(pages) {
-          smartquotes();
-          applyResponsiveScaling();
-        }
+    // Run smartquotes after PagedJS finishes rendering
+    class SmartQuotesHandler extends Paged.Handler {
+      afterRendered(pages) {
+        smartquotes();
+        applyResponsiveScaling();
       }
-      Paged.registerHandlers(SmartQuotesHandler);
+    }
+    Paged.registerHandlers(SmartQuotesHandler);
 
-      // Listen for window resize events
-      window.addEventListener("resize", applyResponsiveScaling);
-    </script>
-  </body>
+    // Listen for window resize events
+    window.addEventListener("resize", applyResponsiveScaling);
+  </script>
+</body>
+
 </html>
