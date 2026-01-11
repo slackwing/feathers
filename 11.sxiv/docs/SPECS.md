@@ -764,8 +764,8 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
    - Multiple values allowed (e.g., `[dep] -0.5 1 1.5 -2`)
    - Calculator shows average with 1 decimal place using "=" separator
 
-7. **[alc]** (alcohol consumption): non-negative integer
-   - Any value ≥ 0 (e.g., `[alc] 0`, `[alc] 2`)
+7. **[alc]** (alcohol consumption): non-negative number (integer or float)
+   - Any value ≥ 0 (e.g., `[alc] 0`, `[alc] 2`, `[alc] 1.5`)
 
 **Processing Rules:**
 

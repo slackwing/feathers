@@ -1728,14 +1728,20 @@ class PointCalculator:
                 return f"    [dep] {' '.join(values_parts)} = {avg_str} ✓", None
 
             elif category == "alc":
-                # Non-negative integer
+                # Non-negative number (integer or float)
                 if len(values_parts) != 1:
                     return line, "[alc] must have exactly one value"
-                value = int(values_parts[0])
+                value = float(values_parts[0])
                 if value < 0:
                     return line, "[alc] must be non-negative"
 
-                return f"    [{category}] {value} ✓", None
+                # Format as integer if it's a whole number, otherwise as float
+                if value == int(value):
+                    value_str = str(int(value))
+                else:
+                    value_str = values_parts[0]
+
+                return f"    [{category}] {value_str} ✓", None
 
             elif category in ["dist", "soc", "out", "exe"]:
                 # 0-3 inclusive
@@ -2659,9 +2665,9 @@ class PointCalculator:
 
         # Generate attributes section after summary at EOF
         # At this point, all old {attributes} sections have been filtered out but captured
-        if not attributes_generated and fixed_lines:
-            # Add blank line before attributes
-            if fixed_lines[-1].strip():
+        if not attributes_generated:
+            # Add blank line before attributes (only if there are existing lines)
+            if fixed_lines and fixed_lines[-1].strip():
                 fixed_lines.append("")
 
             # Process captured attributes or generate template

@@ -1,0 +1,9 @@
+Friday, January 10th, 2025
+{attributes}
+    [sleep] 85 7.5 ✓
+    [dist] 1 ✓
+    [soc] 2 ✓
+    [out] 3 ✓
+    [exe] 2 ✓
+    [dep] 1 0.5 -0.5 = 0.3 ✓
+    [alc] 0 ✓
