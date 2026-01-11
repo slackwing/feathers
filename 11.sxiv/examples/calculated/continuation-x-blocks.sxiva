@@ -12,6 +12,7 @@ x10:00 + [err] wipe counter [6], [err] put away dishes [3] --- 10:00 (+13=-1)
     [sys] - 00:20
 
 {attributes}
+    [sleep]
     [dist]
     [soc]
     [out]

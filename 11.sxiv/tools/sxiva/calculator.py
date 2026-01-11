@@ -1647,6 +1647,7 @@ class PointCalculator:
         """
         return [
             "{attributes}",
+            "    [sleep]",
             "    [dist]",
             "    [soc]",
             "    [out]",
@@ -1690,7 +1691,30 @@ class PointCalculator:
         values_parts = values_str.split()
 
         try:
-            if category == "dep":
+            if category == "sleep":
+                # Parse: percentage (0-100), hours (float), optional tilde
+                # Example: [sleep] 72 5.5 ~ or [sleep] 72 5.5
+                if len(values_parts) < 2:
+                    return line, "[sleep] requires at least 2 values (percentage and hours)"
+
+                # Parse percentage (0-100)
+                percentage = int(values_parts[0])
+                if percentage < 0 or percentage > 100:
+                    return line, f"[sleep] percentage must be between 0 and 100 (got {percentage})"
+
+                # Parse hours (float)
+                hours = float(values_parts[1])
+
+                # Check for optional tilde
+                has_tilde = len(values_parts) > 2 and values_parts[2] == '~'
+
+                # Reconstruct line
+                if has_tilde:
+                    return f"    [sleep] {percentage} {hours} ~ ✓", None
+                else:
+                    return f"    [sleep] {percentage} {hours} ✓", None
+
+            elif category == "dep":
                 # Parse floating point values (can be negative)
                 values = [float(v) for v in values_parts]
                 if not values:
@@ -1741,7 +1765,7 @@ class PointCalculator:
                    num_lines_consumed: How many lines from start_idx were consumed
                    errors: List of error messages
         """
-        EXPECTED_CATEGORIES = ["dist", "soc", "out", "exe", "dep", "alc"]
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc"]
 
         if start_idx == -1:
             # No attributes section - generate template
