@@ -1,5 +1,36 @@
 [
   {
+    "type": "attributes_line",
+    "named": true,
+    "fields": {
+      "category": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "category",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "attributes_section",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attributes_line",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "blick",
     "named": true,
     "fields": {
@@ -525,6 +556,10 @@
       "required": false,
       "types": [
         {
+          "type": "attributes_section",
+          "named": true
+        },
+        {
           "type": "block_separator",
           "named": true
         },
@@ -896,6 +931,10 @@
   },
   {
     "type": "{",
+    "named": false
+  },
+  {
+    "type": "{attributes}",
     "named": false
   },
   {

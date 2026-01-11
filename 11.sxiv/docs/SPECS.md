@@ -715,6 +715,100 @@ Summary totals use **base categories only**:
     [wr]   - 02:24
 ```
 
+### Attributes Declaration
+
+```
+{attributes}
+```
+
+The `{attributes}` section tracks daily self-assessment metrics and dependencies. It appears **after** the `{summary}` section and **before** the `===` end marker.
+
+**Syntax:**
+```
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+```
+
+**Attribute Categories:**
+
+1. **[dist]** (distraction level): 0-3 inclusive
+   - 0 = no distractions, deep focus
+   - 3 = highly distracted
+
+2. **[soc]** (social interaction): 0-3 inclusive
+   - 0 = no social interactions
+   - 3 = high social engagement
+
+3. **[out]** (outside time): 0-3 inclusive
+   - 0 = stayed indoors all day
+   - 3 = spent significant time outside
+
+4. **[exe]** (exercise): 0-3 inclusive
+   - 0 = no exercise
+   - 3 = intense exercise
+
+5. **[dep]** (dependency/mood tracking): floating point values (can be negative)
+   - Multiple values allowed (e.g., `[dep] -0.5 1 1.5 -2`)
+   - Calculator shows average with 1 decimal place using "=" separator
+
+6. **[alc]** (alcohol consumption): non-negative integer
+   - Any value ≥ 0 (e.g., `[alc] 0`, `[alc] 2`)
+
+**Processing Rules:**
+
+- **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above
+- **Category Order**: Categories must appear in the order: dist, soc, out, exe, dep, alc
+- **Missing Categories**: If a category is missing from an existing `{attributes}` section, calculator adds it in the correct position
+- **Validation**: Numbers outside the valid range for each category type generate an ERROR
+- **Optional Values**: Any category can be left blank (no value) - this is valid and means "not filled out"
+- **Checkmarks**: Calculator adds ` ✓` after each filled-in value (except [dep] which gets special formatting)
+- **[dep] Formatting**: Shows ` = [average] ✓` where average is calculated to 1 decimal place
+
+**Example (unfilled template - added by calculator):**
+```sxiva
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+```
+
+**Example (filled in by user, processed by calculator):**
+```sxiva
+{attributes}
+    [dist] 2 ✓
+    [soc] 1 ✓
+    [out] 0 ✓
+    [exe] 2 ✓
+    [dep] -0.5 1 1.5 -2 = 0.0 ✓
+    [alc] 0 ✓
+```
+
+**Example (partial - some filled, some not):**
+```sxiva
+{attributes}
+    [dist] 1 ✓
+    [soc]
+    [out] 3 ✓
+    [exe]
+    [dep] 0.5 1 = 0.8 ✓
+    [alc]
+```
+
+**Placement:**
+- Must appear after `{summary}` section (if summary exists)
+- Must appear before `===` end marker (if end marker exists)
+- Preceded by a blank line
+- Followed by a blank line before `===`
+- All attribute lines are indented with 4 spaces
+
 ## Examples
 
 ### Basic Sequence

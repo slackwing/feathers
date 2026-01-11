@@ -17,3 +17,11 @@ x14:48 - [sys] catchup [6] --- 14:58 (+2=-2)
     [err] - 00:08
     [sys] - 00:20
     [wr]  - 00:48
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

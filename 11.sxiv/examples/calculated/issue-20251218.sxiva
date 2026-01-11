@@ -73,6 +73,14 @@ Wednesday, December 17th, 2025
     [sp]   - 02:40
     [sys]  - 00:04
 
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+
 === (preserved from 20251216)
 
 [err] bug in offset calculation ...

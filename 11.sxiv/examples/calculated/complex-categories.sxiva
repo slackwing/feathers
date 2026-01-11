@@ -12,3 +12,11 @@ x14:36 - [eng/infra] infrastructure work ~[6] --- 14:51 (-3=2)
     [eng] - 00:08
     [sp]  - 00:40
     [sys] - 00:04
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

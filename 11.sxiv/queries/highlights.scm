@@ -125,10 +125,15 @@
 (c_section "{c}" @keyword.focus)
 (summary_section "{summary}" @keyword.focus)
 (freeform_section "{freeform}" @keyword.focus)
+(attributes_section "{attributes}" @keyword.focus)
 
 ; Summary line times - yellow like freeform times
 (summary_line
   (time) @number)
+
+; Attributes line components - highlight category like other categories
+(attributes_line
+  (category) @string)
 
 ; C line components - highlight time like other times
 (c_line

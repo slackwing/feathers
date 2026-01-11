@@ -1,3 +1,11 @@
 Tuesday, May 20th, 2025
 {focus: [wr]}
 09:18 - [wr] writing session [10] --- 09:30 [ERROR] start time 09:18 is not on a valid boundary (:00/:12/:24/:36/:48 for standard blocks, :08/:20/:32/:44/:56 for start blocks)
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

@@ -47,6 +47,7 @@ module.exports = grammar({
     _content: $ => choice(
       $.c_section,              // {c} section with c_lines
       $.summary_section,        // {summary} section (already handles its own lines)
+      $.attributes_section,     // {attributes} section with attributes_lines
       $.freeform_section,       // {freeform} section with metadata_lines
       $._time_tracking_line,    // Default content: time blocks, focus, etc.
     ),
@@ -206,6 +207,23 @@ module.exports = grammar({
       field('category', $.category),
       /\s+-\s+/,
       field('time', $.time),
+      /\n/
+    ),
+
+    // Attributes section: {attributes} followed by indented attributes_lines
+    // Ends when we hit a non-indented line (can't match attributes_line anymore)
+    attributes_section: $ => seq(
+      '{attributes}',
+      /\n/,
+      repeat($.attributes_line)
+    ),
+
+    // Attributes line: indented [category] with optional values and checkmark
+    // Examples: "    [dist]", "    [dist] 2 ✓", "    [dep] -0.5 1.0 = 0.3 ✓"
+    attributes_line: $ => seq(
+      /[ \t]+/,  // Required indentation
+      field('category', $.category),
+      optional(/[^\n]+/),  // Optional values, checkmark, etc.
       /\n/
     ),
 

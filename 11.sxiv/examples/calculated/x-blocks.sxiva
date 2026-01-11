@@ -15,3 +15,11 @@ x15:00 - [bkc] read 2 pages [3] --- 15:19 (-2=-12)
     [err] - 00:32
     [sp]  - 00:12
     [wr]  - 00:12
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

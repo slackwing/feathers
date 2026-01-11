@@ -19,3 +19,11 @@ x15:36 - [err] call taylor ~[6] --- 15:49 (=-12)
     [sp]  - 00:12
     [sys] - 00:04
     [wr]  - 00:12
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

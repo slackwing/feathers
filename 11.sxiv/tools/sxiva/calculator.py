@@ -1578,6 +1578,43 @@ class PointCalculator:
 
         return filtered
 
+    def _filter_attributes_sections(self, lines: list) -> list:
+        """Filter out any {attributes} sections from lines.
+
+        Used when preserving content after === markers to avoid duplicating attributes.
+
+        Args:
+            lines: List of lines that may contain {attributes} sections
+
+        Returns:
+            List of lines with {attributes} sections removed
+        """
+        filtered = []
+        in_attributes = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Check if entering an attributes section
+            if stripped == '{attributes}':
+                in_attributes = True
+                continue
+
+            # Check if exiting attributes section (non-indented line, or another section marker, or ===)
+            if in_attributes:
+                # Attributes lines are indented with spaces
+                if stripped and not line.startswith((' ', '\t')):
+                    # Non-indented line - we're out of the attributes section
+                    in_attributes = False
+                    # Fall through to add this line
+                else:
+                    # Still in attributes section or empty line - skip it
+                    continue
+
+            filtered.append(line)
+
+        return filtered
+
     def generate_summary_lines(self, category_minutes: dict) -> list:
         """Generate summary lines from category minutes.
 
@@ -1601,6 +1638,153 @@ class PointCalculator:
             lines.append(f"    [{cat}]{padding} - {time_str}")
 
         return lines
+
+    def generate_attributes_template(self) -> list:
+        """Generate default attributes section template.
+
+        Returns:
+            List of attribute lines (NOT including blank line before {attributes} header)
+        """
+        return [
+            "{attributes}",
+            "    [dist]",
+            "    [soc]",
+            "    [out]",
+            "    [exe]",
+            "    [dep]",
+            "    [alc]",
+        ]
+
+    def process_attribute_line(self, line: str) -> tuple[str, Optional[str]]:
+        """Process an attribute line and add checkmark/calculation.
+
+        Args:
+            line: Attribute line (e.g., "    [dist] 2" or "    [dep] -0.5 1 1.5")
+
+        Returns:
+            tuple: (processed_line, error_message)
+                   error_message is None if valid, otherwise contains error description
+        """
+        stripped = line.strip()
+
+        # Check if line is just a category with no value
+        category_only_match = re.match(r'^\[(\w+)\]$', stripped)
+        if category_only_match:
+            # Valid but unfilled - return as-is with proper indentation
+            return f"    {stripped}", None
+
+        # Parse category and values
+        match = re.match(r'^\[(\w+)\]\s+(.+?)(?:\s*✓)?$', stripped)
+        if not match:
+            return line, "Invalid attribute line format"
+
+        category = match.group(1)
+        values_str = match.group(2).strip()
+
+        # Remove any existing " = X.X ✓" suffix for [dep]
+        # Match " = " followed by a number with decimal, then optional whitespace/checkmark, then end of string
+        # The key is to ensure we match to the end ($) so we don't accidentally match values
+        values_str = re.sub(r'\s+=\s+-?\d+\.\d+\s*✓?\s*$', '', values_str)
+
+        # Split values
+        values_parts = values_str.split()
+
+        try:
+            if category == "dep":
+                # Parse floating point values (can be negative)
+                values = [float(v) for v in values_parts]
+                if not values:
+                    return line, "[dep] requires at least one value"
+
+                # Calculate average to 1 decimal place
+                avg = sum(values) / len(values)
+                avg_str = f"{avg:.1f}"
+
+                # Reconstruct line with average
+                return f"    [dep] {' '.join(values_parts)} = {avg_str} ✓", None
+
+            elif category == "alc":
+                # Non-negative integer
+                if len(values_parts) != 1:
+                    return line, "[alc] must have exactly one value"
+                value = int(values_parts[0])
+                if value < 0:
+                    return line, "[alc] must be non-negative"
+
+                return f"    [{category}] {value} ✓", None
+
+            elif category in ["dist", "soc", "out", "exe"]:
+                # 0-3 inclusive
+                if len(values_parts) != 1:
+                    return line, f"[{category}] must have exactly one value"
+                value = int(values_parts[0])
+                if value < 0 or value > 3:
+                    return line, f"[{category}] must be between 0 and 3 inclusive"
+
+                return f"    [{category}] {value} ✓", None
+            else:
+                return line, f"Unknown attribute category: [{category}]"
+
+        except ValueError as e:
+            return line, f"Invalid value format for [{category}]: {e}"
+
+    def process_attributes_section(self, lines: list, start_idx: int) -> tuple[list, int, list]:
+        """Process existing attributes section or generate template.
+
+        Args:
+            lines: All lines in the file
+            start_idx: Index where {attributes} appears (or -1 if not found)
+
+        Returns:
+            tuple: (processed_lines, num_lines_consumed, errors)
+                   processed_lines: List of attribute lines including {attributes} header
+                   num_lines_consumed: How many lines from start_idx were consumed
+                   errors: List of error messages
+        """
+        EXPECTED_CATEGORIES = ["dist", "soc", "out", "exe", "dep", "alc"]
+
+        if start_idx == -1:
+            # No attributes section - generate template
+            return self.generate_attributes_template(), 0, []
+
+        # Parse existing attributes section
+        existing_attrs = {}
+        errors = []
+        i = start_idx + 1  # Skip {attributes} header
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # End of attributes section
+            if not stripped or (stripped and not line.startswith((' ', '\t'))):
+                break
+
+            # Parse category from this line
+            cat_match = re.match(r'^\[(\w+)\]', stripped)
+            if cat_match:
+                category = cat_match.group(1)
+                existing_attrs[category] = line
+
+            i += 1
+
+        num_consumed = i - start_idx
+
+        # Build processed attributes section
+        result = ["{attributes}"]
+
+        for cat in EXPECTED_CATEGORIES:
+            if cat in existing_attrs:
+                # Process existing line
+                processed, error = self.process_attribute_line(existing_attrs[cat])
+                result.append(processed)
+                if error:
+                    errors.append(f"[ERROR] {error}: {existing_attrs[cat].strip()}")
+            else:
+                # Add missing category
+                result.append(f"    [{cat}]")
+
+        return result, num_consumed, errors
 
     def strip_points_from_line(self, line: str) -> str:
         """Remove point calculations and error messages from a line.
@@ -1835,6 +2019,9 @@ class PointCalculator:
         in_c_section = False  # Track if we're inside a {c} section
         in_summary_section = False  # Track if we're inside a {summary} section
         summary_generated = False  # Track if we've already generated the summary
+        in_attributes_section = False  # Track if we're inside a {attributes} section
+        attributes_generated = False  # Track if we've already generated the attributes
+        captured_attributes_lines = []  # Capture attributes lines from source for later processing
         block_count = 0  # Track number of blocks for separator insertion
         previous_line_indent = ""  # Track previous block's indentation for separator
         consumed_lines = set()  # Track lines that have been consumed by multi-line nodes
@@ -1861,6 +2048,30 @@ class PointCalculator:
                 else:
                     # Non-indented line - exited summary
                     in_summary_section = False
+                    # Fall through to process this line
+
+            # Detect {attributes} sections even if not in an attributes_section node
+            # (can happen when {attributes} is inside an ERROR node)
+            # IMPORTANT: Check this BEFORE handling blank lines
+            if stripped == '{attributes}':
+                in_attributes_section = True
+                # Capture the header line
+                captured_attributes_lines.append(line)
+                # Skip old attributes sections - will regenerate at EOF
+                continue
+            elif in_attributes_section:
+                # Inside an attributes section - capture indented lines and skip blank lines
+                if not stripped:
+                    # Blank line - end of attributes section
+                    in_attributes_section = False
+                    continue
+                elif line.startswith((' ', '\t')):
+                    # Indented line - part of attributes section
+                    captured_attributes_lines.append(line)
+                    continue
+                else:
+                    # Non-indented line - exited attributes
+                    in_attributes_section = False
                     # Fall through to process this line
 
             # Handle blank lines and comments
@@ -1893,10 +2104,43 @@ class PointCalculator:
                         fixed_lines.append("")
                     summary_generated = True
                     num_fixes += 1
-                # Preserve everything from === onwards, but filter out {summary} sections
+
+                # Generate attributes section before === marker
+                if not attributes_generated:
+                    # Add blank line before attributes
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
+
+                    # Process captured attributes or generate template
+                    if captured_attributes_lines:
+                        # Process existing attributes
+                        attrs_idx = 0
+                        attrs_lines, consumed, errors = self.process_attributes_section(captured_attributes_lines, attrs_idx)
+
+                        # Add errors if any
+                        for error in errors:
+                            fixed_lines.append(error)
+
+                        # Add processed attributes
+                        fixed_lines.extend(attrs_lines)
+                    else:
+                        # No attributes captured - add template
+                        attrs_lines = self.generate_attributes_template()
+                        fixed_lines.extend(attrs_lines)
+
+                    attributes_generated = True
+                    num_fixes += 1
+
+                    # Add blank line before ===
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
+
+                # Preserve everything from === onwards (already filtered attributes during main loop)
                 remaining_lines = lines[line_idx:]
                 filtered_remaining = self._filter_summary_sections(remaining_lines)
+                filtered_remaining = self._filter_attributes_sections(filtered_remaining)
                 fixed_lines.extend(filtered_remaining)
+
                 break
 
             # Find the primary node type for this line
@@ -2388,6 +2632,34 @@ class PointCalculator:
             fixed_lines.extend(summary_lines)
             summary_generated = True
             num_fixes += 1
+
+        # Generate attributes section after summary at EOF
+        # At this point, all old {attributes} sections have been filtered out but captured
+        if not attributes_generated and fixed_lines:
+            # Add blank line before attributes
+            if fixed_lines[-1].strip():
+                fixed_lines.append("")
+
+            # Process captured attributes or generate template
+            if captured_attributes_lines:
+                # Find {attributes} line index (should be first)
+                attrs_idx = 0
+                attrs_lines, consumed, errors = self.process_attributes_section(captured_attributes_lines, attrs_idx)
+
+                # Add errors if any
+                for error in errors:
+                    fixed_lines.append(error)
+
+                # Add processed attributes
+                fixed_lines.extend(attrs_lines)
+                num_fixes += 1
+            else:
+                # No attributes captured - add template
+                attrs_lines = self.generate_attributes_template()
+                fixed_lines.extend(attrs_lines)
+                num_fixes += 1
+
+            attributes_generated = True
 
         # Join fixed lines
         result = '\n'.join(fixed_lines)

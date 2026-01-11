@@ -15,3 +15,11 @@ x09:24 - [wf] cr, next ~[6] --- 09:37 (=-6)
 {summary}
     [err] - 00:04
     [wf]  - 01:12
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

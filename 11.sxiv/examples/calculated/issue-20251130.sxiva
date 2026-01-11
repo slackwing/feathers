@@ -11,3 +11,11 @@ x09:00 - [wf] cr, neovim bug ~[6] --- 09:16 (-4=-5)
 {summary}
     [err] - 00:04
     [wf]  - 00:52
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

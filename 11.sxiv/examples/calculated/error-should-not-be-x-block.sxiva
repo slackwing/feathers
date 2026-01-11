@@ -5,3 +5,11 @@ x09:12 - [wr] continue writing [6] --- 09:24 [ERROR] previous block ended only 2
 
 {summary}
     [wr] - 00:20
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]

@@ -5,3 +5,11 @@ x09:12 - [wr] catchup work [6] --- 09:38 [ERROR] previous block ended 18min late
 
 {summary}
     [wr] - 00:20
+
+{attributes}
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
