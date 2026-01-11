@@ -97,3 +97,11 @@
   sources: ["ean-420"]
   question: What was the "Annapolis Conference" of November 2007?
   answer: A peace conference held in Annapolis, Maryland, hosted by US President George W. Bush, with the aim of reviving the Israeli-Palestinian peace process. The conference brought together Israeli Prime Minister Ehud Olmert, Palestinian Authority President Mahmoud Abbas, and representatives from various countries and international organizations. The participants agreed to work towards a two-state solution and set a goal of reaching a final status agreement by the end of 2008.
+- card:
+  sources: ["ean-448"]
+  question: What was Iran's tie to Palestine?
+  answer: After the 1979 Islamic Revolution, Iran handed over the abandoned Israeli embassy in Tehran to Arafat, and since then has provided financial and military support to Palestinian militant groups, particularly Hamas and Islamic Jihad. Iran views the Palestinian cause as a central component of its foreign policy and a means to challenge Israel's legitimacy in the region.
+- card:
+  sources: ["ean-483"]
+  question: What was UN Resolution 2334?
+  answer: A resolution adopted by the United Nations Security Council on 23 December 2016, which condemned Israeli settlement activity in the occupied Palestinian territories, including East Jerusalem. The resolution stated that the settlements had "no legal validity" and constituted a "flagrant violation" of international law. It called for an immediate halt to all settlement activities and urged both parties to resume negotiations towards a two-state solution. The resolution was notable for being adopted with the support of 14 Security Council members, with the United States abstaining from the vote. It also urged countries to distinguish between the territory of the State of Israel and the territories occupied since 1967.
