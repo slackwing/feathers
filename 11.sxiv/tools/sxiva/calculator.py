@@ -1654,6 +1654,8 @@ class PointCalculator:
             "    [exe]",
             "    [dep]",
             "    [alc]",
+            "    [xmx]",
+            "    [wea]",
         ]
 
     def process_attribute_line(self, line: str) -> tuple[str, Optional[str]]:
@@ -1752,6 +1754,26 @@ class PointCalculator:
                     return line, f"[{category}] must be between 0 and 3 inclusive"
 
                 return f"    [{category}] {value} ✓", None
+
+            elif category == "xmx":
+                # Non-negative integer
+                if len(values_parts) != 1:
+                    return line, "[xmx] must have exactly one value"
+                value = int(values_parts[0])
+                if value < 0:
+                    return line, f"[xmx] must be non-negative (got {value})"
+
+                return f"    [xmx] {value} ✓", None
+
+            elif category == "wea":
+                # Float between -2 and 2 inclusive
+                if len(values_parts) != 1:
+                    return line, "[wea] must have exactly one value"
+                value = float(values_parts[0])
+                if value < -2 or value > 2:
+                    return line, f"[wea] must be between -2 and 2 inclusive (got {value})"
+
+                return f"    [wea] {value} ✓", None
             else:
                 return line, f"Unknown attribute category: [{category}]"
 
@@ -1771,7 +1793,7 @@ class PointCalculator:
                    num_lines_consumed: How many lines from start_idx were consumed
                    errors: List of error messages
         """
-        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc"]
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea"]
 
         if start_idx == -1:
             # No attributes section - generate template
@@ -2696,7 +2718,12 @@ class PointCalculator:
 
         # Add date header at the beginning if needed
         if date_header_to_add:
-            result = date_header_to_add + '\n' + result
+            # Add blank line after date if there's no timesheet (only attributes)
+            # This is detected by checking if summary was never generated
+            if not summary_generated:
+                result = date_header_to_add + '\n\n' + result
+            else:
+                result = date_header_to_add + '\n' + result
             num_fixes += 1
         elif date_header_error:
             # Add error message for missing date filename

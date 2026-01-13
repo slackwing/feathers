@@ -28,3 +28,5 @@ x15:36 - [err] call taylor ~[6] --- 15:49 (=-12)
     [exe]
     [dep]
     [alc]
+    [xmx]
+    [wea]

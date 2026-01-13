@@ -767,10 +767,17 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
 7. **[alc]** (alcohol consumption): non-negative number (integer or float)
    - Any value ≥ 0 (e.g., `[alc] 0`, `[alc] 2`, `[alc] 1.5`)
 
+8. **[xmx]** (extended metric): non-negative integer
+   - Any value ≥ 0 (e.g., `[xmx] 0`, `[xmx] 1`, `[xmx] 5`)
+
+9. **[wea]** (weather/external factors): float between -2 and 2 inclusive
+   - Range: -2.0 to 2.0 (e.g., `[wea] -1.5`, `[wea] 0`, `[wea] 1.2`)
+   - Represents external environmental impact on the day
+
 **Processing Rules:**
 
 - **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above
-- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc
+- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, wea
 - **Missing Categories**: If a category is missing from an existing `{attributes}` section, calculator adds it in the correct position
 - **Validation**: Numbers outside the valid range for each category type generate an ERROR
 - **Optional Values**: Any category can be left blank (no value) - this is valid and means "not filled out"
@@ -787,6 +794,8 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [exe]
     [dep]
     [alc]
+    [xmx]
+    [wea]
 ```
 
 **Example (filled in by user, processed by calculator):**
@@ -799,6 +808,8 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [exe] 2 ✓
     [dep] -0.5 1 1.5 -2 = 0.0 ✓
     [alc] 0 ✓
+    [xmx] 3 ✓
+    [wea] 1.5 ✓
 ```
 
 **Example (partial - some filled, some not):**
@@ -811,6 +822,8 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [exe]
     [dep] 0.5 1 = 0.8 ✓
     [alc]
+    [xmx] 1 ✓
+    [wea] -0.5 ✓
 ```
 
 **Placement:**

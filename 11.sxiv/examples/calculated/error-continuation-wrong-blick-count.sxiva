@@ -1,4 +1,5 @@
 Monday, April 7th, 2025
+
 {focus: [wr]}
 09:00 - [wr] writing session ~+
 09:12 + [wr] continue [3], [sys] email [3] --- 09:24 [ERROR] standard block must have 3 or 4 blicks (9 or 12 minutes), found 2 blicks
@@ -11,3 +12,5 @@ Monday, April 7th, 2025
     [exe]
     [dep]
     [alc]
+    [xmx]
+    [wea]
