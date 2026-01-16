@@ -2454,9 +2454,10 @@ class PointCalculator:
                         num_fixes += 1
                         # ERROR node processed - now stop and preserve remaining lines
                         # Add all remaining lines (after error line) without modification
-                        # BUT filter out old {summary} sections (will be regenerated at EOF)
+                        # BUT filter out old {summary} and {attributes} sections (will be regenerated at EOF)
                         remaining = lines[line_idx + 1:]
                         filtered_remaining = self._filter_summary_sections(remaining)
+                        filtered_remaining = self._filter_attributes_sections(filtered_remaining)
                         fixed_lines.extend(filtered_remaining)
                         break
                 # If no error message in map, keep cleaned line

@@ -146,39 +146,60 @@ def recalculate_all_files():
 
     success_count = 0
     files_with_errors = []  # Track files that have [ERROR] messages
+    files_changed = []  # Track files that had changes
+    files_unchanged = []  # Track files with no changes
 
     click.echo()
     for file_path in sxiva_files:
         try:
+            # Read original content before processing
+            with open(file_path, 'r', encoding='utf-8') as f:
+                original_content = f.read()
+
+            # Process the file
             num_fixes = calculator.fix_file(str(file_path), output_path=None, dry_run=False)
 
-            # Check if file has errors by reading it back
+            # Read content after processing
             with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                if '[ERROR]' in content:
-                    files_with_errors.append(file_path.name)
+                new_content = f.read()
+                has_errors = '[ERROR]' in new_content
 
-            if num_fixes > 0:
-                click.secho(f"✓ Fixed {num_fixes} calculation(s) in {file_path.name}", fg='green')
+            # Determine if file actually changed
+            file_changed = (original_content != new_content)
+
+            if has_errors:
+                # File has [ERROR] messages - show in red with X
+                click.secho(f"✗ {file_path.name} (has errors)", fg='red')
+                files_with_errors.append(file_path.name)
+            elif file_changed:
+                # File was changed - show in yellow
+                click.secho(f"✓ {file_path.name} (regenerated with changes)", fg='yellow')
+                files_changed.append(file_path.name)
             else:
-                click.secho(f"✓ No fixes needed in {file_path.name}", fg='green')
+                # No changes - show in green
+                click.secho(f"✓ {file_path.name} (no changes)", fg='green')
+                files_unchanged.append(file_path.name)
             success_count += 1
         except Exception as e:
-            click.secho(f"✗ Error processing {file_path.name}: {e}", fg='red', err=True)
+            click.secho(f"✗ {file_path.name}: {e}", fg='red', err=True)
             files_with_errors.append(file_path.name)
 
     # Summary
     click.echo()
     click.echo("=" * 50)
     click.secho(f"Processed {success_count} file(s)", fg='cyan')
+    click.echo()
+    click.secho(f"  {len(files_unchanged)} unchanged", fg='green')
+    click.secho(f"  {len(files_changed)} regenerated with changes", fg='yellow')
 
     if files_with_errors:
+        click.secho(f"  {len(files_with_errors)} with errors", fg='red')
         click.echo()
-        click.secho(f"Files with errors ({len(files_with_errors)}):", fg='yellow')
+        click.secho(f"Files with errors:", fg='red')
         for filename in files_with_errors:
-            click.secho(f"  - {filename}", fg='yellow')
+            click.secho(f"  - {filename}", fg='red')
     else:
-        click.secho(f"  No errors found!", fg='green')
+        click.secho(f"  0 with errors", fg='green')
     click.echo("=" * 50)
 
 
