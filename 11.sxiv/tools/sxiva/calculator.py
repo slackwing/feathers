@@ -2718,9 +2718,10 @@ class PointCalculator:
 
         # Add date header at the beginning if needed
         if date_header_to_add:
-            # Add blank line after date if there's no timesheet (only attributes)
-            # This is detected by checking if summary was never generated
-            if not summary_generated:
+            # Add blank line after date if there's no timesheet and file starts with {attributes}
+            # (i.e., no [med] lines or other content before attributes)
+            # This is detected by checking if summary was never generated AND result starts with {attributes}
+            if not summary_generated and result.startswith('{attributes}'):
                 result = date_header_to_add + '\n\n' + result
             else:
                 result = date_header_to_add + '\n' + result
