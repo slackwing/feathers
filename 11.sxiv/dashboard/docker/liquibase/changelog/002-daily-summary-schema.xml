@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-daily-summary-schema" author="sxiva">
+        <comment>Create daily_summary table for storing parsed .sxiva data</comment>
+
+        <!-- Create the main daily_summary table -->
+        <createTable tableName="daily_summary">
+            <!-- Primary key -->
+            <column name="date" type="DATE">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="day_of_week" type="CHAR(1)">
+                <constraints nullable="false" checkConstraint="day_of_week IN ('U','M','T','W','R','F','S')"/>
+            </column>
+
+            <!-- Summary data: flexible JSONB for arbitrary categories -->
+            <column name="category_minutes" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Attributes: sleep (two values) -->
+            <column name="sleep_score" type="INTEGER"/>
+            <column name="sleep_hours" type="NUMERIC(2,1)"/>
+
+            <!-- Attributes: dep (three values) -->
+            <column name="dep_min" type="NUMERIC(2,1)"/>
+            <column name="dep_max" type="NUMERIC(2,1)"/>
+            <column name="dep_avg" type="NUMERIC(2,1)"/>
+
+            <!-- Attributes: integers -->
+            <column name="soc" type="INTEGER"/>
+            <column name="out" type="INTEGER"/>
+            <column name="exe" type="INTEGER"/>
+            <column name="xmx" type="INTEGER"/>
+
+            <!-- Attributes: decimals -->
+            <column name="dist" type="NUMERIC(2,1)"/>
+            <column name="alc" type="NUMERIC(2,1)"/>
+            <column name="wea" type="NUMERIC(2,1)"/>
+
+            <!-- Metadata -->
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Add default value for category_minutes -->
+        <addDefaultValue tableName="daily_summary" columnName="category_minutes" defaultValue="{}"/>
+
+        <!-- Convert to TimescaleDB hypertable for time-series optimization -->
+        <sql>
+            SELECT create_hypertable('daily_summary', 'date');
+        </sql>
+
+        <!-- Create GIN index for fast JSONB queries -->
+        <sql>
+            CREATE INDEX idx_daily_summary_categories ON daily_summary USING GIN (category_minutes);
+        </sql>
+
+        <!-- Create index for date range queries -->
+        <createIndex indexName="idx_daily_summary_date" tableName="daily_summary">
+            <column name="date" descending="true"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

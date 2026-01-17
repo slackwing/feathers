@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-sync-metadata" author="sxiva">
+        <comment>Create table to track last sync timestamp</comment>
+
+        <createTable tableName="sync_metadata">
+            <column name="id" type="INTEGER" defaultValueNumeric="1">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="last_sync_timestamp" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_sync_file_count" type="INTEGER" defaultValueNumeric="0"/>
+            <column name="notes" type="TEXT"/>
+        </createTable>
+
+        <!-- Insert initial record -->
+        <insert tableName="sync_metadata">
+            <column name="id" valueNumeric="1"/>
+            <column name="last_sync_timestamp" valueComputed="'1970-01-01 00:00:00+00'::timestamptz"/>
+            <column name="last_sync_file_count" valueNumeric="0"/>
+            <column name="notes" value="Initial setup - no data synced yet"/>
+        </insert>
+
+        <!-- Ensure only one row exists -->
+        <sql>
+            CREATE UNIQUE INDEX sync_metadata_singleton ON sync_metadata ((id = 1));
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-create-daily-stats-placeholder" author="sxiva">
+        <comment>Placeholder table for daily stats (will be refined once data schema is defined)</comment>
+
+        <createTable tableName="daily_stats">
+            <column name="date" type="DATE">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="day_of_week" type="VARCHAR(10)"/>
+            <column name="file_path" type="TEXT"/>
+            <column name="data_json" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <!-- Create hypertable for time-series optimization -->
+        <sql>
+            SELECT create_hypertable('daily_stats', 'date', if_not_exists => TRUE);
+        </sql>
+
+        <!-- Index for faster queries -->
+        <createIndex tableName="daily_stats" indexName="idx_daily_stats_created_at">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: sxiva-timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sxiva_stats
+      POSTGRES_USER: sxiva_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-S02f14T88}
+    ports:
+      # Only expose locally for development
+      # Remove this in production (API will connect via Docker network)
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - sxiva-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sxiva_user -d sxiva_stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dashboard-api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    image: sxiva-dashboard-api:latest
+    container_name: sxiva-dashboard-api
+    restart: unless-stopped
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: sxiva_stats
+      DB_USER: sxiva_user
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+      API_TOKEN: ${API_TOKEN:-changeme-set-a-real-token}
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - sxiva-network
+
+  liquibase:
+    build:
+      context: .
+      dockerfile: Dockerfile.liquibase
+    image: sxiva-liquibase:latest
+    container_name: sxiva-liquibase
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+    volumes:
+      - ./liquibase/changelog:/liquibase/changelog
+      - ./liquibase/liquibase.properties:/liquibase/liquibase.properties
+    networks:
+      - sxiva-network
+    command:
+      - --changeLogFile=db.changelog-master.xml
+      - --url=jdbc:postgresql://timescaledb:5432/sxiva_stats
+      - --username=sxiva_user
+      - --password=${POSTGRES_PASSWORD:-changeme123}
+      - --classpath=/liquibase/changelog
+      - update
+    profiles:
+      # Only run when explicitly requested: docker-compose --profile migrate up
+      - migrate
+
+volumes:
+  timescaledb-data:
+    driver: local
+
+networks:
+  sxiva-network:
+    driver: bridge
