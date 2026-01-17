@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime
 import subprocess
 from .calculator import PointCalculator
+from .sync import sync_now
 
 
 def _get_data_path():
@@ -110,6 +111,38 @@ def open_nth_file(n):
         click.secho(f"Error: Editor not found: {editor}", fg='red', err=True)
         click.echo("Set the EDITOR environment variable to your preferred editor")
         sys.exit(1)
+
+
+def recalculate_all_files_silent(data_path):
+    """Recalculate all .sxiva files in data_path without prompting.
+
+    Args:
+        data_path: Path to directory containing .sxiva files
+    """
+    sxiva_files = sorted(data_path.glob('*.sxiva'))
+
+    if not sxiva_files:
+        return
+
+    # Process all files silently
+    from .calculator import PointCalculator
+    calculator = PointCalculator()
+
+    for file_path in sxiva_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Calculate and update the file
+            updated_content = calculator.calculate(content, file_path=str(file_path))
+
+            # Only write if content changed (preserves mtime)
+            if updated_content != content:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(updated_content)
+        except Exception:
+            # Silent skip on errors
+            pass
 
 
 def recalculate_all_files():
@@ -409,6 +442,14 @@ def open_today(date_str=None, yesterday=False, preserve=None):
     # Sanitize: ensure blank line before === markers (fixes user errors)
     if not file_is_new:
         _sanitize_section_markers(file_path)
+
+    # Recalculate all files silently (unless SXIVA_NO_RECALC is set)
+    if not os.environ.get('SXIVA_NO_RECALC'):
+        recalculate_all_files_silent(data_path)
+
+    # Sync to dashboard (unless SXIVA_NO_SYNC is set)
+    if not os.environ.get('SXIVA_NO_SYNC'):
+        sync_now(data_path, quiet=True)
 
     # Open with editor
     editor = os.environ.get('EDITOR', 'vi')

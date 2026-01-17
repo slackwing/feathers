@@ -194,26 +194,77 @@ This ensures atomic updates (all-or-nothing).
 ### Phase 2: Data Sync (Local → VM)
 **Goal**: Get data from .sxiva files into the database
 
-- [ ] Create .sxiva parser (extract summary, attributes, med data, etc.)
-- [ ] Create sync client in `tools/sxiva/sync.py`
-- [ ] Integrate sync into `sxiva` CLI command (pre-open hook)
-- [ ] Create API endpoint: `POST /api/sync/data`
-- [ ] Create API endpoint: `GET /api/status/last-sync`
-- [ ] Test full sync workflow locally
-- [ ] Deploy API to VM
-- [ ] Test sync from local machine to VM
+#### API Infrastructure ✅ COMPLETE
+- [x] Create API endpoint: `POST /api/sync/daily`
+- [x] Create API endpoint: `GET /api/status/last-sync`
+- [x] Test full sync workflow locally
+- [x] Deploy API to VM
+- [x] Configure Apache reverse proxy (`andrewcheong.com/status/api/*`)
 
-**Estimated time**: 6-8 hours
+#### Sync Client Implementation ✅ COMPLETE
+
+**Workflow** (runs automatically when `sxiva` command is executed):
+
+1. **Query last sync from server**
+   - [x] Call `GET https://andrewcheong.com/status/api/status/last-sync`
+   - [x] Store returned date (e.g., `"2025-01-17"`)
+   - [x] If network fails, silently skip sync (fail gracefully)
+
+2. **Recalculate all .sxiva files** (MVP: recalculate everything)
+   - [x] Run calculator on all files in data directory
+   - [x] Bypass `-a` confirmation prompt (run silently)
+   - [x] Don't modify files whose content doesn't change (preserve mtime)
+
+3. **Parse .sxiva files to extract data**
+   - [x] Use existing tree-sitter parser (`parser.so`)
+   - [x] For each file, extract:
+     - [x] Date from filename (e.g., `20250117F.sxiva` → `"2025-01-17"`)
+     - [x] Day of week (calculate from date)
+     - [x] `{summary}` section → `category_minutes` dict (e.g., `{"bkc": 40, "jnl": 32}`)
+     - [x] `{attributes}` section → individual fields:
+       - `[sleep] 79 7.0` → `sleep_score=79, sleep_hours=7.0`
+       - `[dep] 1 -3 = -1.0` → `dep_min=1.0, dep_max=-3.0, dep_avg=-1.0`
+       - Other attributes: `dist`, `soc`, `out`, `exe`, `alc`, `xmx`, `wea`
+       - Handle NULL vs 0: empty = NULL, `0` = 0
+
+4. **Filter files to sync**
+   - [x] Compare file date with `last_sync_date` from server
+   - [x] Only sync files where `file_date >= last_sync_date`
+   - [x] Incremental sync working (48 files on first run, 1 file on subsequent runs)
+
+5. **Sync each file to server**
+   - [x] Use Python `requests` library (not curl)
+   - [x] For each file, call `POST /api/sync/daily` with JSON payload
+   - [x] Include `Authorization: Bearer <token>` header
+   - [x] Hardcode API token in Python script (MVP)
+   - [x] If any request fails, silently skip (we'll sync next time)
+   - [x] No retry logic (MVP)
+
+6. **Continue to editor**
+   - [x] After sync completes (or fails), open editor as normal
+   - [x] User doesn't notice any delay (sync runs silently in background)
+
+**Implementation:**
+- [x] Created `tools/sxiva/sync.py` with sync client logic
+- [x] Created `tools/sxiva/parser_extractor.py` to parse tree-sitter output
+- [x] Integrated sync into `sxiva` CLI command (before editor opens)
+- [x] Added `SXIVA_NO_SYNC` and `SXIVA_NO_RECALC` environment variables to disable
+- [x] Tested sync from local machine to VM
+- [x] Verified data appears correctly in database
+
+**Status**: ✅ COMPLETE! All 48 files synced successfully. Data verified in TimescaleDB.
+
+**Actual time**: ~3 hours
 
 ### Phase 3: Backend API (Query Endpoints)
 **Goal**: Serve data to the dashboard
 
 - [ ] Design API endpoints based on dashboard panels (you'll provide specs)
 - [ ] Implement query endpoints
-- [ ] Add API authentication/authorization
-- [ ] Test API locally
-- [ ] Deploy to VM
-- [ ] Configure Apache reverse proxy for API
+- [x] Add API authentication/authorization (Bearer token)
+- [x] Test API locally
+- [x] Deploy to VM
+- [x] Configure Apache reverse proxy for API
 
 **Depends on**: You specifying what dashboard panels you want
 
