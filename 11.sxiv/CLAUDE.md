@@ -25,6 +25,12 @@
    - There's an explicit reason (e.g., grammar change affects all examples)
    - User explicitly requests it
 
+**See [TESTING.md](TESTING.md) for complete testing documentation, including:**
+- How to run all test suites
+- CLI command integration tests
+- Debugging test failures
+- Adding new tests
+
 ---
 
 This document explains the SXIVA project structure, testing workflow, and critical maintenance practices for AI assistants working on this codebase.

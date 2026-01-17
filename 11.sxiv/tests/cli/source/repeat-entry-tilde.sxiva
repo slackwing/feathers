@@ -1,0 +1,18 @@
+Friday, January 17th, 2025
+{focus: [test]}
+14:00 - [test] first task [10] --- 14:12 (+1f,+1a=2)
+14:12 - [test] tilde task [10] ~--- 14:24 (+1f,+2a=4)
+
+{summary}
+    [test] - 00:24
+
+{attributes}
+    [sleep]
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+    [xmx]
+    [wea]

@@ -479,6 +479,383 @@ def calculate(file_path, fix, output):
         sys.exit(1)
 
 
+@cli.command()
+@click.argument('file_path', type=click.Path(exists=True))
+def log_now(file_path):
+    """Set the end time of the last timesheet entry to now.
+
+    Finds the last time block or continuation block and updates its end time
+    to the current time (rounded to the nearest minute). Useful for quickly
+    logging work as you go.
+
+    \b
+    Example:
+        sxiva log-now today.sxiva    # Set last entry end time to now
+    """
+    from datetime import datetime
+    from .parser import SxivaParser, node_text
+
+    try:
+        # Read the file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parse with tree-sitter
+        parser = SxivaParser()
+        tree = parser.parse(content)
+        source_bytes = content.encode('utf-8')
+
+        # Find all time_block and continuation_block nodes
+        time_blocks = []
+
+        def find_time_blocks(node):
+            if node.type in ['time_block', 'continuation_block']:
+                time_blocks.append(node)
+            for child in node.children:
+                find_time_blocks(child)
+
+        find_time_blocks(tree.root_node)
+
+        if not time_blocks:
+            click.secho("No timesheet entries found in file", fg='yellow')
+            sys.exit(1)
+
+        # Find the end time node within a block
+        # Structure: time_block -> terminator -> end_term -> time
+        # Or: continuation_block -> terminator -> end_term -> time
+        def find_end_time(node):
+            if node.type == 'time' and node.parent and node.parent.type == 'end_term':
+                return node
+            for child in node.children:
+                result = find_end_time(child)
+                if result:
+                    return result
+            return None
+
+        # Find the last time block that has a valid end time
+        last_block_with_end_time = None
+        end_time_node = None
+
+        for block in reversed(time_blocks):
+            end_time = find_end_time(block)
+            if end_time:
+                # Check that the end time is not empty (e.g., line ending with just "---")
+                end_time_text = node_text(end_time, source_bytes).strip()
+                if end_time_text:
+                    last_block_with_end_time = block
+                    end_time_node = end_time
+                    break
+
+        if not end_time_node:
+            click.secho("Could not find any timesheet entry with an end time", fg='yellow')
+            sys.exit(1)
+
+        # Get the old end time
+        old_end_time = node_text(end_time_node, source_bytes)
+
+        # Get current time rounded to nearest minute
+        now = datetime.now()
+        current_time = f"{now.hour:02d}:{now.minute:02d}"
+
+        # Replace the end time in the content
+        start_byte = end_time_node.start_byte
+        end_byte = end_time_node.end_byte
+        new_content = (
+            content[:start_byte] +
+            current_time +
+            content[end_byte:]
+        )
+
+        # Write back to file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        click.secho(f"✓ Updated last entry end time: {old_end_time} → {current_time}", fg='green')
+
+        # Now run calculator to fix point calculations
+        calculator = PointCalculator()
+        calculator.fix_file(file_path, output_path=None, dry_run=False)
+        click.secho(f"✓ Recalculated points", fg='green')
+
+    except FileNotFoundError as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('file_path', type=click.Path(exists=True))
+def log_end(file_path):
+    """Clean up the last incomplete entry and set its end time to now.
+
+    Finds the last timesheet entry that ends with --- or ~--- but has no end time.
+    If there's extra text after the ---, removes it. Then sets the end time to current time.
+
+    \b
+    Example:
+        sxiva log-end today.sxiva    # Clean up last incomplete entry and log current time
+    """
+    from .parser import SxivaParser, node_text
+    from datetime import datetime
+
+    try:
+        # Read the file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parse with tree-sitter
+        parser = SxivaParser()
+        tree = parser.parse(content)
+        source_bytes = content.encode('utf-8')
+
+        # Find all lines that look like incomplete entries
+        # We need to look for:
+        # 1. Valid time_block/continuation_block nodes with empty end times
+        # 2. Invalid lines that start with time - blick_list --- but have junk after ---
+
+        # Collect candidate entries: (line_number, has_dash_end)
+        candidates = []
+
+        def find_candidates(node, parent=None, inside_block=False):
+            # Case 1: Valid blocks with empty end times
+            if node.type in ['time_block', 'continuation_block']:
+                # Check if it has an empty end time
+                def find_end_time(n):
+                    if n.type == 'time' and n.parent and n.parent.type == 'end_term':
+                        return n
+                    for child in n.children:
+                        result = find_end_time(child)
+                        if result:
+                            return result
+                    return None
+
+                end_time = find_end_time(node)
+                if end_time:
+                    end_time_text = node_text(end_time, source_bytes).strip()
+                    if not end_time_text:
+                        # This is an incomplete entry
+                        line_num = node.start_point[0]
+                        candidates.append(line_num)
+
+                # Recurse into children but mark that we're inside a block
+                for child in node.children:
+                    find_candidates(child, node, inside_block=True)
+                return
+
+            # Case 2: Look for time nodes (or x_time nodes for x-blocks) that are NOT inside a time_block
+            # but have a triple_dash or --- sibling (these are invalid/incomplete lines)
+            if not inside_block and node.type in ['time', 'x_time'] and parent and parent.type != 'start_term':
+                # Check if this time has a triple_dash or --- sibling
+                if parent:
+                    has_dash = False
+                    for sibling in parent.children:
+                        if sibling.type in ['triple_dash', '---']:
+                            has_dash = True
+                            break
+
+                    if has_dash:
+                        # This looks like a time entry with dashes
+                        line_num = node.start_point[0]
+                        candidates.append(line_num)
+
+            for child in node.children:
+                find_candidates(child, node, inside_block)
+
+        find_candidates(tree.root_node)
+
+        if not candidates:
+            click.secho("No incomplete timesheet entries found", fg='yellow')
+            sys.exit(1)
+
+        # Get the last candidate (highest line number)
+        last_line = max(candidates)
+
+        lines = content.split('\n')
+        block_line = lines[last_line]
+
+        # Find where the --- or ~--- is
+        # Look for either " ---" or " ~---"
+        dash_pos = block_line.find(' ---')
+        tilde_variant = False
+        if dash_pos == -1:
+            dash_pos = block_line.find(' ~---')
+            if dash_pos == -1:
+                click.secho("Could not find --- in incomplete entry", fg='red', err=True)
+                sys.exit(1)
+            dash_end = dash_pos + 5  # " ~---" is 5 chars
+            tilde_variant = True
+        else:
+            dash_end = dash_pos + 4  # " ---" is 4 chars
+
+        # Clean the line - keep everything up to and including the dashes, remove anything after
+        cleaned_line = block_line[:dash_end]
+
+        # Now add the current time as the end time
+        current_time = datetime.now()
+        time_str = current_time.strftime('%H:%M')
+
+        # Add the time after the dashes
+        updated_line = cleaned_line + ' ' + time_str
+
+        # Replace the line
+        lines[last_line] = updated_line
+        new_content = '\n'.join(lines)
+
+        # Write back
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        if cleaned_line != block_line:
+            removed_text = block_line[dash_end:].strip()
+            click.secho(f"✓ Cleaned entry and logged time {time_str} (removed: '{removed_text}')", fg='green')
+        else:
+            click.secho(f"✓ Logged time {time_str}", fg='green')
+
+    except FileNotFoundError as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('file_path', type=click.Path(exists=True))
+def repeat_entry(file_path):
+    """Duplicate the last timesheet entry with +12 minutes to start time.
+
+    Finds the last timesheet entry (incomplete or complete) and creates a new entry
+    below it with the start time advanced by 12 minutes (wrapping at 24:00).
+    Preserves the category, subject, minutes, and dash style, but leaves end time empty.
+
+    \b
+    Example:
+        sxiva repeat-entry today.sxiva    # Duplicate last entry with +12 min start
+    """
+    from .parser import SxivaParser, node_text
+    from datetime import datetime, timedelta
+
+    try:
+        # Read the file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parse with tree-sitter
+        parser = SxivaParser()
+        tree = parser.parse(content)
+        source_bytes = content.encode('utf-8')
+
+        # Find all time_block and continuation_block nodes
+        time_blocks = []
+
+        def find_time_blocks(node):
+            if node.type in ['time_block', 'continuation_block']:
+                time_blocks.append(node)
+            for child in node.children:
+                find_time_blocks(child)
+
+        find_time_blocks(tree.root_node)
+
+        # Also look for incomplete/invalid entries like we do in log-end
+        candidates = []
+
+        def find_candidates(node, parent=None, inside_block=False):
+            if node.type in ['time_block', 'continuation_block']:
+                candidates.append(node.start_point[0])
+                for child in node.children:
+                    find_candidates(child, node, inside_block=True)
+                return
+
+            if not inside_block and node.type in ['time', 'x_time'] and parent and parent.type != 'start_term':
+                if parent:
+                    has_dash = False
+                    for sibling in parent.children:
+                        if sibling.type in ['triple_dash', '---']:
+                            has_dash = True
+                            break
+                    if has_dash:
+                        candidates.append(node.start_point[0])
+
+            for child in node.children:
+                find_candidates(child, node, inside_block)
+
+        find_candidates(tree.root_node)
+
+        if not candidates:
+            click.secho("No timesheet entries found in file", fg='yellow')
+            sys.exit(1)
+
+        # Get the last entry line
+        last_line_num = max(candidates)
+        lines = content.split('\n')
+        last_line = lines[last_line_num].strip()  # Strip leading whitespace (indentation)
+
+        # Parse the line to extract components
+        # Format: HH:MM - [category] subject [minutes] --- (or ~---) [optional end time and notes]
+        # Or: xHH:MM - [category] subject [3] or [6] --- (x-blocks)
+        import re
+
+        # Match start time (with optional x prefix) and everything up to the dashes
+        time_match = re.match(r'^(x?\d{2}:\d{2})\s*-\s*(.+?)\s+(~?---)', last_line)
+        if not time_match:
+            click.secho(f"Could not parse last timesheet entry: {last_line}", fg='red', err=True)
+            sys.exit(1)
+
+        start_time_str = time_match.group(1)  # May include 'x' prefix
+        entry_content = time_match.group(2)  # [category] subject [minutes]
+        dash_style = time_match.group(3)  # "---" or "~---"
+
+        # Check if this is an x-block
+        is_x_block = start_time_str.startswith('x')
+        time_only = start_time_str[1:] if is_x_block else start_time_str
+
+        # Parse the start time and add 12 minutes
+        start_time = datetime.strptime(time_only, '%H:%M')
+        new_start_time = start_time + timedelta(minutes=12)
+
+        # Handle wrapping at midnight
+        if new_start_time.day > start_time.day:
+            new_start_time = new_start_time.replace(hour=0, minute=0)
+
+        new_start_time_str = new_start_time.strftime('%H:%M')
+
+        # Add x prefix back if it was an x-block
+        if is_x_block:
+            new_start_time_str = 'x' + new_start_time_str
+
+        # Build the new line
+        new_line = f"{new_start_time_str} - {entry_content} {dash_style}"
+
+        # Find where to insert the new line
+        # Insert right after the last timesheet entry
+        insert_position = last_line_num + 1
+
+        # Insert the new line
+        lines.insert(insert_position, new_line)
+        new_content = '\n'.join(lines)
+
+        # Write back
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        click.secho(f"✓ Created new entry at {new_start_time_str}", fg='green')
+
+    except FileNotFoundError as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.secho(f"Error: {e}", fg='red', err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
 def main():
     """Entry point for the CLI."""
     cli()

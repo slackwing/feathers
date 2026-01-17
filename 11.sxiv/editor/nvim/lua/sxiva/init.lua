@@ -86,13 +86,13 @@ function M.recalculate()
           -- Update buffer
           vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 
-          -- Mark buffer as modified so user can save
-          vim.bo.modified = true
-
           -- Clean up temp file
           os.remove(temp_file)
 
           vim.notify('✓ Points recalculated', vim.log.levels.INFO)
+
+          -- Auto-save after recalculation
+          vim.cmd('silent write')
         else
           vim.notify('Error reading temp file', vim.log.levels.ERROR)
         end
@@ -116,6 +116,203 @@ end
 -- Legacy function for backward compatibility
 function M.calculate_points()
   M.recalculate()
+end
+
+-- Log now function - sets last entry end time to current time
+function M.log_now()
+  local filepath = vim.fn.expand('%:p')
+
+  -- Check if current file is a .sxiva file
+  if not filepath:match('%.sxiva$') then
+    return
+  end
+
+  -- Get path to Python CLI (assume it's in the project)
+  local nvim_dir = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ':h:h:h')
+  local project_root = vim.fn.fnamemodify(nvim_dir, ':h:h')
+
+  -- Use a temporary file
+  local temp_file = vim.fn.tempname() .. '.sxiva'
+
+  -- Write current buffer to temp file
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local file = io.open(temp_file, 'w')
+  if file then
+    file:write(table.concat(lines, '\n') .. '\n')
+    file:close()
+  end
+
+  -- Run the Python CLI log-now command on temp file (modifies in place)
+  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli log-now "%s" > /dev/null 2>&1',
+                           project_root,
+                           temp_file)
+
+  vim.fn.system(cmd)
+
+  -- Read the temp file and update buffer
+  file = io.open(temp_file, 'r')
+  if file then
+    local content = file:read('*all')
+    file:close()
+
+    -- Split into lines
+    local updated_lines = {}
+    for line in content:gmatch('([^\n]*)\n?') do
+      table.insert(updated_lines, line)
+    end
+    -- Remove last empty line if present
+    if updated_lines[#updated_lines] == '' then
+      table.remove(updated_lines)
+    end
+
+    -- Update buffer
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, updated_lines)
+
+    -- Clean up temp file
+    os.remove(temp_file)
+
+    vim.notify('✓ Logged current time', vim.log.levels.INFO)
+
+    -- Now recalculate points (schedule to avoid blocking prompt)
+    vim.schedule(function()
+      M.recalculate()
+    end)
+  else
+    vim.notify('Error reading temp file', vim.log.levels.ERROR)
+    os.remove(temp_file)
+  end
+end
+
+-- Log end function - cleans up last incomplete entry and logs current time
+function M.log_end()
+  local filepath = vim.fn.expand('%:p')
+
+  -- Check if current file is a .sxiva file
+  if not filepath:match('%.sxiva$') then
+    return
+  end
+
+  -- Get path to Python CLI (assume it's in the project)
+  local nvim_dir = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ':h:h:h')
+  local project_root = vim.fn.fnamemodify(nvim_dir, ':h:h')
+
+  -- Use a temporary file
+  local temp_file = vim.fn.tempname() .. '.sxiva'
+
+  -- Write current buffer to temp file
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local file = io.open(temp_file, 'w')
+  if file then
+    file:write(table.concat(lines, '\n') .. '\n')
+    file:close()
+  end
+
+  -- Run the Python CLI log-end command on temp file (modifies in place)
+  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli log-end "%s" > /dev/null 2>&1',
+                           project_root,
+                           temp_file)
+
+  vim.fn.system(cmd)
+
+  -- Read the temp file and update buffer
+  file = io.open(temp_file, 'r')
+  if file then
+    local content = file:read('*all')
+    file:close()
+
+    -- Split into lines
+    local updated_lines = {}
+    for line in content:gmatch('([^\n]*)\n?') do
+      table.insert(updated_lines, line)
+    end
+    -- Remove last empty line if present
+    if updated_lines[#updated_lines] == '' then
+      table.remove(updated_lines)
+    end
+
+    -- Update buffer
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, updated_lines)
+
+    -- Clean up temp file
+    os.remove(temp_file)
+
+    vim.notify('✓ Logged end time', vim.log.levels.INFO)
+
+    -- Now recalculate points (schedule to avoid blocking prompt)
+    vim.schedule(function()
+      M.recalculate()
+    end)
+  else
+    vim.notify('Error reading temp file', vim.log.levels.ERROR)
+    os.remove(temp_file)
+  end
+end
+
+-- Repeat entry function - duplicates last entry with +12 min start time
+function M.repeat_entry()
+  local filepath = vim.fn.expand('%:p')
+
+  -- Check if current file is a .sxiva file
+  if not filepath:match('%.sxiva$') then
+    return
+  end
+
+  -- Get path to Python CLI (assume it's in the project)
+  local nvim_dir = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ':h:h:h')
+  local project_root = vim.fn.fnamemodify(nvim_dir, ':h:h')
+
+  -- Use a temporary file
+  local temp_file = vim.fn.tempname() .. '.sxiva'
+
+  -- Write current buffer to temp file
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local file = io.open(temp_file, 'w')
+  if file then
+    file:write(table.concat(lines, '\n') .. '\n')
+    file:close()
+  end
+
+  -- Run the Python CLI repeat-entry command on temp file (modifies in place)
+  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli repeat-entry "%s" 2>&1',
+                           project_root,
+                           temp_file)
+
+  local result = vim.fn.system(cmd)
+  local exit_code = vim.v.shell_error
+
+  if exit_code ~= 0 then
+    vim.notify('Error: ' .. result, vim.log.levels.ERROR)
+    os.remove(temp_file)
+    return
+  end
+
+  -- Read the temp file and update buffer
+  file = io.open(temp_file, 'r')
+  if file then
+    local content = file:read('*all')
+    file:close()
+
+    -- Split into lines
+    local updated_lines = {}
+    for line in content:gmatch('([^\n]*)\n?') do
+      table.insert(updated_lines, line)
+    end
+    -- Remove last empty line if present
+    if updated_lines[#updated_lines] == '' then
+      table.remove(updated_lines)
+    end
+
+    -- Update buffer
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, updated_lines)
+
+    -- Clean up temp file
+    os.remove(temp_file)
+
+    vim.notify('✓ Created repeat entry', vim.log.levels.INFO)
+  else
+    vim.notify('Error reading temp file', vim.log.levels.ERROR)
+    os.remove(temp_file)
+  end
 end
 
 return M
