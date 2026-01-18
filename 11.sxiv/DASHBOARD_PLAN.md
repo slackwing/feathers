@@ -263,16 +263,52 @@ This ensures atomic updates (all-or-nothing).
 ### Phase 3: Backend API (Query Endpoints)
 **Goal**: Serve data to the dashboard
 
-- [ ] Design API endpoints based on dashboard panels (you'll provide specs)
-- [ ] Implement query endpoints
-- [x] Add API authentication/authorization (Bearer token)
-- [x] Test API locally
-- [x] Deploy to VM
-- [x] Configure Apache reverse proxy for API
+#### Rolling Category Sum Endpoint
+Endpoint for plotting rolling 7-day sums of category minutes with recency weighting.
 
-**Depends on**: You specifying what dashboard panels you want
+**Specifications:**
+- **Endpoint**: `GET /api/dashboard/category-rolling-sum`
+- **Query parameters**:
+  - `categories`: Comma-separated category codes (e.g., `wf,wr,bkc`)
+  - `days`: Rolling window size (default: 7)
+  - `limit`: Number of recent days to return (default: 30)
+  - `lambda`: Decay parameter for exponential weighting (default: 0.2)
+- **Response format**:
+  ```json
+  {
+    "data": [
+      {
+        "date": "2026-01-18",
+        "raw_sum": 523,
+        "weighted_sum": 487.3
+      },
+      ...
+    ],
+    "window_days": 7,
+    "categories": ["wf", "wr", "bkc"],
+    "decay_lambda": 0.2
+  }
+  ```
+- **Calculation logic**:
+  - `raw_sum`: Simple sum of minutes for the category over the rolling window
+  - `weighted_sum`: Exponentially weighted sum, normalized by sum of weights
+    - Weight for day i (0=today, 6=oldest): `e^(-λ * i)`
+    - Normalized: `SUM(minutes * weight) / SUM(weight)`
+- **SQL approach**: Use PostgreSQL window functions with `ROWS BETWEEN 6 PRECEDING AND CURRENT ROW`
 
-**Estimated time**: 4-6 hours (once panel specs provided)
+**Tasks:**
+- [ ] Implement `/api/dashboard/category-rolling-sum` endpoint
+- [ ] Add helper function to extract category minutes from JSONB
+- [ ] Implement rolling window aggregation with raw sum
+- [ ] Implement exponential weighting with normalization
+- [ ] Add query parameter validation
+- [ ] Test endpoint locally with sample data
+- [ ] Deploy to VM
+- [ ] Test from local machine
+
+**Depends on**: Database already has data in `daily_summary.category_minutes` (COMPLETE)
+
+**Estimated time**: 3-4 hours
 
 ### Phase 4: Frontend Dashboard
 **Goal**: Build the visual interface

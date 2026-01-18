@@ -180,7 +180,7 @@ class SxivaSyncClient:
         return {'synced': synced, 'failed': failed, 'skipped': skipped}
 
 
-def sync_now(data_dir: Optional[Path] = None, verbose: bool = True) -> bool:
+def sync_now(data_dir: Optional[Path] = None, verbose: bool = True, api_url: Optional[str] = None) -> bool:
     """
     Sync all .sxiva files to the dashboard.
 
@@ -189,6 +189,7 @@ def sync_now(data_dir: Optional[Path] = None, verbose: bool = True) -> bool:
     Args:
         data_dir: Directory containing .sxiva files (default: ~/src/minutes/data)
         verbose: If True, show detailed progress messages
+        api_url: API base URL (default: from SXIVA_API_URL env var or https://andrewcheong.com/status/api)
 
     Returns:
         True if sync completed (even if some files failed)
@@ -202,7 +203,11 @@ def sync_now(data_dir: Optional[Path] = None, verbose: bool = True) -> bool:
         return True
 
     try:
-        client = SxivaSyncClient()
+        # Use provided API URL, or fall back to environment/default
+        if api_url is None:
+            api_url = os.getenv('SXIVA_API_URL', API_BASE_URL)
+
+        client = SxivaSyncClient(api_url=api_url)
 
         # Get last sync timestamp from server
         last_sync_timestamp = client.get_last_sync_timestamp()
