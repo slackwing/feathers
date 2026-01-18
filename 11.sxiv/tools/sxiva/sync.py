@@ -36,11 +36,11 @@ class SxivaSyncClient:
         self.api_token = api_token
         self.extractor = SxivaDataExtractor()
 
-    def get_last_sync_date(self) -> Optional[str]:
+    def get_last_sync_timestamp(self) -> Optional[datetime]:
         """
-        Get the last synced date from the server.
+        Get the last sync timestamp from the server.
 
-        Returns: Date string like "2025-01-16" or None if request fails
+        Returns: datetime object or None if request fails
         """
         if not requests:
             return None
@@ -54,18 +54,26 @@ class SxivaSyncClient:
 
             if response.status_code == 200:
                 data = response.json()
-                return data.get('last_sync_date')
+                timestamp_str = data.get('last_sync_timestamp')
+                if timestamp_str:
+                    # Parse ISO format timestamp
+                    return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                return None
             else:
-                print(f"Warning: Failed to get last sync date: {response.status_code}", file=sys.stderr)
+                print(f"Warning: Failed to get last sync timestamp: {response.status_code}", file=sys.stderr)
                 return None
 
         except Exception as e:
             print(f"Warning: Failed to contact sync server: {e}", file=sys.stderr)
             return None
 
-    def sync_file(self, file_path: Path) -> bool:
+    def sync_file(self, file_path: Path, verbose: bool = False) -> bool:
         """
         Sync a single .sxiva file to the server.
+
+        Args:
+            file_path: Path to .sxiva file
+            verbose: If True, print progress messages
 
         Returns: True if successful, False otherwise
         """
@@ -75,7 +83,8 @@ class SxivaSyncClient:
         # Extract data from file
         data = self.extractor.extract_from_file(file_path)
         if not data:
-            print(f"Warning: Failed to extract data from {file_path}", file=sys.stderr)
+            if verbose:
+                print(f"  ✗ {file_path.name}: Failed to extract data", file=sys.stderr)
             return False
 
         try:
@@ -90,22 +99,27 @@ class SxivaSyncClient:
             )
 
             if response.status_code == 200:
+                if verbose:
+                    print(f"  ✓ {data['date']}: Synced", file=sys.stderr)
                 return True
             else:
-                print(f"Warning: Failed to sync {file_path.name}: {response.status_code} {response.text}", file=sys.stderr)
+                if verbose:
+                    print(f"  ✗ {file_path.name}: {response.status_code}", file=sys.stderr)
                 return False
 
         except Exception as e:
-            print(f"Warning: Failed to sync {file_path.name}: {e}", file=sys.stderr)
+            if verbose:
+                print(f"  ✗ {file_path.name}: {e}", file=sys.stderr)
             return False
 
-    def sync_all(self, data_dir: Path, last_sync_date: Optional[str] = None) -> dict:
+    def sync_all(self, data_dir: Path, last_sync_timestamp: Optional[datetime] = None, verbose: bool = False) -> dict:
         """
-        Sync all .sxiva files >= last_sync_date.
+        Sync all .sxiva files modified after last_sync_timestamp.
 
         Args:
             data_dir: Directory containing .sxiva files
-            last_sync_date: Only sync files >= this date (YYYY-MM-DD). If None, sync all.
+            last_sync_timestamp: Only sync files modified after this timestamp. If None, sync all.
+            verbose: If True, print detailed progress messages
 
         Returns:
             dict with 'synced', 'failed', 'skipped' counts
@@ -119,38 +133,46 @@ class SxivaSyncClient:
         if not files:
             return {'synced': 0, 'failed': 0, 'skipped': 0}
 
-        # Parse last sync date if provided
-        cutoff_date = None
-        if last_sync_date:
-            try:
-                cutoff_date = datetime.strptime(last_sync_date, '%Y-%m-%d').date()
-            except ValueError:
-                print(f"Warning: Invalid last_sync_date format: {last_sync_date}", file=sys.stderr)
-
+        # Collect files to sync
+        files_to_sync = []
         synced = 0
         failed = 0
         skipped = 0
 
         for file_path in files:
-            # Extract date from filename
+            # Check if file has valid .sxiva filename
             file_date_str = self.extractor._extract_date_from_filename(file_path.name)
             if not file_date_str:
                 skipped += 1
                 continue
 
-            # Check if we should sync this file
-            if cutoff_date:
+            # Check if we should sync this file based on modification time
+            if last_sync_timestamp:
                 try:
-                    file_date = datetime.strptime(file_date_str, '%Y-%m-%d').date()
-                    if file_date < cutoff_date:
+                    # Get file modification time as UTC timestamp
+                    import time
+                    file_mtime_utc = file_path.stat().st_mtime
+
+                    # Convert last_sync_timestamp to UTC timestamp for comparison
+                    last_sync_utc = last_sync_timestamp.timestamp()
+
+                    # Only sync if file was modified after last sync
+                    if file_mtime_utc <= last_sync_utc:
                         skipped += 1
                         continue
-                except ValueError:
+                except (OSError, ValueError):
                     skipped += 1
                     continue
 
-            # Sync the file
-            if self.sync_file(file_path):
+            files_to_sync.append(file_path)
+
+        # Print summary before syncing
+        if verbose and files_to_sync:
+            print(f"Syncing {len(files_to_sync)} file(s) to dashboard...", file=sys.stderr)
+
+        # Sync the files
+        for file_path in files_to_sync:
+            if self.sync_file(file_path, verbose=verbose):
                 synced += 1
             else:
                 failed += 1
@@ -158,7 +180,7 @@ class SxivaSyncClient:
         return {'synced': synced, 'failed': failed, 'skipped': skipped}
 
 
-def sync_now(data_dir: Optional[Path] = None, quiet: bool = False) -> bool:
+def sync_now(data_dir: Optional[Path] = None, verbose: bool = True) -> bool:
     """
     Sync all .sxiva files to the dashboard.
 
@@ -166,7 +188,7 @@ def sync_now(data_dir: Optional[Path] = None, quiet: bool = False) -> bool:
 
     Args:
         data_dir: Directory containing .sxiva files (default: ~/src/minutes/data)
-        quiet: If True, suppress all output
+        verbose: If True, show detailed progress messages
 
     Returns:
         True if sync completed (even if some files failed)
@@ -175,32 +197,37 @@ def sync_now(data_dir: Optional[Path] = None, quiet: bool = False) -> bool:
         data_dir = DATA_DIR
 
     if not requests:
-        if not quiet:
+        if verbose:
             print("Sync skipped: requests library not installed", file=sys.stderr)
         return True
 
     try:
         client = SxivaSyncClient()
 
-        # Get last sync date from server
-        last_sync_date = client.get_last_sync_date()
+        # Get last sync timestamp from server
+        last_sync_timestamp = client.get_last_sync_timestamp()
 
-        if not quiet and last_sync_date:
-            print(f"Last sync: {last_sync_date}", file=sys.stderr)
+        if verbose:
+            if last_sync_timestamp:
+                print(f"Last sync: {last_sync_timestamp.strftime('%Y-%m-%d %H:%M:%S')}", file=sys.stderr)
+            else:
+                print("Last sync: No previous sync found", file=sys.stderr)
 
-        # Sync all files
-        result = client.sync_all(data_dir, last_sync_date)
+        # Sync all files modified after last sync
+        result = client.sync_all(data_dir, last_sync_timestamp, verbose=verbose)
 
-        if not quiet:
+        if verbose:
             if result['synced'] > 0:
-                print(f"Synced {result['synced']} file(s) to dashboard", file=sys.stderr)
+                print(f"✓ Synced {result['synced']} file(s) to dashboard", file=sys.stderr)
+            elif result['skipped'] > 0:
+                print("✓ All files up to date (nothing to sync)", file=sys.stderr)
             if result['failed'] > 0:
-                print(f"Warning: Failed to sync {result['failed']} file(s)", file=sys.stderr)
+                print(f"✗ Warning: Failed to sync {result['failed']} file(s)", file=sys.stderr)
 
         return True
 
     except Exception as e:
-        if not quiet:
+        if verbose:
             print(f"Warning: Sync failed: {e}", file=sys.stderr)
         return True  # Don't block sxiva command on sync failure
 
@@ -214,5 +241,5 @@ if __name__ == '__main__':
     parser.add_argument('--quiet', action='store_true', help='Suppress output')
     args = parser.parse_args()
 
-    success = sync_now(args.data_dir, args.quiet)
+    success = sync_now(args.data_dir, verbose=not args.quiet)
     sys.exit(0 if success else 1)

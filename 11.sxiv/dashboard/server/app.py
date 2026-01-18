@@ -147,6 +147,14 @@ def sync_daily():
             'wea': data.get('wea')
         })
 
+        # Update sync metadata with current timestamp
+        cur.execute("""
+            UPDATE sync_metadata
+            SET last_sync_timestamp = NOW(),
+                last_sync_file_count = last_sync_file_count + 1
+            WHERE id = 1
+        """)
+
         conn.commit()
         cur.close()
         conn.close()
@@ -162,7 +170,7 @@ def sync_daily():
 
 @app.route('/api/status/last-sync', methods=['GET'])
 def last_sync():
-    """Get the most recent date synced to the database"""
+    """Get the last sync timestamp from sync_metadata table"""
     # Check authentication
     if not check_auth():
         return jsonify({'error': 'Unauthorized'}), 401
@@ -172,10 +180,9 @@ def last_sync():
         cur = conn.cursor()
 
         cur.execute("""
-            SELECT date, updated_at
-            FROM daily_summary
-            ORDER BY date DESC
-            LIMIT 1
+            SELECT last_sync_timestamp, last_sync_file_count
+            FROM sync_metadata
+            WHERE id = 1
         """)
 
         row = cur.fetchone()
@@ -184,13 +191,13 @@ def last_sync():
 
         if row:
             return jsonify({
-                'last_sync_date': row[0].isoformat(),
-                'last_updated_at': row[1].isoformat()
+                'last_sync_timestamp': row[0].isoformat(),
+                'last_sync_file_count': row[1]
             }), 200
         else:
             return jsonify({
-                'last_sync_date': None,
-                'message': 'No data synced yet'
+                'last_sync_timestamp': None,
+                'message': 'No sync metadata found'
             }), 200
 
     except Exception as e:

@@ -449,7 +449,7 @@ def open_today(date_str=None, yesterday=False, preserve=None):
 
     # Sync to dashboard (unless SXIVA_NO_SYNC is set)
     if not os.environ.get('SXIVA_NO_SYNC'):
-        sync_now(data_path, quiet=True)
+        sync_now(data_path)
 
     # Open with editor
     editor = os.environ.get('EDITOR', 'vi')
