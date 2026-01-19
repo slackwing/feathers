@@ -400,12 +400,12 @@ def category_rolling_sum():
 @app.route('/api/dashboard/alcohol-depression', methods=['GET'])
 def alcohol_depression():
     """
-    Get 7-day and 30-day rolling sum for alcohol, and raw/7-day average for depression.
+    Get 7-day and 15-day rolling sum for alcohol, and raw/7-day average for depression.
 
     Query parameters:
-    - limit: Number of recent days to return (default: 60, need extra for 30-day avg)
+    - limit: Number of recent days to return (default: 60, need extra for 15-day avg)
 
-    Returns JSON with alcohol 7-day sum, 30-day avg, and depression raw and 7-day avg
+    Returns JSON with alcohol 7-day sum, 15-day avg, and depression raw and 7-day avg
 
     Note: This endpoint is public (no auth required) for read-only access
     """
@@ -440,8 +440,8 @@ def alcohol_depression():
                 FROM daily_summary
                 ORDER BY date
             ),
-            rolling_30day AS (
-                -- Calculate 30-day moving average for alcohol
+            rolling_15day AS (
+                -- Calculate 15-day moving average for alcohol
                 SELECT
                     date,
                     alc_value,
@@ -450,17 +450,17 @@ def alcohol_depression():
                     dep_7day_avg,
                     AVG(alc_7day_sum) OVER (
                         ORDER BY date
-                        ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
-                    ) AS alc_30day_avg
+                        ROWS BETWEEN 14 PRECEDING AND CURRENT ROW
+                    ) AS alc_15day_avg
                 FROM rolling_7day
             )
             SELECT
                 date,
                 alc_7day_sum,
-                alc_30day_avg,
+                alc_15day_avg,
                 dep_raw,
                 dep_7day_avg
-            FROM rolling_30day
+            FROM rolling_15day
             ORDER BY date DESC
             LIMIT %(limit)s
         """, {
@@ -476,9 +476,79 @@ def alcohol_depression():
             {
                 'date': row[0].isoformat(),
                 'alc_7day_sum': float(row[1]) if row[1] is not None else 0.0,
-                'alc_30day_avg': float(row[2]) if row[2] is not None else 0.0,
+                'alc_15day_avg': float(row[2]) if row[2] is not None else 0.0,
                 'dep_raw': float(row[3]) if row[3] is not None else 0.0,
                 'dep_7day_avg': float(row[4]) if row[4] is not None else 0.0
+            }
+            for row in reversed(rows)  # Reverse to get chronological order
+        ]
+
+        return jsonify({
+            'data': data
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/sleep-score', methods=['GET'])
+def sleep_score():
+    """
+    Get raw (1-day) and 7-day average of sleep score.
+
+    Query parameters:
+    - limit: Number of recent days to return (default: 60)
+
+    Returns JSON with sleep score raw and 7-day average
+
+    Note: This endpoint is public (no auth required) for read-only access
+    """
+    try:
+        limit = int(request.args.get('limit', 60))
+    except ValueError:
+        return jsonify({'error': 'Invalid numeric parameter'}), 400
+
+    if limit < 1:
+        return jsonify({'error': 'limit must be a positive integer'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Build SQL query with window functions
+        cur.execute("""
+            WITH rolling_7day AS (
+                -- Calculate 7-day average
+                SELECT
+                    date,
+                    COALESCE(sleep_score, 0) AS sleep_raw,
+                    AVG(COALESCE(sleep_score, 0)) OVER (
+                        ORDER BY date
+                        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+                    ) AS sleep_7day_avg
+                FROM daily_summary
+                ORDER BY date
+            )
+            SELECT
+                date,
+                sleep_raw,
+                sleep_7day_avg
+            FROM rolling_7day
+            ORDER BY date DESC
+            LIMIT %(limit)s
+        """, {
+            'limit': limit
+        })
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        # Format response
+        data = [
+            {
+                'date': row[0].isoformat(),
+                'sleep_raw': float(row[1]) if row[1] is not None else 0.0,
+                'sleep_7day_avg': float(row[2]) if row[2] is not None else 0.0
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]

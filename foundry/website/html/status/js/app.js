@@ -10,6 +10,7 @@ const DECAY_LAMBDA = 0.5; // Calibrated so day 6 has 5% weight
 let hobbyChart = null;
 let workChart = null;
 let alcoholChart = null;
+let sleepChart = null;
 
 // Fetch data from API
 async function fetchData() {
@@ -57,9 +58,32 @@ async function fetchAlcoholDepressionData() {
     return data;
 }
 
+// Fetch sleep score data from API
+async function fetchSleepData() {
+    const params = new URLSearchParams({
+        limit: 60
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/dashboard/sleep-score?${params}`);
+
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Filter out today's data (always exclude current day since it's in flux)
+    const today = new Date().toISOString().split('T')[0];
+    data.data = data.data.filter(d => d.date !== today);
+
+    return data;
+}
+
 // Format date for display
 function formatDate(dateStr) {
-    const date = new Date(dateStr);
+    // Parse as UTC to avoid timezone offset issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -110,7 +134,7 @@ function updateHobbyChart(data) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Actual',
+                    label: 'Actual 7-Day',
                     data: rawData,
                     borderColor: '#4a9eff',
                     backgroundColor: 'transparent',
@@ -121,7 +145,7 @@ function updateHobbyChart(data) {
                     pointHoverRadius: 0
                 },
                 {
-                    label: 'Feels Like',
+                    label: 'Feels Like 7-Day',
                     data: weightedData,
                     borderColor: 'rgba(74, 158, 255, 0.25)',
                     backgroundColor: 'transparent',
@@ -247,7 +271,7 @@ function updateWorkChart(data) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Actual',
+                    label: 'Actual 7-Day',
                     data: rawData,
                     borderColor: '#ef4444',
                     backgroundColor: 'transparent',
@@ -258,7 +282,7 @@ function updateWorkChart(data) {
                     pointHoverRadius: 0
                 },
                 {
-                    label: 'Feels Like',
+                    label: 'Feels Like 7-Day',
                     data: weightedData,
                     borderColor: 'rgba(239, 68, 68, 0.25)',
                     backgroundColor: 'transparent',
@@ -359,11 +383,11 @@ function updateAlcoholChart(data) {
     const displayData = allData.slice(-30);  // Last 30 days
     const labels = displayData.map(d => formatDate(d.date));
     const alcSevenDaySum = displayData.map(d => d.alc_7day_sum);
-    const alcThirtyDayAvg = displayData.map(d => d.alc_30day_avg);
+    const alcFifteenDayAvg = displayData.map(d => d.alc_15day_avg);
 
     // Shift depression from [-2, 2] to [0, max_alc] range for alignment
     // Find max alcohol value to scale depression to
-    const maxAlc = Math.max(...alcSevenDaySum, ...alcThirtyDayAvg);
+    const maxAlc = Math.max(...alcSevenDaySum, ...alcFifteenDayAvg);
     const depRaw = displayData.map(d => {
         // Shift -2 to 0, 2 to maxAlc: (dep + 2) / 4 * maxAlc
         return ((d.dep_raw + 2) / 4) * maxAlc;
@@ -388,7 +412,7 @@ function updateAlcoholChart(data) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Alcohol 7-Day',
+                    label: 'Weekly Alcohol Rate',
                     data: alcSevenDaySum,
                     borderColor: '#d97706',  // Gold
                     backgroundColor: 'transparent',
@@ -402,8 +426,8 @@ function updateAlcoholChart(data) {
                     yAxisID: 'y'
                 },
                 {
-                    label: 'Alcohol 30-Day',
-                    data: alcThirtyDayAvg,
+                    label: 'Weekly Alcohol Rate 15-day',
+                    data: alcFifteenDayAvg,
                     borderColor: 'rgba(217, 119, 6, 0.35)',  // Lighter gold
                     backgroundColor: 'transparent',
                     borderWidth: 2,
@@ -488,6 +512,116 @@ function updateAlcoholChart(data) {
                                 const originalValue = (context.parsed.y / maxAlc) * 4 - 2;
                                 return `${label}: ${originalValue.toFixed(2)}`;
                             }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        callback: function(value) {
+                            return value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create or update sleep score chart
+function updateSleepChart(data) {
+    const ctx = document.getElementById('sleepChart').getContext('2d');
+
+    // Extract data for chart (only last 30 days for display)
+    const allData = data.data;
+    const displayData = allData.slice(-30);  // Last 30 days
+    const labels = displayData.map(d => formatDate(d.date));
+    const sleepRaw = displayData.map(d => d.sleep_raw);
+    const sleepSevenDayAvg = displayData.map(d => d.sleep_7day_avg);
+
+    // Destroy existing chart if it exists
+    if (sleepChart) {
+        sleepChart.destroy();
+    }
+
+    // Create new sleep chart
+    sleepChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Raw',
+                    data: sleepRaw,
+                    borderColor: '#8b5cf6',  // Purple
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                },
+                {
+                    label: '7-Day Average',
+                    data: sleepSevenDayAvg,
+                    borderColor: 'rgba(139, 92, 246, 0.35)',  // Lighter purple
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#333',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#222',
+                    bodyColor: '#333',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(0)}`;
                         }
                     }
                 }
@@ -615,11 +749,13 @@ async function init() {
         // Fetch data
         const data = await fetchData();
         const alcoholDepressionData = await fetchAlcoholDepressionData();
+        const sleepData = await fetchSleepData();
 
         // Update all components
         updateHobbyChart(data);
         updateWorkChart(data);
         updateAlcoholChart(alcoholDepressionData);
+        updateSleepChart(sleepData);
         updateStats(data);
         updateCategories(data);
         updateTimestamp();
@@ -640,9 +776,11 @@ function startAutoRefresh() {
         try {
             const data = await fetchData();
             const alcoholDepressionData = await fetchAlcoholDepressionData();
+            const sleepData = await fetchSleepData();
             updateHobbyChart(data);
             updateWorkChart(data);
             updateAlcoholChart(alcoholDepressionData);
+            updateSleepChart(sleepData);
             updateStats(data);
             updateCategories(data);
             updateTimestamp();
