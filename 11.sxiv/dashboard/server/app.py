@@ -397,15 +397,15 @@ def category_rolling_sum():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/dashboard/alcohol-rolling-sum', methods=['GET'])
-def alcohol_rolling_sum():
+@app.route('/api/dashboard/alcohol-depression', methods=['GET'])
+def alcohol_depression():
     """
-    Get 7-day rolling sum of alcohol consumption with 30-day moving average.
+    Get 7-day and 30-day rolling sum for alcohol, and raw/7-day average for depression.
 
     Query parameters:
     - limit: Number of recent days to return (default: 60, need extra for 30-day avg)
 
-    Returns JSON with 7-day sum and 30-day moving average of the 7-day sum
+    Returns JSON with alcohol 7-day sum, 30-day avg, and depression raw and 7-day avg
 
     Note: This endpoint is public (no auth required) for read-only access
     """
@@ -424,23 +424,30 @@ def alcohol_rolling_sum():
         # Build SQL query with window functions
         cur.execute("""
             WITH rolling_7day AS (
-                -- Calculate 7-day rolling sum
+                -- Calculate 7-day rolling sum for alcohol and 7-day average for depression
                 SELECT
                     date,
                     COALESCE(alc, 0) AS alc_value,
+                    COALESCE(dep_avg, 0) AS dep_raw,
                     SUM(COALESCE(alc, 0)) OVER (
                         ORDER BY date
                         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-                    ) AS alc_7day_sum
+                    ) AS alc_7day_sum,
+                    AVG(COALESCE(dep_avg, 0)) OVER (
+                        ORDER BY date
+                        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+                    ) AS dep_7day_avg
                 FROM daily_summary
                 ORDER BY date
             ),
             rolling_30day AS (
-                -- Calculate 30-day moving average of the 7-day sum
+                -- Calculate 30-day moving average for alcohol
                 SELECT
                     date,
                     alc_value,
+                    dep_raw,
                     alc_7day_sum,
+                    dep_7day_avg,
                     AVG(alc_7day_sum) OVER (
                         ORDER BY date
                         ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
@@ -450,7 +457,9 @@ def alcohol_rolling_sum():
             SELECT
                 date,
                 alc_7day_sum,
-                alc_30day_avg
+                alc_30day_avg,
+                dep_raw,
+                dep_7day_avg
             FROM rolling_30day
             ORDER BY date DESC
             LIMIT %(limit)s
@@ -467,7 +476,9 @@ def alcohol_rolling_sum():
             {
                 'date': row[0].isoformat(),
                 'alc_7day_sum': float(row[1]) if row[1] is not None else 0.0,
-                'alc_30day_avg': float(row[2]) if row[2] is not None else 0.0
+                'alc_30day_avg': float(row[2]) if row[2] is not None else 0.0,
+                'dep_raw': float(row[3]) if row[3] is not None else 0.0,
+                'dep_7day_avg': float(row[4]) if row[4] is not None else 0.0
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]

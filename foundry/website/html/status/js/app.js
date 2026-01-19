@@ -36,13 +36,13 @@ async function fetchData() {
     return data;
 }
 
-// Fetch alcohol data from API
-async function fetchAlcoholData() {
+// Fetch alcohol and depression data from API
+async function fetchAlcoholDepressionData() {
     const params = new URLSearchParams({
         limit: 60  // Need extra days for 30-day moving average
     });
 
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/alcohol-rolling-sum?${params}`);
+    const response = await fetch(`${API_BASE_URL}/api/dashboard/alcohol-depression?${params}`);
 
     if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -336,7 +336,21 @@ function updateWorkChart(data) {
     });
 }
 
-// Create or update alcohol chart
+// Helper function to get color based on mood value (-2 to 2)
+function getMoodColor(depValue) {
+    // Map from -2 (purple) to 2 (green)
+    // Normalize to 0-1 range
+    const normalized = (depValue + 2) / 4;
+
+    // Interpolate between purple (99, 102, 241) and green (34, 197, 94)
+    const r = Math.round(99 + (34 - 99) * normalized);
+    const g = Math.round(102 + (197 - 102) * normalized);
+    const b = Math.round(241 + (94 - 241) * normalized);
+
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Create or update alcohol & mood chart
 function updateAlcoholChart(data) {
     const ctx = document.getElementById('alcoholChart').getContext('2d');
 
@@ -344,41 +358,96 @@ function updateAlcoholChart(data) {
     const allData = data.data;
     const displayData = allData.slice(-30);  // Last 30 days
     const labels = displayData.map(d => formatDate(d.date));
-    const sevenDaySum = displayData.map(d => d.alc_7day_sum);
-    const thirtyDayAvg = displayData.map(d => d.alc_30day_avg);
+    const alcSevenDaySum = displayData.map(d => d.alc_7day_sum);
+    const alcThirtyDayAvg = displayData.map(d => d.alc_30day_avg);
+
+    // Shift depression from [-2, 2] to [0, max_alc] range for alignment
+    // Find max alcohol value to scale depression to
+    const maxAlc = Math.max(...alcSevenDaySum, ...alcThirtyDayAvg);
+    const depRaw = displayData.map(d => {
+        // Shift -2 to 0, 2 to maxAlc: (dep + 2) / 4 * maxAlc
+        return ((d.dep_raw + 2) / 4) * maxAlc;
+    });
+    const depSevenDayAvg = displayData.map(d => {
+        return ((d.dep_7day_avg + 2) / 4) * maxAlc;
+    });
+
+    // Create segment colors for mood lines based on actual mood values
+    const depRawColors = displayData.map(d => getMoodColor(d.dep_raw));
+    const depSevenDayColors = displayData.map(d => getMoodColor(d.dep_7day_avg));
 
     // Destroy existing chart if it exists
     if (alcoholChart) {
         alcoholChart.destroy();
     }
 
-    // Create new alcohol chart
+    // Create new alcohol & mood chart
     alcoholChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: '7-Day Sum',
-                    data: sevenDaySum,
+                    label: 'Alcohol 7-Day',
+                    data: alcSevenDaySum,
                     borderColor: '#d97706',  // Gold
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
                     fill: false,
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    pointBackgroundColor: depRawColors,
+                    pointBorderColor: depRawColors,
+                    yAxisID: 'y'
                 },
                 {
-                    label: '30-Day Average',
-                    data: thirtyDayAvg,
+                    label: 'Alcohol 30-Day',
+                    data: alcThirtyDayAvg,
                     borderColor: 'rgba(217, 119, 6, 0.35)',  // Lighter gold
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
                     fill: false,
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Mood Raw',
+                    data: depRaw,
+                    segment: {
+                        borderColor: ctx => {
+                            const index = ctx.p0DataIndex;
+                            return depRawColors[index];
+                        }
+                    },
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Mood 7-Day',
+                    data: depSevenDayAvg,
+                    segment: {
+                        borderColor: ctx => {
+                            const index = ctx.p0DataIndex;
+                            const color = depSevenDayColors[index];
+                            // Add transparency
+                            return color.replace('rgb', 'rgba').replace(')', ', 0.35)');
+                        }
+                    },
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    yAxisID: 'y'
                 }
             ]
         },
@@ -411,7 +480,14 @@ function updateAlcoholChart(data) {
                     displayColors: true,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} drinks`;
+                            const label = context.dataset.label;
+                            if (label.startsWith('Alcohol')) {
+                                return `${label}: ${context.parsed.y.toFixed(1)} drinks`;
+                            } else {
+                                // Convert back to original mood scale for tooltip
+                                const originalValue = (context.parsed.y / maxAlc) * 4 - 2;
+                                return `${label}: ${originalValue.toFixed(2)}`;
+                            }
                         }
                     }
                 }
@@ -437,7 +513,7 @@ function updateAlcoholChart(data) {
                     ticks: {
                         color: '#666',
                         callback: function(value) {
-                            return value + ' drinks';
+                            return value.toFixed(0);
                         }
                     }
                 }
@@ -538,12 +614,12 @@ async function init() {
 
         // Fetch data
         const data = await fetchData();
-        const alcoholData = await fetchAlcoholData();
+        const alcoholDepressionData = await fetchAlcoholDepressionData();
 
         // Update all components
         updateHobbyChart(data);
         updateWorkChart(data);
-        updateAlcoholChart(alcoholData);
+        updateAlcoholChart(alcoholDepressionData);
         updateStats(data);
         updateCategories(data);
         updateTimestamp();
@@ -563,10 +639,10 @@ function startAutoRefresh() {
     setInterval(async () => {
         try {
             const data = await fetchData();
-            const alcoholData = await fetchAlcoholData();
+            const alcoholDepressionData = await fetchAlcoholDepressionData();
             updateHobbyChart(data);
             updateWorkChart(data);
-            updateAlcoholChart(alcoholData);
+            updateAlcoholChart(alcoholDepressionData);
             updateStats(data);
             updateCategories(data);
             updateTimestamp();
