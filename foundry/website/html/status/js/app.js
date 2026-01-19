@@ -52,6 +52,32 @@ function updateChart(data) {
         hobbyChart.destroy();
     }
 
+    // Background zone plugin
+    const backgroundZones = {
+        id: 'backgroundZones',
+        beforeDraw: (chart) => {
+            const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+
+            // Define zones: [minHours, maxHours, color]
+            const zones = [
+                [0, 7, 'rgba(255, 100, 80, 0.15)'],      // Red-orange (0-7h)
+                [7, 14, 'rgba(255, 220, 100, 0.2)'],     // Yellow (7-14h)
+                [14, 21, 'rgba(100, 200, 100, 0.15)'],   // Light green (14-21h)
+                [21, 100, 'rgba(100, 200, 100, 0.25)']   // Green, bolder (21+h)
+            ];
+
+            zones.forEach(([minHours, maxHours, color]) => {
+                const minMinutes = minHours * 60;
+                const maxMinutes = maxHours * 60;
+                const yMin = y.getPixelForValue(minMinutes);
+                const yMax = y.getPixelForValue(maxMinutes);
+
+                ctx.fillStyle = color;
+                ctx.fillRect(left, yMax, right - left, yMin - yMax);
+            });
+        }
+    };
+
     // Create new chart
     hobbyChart = new Chart(ctx, {
         type: 'line',
@@ -59,26 +85,26 @@ function updateChart(data) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Raw Sum (7-day)',
+                    label: 'Actual',
                     data: rawData,
-                    borderColor: '#4a9eff',
-                    backgroundColor: 'rgba(74, 158, 255, 0.1)',
+                    borderColor: 'rgba(74, 158, 255, 0.25)',
+                    backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
-                    fill: true,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
                 },
                 {
-                    label: 'Weighted Sum (recent bias)',
+                    label: 'Feels Like',
                     data: weightedData,
-                    borderColor: '#ff9f40',
-                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                    borderColor: '#4a9eff',
+                    backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
-                    fill: true,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
                 }
             ]
         },
@@ -143,7 +169,8 @@ function updateChart(data) {
                     }
                 }
             }
-        }
+        },
+        plugins: [backgroundZones]
     });
 }
 
