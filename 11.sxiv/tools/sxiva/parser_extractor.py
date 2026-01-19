@@ -167,12 +167,18 @@ class SxivaDataExtractor:
             attributes['sleep_score'] = int(match.group(1))
             attributes['sleep_hours'] = float(match.group(2))
 
-        # Parse [dep] 1 -3 = -1.0 ✓
-        match = re.search(r'\[dep\]\s+([\d.-]+)\s+([\d.-]+)\s*=\s*([\d.-]+)', attr_section)
+        # Parse [dep] value1 value2 value3 ... = computed_avg ✓
+        # Format: [dep] -0.5 0 -0.5 = -0.3 ✓
+        # Extract the list of values before the = sign and compute our own min/max/avg
+        match = re.search(r'\[dep\]\s+([\d.\s-]+?)\s*=', attr_section)
         if match:
-            attributes['dep_min'] = float(match.group(1))
-            attributes['dep_max'] = float(match.group(2))
-            attributes['dep_avg'] = float(match.group(3))
+            # Parse all numeric values before the = sign
+            values_str = match.group(1)
+            dep_values = [float(x) for x in re.findall(r'[\d.-]+', values_str)]
+            if dep_values:
+                attributes['dep_min'] = min(dep_values)
+                attributes['dep_max'] = max(dep_values)
+                attributes['dep_avg'] = sum(dep_values) / len(dep_values)
 
         # Parse other single-value attributes
         for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea']:

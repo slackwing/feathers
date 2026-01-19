@@ -203,7 +203,7 @@ def last_sync():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/dashboard/category-rolling-sum', methods=['GET'])
+@app.route('/category-rolling-sum', methods=['GET'])
 def category_rolling_sum():
     """
     Get rolling sum of category minutes with exponential weighting for multiple groups.
@@ -397,7 +397,7 @@ def category_rolling_sum():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/dashboard/alcohol-depression', methods=['GET'])
+@app.route('/alcohol-depression', methods=['GET'])
 def alcohol_depression():
     """
     Get 7-day and 15-day rolling sum for alcohol, and raw/7-day average for depression.
@@ -425,15 +425,16 @@ def alcohol_depression():
         cur.execute("""
             WITH rolling_7day AS (
                 -- Calculate 7-day rolling sum for alcohol and 7-day average for depression
+                -- Keep depression as null when missing (don't coalesce to 0)
                 SELECT
                     date,
                     COALESCE(alc, 0) AS alc_value,
-                    COALESCE(dep_avg, 0) AS dep_raw,
+                    dep_avg AS dep_raw,
                     SUM(COALESCE(alc, 0)) OVER (
                         ORDER BY date
                         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
                     ) AS alc_7day_sum,
-                    AVG(COALESCE(dep_avg, 0)) OVER (
+                    AVG(dep_avg) OVER (
                         ORDER BY date
                         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
                     ) AS dep_7day_avg
@@ -471,14 +472,14 @@ def alcohol_depression():
         cur.close()
         conn.close()
 
-        # Format response
+        # Format response (keep depression as null when missing)
         data = [
             {
                 'date': row[0].isoformat(),
                 'alc_7day_sum': float(row[1]) if row[1] is not None else 0.0,
                 'alc_15day_avg': float(row[2]) if row[2] is not None else 0.0,
-                'dep_raw': float(row[3]) if row[3] is not None else 0.0,
-                'dep_7day_avg': float(row[4]) if row[4] is not None else 0.0
+                'dep_raw': float(row[3]) if row[3] is not None else None,
+                'dep_7day_avg': float(row[4]) if row[4] is not None else None
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]
@@ -490,7 +491,7 @@ def alcohol_depression():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/dashboard/sleep-score', methods=['GET'])
+@app.route('/sleep-score', methods=['GET'])
 def sleep_score():
     """
     Get raw (1-day) and 7-day average of sleep score.
