@@ -641,7 +641,8 @@ function updateSleepChart(data) {
                     }
                 },
                 y: {
-                    beginAtZero: true,
+                    min: 40,
+                    max: 100,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
