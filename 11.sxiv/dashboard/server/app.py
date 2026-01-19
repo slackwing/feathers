@@ -286,31 +286,48 @@ def category_rolling_sum():
                 FROM daily_summary
                 ORDER BY date
             ),
+            weekdays_only AS (
+                -- Filter to weekdays only for work calculation
+                SELECT
+                    date,
+                    work_minutes,
+                    ROW_NUMBER() OVER (ORDER BY date DESC) as recency_rank
+                FROM category_breakdowns
+                WHERE EXTRACT(DOW FROM date) BETWEEN 1 AND 5  -- Monday to Friday
+            ),
             rolling_calcs AS (
                 -- Calculate raw sums using window functions
                 SELECT
-                    date,
-                    hobby_minutes,
-                    work_minutes,
-                    other_minutes,
-                    total_minutes,
-                    SUM(hobby_minutes) OVER (
-                        ORDER BY date
+                    cb.date,
+                    cb.hobby_minutes,
+                    cb.work_minutes,
+                    cb.other_minutes,
+                    cb.total_minutes,
+                    EXTRACT(DOW FROM cb.date) AS day_of_week,
+                    SUM(cb.hobby_minutes) OVER (
+                        ORDER BY cb.date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
                     ) AS hobby_raw,
-                    SUM(work_minutes) OVER (
-                        ORDER BY date
-                        ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
+                    -- Work: sum over last 5 weekdays only (subquery with explicit columns)
+                    (
+                        SELECT COALESCE(SUM(work_minutes), 0)
+                        FROM (
+                            SELECT work_minutes
+                            FROM weekdays_only
+                            WHERE date <= cb.date
+                            ORDER BY date DESC
+                            LIMIT 5
+                        ) AS last_5_weekdays
                     ) AS work_raw,
-                    SUM(other_minutes) OVER (
-                        ORDER BY date
+                    SUM(cb.other_minutes) OVER (
+                        ORDER BY cb.date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
                     ) AS other_raw,
-                    SUM(total_minutes) OVER (
-                        ORDER BY date
+                    SUM(cb.total_minutes) OVER (
+                        ORDER BY cb.date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
                     ) AS total_raw
-                FROM category_breakdowns
+                FROM category_breakdowns cb
             )
             SELECT
                 date,
@@ -329,14 +346,21 @@ def category_rolling_sum():
                 ) AS hobby_weighted,
                 work_raw,
                 ROUND(
-                    (
-                        -- Calculate weighted sum for work categories
-                        SELECT
-                            SUM(cb.work_minutes * EXP(-%(decay_lambda)s * (rc.date - cb.date))) *
-                            (%(window_days)s::float / SUM(EXP(-%(decay_lambda)s * (rc.date - cb.date))))
-                        FROM category_breakdowns cb
-                        WHERE cb.date <= rc.date
-                          AND cb.date > rc.date - INTERVAL '1 day' * %(window_days)s
+                    COALESCE(
+                        (
+                            -- Calculate weighted sum for work categories (weekdays only, last 5)
+                            SELECT
+                                SUM(work_minutes * EXP(-%(decay_lambda)s * (rc.date - date))) *
+                                (5.0 / NULLIF(SUM(EXP(-%(decay_lambda)s * (rc.date - date))), 0))
+                            FROM (
+                                SELECT date, work_minutes
+                                FROM weekdays_only
+                                WHERE date <= rc.date
+                                ORDER BY date DESC
+                                LIMIT 5
+                            ) AS last_5_weekdays_weighted
+                        ),
+                        0
                     )::numeric,
                     1
                 ) AS work_weighted,
