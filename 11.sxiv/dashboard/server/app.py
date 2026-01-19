@@ -397,6 +397,88 @@ def category_rolling_sum():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/dashboard/alcohol-rolling-sum', methods=['GET'])
+def alcohol_rolling_sum():
+    """
+    Get 7-day rolling sum of alcohol consumption with 30-day moving average.
+
+    Query parameters:
+    - limit: Number of recent days to return (default: 60, need extra for 30-day avg)
+
+    Returns JSON with 7-day sum and 30-day moving average of the 7-day sum
+
+    Note: This endpoint is public (no auth required) for read-only access
+    """
+    try:
+        limit = int(request.args.get('limit', 60))
+    except ValueError:
+        return jsonify({'error': 'Invalid numeric parameter'}), 400
+
+    if limit < 1:
+        return jsonify({'error': 'limit must be a positive integer'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Build SQL query with window functions
+        cur.execute("""
+            WITH rolling_7day AS (
+                -- Calculate 7-day rolling sum
+                SELECT
+                    date,
+                    COALESCE(alc, 0) AS alc_value,
+                    SUM(COALESCE(alc, 0)) OVER (
+                        ORDER BY date
+                        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+                    ) AS alc_7day_sum
+                FROM daily_summary
+                ORDER BY date
+            ),
+            rolling_30day AS (
+                -- Calculate 30-day moving average of the 7-day sum
+                SELECT
+                    date,
+                    alc_value,
+                    alc_7day_sum,
+                    AVG(alc_7day_sum) OVER (
+                        ORDER BY date
+                        ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+                    ) AS alc_30day_avg
+                FROM rolling_7day
+            )
+            SELECT
+                date,
+                alc_7day_sum,
+                alc_30day_avg
+            FROM rolling_30day
+            ORDER BY date DESC
+            LIMIT %(limit)s
+        """, {
+            'limit': limit
+        })
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        # Format response
+        data = [
+            {
+                'date': row[0].isoformat(),
+                'alc_7day_sum': float(row[1]) if row[1] is not None else 0.0,
+                'alc_30day_avg': float(row[2]) if row[2] is not None else 0.0
+            }
+            for row in reversed(rows)  # Reverse to get chronological order
+        ]
+
+        return jsonify({
+            'data': data
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Run Flask development server
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -9,6 +9,7 @@ const DECAY_LAMBDA = 0.5; // Calibrated so day 6 has 5% weight
 // Chart instances
 let hobbyChart = null;
 let workChart = null;
+let alcoholChart = null;
 
 // Fetch data from API
 async function fetchData() {
@@ -21,6 +22,27 @@ async function fetchData() {
     });
 
     const response = await fetch(`${API_BASE_URL}/api/dashboard/category-rolling-sum?${params}`);
+
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Filter out today's data (always exclude current day since it's in flux)
+    const today = new Date().toISOString().split('T')[0];
+    data.data = data.data.filter(d => d.date !== today);
+
+    return data;
+}
+
+// Fetch alcohol data from API
+async function fetchAlcoholData() {
+    const params = new URLSearchParams({
+        limit: 60  // Need extra days for 30-day moving average
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/dashboard/alcohol-rolling-sum?${params}`);
 
     if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -314,6 +336,116 @@ function updateWorkChart(data) {
     });
 }
 
+// Create or update alcohol chart
+function updateAlcoholChart(data) {
+    const ctx = document.getElementById('alcoholChart').getContext('2d');
+
+    // Extract data for chart (only last 30 days for display)
+    const allData = data.data;
+    const displayData = allData.slice(-30);  // Last 30 days
+    const labels = displayData.map(d => formatDate(d.date));
+    const sevenDaySum = displayData.map(d => d.alc_7day_sum);
+    const thirtyDayAvg = displayData.map(d => d.alc_30day_avg);
+
+    // Destroy existing chart if it exists
+    if (alcoholChart) {
+        alcoholChart.destroy();
+    }
+
+    // Create new alcohol chart
+    alcoholChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '7-Day Sum',
+                    data: sevenDaySum,
+                    borderColor: '#d97706',  // Gold
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                },
+                {
+                    label: '30-Day Average',
+                    data: thirtyDayAvg,
+                    borderColor: 'rgba(217, 119, 6, 0.35)',  // Lighter gold
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#333',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#222',
+                    bodyColor: '#333',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} drinks`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        callback: function(value) {
+                            return value + ' drinks';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Get color based on hobby zones
 function getHobbyColor(hours) {
     if (hours < 7) return '#d97706';  // Orange (readable)
@@ -406,10 +538,12 @@ async function init() {
 
         // Fetch data
         const data = await fetchData();
+        const alcoholData = await fetchAlcoholData();
 
         // Update all components
         updateHobbyChart(data);
         updateWorkChart(data);
+        updateAlcoholChart(alcoholData);
         updateStats(data);
         updateCategories(data);
         updateTimestamp();
@@ -429,8 +563,10 @@ function startAutoRefresh() {
     setInterval(async () => {
         try {
             const data = await fetchData();
+            const alcoholData = await fetchAlcoholData();
             updateHobbyChart(data);
             updateWorkChart(data);
+            updateAlcoholChart(alcoholData);
             updateStats(data);
             updateCategories(data);
             updateTimestamp();
