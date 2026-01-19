@@ -517,11 +517,11 @@ def sleep_score():
         # Build SQL query with window functions
         cur.execute("""
             WITH rolling_7day AS (
-                -- Calculate 7-day average
+                -- Calculate 7-day average (null sleep_score means no data, not 0)
                 SELECT
                     date,
-                    COALESCE(sleep_score, 0) AS sleep_raw,
-                    AVG(COALESCE(sleep_score, 0)) OVER (
+                    sleep_score AS sleep_raw,
+                    AVG(sleep_score) OVER (
                         ORDER BY date
                         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
                     ) AS sleep_7day_avg
@@ -543,12 +543,12 @@ def sleep_score():
         cur.close()
         conn.close()
 
-        # Format response
+        # Format response (keep null as null so frontend can skip missing data)
         data = [
             {
                 'date': row[0].isoformat(),
-                'sleep_raw': float(row[1]) if row[1] is not None else 0.0,
-                'sleep_7day_avg': float(row[2]) if row[2] is not None else 0.0
+                'sleep_raw': float(row[1]) if row[1] is not None else None,
+                'sleep_7day_avg': float(row[2]) if row[2] is not None else None
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]

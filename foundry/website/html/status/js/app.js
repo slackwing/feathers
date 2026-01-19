@@ -577,7 +577,8 @@ function updateSleepChart(data) {
                     tension: 0.3,
                     fill: false,
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    spanGaps: false  // Don't connect across missing data
                 },
                 {
                     label: '7-Day Average',
@@ -588,7 +589,8 @@ function updateSleepChart(data) {
                     tension: 0.3,
                     fill: false,
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    spanGaps: false  // Don't connect across missing data
                 }
             ]
         },
