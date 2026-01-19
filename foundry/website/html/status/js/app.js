@@ -1,17 +1,20 @@
 // Configuration
 const API_BASE_URL = '/status/api';
 const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws'];
+const WORK_CATEGORIES = ['sp'];
 const CHART_DAYS_LIMIT = 31; // Request 31 days to ensure we have 30 after excluding today
 const ROLLING_WINDOW_DAYS = 7;
 const DECAY_LAMBDA = 0.5; // Calibrated so day 6 has 5% weight
 
-// Chart instance
+// Chart instances
 let hobbyChart = null;
+let workChart = null;
 
 // Fetch data from API
 async function fetchData() {
     const params = new URLSearchParams({
-        categories: HOBBY_CATEGORIES.join(','),
+        hobby: HOBBY_CATEGORIES.join(','),
+        work: WORK_CATEGORIES.join(','),
         days: ROLLING_WINDOW_DAYS,
         limit: CHART_DAYS_LIMIT,
         lambda: DECAY_LAMBDA
@@ -38,14 +41,14 @@ function formatDate(dateStr) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Create or update chart
-function updateChart(data) {
+// Create or update hobby chart
+function updateHobbyChart(data) {
     const ctx = document.getElementById('hobbyChart').getContext('2d');
 
     // Extract data for chart
     const labels = data.data.map(d => formatDate(d.date));
-    const rawData = data.data.map(d => d.matched_raw);
-    const weightedData = data.data.map(d => d.matched_weighted);
+    const rawData = data.data.map(d => d.hobby_raw);
+    const weightedData = data.data.map(d => d.hobby_weighted);
 
     // Destroy existing chart if it exists
     if (hobbyChart) {
@@ -78,7 +81,7 @@ function updateChart(data) {
         }
     };
 
-    // Create new chart
+    // Create new hobby chart
     hobbyChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -87,7 +90,7 @@ function updateChart(data) {
                 {
                     label: 'Actual',
                     data: rawData,
-                    borderColor: 'rgba(74, 158, 255, 0.25)',
+                    borderColor: '#4a9eff',
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -98,7 +101,7 @@ function updateChart(data) {
                 {
                     label: 'Feels Like',
                     data: weightedData,
-                    borderColor: '#4a9eff',
+                    borderColor: 'rgba(74, 158, 255, 0.25)',
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -174,39 +177,204 @@ function updateChart(data) {
     });
 }
 
+// Create or update work chart
+function updateWorkChart(data) {
+    const ctx = document.getElementById('workChart').getContext('2d');
+
+    // Extract data for chart (multiply work by 2)
+    const labels = data.data.map(d => formatDate(d.date));
+    const rawData = data.data.map(d => d.work_raw * 2);
+    const weightedData = data.data.map(d => d.work_weighted * 2);
+
+    // Destroy existing chart if it exists
+    if (workChart) {
+        workChart.destroy();
+    }
+
+    // Background zone plugin for work (different zones)
+    const backgroundZones = {
+        id: 'backgroundZones',
+        beforeDraw: (chart) => {
+            const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+
+            // Define zones: [minHours, maxHours, color]
+            // 0-14: light green, 14-21: very light green, 21-28: light yellow, 28+: red-orange
+            const zones = [
+                [0, 14, 'rgba(100, 200, 100, 0.15)'],    // Light green (0-14h)
+                [14, 21, 'rgba(100, 200, 100, 0.08)'],   // Very light green (14-21h)
+                [21, 28, 'rgba(255, 220, 100, 0.2)'],    // Light yellow (21-28h)
+                [28, 100, 'rgba(255, 100, 80, 0.15)']    // Red-orange (28+h)
+            ];
+
+            zones.forEach(([minHours, maxHours, color]) => {
+                const minMinutes = minHours * 60;
+                const maxMinutes = maxHours * 60;
+                const yMin = y.getPixelForValue(minMinutes);
+                const yMax = y.getPixelForValue(maxMinutes);
+
+                ctx.fillStyle = color;
+                ctx.fillRect(left, yMax, right - left, yMin - yMax);
+            });
+        }
+    };
+
+    // Create new work chart
+    workChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Actual',
+                    data: rawData,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                },
+                {
+                    label: 'Feels Like',
+                    data: weightedData,
+                    borderColor: 'rgba(239, 68, 68, 0.25)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#333',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#222',
+                    bodyColor: '#333',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(0)} min`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        callback: function(value) {
+                            const hours = Math.floor(value / 60);
+                            return hours + 'h';
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [backgroundZones]
+    });
+}
+
+// Get color based on hobby zones
+function getHobbyColor(hours) {
+    if (hours < 7) return '#d97706';  // Orange (readable)
+    if (hours < 14) return '#ca8a04'; // Yellow-orange (readable)
+    if (hours < 21) return '#16a34a'; // Green
+    return '#15803d';                 // Dark green
+}
+
+// Get color based on work zones
+function getWorkColor(hours) {
+    if (hours < 14) return '#16a34a';  // Green
+    if (hours < 21) return '#22c55e';  // Light green
+    if (hours < 28) return '#ca8a04';  // Yellow-orange (readable)
+    return '#d97706';                  // Orange
+}
+
 // Update stats cards
 function updateStats(data) {
     const latest = data.data[data.data.length - 1];
 
-    document.getElementById('latestRaw').textContent = latest.matched_raw.toFixed(0);
-    document.getElementById('latestWeighted').textContent = latest.matched_weighted.toFixed(0);
+    // Convert minutes to hours and combine raw + weighted for hobbies
+    const hobbyRawHours = Math.round(latest.hobby_raw / 60);
+    const hobbyWeightedHours = Math.round(latest.hobby_weighted / 60);
+    const hobbyColor = getHobbyColor(hobbyRawHours);
+    const hobbyWeightedColor = getHobbyColor(hobbyWeightedHours);
+    document.getElementById('latestHobby').innerHTML = `<span style="color: ${hobbyColor};">${hobbyRawHours}</span> <span style="color: ${hobbyWeightedColor}; opacity: 0.4;">(${hobbyWeightedHours})</span>`;
 
-    const totalCategories = data.matched_categories.length + data.unmatched_categories.length;
-    document.getElementById('categoryCount').textContent = totalCategories;
+    // Show work raw + weighted in hours (multiply by 2)
+    const workRawHours = Math.round((latest.work_raw * 2) / 60);
+    const workWeightedHours = Math.round((latest.work_weighted * 2) / 60);
+    const workColor = getWorkColor(workRawHours);
+    const workWeightedColor = getWorkColor(workWeightedHours);
+    document.getElementById('latestWork').innerHTML = `<span style="color: ${workColor};">${workRawHours}</span> <span style="color: ${workWeightedColor}; opacity: 0.4;">(${workWeightedHours})</span>`;
+
+    // Show other raw sum in hours
+    const otherHours = Math.round(latest.other_raw / 60);
+    document.getElementById('latestOther').textContent = otherHours;
 }
 
 // Update category lists
 function updateCategories(data) {
-    const matchedContainer = document.getElementById('matchedCategories');
-    const unmatchedContainer = document.getElementById('unmatchedCategories');
+    const hobbyContainer = document.getElementById('hobbyCategories');
+    const otherContainer = document.getElementById('otherCategories');
 
-    matchedContainer.innerHTML = '';
-    unmatchedContainer.innerHTML = '';
+    hobbyContainer.innerHTML = '';
+    otherContainer.innerHTML = '';
 
-    // Add matched categories
-    data.matched_categories.forEach(cat => {
+    // Add hobby categories
+    data.hobby_categories.forEach(cat => {
         const tag = document.createElement('span');
         tag.className = 'category-tag matched';
         tag.textContent = cat;
-        matchedContainer.appendChild(tag);
+        hobbyContainer.appendChild(tag);
     });
 
-    // Add unmatched categories
-    data.unmatched_categories.forEach(cat => {
+    // Add other categories
+    data.other_categories.forEach(cat => {
         const tag = document.createElement('span');
         tag.className = 'category-tag';
         tag.textContent = cat;
-        unmatchedContainer.appendChild(tag);
+        otherContainer.appendChild(tag);
     });
 }
 
@@ -240,7 +408,8 @@ async function init() {
         const data = await fetchData();
 
         // Update all components
-        updateChart(data);
+        updateHobbyChart(data);
+        updateWorkChart(data);
         updateStats(data);
         updateCategories(data);
         updateTimestamp();
@@ -260,7 +429,8 @@ function startAutoRefresh() {
     setInterval(async () => {
         try {
             const data = await fetchData();
-            updateChart(data);
+            updateHobbyChart(data);
+            updateWorkChart(data);
             updateStats(data);
             updateCategories(data);
             updateTimestamp();

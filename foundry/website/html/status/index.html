@@ -10,37 +10,42 @@
 <body>
     <div class="container">
         <main>
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <h3>Current Hobbies</h3>
+                    <p class="stat-value" id="latestHobby">--</p>
+                    <p class="stat-label">hours</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Current Work</h3>
+                    <p class="stat-value" id="latestWork">--</p>
+                    <p class="stat-label">hours</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Current Other</h3>
+                    <p class="stat-value" id="latestOther">--</p>
+                    <p class="stat-label">hours</p>
+                </div>
+            </section>
+
             <section class="chart-container">
                 <h2>Hobbies (hours per week)</h2>
                 <canvas id="hobbyChart"></canvas>
             </section>
 
-            <section class="stats-grid">
-                <div class="stat-card">
-                    <h3>Latest Raw Sum</h3>
-                    <p class="stat-value" id="latestRaw">--</p>
-                    <p class="stat-label">minutes (7 days)</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Latest Weighted</h3>
-                    <p class="stat-value" id="latestWeighted">--</p>
-                    <p class="stat-label">minutes (feels like)</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Tracked Categories</h3>
-                    <p class="stat-value" id="categoryCount">--</p>
-                    <p class="stat-label">categories</p>
-                </div>
+            <section class="chart-container">
+                <h2>Work (hours per week)</h2>
+                <canvas id="workChart"></canvas>
             </section>
 
             <section class="categories-section">
                 <div class="categories-list">
                     <h3>Hobby Categories</h3>
-                    <div id="matchedCategories" class="category-tags"></div>
+                    <div id="hobbyCategories" class="category-tags"></div>
                 </div>
                 <div class="categories-list">
                     <h3>Other Categories</h3>
-                    <div id="unmatchedCategories" class="category-tags"></div>
+                    <div id="otherCategories" class="category-tags"></div>
                 </div>
             </section>
         </main>
