@@ -206,26 +206,31 @@ def last_sync():
 @app.route('/api/dashboard/category-rolling-sum', methods=['GET'])
 def category_rolling_sum():
     """
-    Get rolling sum of category minutes with exponential weighting.
+    Get rolling sum of category minutes with exponential weighting for multiple groups.
 
     Query parameters:
-    - categories: Comma-separated category codes (e.g., "wf,wr,bkc")
+    - hobby: Comma-separated hobby category codes (e.g., "wf,wr,bkc")
+    - work: Comma-separated work category codes (e.g., "sp")
     - days: Rolling window size (default: 7)
     - limit: Number of recent days to return (default: 30)
     - lambda: Decay parameter for exponential weighting (default: 0.2)
 
-    Returns JSON with data array containing date, raw_sum, and weighted_sum
+    Returns JSON with separate sums for hobby, work, and other categories
 
     Note: This endpoint is public (no auth required) for read-only access
     """
     # No authentication required for dashboard queries
 
     # Parse query parameters
-    categories_str = request.args.get('categories', '')
-    if not categories_str:
-        return jsonify({'error': 'Missing required parameter: categories'}), 400
+    hobby_str = request.args.get('hobby', '')
+    work_str = request.args.get('work', '')
 
-    categories = [cat.strip() for cat in categories_str.split(',')]
+    if not hobby_str and not work_str:
+        return jsonify({'error': 'At least one of hobby or work parameters required'}), 400
+
+    hobby_categories = [cat.strip() for cat in hobby_str.split(',') if cat.strip()] if hobby_str else []
+    work_categories = [cat.strip() for cat in work_str.split(',') if cat.strip()] if work_str else []
+    all_specified = hobby_categories + work_categories
 
     try:
         window_days = int(request.args.get('days', 7))
@@ -241,32 +246,36 @@ def category_rolling_sum():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Build SQL query with window functions
-        # For each date, calculate:
-        # 1. matched categories: raw_sum and weighted_sum
-        # 2. unmatched categories: raw_sum only
-        # 3. total: raw_sum
+        # Build SQL query with window functions for hobby, work, and other
         cur.execute("""
             WITH category_breakdowns AS (
-                -- Split category minutes into matched and unmatched
+                -- Split category minutes into hobby, work, and other
                 SELECT
                     date,
                     COALESCE(
                         (
                             SELECT SUM((value)::int)
                             FROM jsonb_each_text(category_minutes)
-                            WHERE key = ANY(%(categories)s)
+                            WHERE key = ANY(%(hobby_categories)s)
                         ),
                         0
-                    ) AS matched_minutes,
+                    ) AS hobby_minutes,
                     COALESCE(
                         (
                             SELECT SUM((value)::int)
                             FROM jsonb_each_text(category_minutes)
-                            WHERE key != ALL(%(categories)s)
+                            WHERE key = ANY(%(work_categories)s)
                         ),
                         0
-                    ) AS unmatched_minutes,
+                    ) AS work_minutes,
+                    COALESCE(
+                        (
+                            SELECT SUM((value)::int)
+                            FROM jsonb_each_text(category_minutes)
+                            WHERE key != ALL(%(all_specified)s)
+                        ),
+                        0
+                    ) AS other_minutes,
                     COALESCE(
                         (
                             SELECT SUM((value)::int)
@@ -281,17 +290,22 @@ def category_rolling_sum():
                 -- Calculate raw sums using window functions
                 SELECT
                     date,
-                    matched_minutes,
-                    unmatched_minutes,
+                    hobby_minutes,
+                    work_minutes,
+                    other_minutes,
                     total_minutes,
-                    SUM(matched_minutes) OVER (
+                    SUM(hobby_minutes) OVER (
                         ORDER BY date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
-                    ) AS matched_raw,
-                    SUM(unmatched_minutes) OVER (
+                    ) AS hobby_raw,
+                    SUM(work_minutes) OVER (
                         ORDER BY date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
-                    ) AS unmatched_raw,
+                    ) AS work_raw,
+                    SUM(other_minutes) OVER (
+                        ORDER BY date
+                        ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
+                    ) AS other_raw,
                     SUM(total_minutes) OVER (
                         ORDER BY date
                         ROWS BETWEEN %(window_days)s - 1 PRECEDING AND CURRENT ROW
@@ -300,27 +314,41 @@ def category_rolling_sum():
             )
             SELECT
                 date,
-                matched_raw,
+                hobby_raw,
                 ROUND(
                     (
-                        -- Calculate weighted sum for matched categories only
-                        -- Normalized so that equal daily values give same total as raw_sum
+                        -- Calculate weighted sum for hobby categories
                         SELECT
-                            SUM(cb.matched_minutes * EXP(-%(decay_lambda)s * (rc.date - cb.date))) *
+                            SUM(cb.hobby_minutes * EXP(-%(decay_lambda)s * (rc.date - cb.date))) *
                             (%(window_days)s::float / SUM(EXP(-%(decay_lambda)s * (rc.date - cb.date))))
                         FROM category_breakdowns cb
                         WHERE cb.date <= rc.date
                           AND cb.date > rc.date - INTERVAL '1 day' * %(window_days)s
                     )::numeric,
                     1
-                ) AS matched_weighted,
-                unmatched_raw,
+                ) AS hobby_weighted,
+                work_raw,
+                ROUND(
+                    (
+                        -- Calculate weighted sum for work categories
+                        SELECT
+                            SUM(cb.work_minutes * EXP(-%(decay_lambda)s * (rc.date - cb.date))) *
+                            (%(window_days)s::float / SUM(EXP(-%(decay_lambda)s * (rc.date - cb.date))))
+                        FROM category_breakdowns cb
+                        WHERE cb.date <= rc.date
+                          AND cb.date > rc.date - INTERVAL '1 day' * %(window_days)s
+                    )::numeric,
+                    1
+                ) AS work_weighted,
+                other_raw,
                 total_raw
             FROM rolling_calcs rc
             ORDER BY date DESC
             LIMIT %(limit)s
         """, {
-            'categories': categories,
+            'hobby_categories': hobby_categories,
+            'work_categories': work_categories,
+            'all_specified': all_specified,
             'window_days': window_days,
             'limit': limit,
             'decay_lambda': decay_lambda
@@ -328,7 +356,7 @@ def category_rolling_sum():
 
         rows = cur.fetchall()
 
-        # Get list of all categories and split into matched/unmatched
+        # Get list of all categories and split into hobby/work/other
         cur = conn.cursor()
         cur.execute("""
             SELECT DISTINCT jsonb_object_keys(category_minutes) as category
@@ -336,8 +364,9 @@ def category_rolling_sum():
             ORDER BY category
         """)
         all_categories = [row[0] for row in cur.fetchall()]
-        matched_categories = [cat for cat in all_categories if cat in categories]
-        unmatched_categories = [cat for cat in all_categories if cat not in categories]
+        hobby_cats = [cat for cat in all_categories if cat in hobby_categories]
+        work_cats = [cat for cat in all_categories if cat in work_categories]
+        other_cats = [cat for cat in all_categories if cat not in all_specified]
 
         cur.close()
         conn.close()
@@ -346,18 +375,21 @@ def category_rolling_sum():
         data = [
             {
                 'date': row[0].isoformat(),
-                'matched_raw': int(row[1]) if row[1] is not None else 0,
-                'matched_weighted': float(row[2]) if row[2] is not None else 0.0,
-                'unmatched_raw': int(row[3]) if row[3] is not None else 0,
-                'total_raw': int(row[4]) if row[4] is not None else 0
+                'hobby_raw': int(row[1]) if row[1] is not None else 0,
+                'hobby_weighted': float(row[2]) if row[2] is not None else 0.0,
+                'work_raw': int(row[3]) if row[3] is not None else 0,
+                'work_weighted': float(row[4]) if row[4] is not None else 0.0,
+                'other_raw': int(row[5]) if row[5] is not None else 0,
+                'total_raw': int(row[6]) if row[6] is not None else 0
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]
 
         return jsonify({
             'data': data,
-            'matched_categories': matched_categories,
-            'unmatched_categories': unmatched_categories,
+            'hobby_categories': hobby_cats,
+            'work_categories': work_cats,
+            'other_categories': other_cats,
             'window_days': window_days,
             'decay_lambda': decay_lambda
         }), 200
