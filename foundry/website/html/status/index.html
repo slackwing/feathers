@@ -12,19 +12,49 @@
         <main>
             <section class="stats-grid">
                 <div class="stat-card">
-                    <h3>Current Hobbies</h3>
-                    <p class="stat-value" id="latestHobby">--</p>
-                    <p class="stat-label">hours</p>
+                    <h3>Current Rate of Hobbies</h3>
+                    <div class="stat-with-pie">
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="hobbyLabelLeft">REAL</p>
+                            <div class="stat-section-content">
+                                <canvas id="hobbyPieLeft" class="mini-pie-left"></canvas>
+                                <p class="stat-value" id="hobbyValueLeft">--</p>
+                            </div>
+                        </div>
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="hobbyLabelRight">FEELS LIKE</p>
+                            <div class="stat-section-content">
+                                <canvas id="hobbyPieRight" class="mini-pie-right"></canvas>
+                                <p class="stat-value" id="hobbyValueRight">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="stat-label">hours per week</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Current Work</h3>
-                    <p class="stat-value" id="latestWork">--</p>
-                    <p class="stat-label">hours</p>
+                    <h3>Current Rate of Work</h3>
+                    <div class="stat-with-pie">
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="workLabelLeft">REAL</p>
+                            <div class="stat-section-content">
+                                <canvas id="workPieLeft" class="mini-pie-left"></canvas>
+                                <p class="stat-value" id="workValueLeft">--</p>
+                            </div>
+                        </div>
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="workLabelRight">FEELS LIKE</p>
+                            <div class="stat-section-content">
+                                <canvas id="workPieRight" class="mini-pie-right"></canvas>
+                                <p class="stat-value" id="workValueRight">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="stat-label">hours per week</p>
                 </div>
                 <div class="stat-card">
                     <h3>Current Other</h3>
                     <p class="stat-value" id="latestOther">--</p>
-                    <p class="stat-label">hours</p>
+                    <p class="stat-label">hours per week</p>
                 </div>
             </section>
 

@@ -13,6 +13,25 @@ let workChart = null;
 let alcoholChart = null;
 let sleepChart = null;
 
+// Helper to determine if on mobile and get responsive options
+function isMobile() {
+    return window.innerWidth < 768;
+}
+
+function getResponsiveChartOptions() {
+    const mobile = isMobile();
+    return {
+        responsive: true,
+        maintainAspectRatio: !mobile, // Disable aspect ratio on mobile
+        aspectRatio: mobile ? undefined : 2,
+        plugins: {
+            tooltip: {
+                enabled: false
+            }
+        }
+    };
+}
+
 // Extra-exaggerated mood transformation: 0 to 0.5 takes same space as 0.5 to 2.0
 function transformMood(mood) {
     if (mood === null) return null;
@@ -258,8 +277,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            ...getResponsiveChartOptions(),
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -275,12 +293,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#222',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 12
+                    enabled: false
                 },
                 moodZeroLine: {},
                 chartBorder: {}
@@ -391,8 +404,7 @@ function updateHobbyChart(data) {
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            ...getResponsiveChartOptions(),
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -410,18 +422,7 @@ function updateHobbyChart(data) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#222',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(0)} min`;
-                        }
-                    }
+                    enabled: false
                 }
             },
             scales: {
@@ -529,8 +530,7 @@ function updateWorkChart(data) {
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            ...getResponsiveChartOptions(),
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -548,18 +548,7 @@ function updateWorkChart(data) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#222',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(0)} min`;
-                        }
-                    }
+                    enabled: false
                 }
             },
             scales: {
@@ -728,8 +717,7 @@ function updateAlcoholChart(data) {
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            ...getResponsiveChartOptions(),
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -747,37 +735,7 @@ function updateAlcoholChart(data) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#222',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.dataset.label;
-                            if (label.startsWith('Alcohol')) {
-                                return `${label}: ${context.parsed.y.toFixed(1)} drinks`;
-                            } else {
-                                // Convert back from scaled transformed mood to original mood scale
-                                const transformedMood = (context.parsed.y / maxAlc) * 4 - 2;
-                                // Reverse the transformation
-                                let originalMood;
-                                const sign = transformedMood >= 0 ? 1 : -1;
-                                const absTransformed = Math.abs(transformedMood);
-
-                                if (absTransformed <= 1.0) {
-                                    // Was in [0, 0.5] range, reverse: transformed/2.0
-                                    originalMood = sign * (absTransformed / 2.0);
-                                } else {
-                                    // Was in [0.5, 2.0] range, reverse: 0.5 + (transformed - 1.0) * 1.5
-                                    originalMood = sign * (0.5 + (absTransformed - 1.0) * 1.5);
-                                }
-                                return `${label}: ${originalMood.toFixed(2)}`;
-                            }
-                        }
-                    }
+                    enabled: false
                 }
             },
             scales: {
@@ -862,8 +820,7 @@ function updateSleepChart(data) {
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            ...getResponsiveChartOptions(),
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -881,25 +838,7 @@ function updateSleepChart(data) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#222',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            // Reverse the exponential transformation to show original value
-                            const transformed = context.parsed.y;
-                            const k = 1.099;
-                            const maxExp = Math.exp(k) - 1;
-                            // Reverse: normalized = log((transformed / 100) * maxExp + 1) / k
-                            const normalized = Math.log((transformed / 100) * maxExp + 1) / k;
-                            const original = normalized * 60 + 40;
-                            return `${context.dataset.label}: ${original.toFixed(0)}`;
-                        }
-                    }
+                    enabled: false
                 }
             },
             scales: {
@@ -954,6 +893,48 @@ function getWorkColor(hours) {
     return '#d97706';                  // Orange
 }
 
+// Create mini pie chart
+function createMiniPie(canvasId, value, maxValue, color, opacity = 1.0) {
+    const canvas = document.getElementById(canvasId);
+
+    // Set canvas dimensions explicitly
+    canvas.width = 40;
+    canvas.height = 40;
+
+    const ctx = canvas.getContext('2d');
+
+    // Destroy existing chart if present
+    if (canvas.chart) {
+        canvas.chart.destroy();
+    }
+
+    const percentage = Math.min(value / maxValue, 1.0);
+    const remaining = 1.0 - percentage;
+
+    canvas.chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [percentage * 100, remaining * 100],
+                backgroundColor: [
+                    `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+                    '#e5e7eb'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            cutout: '70%'
+        }
+    });
+}
+
 // Update stats cards
 function updateStats(data) {
     const latest = data.data[data.data.length - 1];
@@ -963,14 +944,40 @@ function updateStats(data) {
     const hobbyWeightedHours = Math.round(latest.hobby_weighted / 60);
     const hobbyColor = getHobbyColor(hobbyRawHours);
     const hobbyWeightedColor = getHobbyColor(hobbyWeightedHours);
-    document.getElementById('latestHobby').innerHTML = `<span style="color: ${hobbyColor};">${hobbyRawHours}</span> <span style="color: ${hobbyWeightedColor}; opacity: 0.4;">(${hobbyWeightedHours})</span>`;
+
+    // Update hobby left (REAL)
+    document.getElementById('hobbyValueLeft').textContent = hobbyRawHours;
+    document.getElementById('hobbyValueLeft').style.color = hobbyColor;
+    document.getElementById('hobbyLabelLeft').style.color = hobbyColor;
+    createMiniPie('hobbyPieLeft', hobbyRawHours, 21, hobbyColor, 1.0);
+
+    // Update hobby right (FEELS LIKE)
+    document.getElementById('hobbyValueRight').textContent = hobbyWeightedHours;
+    document.getElementById('hobbyValueRight').style.color = hobbyWeightedColor;
+    document.getElementById('hobbyValueRight').style.opacity = '0.4';
+    document.getElementById('hobbyLabelRight').style.color = hobbyWeightedColor;
+    document.getElementById('hobbyLabelRight').style.opacity = '0.4';
+    createMiniPie('hobbyPieRight', hobbyWeightedHours, 21, hobbyWeightedColor, 0.4);
 
     // Show work raw + weighted in hours (multiply by 2)
     const workRawHours = Math.round((latest.work_raw * 2) / 60);
     const workWeightedHours = Math.round((latest.work_weighted * 2) / 60);
     const workColor = getWorkColor(workRawHours);
     const workWeightedColor = getWorkColor(workWeightedHours);
-    document.getElementById('latestWork').innerHTML = `<span style="color: ${workColor};">${workRawHours}</span> <span style="color: ${workWeightedColor}; opacity: 0.4;">(${workWeightedHours})</span>`;
+
+    // Update work left (REAL)
+    document.getElementById('workValueLeft').textContent = workRawHours;
+    document.getElementById('workValueLeft').style.color = workColor;
+    document.getElementById('workLabelLeft').style.color = workColor;
+    createMiniPie('workPieLeft', workRawHours, 21, workColor, 1.0);
+
+    // Update work right (FEELS LIKE)
+    document.getElementById('workValueRight').textContent = workWeightedHours;
+    document.getElementById('workValueRight').style.color = workWeightedColor;
+    document.getElementById('workValueRight').style.opacity = '0.4';
+    document.getElementById('workLabelRight').style.color = workWeightedColor;
+    document.getElementById('workLabelRight').style.opacity = '0.4';
+    createMiniPie('workPieRight', workWeightedHours, 21, workWeightedColor, 0.4);
 
     // Show other raw sum in hours
     const otherHours = Math.round(latest.other_raw / 60);
