@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Status Dashboard</h1>
+            <p class="subtitle">Personal time tracking visualization</p>
+        </header>
+
+        <main>
+            <section class="chart-container">
+                <h2>Hobby Time - 7-Day Rolling Sum</h2>
+                <p class="chart-description">
+                    Blue line: Raw 7-day sum | Orange line: Weighted sum (recent days have more influence)
+                </p>
+                <canvas id="hobbyChart"></canvas>
+            </section>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <h3>Latest Raw Sum</h3>
+                    <p class="stat-value" id="latestRaw">--</p>
+                    <p class="stat-label">minutes (7 days)</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Latest Weighted</h3>
+                    <p class="stat-value" id="latestWeighted">--</p>
+                    <p class="stat-label">minutes (feels like)</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Tracked Categories</h3>
+                    <p class="stat-value" id="categoryCount">--</p>
+                    <p class="stat-label">categories</p>
+                </div>
+            </section>
+
+            <section class="categories-section">
+                <div class="categories-list">
+                    <h3>Hobby Categories</h3>
+                    <div id="matchedCategories" class="category-tags"></div>
+                </div>
+                <div class="categories-list">
+                    <h3>Other Categories</h3>
+                    <div id="unmatchedCategories" class="category-tags"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Data synced from .sxiva files | Last updated: <span id="lastUpdated">--</span></p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

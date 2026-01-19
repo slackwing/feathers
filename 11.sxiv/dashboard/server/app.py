@@ -215,10 +215,10 @@ def category_rolling_sum():
     - lambda: Decay parameter for exponential weighting (default: 0.2)
 
     Returns JSON with data array containing date, raw_sum, and weighted_sum
+
+    Note: This endpoint is public (no auth required) for read-only access
     """
-    # Check authentication
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
+    # No authentication required for dashboard queries
 
     # Parse query parameters
     categories_str = request.args.get('categories', '')

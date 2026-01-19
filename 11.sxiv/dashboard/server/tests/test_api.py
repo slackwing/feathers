@@ -36,16 +36,16 @@ def test_health_endpoint():
     assert data['status'] == 'healthy'
 
 
-def test_rolling_sum_auth_required(api_headers):
-    """Test that authentication is required"""
-    # Without auth
+def test_rolling_sum_public_access(api_headers):
+    """Test that dashboard endpoint is public (no auth required)"""
+    # Without auth - should work
     response = requests.get(
         f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
         params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5}
     )
-    assert response.status_code == 401
+    assert response.status_code == 200
 
-    # With auth
+    # With auth - should also work
     response = requests.get(
         f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
         params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5},
