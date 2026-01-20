@@ -1656,6 +1656,7 @@ class PointCalculator:
             "    [alc]",
             "    [xmx]",
             "    [wea]",
+            "    [meet]",
         ]
 
     def process_attribute_line(self, line: str) -> tuple[str, Optional[str]]:
@@ -1774,6 +1775,16 @@ class PointCalculator:
                     return line, f"[wea] must be between -2 and 2 inclusive (got {value})"
 
                 return f"    [wea] {value} ✓", None
+
+            elif category == "meet":
+                # Non-negative integer (meeting minutes)
+                if len(values_parts) != 1:
+                    return line, "[meet] must have exactly one value"
+                value = int(values_parts[0])
+                if value < 0:
+                    return line, f"[meet] must be non-negative (got {value})"
+
+                return f"    [meet] {value} ✓", None
             else:
                 return line, f"Unknown attribute category: [{category}]"
 
@@ -1793,7 +1804,7 @@ class PointCalculator:
                    num_lines_consumed: How many lines from start_idx were consumed
                    errors: List of error messages
         """
-        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea"]
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea", "meet"]
 
         if start_idx == -1:
             # No attributes section - generate template

@@ -104,13 +104,13 @@ def sync_daily():
                 date, day_of_week, category_minutes,
                 sleep_score, sleep_hours,
                 dep_min, dep_max, dep_avg,
-                dist, soc, out, exe, alc, xmx, wea,
+                dist, soc, out, exe, alc, xmx, wea, meet,
                 created_at, updated_at
             ) VALUES (
                 %(date)s, %(day_of_week)s, %(category_minutes)s,
                 %(sleep_score)s, %(sleep_hours)s,
                 %(dep_min)s, %(dep_max)s, %(dep_avg)s,
-                %(dist)s, %(soc)s, %(out)s, %(exe)s, %(alc)s, %(xmx)s, %(wea)s,
+                %(dist)s, %(soc)s, %(out)s, %(exe)s, %(alc)s, %(xmx)s, %(wea)s, %(meet)s,
                 NOW(), NOW()
             )
             ON CONFLICT (date) DO UPDATE SET
@@ -128,6 +128,7 @@ def sync_daily():
                 alc = EXCLUDED.alc,
                 xmx = EXCLUDED.xmx,
                 wea = EXCLUDED.wea,
+                meet = EXCLUDED.meet,
                 updated_at = NOW()
         """, {
             'date': data['date'],
@@ -144,7 +145,8 @@ def sync_daily():
             'exe': data.get('exe'),
             'alc': data.get('alc'),
             'xmx': data.get('xmx'),
-            'wea': data.get('wea')
+            'wea': data.get('wea'),
+            'meet': data.get('meet')
         })
 
         # Update sync metadata with current timestamp

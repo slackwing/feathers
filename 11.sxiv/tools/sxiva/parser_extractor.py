@@ -44,6 +44,7 @@ class SxivaDataExtractor:
         - alc: float | None
         - xmx: int | None
         - wea: float | None
+        - meet: int | None
         """
         try:
             with open(file_path, 'r') as f:
@@ -151,7 +152,8 @@ class SxivaDataExtractor:
             'exe': None,
             'alc': None,
             'xmx': None,
-            'wea': None
+            'wea': None,
+            'meet': None
         }
 
         # Find {attributes} section in content
@@ -181,12 +183,12 @@ class SxivaDataExtractor:
                 attributes['dep_avg'] = sum(dep_values) / len(dep_values)
 
         # Parse other single-value attributes
-        for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea']:
+        for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea', 'meet']:
             match = re.search(rf'\[{attr_name}\]\s+([\d.-]+)', attr_section)
             if match:
                 value = match.group(1)
-                # Integer fields: soc, out, exe, xmx
-                if attr_name in ['soc', 'out', 'exe', 'xmx']:
+                # Integer fields: soc, out, exe, xmx, meet
+                if attr_name in ['soc', 'out', 'exe', 'xmx', 'meet']:
                     attributes[attr_name] = int(float(value))
                 else:
                     # Decimal fields: dist, alc, wea

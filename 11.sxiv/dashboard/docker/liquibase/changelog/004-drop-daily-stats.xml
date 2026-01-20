@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-drop-daily-stats" author="sxiva">
+        <comment>Drop unused daily_stats placeholder table (replaced by daily_summary)</comment>
+
+        <dropTable tableName="daily_stats" cascadeConstraints="true"/>
+
+    </changeSet>
+
+</databaseChangeLog>

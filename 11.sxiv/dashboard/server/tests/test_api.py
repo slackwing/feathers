@@ -40,29 +40,29 @@ def test_rolling_sum_public_access(api_headers):
     """Test that dashboard endpoint is public (no auth required)"""
     # Without auth - should work
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5}
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5}
     )
     assert response.status_code == 200
 
     # With auth - should also work
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5},
         headers=api_headers
     )
     assert response.status_code == 200
 
 
 def test_rolling_sum_missing_categories(api_headers):
-    """Test that categories parameter is required"""
+    """Test that hobby or work parameter is required"""
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
+        f'{API_BASE_URL}/category-rolling-sum',
         params={'days': 7, 'limit': 5},
         headers=api_headers
     )
     assert response.status_code == 400
-    assert 'categories' in response.json()['error']
+    assert 'hobby or work' in response.json()['error']
 
 
 def test_rolling_sum_dec_24_2025(api_headers):
@@ -71,8 +71,8 @@ def test_rolling_sum_dec_24_2025(api_headers):
     Expected: matched values higher than earlier dates
     """
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 30},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 30},
         headers=api_headers
     )
     assert response.status_code == 200
@@ -80,8 +80,9 @@ def test_rolling_sum_dec_24_2025(api_headers):
 
     # Verify response structure
     assert 'data' in data
-    assert 'matched_categories' in data
-    assert 'unmatched_categories' in data
+    assert 'hobby_categories' in data
+    assert 'work_categories' in data
+    assert 'other_categories' in data
     assert 'window_days' in data
     assert 'decay_lambda' in data
 
@@ -92,22 +93,24 @@ def test_rolling_sum_dec_24_2025(api_headers):
     dec_24 = dec_24_data[0]
 
     # Verify all required fields exist
-    assert 'matched_raw' in dec_24
-    assert 'matched_weighted' in dec_24
-    assert 'unmatched_raw' in dec_24
+    assert 'hobby_raw' in dec_24
+    assert 'hobby_weighted' in dec_24
+    assert 'work_raw' in dec_24
+    assert 'work_weighted' in dec_24
+    assert 'other_raw' in dec_24
     assert 'total_raw' in dec_24
 
     # Assert specific values from historical data
-    assert dec_24['matched_raw'] == 541
-    assert abs(dec_24['matched_weighted'] - 718.9) < 1.0
-    assert dec_24['unmatched_raw'] == 1066
+    assert dec_24['hobby_raw'] == 541
+    assert abs(dec_24['hobby_weighted'] - 718.9) < 1.0
+    assert dec_24['other_raw'] == 1066
     assert dec_24['total_raw'] == 1607
 
-    # Verify matched_raw + unmatched_raw = total_raw
-    assert dec_24['matched_raw'] + dec_24['unmatched_raw'] == dec_24['total_raw']
+    # Verify hobby_raw + work_raw + other_raw = total_raw
+    assert dec_24['hobby_raw'] + dec_24['work_raw'] + dec_24['other_raw'] == dec_24['total_raw']
 
     # Verify weighted sum is higher than raw (recent activity boost)
-    assert dec_24['matched_weighted'] > dec_24['matched_raw']
+    assert dec_24['hobby_weighted'] > dec_24['hobby_raw']
 
 
 def test_rolling_sum_dec_26_2025(api_headers):
@@ -116,8 +119,8 @@ def test_rolling_sum_dec_26_2025(api_headers):
     Expected: highest matched values in the test range
     """
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 30},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 30},
         headers=api_headers
     )
     assert response.status_code == 200
@@ -129,16 +132,16 @@ def test_rolling_sum_dec_26_2025(api_headers):
     dec_26 = dec_26_data[0]
 
     # Assert exact values from current database
-    assert dec_26['matched_raw'] == 838
-    assert abs(dec_26['matched_weighted'] - 1077.4) < 1.0
-    assert dec_26['unmatched_raw'] == 752
+    assert dec_26['hobby_raw'] == 838
+    assert abs(dec_26['hobby_weighted'] - 1077.4) < 1.0
+    assert dec_26['other_raw'] == 752
     assert dec_26['total_raw'] == 1590
 
     # Verify math
-    assert dec_26['matched_raw'] + dec_26['unmatched_raw'] == dec_26['total_raw']
+    assert dec_26['hobby_raw'] + dec_26['work_raw'] + dec_26['other_raw'] == dec_26['total_raw']
 
     # Weighted should be higher (recent activity)
-    assert dec_26['matched_weighted'] > dec_26['matched_raw']
+    assert dec_26['hobby_weighted'] > dec_26['hobby_raw']
 
 
 def test_rolling_sum_dec_28_2025(api_headers):
@@ -147,8 +150,8 @@ def test_rolling_sum_dec_28_2025(api_headers):
     Expected: raw sum stays high but weighted drops (recency bias)
     """
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 30},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 30},
         headers=api_headers
     )
     assert response.status_code == 200
@@ -160,48 +163,48 @@ def test_rolling_sum_dec_28_2025(api_headers):
     dec_28 = dec_28_data[0]
 
     # Assert exact values
-    assert dec_28['matched_raw'] == 838  # Same as Dec 26 (7-day window includes same dates)
-    assert abs(dec_28['matched_weighted'] - 722.2) < 1.0  # Lower due to no recent activity
-    assert dec_28['unmatched_raw'] == 752
+    assert dec_28['hobby_raw'] == 838  # Same as Dec 26 (7-day window includes same dates)
+    assert abs(dec_28['hobby_weighted'] - 722.2) < 1.0  # Lower due to no recent activity
+    assert dec_28['other_raw'] == 752
     assert dec_28['total_raw'] == 1590
 
     # Verify math
-    assert dec_28['matched_raw'] + dec_28['unmatched_raw'] == dec_28['total_raw']
+    assert dec_28['hobby_raw'] + dec_28['work_raw'] + dec_28['other_raw'] == dec_28['total_raw']
 
     # Weighted should be LOWER (no recent activity)
-    assert dec_28['matched_weighted'] < dec_28['matched_raw']
+    assert dec_28['hobby_weighted'] < dec_28['hobby_raw']
 
 
 def test_rolling_sum_category_lists(api_headers):
-    """Test that matched and unmatched category lists are correct"""
+    """Test that hobby, work, and other category lists are correct"""
     response = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5},
         headers=api_headers
     )
     assert response.status_code == 200
     data = response.json()
 
-    # Verify matched categories
-    assert 'matched_categories' in data
-    assert set(data['matched_categories']) == {'wf', 'wr', 'bkc'}
+    # Verify hobby categories
+    assert 'hobby_categories' in data
+    assert set(data['hobby_categories']) == {'wf', 'wr', 'bkc'}
 
-    # Verify unmatched categories exist and don't overlap
-    assert 'unmatched_categories' in data
-    assert len(data['unmatched_categories']) > 0
+    # Verify other categories exist and don't overlap with hobby
+    assert 'other_categories' in data
+    assert len(data['other_categories']) > 0
 
-    # Ensure no overlap between matched and unmatched
-    matched_set = set(data['matched_categories'])
-    unmatched_set = set(data['unmatched_categories'])
-    assert matched_set.isdisjoint(unmatched_set)
+    # Ensure no overlap between hobby and other
+    hobby_set = set(data['hobby_categories'])
+    other_set = set(data['other_categories'])
+    assert hobby_set.isdisjoint(other_set)
 
 
 def test_rolling_sum_different_window_sizes(api_headers):
     """Test that different window sizes produce different results"""
     # Get 7-day window
     response_7 = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5},
         headers=api_headers
     )
     assert response_7.status_code == 200
@@ -209,8 +212,8 @@ def test_rolling_sum_different_window_sizes(api_headers):
 
     # Get 14-day window
     response_14 = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 14, 'limit': 5},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 14, 'limit': 5},
         headers=api_headers
     )
     assert response_14.status_code == 200
@@ -227,15 +230,15 @@ def test_rolling_sum_different_window_sizes(api_headers):
         matching_14 = [d for d in data_14['data'] if d['date'] == date_7]
         if matching_14:
             # 14-day window should have >= 7-day window raw sum
-            assert matching_14[0]['matched_raw'] >= data_7['data'][0]['matched_raw']
+            assert matching_14[0]['hobby_raw'] >= data_7['data'][0]['hobby_raw']
 
 
 def test_rolling_sum_lambda_parameter(api_headers):
     """Test that different lambda values affect weighting"""
     # Lambda 0.2 (default)
     response_02 = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5, 'lambda': 0.2},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5, 'lambda': 0.2},
         headers=api_headers
     )
     assert response_02.status_code == 200
@@ -243,8 +246,8 @@ def test_rolling_sum_lambda_parameter(api_headers):
 
     # Lambda 0.5 (stronger recency bias)
     response_05 = requests.get(
-        f'{API_BASE_URL}/api/dashboard/category-rolling-sum',
-        params={'categories': 'wf,wr,bkc', 'days': 7, 'limit': 5, 'lambda': 0.5},
+        f'{API_BASE_URL}/category-rolling-sum',
+        params={'hobby': 'wf,wr,bkc', 'days': 7, 'limit': 5, 'lambda': 0.5},
         headers=api_headers
     )
     assert response_05.status_code == 200
@@ -256,7 +259,7 @@ def test_rolling_sum_lambda_parameter(api_headers):
 
     # Both should have the same raw sums (lambda only affects weighted)
     if data_02['data'] and data_05['data']:
-        assert data_02['data'][0]['matched_raw'] == data_05['data'][0]['matched_raw']
+        assert data_02['data'][0]['hobby_raw'] == data_05['data'][0]['hobby_raw']
 
 
 if __name__ == '__main__':
