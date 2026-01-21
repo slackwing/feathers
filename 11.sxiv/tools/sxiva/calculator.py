@@ -1969,6 +1969,9 @@ class PointCalculator:
         with open(file_path, 'r', encoding='utf-8') as f:
             source_code = f.read()
 
+        # Save original content for comparison later (to avoid unnecessary writes)
+        original_file_content = source_code
+
         # Sanitize: ensure blank line before first === marker
         # This prevents parsing errors when user accidentally removes the blank line
         source_lines = source_code.split('\n')
@@ -2772,7 +2775,9 @@ class PointCalculator:
                 input_filename = Path(file_path).name
                 output_path_obj = output_path_obj / input_filename
 
-            with open(output_path_obj, 'w', encoding='utf-8') as f:
-                f.write(result)
+            # Only write if content changed (preserves mtime when unchanged)
+            if result != original_file_content:
+                with open(output_path_obj, 'w', encoding='utf-8') as f:
+                    f.write(result)
 
         return num_fixes
