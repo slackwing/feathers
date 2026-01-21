@@ -269,7 +269,7 @@ def category_rolling_sum():
                             WHERE key = ANY(%(work_categories)s)
                         ),
                         0
-                    ) AS work_minutes,
+                    ) + COALESCE(meet, 0) AS work_minutes,
                     COALESCE(
                         (
                             SELECT SUM((value)::int)
