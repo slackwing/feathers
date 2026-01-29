@@ -778,10 +778,16 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
    - Range: -2.0 to 2.0 (e.g., `[wea] -1.5`, `[wea] 0`, `[wea] 1.2`)
    - Represents external environmental impact on the day
 
+10. **[meet]** (meeting time): time duration in various formats
+   - Format: `Xm` (minutes), `Xh` (hours), `XhYm` (hours and minutes), or `H:MM` (colon-separated)
+   - Examples: `[meet] 75m`, `[meet] 1h20m`, `[meet] 2:05`, `[meet] 7m`, `[meet] 1h`, `[meet] 2h`
+   - Represents total meeting time for the day
+   - Value must be non-negative
+
 **Processing Rules:**
 
 - **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above
-- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, wea
+- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, wea, meet
 - **Missing Categories**: If a category is missing from an existing `{attributes}` section, calculator adds it in the correct position
 - **Validation**: Numbers outside the valid range for each category type generate an ERROR
 - **Optional Values**: Any category can be left blank (no value) - this is valid and means "not filled out"
@@ -800,6 +806,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [alc]
     [xmx]
     [wea]
+    [meet]
 ```
 
 **Example (filled in by user, processed by calculator):**
@@ -814,6 +821,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [alc] 0 ✓
     [xmx] 3 ✓
     [wea] 1.5 ✓
+    [meet] 1h20m ✓
 ```
 
 **Example (partial - some filled, some not):**
@@ -828,6 +836,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [alc]
     [xmx] 1 ✓
     [wea] -0.5 ✓
+    [meet]
 ```
 
 **Placement:**

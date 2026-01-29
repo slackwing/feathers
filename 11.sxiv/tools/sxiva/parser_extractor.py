@@ -183,18 +183,73 @@ class SxivaDataExtractor:
                 attributes['dep_avg'] = sum(dep_values) / len(dep_values)
 
         # Parse other single-value attributes
-        for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea', 'meet']:
+        for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea']:
             match = re.search(rf'\[{attr_name}\]\s+([\d.-]+)', attr_section)
             if match:
                 value = match.group(1)
-                # Integer fields: soc, out, exe, xmx, meet
-                if attr_name in ['soc', 'out', 'exe', 'xmx', 'meet']:
+                # Integer fields: soc, out, exe, xmx
+                if attr_name in ['soc', 'out', 'exe', 'xmx']:
                     attributes[attr_name] = int(float(value))
                 else:
                     # Decimal fields: dist, alc, wea
                     attributes[attr_name] = float(value)
 
+        # Parse [meet] with time format (e.g., 75m, 1h20m, 2:05)
+        meet_match = re.search(r'\[meet\]\s+([^\s✓]+)', attr_section)
+        if meet_match:
+            time_str = meet_match.group(1)
+            minutes = self._parse_meeting_time(time_str)
+            if minutes is not None:
+                attributes['meet'] = minutes
+
         return attributes
+
+    def _parse_meeting_time(self, time_str: str) -> Optional[int]:
+        """Parse meeting time format into minutes.
+
+        Supported formats:
+        - 75m (minutes only)
+        - 1h (hours only)
+        - 1h20m (hours and minutes)
+        - 2:05 (H:MM format)
+
+        Args:
+            time_str: Time string to parse
+
+        Returns:
+            int: Total minutes, or None if invalid format
+        """
+        time_str = time_str.strip()
+
+        # Format: H:MM or HH:MM (e.g., "2:05")
+        if ':' in time_str:
+            match = re.match(r'^(\d+):(\d{2})$', time_str)
+            if match:
+                hours = int(match.group(1))
+                minutes = int(match.group(2))
+                return hours * 60 + minutes
+            return None
+
+        # Format: XhYm (e.g., "1h20m")
+        match = re.match(r'^(\d+)h(\d+)m$', time_str)
+        if match:
+            hours = int(match.group(1))
+            minutes = int(match.group(2))
+            return hours * 60 + minutes
+
+        # Format: Xh (e.g., "1h", "2h")
+        match = re.match(r'^(\d+)h$', time_str)
+        if match:
+            hours = int(match.group(1))
+            return hours * 60
+
+        # Format: Xm (e.g., "75m", "7m")
+        match = re.match(r'^(\d+)m$', time_str)
+        if match:
+            minutes = int(match.group(1))
+            return minutes
+
+        return None
 
     def _find_node_by_type(self, node, node_type: str):
         """Recursively find first node of given type"""

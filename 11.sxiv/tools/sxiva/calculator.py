@@ -1639,6 +1639,53 @@ class PointCalculator:
 
         return lines
 
+    def parse_meeting_time(self, time_str: str) -> Optional[int]:
+        """Parse meeting time format into minutes.
+
+        Supported formats:
+        - 75m (minutes only)
+        - 1h (hours only)
+        - 1h20m (hours and minutes)
+        - 2:05 (H:MM format)
+
+        Args:
+            time_str: Time string to parse
+
+        Returns:
+            int: Total minutes, or None if invalid format
+        """
+        time_str = time_str.strip()
+
+        # Format: H:MM or HH:MM (e.g., "2:05")
+        if ':' in time_str:
+            match = re.match(r'^(\d+):(\d{2})$', time_str)
+            if match:
+                hours = int(match.group(1))
+                minutes = int(match.group(2))
+                return hours * 60 + minutes
+            return None
+
+        # Format: XhYm (e.g., "1h20m")
+        match = re.match(r'^(\d+)h(\d+)m$', time_str)
+        if match:
+            hours = int(match.group(1))
+            minutes = int(match.group(2))
+            return hours * 60 + minutes
+
+        # Format: Xh (e.g., "1h", "2h")
+        match = re.match(r'^(\d+)h$', time_str)
+        if match:
+            hours = int(match.group(1))
+            return hours * 60
+
+        # Format: Xm (e.g., "75m", "7m")
+        match = re.match(r'^(\d+)m$', time_str)
+        if match:
+            minutes = int(match.group(1))
+            return minutes
+
+        return None
+
     def generate_attributes_template(self) -> list:
         """Generate default attributes section template.
 
@@ -1783,14 +1830,20 @@ class PointCalculator:
                 return f"    [wea] {value} ✓", None
 
             elif category == "meet":
-                # Non-negative integer (meeting minutes)
+                # Parse time format: 75m, 1h20m, 2:05, 7m, 1h, 2h
                 if len(values_parts) != 1:
                     return line, "[meet] must have exactly one value"
-                value = int(values_parts[0])
-                if value < 0:
-                    return line, f"[meet] must be non-negative (got {value})"
 
-                return f"    [meet] {value} ✓", None
+                time_str = values_parts[0]
+                minutes = self.parse_meeting_time(time_str)
+
+                if minutes is None:
+                    return line, f"[meet] invalid time format: {time_str} (expected formats: 75m, 1h20m, 2:05, etc)"
+
+                if minutes < 0:
+                    return line, f"[meet] must be non-negative (got {minutes})"
+
+                return f"    [meet] {time_str} ✓", None
             else:
                 return line, f"Unknown attribute category: [{category}]"
 
