@@ -1,10 +1,42 @@
 // Configuration
 const API_BASE_URL = '/status/api';
-const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws'];
+const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs'];
 const WORK_CATEGORIES = ['sp'];
 const CHART_DAYS_LIMIT = 31; // Request 31 days to ensure we have 30 after excluding today
 const ROLLING_WINDOW_DAYS = 7;
 const DECAY_LAMBDA = 0.5; // Calibrated so day 6 has 5% weight
+
+// Color scheme - centralized color definitions
+const COLORS = {
+    // Primary colors for good/bad states
+    RED: '#dc2626',          // Bad state (too low hobbies, too high work)
+    YELLOW: '#ca8a04',       // Warning state
+    GREEN: '#16a34a',        // Good state
+    GREEN_LIGHT: '#22c55e',  // Light green variant
+    GREEN_DARK: '#15803d',   // Dark green variant
+
+    // Chart zone colors (with alpha for backgrounds)
+    ZONE_RED: 'rgba(220, 38, 38, 0.15)',      // Bad zones
+    ZONE_YELLOW: 'rgba(202, 138, 4, 0.15)',   // Warning zones
+    ZONE_GREEN: 'rgba(22, 163, 74, 0.15)',    // Good zones
+    ZONE_GREEN_LIGHT: 'rgba(100, 200, 100, 0.08)',  // Very light green
+
+    // Chart line colors (solid for "Actual", light for "Feels Like" or secondary lines)
+    HOBBY_LINE: '#10b981',                          // Green (want more hobbies)
+    HOBBY_LINE_LIGHT: 'rgba(16, 185, 129, 0.25)',  // Light green for feels-like
+
+    WORK_LINE: '#ef4444',                           // Red (want less work)
+    WORK_LINE_LIGHT: 'rgba(239, 68, 68, 0.25)',    // Light red for feels-like
+
+    ALCOHOL_LINE: '#eab308',                        // Yellow for alcohol
+    ALCOHOL_LINE_LIGHT: 'rgba(234, 179, 8, 0.35)', // Light yellow for 15-day avg
+
+    MOOD_LINE: '#4a9eff',                           // Blue for mood
+    MOOD_LINE_LIGHT: 'rgba(74, 158, 255, 0.35)',   // Light blue for 7-day avg
+
+    SLEEP_LINE: '#8b5cf6',                          // Purple for sleep
+    SLEEP_LINE_LIGHT: 'rgba(139, 92, 246, 0.35)'   // Light purple for 7-day avg
+};
 
 // Chart instances
 let summaryChart = null;
@@ -221,7 +253,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 {
                     label: 'Hobbies Feels Like 7-Day',
                     data: hobbyFeelsLike,
-                    borderColor: '#10b981',  // Green
+                    borderColor: COLORS.HOBBY_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -232,7 +264,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 {
                     label: 'Work Feels Like 7-Day',
                     data: workFeelsLike,
-                    borderColor: '#ef4444',
+                    borderColor: COLORS.WORK_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -243,7 +275,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 {
                     label: 'Weekly Alcohol Rate',
                     data: alcoholWeekly,
-                    borderColor: '#eab308',
+                    borderColor: COLORS.ALCOHOL_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -254,7 +286,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 {
                     label: 'Mood 7-Day',
                     data: moodSevenDay,
-                    borderColor: '#4a9eff',  // Blue
+                    borderColor: COLORS.MOOD_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -355,10 +387,10 @@ function updateHobbyChart(data) {
 
             // Define zones: [minHours, maxHours, color]
             const zones = [
-                [0, 7, 'rgba(255, 100, 80, 0.15)'],      // Red-orange (0-7h)
-                [7, 14, 'rgba(255, 220, 100, 0.2)'],     // Yellow (7-14h)
-                [14, 21, 'rgba(100, 200, 100, 0.15)'],   // Light green (14-21h)
-                [21, 100, 'rgba(100, 200, 100, 0.25)']   // Green, bolder (21+h)
+                [0, 7, COLORS.ZONE_RED],      // Red (0-7h - too low)
+                [7, 14, COLORS.ZONE_YELLOW],  // Yellow (7-14h - low)
+                [14, 21, COLORS.ZONE_GREEN],  // Green (14-21h - good)
+                [21, 100, COLORS.ZONE_GREEN]  // Green (21+h - great)
             ];
 
             zones.forEach(([minHours, maxHours, color]) => {
@@ -382,7 +414,7 @@ function updateHobbyChart(data) {
                 {
                     label: 'Actual 7-Day',
                     data: rawData,
-                    borderColor: '#4a9eff',
+                    borderColor: COLORS.HOBBY_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -393,7 +425,7 @@ function updateHobbyChart(data) {
                 {
                     label: 'Feels Like 7-Day',
                     data: weightedData,
-                    borderColor: 'rgba(74, 158, 255, 0.25)',
+                    borderColor: COLORS.HOBBY_LINE_LIGHT,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -479,12 +511,12 @@ function updateWorkChart(data) {
             const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
 
             // Define zones: [minHours, maxHours, color]
-            // 0-14: light green, 14-21: very light green, 21-28: light yellow, 28+: red-orange
+            // 0-14: green (good), 14-21: light green (ok), 21-28: yellow (high), 28+: red (too high)
             const zones = [
-                [0, 14, 'rgba(100, 200, 100, 0.15)'],    // Light green (0-14h)
-                [14, 21, 'rgba(100, 200, 100, 0.08)'],   // Very light green (14-21h)
-                [21, 28, 'rgba(255, 220, 100, 0.2)'],    // Light yellow (21-28h)
-                [28, 100, 'rgba(255, 100, 80, 0.15)']    // Red-orange (28+h)
+                [0, 14, COLORS.ZONE_GREEN],        // Green (0-14h - good)
+                [14, 21, COLORS.ZONE_GREEN_LIGHT], // Light green (14-21h - okay)
+                [21, 28, COLORS.ZONE_YELLOW],      // Yellow (21-28h - getting high)
+                [28, 100, COLORS.ZONE_RED]         // Red (28+h - too high)
             ];
 
             zones.forEach(([minHours, maxHours, color]) => {
@@ -508,7 +540,7 @@ function updateWorkChart(data) {
                 {
                     label: 'Actual 7-Day',
                     data: rawData,
-                    borderColor: '#ef4444',
+                    borderColor: COLORS.WORK_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -519,7 +551,7 @@ function updateWorkChart(data) {
                 {
                     label: 'Feels Like 7-Day',
                     data: weightedData,
-                    borderColor: 'rgba(239, 68, 68, 0.25)',
+                    borderColor: COLORS.WORK_LINE_LIGHT,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -667,7 +699,7 @@ function updateAlcoholChart(data) {
                 {
                     label: 'Weekly Alcohol Rate',
                     data: alcSevenDaySum,
-                    borderColor: '#eab308',  // Yellow
+                    borderColor: COLORS.ALCOHOL_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -679,7 +711,7 @@ function updateAlcoholChart(data) {
                 {
                     label: 'Weekly Alcohol Rate 15-day',
                     data: alcFifteenDayAvg,
-                    borderColor: 'rgba(234, 179, 8, 0.35)',  // Lighter yellow
+                    borderColor: COLORS.ALCOHOL_LINE_LIGHT,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -691,7 +723,7 @@ function updateAlcoholChart(data) {
                 {
                     label: 'Mood Raw',
                     data: depRawTransformed,
-                    borderColor: '#4a9eff',  // Blue
+                    borderColor: COLORS.MOOD_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -704,7 +736,7 @@ function updateAlcoholChart(data) {
                 {
                     label: 'Mood 7-Day',
                     data: depSevenDayTransformed,
-                    borderColor: 'rgba(74, 158, 255, 0.35)',  // Lighter blue
+                    borderColor: COLORS.MOOD_LINE_LIGHT,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -796,7 +828,7 @@ function updateSleepChart(data) {
                 {
                     label: 'Raw',
                     data: sleepRaw,
-                    borderColor: '#8b5cf6',  // Purple
+                    borderColor: COLORS.SLEEP_LINE,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -808,7 +840,7 @@ function updateSleepChart(data) {
                 {
                     label: '7-Day Average',
                     data: sleepSevenDayAvg,
-                    borderColor: 'rgba(139, 92, 246, 0.35)',  // Lighter purple
+                    borderColor: COLORS.SLEEP_LINE_LIGHT,
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     tension: 0.3,
@@ -879,18 +911,18 @@ function updateSleepChart(data) {
 
 // Get color based on hobby zones
 function getHobbyColor(hours) {
-    if (hours < 7) return '#d97706';  // Orange (readable)
-    if (hours < 14) return '#ca8a04'; // Yellow-orange (readable)
-    if (hours < 21) return '#16a34a'; // Green
-    return '#15803d';                 // Dark green
+    if (hours < 7) return COLORS.RED;         // Red (too low - bad)
+    if (hours < 14) return COLORS.YELLOW;     // Yellow (low)
+    if (hours < 21) return COLORS.GREEN;      // Green (good range)
+    return COLORS.GREEN_DARK;                 // Dark green (high - great)
 }
 
 // Get color based on work zones
 function getWorkColor(hours) {
-    if (hours < 14) return '#16a34a';  // Green
-    if (hours < 21) return '#22c55e';  // Light green
-    if (hours < 28) return '#ca8a04';  // Yellow-orange (readable)
-    return '#d97706';                  // Orange
+    if (hours < 14) return COLORS.GREEN;        // Green (good - not too much)
+    if (hours < 21) return COLORS.GREEN_LIGHT;  // Light green (okay)
+    if (hours < 28) return COLORS.YELLOW;       // Yellow (getting high)
+    return COLORS.RED;                          // Red (too high - bad)
 }
 
 // Create mini pie chart
