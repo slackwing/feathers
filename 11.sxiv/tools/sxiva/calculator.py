@@ -1704,6 +1704,8 @@ class PointCalculator:
             "    [xmx]",
             "    [wea]",
             "    [meet]",
+            "    [abi]",
+            "    [save]",
         ]
 
     def process_attribute_line(self, line: str) -> tuple[str, Optional[str]]:
@@ -1844,6 +1846,40 @@ class PointCalculator:
                     return line, f"[meet] must be non-negative (got {minutes})"
 
                 return f"    [meet] {time_str} ✓", None
+
+            elif category == "abi":
+                # Floating point with 1 decimal place (can be negative, zero, or positive)
+                if len(values_parts) != 1:
+                    return line, "[abi] must have exactly one value"
+                value = float(values_parts[0])
+
+                # Format to 1 decimal place
+                value_str = f"{value:.1f}"
+                return f"    [abi] {value_str} ✓", None
+
+            elif category == "save":
+                # Dollar string like "$4500" or "-$1500" (no decimals, negatives allowed)
+                if len(values_parts) != 1:
+                    return line, "[save] must have exactly one value"
+
+                value_str = values_parts[0]
+
+                # Validate format: must be either $XXXX or -$XXXX (not $-XXXX)
+                if not re.match(r'^-?\$\d+$', value_str):
+                    return line, f"[save] invalid format: {value_str} (expected format: $4500 or -$1500)"
+
+                # Parse negative dollar amounts: -$1500 or positive: $4500
+                is_negative = value_str.startswith('-')
+                amount_str = value_str[2:] if is_negative else value_str[1:]  # Skip -$ or $
+
+                try:
+                    amount = int(amount_str)
+                    value = -amount if is_negative else amount
+                except ValueError:
+                    return line, f"[save] invalid format: {value_str}"
+
+                return f"    [save] {value_str} ✓", None
+
             else:
                 return line, f"Unknown attribute category: [{category}]"
 
@@ -1863,7 +1899,7 @@ class PointCalculator:
                    num_lines_consumed: How many lines from start_idx were consumed
                    errors: List of error messages
         """
-        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea", "meet"]
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea", "meet", "abi", "save"]
 
         if start_idx == -1:
             # No attributes section - generate template

@@ -784,6 +784,16 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
    - Represents total meeting time for the day
    - Value must be non-negative
 
+11. **[abi]** (ability): floating point with 1 decimal place
+   - Can be negative, zero, or positive
+   - Examples: `[abi] -1.5`, `[abi] 0.0`, `[abi] 2.3`
+   - Value can be null (left blank)
+
+12. **[save]** (savings): dollar amount as string
+   - Format: `$XXXX` or `-$XXXX` (no decimals, negatives allowed)
+   - Examples: `[save] $4500`, `[save] $0`, `[save] -$1500`, `[save] $12000`
+   - Value can be null (left blank)
+
 **Processing Rules:**
 
 - **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above

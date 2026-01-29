@@ -65,15 +65,21 @@ See [DASHBOARD_PLAN.md](../DASHBOARD_PLAN.md) for full project plan.
 dashboard/
 ├── README.md              # This file
 ├── docker/                # Docker infrastructure
-│   ├── docker compose.yml
+│   ├── docker-compose.yml
 │   ├── .env.example
 │   ├── init-scripts/      # Database initialization
 │   ├── liquibase/         # Schema migrations
 │   └── test-db.sh         # Test script
-├── server/                # Backend API (Phase 3)
-├── static/                # Frontend files (Phase 4)
-└── deploy/                # Deployment scripts (Phase 5)
+├── server/                # Backend API (Flask app.py)
+└── deploy/                # Deployment scripts
 ```
+
+**Frontend Location:**
+The dashboard frontend is located at:
+`~/src/feathers/foundry/website/html/status/`
+- `index.html` - Dashboard structure
+- `css/style.css` - Styles
+- `js/app.js` - Charts and data fetching logic
 
 ## Current Database Schema
 

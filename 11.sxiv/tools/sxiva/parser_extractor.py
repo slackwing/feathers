@@ -45,6 +45,8 @@ class SxivaDataExtractor:
         - xmx: int | None
         - wea: float | None
         - meet: int | None
+        - abi: float | None
+        - save: int | None
         """
         try:
             with open(file_path, 'r') as f:
@@ -153,7 +155,9 @@ class SxivaDataExtractor:
             'alc': None,
             'xmx': None,
             'wea': None,
-            'meet': None
+            'meet': None,
+            'abi': None,
+            'save': None
         }
 
         # Find {attributes} section in content
@@ -201,6 +205,20 @@ class SxivaDataExtractor:
             minutes = self._parse_meeting_time(time_str)
             if minutes is not None:
                 attributes['meet'] = minutes
+
+        # Parse [abi] - floating point with 1 decimal place (can be negative)
+        abi_match = re.search(r'\[abi\]\s+([-\d.]+)', attr_section)
+        if abi_match:
+            attributes['abi'] = float(abi_match.group(1))
+
+        # Parse [save] - dollar string like "$4500" or "-$1500"
+        save_match = re.search(r'\[save\]\s+(-?\$\d+)', attr_section)
+        if save_match:
+            value_str = save_match.group(1)
+            is_negative = value_str.startswith('-')
+            amount_str = value_str[2:] if is_negative else value_str[1:]  # Skip -$ or $
+            amount = int(amount_str)
+            attributes['save'] = -amount if is_negative else amount
 
         return attributes
 
