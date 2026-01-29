@@ -11,5 +11,6 @@
     <include file="002-daily-summary-schema.xml"/>
     <include file="003-add-meet-column.xml"/>
     <include file="004-drop-daily-stats.xml"/>
+    <include file="005-change-exe-to-decimal.xml"/>
 
 </databaseChangeLog>

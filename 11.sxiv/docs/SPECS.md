@@ -744,21 +744,25 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
    - Hours: floating point (actual sleep duration)
    - Tilde: optional marker
 
-2. **[dist]** (distraction level): 0-3 inclusive
+2. **[dist]** (distraction level): 0-3 inclusive (supports floating point)
    - 0 = no distractions, deep focus
    - 3 = highly distracted
+   - Examples: `[dist] 0`, `[dist] 1.5`, `[dist] 2`
 
-3. **[soc]** (social interaction): 0-3 inclusive
+3. **[soc]** (social interaction): 0-3 inclusive (supports floating point)
    - 0 = no social interactions
    - 3 = high social engagement
+   - Examples: `[soc] 0`, `[soc] 1.5`, `[soc] 2`
 
-4. **[out]** (outside time): 0-3 inclusive
+4. **[out]** (outside time): 0-3 inclusive (supports floating point)
    - 0 = stayed indoors all day
    - 3 = spent significant time outside
+   - Examples: `[out] 0`, `[out] 1.5`, `[out] 3`
 
-5. **[exe]** (exercise): 0-3 inclusive
+5. **[exe]** (exercise): 0-3 inclusive (supports floating point)
    - 0 = no exercise
    - 3 = intense exercise
+   - Examples: `[exe] 0`, `[exe] 1.5`, `[exe] 2.5`
 
 6. **[dep]** (dependency/mood tracking): floating point values (can be negative)
    - Multiple values allowed (e.g., `[dep] -0.5 1 1.5 -2`)

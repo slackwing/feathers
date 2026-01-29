@@ -1747,14 +1747,20 @@ class PointCalculator:
                 return f"    [{category}] {value_str} ✓", None
 
             elif category in ["dist", "soc", "out", "exe"]:
-                # 0-3 inclusive
+                # 0-3 inclusive (supports floating point)
                 if len(values_parts) != 1:
                     return line, f"[{category}] must have exactly one value"
-                value = int(values_parts[0])
+                value = float(values_parts[0])
                 if value < 0 or value > 3:
                     return line, f"[{category}] must be between 0 and 3 inclusive"
 
-                return f"    [{category}] {value} ✓", None
+                # Format as integer if it's a whole number, otherwise as float
+                if value == int(value):
+                    value_str = str(int(value))
+                else:
+                    value_str = values_parts[0]
+
+                return f"    [{category}] {value_str} ✓", None
 
             elif category == "xmx":
                 # Non-negative integer
