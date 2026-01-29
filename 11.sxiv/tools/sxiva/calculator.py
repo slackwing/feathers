@@ -539,7 +539,7 @@ class PointCalculator:
                     final_work_minutes = work_minutes
 
         # If we don't have a final end time, we can't calculate points
-        if final_end_time is None or final_work_minutes is None:
+        if not final_end_time or final_work_minutes is None:
             # Return a placeholder - this continuation chain is incomplete
             return (BlockPoints(0, 0, 0, 0, "0"), None)
 
