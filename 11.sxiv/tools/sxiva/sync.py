@@ -23,7 +23,7 @@ from tools.sxiva.parser_extractor import SxivaDataExtractor
 
 
 # Configuration
-API_BASE_URL = os.getenv('SXIVA_API_URL', 'https://andrewcheong.com/status/api')
+API_BASE_URL = os.getenv('SXIVA_API_URL', 'https://andrewcheong.com/status')
 API_TOKEN = os.getenv('SXIVA_API_TOKEN', '70e76d8aa02a319a510b8c239e1e7cbe86dbc3c35fec7bf270564757af0c6a90')
 DATA_DIR = Path.home() / 'src/minutes/data'
 

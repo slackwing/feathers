@@ -150,7 +150,9 @@ def sync_daily():
             'alc': data.get('alc'),
             'xmx': data.get('xmx'),
             'wea': data.get('wea'),
-            'meet': data.get('meet')
+            'meet': data.get('meet'),
+            'abi': data.get('abi'),
+            'save': data.get('save')
         })
 
         # Update sync metadata with current timestamp
