@@ -44,7 +44,7 @@ def check_auth():
 
     return parts[1] == API_TOKEN
 
-@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint (no auth required)"""
     try:
@@ -211,7 +211,7 @@ def last_sync():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/category-rolling-sum', methods=['GET'])
+@app.route('/api/category-rolling-sum', methods=['GET'])
 def category_rolling_sum():
     """
     Get rolling sum of category minutes with exponential weighting for multiple groups.
@@ -290,7 +290,7 @@ def category_rolling_sum():
                             FROM jsonb_each_text(category_minutes)
                         ),
                         0
-                    ) AS total_minutes
+                    ) + COALESCE(meet, 0) AS total_minutes
                 FROM daily_summary
                 ORDER BY date
             ),
@@ -429,7 +429,7 @@ def category_rolling_sum():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/alcohol-depression', methods=['GET'])
+@app.route('/api/alcohol-depression', methods=['GET'])
 def alcohol_depression():
     """
     Get 7-day and 15-day rolling sum for alcohol, and raw/7-day average for depression.
@@ -523,7 +523,7 @@ def alcohol_depression():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/sleep-score', methods=['GET'])
+@app.route('/api/sleep-score', methods=['GET'])
 def sleep_score():
     """
     Get raw (1-day) and 7-day average of sleep score.
