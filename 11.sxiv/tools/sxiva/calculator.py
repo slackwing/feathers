@@ -2456,6 +2456,21 @@ class PointCalculator:
                     consumed_lines.add(i)
                 continue
 
+            elif node.type == 'attributes_section':
+                # Capture attributes section for later processing
+                # This ensures attributes are preserved even when there are syntax errors elsewhere
+                in_timesheet_section = False
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                # Capture all lines in the attributes section from the source
+                for line_num in range(start_line, end_line + 1):
+                    if line_num < len(lines):
+                        captured_attributes_lines.append(lines[line_num])
+                        consumed_lines.add(line_num)
+
+                continue
+
             elif node.type == 'date_header':
                 # Standalone date header (shouldn't happen with new grammar, but keep for safety)
                 # Skip it if we're going to add a date header (avoid duplication)
@@ -2565,6 +2580,21 @@ class PointCalculator:
                         # Add all remaining lines (after error line) without modification
                         # BUT filter out old {summary} and {attributes} sections (will be regenerated at EOF)
                         remaining = lines[line_idx + 1:]
+
+                        # IMPORTANT: Capture attributes BEFORE filtering them out
+                        # This ensures attributes are preserved even when there are syntax errors
+                        if not captured_attributes_lines:
+                            in_attr_capture = False
+                            for rem_line in remaining:
+                                stripped = rem_line.strip()
+                                if stripped == '{attributes}':
+                                    in_attr_capture = True
+                                    captured_attributes_lines.append(rem_line)
+                                elif in_attr_capture:
+                                    if not stripped or not rem_line.startswith((' ', '\t')):
+                                        break  # End of attributes section
+                                    captured_attributes_lines.append(rem_line)
+
                         filtered_remaining = self._filter_summary_sections(remaining)
                         filtered_remaining = self._filter_attributes_sections(filtered_remaining)
                         fixed_lines.extend(filtered_remaining)
