@@ -1,6 +1,6 @@
 // Configuration
 const API_BASE_URL = '/status/api';
-const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs'];
+const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk'];
 const WORK_CATEGORIES = ['sp'];
 const CHART_DAYS_LIMIT = 31; // Request 31 days to ensure we have 30 after excluding today
 const ROLLING_WINDOW_DAYS = 7;
