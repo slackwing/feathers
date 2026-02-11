@@ -38,6 +38,27 @@ const COLORS = {
     SLEEP_LINE_LIGHT: 'rgba(139, 92, 246, 0.35)'   // Light purple for 7-day avg
 };
 
+// Unified chart scale configuration
+// This ensures summary chart and individual charts use the same y-axis scaling
+const CHART_SCALES = {
+    hours: {
+        min: 0,
+        max: 35 * 60  // 35 hours in minutes
+    },
+    alcohol: {
+        min: 0,
+        max: null  // Auto-scale based on data (will be set dynamically)
+    },
+    mood: {
+        min: -2,
+        max: 2
+    },
+    sleep: {
+        min: 0,
+        max: 100
+    }
+};
+
 // Chart instances
 let summaryChart = null;
 let hobbyChart = null;
@@ -200,6 +221,11 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
     // Alcohol: weekly rate (already reasonable scale)
     const alcoholWeekly = alcoholDisplay.map(d => d.alc_7day_sum);
 
+    // Calculate max alcohol value for dynamic scaling (match individual chart behavior)
+    const maxAlcValue = Math.max(...alcoholWeekly);
+    // Round up to nearest 10 for cleaner scale
+    const alcoholMaxScale = Math.ceil(maxAlcValue / 10) * 10;
+
     // Mood: transform with logarithmic compression, then scale from [-2,2] to visible range
     const moodSevenDay = alcoholDisplay.map(d => transformMood(d.dep_7day_avg));
 
@@ -338,26 +364,26 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 yHours: {
                     display: false,  // Hide axis
                     position: 'left',
-                    min: 0,
-                    max: 28
+                    min: CHART_SCALES.hours.min / 60,  // Convert to hours for summary chart
+                    max: CHART_SCALES.hours.max / 60   // Convert to hours for summary chart
                 },
                 yAlcohol: {
                     display: false,
                     position: 'left',
                     min: 0,
-                    max: 50
+                    max: alcoholMaxScale  // Dynamic max based on data
                 },
                 yMood: {
                     display: false,
                     position: 'left',
-                    min: -2,
-                    max: 2
+                    min: CHART_SCALES.mood.min,
+                    max: CHART_SCALES.mood.max
                 },
                 ySleep: {
                     display: false,
                     position: 'left',
-                    min: 0,
-                    max: 100
+                    min: CHART_SCALES.sleep.min,
+                    max: CHART_SCALES.sleep.max
                 }
             }
         },
@@ -470,8 +496,8 @@ function updateHobbyChart(data) {
                     }
                 },
                 y: {
-                    min: 0,
-                    max: 1680,  // 28 hours in minutes
+                    min: CHART_SCALES.hours.min,
+                    max: CHART_SCALES.hours.max,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
@@ -596,7 +622,8 @@ function updateWorkChart(data) {
                     }
                 },
                 y: {
-                    beginAtZero: true,
+                    min: CHART_SCALES.hours.min,
+                    max: CHART_SCALES.hours.max,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
@@ -643,6 +670,8 @@ function updateAlcoholChart(data) {
     // Shift depression from [-2, 2] to [0, max_alc] range for alignment
     // Find max alcohol value to scale depression to
     const maxAlc = Math.max(...alcSevenDaySum, ...alcFifteenDayAvg);
+    // Round up to nearest 10 for cleaner scale (match summary chart)
+    const alcoholMaxScale = Math.ceil(maxAlc / 10) * 10;
     const depRaw = displayData.map(d => {
         // Shift -2 to 0, 2 to maxAlc: (dep + 2) / 4 * maxAlc
         return ((d.dep_raw + 2) / 4) * maxAlc;
@@ -783,7 +812,8 @@ function updateAlcoholChart(data) {
                     }
                 },
                 y: {
-                    beginAtZero: true,
+                    min: 0,
+                    max: alcoholMaxScale,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
@@ -886,8 +916,8 @@ function updateSleepChart(data) {
                     }
                 },
                 y: {
-                    min: 0,
-                    max: 100,
+                    min: CHART_SCALES.sleep.min,
+                    max: CHART_SCALES.sleep.max,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
