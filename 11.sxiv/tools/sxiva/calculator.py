@@ -539,6 +539,25 @@ class PointCalculator:
                     # This is the final block
                     final_end_time = end_time
                     final_work_minutes = work_minutes
+            else:
+                # No blick_list: pure continuation (e.g., "09:12 + +")
+                # This block has 0 work minutes and simply passes through to the next block
+                work_minutes = 0
+
+                # If this is not the final block (no end time), imagined end is just the start time
+                if end_time is None:
+                    # For pure continuation, imagined end = previous imagined end (no work done)
+                    # Keep prev_imagined_end unchanged
+                    if prev_imagined_end is None:
+                        # First block in chain with no blicks - use previous block's end or start time
+                        if state.previous_end_time:
+                            prev_imagined_end = state.previous_end_time
+                        else:
+                            prev_imagined_end = start_time
+                else:
+                    # This is the final block with no blicks
+                    final_end_time = end_time
+                    final_work_minutes = work_minutes
 
         # If we don't have a final end time, we can't calculate points
         if not final_end_time or final_work_minutes is None:

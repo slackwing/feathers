@@ -265,17 +265,32 @@ module.exports = grammar({
       /\n/
     ),
 
-    // Continuation block: [x]HH:MM + blick_list terminator
-    continuation_block: $ => seq(
-      field('shortened', optional('x')),
-      field('start_time', $.time),
-      optional(/\s+/),
-      '+',
-      optional(/\s+/),
-      field('blicks', $.blick_list),
-      optional(/\s+/),
-      field('terminator', $.terminator),
-      /\n/
+    // Continuation block: [x]HH:MM + [blick_list] terminator
+    // blick_list is now optional - allows pure continuation like "09:12 + +"
+    // Use choice to handle two cases: with blicks or without blicks
+    continuation_block: $ => choice(
+      // With blick_list
+      seq(
+        field('shortened', optional('x')),
+        field('start_time', $.time),
+        optional(/\s+/),
+        '+',
+        optional(/\s+/),
+        field('blicks', $.blick_list),
+        optional(/\s+/),
+        field('terminator', $.terminator),
+        /\n/
+      ),
+      // Without blick_list (pure continuation)
+      seq(
+        field('shortened', optional('x')),
+        field('start_time', $.time),
+        optional(/\s+/),
+        '+',
+        optional(/\s+/),
+        field('terminator', $.terminator),
+        /\n/
+      )
     ),
 
     // Time: HH:MM
@@ -320,11 +335,11 @@ module.exports = grammar({
     category: $ => seq('[', /[^\[\]]+/, ']'),
 
     // Subject: words with spaces, can include some punctuation including commas, dashes, apostrophes, periods
-    // But NOT brackets (reserved for categories/minutes)
+    // But NOT brackets (reserved for categories/minutes) or + (reserved for continuation marker)
     // Pattern: start with word chars, then allow spaces/commas/dashes/single-periods followed by more word chars
     // Key: comma, dash, or ellipsis (...) must be followed (possibly after space) by more text
     // Single period OK (for "v2.0"), but not ellipsis which is reserved as separator
-    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+(\.[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+|\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+)*)*/,
+    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>]+(\.[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>]+|\s+[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+)*)*/,
 
     // Minutes: [3], [6], [10], or [13]
     minutes: $ => choice(

@@ -181,7 +181,7 @@
     "fields": {
       "blicks": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "blick_list",
