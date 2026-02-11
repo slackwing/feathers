@@ -41,8 +41,12 @@ const COLORS = {
 // Unified chart scale configuration
 // This ensures summary chart and individual charts use the same y-axis scaling
 const CHART_SCALES = {
-    hours: {
+    hobby: {
         min: 0,
+        max: 35 * 60  // 35 hours in minutes
+    },
+    work: {
+        min: 7 * 60,  // 7 hours in minutes
         max: 35 * 60  // 35 hours in minutes
     },
     alcohol: {
@@ -364,8 +368,8 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 yHours: {
                     display: false,  // Hide axis
                     position: 'left',
-                    min: CHART_SCALES.hours.min / 60,  // Convert to hours for summary chart
-                    max: CHART_SCALES.hours.max / 60   // Convert to hours for summary chart
+                    min: CHART_SCALES.hobby.min / 60,  // Convert to hours for summary chart (hobbies start at 0)
+                    max: CHART_SCALES.hobby.max / 60   // Convert to hours for summary chart
                 },
                 yAlcohol: {
                     display: false,
@@ -496,8 +500,8 @@ function updateHobbyChart(data) {
                     }
                 },
                 y: {
-                    min: CHART_SCALES.hours.min,
-                    max: CHART_SCALES.hours.max,
+                    min: CHART_SCALES.hobby.min,
+                    max: CHART_SCALES.hobby.max,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
@@ -537,12 +541,14 @@ function updateWorkChart(data) {
             const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
 
             // Define zones: [minHours, maxHours, color]
-            // 0-14: green (good), 14-21: light green (ok), 21-28: yellow (high), 28+: red (too high)
+            // Start zones from chart min (7h), not 0
+            // 7-14: green (good), 14-21: light green (ok), 21-28: yellow (high), 28+: red (too high)
+            const chartMinHours = CHART_SCALES.work.min / 60;
             const zones = [
-                [0, 14, COLORS.ZONE_GREEN],        // Green (0-14h - good)
-                [14, 21, COLORS.ZONE_GREEN_LIGHT], // Light green (14-21h - okay)
-                [21, 28, COLORS.ZONE_YELLOW],      // Yellow (21-28h - getting high)
-                [28, 100, COLORS.ZONE_RED]         // Red (28+h - too high)
+                [chartMinHours, 14, COLORS.ZONE_GREEN],  // Green (7-14h - good)
+                [14, 21, COLORS.ZONE_GREEN_LIGHT],       // Light green (14-21h - okay)
+                [21, 28, COLORS.ZONE_YELLOW],            // Yellow (21-28h - getting high)
+                [28, 100, COLORS.ZONE_RED]               // Red (28+h - too high)
             ];
 
             zones.forEach(([minHours, maxHours, color]) => {
@@ -622,8 +628,8 @@ function updateWorkChart(data) {
                     }
                 },
                 y: {
-                    min: CHART_SCALES.hours.min,
-                    max: CHART_SCALES.hours.max,
+                    min: CHART_SCALES.work.min,
+                    max: CHART_SCALES.work.max,
                     grid: {
                         color: '#e5e7eb',
                         drawBorder: false
