@@ -89,6 +89,15 @@ function getResponsiveChartOptions() {
     };
 }
 
+// Get today's date in local timezone (YYYY-MM-DD format)
+function getTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Extra-exaggerated mood transformation: 0 to 0.5 takes same space as 0.5 to 2.0
 function transformMood(mood) {
     if (mood === null) return null;
@@ -146,7 +155,7 @@ async function fetchData() {
     const data = await response.json();
 
     // Filter out today's data (always exclude current day since it's in flux)
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     data.data = data.data.filter(d => d.date !== today);
 
     return data;
@@ -167,7 +176,7 @@ async function fetchAlcoholDepressionData() {
     const data = await response.json();
 
     // Filter out today's data (always exclude current day since it's in flux)
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     data.data = data.data.filter(d => d.date !== today);
 
     return data;
@@ -188,7 +197,7 @@ async function fetchSleepData() {
     const data = await response.json();
 
     // Filter out today's data (always exclude current day since it's in flux)
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     data.data = data.data.filter(d => d.date !== today);
 
     return data;
