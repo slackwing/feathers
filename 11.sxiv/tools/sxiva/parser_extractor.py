@@ -15,6 +15,7 @@ from tree_sitter import Language, Parser
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from tools.sxiva.parser import SxivaParser
+from tools.sxiva.time_parser import parse_duration
 
 
 class SxivaDataExtractor:
@@ -226,10 +227,15 @@ class SxivaDataExtractor:
         """Parse meeting time format into minutes.
 
         Supported formats:
-        - 75m (minutes only)
+        - 5m (minutes only)
         - 1h (hours only)
-        - 1h20m (hours and minutes)
-        - 2:05 (H:MM format)
+        - 1h34m (hours and minutes)
+        - 1:34 (H:MM format)
+        - 01:34 (HH:MM format)
+        - 75m (minutes)
+        - 1.75h (decimal hours, rounded to nearest minute)
+        - 0.5h (decimal hours)
+        - 0.25h (decimal hours)
 
         Args:
             time_str: Time string to parse
@@ -237,37 +243,7 @@ class SxivaDataExtractor:
         Returns:
             int: Total minutes, or None if invalid format
         """
-        time_str = time_str.strip()
-
-        # Format: H:MM or HH:MM (e.g., "2:05")
-        if ':' in time_str:
-            match = re.match(r'^(\d+):(\d{2})$', time_str)
-            if match:
-                hours = int(match.group(1))
-                minutes = int(match.group(2))
-                return hours * 60 + minutes
-            return None
-
-        # Format: XhYm (e.g., "1h20m")
-        match = re.match(r'^(\d+)h(\d+)m$', time_str)
-        if match:
-            hours = int(match.group(1))
-            minutes = int(match.group(2))
-            return hours * 60 + minutes
-
-        # Format: Xh (e.g., "1h", "2h")
-        match = re.match(r'^(\d+)h$', time_str)
-        if match:
-            hours = int(match.group(1))
-            return hours * 60
-
-        # Format: Xm (e.g., "75m", "7m")
-        match = re.match(r'^(\d+)m$', time_str)
-        if match:
-            minutes = int(match.group(1))
-            return minutes
-
-        return None
+        return parse_duration(time_str)
 
     def _find_node_by_type(self, node, node_type: str):
         """Recursively find first node of given type"""

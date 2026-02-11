@@ -6,6 +6,8 @@ from typing import List, Optional, Set, Tuple
 from datetime import datetime
 from pathlib import Path
 
+from .time_parser import parse_duration, parse_time_to_minutes_since_midnight, format_duration
+
 
 @dataclass
 class CalculationState:
@@ -1479,10 +1481,11 @@ class PointCalculator:
         return f"{hours:02d}:{minutes:02d}"
 
     def parse_freeform_time(self, text: str) -> int:
-        """Parse time ranges and explicit minutes from freeform text.
+        """Parse time ranges and explicit durations from freeform text.
 
         Args:
-            text: Freeform text containing time ranges (HH:MM-HH:MM) and/or explicit minutes (6m, 1h, 1h30m)
+            text: Freeform text containing time ranges (HH:MM-HH:MM) and/or
+                  explicit durations (5m, 1h, 1h34m, 1:34, 1.75h, 0.5h, etc.)
 
         Returns:
             Total minutes from all matched patterns
@@ -1500,13 +1503,22 @@ class PointCalculator:
             if duration > 0:  # Only count positive durations
                 total_minutes += duration
 
-        # Match explicit minutes: (\d+h)?\d+m (e.g., 6m, 1h, 1h30m, 2h15m)
-        explicit_pattern = r'(?:(\d+)h)?(\d+)m'
-        for match in re.finditer(explicit_pattern, text):
-            hours_str, minutes_str = match.groups()
-            hours = int(hours_str) if hours_str else 0
-            minutes = int(minutes_str) if minutes_str else 0
-            total_minutes += hours * 60 + minutes
+        # Match explicit durations using unified parser
+        # Pattern covers: Xm, Xh, XhYm, X.Yh, H:MM (but not HH:MM-HH:MM ranges already matched)
+        # Order matters - check more specific patterns first to avoid double-counting
+        duration_patterns = [
+            r'\b(\d+h\d+m)\b',                         # Hours and minutes: 1h34m (most specific, check first)
+            r'\b(\d+(?:\.\d+)?h)(?!\d)',               # Decimal/whole hours: 1.75h, 0.5h, 1h (but not if followed by digit like in 1h34m)
+            r'(?<![:\d-])(\d{1,2}:\d{2})(?![-:])',    # H:MM not part of a range (no dash before or after, no : after)
+            r'\b(\d+m)\b',                             # Minutes only: 5m, 75m
+        ]
+
+        for pattern in duration_patterns:
+            for match in re.finditer(pattern, text):
+                duration_str = match.group(1)
+                parsed = parse_duration(duration_str)
+                if parsed is not None:
+                    total_minutes += parsed
 
         return total_minutes
 
@@ -1643,10 +1655,15 @@ class PointCalculator:
         """Parse meeting time format into minutes.
 
         Supported formats:
-        - 75m (minutes only)
+        - 5m (minutes only)
         - 1h (hours only)
-        - 1h20m (hours and minutes)
-        - 2:05 (H:MM format)
+        - 1h34m (hours and minutes)
+        - 1:34 (H:MM format)
+        - 01:34 (HH:MM format)
+        - 75m (minutes)
+        - 1.75h (decimal hours, rounded to nearest minute)
+        - 0.5h (decimal hours)
+        - 0.25h (decimal hours)
 
         Args:
             time_str: Time string to parse
@@ -1654,37 +1671,7 @@ class PointCalculator:
         Returns:
             int: Total minutes, or None if invalid format
         """
-        time_str = time_str.strip()
-
-        # Format: H:MM or HH:MM (e.g., "2:05")
-        if ':' in time_str:
-            match = re.match(r'^(\d+):(\d{2})$', time_str)
-            if match:
-                hours = int(match.group(1))
-                minutes = int(match.group(2))
-                return hours * 60 + minutes
-            return None
-
-        # Format: XhYm (e.g., "1h20m")
-        match = re.match(r'^(\d+)h(\d+)m$', time_str)
-        if match:
-            hours = int(match.group(1))
-            minutes = int(match.group(2))
-            return hours * 60 + minutes
-
-        # Format: Xh (e.g., "1h", "2h")
-        match = re.match(r'^(\d+)h$', time_str)
-        if match:
-            hours = int(match.group(1))
-            return hours * 60
-
-        # Format: Xm (e.g., "75m", "7m")
-        match = re.match(r'^(\d+)m$', time_str)
-        if match:
-            minutes = int(match.group(1))
-            return minutes
-
-        return None
+        return parse_duration(time_str)
 
     def generate_attributes_template(self) -> list:
         """Generate default attributes section template.
