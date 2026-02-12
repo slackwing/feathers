@@ -43,7 +43,7 @@ const COLORS = {
 const CHART_SCALES = {
     hobby: {
         min: 0,
-        max: 35 * 60  // 35 hours in minutes
+        max: 28 * 60  // 28 hours in minutes
     },
     work: {
         min: 7 * 60,  // 7 hours in minutes
@@ -250,26 +250,6 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
         summaryChart.destroy();
     }
 
-    // Plugin to draw horizontal line at mood y=0
-    const moodZeroLinePlugin = {
-        id: 'moodZeroLine',
-        beforeDraw: (chart) => {
-            const { ctx, chartArea: { left, right }, scales: { yMood } } = chart;
-            if (yMood) {
-                const y = yMood.getPixelForValue(0);
-                ctx.save();
-                ctx.strokeStyle = '#999';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(left, y);
-                ctx.lineTo(right, y);
-                ctx.stroke();
-                ctx.restore();
-            }
-        }
-    };
-
     // Plugin to draw border around chart area
     const chartBorderPlugin = {
         id: 'chartBorder',
@@ -366,7 +346,6 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 tooltip: {
                     enabled: false
                 },
-                moodZeroLine: {},
                 chartBorder: {}
             },
             scales: {
@@ -400,7 +379,7 @@ function updateSummaryChart(hobbyData, workData, alcoholData, sleepData) {
                 }
             }
         },
-        plugins: [moodZeroLinePlugin, chartBorderPlugin]
+        plugins: [chartBorderPlugin]
     });
 }
 
