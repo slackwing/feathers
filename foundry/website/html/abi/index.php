@@ -1,0 +1,524 @@
+<!doctype html>
+<?php
+
+define("WP_USE_THEMES", false);
+require "/var/www/volatile/wpabi/wp-load.php";
+
+$pages = get_pages();
+
+$page_data = [];
+
+foreach ($pages as $page) {
+  $page_data[] = [
+    "id" => $page->ID,
+    "title" => $page->post_title,
+    "content" => $page->post_content,
+    "slug" => $page->post_name,
+    "url" => get_permalink($page->ID),
+    "date" => substr(get_post_field("post_date", $page->ID), 0, 10),
+    "featured_image_url" => wp_get_attachment_url(get_post_thumbnail_id($page->ID), "thumbnail"),
+    "gallery_caption" => get_post_meta($page->ID, "gallery_caption", true),
+    "lightbox" => get_post_meta($page->ID, "lightbox", true),
+    "override_date" => get_post_meta($page->ID, "override_date", true),
+    "spotlight" => get_post_meta($page->ID, "spotlight", true),
+  ];
+}
+
+function compare_pages($a, $b)
+{
+  if ($a["spotlight"] != $b["spotlight"]) {
+    return $a["spotlight"] > $b["spotlight"] ? -1 : 1;
+  }
+  $date_a = !empty($a["override_date"]) ? $a["override_date"] : $a["date"];
+  $date_b = !empty($b["override_date"]) ? $b["override_date"] : $b["date"];
+  if ($date_a == $date_b) {
+    return 0;
+  }
+  return $date_a > $date_b ? -1 : 1;
+}
+
+usort($page_data, "compare_pages");
+
+$to_console = [];
+
+// Function to enqueue styles and scripts
+function load_custom_styles()
+{
+  // Enqueue the main stylesheet
+  wp_enqueue_style("style", get_stylesheet_uri());
+
+  // Enqueue editor styles
+  add_editor_style(); // This will enqueue the editor styles
+}
+?>
+
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+    rel="stylesheet" />
+  <style>
+    body {
+      font-family: Roboto;
+      font-size: 18px;
+      font-weight: 400;
+      color: #333;
+      margin: 0px;
+      /* Override user agent stylesheet. */
+    }
+
+    #gallery-container {
+      margin-top: 150px;
+      transition: margin 1000ms ease;
+      /* TODO */
+      display: flex;
+    }
+
+    #gallery-container.below {
+      width: 100%;
+      max-width: 1920px;
+      margin: 0px auto;
+    }
+
+    #gallery {
+      width: auto;
+      flex-grow: 1;
+    }
+
+    #gallery-padding {
+      width: 15px;
+      /* Equal to space between grid items. */
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      width: auto;
+    }
+
+    .grid-item {
+      width: 385px;
+      /* Guides below @media calculations. */
+      padding-left: 15px;
+      margin-bottom: 15px;
+      /* TODO(ABI,P0): Try 25px. */
+      box-sizing: border-box;
+    }
+
+    .grid-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* The guide below is keeping the product near 385 pixels. */
+
+    @media (max-width: 3850px) {
+      .grid-item {
+        width: 10%;
+      }
+    }
+
+    @media (max-width: 3500px) {
+      .grid-item {
+        width: 11.11%;
+      }
+    }
+
+    @media (max-width: 3080px) {
+      .grid-item {
+        width: 12.5%;
+      }
+    }
+
+    @media (max-width: 2700px) {
+      .grid-item {
+        width: 14.28%;
+      }
+    }
+
+    @media (max-width: 2300px) {
+      .grid-item {
+        width: 16.66%;
+      }
+    }
+
+    @media (max-width: 1950px) {
+      .grid-item {
+        width: 20%;
+      }
+    }
+
+    @media (max-width: 1550px) {
+      .grid-item {
+        width: 25%;
+      }
+    }
+
+    @media (max-width: 1150px) {
+      .grid-item {
+        width: 33.33%;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .grid-item {
+        width: 50%;
+      }
+    }
+
+    /* TODO */
+    @media (max-width: 500px) {
+      .grid-item {
+        width: 100%;
+      }
+    }
+
+    .header {
+      /* TODO(ABI,P1): I just hacked a similar font situation for now. What should we do? */
+      font-family: Roboto;
+      color: #333;
+      z-index: 1000;
+    }
+
+    #title {
+      position: fixed;
+      /* TODO(ABI,P0): What to do when over dark image? */
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      /* TODO(ABI,P1): I just hacked a similar font situation for now. What should we do? */
+      font-size: 40px;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    #left-header {
+      position: fixed;
+      top: 30px;
+      left: 15px;
+      font-size: 20px;
+      font-weight: 400;
+    }
+
+    #right-header {
+      position: fixed;
+      top: 30px;
+      right: 15px;
+      font-size: 20px;
+      font-weight: 400;
+    }
+
+    #content {
+      width: auto;
+      max-width: 1920px;
+      margin: 150px auto;
+      padding: 0px 15px;
+    }
+
+    .hidden {
+      display: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .visible {
+      display: block;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .visible.fade-in {
+      opacity: 1;
+    }
+
+    .grid-item img {
+      position: relative;
+      background: white;
+      border-radius: 8px;
+      z-index: 5;
+      transform: scale(1) translateY(0%);
+      transition: all 150ms linear;
+      /* TODO(ABI,P2): Speed of animation. */
+    }
+
+    .grid-item img:hover {
+      border-radius: 32px;
+      transform: scale(0.9) translateY(-5%);
+      transition: all 150ms linear;
+    }
+
+    .grid-item img::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .grid-item span.caption {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      vertical-align: bottom;
+      text-align: center;
+      opacity: 0;
+      z-index: -10;
+      /* TODO */
+      transition: all 0.5s ease;
+    }
+
+    .grid-item img:hover+span.caption {
+      opacity: 1;
+    }
+
+    #content h1 {
+      display: none;
+    }
+
+    /* Lightbox */
+
+    /* .grid-item img.open-as-lightbox {
+        transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+      } */
+
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
+      z-index: 1000;
+    }
+
+    .lightbox.active {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .lightbox-img {
+      max-width: 80%;
+      /* TODO(ABI,P3) */
+      max-height: 80%;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header" id="title">abigoh</div>
+  <div class="header" id="left-header">Information</div>
+  <div class="header" id="right-header">Instagram</div>
+
+  <div id="content" class="hidden"></div>
+
+  <div id="gallery-container">
+    <div id="gallery" class="grid">
+      <?php foreach ($page_data as $page) {
+          if (!isset($page["featured_image_url"]) || empty($page["featured_image_url"])) {
+            $to_console[] =
+              "WARNING: Page titled {" .
+              $page["title"] .
+              "} did not have a featured image to use as a thumbnail in the grid.";
+          } elseif (!isset($page["gallery_caption"]) || empty($page["gallery_caption"])) {
+            $to_console[] =
+              "WARNING: Page titled {" .
+              $page["title"] .
+              "} did not have a gallery caption to show on mouse hover in the grid.";
+          } else {
+
+            $lightbox = false;
+            if (isset($page["lightbox"]) && $page["lightbox"] == "true") {
+              $lightbox = true;
+            }
+            ?>
+      <div class="grid-item">
+        <img src="<?php echo $page["featured_image_url"]; ?>"
+        data-page-id="
+        <?php echo $page["id"]; ?>"
+        class="
+        <?php echo $lightbox ? "open-as-lightbox" : ""; ?>"
+        />
+        <span class="caption">
+          <?php echo $page["gallery_caption"]; ?>
+        </span>
+      </div>
+      <?php
+          }
+        } ?>
+    </div>
+    <div id="gallery-padding"></div>
+  </div>
+
+  <script src="masonry.pkgd.min.js"></script>
+  <script src="imagesloaded.pkgd.min.js"></script>
+  <script>
+    // init Masonry
+    var $grid = $(".grid").masonry({
+      itemSelector: ".grid-item",
+    });
+    // layout Masonry after each image loads
+    $grid.imagesLoaded().progress(function () {
+      $grid.masonry("layout");
+    });
+    $(window).on('resize', function () {
+      $grid.masonry('layout');
+    });
+    $grid.imagesLoaded(function () {
+      $grid.masonry('layout');
+    });
+  </script>
+
+  <script>
+    // Generated by ChatGPT for async loading of WP pages.
+    document.addEventListener('DOMContentLoaded', function () {
+
+      function loadPageContent(pageId) {
+        let formData = new FormData();
+        formData.append('page_id', pageId);
+        fetch('/abi/ajax-page-loader.php', {
+          method: 'POST',
+          body: formData
+        })
+          .then(response => response.text())
+          .then(data => {
+            let content = document.getElementById('content');
+            // Display the page content
+            content.innerHTML = data;
+            content.classList.remove('hidden');
+            content.classList.add('visible');
+            void content.offsetWidth;
+          })
+          .catch(error => console.error('Error:', error));
+      }
+
+      // Make the title into a home button.
+
+      document.getElementById('title').addEventListener('click', function () {
+        let gallery = document.getElementById('gallery-container');
+        let content = document.getElementById('content');
+        let slideCallback = function () {
+          if (!content.classList.contains('activated')) {
+            gallery.style.marginTop = '150px';
+            void content.offsetWidth;
+            $grid.masonry('layout');
+          }
+        }
+        gallery.addEventListener('transitionend', slideCallback);
+        content.classList.remove('activated');
+        content.classList.remove('fade-in');
+        content.classList.remove('visible');
+        content.classList.add('hidden');
+        gallery.classList.remove('below');
+      });
+
+      let items;
+
+      // First add events for images that open in pages.
+
+      items = document.querySelectorAll('.grid-item img:not(.open-as-lightbox)');
+      items.forEach(item => {
+        item.addEventListener('click', function () {
+          const pageId = item.getAttribute('data-page-id');
+          if (pageId) {
+            let gallery = document.getElementById('gallery-container');
+            let content = document.getElementById('content');
+            let fadeCallback = function () {
+              if (content.classList.contains('activated')) {
+                if (content.classList.contains('visible')) {
+                  gallery.classList.add('below');
+                  gallery.style.removeProperty('margin-top');
+                  content.classList.add('fade-in');
+                  $grid.masonry('layout');
+                } else {
+                  setTimeout(fadeCallback, 500);
+                }
+              }
+            }
+            gallery.addEventListener('transitionend', fadeCallback);
+            loadPageContent(pageId);
+            content.classList.add('activated');
+            gallery.style.marginTop = `${window.innerHeight * 1.5}px`;
+          } else {
+            console.warn('No data-page-id attribute found on this element.');
+          }
+        });
+      });
+
+      // Second add events for images that open in a lightbox.
+
+      let lightbox;
+      items = document.querySelectorAll('.grid-item img.open-as-lightbox');
+      items.forEach(item => {
+        item.addEventListener('click', function () {
+          const pageId = item.getAttribute('data-page-id');
+          if (pageId) {
+            if (!lightbox) {
+              lightbox = document.createElement('div');
+              lightbox.classList.add('lightbox');
+              document.body.appendChild(lightbox);
+
+              // First create the lightbox image and append it to the DOM. It will be invisible
+              // but this allows us to get the end-state lightbox image position and size.
+              lightboxImage = document.createElement('img');
+              lightboxImage.src = item.getAttribute('src');
+              lightboxImage.classList.add('lightbox-img');
+              lightbox.appendChild(lightboxImage);
+              const lightboxImageRect = lightboxImage.getBoundingClientRect();
+              // Now we can calculate a transform to place it perfectly atop the thumbnail.
+              const thumbnailRect = item.getBoundingClientRect();
+              const thumbnailWidth = item.width;
+              const thumbnailHeight = item.height;
+              const shiftLeftBy = thumbnailRect.left - lightboxImageRect.left;
+              const shiftTopBy = thumbnailRect.top - lightboxImageRect.top;
+              const scaleWidthBy = thumbnailWidth / lightboxImage.width;
+              const scaleHeightBy = thumbnailHeight / lightboxImage.height;
+              // Scaling happens after translation; so need to translate more.
+              const additionalShiftLeftBy = (thumbnailWidth - lightboxImage.width) / 2;
+              const additionalShiftTopBy = (thumbnailHeight - lightboxImage.height) / 2;
+              const actualShiftLeftBy = shiftLeftBy + additionalShiftLeftBy;
+              const actualShiftTopBy = shiftTopBy + additionalShiftTopBy;
+              lightboxImage.style.transform = `translate(${actualShiftLeftBy}px, ${actualShiftTopBy}px) scale(${scaleWidthBy}, ${scaleHeightBy})`;
+              lightbox.addEventListener('click', () => {
+                lightboxImage.style.transform = `translate(${actualShiftLeftBy}px, ${actualShiftTopBy}px) scale(${scaleWidthBy}, ${scaleHeightBy})`;
+                lightbox.classList.remove('active');
+                setTimeout(() => {
+                  lightbox.remove();
+                  lightbox = null;
+                }, 500);
+              });
+            }
+            lightbox.classList.add('active');
+            setTimeout(() => {
+              lightboxImage.style.transition = 'transform 0.2s ease-in-out';
+              lightboxImage.style.transform = 'translate(0, 0) scale(1, 1)';
+            }, 50);
+          } else {
+            console.warn('No data-page-id attribute found on this element.');
+          }
+        });
+      });
+    });
+  </script>
+
+  <script>
+      <?php foreach($to_console as $msg) { ?>
+      console.log("<?php echo $msg; ?>");
+      <?php } ?>
+  </script>
+</body>
+
+</html>
