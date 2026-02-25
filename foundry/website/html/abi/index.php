@@ -183,6 +183,7 @@ function load_custom_styles()
       font-family: Roboto;
       color: #333;
       z-index: 1000;
+      cursor: pointer;
     }
 
     #title {
