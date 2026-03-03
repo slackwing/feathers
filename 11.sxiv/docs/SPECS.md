@@ -50,7 +50,12 @@ CATEGORY ::= '[' CATEGORY_CONTENT ']'
 CATEGORY_CONTENT ::= [^[\]]+    # Any characters except square brackets
 ```
 
-Common examples: `[wr]`, `[err]`, `[sp/a]`, `[bkc]`, `[...]`
+Categories are user-defined and flexible. The system does not enforce a fixed list of valid categories.
+
+Common examples:
+- Work categories: `[wr]` (writing), `[err]` (error handling), `[sp]` (special projects)
+- Hobby categories: `[wapp]` (web apps), `[fesh]` (fresh/exploration), `[bkc]` (book/content)
+- Meta categories: `[...]` (rest/break), `[sp/a]`, `[sp/b]` (subcategories)
 
 #### Minutes
 ```
@@ -561,8 +566,9 @@ The `{freeform}` section allows tracking unstructured time that doesn't fit into
 
 **Time notation in freeform lines:**
 - Time ranges: `HH:MM-HH:MM` (e.g., `18:56-19:47`)
-- Explicit minutes: `(\d+h)?\d+m` (e.g., `6m`, `1h`, `1h30m`, `2h15m`)
+- Explicit minutes: `0` (bare zero), `(\d+h)?\d+m` (e.g., `6m`, `1h`, `1h30m`, `2h15m`)
 - Multiple ranges/minutes can appear anywhere in the description text
+- Special case: `0` without a unit is interpreted as 0 minutes
 
 **Processing:**
 1. Calculator scans the line for all time ranges and explicit minute notations
@@ -779,10 +785,11 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
    - Represents external environmental impact on the day
 
 10. **[meet]** (meeting time): time duration in various formats
-   - Format: `Xm` (minutes), `Xh` (hours), `XhYm` (hours and minutes), or `H:MM` (colon-separated)
-   - Examples: `[meet] 75m`, `[meet] 1h20m`, `[meet] 2:05`, `[meet] 7m`, `[meet] 1h`, `[meet] 2h`
+   - Format: `0` (bare zero), `Xm` (minutes), `Xh` (hours), `XhYm` (hours and minutes), or `H:MM` (colon-separated)
+   - Examples: `[meet] 0`, `[meet] 75m`, `[meet] 1h20m`, `[meet] 2:05`, `[meet] 7m`, `[meet] 1h`, `[meet] 2h`
    - Represents total meeting time for the day
    - Value must be non-negative
+   - Special case: `0` without a unit is interpreted as 0 minutes (same as `0m` or `0h`)
 
 11. **[abi]** (ability): floating point with 1 decimal place
    - Can be negative, zero, or positive

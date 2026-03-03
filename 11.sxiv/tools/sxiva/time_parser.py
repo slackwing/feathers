@@ -7,6 +7,7 @@ used throughout SXIVA files, including:
 - Any other duration parsing needs
 
 Supported formats:
+- 0            -> 0 minutes (bare zero)
 - 5m           -> 5 minutes
 - 1h           -> 60 minutes
 - 1h34m        -> 94 minutes
@@ -26,6 +27,7 @@ def parse_duration(duration_str: str) -> Optional[int]:
     """Parse a duration string into total minutes.
 
     Supports all SXIVA duration formats:
+    - Bare zero: 0 (same as 0m or 0h)
     - Minutes only: 5m, 75m
     - Hours only: 1h, 2h
     - Hours and minutes: 1h34m, 2h15m
@@ -39,6 +41,8 @@ def parse_duration(duration_str: str) -> Optional[int]:
         Total minutes as integer, or None if format is invalid
 
     Examples:
+        >>> parse_duration("0")
+        0
         >>> parse_duration("5m")
         5
         >>> parse_duration("1h")
@@ -59,6 +63,10 @@ def parse_duration(duration_str: str) -> Optional[int]:
         15
     """
     duration_str = duration_str.strip()
+
+    # Format: bare "0" (same as 0m or 0h)
+    if duration_str == '0':
+        return 0
 
     # Format: H:MM or HH:MM (e.g., "1:34", "01:34")
     if ':' in duration_str:
