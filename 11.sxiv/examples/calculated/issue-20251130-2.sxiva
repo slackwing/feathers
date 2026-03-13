@@ -36,3 +36,16 @@ x18:12 + [wf] freeform ~--- 18:28 (-2=-1)
     [err] - 00:20
     [wf]  - 02:52
 
+{attributes}
+    [sleep]
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+    [xmx]
+    [wea]
+    [meet]
+    [abi]
+    [save]

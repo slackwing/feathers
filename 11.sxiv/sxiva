@@ -6,5 +6,8 @@
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
+# Save original PWD before cd (for --all flag to work correctly)
+export SXIVA_ORIGINAL_DIR="$PWD"
+
 # Run the Python CLI from the tools directory
 cd "$SCRIPT_DIR/tools" && python3 -m sxiva.cli "$@"

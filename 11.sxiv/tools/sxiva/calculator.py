@@ -6,6 +6,8 @@ from typing import List, Optional, Set, Tuple
 from datetime import datetime
 from pathlib import Path
 
+from .time_parser import parse_duration, parse_time_to_minutes_since_midnight, format_duration
+
 
 @dataclass
 class CalculationState:
@@ -537,9 +539,28 @@ class PointCalculator:
                     # This is the final block
                     final_end_time = end_time
                     final_work_minutes = work_minutes
+            else:
+                # No blick_list: pure continuation (e.g., "09:12 + +")
+                # This block has 0 work minutes and simply passes through to the next block
+                work_minutes = 0
+
+                # If this is not the final block (no end time), imagined end is just the start time
+                if end_time is None:
+                    # For pure continuation, imagined end = previous imagined end (no work done)
+                    # Keep prev_imagined_end unchanged
+                    if prev_imagined_end is None:
+                        # First block in chain with no blicks - use previous block's end or start time
+                        if state.previous_end_time:
+                            prev_imagined_end = state.previous_end_time
+                        else:
+                            prev_imagined_end = start_time
+                else:
+                    # This is the final block with no blicks
+                    final_end_time = end_time
+                    final_work_minutes = work_minutes
 
         # If we don't have a final end time, we can't calculate points
-        if final_end_time is None or final_work_minutes is None:
+        if not final_end_time or final_work_minutes is None:
             # Return a placeholder - this continuation chain is incomplete
             return (BlockPoints(0, 0, 0, 0, "0"), None)
 
@@ -968,10 +989,11 @@ class PointCalculator:
 
                         # Only validate if we found blick_lists
                         if blick_lists_found:
-                            # Standard blocks/lines should have 3 blicks total
-                            if not is_x_block and total_blicks != 3:
+                            # Standard blocks should have 3 blicks (9 min) or 4 blicks (12 min for start4)
+                            # X-blocks can have 1 or 2 blicks
+                            if not is_x_block and total_blicks not in [3, 4]:
                                 line_num = chain_node.start_point[0] + 1
-                                error_msg = f"[ERROR] standard block must have 3 blicks (9 minutes), found {total_blicks} blicks"
+                                error_msg = f"[ERROR] standard block must have 3 or 4 blicks (9 or 12 minutes), found {total_blicks} blicks"
                                 issues.append((
                                     line_num,
                                     chain_node.start_byte,
@@ -1062,7 +1084,11 @@ class PointCalculator:
                     # Offset = how far past (or before) the standard boundary we ended
                     state.time_offset = end_mins - standard_boundary
                     state.previous_end_time = final_end_time
-                    state.previous_start_time = first_start
+                    # For continuation chains, use the LAST block's start time, not first
+                    # This prevents incorrect "after start block" validation when chain extends past expected boundary
+                    final_start_nodes = self.find_all_times(chain_nodes[-1])
+                    final_start = node_text(final_start_nodes[0], source_bytes)
+                    state.previous_start_time = final_start
                     state.is_first_block = False
                     # Clear before-break timing once we've processed the first block after a break
                     state.before_break_end_time = None
@@ -1474,10 +1500,11 @@ class PointCalculator:
         return f"{hours:02d}:{minutes:02d}"
 
     def parse_freeform_time(self, text: str) -> int:
-        """Parse time ranges and explicit minutes from freeform text.
+        """Parse time ranges and explicit durations from freeform text.
 
         Args:
-            text: Freeform text containing time ranges (HH:MM-HH:MM) and/or explicit minutes (6m, 1h, 1h30m)
+            text: Freeform text containing time ranges (HH:MM-HH:MM) and/or
+                  explicit durations (5m, 1h, 1h34m, 1:34, 1.75h, 0.5h, etc.)
 
         Returns:
             Total minutes from all matched patterns
@@ -1495,13 +1522,22 @@ class PointCalculator:
             if duration > 0:  # Only count positive durations
                 total_minutes += duration
 
-        # Match explicit minutes: (\d+h)?\d+m (e.g., 6m, 1h, 1h30m, 2h15m)
-        explicit_pattern = r'(?:(\d+)h)?(\d+)m'
-        for match in re.finditer(explicit_pattern, text):
-            hours_str, minutes_str = match.groups()
-            hours = int(hours_str) if hours_str else 0
-            minutes = int(minutes_str) if minutes_str else 0
-            total_minutes += hours * 60 + minutes
+        # Match explicit durations using unified parser
+        # Pattern covers: Xm, Xh, XhYm, X.Yh, H:MM (but not HH:MM-HH:MM ranges already matched)
+        # Order matters - check more specific patterns first to avoid double-counting
+        duration_patterns = [
+            r'\b(\d+h\d+m)\b',                         # Hours and minutes: 1h34m (most specific, check first)
+            r'\b(\d+(?:\.\d+)?h)(?!\d)',               # Decimal/whole hours: 1.75h, 0.5h, 1h (but not if followed by digit like in 1h34m)
+            r'(?<![:\d-])(\d{1,2}:\d{2})(?![-:])',    # H:MM not part of a range (no dash before or after, no : after)
+            r'\b(\d+m)\b',                             # Minutes only: 5m, 75m
+        ]
+
+        for pattern in duration_patterns:
+            for match in re.finditer(pattern, text):
+                duration_str = match.group(1)
+                parsed = parse_duration(duration_str)
+                if parsed is not None:
+                    total_minutes += parsed
 
         return total_minutes
 
@@ -1573,6 +1609,43 @@ class PointCalculator:
 
         return filtered
 
+    def _filter_attributes_sections(self, lines: list) -> list:
+        """Filter out any {attributes} sections from lines.
+
+        Used when preserving content after === markers to avoid duplicating attributes.
+
+        Args:
+            lines: List of lines that may contain {attributes} sections
+
+        Returns:
+            List of lines with {attributes} sections removed
+        """
+        filtered = []
+        in_attributes = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Check if entering an attributes section
+            if stripped == '{attributes}':
+                in_attributes = True
+                continue
+
+            # Check if exiting attributes section (non-indented line, or another section marker, or ===)
+            if in_attributes:
+                # Attributes lines are indented with spaces
+                if stripped and not line.startswith((' ', '\t')):
+                    # Non-indented line - we're out of the attributes section
+                    in_attributes = False
+                    # Fall through to add this line
+                else:
+                    # Still in attributes section or empty line - skip it
+                    continue
+
+            filtered.append(line)
+
+        return filtered
+
     def generate_summary_lines(self, category_minutes: dict) -> list:
         """Generate summary lines from category minutes.
 
@@ -1596,6 +1669,286 @@ class PointCalculator:
             lines.append(f"    [{cat}]{padding} - {time_str}")
 
         return lines
+
+    def parse_meeting_time(self, time_str: str) -> Optional[int]:
+        """Parse meeting time format into minutes.
+
+        Supported formats:
+        - 5m (minutes only)
+        - 1h (hours only)
+        - 1h34m (hours and minutes)
+        - 1:34 (H:MM format)
+        - 01:34 (HH:MM format)
+        - 75m (minutes)
+        - 1.75h (decimal hours, rounded to nearest minute)
+        - 0.5h (decimal hours)
+        - 0.25h (decimal hours)
+
+        Args:
+            time_str: Time string to parse
+
+        Returns:
+            int: Total minutes, or None if invalid format
+        """
+        return parse_duration(time_str)
+
+    def generate_attributes_template(self) -> list:
+        """Generate default attributes section template.
+
+        Returns:
+            List of attribute lines (NOT including blank line before {attributes} header)
+        """
+        return [
+            "{attributes}",
+            "    [sleep]",
+            "    [dist]",
+            "    [soc]",
+            "    [out]",
+            "    [exe]",
+            "    [dep]",
+            "    [alc]",
+            "    [xmx]",
+            "    [wea]",
+            "    [meet]",
+            "    [abi]",
+            "    [save]",
+        ]
+
+    def process_attribute_line(self, line: str) -> tuple[str, Optional[str]]:
+        """Process an attribute line and add checkmark/calculation.
+
+        Args:
+            line: Attribute line (e.g., "    [dist] 2" or "    [dep] -0.5 1 1.5")
+
+        Returns:
+            tuple: (processed_line, error_message)
+                   error_message is None if valid, otherwise contains error description
+        """
+        stripped = line.strip()
+
+        # Check if line is just a category with no value
+        category_only_match = re.match(r'^\[(\w+)\]$', stripped)
+        if category_only_match:
+            # Valid but unfilled - return as-is with proper indentation
+            return f"    {stripped}", None
+
+        # Parse category and values
+        match = re.match(r'^\[(\w+)\]\s+(.+?)(?:\s*✓)?$', stripped)
+        if not match:
+            return line, "Invalid attribute line format"
+
+        category = match.group(1)
+        values_str = match.group(2).strip()
+
+        # Remove any existing " = X.X ✓" suffix for [dep]
+        # Match " = " followed by a number with decimal, then optional whitespace/checkmark, then end of string
+        # The key is to ensure we match to the end ($) so we don't accidentally match values
+        values_str = re.sub(r'\s+=\s+-?\d+\.\d+\s*✓?\s*$', '', values_str)
+
+        # Split values
+        values_parts = values_str.split()
+
+        try:
+            if category == "sleep":
+                # Parse: percentage (0-100), hours (float), optional tilde
+                # Example: [sleep] 72 5.5 ~ or [sleep] 72 5.5
+                if len(values_parts) < 2:
+                    return line, "[sleep] requires at least 2 values (percentage and hours)"
+
+                # Parse percentage (0-100)
+                percentage = int(values_parts[0])
+                if percentage < 0 or percentage > 100:
+                    return line, f"[sleep] percentage must be between 0 and 100 (got {percentage})"
+
+                # Parse hours (float)
+                hours = float(values_parts[1])
+
+                # Check for optional tilde
+                has_tilde = len(values_parts) > 2 and values_parts[2] == '~'
+
+                # Reconstruct line
+                if has_tilde:
+                    return f"    [sleep] {percentage} {hours} ~ ✓", None
+                else:
+                    return f"    [sleep] {percentage} {hours} ✓", None
+
+            elif category == "dep":
+                # Parse floating point values (can be negative)
+                values = [float(v) for v in values_parts]
+                if not values:
+                    return line, "[dep] requires at least one value"
+
+                # Calculate average to 1 decimal place
+                avg = sum(values) / len(values)
+                avg_str = f"{avg:.1f}"
+
+                # Reconstruct line with average
+                return f"    [dep] {' '.join(values_parts)} = {avg_str} ✓", None
+
+            elif category == "alc":
+                # Non-negative number (integer or float)
+                if len(values_parts) != 1:
+                    return line, "[alc] must have exactly one value"
+                value = float(values_parts[0])
+                if value < 0:
+                    return line, "[alc] must be non-negative"
+
+                # Format as integer if it's a whole number, otherwise as float
+                if value == int(value):
+                    value_str = str(int(value))
+                else:
+                    value_str = values_parts[0]
+
+                return f"    [{category}] {value_str} ✓", None
+
+            elif category in ["dist", "soc", "out", "exe"]:
+                # 0-3 inclusive (supports floating point)
+                if len(values_parts) != 1:
+                    return line, f"[{category}] must have exactly one value"
+                value = float(values_parts[0])
+                if value < 0 or value > 3:
+                    return line, f"[{category}] must be between 0 and 3 inclusive"
+
+                # Format as integer if it's a whole number, otherwise as float
+                if value == int(value):
+                    value_str = str(int(value))
+                else:
+                    value_str = values_parts[0]
+
+                return f"    [{category}] {value_str} ✓", None
+
+            elif category == "xmx":
+                # Non-negative integer
+                if len(values_parts) != 1:
+                    return line, "[xmx] must have exactly one value"
+                value = int(values_parts[0])
+                if value < 0:
+                    return line, f"[xmx] must be non-negative (got {value})"
+
+                return f"    [xmx] {value} ✓", None
+
+            elif category == "wea":
+                # Float between -2 and 2 inclusive
+                if len(values_parts) != 1:
+                    return line, "[wea] must have exactly one value"
+                value = float(values_parts[0])
+                if value < -2 or value > 2:
+                    return line, f"[wea] must be between -2 and 2 inclusive (got {value})"
+
+                return f"    [wea] {value} ✓", None
+
+            elif category == "meet":
+                # Parse time format: 75m, 1h20m, 2:05, 7m, 1h, 2h
+                if len(values_parts) != 1:
+                    return line, "[meet] must have exactly one value"
+
+                time_str = values_parts[0]
+                minutes = self.parse_meeting_time(time_str)
+
+                if minutes is None:
+                    return line, f"[meet] invalid time format: {time_str} (expected formats: 75m, 1h20m, 2:05, etc)"
+
+                if minutes < 0:
+                    return line, f"[meet] must be non-negative (got {minutes})"
+
+                return f"    [meet] {time_str} ✓", None
+
+            elif category == "abi":
+                # Floating point with 1 decimal place (can be negative, zero, or positive)
+                if len(values_parts) != 1:
+                    return line, "[abi] must have exactly one value"
+                value = float(values_parts[0])
+
+                # Format to 1 decimal place
+                value_str = f"{value:.1f}"
+                return f"    [abi] {value_str} ✓", None
+
+            elif category == "save":
+                # Dollar string like "$4500" or "-$1500" (no decimals, negatives allowed)
+                if len(values_parts) != 1:
+                    return line, "[save] must have exactly one value"
+
+                value_str = values_parts[0]
+
+                # Validate format: must be either $XXXX or -$XXXX (not $-XXXX)
+                if not re.match(r'^-?\$\d+$', value_str):
+                    return line, f"[save] invalid format: {value_str} (expected format: $4500 or -$1500)"
+
+                # Parse negative dollar amounts: -$1500 or positive: $4500
+                is_negative = value_str.startswith('-')
+                amount_str = value_str[2:] if is_negative else value_str[1:]  # Skip -$ or $
+
+                try:
+                    amount = int(amount_str)
+                    value = -amount if is_negative else amount
+                except ValueError:
+                    return line, f"[save] invalid format: {value_str}"
+
+                return f"    [save] {value_str} ✓", None
+
+            else:
+                return line, f"Unknown attribute category: [{category}]"
+
+        except ValueError as e:
+            return line, f"Invalid value format for [{category}]: {e}"
+
+    def process_attributes_section(self, lines: list, start_idx: int) -> tuple[list, int, list]:
+        """Process existing attributes section or generate template.
+
+        Args:
+            lines: All lines in the file
+            start_idx: Index where {attributes} appears (or -1 if not found)
+
+        Returns:
+            tuple: (processed_lines, num_lines_consumed, errors)
+                   processed_lines: List of attribute lines including {attributes} header
+                   num_lines_consumed: How many lines from start_idx were consumed
+                   errors: List of error messages
+        """
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea", "meet", "abi", "save"]
+
+        if start_idx == -1:
+            # No attributes section - generate template
+            return self.generate_attributes_template(), 0, []
+
+        # Parse existing attributes section
+        existing_attrs = {}
+        errors = []
+        i = start_idx + 1  # Skip {attributes} header
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # End of attributes section
+            if not stripped or (stripped and not line.startswith((' ', '\t'))):
+                break
+
+            # Parse category from this line
+            cat_match = re.match(r'^\[(\w+)\]', stripped)
+            if cat_match:
+                category = cat_match.group(1)
+                existing_attrs[category] = line
+
+            i += 1
+
+        num_consumed = i - start_idx
+
+        # Build processed attributes section
+        result = ["{attributes}"]
+
+        for cat in EXPECTED_CATEGORIES:
+            if cat in existing_attrs:
+                # Process existing line
+                processed, error = self.process_attribute_line(existing_attrs[cat])
+                result.append(processed)
+                if error:
+                    errors.append(f"[ERROR] {error}: {existing_attrs[cat].strip()}")
+            else:
+                # Add missing category
+                result.append(f"    [{cat}]")
+
+        return result, num_consumed, errors
 
     def strip_points_from_line(self, line: str) -> str:
         """Remove point calculations and error messages from a line.
@@ -1717,6 +2070,21 @@ class PointCalculator:
         with open(file_path, 'r', encoding='utf-8') as f:
             source_code = f.read()
 
+        # Save original content for comparison later (to avoid unnecessary writes)
+        original_file_content = source_code
+
+        # Sanitize: ensure blank line before first === marker
+        # This prevents parsing errors when user accidentally removes the blank line
+        source_lines = source_code.split('\n')
+        for i, line in enumerate(source_lines):
+            if line.startswith('==='):
+                # Found first === line - ensure blank line before it
+                if i > 0 and source_lines[i - 1].strip() != '':
+                    # Previous line is not blank - insert blank line
+                    source_lines.insert(i, '')
+                break
+        source_code = '\n'.join(source_lines)
+
         # Check if filename is in YYYYMMDD format
         has_date_filename = self.has_date_filename(file_path)
 
@@ -1818,6 +2186,9 @@ class PointCalculator:
         in_c_section = False  # Track if we're inside a {c} section
         in_summary_section = False  # Track if we're inside a {summary} section
         summary_generated = False  # Track if we've already generated the summary
+        in_attributes_section = False  # Track if we're inside a {attributes} section
+        attributes_generated = False  # Track if we've already generated the attributes
+        captured_attributes_lines = []  # Capture attributes lines from source for later processing
         block_count = 0  # Track number of blocks for separator insertion
         previous_line_indent = ""  # Track previous block's indentation for separator
         consumed_lines = set()  # Track lines that have been consumed by multi-line nodes
@@ -1829,6 +2200,48 @@ class PointCalculator:
                 continue
             # Handle empty lines and comments
             stripped = line.strip()
+
+            # Detect {summary} sections even if not in a summary_section node
+            # (can happen when {summary} is inside an ERROR node)
+            # IMPORTANT: Check this BEFORE handling blank lines, so blank lines before {summary} don't get preserved
+            if stripped == '{summary}':
+                in_summary_section = True
+                # Skip old summary sections - will regenerate at EOF
+                continue
+            elif in_summary_section:
+                # Inside a summary section - skip indented lines and blank lines
+                if not stripped or line.startswith((' ', '\t')):
+                    continue
+                else:
+                    # Non-indented line - exited summary
+                    in_summary_section = False
+                    # Fall through to process this line
+
+            # Detect {attributes} sections even if not in an attributes_section node
+            # (can happen when {attributes} is inside an ERROR node)
+            # IMPORTANT: Check this BEFORE handling blank lines
+            if stripped == '{attributes}':
+                in_attributes_section = True
+                # Capture the header line
+                captured_attributes_lines.append(line)
+                # Skip old attributes sections - will regenerate at EOF
+                continue
+            elif in_attributes_section:
+                # Inside an attributes section - capture indented lines and skip blank lines
+                if not stripped:
+                    # Blank line - end of attributes section
+                    in_attributes_section = False
+                    continue
+                elif line.startswith((' ', '\t')):
+                    # Indented line - part of attributes section
+                    captured_attributes_lines.append(line)
+                    continue
+                else:
+                    # Non-indented line - exited attributes
+                    in_attributes_section = False
+                    # Fall through to process this line
+
+            # Handle blank lines and comments
             if not stripped:
                 # Skip blank lines in timesheet section, preserve elsewhere
                 if not in_timesheet_section:
@@ -1845,16 +2258,56 @@ class PointCalculator:
                 in_timesheet_section = False
                 # Generate summary before the end marker if not already generated
                 if not summary_generated and category_minutes:
+                    # Add blank line before summary if needed
+                    # Don't add if last line in output is already blank
+                    if not (fixed_lines and not fixed_lines[-1].strip()):
+                        fixed_lines.append("")
                     summary_lines = self.generate_summary_lines(category_minutes)
                     fixed_lines.extend(summary_lines)
-                    # Add blank line between summary and ===
-                    fixed_lines.append("")
+                    # Add blank line between summary and === if there isn't one already in source
+                    end_marker_line_idx = line_idx
+                    if end_marker_line_idx > 0 and lines[end_marker_line_idx - 1].strip():
+                        # Previous line (in source) before === has content, add blank
+                        fixed_lines.append("")
                     summary_generated = True
                     num_fixes += 1
-                # Preserve everything from === onwards, but filter out {summary} sections
+
+                # Generate attributes section before === marker
+                if not attributes_generated:
+                    # Add blank line before attributes
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
+
+                    # Process captured attributes or generate template
+                    if captured_attributes_lines:
+                        # Process existing attributes
+                        attrs_idx = 0
+                        attrs_lines, consumed, errors = self.process_attributes_section(captured_attributes_lines, attrs_idx)
+
+                        # Add errors if any
+                        for error in errors:
+                            fixed_lines.append(error)
+
+                        # Add processed attributes
+                        fixed_lines.extend(attrs_lines)
+                    else:
+                        # No attributes captured - add template
+                        attrs_lines = self.generate_attributes_template()
+                        fixed_lines.extend(attrs_lines)
+
+                    attributes_generated = True
+                    num_fixes += 1
+
+                    # Add blank line before ===
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append("")
+
+                # Preserve everything from === onwards (already filtered attributes during main loop)
                 remaining_lines = lines[line_idx:]
                 filtered_remaining = self._filter_summary_sections(remaining_lines)
+                filtered_remaining = self._filter_attributes_sections(filtered_remaining)
                 fixed_lines.extend(filtered_remaining)
+
                 break
 
             # Find the primary node type for this line
@@ -1897,6 +2350,7 @@ class PointCalculator:
                 in_timesheet_section = False
 
                 # Add blank line before section if needed
+                # Always ensure there's a blank line before {freeform} in output
                 if fixed_lines and fixed_lines[-1].strip():
                     fixed_lines.append("")
                 fixed_lines.append("{freeform}")
@@ -2008,6 +2462,21 @@ class PointCalculator:
                     consumed_lines.add(i)
                 continue
 
+            elif node.type == 'attributes_section':
+                # Capture attributes section for later processing
+                # This ensures attributes are preserved even when there are syntax errors elsewhere
+                in_timesheet_section = False
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                # Capture all lines in the attributes section from the source
+                for line_num in range(start_line, end_line + 1):
+                    if line_num < len(lines):
+                        captured_attributes_lines.append(lines[line_num])
+                        consumed_lines.add(line_num)
+
+                continue
+
             elif node.type == 'date_header':
                 # Standalone date header (shouldn't happen with new grammar, but keep for safety)
                 # Skip it if we're going to add a date header (avoid duplication)
@@ -2107,10 +2576,35 @@ class PointCalculator:
                 if node_id in block_points_map:
                     error_msg, _ = block_points_map[node_id]
                     if isinstance(error_msg, str) and error_msg.startswith("[ERROR]"):
-                        fixed_line = clean_line + f" {error_msg}"
+                        # Extract only the first line of the error message
+                        # (ERROR nodes can span multiple lines, but we only want the message on the first line)
+                        error_first_line = error_msg.split('\n')[0]
+                        fixed_line = clean_line + f" {error_first_line}"
                         fixed_lines.append(fixed_line)
                         num_fixes += 1
-                        continue
+                        # ERROR node processed - now stop and preserve remaining lines
+                        # Add all remaining lines (after error line) without modification
+                        # BUT filter out old {summary} and {attributes} sections (will be regenerated at EOF)
+                        remaining = lines[line_idx + 1:]
+
+                        # IMPORTANT: Capture attributes BEFORE filtering them out
+                        # This ensures attributes are preserved even when there are syntax errors
+                        if not captured_attributes_lines:
+                            in_attr_capture = False
+                            for rem_line in remaining:
+                                stripped = rem_line.strip()
+                                if stripped == '{attributes}':
+                                    in_attr_capture = True
+                                    captured_attributes_lines.append(rem_line)
+                                elif in_attr_capture:
+                                    if not stripped or not rem_line.startswith((' ', '\t')):
+                                        break  # End of attributes section
+                                    captured_attributes_lines.append(rem_line)
+
+                        filtered_remaining = self._filter_summary_sections(remaining)
+                        filtered_remaining = self._filter_attributes_sections(filtered_remaining)
+                        fixed_lines.extend(filtered_remaining)
+                        break
                 # If no error message in map, keep cleaned line
                 fixed_lines.append(clean_line)
 
@@ -2337,17 +2831,69 @@ class PointCalculator:
             summary_generated = True
             num_fixes += 1
 
+        # Generate attributes section after summary at EOF
+        # At this point, all old {attributes} sections have been filtered out but captured
+        if not attributes_generated:
+            # Add blank line before attributes (only if there are existing lines)
+            if fixed_lines and fixed_lines[-1].strip():
+                fixed_lines.append("")
+
+            # Process captured attributes or generate template
+            if captured_attributes_lines:
+                # Find {attributes} line index (should be first)
+                attrs_idx = 0
+                attrs_lines, consumed, errors = self.process_attributes_section(captured_attributes_lines, attrs_idx)
+
+                # Add errors if any
+                for error in errors:
+                    fixed_lines.append(error)
+
+                # Add processed attributes
+                fixed_lines.extend(attrs_lines)
+                num_fixes += 1
+            else:
+                # No attributes captured - add template
+                attrs_lines = self.generate_attributes_template()
+                fixed_lines.extend(attrs_lines)
+                num_fixes += 1
+
+            attributes_generated = True
+
         # Join fixed lines
         result = '\n'.join(fixed_lines)
 
         # Add date header at the beginning if needed
         if date_header_to_add:
-            result = date_header_to_add + '\n' + result
+            # Add blank line after date if there's no timesheet and file starts with {attributes}
+            # (i.e., no [med] lines or other content before attributes)
+            # This is detected by checking if summary was never generated AND result starts with {attributes}
+            if not summary_generated and result.startswith('{attributes}'):
+                result = date_header_to_add + '\n\n' + result
+            else:
+                result = date_header_to_add + '\n' + result
             num_fixes += 1
         elif date_header_error:
             # Add error message for missing date filename
             result = date_header_error + '\n' + result
             num_fixes += 1
+
+        # Sanitization: ensure blank line before first === line
+        # This handles cases where === appears without a blank line before it
+        # (either from date addition stripping newlines, or user error)
+        result_lines = result.split('\n')
+        for i, line in enumerate(result_lines):
+            if line.startswith('==='):
+                # Found first === line - ensure blank line before it
+                if i > 0 and result_lines[i - 1].strip() != '':
+                    # Previous line is not blank - insert blank line
+                    result_lines.insert(i, '')
+                    num_fixes += 1
+                break
+        result = '\n'.join(result_lines)
+
+        # Ensure file ends with a newline
+        if result and not result.endswith('\n'):
+            result += '\n'
 
         # Determine output file path
         if not dry_run:
@@ -2360,7 +2906,9 @@ class PointCalculator:
                 input_filename = Path(file_path).name
                 output_path_obj = output_path_obj / input_filename
 
-            with open(output_path_obj, 'w', encoding='utf-8') as f:
-                f.write(result)
+            # Only write if content changed (preserves mtime when unchanged)
+            if result != original_file_content:
+                with open(output_path_obj, 'w', encoding='utf-8') as f:
+                    f.write(result)
 
         return num_fixes

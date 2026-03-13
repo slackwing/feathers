@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-change-exe-to-decimal" author="sxiva">
+        <comment>Change exe column from INTEGER to NUMERIC(2,1) to support floating point values like 1.5</comment>
+
+        <sql>
+            ALTER TABLE daily_summary ALTER COLUMN exe TYPE NUMERIC(2,1);
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

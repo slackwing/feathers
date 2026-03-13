@@ -1,0 +1,32 @@
+Friday, February 14th, 2025
+{focus: [wr]}
+08:44 - [wr] basic work session --- 09:02 (-6,+1f,+1a=-4)
+
+{freeform}
+    [wf] test 5m format - 00:05
+    [wf] test 1h format - 01:00
+    [wf] test 1h34m format - 01:34
+    [wf] test 1:34 format - 01:34
+    [wf] test 01:34 format - 01:34
+    [wf] test 75m format - 01:15
+    [wf] test 1.75h format - 01:45
+    [wf] test 0.5h format - 00:30
+    [wf] test 0.25h format - 00:15
+
+{summary}
+    [wf] - 09:32
+    [wr] - 00:12
+
+{attributes}
+    [sleep]
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+    [xmx]
+    [wea]
+    [meet] 1.75h ✓
+    [abi]
+    [save]

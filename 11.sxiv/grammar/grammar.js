@@ -47,6 +47,7 @@ module.exports = grammar({
     _content: $ => choice(
       $.c_section,              // {c} section with c_lines
       $.summary_section,        // {summary} section (already handles its own lines)
+      $.attributes_section,     // {attributes} section with attributes_lines
       $.freeform_section,       // {freeform} section with metadata_lines
       $._time_tracking_line,    // Default content: time blocks, focus, etc.
     ),
@@ -209,6 +210,23 @@ module.exports = grammar({
       /\n/
     ),
 
+    // Attributes section: {attributes} followed by indented attributes_lines
+    // Ends when we hit a non-indented line (can't match attributes_line anymore)
+    attributes_section: $ => seq(
+      '{attributes}',
+      /\n/,
+      repeat($.attributes_line)
+    ),
+
+    // Attributes line: indented [category] with optional values and checkmark
+    // Examples: "    [dist]", "    [dist] 2 ✓", "    [dep] -0.5 1.0 = 0.3 ✓"
+    attributes_line: $ => seq(
+      /[ \t]+/,  // Required indentation
+      field('category', $.category),
+      optional(/[^\n]+/),  // Optional values, checkmark, etc.
+      /\n/
+    ),
+
     // Rest block: [...] (description) [minutes]
     rest_block: $ => seq(
       '[...]',
@@ -247,17 +265,32 @@ module.exports = grammar({
       /\n/
     ),
 
-    // Continuation block: [x]HH:MM + blick_list terminator
-    continuation_block: $ => seq(
-      field('shortened', optional('x')),
-      field('start_time', $.time),
-      optional(/\s+/),
-      '+',
-      optional(/\s+/),
-      field('blicks', $.blick_list),
-      optional(/\s+/),
-      field('terminator', $.terminator),
-      /\n/
+    // Continuation block: [x]HH:MM + [blick_list] terminator
+    // blick_list is now optional - allows pure continuation like "09:12 + +"
+    // Use choice to handle two cases: with blicks or without blicks
+    continuation_block: $ => choice(
+      // With blick_list
+      seq(
+        field('shortened', optional('x')),
+        field('start_time', $.time),
+        optional(/\s+/),
+        '+',
+        optional(/\s+/),
+        field('blicks', $.blick_list),
+        optional(/\s+/),
+        field('terminator', $.terminator),
+        /\n/
+      ),
+      // Without blick_list (pure continuation)
+      seq(
+        field('shortened', optional('x')),
+        field('start_time', $.time),
+        optional(/\s+/),
+        '+',
+        optional(/\s+/),
+        field('terminator', $.terminator),
+        /\n/
+      )
     ),
 
     // Time: HH:MM
@@ -302,11 +335,11 @@ module.exports = grammar({
     category: $ => seq('[', /[^\[\]]+/, ']'),
 
     // Subject: words with spaces, can include some punctuation including commas, dashes, apostrophes, periods
-    // But NOT brackets (reserved for categories/minutes)
+    // But NOT brackets (reserved for categories/minutes) or + (reserved for continuation marker)
     // Pattern: start with word chars, then allow spaces/commas/dashes/single-periods followed by more word chars
     // Key: comma, dash, or ellipsis (...) must be followed (possibly after space) by more text
     // Single period OK (for "v2.0"), but not ellipsis which is reserved as separator
-    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+(\.[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>]+|\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()+={}|\\/<>.]+)*)*/,
+    subject: $ => /[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>]+(\.[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>]+|\s+[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+|[,\-](\s+)?[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+(\s+[a-zA-Z0-9_"';:!?@#$%^&*()={}|\\/<>.]+)*)*/,
 
     // Minutes: [3], [6], [10], or [13]
     minutes: $ => choice(

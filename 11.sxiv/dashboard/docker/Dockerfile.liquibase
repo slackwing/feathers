@@ -1,0 +1,6 @@
+FROM liquibase/liquibase:latest
+
+# Download PostgreSQL JDBC driver
+USER root
+RUN lpm add postgresql --global
+USER liquibase

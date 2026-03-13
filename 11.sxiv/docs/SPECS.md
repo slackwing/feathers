@@ -50,7 +50,12 @@ CATEGORY ::= '[' CATEGORY_CONTENT ']'
 CATEGORY_CONTENT ::= [^[\]]+    # Any characters except square brackets
 ```
 
-Common examples: `[wr]`, `[err]`, `[sp/a]`, `[bkc]`, `[...]`
+Categories are user-defined and flexible. The system does not enforce a fixed list of valid categories.
+
+Common examples:
+- Work categories: `[wr]` (writing), `[err]` (error handling), `[sp]` (special projects)
+- Hobby categories: `[wapp]` (web apps), `[fesh]` (fresh/exploration), `[bkc]` (book/content)
+- Meta categories: `[...]` (rest/break), `[sp/a]`, `[sp/b]` (subcategories)
 
 #### Minutes
 ```
@@ -561,8 +566,9 @@ The `{freeform}` section allows tracking unstructured time that doesn't fit into
 
 **Time notation in freeform lines:**
 - Time ranges: `HH:MM-HH:MM` (e.g., `18:56-19:47`)
-- Explicit minutes: `(\d+h)?\d+m` (e.g., `6m`, `1h`, `1h30m`, `2h15m`)
+- Explicit minutes: `0` (bare zero), `(\d+h)?\d+m` (e.g., `6m`, `1h`, `1h30m`, `2h15m`)
 - Multiple ranges/minutes can appear anywhere in the description text
+- Special case: `0` without a unit is interpreted as 0 minutes
 
 **Processing:**
 1. Calculator scans the line for all time ranges and explicit minute notations
@@ -714,6 +720,148 @@ Summary totals use **base categories only**:
     [sys]  - 00:12
     [wr]   - 02:24
 ```
+
+### Attributes Declaration
+
+```
+{attributes}
+```
+
+The `{attributes}` section tracks daily self-assessment metrics and dependencies. It appears **after** the `{summary}` section and **before** the `===` end marker.
+
+**Syntax:**
+```
+{attributes}
+    [sleep]
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+```
+
+**Attribute Categories:**
+
+1. **[sleep]** (sleep tracking): integer 0-100 inclusive, floating point number, optional tilde
+   - Format: `[sleep] <percentage> <hours> [~]`
+   - Example: `[sleep] 72 5.5` or `[sleep] 72 5.5 ~`
+   - Percentage: 0-100 (sleep quality/efficiency)
+   - Hours: floating point (actual sleep duration)
+   - Tilde: optional marker
+
+2. **[dist]** (distraction level): 0-3 inclusive (supports floating point)
+   - 0 = no distractions, deep focus
+   - 3 = highly distracted
+   - Examples: `[dist] 0`, `[dist] 1.5`, `[dist] 2`
+
+3. **[soc]** (social interaction): 0-3 inclusive (supports floating point)
+   - 0 = no social interactions
+   - 3 = high social engagement
+   - Examples: `[soc] 0`, `[soc] 1.5`, `[soc] 2`
+
+4. **[out]** (outside time): 0-3 inclusive (supports floating point)
+   - 0 = stayed indoors all day
+   - 3 = spent significant time outside
+   - Examples: `[out] 0`, `[out] 1.5`, `[out] 3`
+
+5. **[exe]** (exercise): 0-3 inclusive (supports floating point)
+   - 0 = no exercise
+   - 3 = intense exercise
+   - Examples: `[exe] 0`, `[exe] 1.5`, `[exe] 2.5`
+
+6. **[dep]** (dependency/mood tracking): floating point values (can be negative)
+   - Multiple values allowed (e.g., `[dep] -0.5 1 1.5 -2`)
+   - Calculator shows average with 1 decimal place using "=" separator
+
+7. **[alc]** (alcohol consumption): non-negative number (integer or float)
+   - Any value ≥ 0 (e.g., `[alc] 0`, `[alc] 2`, `[alc] 1.5`)
+
+8. **[xmx]** (extended metric): non-negative integer
+   - Any value ≥ 0 (e.g., `[xmx] 0`, `[xmx] 1`, `[xmx] 5`)
+
+9. **[wea]** (weather/external factors): float between -2 and 2 inclusive
+   - Range: -2.0 to 2.0 (e.g., `[wea] -1.5`, `[wea] 0`, `[wea] 1.2`)
+   - Represents external environmental impact on the day
+
+10. **[meet]** (meeting time): time duration in various formats
+   - Format: `0` (bare zero), `Xm` (minutes), `Xh` (hours), `XhYm` (hours and minutes), or `H:MM` (colon-separated)
+   - Examples: `[meet] 0`, `[meet] 75m`, `[meet] 1h20m`, `[meet] 2:05`, `[meet] 7m`, `[meet] 1h`, `[meet] 2h`
+   - Represents total meeting time for the day
+   - Value must be non-negative
+   - Special case: `0` without a unit is interpreted as 0 minutes (same as `0m` or `0h`)
+
+11. **[abi]** (ability): floating point with 1 decimal place
+   - Can be negative, zero, or positive
+   - Examples: `[abi] -1.5`, `[abi] 0.0`, `[abi] 2.3`
+   - Value can be null (left blank)
+
+12. **[save]** (savings): dollar amount as string
+   - Format: `$XXXX` or `-$XXXX` (no decimals, negatives allowed)
+   - Examples: `[save] $4500`, `[save] $0`, `[save] -$1500`, `[save] $12000`
+   - Value can be null (left blank)
+
+**Processing Rules:**
+
+- **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above
+- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, wea, meet
+- **Missing Categories**: If a category is missing from an existing `{attributes}` section, calculator adds it in the correct position
+- **Validation**: Numbers outside the valid range for each category type generate an ERROR
+- **Optional Values**: Any category can be left blank (no value) - this is valid and means "not filled out"
+- **Checkmarks**: Calculator adds ` ✓` after each filled-in value (except [dep] which gets special formatting)
+- **[dep] Formatting**: Shows ` = [average] ✓` where average is calculated to 1 decimal place
+
+**Example (unfilled template - added by calculator):**
+```sxiva
+{attributes}
+    [sleep]
+    [dist]
+    [soc]
+    [out]
+    [exe]
+    [dep]
+    [alc]
+    [xmx]
+    [wea]
+    [meet]
+```
+
+**Example (filled in by user, processed by calculator):**
+```sxiva
+{attributes}
+    [sleep] 72 5.5 ~ ✓
+    [dist] 2 ✓
+    [soc] 1 ✓
+    [out] 0 ✓
+    [exe] 2 ✓
+    [dep] -0.5 1 1.5 -2 = 0.0 ✓
+    [alc] 0 ✓
+    [xmx] 3 ✓
+    [wea] 1.5 ✓
+    [meet] 1h20m ✓
+```
+
+**Example (partial - some filled, some not):**
+```sxiva
+{attributes}
+    [sleep] 85 7.0 ✓
+    [dist] 1 ✓
+    [soc]
+    [out] 3 ✓
+    [exe]
+    [dep] 0.5 1 = 0.8 ✓
+    [alc]
+    [xmx] 1 ✓
+    [wea] -0.5 ✓
+    [meet]
+```
+
+**Placement:**
+- Must appear after `{summary}` section (if summary exists)
+- Must appear before `===` end marker (if end marker exists)
+- Preceded by a blank line
+- Followed by a blank line before `===`
+- All attribute lines are indented with 4 spaces
 
 ## Examples
 

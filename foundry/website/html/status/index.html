@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <main>
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <h3>Current Rate of Hobbies</h3>
+                    <div class="stat-with-pie">
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="hobbyLabelLeft">REAL</p>
+                            <div class="stat-section-content">
+                                <canvas id="hobbyPieLeft" class="mini-pie-left"></canvas>
+                                <p class="stat-value" id="hobbyValueLeft">--</p>
+                            </div>
+                        </div>
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="hobbyLabelRight">FEELS LIKE</p>
+                            <div class="stat-section-content">
+                                <canvas id="hobbyPieRight" class="mini-pie-right"></canvas>
+                                <p class="stat-value" id="hobbyValueRight">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="stat-label">hours per week</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Current Rate of Work</h3>
+                    <div class="stat-with-pie">
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="workLabelLeft">REAL</p>
+                            <div class="stat-section-content">
+                                <canvas id="workPieLeft" class="mini-pie-left"></canvas>
+                                <p class="stat-value" id="workValueLeft">--</p>
+                            </div>
+                        </div>
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="workLabelRight">FEELS LIKE</p>
+                            <div class="stat-section-content">
+                                <canvas id="workPieRight" class="mini-pie-right"></canvas>
+                                <p class="stat-value" id="workValueRight">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="stat-label">hours per week</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Current Other</h3>
+                    <p class="stat-value" id="latestOther">--</p>
+                    <p class="stat-label">hours per week</p>
+                </div>
+            </section>
+
+            <section class="chart-container">
+                <h2>Summary</h2>
+                <canvas id="summaryChart"></canvas>
+            </section>
+
+            <section class="chart-container">
+                <h2>Hobbies</h2>
+                <canvas id="hobbyChart"></canvas>
+            </section>
+
+            <section class="chart-container">
+                <h2>Work</h2>
+                <canvas id="workChart"></canvas>
+            </section>
+
+            <section class="categories-section">
+                <div class="categories-list">
+                    <h3>Hobby Categories</h3>
+                    <div id="hobbyCategories" class="category-tags"></div>
+                </div>
+                <div class="categories-list">
+                    <h3>Other Categories</h3>
+                    <div id="otherCategories" class="category-tags"></div>
+                </div>
+            </section>
+
+            <section class="chart-container">
+                <h2>Alcohol & Mood</h2>
+                <canvas id="alcoholChart"></canvas>
+            </section>
+
+            <section class="chart-container">
+                <h2>Sleep Score</h2>
+                <canvas id="sleepChart"></canvas>
+            </section>
+        </main>
+
+        <footer>
+            <p>Data synced from .sxiva files | Last updated: <span id="lastUpdated">--</span></p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
