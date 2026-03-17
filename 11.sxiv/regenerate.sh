@@ -28,8 +28,9 @@ for file in examples/*.sxiva; do
 
     total=$((total + 1))
 
-    # Run calculator
-    if python3 -m tools.sxiva.cli calculate "$file" -o "examples/calculated/$filename" 2>&1; then
+    # Run calculator (use venv python if available, otherwise system python3)
+    PYTHON="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/}python3"
+    if $PYTHON -m tools.sxiva.cli calculate "$file" -o "examples/calculated/$filename" 2>&1; then
         success=$((success + 1))
         echo "✓ Generated $filename"
     else
