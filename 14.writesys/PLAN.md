@@ -10,9 +10,10 @@ WriteSys is a system for tracking annotations (highlights, tags, tasks) on sente
 1. **No sentence versioning or lineage tracking** - new IDs every commit, even for unchanged sentences
 2. **Simplified schema** - text stored directly in `sentence` table (no separate `sentence_text` table)
 3. **Deterministic 8-hex-char IDs** - collision-proof via hashing (text + ordinal + commit)
-4. **Sequential DOM wrapping** - frontend and backend use identical tokenization logic
-5. **Tokenizer parity required** - Go and JavaScript implementations must match exactly
-6. **Ordinal-based synchronization** - sentence ID array acts as the bridge between backend and frontend
+4. **No tokenizer parity needed!** - Backend sends word counts, frontend wraps by counting alphanumeric blobs
+5. **Word-count based wrapping** - Frontend uses word counts to wrap sentences, no JS tokenizer needed
+6. **Inline migration history** - No separate migration table, history stored as JSONB array in annotation_version
+7. **No normalized_text storage** - Normalize on-the-fly during migration (saves ~75MB)
 
 ---
 
@@ -59,10 +60,10 @@ WriteSys is a system for tracking annotations (highlights, tags, tasks) on sente
                    ▼
 ┌─────────────────────────────────────────────────────┐
 │  PostgreSQL Database                                │
-│  - Sentence text (content-addressed, deduplicated)  │
-│  - Sentence instances per commit                    │
+│  - Manuscripts (repo paths, file paths)             │
+│  - Sentence instances per commit (with word counts) │
 │  - Annotations (highlights, tags, tasks)            │
-│  - Migration maps with confidence scores            │
+│  - Annotation version history with migration data   │
 └──────────────────┬──────────────────────────────────┘
                    │
                    │ reads from
@@ -84,10 +85,13 @@ WriteSys is a system for tracking annotations (highlights, tags, tasks) on sente
 - **Database:** PostgreSQL 16 (plain Postgres, no TimescaleDB extension needed)
 - **Migrations:** Liquibase with XML changelogs
 - **Frontend:** Plain HTML/CSS/JavaScript (no framework)
-- **Sentence Splitting:** Go `prose` library (github.com/jdkato/prose/v2)
+  - Paged.js for book pagination
+  - marked.js for Markdown → HTML
+  - smartquotes.js for typography
+  - **No sentence tokenizer needed** - uses word counts from backend
+- **Sentence Splitting (Backend only):** Go `prose` library (github.com/jdkato/prose/v2) + custom fiction rules
 - **HTTP Routing:** Chi (github.com/go-chi/chi/v5)
 - **Postgres Driver:** pgx (github.com/jackc/pgx/v5)
-- **Markdown Parsing:** Goldmark (github.com/yuin/goldmark)
 - **Deployment:** Docker Compose (local dev), GCP VM (future)
 
 ---
@@ -96,31 +100,54 @@ WriteSys is a system for tracking annotations (highlights, tags, tasks) on sente
 
 ### Core Entities
 
-#### 1. `processed_commit` (Git Commit History)
+#### 1. `manuscript` (Manuscript Metadata)
+
+Tracks manuscripts being worked on.
+
+```sql
+CREATE TABLE manuscript (
+    manuscript_id       SERIAL PRIMARY KEY,
+    repo_path           TEXT NOT NULL,              -- e.g., "/home/user/my-novel"
+    story_file_path     TEXT NOT NULL,              -- e.g., "the-wildfire.md"
+    created_at          TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (repo_path, story_file_path)
+);
+```
+
+**Interactive Mode:**
+- First run: Prompts for repo path and file path, creates manuscript record
+- Subsequent runs: Auto-detects manuscript from current directory
+- Option to start new manuscript
+
+---
+
+#### 2. `processed_commit` (Git Commit History)
 
 Tracks which commits have been processed.
 
 ```sql
 CREATE TABLE processed_commit (
     commit_hash              VARCHAR(40) PRIMARY KEY,  -- Git SHA-1
+    manuscript_id            INTEGER NOT NULL,
     parent_commit_hash       VARCHAR(40),              -- For traversal
     branch_name              VARCHAR(255) NOT NULL,
-    story_file_path          TEXT NOT NULL,            -- e.g., "the-wildfire.md"
     processed_at             TIMESTAMPTZ DEFAULT NOW(),
     sentence_count           INTEGER NOT NULL,
     additions_count          INTEGER NOT NULL DEFAULT 0,
     deletions_count          INTEGER NOT NULL DEFAULT 0,
     changes_count            INTEGER NOT NULL DEFAULT 0,
     sentence_id_array        JSONB NOT NULL,           -- Array for integrity checking & backup
+    FOREIGN KEY (manuscript_id) REFERENCES manuscript(manuscript_id) ON DELETE CASCADE,
     FOREIGN KEY (parent_commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE SET NULL
 );
 
+CREATE INDEX idx_processed_commit_manuscript ON processed_commit(manuscript_id);
 CREATE INDEX idx_processed_commit_branch ON processed_commit(branch_name);
 CREATE INDEX idx_processed_commit_processed_at ON processed_commit(processed_at);
 CREATE INDEX idx_processed_commit_sentence_array ON processed_commit USING GIN(sentence_id_array);
 ```
 
-**Why Store Sentence ID Array (Uncompressed JSON):**
+**Why Store Sentence ID Array:**
 - Integrity checking: verify ordinal reconstruction matches expected order
 - Backup: if `sentence` table ordinals get corrupted, can rebuild from array
 - Debugging: human-readable when querying database
@@ -134,7 +161,7 @@ CREATE INDEX idx_processed_commit_sentence_array ON processed_commit USING GIN(s
 
 ---
 
-#### 2. `sentence` (Sentence Instances per Commit)
+#### 3. `sentence` (Sentence Instances per Commit)
 
 Each row represents a specific sentence in a specific commit.
 
@@ -143,9 +170,8 @@ CREATE TABLE sentence (
     sentence_id     VARCHAR(100) PRIMARY KEY,    -- e.g., "kostya-looked-around-a1f04c9d"
     commit_hash     VARCHAR(40) NOT NULL,
     text            TEXT NOT NULL,               -- Full sentence text
-    normalized_text TEXT NOT NULL,               -- Normalized for comparison/matching
+    word_count      INTEGER NOT NULL,            -- Count of alphanumeric word blobs
     ordinal         INTEGER NOT NULL,            -- Position in manuscript (0-indexed)
-    is_heading      BOOLEAN DEFAULT FALSE,       -- True if this is a Markdown heading
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     FOREIGN KEY (commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE CASCADE,
     UNIQUE (commit_hash, ordinal)
@@ -153,19 +179,24 @@ CREATE TABLE sentence (
 
 CREATE INDEX idx_sentence_commit ON sentence(commit_hash);
 CREATE INDEX idx_sentence_ordinal ON sentence(commit_hash, ordinal);
-CREATE INDEX idx_sentence_normalized ON sentence(normalized_text);
 ```
 
-**Normalization Rules:**
-- Trim leading/trailing whitespace
-- Collapse multiple spaces to single space
-- Convert smart quotes to straight quotes: `"` → `"`, `'` → `'`
-- Convert em-dashes/en-dashes to hyphens: `—` → `-`
-- Lowercase for comparison (stored separately, original text preserved)
+**Word Count Definition:**
+- Count of contiguous alphanumeric character sequences (`[a-zA-Z0-9]+`)
+- Used by frontend to wrap sentences without needing tokenizer
+- Examples:
+  - "Kostya looked around." → 3 words
+  - "He said, 'No.'" → 3 words (`He`, `said`, `No`)
+  - "The variable `userId` is important." → 5 words
+
+**Why No normalized_text?**
+- Only needed during migration for fuzzy matching
+- Can normalize on-the-fly when comparing (adds ~10 seconds per commit)
+- Saves ~75MB for full manuscript lifecycle
 
 **Space Analysis:**
-- ~203 bytes per row (sentence_id 100 + commit_hash 40 + text ~50 + normalized ~50 + metadata)
-- For 200 commits × 7,500 sentences ≈ **304 MB** total
+- ~190 bytes per row (sentence_id 100 + commit_hash 40 + text ~50 + word_count 4)
+- For 200 commits × 7,500 sentences ≈ **285 MB** total
 - Acceptable for local development and GCP deployment
 
 **Sentence ID Format:** `{first-three-words}-{8-hex-chars}`
@@ -185,13 +216,13 @@ CREATE INDEX idx_sentence_normalized ON sentence(normalized_text);
 
 ---
 
-#### 3. `annotation` (User Annotations)
+#### 4. `annotation` (User Annotations)
 
 Stores all annotation types: highlights, tags, tasks.
 
 ```sql
 CREATE TABLE annotation (
-    annotation_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    annotation_id   SERIAL PRIMARY KEY,
     type            VARCHAR(20) NOT NULL,        -- 'highlight', 'tag', 'task'
     created_by      VARCHAR(50) NOT NULL,        -- Username (Phase 1: always "andrew")
     created_at      TIMESTAMPTZ DEFAULT NOW(),
@@ -206,35 +237,43 @@ CREATE INDEX idx_annotation_deleted_at ON annotation(deleted_at) WHERE deleted_a
 
 ---
 
-#### 4. `annotation_version` (Version History)
+#### 5. `annotation_version` (Version History)
 
-Every edit creates a new version. Always append-only.
+Every edit creates a new version. Always append-only. Stores migration history inline.
 
 ```sql
 CREATE TABLE annotation_version (
-    version_id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    annotation_id               UUID NOT NULL,
+    annotation_id               INTEGER NOT NULL,
+    version                     INTEGER NOT NULL,
     sentence_id                 VARCHAR(100) NOT NULL,        -- Current attachment
-    payload                     JSONB NOT NULL,                -- Type-specific data
-    originating_sentence_id     VARCHAR(100),                  -- Where it was first created
-    origin_commit_hash          VARCHAR(40),
-    migration_event_id          UUID,                          -- NULL if not migrated
+    payload                     JSONB NOT NULL,               -- Type-specific data
+    sentence_id_history         JSONB NOT NULL,               -- Array of sentence IDs through migrations
+    migration_confidence        NUMERIC(3, 2),                -- Latest migration confidence (0.00-1.00)
+    origin_sentence_id          VARCHAR(100) NOT NULL,        -- Where it was first created
+    origin_commit_hash          VARCHAR(40) NOT NULL,
     created_at                  TIMESTAMPTZ DEFAULT NOW(),
     created_by                  VARCHAR(50) NOT NULL,
-    snapshot_text               TEXT,                          -- Sentence text at creation/migration
-    snapshot_prev_text          TEXT,                          -- Previous sentence text
-    snapshot_next_text          TEXT,                          -- Next sentence text
+    PRIMARY KEY (annotation_id, version),
     FOREIGN KEY (annotation_id) REFERENCES annotation(annotation_id) ON DELETE CASCADE,
     FOREIGN KEY (sentence_id) REFERENCES sentence(sentence_id) ON DELETE RESTRICT,
-    FOREIGN KEY (originating_sentence_id) REFERENCES sentence(sentence_id) ON DELETE SET NULL,
-    FOREIGN KEY (origin_commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE SET NULL,
-    FOREIGN KEY (migration_event_id) REFERENCES sentence_migration_event(event_id) ON DELETE SET NULL
+    FOREIGN KEY (origin_sentence_id) REFERENCES sentence(sentence_id) ON DELETE SET NULL,
+    FOREIGN KEY (origin_commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_annotation_version_annotation ON annotation_version(annotation_id);
 CREATE INDEX idx_annotation_version_sentence ON annotation_version(sentence_id);
 CREATE INDEX idx_annotation_version_created_at ON annotation_version(created_at);
 ```
+
+**Migration History Storage:**
+- `sentence_id_history`: JSONB array tracking sentence ID changes
+  - Example: `["old-id-1", "old-id-2", "current-id"]`
+  - UI can walk back through history to show context at each migration point
+- `migration_confidence`: Latest migration's confidence score (0.00-1.00)
+
+**No Snapshot Fields:**
+- Context can be reconstructed by querying sentences using `origin_sentence_id` + `origin_commit_hash`
+- Async request for context when user clicks annotation
 
 **Payload Schema by Type:**
 
@@ -259,54 +298,11 @@ CREATE INDEX idx_annotation_version_created_at ON annotation_version(created_at)
   "description": "Fix awkward phrasing",
   "status": "open",            // open, wip, nvm, dupe, done
   "priority": 2,               // Non-negative integer (displays as "P2")
-  "tag": "editing",            // Single string tag
+  "tags": ["editing", "dialogue"],  // Array of tags
   "flag": false,               // Boolean (displays as red flag if true)
   "color": "pink"              // Optional, for visual distinction
 }
 ```
-
----
-
-#### 5. `sentence_migration_event` (Migration History)
-
-Tracks how annotations were moved between commits.
-
-```sql
-CREATE TABLE sentence_migration_event (
-    event_id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    from_commit_hash        VARCHAR(40) NOT NULL,
-    to_commit_hash          VARCHAR(40) NOT NULL,
-    old_sentence_id         VARCHAR(100) NOT NULL,
-    new_sentence_id         VARCHAR(100) NOT NULL,
-    migration_type          VARCHAR(30) NOT NULL,  -- See types below
-    confidence_score        NUMERIC(3, 2) NOT NULL, -- 0.00 to 1.00
-    algorithm_used          VARCHAR(50) NOT NULL,   -- e.g., "fuzzy-word-v1"
-    created_at              TIMESTAMPTZ DEFAULT NOW(),
-    FOREIGN KEY (from_commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE CASCADE,
-    FOREIGN KEY (to_commit_hash) REFERENCES processed_commit(commit_hash) ON DELETE CASCADE,
-    CHECK (confidence_score >= 0.00 AND confidence_score <= 1.00),
-    CHECK (migration_type IN ('exact', 'high-similarity', 'moderate-similarity',
-                               'low-similarity', 'positional-fallback', 'split-preferred',
-                               'merge-source', 'deletion-nearest'))
-);
-
-CREATE INDEX idx_sentence_migration_from ON sentence_migration_event(from_commit_hash, old_sentence_id);
-CREATE INDEX idx_sentence_migration_to ON sentence_migration_event(to_commit_hash, new_sentence_id);
-CREATE INDEX idx_sentence_migration_confidence ON sentence_migration_event(confidence_score);
-```
-
-**Migration Types & Confidence:**
-
-| Type | Confidence | Description |
-|------|------------|-------------|
-| `exact` | 1.00 | Normalized text identical |
-| `high-similarity` | 0.80-0.99 | Fuzzy match > 80% similar |
-| `moderate-similarity` | 0.60-0.79 | Fuzzy match 60-79% similar |
-| `low-similarity` | 0.40-0.59 | Fuzzy match 40-59% similar |
-| `positional-fallback` | 0.20 | No good match, use nearest ordinal |
-| `split-preferred` | 0.50-0.90 | Old sentence split into multiple, picked best |
-| `merge-source` | 0.70-0.95 | Multiple old sentences merged into one |
-| `deletion-nearest` | 0.10 | Old sentence deleted, mapped to following sentence |
 
 ---
 
@@ -358,9 +354,9 @@ VALUES ('andrew', '$2a$10$placeholder.hash.for.phase1', 'author');
 4. **Em-dashes:** Treat like commas (same sentence)
    - `She turned—quickly, too quickly—toward the door.` → ONE sentence
 
-5. **Headings:** Treated as sentences, marked with `is_heading = true`
-   - `# Chapter 5` → sentence `chapter-5-a1f2c3d4`, `is_heading = true`
-   - `V` → sentence `v-e8f2b3c1`, `is_heading = true`
+5. **Headings:** Treated as sentences (no special marker needed)
+   - `# Chapter 5` → sentence `chapter-5-a1f2c3d4`
+   - `V` → sentence `v-e8f2b3c1`
 
 **Implementation Strategy:**
 
@@ -384,27 +380,25 @@ func applyFictionRules(sentences []prose.Sentence) []string {
 
 **Frontend (JavaScript):**
 ```javascript
-// web/js/tokenizer.js
-function splitIntoSentences(text) {
-    // Port exact same logic from Go
-    // Use regex-based approach to match prose library behavior
-    let baseSentences = basicSentenceSplit(text);
-    return applyFictionRules(baseSentences);
-}
-
-function applyFictionRules(sentences) {
-    // Identical logic to Go implementation
-    // Handle dialogue, ellipses, fragments
+// web/js/renderer.js
+function wrapSentencesByWordCount(container, sentences) {
+    // Walk text nodes sequentially
+    // Count alphanumeric blobs: /[a-zA-Z0-9]+/g
+    // Wrap when word count matches backend's count
+    // No tokenizer needed!
 }
 ```
 
-**Testing Tokenizer Parity:**
-- Create test suite with ~100 fiction examples
-- Run through both Go and JS tokenizers
-- Assert outputs match exactly
-- Maintain shared test fixtures (JSON file) for both implementations
+**Word Counting (Backend):**
+```go
+func CountWords(text string) int {
+    // Count alphanumeric sequences
+    words := regexp.MustCompile(`[a-zA-Z0-9]+`).FindAllString(text, -1)
+    return len(words)
+}
+```
 
-**Critical:** Frontend and backend tokenizers must produce identical output for the same input. This is the foundation of the ordinal-based sentence wrapping approach.
+**No Tokenizer Parity Needed:** Backend tokenizes and counts words. Frontend just counts alphanumeric blobs to wrap. Simpler and more robust!
 
 ---
 
@@ -546,8 +540,10 @@ func ComputeSimilarity(text1, text2 string) float64 {
 
 **Primary command:**
 ```bash
-writesys process [OPTIONS]
+writesys
 ```
+
+The CLI runs in **interactive mode by default** (no flags needed for Phase 1).
 
 **Behavior:**
 
@@ -585,10 +581,13 @@ writesys process [OPTIONS]
    - Store sentence ID array (uncompressed JSON) in `processed_commit`
    - Update `processed_commit` table
 
-**Flags:**
+**Flags (for testing/automation):**
 - `--file <path>`: Specify story file (default: auto-detect `*.md` in repo)
-- `--force-commit <hash>`: Skip interactive mode, process specific commit
+- `--commit <hash>`: Process specific commit non-interactively
 - `--branch <name>`: Override branch detection
+- `--yes`: Skip confirmations (for automation)
+
+**Note:** Flags enable testing and automated workflows. Interactive mode is still the primary UX focus for Phase 1.
 
 **Edge Case Handling:**
 
@@ -601,11 +600,11 @@ writesys process [OPTIONS]
 - Prompt: Continue [y/n]?
 
 **Processed commit no longer in history (rebase):**
-- Error: "Last processed commit abc123 not found in current branch history. Database may be out of sync."
-- Offer options:
-  - [1] Rebuild from scratch (WARNING: will recompute all migrations)
-  - [2] Manually specify new starting commit
-  - [3] Abort
+- **Option A (Chosen):** Treat current HEAD as coming after last processed commit
+- Warning: "Last processed commit abc123 not found in current branch history (likely rebased). Sentences from old commits still exist in database. Continue migrating from last processed commit to current HEAD?"
+- Prompt: Continue [y/n]?
+- If yes: Proceed with migration using sentence data from database
+- **Note:** Annotations can still migrate because sentence IDs from old commits remain in database, only the git commit is gone
 
 ---
 
@@ -617,7 +616,15 @@ writesys process [OPTIONS]
 
 ```
 GET  /api/manuscripts/:commit_hash
-  → Returns: { sentences: [...], markdown: "..." }
+  → Returns: {
+      markdown: "# Chapter 1\n\nKostya...",
+      sentences: [
+        { "id": "kostya-looked-around-a1f0", "wordCount": 3 },
+        { "id": "it-was-empty-b2g5", "wordCount": 3 },
+        ...
+      ],
+      annotations: [...]
+    }
 
 GET  /api/annotations/:commit_hash
   → Returns: { annotations: [...] } (for all sentences in this commit)
@@ -675,31 +682,32 @@ DELETE /api/annotations/:annotation_id
 
 **Backend responsibilities:**
 1. Sentence splitting on **plain text Markdown**
-2. Serve raw Markdown + ordered sentence ID array via API
-3. No Markdown rendering needed in Go
+2. Generate sentence IDs with word counts
+3. Serve raw Markdown + structured sentence objects via API
 
 **Frontend responsibilities:**
-1. Fetch Markdown + ordered sentence IDs from API
+1. Fetch Markdown + sentence objects (with word counts) from API
 2. Parse Markdown → HTML using `marked.js`
-3. **Sequentially walk text nodes, splitting with same tokenizer rules as backend**
+3. **Sequentially walk text nodes, using word counts to wrap sentences**
 4. Wrap sentences in `<span>` tags, matching IDs by ordinal
 5. Apply Paged.js for book-style pagination
 6. Run smartquotes.js for typographic quotes
 
-**Critical Requirement: Tokenizer Parity**
+**Word-Count Based Wrapping (No Tokenizer Parity Needed!)**
 
-The backend (Go) and frontend (JavaScript) must use **identical sentence tokenization rules**. This is achieved by:
-1. Implementing fiction-specific rules in Go first (backend)
-2. Porting identical logic to JavaScript (frontend)
-3. Testing both with same input to ensure identical output
+The backend sends word counts for each sentence. The frontend wraps by counting alphanumeric blobs:
+1. Backend: Tokenizes sentences, generates IDs, **counts words** (alphanumeric sequences)
+2. Frontend: Walks text nodes, **counts alphanumeric blobs** (`[a-zA-Z0-9]+`), wraps when count matches
+3. No need to port tokenizer logic to JavaScript!
+4. Simpler, more robust, and faster
 
 **Rendering Steps:**
 
 1. **Fetch data:**
    ```javascript
    const response = await fetch(`/api/manuscripts/${commitHash}`);
-   const { markdown, sentenceIds, annotations } = await response.json();
-   // sentenceIds: ["kostya-looked-around-a1f0", "it-was-empty-b2g5", ...]
+   const { markdown, sentences, annotations } = await response.json();
+   // sentences: [{ id: "kostya-looked-around-a1f0", wordCount: 3 }, ...]
    ```
 
 2. **Parse Markdown → HTML:**
@@ -709,11 +717,11 @@ The backend (Go) and frontend (JavaScript) must use **identical sentence tokeniz
    container.innerHTML = html;
    ```
 
-3. **Sequential sentence wrapping:**
+3. **Sequential sentence wrapping by word count:**
    ```javascript
-   let currentIdIndex = 0;
+   let currentSentenceIndex = 0;
 
-   function wrapSentencesInContainer(container, sentenceIds) {
+   function wrapSentencesByWordCount(container, sentences) {
      // Walk all text nodes in DOM order
      const walker = document.createTreeWalker(
        container,
@@ -724,33 +732,67 @@ The backend (Go) and frontend (JavaScript) must use **identical sentence tokeniz
 
      let textNode;
      while (textNode = walker.nextNode()) {
-       // Skip empty/whitespace-only nodes
        if (!textNode.textContent.trim()) continue;
 
-       // Split text node into sentences (same rules as backend)
-       const sentences = splitTextNodeIntoSentences(textNode.textContent);
-
-       // Create span for each sentence
        const fragment = document.createDocumentFragment();
-       sentences.forEach(sentenceText => {
+       const text = textNode.textContent;
+       let textPos = 0;
+
+       while (currentSentenceIndex < sentences.length) {
+         const { id, wordCount } = sentences[currentSentenceIndex];
+
+         // Count alphanumeric blobs in remaining text
+         const words = text.substring(textPos).match(/[a-zA-Z0-9]+/g) || [];
+
+         if (words.length === 0) break;
+
+         // Find position after N words
+         let wordsFound = 0;
+         let endPos = textPos;
+         const regex = /[a-zA-Z0-9]+/g;
+         regex.lastIndex = textPos;
+         let match;
+
+         while (wordsFound < wordCount && (match = regex.exec(text))) {
+           wordsFound++;
+           endPos = match.index + match[0].length;
+         }
+
+         // Capture sentence text including trailing punctuation/whitespace
+         while (endPos < text.length && /[\s.,!?;:'"]/.test(text[endPos])) {
+           endPos++;
+         }
+
+         const sentenceText = text.substring(textPos, endPos);
+
+         // Create span
          const span = document.createElement('span');
          span.className = 'sentence';
-         span.dataset.id = sentenceIds[currentIdIndex++];
+         span.dataset.id = id;
          span.textContent = sentenceText;
          fragment.appendChild(span);
-       });
 
-       // Replace text node with wrapped sentences
+         textPos = endPos;
+         currentSentenceIndex++;
+
+         if (textPos >= text.length) break;
+       }
+
+       // Add any remaining text
+       if (textPos < text.length) {
+         fragment.appendChild(document.createTextNode(text.substring(textPos)));
+       }
+
        textNode.parentNode.replaceChild(fragment, textNode);
      }
 
-     // Verify all IDs were used
-     if (currentIdIndex !== sentenceIds.length) {
-       console.error(`Mismatch: ${currentIdIndex} spans created, ${sentenceIds.length} IDs provided`);
+     // Verify all sentences were wrapped
+     if (currentSentenceIndex !== sentences.length) {
+       console.warn(`Wrapped ${currentSentenceIndex}/${sentences.length} sentences`);
      }
    }
 
-   wrapSentencesInContainer(container, sentenceIds);
+   wrapSentencesByWordCount(container, sentences);
    ```
 
 4. **Apply annotations as CSS classes:**
@@ -787,11 +829,11 @@ For a **60,000 word novel** (~9,000 sentences):
 
 **Total initial load time: 3-4 seconds** (acceptable for desktop tool)
 
-**Why Sequential Approach:**
-- ✅ Fast (ordinal-based, no searching)
+**Why Word-Count Approach:**
+- ✅ Fast (ordinal-based, no searching, no tokenizer needed)
 - ✅ Robust (no ambiguity with duplicate sentences)
-- ✅ Simple (one pass through DOM)
-- ⚠️ Requires tokenizer parity (manageable one-time porting effort)
+- ✅ Simple (one pass through DOM, count alphanumeric blobs)
+- ✅ **No tokenizer parity needed!** Backend sends word counts, frontend just counts
 
 **Interaction Behavior:**
 
@@ -991,11 +1033,11 @@ h1 {
 **Tables (in order of dependencies):**
 
 1. `user` (seed data: andrew)
-2. `processed_commit` (git history)
-3. `sentence` (sentence instances)
-4. `annotation` (annotation metadata)
-5. `sentence_migration_event` (migration history)
-6. `annotation_version` (versioned annotation content)
+2. `manuscript` (manuscript metadata)
+3. `processed_commit` (git history)
+4. `sentence` (sentence instances)
+5. `annotation` (annotation metadata)
+6. `annotation_version` (versioned annotation content with inline migration history)
 
 **Liquibase Changelog Structure:**
 
@@ -1003,10 +1045,10 @@ h1 {
 liquibase/changelog/
 ├── db.changelog-master.xml
 ├── 001-create-user-table.xml
-├── 002-create-processed-commit-table.xml
-├── 003-create-sentence-table.xml
-├── 004-create-annotation-table.xml
-├── 005-create-migration-event-table.xml
+├── 002-create-manuscript-table.xml
+├── 003-create-processed-commit-table.xml
+├── 004-create-sentence-table.xml
+├── 005-create-annotation-table.xml
 ├── 006-create-annotation-version-table.xml
 └── 007-seed-default-user.xml
 ```
@@ -1029,10 +1071,9 @@ liquibase/changelog/
 - [ ] Create test suite with ~100 fiction sentence examples
 - [ ] Implement sentence ID generation algorithm
 - [ ] Implement sentence normalization
-- [ ] Build `writesys process` CLI command (bootstrap mode only)
+- [ ] Implement word counting (alphanumeric blobs)
+- [ ] Build `writesys` CLI command in interactive mode (bootstrap mode only)
 - [ ] Test with sample Markdown file
-- [ ] **Port tokenizer to JavaScript (maintain parity with Go)**
-- [ ] **Create shared test fixtures (JSON) and verify Go/JS produce identical output**
 
 **Milestone 3: Migration Algorithm**
 - [ ] Implement fuzzy word-level Levenshtein matching
@@ -1050,8 +1091,8 @@ liquibase/changelog/
 
 **Milestone 5: Web UI**
 - [ ] Set up HTML page with Paged.js, marked.js, smartquotes.js
-- [ ] Implement sequential sentence wrapping (using JS tokenizer)
-- [ ] Verify sentence IDs match between backend and frontend (ordinal alignment)
+- [ ] Implement word-count based sentence wrapping (count alphanumeric blobs)
+- [ ] Verify sentence wrapping matches backend sentence boundaries
 - [ ] Implement book-style page layout CSS (based on existing pattern)
 - [ ] Implement hover/click interaction on sentences
 - [ ] Build annotation sidebar (view/create/edit/delete)
@@ -1129,7 +1170,7 @@ liquibase/changelog/
    - Tool only processes clean commits
 
 5. **Should headings be first-class entities separate from sentences?**
-   - Current design: Headings are sentences with `is_heading = true`
+   - Current design: Headings are sentences (no special marker)
    - May revisit if heading-specific features needed (e.g., TOC generation)
 
 ---
@@ -1216,14 +1257,14 @@ docker compose --profile migrate up liquibase
 ./test-db.sh
 
 # Build CLI tool
-cd ../cmd/writesys
+cd ../cli/writesys
 go build -o writesys
 
-# Bootstrap first commit
-./writesys process --file ../../manuscripts/the-wildfire.md
+# Run interactive mode (will prompt for manuscript on first run)
+./writesys
 
 # Start API server
-cd ../api
+cd ../../api
 go run main.go
 
 # Open browser
@@ -1250,9 +1291,9 @@ open http://localhost:5000
 │   │       └── 001-*.xml ... 008-*.xml
 │   ├── test-db.sh                   # Setup verification script
 │   └── README.md
-├── cmd/
+├── cli/
 │   └── writesys/
-│       ├── main.go                  # CLI entry point
+│       ├── main.go                  # CLI entry point (interactive mode)
 │       ├── process.go               # Git commit processing
 │       └── migrate.go               # Migration algorithm
 ├── internal/
@@ -1305,7 +1346,7 @@ Phase 1 is complete when:
 
 This design balances pragmatism with extensibility. By treating sentence instances as independent entities (no false lineage tracking) and using heuristic migration with confidence scoring, the system stays simple while giving the author the tools needed to manage annotations through manuscript evolution.
 
-The content-addressed storage and compressed snapshots keep the database compact (~150-400MB for a full novel lifecycle), while the append-only annotation history ensures no data loss.
+The simplified schema with inline migration history and word-count based wrapping keeps the database compact (~285MB for a full novel lifecycle), while the append-only annotation history ensures no data loss.
 
 Phase 1 provides a solid foundation for future multi-user collaboration, AI-assisted features, and production deployment.
 
