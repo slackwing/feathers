@@ -195,8 +195,8 @@ CREATE INDEX idx_sentence_ordinal ON sentence(commit_hash, ordinal);
 - Saves ~75MB for full manuscript lifecycle
 
 **Space Analysis:**
-- ~190 bytes per row (sentence_id 100 + commit_hash 40 + text ~50 + word_count 4)
-- For 200 commits × 7,500 sentences ≈ **285 MB** total
+- ~264 bytes per row (sentence_id 100 + commit_hash 40 + text ~120 average + word_count 4)
+- For 200 commits × 7,500 sentences ≈ **396 MB** total
 - Acceptable for local development and GCP deployment
 
 **Sentence ID Format:** `{first-three-words}-{8-hex-chars}`
@@ -600,7 +600,7 @@ The CLI runs in **interactive mode by default** (no flags needed for Phase 1).
 - Prompt: Continue [y/n]?
 
 **Processed commit no longer in history (rebase):**
-- **Option A (Chosen):** Treat current HEAD as coming after last processed commit
+- Treat current HEAD as coming after last processed commit
 - Warning: "Last processed commit abc123 not found in current branch history (likely rebased). Sentences from old commits still exist in database. Continue migrating from last processed commit to current HEAD?"
 - Prompt: Continue [y/n]?
 - If yes: Proceed with migration using sentence data from database
@@ -1060,51 +1060,94 @@ liquibase/changelog/
 ### Phase 1 Milestones
 
 **Milestone 1: Infrastructure Setup**
-- [ ] Initialize Go project structure
-- [ ] Set up Docker Compose (Postgres + API + Liquibase)
-- [ ] Create Liquibase changelogs for all tables
-- [ ] Verify database migrations with test-db.sh script
-- [ ] Set up basic Go HTTP server (Chi or Gorilla Mux)
+- [ ] Initialize Go project structure with modules (go.mod)
+- [ ] Set up Docker Compose with postgres, api, liquibase services
+- [ ] Create Liquibase changelogs for all 7 tables (user, manuscript, processed_commit, sentence, annotation, annotation_version)
+- [ ] **TEST: Run migrations** (`docker compose --profile migrate up liquibase`, verify all tables created)
+- [ ] **TEST: Verify database schema** (`./test-db.sh`, check table structure, indexes, foreign keys)
+- [ ] Set up basic Go HTTP server with Chi router
+- [ ] **TEST: Health check endpoint** (`curl localhost:5000/health`, expect 200 OK)
 
 **Milestone 2: Sentence Processing Core**
-- [ ] Implement sentence tokenizer with fiction rules (Go)
-- [ ] Create test suite with ~100 fiction sentence examples
-- [ ] Implement sentence ID generation algorithm
-- [ ] Implement sentence normalization
-- [ ] Implement word counting (alphanumeric blobs)
-- [ ] Build `writesys` CLI command in interactive mode (bootstrap mode only)
-- [ ] Test with sample Markdown file
+- [ ] Implement sentence tokenizer with prose library (`internal/sentence/tokenizer.go`)
+- [ ] Apply custom fiction rules (dialogue, fragments, ellipses, em-dashes)
+- [ ] Write unit tests for tokenizer (~100 fiction sentence edge cases)
+- [ ] **TEST: Run tokenizer tests** (`go test ./internal/sentence/... -v`, show pass/fail counts)
+- [ ] Implement deterministic sentence ID generation algorithm (`internal/sentence/id.go`)
+- [ ] Write unit tests for ID generation (verify determinism: same input → same ID)
+- [ ] **TEST: Run ID generation tests** (`go test ./internal/sentence/... -run TestGenerateSentenceID -v`)
+- [ ] Implement word counting (alphanumeric blob regex: `[a-zA-Z0-9]+`)
+- [ ] Write unit tests for word counting (20+ cases including edge cases)
+- [ ] **TEST: Run word count tests** (`go test ./internal/sentence/... -run TestCountWords -v`)
+- [ ] Build `writesys` CLI interactive mode with manuscript selection (`cli/writesys/main.go`)
+- [ ] Implement bootstrap mode: process first commit (tokenize → generate IDs → store sentences)
+- [ ] Write integration test with sample Markdown file (10-20 sentences)
+- [ ] **TEST: Process sample manuscript** (`./writesys --file test-data/sample.md --commit abc123 --yes`, verify DB entries)
+- [ ] **TEST: Verify sentence ID array** (query `processed_commit.sentence_id_array`, confirm JSON structure)
 
 **Milestone 3: Migration Algorithm**
-- [ ] Implement fuzzy word-level Levenshtein matching
-- [ ] Implement sentence diff algorithm (added/deleted/unchanged)
-- [ ] Implement migration mapping with confidence scoring
-- [ ] Handle edge cases: splits, merges, deletions
-- [ ] Test with realistic manuscript edits
+- [ ] Implement text normalization for matching (`internal/sentence/matcher.go`)
+- [ ] Implement word-level Levenshtein distance algorithm
+- [ ] Write unit tests for similarity computation (20+ test pairs with expected scores)
+- [ ] **TEST: Run similarity tests** (`go test ./internal/sentence/... -run TestComputeSimilarity -v`)
+- [ ] Implement sentence diff algorithm (identify added/deleted/unchanged sentences)
+- [ ] Write unit tests for diff algorithm (5+ realistic edit scenarios)
+- [ ] **TEST: Run diff tests** (`go test ./internal/sentence/... -run TestSentenceDiff -v`)
+- [ ] Implement migration mapping with confidence scoring (fuzzy match + edge cases)
+- [ ] Handle edge cases: splits (prefer later), merges (all map to one), deletions (nearest following)
+- [ ] Write unit tests for migration edge cases (split, merge, deletion)
+- [ ] **TEST: Run migration tests** (`go test ./internal/sentence/... -run TestMigration -v`, show confidence scores)
+- [ ] Create realistic test scenario: commit A → commit B with 5 edits, 2 deletions, 3 additions
+- [ ] **TEST: End-to-end migration test** (`./writesys` process A then B, verify migration_confidence values in DB)
+- [ ] **TEST: Verify annotation migration** (create annotation on commit A sentence, process commit B, check annotation_version updated)
 
 **Milestone 4: API Backend**
-- [ ] Implement GET /api/manuscripts/:commit_hash
-- [ ] Implement GET /api/annotations endpoints
-- [ ] Implement POST /api/annotations (create)
-- [ ] Implement PUT /api/annotations/:id (update/new version)
-- [ ] Implement DELETE /api/annotations/:id (soft delete)
+- [ ] Implement database query functions (`internal/database/queries.go`)
+- [ ] Write unit tests for queries (use test database fixtures)
+- [ ] **TEST: Run query tests** (`go test ./internal/database/... -v`)
+- [ ] Implement GET /api/manuscripts/:commit_hash handler
+- [ ] **TEST: Fetch manuscript** (`curl localhost:5000/api/manuscripts/abc123`, verify JSON structure with markdown + sentences + annotations)
+- [ ] Implement GET /api/annotations/:commit_hash handler
+- [ ] **TEST: Fetch annotations by commit** (`curl localhost:5000/api/annotations/abc123`, verify array)
+- [ ] Implement GET /api/annotations/sentence/:sentence_id handler
+- [ ] **TEST: Fetch annotations by sentence** (`curl localhost:5000/api/annotations/sentence/kostya-looked-around-a1f0`, verify filtered results)
+- [ ] Implement POST /api/annotations (create highlight/tag/task)
+- [ ] **TEST: Create annotation** (`curl -X POST -d '{"type":"highlight","sentence_id":"...","payload":{...}}'`, verify DB insertion)
+- [ ] Implement PUT /api/annotations/:annotation_id (creates new version)
+- [ ] **TEST: Update annotation** (`curl -X PUT -d '{"payload":{...}}'`, verify new annotation_version row)
+- [ ] Implement DELETE /api/annotations/:annotation_id (soft delete)
+- [ ] **TEST: Delete annotation** (`curl -X DELETE`, verify deleted_at timestamp set)
 
 **Milestone 5: Web UI**
-- [ ] Set up HTML page with Paged.js, marked.js, smartquotes.js
-- [ ] Implement word-count based sentence wrapping (count alphanumeric blobs)
-- [ ] Verify sentence wrapping matches backend sentence boundaries
-- [ ] Implement book-style page layout CSS (based on existing pattern)
-- [ ] Implement hover/click interaction on sentences
-- [ ] Build annotation sidebar (view/create/edit/delete)
-- [ ] Style highlights, tags, tasks visually
-- [ ] Show migration history and confidence scores
-- [ ] Performance test: 60K words should load in < 5 seconds
+- [ ] Set up index.html with Paged.js, marked.js, smartquotes.js CDN links
+- [ ] Implement Markdown fetch and parsing (`web/js/renderer.js`)
+- [ ] **TEST: Fetch and render Markdown** (open browser, check HTML rendered from API)
+- [ ] Implement word-count based sentence wrapping algorithm (walk text nodes, count alphanumeric blobs)
+- [ ] **TEST: Verify sentence boundaries** (manually inspect: check 10 random sentences match backend IDs by ordinal)
+- [ ] **TEST: Mismatch detection** (add console.warn if wrapped count ≠ sentences.length, verify warning appears if mismatch)
+- [ ] Implement book-style CSS (Paged.js @page rules, typography, 6in x 9in pages)
+- [ ] **TEST: Visual inspection** (open browser, verify book layout, page numbers, proper pagination)
+- [ ] Implement sentence hover/click interactions
+- [ ] **TEST: Interaction** (hover sentence → preview highlight, click → sidebar opens)
+- [ ] Build annotation sidebar UI (view annotations, show migration history)
+- [ ] Implement annotation CRUD via API calls
+- [ ] **TEST: Create highlight** (click sentence, add yellow highlight, verify appears in UI and DB)
+- [ ] **TEST: Create task** (click sentence, add task with P2 priority, verify folded corner appears)
+- [ ] **TEST: Edit annotation** (click Edit, change color, verify new version created in DB)
+- [ ] **TEST: Delete annotation** (click Delete, verify disappears from UI and deleted_at set in DB)
+- [ ] Style migration confidence indicators (green >0.8, yellow 0.4-0.8, red <0.4)
+- [ ] **TEST: Migration display** (create annotation, edit manuscript, process commit, verify confidence badge shows correct color)
+- [ ] **TEST: Performance** (load 60K word sample, measure total load time, should be < 5 seconds)
 
-**Milestone 6: Testing & Refinement**
-- [ ] End-to-end test: Markdown → process → UI → annotate → edit → process
-- [ ] Test migration quality on real manuscript edits
-- [ ] Performance testing with 10,000+ sentences
-- [ ] Bug fixes and UX polish
+**Milestone 6: End-to-End Integration & Polish**
+- [ ] **TEST: Full workflow** (bootstrap commit A → annotate 5 sentences → edit manuscript → process commit B → verify migrations)
+- [ ] **TEST: Migration quality** (edit 50 sentences in realistic ways, measure migration accuracy: expect >80% high-confidence matches)
+- [ ] **TEST: Edge case handling** (split sentence, merge sentences, delete sentence, verify annotations migrate correctly)
+- [ ] **TEST: Performance at scale** (process 200 commits with 7,500 sentences each, measure total time and DB size)
+- [ ] **TEST: Concurrent annotations** (create 50 annotations on same commit, verify no race conditions)
+- [ ] Bug fixes based on test results
+- [ ] UX polish (loading indicators, error messages, keyboard shortcuts)
+- [ ] Documentation updates (README.md with setup instructions and screenshots)
 
 ---
 
@@ -1193,8 +1236,9 @@ WriteSys uses a dedicated database (`writesys`) within the same Postgres instanc
 **Database Configuration:**
 - **Database name:** `writesys`
 - **User:** `writesys_user`
-- **Port:** `127.0.0.1:5432` (localhost only, shared with other projects)
+- **Port:** `127.0.0.1:5432` (localhost only, single shared Postgres instance with multiple databases)
 - **No TimescaleDB extension needed** (plain Postgres 16)
+- **Shared Setup:** One Postgres container hosts multiple databases (`writesys`, `sxiva_stats`, etc.) - no port conflicts
 
 **docker-compose.yml Service:**
 ```yaml
@@ -1346,12 +1390,35 @@ Phase 1 is complete when:
 
 This design balances pragmatism with extensibility. By treating sentence instances as independent entities (no false lineage tracking) and using heuristic migration with confidence scoring, the system stays simple while giving the author the tools needed to manage annotations through manuscript evolution.
 
-The simplified schema with inline migration history and word-count based wrapping keeps the database compact (~285MB for a full novel lifecycle), while the append-only annotation history ensures no data loss.
+The simplified schema with inline migration history and word-count based wrapping keeps the database compact (~396MB for a full novel lifecycle with 200 commits), while the append-only annotation history ensures no data loss.
 
 Phase 1 provides a solid foundation for future multi-user collaboration, AI-assisted features, and production deployment.
 
 ---
 
-**Last Updated:** 2024-03-18
+**Last Updated:** 2026-03-18
 **Author:** Andrew (with Claude Code)
 **Status:** Design Document for Phase 1 Implementation
+
+---
+
+**Document Review:**
+Reviewed and approved by plan-reviewer agent on 2026-03-18 16:45 UTC
+
+Key improvements made:
+
+- Recalculated space analysis with realistic sentence length (120 bytes avg): 285MB → 396MB for 200 commits
+- Clarified database deployment: single shared Postgres container with multiple databases (no port conflicts)
+- Removed "(Chosen)" suffix from rebase handling for clarity
+- Updated last-updated date from 2024 to 2026
+- Restructured implementation plan with integrated testing throughout all 6 milestones
+- Added specific test commands with expected outputs (unit tests → integration tests → test execution → verification)
+- Tests now interleaved with implementation: implement → write tests → RUN tests → show output → proceed
+- Added 40+ explicit test tasks across milestones with verification steps
+
+Outstanding questions/recommendations:
+
+- Consider adding fallback behavior if frontend sentence wrapping count mismatches backend (currently just console.warn)
+- Migration confidence threshold (0.4) creates clear visual separation in UI (red <0.4, yellow 0.4-0.8, green >0.8) - consider documenting rationale
+- Performance target of <5 seconds for 60K words is aggressive given ~3-4s estimate; consider adjusting to <6 seconds for safety margin
+- Future phase: Consider manual migration override UI for low-confidence matches (flagged for Phase 2+)
