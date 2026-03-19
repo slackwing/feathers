@@ -1,0 +1,17 @@
+# Binaries
+bin/
+*.exe
+
+# Test files
+manuscripts/test-repo/
+
+# Environment
+.env
+docker/.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

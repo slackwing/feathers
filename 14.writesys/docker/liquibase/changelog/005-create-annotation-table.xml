@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
+
+    <changeSet id="005-create-annotation-table" author="andrew">
+        <createTable tableName="annotation">
+            <column name="annotation_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMPTZ">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE annotation ADD CONSTRAINT chk_annotation_type CHECK (type IN ('highlight', 'tag', 'task'));
+        </sql>
+
+        <createIndex tableName="annotation" indexName="idx_annotation_type">
+            <column name="type"/>
+        </createIndex>
+
+        <createIndex tableName="annotation" indexName="idx_annotation_created_by">
+            <column name="created_by"/>
+        </createIndex>
+
+        <sql>
+            CREATE INDEX idx_annotation_deleted_at ON annotation(deleted_at) WHERE deleted_at IS NULL;
+        </sql>
+
+        <rollback>
+            <dropTable tableName="annotation"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

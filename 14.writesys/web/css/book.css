@@ -1,0 +1,503 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.6;
+  color: #222;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  quotes: """ """ "'" "'";
+}
+
+/* Controls at top - completely outside Paged.js */
+#controls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 20px;
+  z-index: 10000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#controls label {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: #666;
+}
+
+#controls input {
+  font-family: "Monaco", monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+#controls button {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#controls button:hover {
+  background: #0056b3;
+}
+
+#status {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  color: #666;
+}
+
+#sentence-count {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  color: #999;
+  margin-left: 15px;
+}
+
+/* App container - wraps manuscript for Paged.js */
+#app-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Manuscript content container */
+#manuscript-content {
+  /* Content will be replaced by Paged.js output */
+}
+
+/* Paged.js container styling */
+.pagedjs_pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2em;
+  padding: 2em;
+  background: #f5f5f5;
+  min-height: calc(100vh - 60px);
+  margin-top: 60px !important; /* Space for fixed controls */
+}
+
+/* Paged.js page styling - force exact dimensions to match reference */
+.pagedjs_page {
+  background: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ccc;
+  width: 576px !important;
+  height: 864px !important;
+}
+
+/* Force ALL internal Paged.js containers to correct size */
+.pagedjs_sheet,
+.pagedjs_pagebox {
+  width: 576px !important;
+  height: 864px !important;
+}
+
+/* Grid template is set by JavaScript in pagedjs-config.js after rendering */
+
+/* Force margin boxes to our desired dimensions */
+.pagedjs_margin-top,
+.pagedjs_margin-bottom {
+  height: 72px !important;  /* 0.75in top/bottom margins */
+}
+
+.pagedjs_margin-left,
+.pagedjs_margin-right {
+  width: 48px !important;   /* 0.5in left/right margins */
+}
+
+/* Content area should fill remaining space */
+.pagedjs_area {
+  width: 480px !important;   /* 576 - 2*48 */
+  height: 720px !important;  /* 864 - 2*72 */
+}
+
+/* Page content area fills the area exactly */
+.pagedjs_page_content {
+  width: 480px !important;
+  height: 720px !important;
+  margin: 0 !important;  /* No margin - area handles spacing */
+  padding: 0 !important;
+}
+
+/* Page number styling - force visibility */
+.pagedjs_margin-bottom-right {
+  font-family: Georgia, serif !important;
+  font-size: 10pt !important;
+  color: #222 !important;
+  visibility: visible !important;
+}
+
+.loading {
+  text-align: center;
+  font-family: "Helvetica", sans-serif;
+  color: #999;
+  padding: 3in 0;
+}
+
+/* Book-style pages with Paged.js */
+@page {
+  size: 6in 9in;
+  margin: 0.75in 0.5in;
+  @bottom-right {
+    content: counter(page);
+    font-family: Georgia, serif;
+    font-size: 10pt;
+  }
+}
+
+/* Hide page number on first page */
+@page :first {
+  @bottom-right {
+    content: none;
+  }
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: normal;
+  margin: 1.5em 0 0.5em 0;
+  page-break-after: avoid;
+}
+
+h1 {
+  font-size: 18pt;
+  text-align: center;
+  font-style: italic;
+  font-weight: normal;
+  margin-top: 0;
+  margin-bottom: 2em;
+  page-break-before: always;
+  page-break-after: avoid;
+}
+
+h1:first-of-type {
+  page-break-before: auto;
+}
+
+h2 {
+  font-size: 18pt;
+  margin-top: 2em;
+}
+
+h3 {
+  font-size: 14pt;
+  font-style: italic;
+}
+
+p {
+  text-align: justify;
+  text-indent: 2em;
+  margin: 0;
+  orphans: 2;
+  widows: 2;
+  hanging-punctuation: first last;
+}
+
+/* First paragraph has no indent */
+p:first-of-type {
+  text-indent: 0;
+}
+
+/* Sentence spans (for annotation) */
+.sentence {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.sentence:hover {
+  background-color: rgba(66, 153, 225, 0.1);
+}
+
+.sentence.selected {
+  background-color: rgba(66, 153, 225, 0.2);
+}
+
+/* Annotations */
+.sentence.annotated-highlight {
+  background-color: rgba(255, 255, 0, 0.3);
+  border-radius: 2px;
+}
+
+.sentence.annotated-highlight[data-color="yellow"] {
+  background-color: rgba(255, 255, 0, 0.3);
+}
+
+.sentence.annotated-highlight[data-color="green"] {
+  background-color: rgba(144, 238, 144, 0.3);
+}
+
+.sentence.annotated-highlight[data-color="blue"] {
+  background-color: rgba(173, 216, 230, 0.3);
+}
+
+.sentence.annotated-highlight[data-color="pink"] {
+  background-color: rgba(255, 182, 193, 0.3);
+}
+
+.sentence.annotated-tag {
+  border-bottom: 2px solid #007bff;
+}
+
+.sentence.annotated-task {
+  position: relative;
+}
+
+.sentence.annotated-task::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 12px 12px 0;
+  border-color: transparent #ff6b6b transparent transparent;
+}
+
+/* Annotation sidebar */
+#annotation-sidebar {
+  position: fixed;
+  top: 60px;
+  right: 0;
+  width: 350px;
+  height: calc(100vh - 60px);
+  background: white;
+  border-left: 1px solid #ddd;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 9999 !important;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+#annotation-sidebar:not(.hidden) {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.sidebar-header h3 {
+  font-family: "Helvetica", sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+}
+
+#close-sidebar {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+}
+
+#close-sidebar:hover {
+  color: #666;
+}
+
+.sidebar-content {
+  padding: 20px;
+}
+
+#selected-sentence-text {
+  font-family: "Baskerville", "Georgia", serif;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  color: #555;
+  font-style: italic;
+}
+
+#annotation-list {
+  margin-bottom: 20px;
+}
+
+.annotation-item {
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  background: white;
+}
+
+.annotation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.annotation-type {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+.annotation-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.annotation-actions button {
+  font-family: "Helvetica", sans-serif;
+  font-size: 10px;
+  padding: 3px 8px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.annotation-actions button:hover {
+  background: #e9ecef;
+}
+
+.annotation-content {
+  font-family: "Helvetica", sans-serif;
+  font-size: 12px;
+  color: #666;
+}
+
+.annotation-note {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  color: #999;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Annotation form */
+#annotation-form {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+#annotation-form h4 {
+  font-family: "Helvetica", sans-serif;
+  font-size: 14px;
+  margin: 0 0 12px 0;
+}
+
+#annotation-form select,
+#annotation-form input,
+#annotation-form textarea {
+  font-family: "Helvetica", sans-serif;
+  font-size: 12px;
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+#annotation-form textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.annotation-options {
+  margin-bottom: 10px;
+}
+
+.annotation-options label {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: #666;
+  display: block;
+  margin-bottom: 4px;
+}
+
+#annotation-form button {
+  font-family: "Helvetica", sans-serif;
+  font-size: 12px;
+  padding: 8px 16px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#save-annotation {
+  background: #007bff;
+  color: white;
+}
+
+#save-annotation:hover {
+  background: #0056b3;
+}
+
+#cancel-annotation {
+  background: #6c757d;
+  color: white;
+}
+
+#cancel-annotation:hover {
+  background: #545b62;
+}
+
+/* Utility classes */
+.hidden {
+  display: none !important;
+}
+
+/* Print styles */
+@media print {
+  #controls,
+  #annotation-sidebar {
+    display: none;
+  }
+
+  .sentence:hover {
+    background-color: transparent;
+  }
+}

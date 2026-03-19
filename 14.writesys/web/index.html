@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteSys - Book Annotation System</title>
+
+  <!-- Book-style CSS -->
+  <link rel="stylesheet" href="/css/book.css?v=23">
+
+  <!-- Paged.js for book pagination - loaded but not auto-run -->
+  <script>
+    // Prevent Paged.js from auto-running on page load
+    window.PagedConfig = {
+      auto: false
+    };
+  </script>
+  <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+</head>
+<body>
+  <!-- Controls (not paginated) -->
+  <div id="controls" class="pagedjs_ignore">
+    <div class="control-group">
+      <label>Commit Hash:</label>
+      <input type="text" id="commit-hash" value="3d3f5da" />
+      <label>Repo:</label>
+      <input type="text" id="repo-path" value="manuscripts/test-repo" />
+      <label>File:</label>
+      <input type="text" id="file-path" value="the-wildfire.md" />
+      <button id="load-button">Load Manuscript</button>
+    </div>
+    <div class="control-group">
+      <span id="status">Ready</span>
+      <span id="sentence-count"></span>
+    </div>
+  </div>
+
+  <!-- Container for entire app -->
+  <div id="app-container">
+    <!-- Manuscript content (will be paginated by Paged.js) -->
+    <div id="manuscript-content">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Annotation sidebar (not paginated) -->
+  <div id="annotation-sidebar" class="hidden pagedjs_ignore">
+    <div class="sidebar-header">
+      <h3>Annotations</h3>
+      <button id="close-sidebar">×</button>
+    </div>
+    <div class="sidebar-content">
+      <div id="selected-sentence-text"></div>
+      <div id="annotation-list"></div>
+      <div id="annotation-form" class="hidden">
+        <h4>Add Annotation</h4>
+        <select id="annotation-type">
+          <option value="highlight">Highlight</option>
+          <option value="tag">Tag</option>
+          <option value="task">Task</option>
+        </select>
+        <div id="highlight-options" class="annotation-options">
+          <label>Color:</label>
+          <select id="highlight-color">
+            <option value="yellow">Yellow</option>
+            <option value="green">Green</option>
+            <option value="blue">Blue</option>
+            <option value="pink">Pink</option>
+          </select>
+        </div>
+        <div id="tag-options" class="annotation-options hidden">
+          <label>Tag:</label>
+          <input type="text" id="tag-value" placeholder="character, plot, etc." />
+        </div>
+        <div id="task-options" class="annotation-options hidden">
+          <label>Task:</label>
+          <textarea id="task-description" placeholder="What needs to be done?"></textarea>
+          <label>Priority:</label>
+          <select id="task-priority">
+            <option value="P0">P0 - Critical</option>
+            <option value="P1">P1 - High</option>
+            <option value="P2">P2 - Medium</option>
+            <option value="P3">P3 - Low</option>
+          </select>
+        </div>
+        <textarea id="annotation-note" placeholder="Optional note..."></textarea>
+        <button id="save-annotation">Save</button>
+        <button id="cancel-annotation">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- External libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Paged.js configuration (must load after Paged.js, before renderer) -->
+  <script src="/js/pagedjs-config.js"></script>
+
+  <!-- Application scripts -->
+  <script src="/js/renderer.js"></script>
+  <script src="/js/annotations.js"></script>
+</body>
+</html>
