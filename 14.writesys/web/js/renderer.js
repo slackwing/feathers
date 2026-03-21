@@ -10,18 +10,62 @@ const WriteSysRenderer = {
   /**
    * Initialize the renderer
    */
-  init() {
+  async init() {
     // Set up event listeners
     document.getElementById('load-button').addEventListener('click', () => this.loadManuscript());
 
     // Load on Enter key in inputs
-    ['commit-hash', 'repo-path', 'file-path'].forEach(id => {
+    ['repo-path', 'file-path'].forEach(id => {
       document.getElementById(id).addEventListener('keypress', (e) => {
         if (e.key === 'Enter') this.loadManuscript();
       });
     });
 
+    // Load commits on select change
+    document.getElementById('commit-select').addEventListener('change', () => {
+      if (document.getElementById('commit-select').value) {
+        this.loadManuscript();
+      }
+    });
+
     console.log('WriteSys Renderer initialized');
+
+    // Load commits and auto-load latest
+    await this.loadCommits();
+  },
+
+  /**
+   * Load commits from API and populate dropdown
+   */
+  async loadCommits() {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/commits?manuscript_id=3`);
+      const data = await response.json();
+
+      const select = document.getElementById('commit-select');
+      select.innerHTML = ''; // Clear loading message
+
+      if (data.commits && data.commits.length > 0) {
+        data.commits.forEach(commit => {
+          const option = document.createElement('option');
+          option.value = commit.commit_hash;
+
+          // Format: hash (date - sentences)
+          const date = new Date(commit.processed_at).toLocaleDateString();
+          option.textContent = `${commit.commit_hash} (${date} - ${commit.sentence_count} sentences)`;
+          select.appendChild(option);
+        });
+
+        // Auto-select and load the latest commit (first in list)
+        select.value = data.commits[0].commit_hash;
+        await this.loadManuscript();
+      } else {
+        select.innerHTML = '<option value="">No commits found</option>';
+      }
+    } catch (error) {
+      console.error('Failed to load commits:', error);
+      document.getElementById('commit-select').innerHTML = '<option value="">Error loading commits</option>';
+    }
   },
 
   /**
@@ -60,7 +104,7 @@ const WriteSysRenderer = {
       await this.waitForPagedJS();
     }
 
-    const commitHash = document.getElementById('commit-hash').value.trim();
+    const commitHash = document.getElementById('commit-select').value.trim();
     const repoPath = document.getElementById('repo-path').value.trim();
     const filePath = document.getElementById('file-path').value.trim();
 

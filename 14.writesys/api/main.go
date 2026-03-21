@@ -125,6 +125,7 @@ func (s *Server) setupRoutes() {
 
 	// API routes
 	s.router.Route("/api", func(r chi.Router) {
+		r.Get("/commits", s.handleGetCommits)
 		r.Get("/manuscripts/{commit_hash}", s.handleGetManuscript)
 		r.Get("/annotations/{commit_hash}", s.handleGetAnnotationsByCommit)
 		r.Get("/annotations/sentence/{sentence_id}", s.handleGetAnnotationsBySentence)
@@ -156,6 +157,60 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// GET /api/commits
+// Returns list of processed commits for a manuscript
+func (s *Server) handleGetCommits(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get manuscript ID from query params
+	// For Phase 1, we'll use manuscript_id=1 as default or from query param
+	manuscriptIDStr := r.URL.Query().Get("manuscript_id")
+	manuscriptID := 1 // Default to first manuscript
+	if manuscriptIDStr != "" {
+		var err error
+		manuscriptID, err = strconv.Atoi(manuscriptIDStr)
+		if err != nil {
+			http.Error(w, "Invalid manuscript_id", http.StatusBadRequest)
+			return
+		}
+	}
+
+	commits, err := s.db.GetProcessedCommits(ctx, manuscriptID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get commits: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to simplified response (don't send full sentence_id_array)
+	type CommitInfo struct {
+		CommitHash     string    `json:"commit_hash"`
+		BranchName     string    `json:"branch_name"`
+		ProcessedAt    time.Time `json:"processed_at"`
+		SentenceCount  int       `json:"sentence_count"`
+		AdditionsCount int       `json:"additions_count"`
+		DeletionsCount int       `json:"deletions_count"`
+		ChangesCount   int       `json:"changes_count"`
+	}
+
+	commitInfos := make([]CommitInfo, len(commits))
+	for i, c := range commits {
+		commitInfos[i] = CommitInfo{
+			CommitHash:     c.CommitHash,
+			BranchName:     c.BranchName,
+			ProcessedAt:    c.ProcessedAt,
+			SentenceCount:  c.SentenceCount,
+			AdditionsCount: c.AdditionsCount,
+			DeletionsCount: c.DeletionsCount,
+			ChangesCount:   c.ChangesCount,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"commits": commitInfos,
+	})
 }
 
 // API Response types

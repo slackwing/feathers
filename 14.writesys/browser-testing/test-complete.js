@@ -28,15 +28,30 @@ async function runTests() {
 
     // Load the page
     await page.goto('http://localhost:5003');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(8000); // Wait for auto-load to complete
 
-    // Test 1: Controls visible before loading
+    // Test 1: Controls visible on page load
     const controlsVisibleBefore = await page.locator('#controls').isVisible();
     assert(controlsVisibleBefore, 'Controls are visible on page load');
 
-    // Load manuscript
-    await page.click('#load-button');
-    await page.waitForTimeout(5000);
+    // Test 2: Commit dropdown populated from database
+    const dropdownOptions = await page.evaluate(() => {
+      const select = document.getElementById('commit-select');
+      return Array.from(select.options).map(opt => opt.value).filter(v => v !== '');
+    });
+    assert(dropdownOptions.length > 0, `Commit dropdown populated (found ${dropdownOptions.length} commits)`);
+
+    // Test 3: Latest commit auto-selected
+    const selectedCommit = await page.evaluate(() => {
+      return document.getElementById('commit-select').value;
+    });
+    assert(selectedCommit === dropdownOptions[0], `Latest commit auto-selected (${selectedCommit})`);
+
+    // Test 4: Manuscript auto-loaded on page load
+    const pagesRendered = await page.locator('.pagedjs_page').count();
+    assert(pagesRendered > 0, `Manuscript auto-loaded on page load (${pagesRendered} pages)`);
+
+    // Continue with other tests (manuscript already loaded)
 
     // Test 2: Controls still visible after loading
     const controlsVisibleAfter = await page.locator('#controls').isVisible();

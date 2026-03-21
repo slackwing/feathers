@@ -101,6 +101,59 @@ func (db *DB) GetLatestProcessedCommit(ctx context.Context, manuscriptID int) (*
 	return &pc, nil
 }
 
+// GetProcessedCommits gets all processed commits for a manuscript, ordered by most recent first
+func (db *DB) GetProcessedCommits(ctx context.Context, manuscriptID int) ([]models.ProcessedCommit, error) {
+	query := `
+		SELECT commit_hash, manuscript_id, parent_commit_hash, branch_name,
+		       processed_at, sentence_count, additions_count, deletions_count,
+		       changes_count, sentence_id_array
+		FROM processed_commit
+		WHERE manuscript_id = $1
+		ORDER BY processed_at DESC
+	`
+
+	rows, err := db.Pool.Query(ctx, query, manuscriptID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get processed commits: %w", err)
+	}
+	defer rows.Close()
+
+	var commits []models.ProcessedCommit
+	for rows.Next() {
+		var pc models.ProcessedCommit
+		var sentenceIDArrayJSON []byte
+
+		err := rows.Scan(
+			&pc.CommitHash,
+			&pc.ManuscriptID,
+			&pc.ParentCommitHash,
+			&pc.BranchName,
+			&pc.ProcessedAt,
+			&pc.SentenceCount,
+			&pc.AdditionsCount,
+			&pc.DeletionsCount,
+			&pc.ChangesCount,
+			&sentenceIDArrayJSON,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan processed commit: %w", err)
+		}
+
+		// Parse JSONB array
+		if err := json.Unmarshal(sentenceIDArrayJSON, &pc.SentenceIDArray); err != nil {
+			return nil, fmt.Errorf("failed to parse sentence_id_array: %w", err)
+		}
+
+		commits = append(commits, pc)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating processed commits: %w", err)
+	}
+
+	return commits, nil
+}
+
 // CreateProcessedCommit creates a new processed commit record
 func (db *DB) CreateProcessedCommit(ctx context.Context, pc *models.ProcessedCommit) error {
 	// Convert sentence ID array to JSON

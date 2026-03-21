@@ -21,8 +21,10 @@
   <!-- Controls (not paginated) -->
   <div id="controls" class="pagedjs_ignore">
     <div class="control-group">
-      <label>Commit Hash:</label>
-      <input type="text" id="commit-hash" value="3d3f5da" />
+      <label>Commit:</label>
+      <select id="commit-select">
+        <option value="">Loading commits...</option>
+      </select>
       <label>Repo:</label>
       <input type="text" id="repo-path" value="manuscripts/test-repo" />
       <label>File:</label>

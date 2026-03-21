@@ -34,6 +34,39 @@ The PLAN.md file contains:
 4. **Append-only annotation history** - never delete, only soft-delete
 5. **Content-addressed sentence storage** - deduplicate text across commits
 
+## Testing Philosophy
+
+**CRITICAL: Write tests for EVERYTHING**
+
+Every feature, fix, or change MUST have corresponding tests. No exceptions.
+
+**The Rule:**
+1. **Before you write code**: Write a failing test that demonstrates what needs to work
+2. **While you code**: Run tests frequently to verify progress
+3. **After you finish**: Ensure all tests pass before considering the work complete
+4. **Before you commit**: Run the complete test suite (`./test-all.sh`)
+
+**Why this matters:**
+- Tests prevent regressions - bugs that get fixed stay fixed
+- Tests document expected behavior - they ARE the specification
+- Tests enable confident refactoring - you know immediately if you break something
+- Tests save time - catching bugs early is 10x faster than debugging later
+
+**Test Types:**
+- **Unit Tests** (`go test ./...`): Test individual functions and modules
+- **Integration Tests** (`./bin/writesys`): Test CLI with real database
+- **API Tests** (`curl` commands): Test HTTP endpoints
+- **UI Tests** (`node browser-testing/test-complete.js`): Test browser behavior with Playwright
+
+When you discover a bug or make a mistake:
+1. IMMEDIATELY write a test that would have caught it
+2. Verify the test fails (reproduces the bug)
+3. Fix the bug
+4. Verify the test passes
+5. Add it to the test suite
+
+This creates a growing safety net that makes the codebase more robust over time.
+
 ## Common Tasks
 
 ### Working on the CLI (`writesys` command)
@@ -295,18 +328,27 @@ open http://localhost:5003
 ALWAYS run Playwright tests after making changes to HTML, CSS, or JavaScript.
 
 ```bash
-# Complete UI test suite - see file for what it tests
+# Complete UI test suite (21 tests) - see file for what it tests
 node browser-testing/test-complete.js
 
 # Individual diagnostic tests - see browser-testing/ directory
+node browser-testing/test-auto-load.js  # Auto-load verification
 node browser-testing/test-ui-visual.js
 node browser-testing/test-ui-detailed.js
 node browser-testing/test-structure.js
 ```
 
 **The tests ARE the documentation.** Read the test files to understand what the UI should do:
-- `browser-testing/test-complete.js` - Complete specification of expected UI behavior
+- `browser-testing/test-complete.js` - Complete specification (21 tests covering auto-load, rendering, styling, pagination)
 - `browser-testing/test-*.js` - Diagnostic tools for debugging
+
+**What test-complete.js verifies:**
+1. **Auto-load (Tests 1-4)**: Dropdown populated, latest commit selected, manuscript loads automatically
+2. **Controls (Tests 5-9)**: Visibility, positioning, outside Paged.js container
+3. **Styling (Tests 10-13)**: Page colors, borders, shadows, text justification
+4. **Content (Tests 14-17)**: Text rendering, sentence wrapping, page numbers
+5. **Layout (Tests 18-20)**: Page dimensions, content area size
+6. **Typography (Test 21)**: Short dialogue lines don't have stretched justification
 
 **Reference Design:**
 - Live: https://andrewcheong.com/.staging/stories/
@@ -442,7 +484,7 @@ Expected: Each annotation should have 2 versions
 - Version 1: Original sentence ID, no confidence (bootstrap)
 - Version 2: New sentence ID, confidence = 1.00 (migrated)
 
-### Last Test Run: 2026-03-18
+### Last Test Run: 2026-03-19
 
 - Unit tests: 56/56 passing
 - Bootstrap test: PASSED (214 sentences)
@@ -451,15 +493,21 @@ Expected: Each annotation should have 2 versions
 - API tests: All endpoints PASSED
   - Health check: PASSED
   - GET /api/manuscripts/:commit_hash: PASSED (214 sentences)
+  - GET /api/commits: PASSED (6 commits returned)
   - GET /api/annotations/sentence/:sentence_id: PASSED
   - POST /api/annotations: PASSED (annotation_id: 3, version: 1)
   - PUT /api/annotations/:annotation_id: PASSED (version: 2)
   - DELETE /api/annotations/:annotation_id: PASSED (soft delete confirmed)
-- Web UI tests: PASSED
-  - Manuscript loading: PASSED (214 sentences, 15950 chars)
-  - Sentence wrapping: PASSED (word-count based algorithm)
-  - Static file serving: PASSED (HTML, CSS, JS)
-  - Ready for manual browser testing
+- Web UI tests: PASSED (21/21 tests)
+  - Auto-load: PASSED (dropdown populated with 6 commits, latest auto-selected and loaded)
+  - Controls visibility and positioning: PASSED
+  - Paged.js pagination: PASSED (10 pages rendered)
+  - Page styling: PASSED (white background, borders, shadows, gray container)
+  - Typography: PASSED (justified paragraphs, no stretched dialogue)
+  - Sentence wrapping: PASSED (319 .sentence elements)
+  - Page numbers: PASSED (hidden on first page, visible on others)
+  - Layout dimensions: PASSED (576×864 pages, 480×720 content area)
+  - Screenshot: browser-testing/test-complete.png
 - Annotation Migration tests: PASSED
   - Created 3 annotations on commit b30bd0f
   - Processed commit 76c9a7f with migration
@@ -535,4 +583,4 @@ If anything is unclear or conflicts with PLAN.md, **ask the user** rather than m
 
 ---
 
-**Last Updated:** 2024-03-18
+**Last Updated:** 2026-03-19
