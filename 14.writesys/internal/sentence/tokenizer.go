@@ -44,6 +44,38 @@ func (t *Tokenizer) SplitIntoSentences(text string) []string {
 	return t.applyFictionRules(text, proseSentences)
 }
 
+// cleanSentenceBoundaries removes leading punctuation but keeps trailing punctuation
+// This ensures cleaner highlighting boundaries in the UI
+// Exceptions: Keeps quotes (", ') as they might start quoted sentences
+func cleanSentenceBoundaries(text string) string {
+	trimmed := strings.TrimSpace(text)
+
+	// Remove leading punctuation (but NOT letters, numbers, quotes, or opening brackets)
+	// Common sentence-joining punctuation: . , ; : ! ? —
+	// Exception: Keep quotes (", ', ", ', „) as sentences can start with quotes
+	for len(trimmed) > 0 {
+		firstRune := rune(trimmed[0])
+		// Check if it's punctuation that shouldn't start a sentence
+		// Skip quote characters (using Unicode code points for curly quotes)
+		if firstRune == '"' || firstRune == '\'' || firstRune == '\u201c' || // "
+			firstRune == '\u201d' || firstRune == '\u2018' || firstRune == '\u2019' || // ' '
+			firstRune == '\u201e' { // „
+			// Keep quotes at start
+			break
+		}
+		if firstRune == '.' || firstRune == ',' || firstRune == ';' ||
+			firstRune == ':' || firstRune == '!' || firstRune == '?' ||
+			firstRune == '—' || firstRune == '-' {
+			trimmed = trimmed[1:]
+			trimmed = strings.TrimLeftFunc(trimmed, unicode.IsSpace)
+		} else {
+			break
+		}
+	}
+
+	return trimmed
+}
+
 // applyFictionRules applies custom fiction rules to prose output
 func (t *Tokenizer) applyFictionRules(originalText string, proseSentences []prose.Sentence) []string {
 	var result []string
@@ -63,7 +95,12 @@ func (t *Tokenizer) applyFictionRules(originalText string, proseSentences []pros
 		// Handle ellipses: check if continuation is uppercase (new sentence) or lowercase (same)
 		// This requires looking at context, which prose handles, but we can refine
 
-		result = append(result, strings.TrimSpace(sentText))
+		// Clean boundaries: remove leading punctuation, keep trailing
+		cleaned := cleanSentenceBoundaries(sentText)
+
+		if cleaned != "" {
+			result = append(result, cleaned)
+		}
 	}
 
 	return result

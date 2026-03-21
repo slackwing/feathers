@@ -181,6 +181,25 @@ const WriteSysRenderer = {
   },
 
   /**
+   * Check if a node is inside an inline formatting element
+   */
+  isInsideInlineElement(node) {
+    const inlineElements = ['EM', 'STRONG', 'I', 'B', 'SPAN', 'A', 'CODE'];
+    let parent = node.parentElement;
+    while (parent) {
+      if (inlineElements.includes(parent.tagName) && parent.tagName !== 'SPAN') {
+        return true;
+      }
+      // Stop at block elements
+      if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'].includes(parent.tagName)) {
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    return false;
+  },
+
+  /**
    * Wrap sentences in <span> tags using word-count based algorithm
    */
   wrapSentences(container) {
@@ -203,6 +222,26 @@ const WriteSysRenderer = {
     while (currentNode) {
       // Skip empty text nodes
       if (currentNode.textContent.trim() === '') {
+        currentNode = walker.nextNode();
+        continue;
+      }
+
+      // Skip text nodes inside inline formatting elements - they'll be included
+      // in the parent's wrapping to avoid breaking sentences across <em>, <strong>, etc.
+      if (this.isInsideInlineElement(currentNode)) {
+        // Still count the words, but don't wrap this node directly
+        const words = this.extractWords(currentNode.textContent);
+        wordCountInCurrentSentence += words.length;
+
+        // Check if we've completed the sentence
+        if (wordCountInCurrentSentence >= targetWordCount && sentenceIndex < this.currentSentences.length) {
+          sentenceIndex++;
+          if (sentenceIndex < this.currentSentences.length) {
+            targetWordCount = this.currentSentences[sentenceIndex].wordCount;
+            wordCountInCurrentSentence = 0;
+          }
+        }
+
         currentNode = walker.nextNode();
         continue;
       }

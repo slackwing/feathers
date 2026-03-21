@@ -89,6 +89,35 @@ This creates a growing safety net that makes the codebase more robust over time.
 - See: PLAN.md → "Rendering Pipeline" (API endpoints listed)
 - Code location: `api/`
 
+### Modifying Source Markdown Files
+
+**CRITICAL**: Whenever you change source markdown files in `manuscripts/`, you MUST:
+
+1. Commit the changes to git in the test repository:
+   ```bash
+   cd manuscripts/test-repo
+   git add the-wildfire.md
+   git commit -m "fix: describe your change"
+   ```
+
+2. Reprocess the commit to update the database:
+   ```bash
+   # Delete old processed commit first
+   docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "
+   DELETE FROM annotation_version WHERE sentence_id IN (SELECT sentence_id FROM sentence WHERE commit_hash = 'OLD_HASH');
+   DELETE FROM annotation WHERE annotation_id IN (SELECT DISTINCT annotation_id FROM annotation_version WHERE sentence_id IN (SELECT sentence_id FROM sentence WHERE commit_hash = 'OLD_HASH'));
+   DELETE FROM sentence WHERE commit_hash = 'OLD_HASH';
+   DELETE FROM processed_commit WHERE commit_hash = 'OLD_HASH';
+   "
+
+   # Process new commit
+   ./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit NEW_HASH --yes
+   ```
+
+3. Update any tests that reference the old commit hash to use the new hash
+
+Without reprocessing, the UI will continue showing the old version from the database.
+
 ## Development Workflow
 
 ```bash

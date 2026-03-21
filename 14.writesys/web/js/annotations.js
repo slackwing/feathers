@@ -39,14 +39,29 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Format sentence text for preview
+   * - No quotes
+   * - Remove leading punctuation
+   * - Keep trailing punctuation
+   */
+  formatSentencePreview(text) {
+    let formatted = text.trim();
+
+    // Remove leading punctuation (but not letters/numbers)
+    formatted = formatted.replace(/^[.,;:!?]+/, '');
+
+    return formatted;
+  },
+
+  /**
    * Show annotations for a specific sentence
    */
   async showAnnotationsForSentence(sentenceId, sentenceText) {
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
-    // Update sentence text display
-    document.getElementById('selected-sentence-text').textContent = `"${sentenceText.trim()}"`;
+    // Update sentence text display (no quotes, clean punctuation)
+    document.getElementById('selected-sentence-text').textContent = this.formatSentencePreview(sentenceText);
 
     // Show sidebar
     const sidebar = document.getElementById('annotation-sidebar');

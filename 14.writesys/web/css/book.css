@@ -232,12 +232,19 @@ p:first-of-type {
   transition: background-color 0.2s;
 }
 
-.sentence:hover {
-  background-color: rgba(66, 153, 225, 0.1);
+/* Hover state - applies to all sentences, even when another is selected */
+.sentence:not(.selected):hover {
+  background-color: rgba(66, 153, 225, 0.1) !important;
 }
 
+/* Selected state - higher specificity, overrides hover */
 .sentence.selected {
-  background-color: rgba(66, 153, 225, 0.2);
+  background-color: rgba(66, 153, 225, 0.2) !important;
+}
+
+/* Keep selected highlighted even when hovering over it */
+.sentence.selected:hover {
+  background-color: rgba(66, 153, 225, 0.2) !important;
 }
 
 /* Annotations */
