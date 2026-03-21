@@ -27,9 +27,11 @@ function classifyPattern(expected) {
   return patterns.length > 0 ? patterns.join(', ') : 'standard';
 }
 
-// Escape pipes for markdown table
-function escapePipes(text) {
-  return text.replace(/\|/g, '\\|');
+// Escape special characters for markdown table
+function escapeForTable(text) {
+  return text
+    .replace(/\|/g, '\\|')       // Escape pipes
+    .replace(/\n/g, ' ¶ ');      // Replace newlines with paragraph symbol for visibility
 }
 
 // Generate table
@@ -41,8 +43,8 @@ markdown += '|---|---------|--------------|-------------------|\n';
 scenarios.forEach((scenario, index) => {
   const num = index + 1;
   const pattern = classifyPattern(scenario.expected);
-  const context = escapePipes(scenario.text);
-  const expected = escapePipes(scenario.expected);
+  const context = escapeForTable(scenario.text);
+  const expected = escapeForTable(scenario.expected);
 
   markdown += `| ${num} | ${pattern} | ${context} | ${expected} |\n`;
 });
