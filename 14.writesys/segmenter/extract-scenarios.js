@@ -66,31 +66,65 @@ function extractVerbatim(text, start, end) {
   return text.substring(start, end);
 }
 
+// Categorize sentence pattern
+function categorizePattern(sentence) {
+  const patterns = [];
+
+  if (sentence.includes('"')) patterns.push('dialogue');
+  if (sentence.endsWith('?')) patterns.push('question');
+  if (sentence.includes('—')) patterns.push('em-dash');
+  if (sentence.includes('*') && sentence.match(/\*[^*]+\*/)) patterns.push('italics');
+  if (sentence.includes('...')) patterns.push('ellipsis');
+  if (sentence.includes('(') && sentence.includes(')')) patterns.push('parenthetical');
+  if (sentence.includes(':')) patterns.push('colon');
+  if (sentence.match(/^###?\s/)) patterns.push('heading');
+  if (sentence.includes('\n')) patterns.push('paragraph-break');
+
+  return patterns.join(',') || 'standard';
+}
+
 // Find boundaries
 const boundaries = findSentenceBoundaries(source);
 console.log(`Found ${boundaries.length} sentence boundaries`);
 
-// Extract scenarios
+// Extract unique edge case scenarios
 const scenarios = [];
-const seenTargets = new Set();
+const seenPatterns = new Set();
 
 for (let i = 1; i < boundaries.length - 1; i++) {
-  // Extract the three sentences VERBATIM
-  const beforeStart = boundaries[i - 1].start;
-  const afterEnd = boundaries[i + 1].end;
+  const beforeBoundary = boundaries[i - 1];
+  const targetBoundary = boundaries[i];
+  const afterBoundary = boundaries[i + 1];
 
-  const contextVerbatim = extractVerbatim(source, beforeStart, afterEnd);
-  const targetVerbatim = extractVerbatim(source, boundaries[i].start, boundaries[i].end);
+  // Extract EXACTLY 3 sentences verbatim (before, target, after)
+  const contextStart = beforeBoundary.start;
+  const contextEnd = afterBoundary.end;
+  const contextVerbatim = extractVerbatim(source, contextStart, contextEnd);
 
-  // Skip if target is very short or a chapter marker
+  // Extract the middle sentence (target)
+  const targetVerbatim = extractVerbatim(source, targetBoundary.start, targetBoundary.end);
+
+  // Skip if target is very short or a heading marker
   const targetTrimmed = targetVerbatim.trim();
-  if (targetTrimmed.length < 5 || /^(Chapter|I{1,3}|IV|V)\.?$/.test(targetTrimmed)) {
+  if (targetTrimmed.length < 5 || /^###?\s/.test(targetTrimmed)) {
     continue;
   }
 
-  // Skip duplicates
-  if (seenTargets.has(targetTrimmed)) continue;
-  seenTargets.add(targetTrimmed);
+  // Categorize pattern
+  const pattern = categorizePattern(targetTrimmed);
+
+  // Only keep unique patterns or interesting variations
+  const patternKey = pattern + ':' + (targetTrimmed.length > 100 ? 'long' : targetTrimmed.length < 20 ? 'short' : 'medium');
+
+  // Skip duplicate patterns unless it's a unique variation
+  if (seenPatterns.has(patternKey)) {
+    // Allow some duplicates for complex patterns
+    if (!pattern.includes(',') || seenPatterns.size < 50) {
+      continue;
+    }
+  }
+
+  seenPatterns.add(patternKey);
 
   scenarios.push({
     text: contextVerbatim,
@@ -98,7 +132,7 @@ for (let i = 1; i < boundaries.length - 1; i++) {
   });
 }
 
-console.log(`Extracted ${scenarios.length} unique scenarios`);
+console.log(`Extracted ${scenarios.length} unique edge case scenarios`);
 
 // Validate
 let errors = 0;
@@ -131,6 +165,7 @@ if (errors > 0) {
 const ndjson = scenarios.map(s => JSON.stringify(s)).join('\n') + '\n';
 fs.writeFileSync(outputFile, ndjson, 'utf-8');
 
-console.log(`\n✓ Saved ${scenarios.length} scenarios to test-scenarios.ndjson`);
+console.log(`\n✓ Saved ${scenarios.length} unique edge case scenarios to test-scenarios.ndjson`);
 console.log(`✓ All text is verbatim from source (no modifications)`);
-console.log(`✓ Each scenario contains exactly 3 sentences`);
+console.log(`✓ Each context contains exactly 3 contiguous sentences`);
+console.log(`✓ Each expected is the MIDDLE sentence`);
