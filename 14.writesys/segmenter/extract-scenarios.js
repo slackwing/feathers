@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const sourceFile = path.join(__dirname, '../manuscripts/test-repo/the-wildfire.md');
+const sourceFile = path.join(__dirname, '../manuscripts/the-wildfire.md');
 const outputFile = path.join(__dirname, 'test-scenarios.ndjson');
 
 // Read source file
