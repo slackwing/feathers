@@ -240,6 +240,16 @@ Each test provides:
 5. Reprocess all manuscripts in database
 6. Verify UI highlighting matches database sentences exactly
 
+## Edge Cases Table
+
+This table documents specific edge cases encountered in the manuscript that require special handling:
+
+| Edge Case | Pattern | Rule | Example |
+|-----------|---------|------|---------|
+| Dialogue ending in "?" followed by "I" | Dialogue ends with "?" and next word is "I" (always capitalized) | Assume continuation (same sentence) because "I" is always capitalized in English, so we cannot tell from capitalization alone if it's a new sentence | `"Anything the matter?" In the sing-song voice...` → Treat "In" as continuation, not new sentence |
+| Em dash with capitalized word | `text—Capitalized continuation` | Capital after em dash does NOT start new sentence | `"Or was I paralyzed?\n\"I don't know..."` → The dialogue is a new sentence, but `text—Capital` patterns continue |
+| Ellipses with "because..." | `because... well, I'm writing` | Ellipses indicate continuation/trailing off, not termination | `But no, I ask seriously, because... well, I'm writing to you now...` → ONE sentence |
+
 ## Future Enhancements
 
 - Abbreviation detection if needed for other manuscripts
