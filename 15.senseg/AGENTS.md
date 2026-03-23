@@ -6,6 +6,14 @@
 - **`manuscripts/the-wildfire.manuscript`** - This is the source manuscript. NEVER edit, run scripts on, or modify this file unless the user explicitly and directly asks you to do so. Double-check even if you think the user is asking you to.
 - **`scenarios.jsonl`** - This contains hand-curated test scenarios. NEVER add, remove, or modify entries unless explicitly instructed by the user.
 
+## Git Operations
+
+### NEVER CREATE GIT COMMITS
+- **NEVER run `git commit`** - Only the user should create commits
+- You may read git status, diffs, logs, etc. for informational purposes
+- You may make file changes, but NEVER commit them
+- The user will handle all git commit operations themselves
+
 ## Supported Languages
 
 Currently supported segmenter implementations:

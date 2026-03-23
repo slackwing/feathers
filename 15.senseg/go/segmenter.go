@@ -33,6 +33,23 @@ func Segment(text string) []string {
 		text = strings.Replace(text, qt, placeholder, 1)
 	}
 
+	// Handle sentence boundaries after quoted text ending with punctuation
+	// This allows dialogue like "Hello?" on its own line to be a separate sentence
+	for i, qt := range quotedTexts {
+		if len(qt) < 2 {
+			continue
+		}
+		// Check if quote ends with sentence-ending punctuation before the closing quote
+		// Check for patterns like ."  !"  ?"
+		if strings.HasSuffix(qt, ".\"") || strings.HasSuffix(qt, "!\"") || strings.HasSuffix(qt, "?\"") ||
+			strings.HasSuffix(qt, ".\u201D") || strings.HasSuffix(qt, "!\u201D") || strings.HasSuffix(qt, "?\u201D") {
+			placeholder := fmt.Sprintf(quotePlaceholderBase, i)
+			// Add marker after placeholder when followed by newline or space
+			text = strings.ReplaceAll(text, placeholder+"\n", placeholder+marker)
+			text = strings.ReplaceAll(text, placeholder+" ", placeholder+marker)
+		}
+	}
+
 	// Protect ellipsis from being treated as sentence boundaries
 	text = strings.ReplaceAll(text, "... ", ellipsisPlaceholder)
 	text = strings.ReplaceAll(text, "...", ellipsisPlaceholder[:len(ellipsisPlaceholder)-1]) // ellipsis without space
