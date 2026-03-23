@@ -18,13 +18,31 @@ func Segment(text string) []string {
 
 	// Replace sentence endings, keeping the punctuation
 	marker := "\x00SENT\x00"
+	ellipsisPlaceholder := "\x00ELLIPSIS\x00"
 
+	// Protect ellipsis from being treated as sentence boundaries
+	text = strings.ReplaceAll(text, "... ", ellipsisPlaceholder)
+	text = strings.ReplaceAll(text, "...", ellipsisPlaceholder[:len(ellipsisPlaceholder)-1]) // ellipsis without space
+
+	// Handle specific multi-character patterns first (most specific to least specific)
+	text = strings.ReplaceAll(text, ".\n\n", "."+marker)
+	text = strings.ReplaceAll(text, "!\n\n", "!"+marker)
+	text = strings.ReplaceAll(text, "?\n\n", "?"+marker)
+
+	// Handle punctuation-based boundaries
 	text = strings.ReplaceAll(text, ". ", "."+marker)
 	text = strings.ReplaceAll(text, ".\n", "."+marker)
 	text = strings.ReplaceAll(text, "! ", "!"+marker)
 	text = strings.ReplaceAll(text, "!\n", "!"+marker)
 	text = strings.ReplaceAll(text, "? ", "?"+marker)
 	text = strings.ReplaceAll(text, "?\n", "?"+marker)
+
+	// Handle double newlines as sentence boundaries (for headings, paragraphs without punctuation)
+	text = strings.ReplaceAll(text, "\n\n", marker)
+
+	// Restore ellipsis
+	text = strings.ReplaceAll(text, ellipsisPlaceholder, "... ")
+	text = strings.ReplaceAll(text, ellipsisPlaceholder[:len(ellipsisPlaceholder)-1], "...")
 
 	// Handle end of text
 	if strings.HasSuffix(text, ".") || strings.HasSuffix(text, "!") || strings.HasSuffix(text, "?") {
