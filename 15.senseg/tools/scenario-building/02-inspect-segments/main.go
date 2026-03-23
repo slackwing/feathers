@@ -6,16 +6,19 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
 	from := flag.Int("from", 0, "Starting sentence index (1-indexed, inclusive)")
 	to := flag.Int("to", 0, "Ending sentence index (1-indexed, inclusive)")
+	lang := flag.String("lang", "go", "Language segmenter output to use (go|js)")
 	flag.Parse()
 
 	if *from == 0 || *to == 0 {
 		fmt.Fprintf(os.Stderr, "Error: both --from and --to flags are required\n")
-		fmt.Fprintf(os.Stderr, "Usage: 02-inspect-segments --from <int> --to <int>\n")
+		fmt.Fprintf(os.Stderr, "Usage: 02-inspect-segments --from <int> --to <int> [--lang go|js]\n")
 		os.Exit(1)
 	}
 
@@ -29,11 +32,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Open generated/out.jsonl
-	file, err := os.Open("generated/out.jsonl")
+	// Get manuscript path to determine manuscript name
+	manuscriptPath := os.Getenv("SENSEG_SCENARIOS_MANUSCRIPT")
+	if manuscriptPath == "" {
+		matches, err := filepath.Glob("manuscripts/*.manuscript")
+		if err != nil || len(matches) == 0 {
+			fmt.Fprintf(os.Stderr, "Error: no manuscript file found in manuscripts/\n")
+			os.Exit(1)
+		}
+		manuscriptPath = matches[0]
+	}
+
+	// Extract manuscript name (without .manuscript extension)
+	manuscriptName := filepath.Base(manuscriptPath)
+	manuscriptName = strings.TrimSuffix(manuscriptName, ".manuscript")
+
+	// Open segmented/{manuscript-name}/{manuscript-name}.{lang}.jsonl
+	segmentedPath := filepath.Join("segmented", manuscriptName, fmt.Sprintf("%s.%s.jsonl", manuscriptName, *lang))
+	file, err := os.Open(segmentedPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening generated/out.jsonl: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Have you run 01-segment-manuscript yet?\n")
+		fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", segmentedPath, err)
+		fmt.Fprintf(os.Stderr, "Have you run 01-segment-manuscript --lang %s yet?\n", *lang)
 		os.Exit(1)
 	}
 	defer file.Close()

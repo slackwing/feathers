@@ -38,6 +38,10 @@ func main() {
 		manuscriptPath = matches[0]
 	}
 
+	// Extract manuscript name (without .manuscript extension)
+	manuscriptName := filepath.Base(manuscriptPath)
+	manuscriptName = strings.TrimSuffix(manuscriptName, ".manuscript")
+
 	// Read manuscript
 	content, err := os.ReadFile(manuscriptPath)
 	if err != nil {
@@ -57,14 +61,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Ensure generated/ directory exists
-	if err := os.MkdirAll("generated", 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating generated/ directory: %v\n", err)
+	// Create output directory: segmented/{manuscript-name}/
+	outDir := filepath.Join("segmented", manuscriptName)
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Write to generated/out.jsonl
-	outFile, err := os.Create("generated/out.jsonl")
+	// Write to segmented/{manuscript-name}/{manuscript-name}.{lang}.jsonl
+	outPath := filepath.Join(outDir, fmt.Sprintf("%s.%s.jsonl", manuscriptName, *lang))
+	outFile, err := os.Create(outPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output file: %v\n", err)
 		os.Exit(1)
@@ -80,7 +86,7 @@ func main() {
 		fmt.Fprintln(outFile, string(line))
 	}
 
-	fmt.Printf("Segmented %d sentences from %s to generated/out.jsonl\n", len(sentences), manuscriptPath)
+	fmt.Printf("Segmented %d sentences from %s to %s\n", len(sentences), manuscriptPath, outPath)
 }
 
 // callJSSegmenter calls the JavaScript segmenter (placeholder for future implementation)

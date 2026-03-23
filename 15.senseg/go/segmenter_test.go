@@ -46,6 +46,15 @@ func TestScenarios(t *testing.T) {
 		// Run segmenter on context
 		sentences := Segment(scenario.Context)
 
+		// Debug scenario 003
+		if scenario.ID == "003" {
+			t.Logf("Context bytes: %q", scenario.Context)
+			t.Logf("Expected bytes: %q", scenario.Expected)
+			for i, s := range sentences {
+				t.Logf("Sentence[%d]: %q", i, s)
+			}
+		}
+
 		// Check if expected sentence is in the output
 		found := false
 		for _, sentence := range sentences {

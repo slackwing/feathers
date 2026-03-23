@@ -1,6 +1,8 @@
 package senseg
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -19,6 +21,17 @@ func Segment(text string) []string {
 	// Replace sentence endings, keeping the punctuation
 	marker := "\x00SENT\x00"
 	ellipsisPlaceholder := "\x00ELLIPSIS\x00"
+	quotePlaceholderBase := "\x00QUOTE%d\x00"
+
+	// Protect quoted text from being split
+	// Handle all types of quotes: curly quotes (U+201C/U+201D), straight quotes (U+0022)
+	// Use a greedy match to get the longest quoted section
+	allQuotesRegex := regexp.MustCompile(`[\x{201C}\x{201D}"]+[^\x{201C}\x{201D}"]*[\x{201C}\x{201D}"]+`)
+	quotedTexts := allQuotesRegex.FindAllString(text, -1)
+	for i, qt := range quotedTexts {
+		placeholder := fmt.Sprintf(quotePlaceholderBase, i)
+		text = strings.Replace(text, qt, placeholder, 1)
+	}
 
 	// Protect ellipsis from being treated as sentence boundaries
 	text = strings.ReplaceAll(text, "... ", ellipsisPlaceholder)
@@ -55,6 +68,11 @@ func Segment(text string) []string {
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part != "" {
+			// Restore quoted text
+			for i, qt := range quotedTexts {
+				placeholder := fmt.Sprintf(quotePlaceholderBase, i)
+				part = strings.ReplaceAll(part, placeholder, qt)
+			}
 			sentences = append(sentences, part)
 		}
 	}
