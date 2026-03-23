@@ -12,13 +12,21 @@ Currently supported segmenter implementations:
 - **Go** - `go/segmenter.go` (active)
 - **JavaScript** - `js/` (placeholder, not yet implemented)
 
+## Building Tools
+
+**IMPORTANT**: All tool binaries MUST be built to the `generated/` directory, NEVER to the tool's source directory.
+
+- Run `./build-tools` to build all tools to `generated/`
+- Tool binaries should be run from `generated/`, e.g., `./generated/01-segment-manuscript --lang go`
+- NEVER build binaries into `tools/` subdirectories - they should only contain source code
+
 ## Tools Usage
 
 ### DO NOT USE
 - **`03-add-scenario`** - This tool is for manual use only. Only the human user should add scenarios to ensure quality and intentionality of test cases.
 
 ### CAN USE
-- `00-sanitize-manuscript` - For cleaning up the manuscript (but only with explicit permission for the-wildfire.manuscript)
+- `restore-italics` - For restoring italics to manuscript (manual use only)
 - `01-segment-manuscript` - For re-segmenting after changes to the segmenter (requires `--lang`, e.g., `--lang go`)
 - `02-inspect-segments` - For inspecting segmented output (optional `--lang`, defaults to `go`)
 - `run-scenarios` - For running tests against scenarios.jsonl (reading only)
@@ -31,10 +39,11 @@ When the user says "added a new scenario" or similar, follow this sequence:
 1. **Run tests**: Execute `./run-scenarios` to see if the new scenario passes
 2. **Fix segmenter if needed**: If tests fail, fix the segmenter implementation in the failing language(s)
 3. **Re-run tests**: Execute `./run-scenarios` again to verify all scenarios pass
-4. **Regenerate segments**: For each supported language, run:
-   - `./tools/scenario-building/01-segment-manuscript/01-segment-manuscript --lang go` → outputs to `segmented/the-wildfire/the-wildfire.go.jsonl`
-   - `./tools/scenario-building/01-segment-manuscript/01-segment-manuscript --lang js` → outputs to `segmented/the-wildfire/the-wildfire.js.jsonl` (when JS is implemented)
-5. **Report results**: Tell the user the outcome (tests passing, which files were regenerated)
+4. **Rebuild tools if needed**: If you modified any tools, run `./build-tools`
+5. **Regenerate segments**: For each supported language, run:
+   - `./generated/01-segment-manuscript --lang go` → outputs to `segmented/the-wildfire/the-wildfire.go.jsonl`
+   - `./generated/01-segment-manuscript --lang js` → outputs to `segmented/the-wildfire/the-wildfire.js.jsonl` (when JS is implemented)
+6. **Report results**: Tell the user the outcome (tests passing, which files were regenerated)
 
 ## General Workflow
 1. Fix/improve the segmenter based on test failures or requirements

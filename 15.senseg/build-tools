@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+# Build all tools to generated/
+
+cd "$(dirname "$0")/go"
+
+echo "Building tools to generated/..."
+
+# Manuscript tools
+go build -o ../generated/restore-italics ../tools/manuscript/restore-italics/main.go
+
+# Scenario-building tools
+go build -o ../generated/01-segment-manuscript ../tools/scenario-building/01-segment-manuscript/main.go
+go build -o ../generated/02-inspect-segments ../tools/scenario-building/02-inspect-segments/main.go
+go build -o ../generated/03-add-scenario ../tools/scenario-building/03-add-scenario/main.go
+
+echo "Done. Binaries in generated/"
+ls -lh ../generated/
