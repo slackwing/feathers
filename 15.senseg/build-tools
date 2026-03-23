@@ -8,7 +8,7 @@ cd "$(dirname "$0")/go"
 echo "Building tools to generated/..."
 
 # Manuscript tools
-go build -o ../generated/restore-italics ../tools/manuscript/restore-italics/main.go
+go build -o ../generated/00-sanitize-manuscript ../tools/manuscript/00-sanitize-manuscript/main.go
 
 # Scenario-building tools
 go build -o ../generated/01-segment-manuscript ../tools/scenario-building/01-segment-manuscript/main.go
