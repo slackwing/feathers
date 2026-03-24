@@ -44,9 +44,10 @@ func Segment(text string) []string {
 		if strings.HasSuffix(qt, ".\"") || strings.HasSuffix(qt, "!\"") || strings.HasSuffix(qt, "?\"") ||
 			strings.HasSuffix(qt, ".\u201D") || strings.HasSuffix(qt, "!\u201D") || strings.HasSuffix(qt, "?\u201D") {
 			placeholder := fmt.Sprintf(quotePlaceholderBase, i)
-			// Add marker after placeholder when followed by newline or space
-			text = strings.ReplaceAll(text, placeholder+"\n", placeholder+marker)
-			text = strings.ReplaceAll(text, placeholder+" ", placeholder+marker)
+			// Add marker after placeholder when followed by newline (with optional tab/whitespace)
+			text = strings.ReplaceAll(text, placeholder+"\n\t", placeholder+marker+"\n\t")
+			text = strings.ReplaceAll(text, placeholder+"\n", placeholder+marker+"\n")
+			text = strings.ReplaceAll(text, placeholder+" ", placeholder+marker+" ")
 		}
 	}
 
