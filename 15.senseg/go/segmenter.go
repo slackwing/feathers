@@ -33,17 +33,22 @@ func Segment(text string) []string {
 		text = strings.Replace(text, qt, placeholder, 1)
 	}
 
-	// Handle sentence boundaries after quoted text ending with punctuation
-	// This allows dialogue like "Hello?" on its own line to be a separate sentence
+	// Handle sentence boundaries around quoted text
 	for i, qt := range quotedTexts {
 		if len(qt) < 2 {
 			continue
 		}
-		// Check if quote ends with sentence-ending punctuation before the closing quote
+		placeholder := fmt.Sprintf(quotePlaceholderBase, i)
+
+		// Add boundary BEFORE quoted text when it starts on a new line
+		// This separates dialogue from the preceding sentence
+		text = strings.ReplaceAll(text, "\n\t"+placeholder, marker+"\n\t"+placeholder)
+		text = strings.ReplaceAll(text, "\n"+placeholder, marker+"\n"+placeholder)
+
+		// Add boundary AFTER quoted text ending with sentence-ending punctuation
 		// Check for patterns like ."  !"  ?"
 		if strings.HasSuffix(qt, ".\"") || strings.HasSuffix(qt, "!\"") || strings.HasSuffix(qt, "?\"") ||
 			strings.HasSuffix(qt, ".\u201D") || strings.HasSuffix(qt, "!\u201D") || strings.HasSuffix(qt, "?\u201D") {
-			placeholder := fmt.Sprintf(quotePlaceholderBase, i)
 			// Add marker after placeholder when followed by newline (with optional tab/whitespace)
 			text = strings.ReplaceAll(text, placeholder+"\n\t", placeholder+marker+"\n\t")
 			text = strings.ReplaceAll(text, placeholder+"\n", placeholder+marker+"\n")
