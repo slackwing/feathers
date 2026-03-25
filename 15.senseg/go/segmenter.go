@@ -23,9 +23,8 @@ func Segment(text string) []string {
 	ellipsisPlaceholder := "\x00ELLIPSIS\x00"
 	quotePlaceholderBase := "\x00QUOTE%d\x00"
 
-	// Protect quoted text from being split
+	// Protect remaining quoted text from being split
 	// Handle all types of quotes: curly quotes (U+201C/U+201D), straight quotes (U+0022)
-	// Use a greedy match to get the longest quoted section
 	allQuotesRegex := regexp.MustCompile(`[\x{201C}\x{201D}"]+[^\x{201C}\x{201D}"]*[\x{201C}\x{201D}"]+`)
 	quotedTexts := allQuotesRegex.FindAllString(text, -1)
 	for i, qt := range quotedTexts {
@@ -33,8 +32,34 @@ func Segment(text string) []string {
 		text = strings.Replace(text, qt, placeholder, 1)
 	}
 
+	// Mark quotes that are followed by attribution
+	// This prevents them from being split even if they end with sentence punctuation
+	attributionVerbs := []string{"said", "asked", "replied", "stammered", "shouted", "whispered", "muttered", "continued", "added", "explained"}
+	var quotesUsedInAttribution []bool = make([]bool, len(quotedTexts))
+
+	for i := 0; i < len(quotedTexts); i++ {
+		quotePlaceholder := fmt.Sprintf(quotePlaceholderBase, i)
+		for _, verb := range attributionVerbs {
+			for _, pronoun := range []string{"he", "she", "I", "they", "we", "you"} {
+				// Look for patterns like: QUOTE0 he said (don't require period, as there may be more text)
+				pattern := quotePlaceholder + " " + pronoun + " " + verb
+				if strings.Contains(text, pattern) {
+					quotesUsedInAttribution[i] = true
+					break
+				}
+			}
+			if quotesUsedInAttribution[i] {
+				break
+			}
+		}
+	}
+
 	// Handle sentence boundaries around quoted text
+	// But skip quotes that are part of dialogue with attribution
 	for i, qt := range quotedTexts {
+		if quotesUsedInAttribution[i] {
+			continue
+		}
 		if len(qt) < 2 {
 			continue
 		}
@@ -76,10 +101,6 @@ func Segment(text string) []string {
 	// Handle double newlines as sentence boundaries (for headings, paragraphs without punctuation)
 	text = strings.ReplaceAll(text, "\n\n", marker)
 
-	// Restore ellipsis
-	text = strings.ReplaceAll(text, ellipsisPlaceholder, "... ")
-	text = strings.ReplaceAll(text, ellipsisPlaceholder[:len(ellipsisPlaceholder)-1], "...")
-
 	// Handle end of text
 	if strings.HasSuffix(text, ".") || strings.HasSuffix(text, "!") || strings.HasSuffix(text, "?") {
 		text += marker
@@ -91,6 +112,10 @@ func Segment(text string) []string {
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part != "" {
+			// Restore ellipsis FIRST (before restoring quotes, to avoid conflicts)
+			part = strings.ReplaceAll(part, ellipsisPlaceholder, "... ")
+			part = strings.ReplaceAll(part, ellipsisPlaceholder[:len(ellipsisPlaceholder)-1], "...")
+
 			// Restore quoted text
 			for i, qt := range quotedTexts {
 				placeholder := fmt.Sprintf(quotePlaceholderBase, i)
