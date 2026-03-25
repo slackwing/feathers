@@ -34,6 +34,7 @@
 | Pattern | Description | Test Scenarios | Priority |
 |---------|-------------|----------------|----------|
 | `\n\n` | Double newline always creates boundary (paragraphs, sections) | 001 | HIGH |
+| `\n\t` | Tab-indented paragraph break always creates boundary | 012 | HIGH |
 | Markdown headers | Lines starting with `#` are separate segments | 001 | HIGH |
 
 ### 2. Dialogue & Quotation Rules
