@@ -6,6 +6,12 @@
 - **`manuscripts/the-wildfire.manuscript`** - This is the source manuscript. NEVER edit, run scripts on, or modify this file unless the user explicitly and directly asks you to do so. Double-check even if you think the user is asking you to.
 - **`scenarios.jsonl`** - This contains hand-curated test scenarios. NEVER add, remove, or modify entries unless explicitly instructed by the user.
 
+### MUST BE UPDATED TOGETHER
+- **`SPECS.md` and `scenarios.jsonl`** - These two files must stay synchronized:
+  - When adding a test scenario, update SPECS.md with the corresponding rule
+  - When modifying a rule in SPECS.md, ensure test coverage exists in scenarios.jsonl
+  - Only update if changes are actually needed (don't modify for no reason)
+
 ## Git Operations
 
 ### NEVER CREATE GIT COMMITS
