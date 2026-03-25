@@ -35,7 +35,7 @@
 |---------|-------------|----------------|----------|
 | `\n\n` | Double newline always creates boundary (paragraphs, sections) | 001 | HIGH |
 | `\n\t` | Tab-indented paragraph break always creates boundary | 012 | HIGH |
-| Markdown headers | Lines starting with `#` are separate segments | 001 | HIGH |
+| Markdown headers | Lines starting with `#` are separate segments (boundary before and after) | 001, 057 | HIGH |
 
 ### 2. Dialogue & Quotation Rules
 
@@ -46,6 +46,7 @@
 | `"quote!"` embedded in sentence | Quote with internal punctuation but embedded in sentence doesn't split | 003 | MEDIUM |
 | Multi-sentence quote | Entire quote stays as ONE sentence, even with internal `.!?` | 031 | HIGH |
 | `*italic thought*` | Italics used for internal thoughts follow SAME rules as quotes | 016 | HIGH |
+| Split quote with attribution | `"part1," he said, "part2."` stays as ONE sentence - attribution search stops at next quote | 056 | HIGH |
 
 **Attribution verbs:** said, asked, replied, stammered, shouted, whispered, muttered, continued, added, explained
 
@@ -101,18 +102,19 @@
 
 ## Implementation Notes
 
-### V3 Architecture (Current: 36/36 passing)
+### V3 Architecture (Current: 38/38 passing)
 
 **3-Phase Pipeline:**
 1. **Mark Nested Structures** - Find all quotes, parens, brackets, italics (position ranges, 1-level only)
-2. **Mark Boundaries** - Apply 7 rules to identify split points (respecting nested regions)
+2. **Mark Boundaries** - Apply 8 rules to identify split points (respecting nested regions)
 3. **Split & Normalize** - Split at boundaries, normalize internal whitespace to spaces
 
 **Critical details:**
 - **Quote detection:** Straight quotes `"` toggle open/close; curly quotes `"` `"` explicit
 - **Whitespace normalization:** Internal `\n` and `\t` → single space, collapse multiples
-- **Attribution detection:** Check for verb + comma before `\n\t"quote"` pattern
+- **Attribution detection:** Check for verb + comma before `\n\t"quote"` pattern; stop search at next quote to preserve split quotes
 - **Paragraph breaks:** Both `\n\n` and `\n\t` (when not dialogue) create boundaries
+- **Markdown headers:** Lines starting with `#` create boundaries before and after
 
 ### Quote Classification
 - **Standalone dialogue**: Quote on own line (`\n\t"..."`) without attribution before

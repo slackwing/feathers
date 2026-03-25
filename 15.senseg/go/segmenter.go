@@ -219,7 +219,8 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 					// If followed by lowercase letter, likely has attribution after
 					if j < len(runes) && unicode.IsLower(runes[j]) {
 						// Find end of sentence (period after attribution)
-						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' {
+						// Stop if we hit a quote (continuation of split quote) or newline
+						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' && runes[j] != '"' && runes[j] != '\u201C' {
 							j++
 						}
 						if j < len(runes) && runes[j] == '.' {
@@ -239,7 +240,9 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 						j++
 					}
 					if j < len(runes) && unicode.IsLower(runes[j]) {
-						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' {
+						// Find end of sentence (period after attribution)
+						// Stop if we hit a quote (continuation of split quote) or newline
+						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' && runes[j] != '"' && runes[j] != '\u201C' {
 							j++
 						}
 						if j < len(runes) && runes[j] == '.' {
@@ -413,6 +416,32 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 			}
 			if !isDialogue {
 				boundaries = append(boundaries, boundaryMark{pos: i + 1, reason: "paragraph break"})
+			}
+		}
+	}
+
+	// RULE 8: Markdown headers (lines starting with #)
+	for i := 0; i < len(runes); i++ {
+		if runes[i] == '#' {
+			// Check if this # is at the start of a line (after newline or at position 0)
+			atLineStart := i == 0 || runes[i-1] == '\n'
+
+			if atLineStart {
+				// Create boundary before the header (unless at start of text)
+				if i > 0 {
+					boundaries = append(boundaries, boundaryMark{pos: i, reason: "before markdown header"})
+				}
+
+				// Find the end of the header line
+				j := i
+				for j < len(runes) && runes[j] != '\n' {
+					j++
+				}
+
+				// Create boundary after the header (at the newline)
+				if j < len(runes) {
+					boundaries = append(boundaries, boundaryMark{pos: j, reason: "after markdown header"})
+				}
 			}
 		}
 	}
