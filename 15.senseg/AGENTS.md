@@ -28,11 +28,29 @@ Currently supported segmenter implementations:
 
 ## Building Tools
 
-**IMPORTANT**: All tool binaries MUST be built to the `generated/` directory, NEVER to the tool's source directory.
+**IMPORTANT**: All tool binaries MUST be in the `generated/` directory, NEVER in the tool's source directory.
 
-- Run `./build-tools` to build all tools to `generated/`
-- Tool binaries should be run from `generated/`, e.g., `./generated/01-segment-manuscript --lang go`
-- NEVER build binaries into `tools/` subdirectories - they should only contain source code
+### Tool Source Location
+- **All tool source** (Go and Bash) goes in `tools/` subdirectories:
+  - `tools/manuscript/` - Manuscript processing tools
+  - `tools/scenario-building/` - Scenario and testing tools
+- **All built/deployed tools** go in `generated/`
+
+### Building/Deploying Tools
+- **Always run `./build-tools`** after creating or modifying any tool
+- This script:
+  - Compiles Go tools: `tools/*/toolname/main.go` → `generated/toolname`
+  - Copies bash scripts: `tools/*/scriptname` → `generated/scriptname`
+  - Makes everything executable
+
+### After Creating New Tools
+1. Create source in `tools/manuscript/` or `tools/scenario-building/`
+2. Add to `build-tools` script (for Go: add `go build` line; for bash: add `cp` line)
+3. Run `./build-tools` to deploy to `generated/`
+4. **Always run tools from `generated/`**: e.g., `./generated/04-context search term`
+
+### Note on go/tools/
+The `go/tools/` directory appears to be legacy. Active source is in root-level `tools/`.
 
 ## Tools Usage
 
