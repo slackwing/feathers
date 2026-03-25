@@ -207,37 +207,24 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 		if region.typ == '"' {
 			// Check if quote starts after \n\t or \n
 			if region.start >= 2 && runes[region.start-2] == '\n' && runes[region.start-1] == '\t' {
-				// Check if preceded by attribution (verb + comma before newline)
-				hasAttributionBefore := false
-				verbs := []string{"said", "asked", "replied", "stammered", "shouted", "whispered",
-					"muttered", "continued", "added", "explained"}
+				// Always create boundary before standalone dialogue
+				boundaries = append(boundaries, boundaryMark{pos: region.start - 2, reason: "before standalone dialogue"})
 
-				// Look backwards from the newline to find comma and verb
-				for i := region.start - 3; i >= 0; i-- {
-					if runes[i] == '\n' {
-						break // Hit previous paragraph
+				// Check if there's lowercase word after quote (attribution after)
+				if region.end+1 < len(runes) {
+					j := region.end + 1
+					for j < len(runes) && (runes[j] == ' ' || runes[j] == '\t') {
+						j++
 					}
-					if runes[i] == ',' {
-						// Found comma, check if preceded by attribution verb
-						textBefore := string(runes[:i])
-						for _, verb := range verbs {
-							if strings.HasSuffix(textBefore, " "+verb) || strings.HasSuffix(textBefore, "\t"+verb) {
-								hasAttributionBefore = true
-								break
-							}
+					// If followed by lowercase letter, likely has attribution after
+					if j < len(runes) && unicode.IsLower(runes[j]) {
+						// Find end of sentence (period after attribution)
+						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' {
+							j++
 						}
-						break
-					}
-				}
-
-				// Only create standalone dialogue boundary if NO attribution before
-				if !hasAttributionBefore {
-					boundaries = append(boundaries, boundaryMark{pos: region.start - 2, reason: "before standalone dialogue"})
-
-					// Find end of attribution (if any)
-					attribEnd := findAttributionEnd(runes, region.end+1)
-					if attribEnd > region.end+1 {
-						boundaries = append(boundaries, boundaryMark{pos: attribEnd, reason: "after dialogue+attribution"})
+						if j < len(runes) && runes[j] == '.' {
+							boundaries = append(boundaries, boundaryMark{pos: j + 1, reason: "after dialogue+attribution"})
+						}
 					} else if region.end < len(runes)-1 {
 						boundaries = append(boundaries, boundaryMark{pos: region.end + 1, reason: "after standalone dialogue"})
 					}
@@ -245,11 +232,22 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 			} else if region.start >= 1 && runes[region.start-1] == '\n' {
 				boundaries = append(boundaries, boundaryMark{pos: region.start - 1, reason: "before standalone dialogue"})
 
-				attribEnd := findAttributionEnd(runes, region.end+1)
-				if attribEnd > region.end+1 {
-					boundaries = append(boundaries, boundaryMark{pos: attribEnd, reason: "after dialogue+attribution"})
-				} else if region.end < len(runes)-1 {
-					boundaries = append(boundaries, boundaryMark{pos: region.end + 1, reason: "after standalone dialogue"})
+				// Check for attribution after
+				if region.end+1 < len(runes) {
+					j := region.end + 1
+					for j < len(runes) && (runes[j] == ' ' || runes[j] == '\t') {
+						j++
+					}
+					if j < len(runes) && unicode.IsLower(runes[j]) {
+						for j < len(runes) && runes[j] != '.' && runes[j] != '\n' {
+							j++
+						}
+						if j < len(runes) && runes[j] == '.' {
+							boundaries = append(boundaries, boundaryMark{pos: j + 1, reason: "after dialogue+attribution"})
+						}
+					} else if region.end < len(runes)-1 {
+						boundaries = append(boundaries, boundaryMark{pos: region.end + 1, reason: "after standalone dialogue"})
+					}
 				}
 			}
 		}
@@ -270,24 +268,37 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 							j++
 						}
 
-						// Check if followed by attribution (pronoun + verb)
+						// Check if followed by lowercase letter (indicates attribution continuation)
 						hasAttribution := false
-						if region.typ == '"' && j < len(runes) {
-							remaining := string(runes[j:])
-							pronouns := []string{"I", "he", "she", "they", "we", "you"}
-							verbs := []string{"said", "asked", "replied", "stammered", "shouted", "whispered",
-								"muttered", "continued", "added", "explained"}
+						if region.typ == '"' && j < len(runes) && unicode.IsLower(runes[j]) {
+							hasAttribution = true
+						}
 
-							for _, pronoun := range pronouns {
-								for _, verb := range verbs {
-									pattern := pronoun + " " + verb
-									if strings.HasPrefix(remaining, pattern) {
-										hasAttribution = true
-										break
-									}
+						// Special handling for "I": check if quote appears after sentence boundary
+						// If quote comes after ". ", treat "I" as new sentence
+						// Otherwise, check if it's "I <lowercase>" (likely attribution like "I said")
+						if region.typ == '"' && j < len(runes) && runes[j] == 'I' {
+							// Check if quote started after a period (sentence boundary)
+							quoteAfterPeriod := false
+							if region.start >= 2 {
+								// Look back to see if there's a period before the quote
+								i := region.start - 1
+								for i >= 0 && (runes[i] == ' ' || runes[i] == '\t' || runes[i] == '"' || runes[i] == '\u201C') {
+									i--
 								}
-								if hasAttribution {
-									break
+								if i >= 0 && runes[i] == '.' {
+									quoteAfterPeriod = true
+								}
+							}
+
+							// If NOT after period, check for "I <lowercase>" attribution pattern
+							if !quoteAfterPeriod {
+								k := j + 1
+								for k < len(runes) && (runes[k] == ' ' || runes[k] == '\t') {
+									k++
+								}
+								if k < len(runes) && unicode.IsLower(runes[k]) {
+									hasAttribution = true
 								}
 							}
 						}
@@ -407,48 +418,6 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 	}
 
 	return boundaries
-}
-
-// findAttributionEnd finds the end of dialogue attribution after a quote
-func findAttributionEnd(runes []rune, start int) int {
-	if start >= len(runes) {
-		return start
-	}
-
-	// Skip whitespace
-	i := start
-	for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
-		i++
-	}
-
-	if i >= len(runes) {
-		return start
-	}
-
-	// Look for pronoun + verb pattern
-	pronouns := []string{"he", "she", "I", "they", "we", "you"}
-	verbs := []string{"said", "asked", "replied", "stammered", "shouted", "whispered",
-		"muttered", "continued", "added", "explained"}
-
-	remaining := string(runes[i:])
-
-	for _, pronoun := range pronouns {
-		for _, verb := range verbs {
-			pattern := pronoun + " " + verb
-			if strings.HasPrefix(remaining, pattern) {
-				// Found attribution, find the period
-				j := i + len([]rune(pattern))
-				for j < len(runes) && runes[j] != '.' && runes[j] != '\n' {
-					j++
-				}
-				if j < len(runes) && runes[j] == '.' {
-					return j + 1
-				}
-			}
-		}
-	}
-
-	return start
 }
 
 // splitAtBoundaries splits the text at marked boundaries
