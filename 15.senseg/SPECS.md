@@ -100,26 +100,23 @@
 
 ## Implementation Notes
 
-### Context Detection Order
-1. Identify all quoted regions first (position ranges)
-2. Detect attribution patterns adjacent to quotes
-3. Mark ellipsis positions
-4. Apply boundary rules with context awareness
+### V3 Architecture (Current: 36/36 passing)
+
+**3-Phase Pipeline:**
+1. **Mark Nested Structures** - Find all quotes, parens, brackets, italics (position ranges, 1-level only)
+2. **Mark Boundaries** - Apply 7 rules to identify split points (respecting nested regions)
+3. **Split & Normalize** - Split at boundaries, normalize internal whitespace to spaces
+
+**Critical details:**
+- **Quote detection:** Straight quotes `"` toggle open/close; curly quotes `"` `"` explicit
+- **Whitespace normalization:** Internal `\n` and `\t` → single space, collapse multiples
+- **Attribution detection:** Check for verb + comma before `\n\t"quote"` pattern
+- **Paragraph breaks:** Both `\n\n` and `\n\t` (when not dialogue) create boundaries
 
 ### Quote Classification
-- **Standalone dialogue**: Quote on own line or after clear sentence boundary
+- **Standalone dialogue**: Quote on own line (`\n\t"..."`) without attribution before
 - **Embedded dialogue**: Quote within ongoing sentence (e.g., after "shouting,")
-- **Attributed dialogue**: Quote immediately followed by `<pronoun> <verb>` pattern
-
-### Boundary Decision Logic
-```
-For each potential boundary position:
-  1. Check HIGH priority rules first (structural, dialogue)
-  2. If no HIGH rule applies, check MEDIUM (punctuation)
-  3. Check exception contexts (inhibitors)
-  4. If exceptions apply, NO boundary
-  5. Otherwise, create boundary
-```
+- **Attributed dialogue**: Quote followed by `<pronoun> <verb>` pattern (or verb before)
 
 ---
 
@@ -242,3 +239,4 @@ For each potential boundary position:
 | 2026-03-24 | Italics = quotes | User confirmed italics follow quote rules | 016 |
 | 2026-03-24 | Multi-sentence quotes | User confirmed entire quote = one sentence | 031 |
 | 2026-03-24 | Period after attribution | Clarified period AFTER attribution ends sentence | 023, 024 |
+| 2026-03-25 | V3 complete (100%) | 3-phase architecture with whitespace normalization | All 36 |

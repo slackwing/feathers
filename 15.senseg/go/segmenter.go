@@ -1,8 +1,6 @@
 package senseg
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"unicode"
 )
@@ -38,28 +36,8 @@ func Segment(text string) []string {
 	// PHASE 2: Mark sentence boundaries
 	boundaries := markBoundaries(runes, regions)
 
-	// DEBUG: Enable with DEBUG_SENSEG=1
-	if os.Getenv("DEBUG_SENSEG") == "1" {
-		fmt.Printf("\n=== DEBUG ===\n")
-		fmt.Printf("Text: %q\n", string(runes))
-		fmt.Printf("Regions: %+v\n", regions)
-		fmt.Printf("Boundaries: %+v\n", boundaries)
-		fmt.Printf("=============\n\n")
-	}
-
 	// PHASE 3: Split at boundaries
-	result := splitAtBoundaries(runes, boundaries)
-
-	// DEBUG: Show result
-	if os.Getenv("DEBUG_SENSEG") == "1" {
-		fmt.Printf("Result: %d sentences\n", len(result))
-		for i, s := range result {
-			fmt.Printf("  [%d]: %q\n", i, s)
-		}
-		fmt.Printf("\n")
-	}
-
-	return result
+	return splitAtBoundaries(runes, boundaries)
 }
 
 // markNestedRegions finds all nested structures in the text (1 level only)
@@ -250,16 +228,6 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 						}
 						break
 					}
-				}
-
-				// Debug attribution detection
-				if os.Getenv("DEBUG_SENSEG") == "1" && region.start >= 2 {
-					contextStart := region.start - 40
-					if contextStart < 0 {
-						contextStart = 0
-					}
-					fmt.Printf("  Quote at %d, checking attribution: hasAttr=%v, context=%q\n",
-						region.start, hasAttributionBefore, string(runes[contextStart:region.start]))
 				}
 
 				// Only create standalone dialogue boundary if NO attribution before
