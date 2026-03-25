@@ -1,6 +1,6 @@
 # Comprehensive Test Scenario Extraction
 
-**Status:** ✅ EXTRACTION COMPLETE - 22 new scenarios ready for review (corrected)
+**Status:** ✅ EXTRACTION COMPLETE - 21 new scenarios ready for review (corrected)
 
 **Goal:** Extract comprehensive test scenarios covering all discovered patterns.
 **Format:** For each pattern, provide manuscript line reference and extracted context+expected.
@@ -10,16 +10,15 @@
 ## EXTRACTION SUMMARY
 
 **Completed:**
-- ✅ 22 unique new scenarios extracted (007-055)
-- ✅ 11 duplicates identified and removed
-- ✅ 3 non-special cases discarded
+- ✅ 21 unique new scenarios extracted (007-055)
+- ✅ 12 duplicates identified and removed (033, 037, 041, 043, 044, 050, 051, 052, 054, and earlier: 008, 020, 025)
+- ✅ 3 non-special cases discarded (026-028)
 - ✅ 2 scenarios removed (017, 018 - invalidated by manuscript fixes)
-- ✅ User decision made: Nesting pattern (scenario 034)
 - ✅ Final manuscript sweep completed - no additional patterns found
 - ✅ All Expected values corrected to single sentences
 - ✅ All scenarios confirmed and ready
 
-**Total scenarios:** 6 existing + 22 new = **28 comprehensive test scenarios**
+**Total scenarios:** 6 existing + 21 new = **27 comprehensive test scenarios**
 
 **See:** `QUESTIONS_FOR_USER.md` for user review questions
 
@@ -164,8 +163,8 @@ Wait, let me find the "said calmly" example:
 #### 030: Colon introducing conclusion
 **Pattern:** `: I felt too much` - colon does NOT create boundary, continues sentence
 **Lines:** 57
-**Context:** ""No... not really. Y— That's what's hard to explain, right? It doesn't feel rough—it's just that you feel nothing—and somehow it's unbearable, day after day—I mean, you can call that rough but, it doesn't *feel* very rough at all, I don't know." "No, yeah," I said for now, even though that wasn't really my brand of the tendency. Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time. Ha, I know reading that just now made you raise your eyebrows and smile and go, "Yup," am I right?"
-**Expected:** ""No, yeah," I said for now, even though that wasn't really my brand of the tendency. Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time."
+**Context:** ""No, yeah," I said for now, even though that wasn't really my brand of the tendency. Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time. Ha, I know reading that just now made you raise your eyebrows and smile and go, "Yup," am I right?"
+**Expected:** "Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time."
 **Note:** Very long sentence with colon at end introducing conclusion. Also has em-dashes and parenthetical.
 
 #### 031: Colon introducing realization mid-dialogue
@@ -185,29 +184,26 @@ Wait, let me find the "said calmly" example:
 **Context:** "Because I remember, not long after, a cloud briskly overtaking the sun and casting the vista in shade, the novelty of our defiance suddenly seeming to wane, and my next sigh feeling naked and self-conscious. Families in their cars who we fancied wanted to join us (didn't we feel ready to share?), now we imagined rolling their eyes behind us and looking away. We took shyer sips of champagne."
 **Expected:** "Families in their cars who we fancied wanted to join us (didn't we feel ready to share?), now we imagined rolling their eyes behind us and looking away."
 
-#### 033: Parenthetical aside (DUPLICATE of 030)
-**Note:** Pattern `(and their crushing disinterest)` already tested in scenario 030. No separate scenario needed.
-
-#### 034: Long parenthetical with period inside ✅
-**Pattern:** `(I'm remembering you teasing me—"quote"—once, at...)` - parenthetical sentence with nested quote and em-dashes
+#### 034: Parenthetical as standalone sentence
+**Pattern:** Parenthetical with period inside stands as its own sentence
 **Lines:** 130
-**Context:** "You know how I don't even like to run into a best friend in public. Maybe it's what you always said: I hate surprises. (I'm remembering you teasing me—"Aww, poor baby, was that a little *too* surprising for you?"—once, at my disgust over some weird-flavored snack you brought home.) Well for not liking surprises, a sure lot of surprising things seem to happen to me."
-**Expected:** "Maybe it's what you always said: I hate surprises. (I'm remembering you teasing me—"Aww, poor baby, was that a little *too* surprising for you?"—once, at my disgust over some weird-flavored snack you brought home.) Well for not liking surprises, a sure lot of surprising things seem to happen to me."
-**Note:** USER DECISION - Nesting pattern: Any nested structure (parentheticals, brackets, quotes, italics) = one sentence. No splitting within nesting.
+**Context:** "Maybe it's what you always said: I hate surprises. (I'm remembering you teasing me—"Aww, poor baby, was that a little *too* surprising for you?"—once, at my disgust over some weird-flavored snack you brought home.) Well for not liking surprises, a sure lot of surprising things seem to happen to me."
+**Expected:** "(I'm remembering you teasing me—"Aww, poor baby, was that a little *too* surprising for you?"—once, at my disgust over some weird-flavored snack you brought home.)"
+**Note:** Parenthetical with nested quote and em-dashes. Has period inside so it's a separate sentence.
 
-#### 035: Parenthetical speculation question
-**Pattern:** `(What if, even, desperately?)` - short parenthetical question embedded
+#### 035: Parenthetical question as standalone sentence
+**Pattern:** `(What if, even, desperately?)` - parenthetical question stands alone
 **Lines:** 137
-**Context:** "I started a job down in the city, the very week after graduation I think, while they had the summer together. But you know, I'm lucky that being envious isn't a feeling I know, or I might have been, very. (What if, even, desperately?) But you know me, when duty calls. My family needed the money."
-**Expected:** "But you know, I'm lucky that being envious isn't a feeling I know, or I might have been, very. (What if, even, desperately?) But you know me, when duty calls."
-**Note:** Tests parenthetical question mark mid-sentence - should not create boundary
+**Context:** "But you know, I'm lucky that being envious isn't a feeling I know, or I might have been, very. (What if, even, desperately?) But you know me, when duty calls."
+**Expected:** "(What if, even, desperately?)"
+**Note:** Short parenthetical question with punctuation inside - separate sentence
 
 #### 036: Parenthetical philosophical question
 **Pattern:** `(Isn't it true that we all learn to distrust, when the formula of a night seems perfect?)` - longer rhetorical question
 **Lines:** 138
 **Context:** "You'd expect there to be some buzz among the guys, but the mood in the basement was oddly somber and no one seemed eager to try it. (Isn't it true that we all learn to distrust, when the formula of a night seems perfect?) Obviously someone had to, though, and I think someone egged Kostya."
-**Expected:** "You'd expect there to be some buzz among the guys, but the mood in the basement was oddly somber and no one seemed eager to try it. (Isn't it true that we all learn to distrust, when the formula of a night seems perfect?) Obviously someone had to, though, and I think someone egged Kostya."
-**Note:** Complex parenthetical with comma - entire sentence stays together
+**Expected:** "(Isn't it true that we all learn to distrust, when the formula of a night seems perfect?)"
+**Note:** Longer parenthetical question with punctuation inside - separate sentence
 
 ---
 
@@ -329,7 +325,7 @@ Wait, let me find the "said calmly" example:
 
 ## FINAL EXTRACTION STATUS
 
-### ✅ READY FOR USER REVIEW (22 new scenarios)
+### ✅ READY FOR USER REVIEW (21 new scenarios)
 
 **Em-dash patterns (8):**
 - 007: Parenthetical series
@@ -355,11 +351,10 @@ Wait, let me find the "said calmly" example:
 - 031: Before exclamation/realization (also tests multi-sentence quote)
 
 **Parenthetical patterns (4):**
-- 032: Rhetorical question
-- 033: DUPLICATE of 030
-- 034: ✅ Parenthetical sentence with period inside (nesting pattern confirmed)
-- 035: Speculation question
-- 036: Philosophical question
+- 032: Rhetorical question (embedded mid-sentence)
+- 034: Parenthetical as standalone sentence
+- 035: Parenthetical question standalone
+- 036: Philosophical question standalone
 
 **Ellipsis patterns (4):**
 - 037: DUPLICATE of 006
@@ -387,12 +382,11 @@ Wait, let me find the "said calmly" example:
 
 ### 📊 STATISTICS
 
-- **Total extracted:** 22 unique scenarios
-- **Duplicates removed:** 11
+- **Total extracted:** 21 unique scenarios
+- **Duplicates removed:** 12
 - **Discarded (normal behavior):** 3
 - **Invalid after manuscript fixes:** 2 (scenarios 017, 018 - Roman numerals now have Markdown headers)
-- **User decisions made:** 1 (nesting pattern established)
-- **Combined with existing 6:** 28 total comprehensive scenarios
+- **Combined with existing 6:** 27 total comprehensive scenarios
 - **Status:** ✅ All scenarios confirmed and ready
 
 ---

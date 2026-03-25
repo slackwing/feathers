@@ -1,9 +1,9 @@
 # Good Morning! 🌅 Scenario Extraction Complete
 
 ## TL;DR
-✅ **22 new test scenarios extracted and ready** (after corrections)
+✅ **21 new test scenarios extracted and ready** (after corrections)
 ✅ **All Expected values fixed** to show single sentences
-✅ **Scenarios 017-018 removed** (invalidated by manuscript fixes)
+✅ **Scenarios 017-018, 033 removed** (invalidated by manuscript fixes / duplicates)
 ✅ **All documentation updated**
 ✅ **Manuscript fixed** (Roman numerals now have ### H3 format)
 
@@ -96,10 +96,10 @@ All scenarios now have correct Expected values showing ONLY the single sentence 
 ## Statistics
 
 **Before:** 6 test scenarios
-**After:** 28 comprehensive test scenarios (6 existing + 22 new)
+**After:** 27 comprehensive test scenarios (6 existing + 21 new)
 **Corrections made:**
-- Fixed scenarios 010, 011, 016, 031 - corrected Expected values to single sentences
-- Removed scenarios 017, 018 - invalidated by manuscript Markdown fixes
+- Fixed scenarios 010, 011, 016, 030, 031, 034, 035, 036 - corrected Expected values to single sentences
+- Removed scenarios 017, 018, 033 - invalidated by manuscript fixes / duplicate
 - Removed note about 026-028
 - Verified all remaining scenarios have single-sentence Expected values
 
