@@ -1,6 +1,6 @@
 # Comprehensive Test Scenario Extraction
 
-**Status:** ✅ EXTRACTION COMPLETE - 21 new scenarios ready for review (corrected)
+**Status:** ✅ EXTRACTION COMPLETE - 15 new scenarios ready for review (corrected)
 
 **Goal:** Extract comprehensive test scenarios covering all discovered patterns.
 **Format:** For each pattern, provide manuscript line reference and extracted context+expected.
@@ -10,15 +10,16 @@
 ## EXTRACTION SUMMARY
 
 **Completed:**
-- ✅ 21 unique new scenarios extracted (007-055)
-- ✅ 12 duplicates identified and removed (033, 037, 041, 043, 044, 050, 051, 052, 054, and earlier: 008, 020, 025)
+- ✅ 15 unique new scenarios extracted (007-055)
+- ✅ 18 duplicates identified and removed (033, 037, 041, 043, 044, 050, 051, 052, 054, and earlier: 008, 020, 025)
 - ✅ 3 non-special cases discarded (026-028)
 - ✅ 2 scenarios removed (017, 018 - invalidated by manuscript fixes)
+- ✅ 1 unnecessary scenario removed (046 - covered by existing)
 - ✅ Final manuscript sweep completed - no additional patterns found
 - ✅ All Expected values corrected to single sentences
 - ✅ All scenarios confirmed and ready
 
-**Total scenarios:** 6 existing + 21 new = **27 comprehensive test scenarios**
+**Total scenarios:** 6 existing + 15 new = **21 comprehensive test scenarios**
 
 **See:** `QUESTIONS_FOR_USER.md` for user review questions
 
@@ -78,8 +79,8 @@ Pretending I didn't suspect anything."
 
 #### 012: Em-dash trailing off (unfinished thought)
 **Pattern:** Sentence ending with `—` (rare but should handle)
-**Lines:** 27
-**Context:** "I said to Dave, "Hey, really sorry. Let me go somewhere I can actually be alone. Give me a minute," and I walked— God, I know—walking here, walking there—what am I telling you all this for?"
+**Lines:** 27-28
+**Context:** "Some cartoon character on Adult Swim was obnoxiously bleating profanities. I said to Dave, "Hey, really sorry. Let me go somewhere I can actually be alone. Give me a minute," and I walked— God, I know—walking here, walking there—what am I telling you all this for?"
 **Expected:** "I said to Dave, "Hey, really sorry. Let me go somewhere I can actually be alone. Give me a minute," and I walked—"
 
 #### 013: Em-dash in conditional narrative
@@ -96,14 +97,14 @@ Pretending I didn't suspect anything."
 
 #### 015: Em-dash in direct address/clarification
 **Pattern:** `word—clarification` within dialogue
-**Lines:** 99
-**Context:** "Then it came flowing out. "Dave. I'm buying you a ticket, right now—a flight to San Diego, tonight. Are you in New York?""
-**Expected:** ""Dave. I'm buying you a ticket, right now—a flight to San Diego, tonight.""
+**Lines:** 98-100
+**Context:** "Then it came flowing out. "Dave. I'm buying you a ticket, right now—a flight to San Diego, tonight. Are you in New York?" No answer."
+**Expected:** ""Dave. I'm buying you a ticket, right now—a flight to San Diego, tonight. Are you in New York?""
 
 #### 016: Em-dash series with embedded italic thought
 **Pattern:** Multiple em-dashes with embedded italic thought continuing same sentence
-**Lines:** 91-92
-**Context:** "I blinked, then hit the call button twice with my thumb to call him back. A vertigo came over me thinking, *What if I waited too long. Why did it have to be 30. Why not 20.* The line was ringing—shame washed over me—*What was I thinking?*—and ringing—and ringing—and ringing—then it went to Dave's voicemail."
+**Lines:** 92
+**Context:** "A vertigo came over me thinking, *What if I waited too long. Why did it have to be 30. Why not 20.* The line was ringing—shame washed over me—*What was I thinking?*—and ringing—and ringing—and ringing—then it went to Dave's voicemail. The vertigo was merciless—would *this* be my last time hearing Dave's voice?"
 **Expected:** "The line was ringing—shame washed over me—*What was I thinking?*—and ringing—and ringing—and ringing—then it went to Dave's voicemail."
 **Note:** Complex - multiple em-dashes AND embedded italic thought
 
@@ -135,13 +136,8 @@ Pretending I didn't suspect anything."
 
 #### 023: Attribution with adverb
 **Pattern:** `he said calmly` stays together with quote
-**Lines:** 83
-**Context:** "I remember being bewildered, *Why don't I have another choice?* Another voice in my head screaming, *You do! Say something!* But I'm walking us through these thoughts as if they happened sequentially—they didn't—they didn't need any "walking through" for me, because they were a single and instantaneous feeling, a memory already processed and ready-evoked—including the hunch that caving too early and asking Dave to reconsider, could flare up his defensive resolve to carry through, trigger despair at finding himself all alone again, and then... "No problem, Dave," I found myself saying. "We'll miss you." And finally, "But we'll be okay." "Thanks A—," he said. A second or two passed, then the call ended. For 30 seconds, I counted, frozen, still holding the phone to my head, my chest pounding—staring at that washing machine—commanding myself to wait—wait like I was observing an excruciating, but sacred, ritual."
-**Expected:** ""Thanks A—," he said."
-
-Wait, let me find the "said calmly" example:
-**Lines:** 83
-**Context:** "We were quiet for a while. "I don't want to keep you." "Dude. I'm never going to hear from you again. I have time." A moment later, "Thanks." Maybe this is the moment that your washing machine got burned into the retina of my mind. I was standing motionless, almost unblinking, regulating my breath to be steady and deathly silent, afraid that even a tinge of alarm would scare him away, feeling at once that nothing could change and also that *everything* could change, and it all depended on me, but my mind was blanking, staring at this washing machine, sheet metal the coldest tone of white I'd ever seen, with a slight dimple on one face that reflected a glare of the fluorescent light. Whenever I think of this night, this washing machine is so vivid in my mind that I almost can't see what's actually in front of me. "Well, I'm going to go," he said calmly. I searched desperately for a clue."
+**Lines:** 83-84
+**Context:** "Whenever I think of this night, this washing machine is so vivid in my mind that I almost can't see what's actually in front of me. "Well, I'm going to go," he said calmly. I searched desperately for a clue."
 **Expected:** ""Well, I'm going to go," he said calmly."
 
 #### 024: Attribution with laugh as verb
@@ -162,7 +158,7 @@ Wait, let me find the "said calmly" example:
 
 #### 030: Colon introducing conclusion
 **Pattern:** `: I felt too much` - colon does NOT create boundary, continues sentence
-**Lines:** 57
+**Lines:** 57-58
 **Context:** ""No, yeah," I said for now, even though that wasn't really my brand of the tendency. Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time. Ha, I know reading that just now made you raise your eyebrows and smile and go, "Yup," am I right?"
 **Expected:** "Mine had been more fiery—with a cast of actors in a dramatic world—my mom, my father, my sister, romantic interests (and their crushing disinterest), society, "they"—so actually my problem was almost the opposite: I felt too much, all of the time."
 **Note:** Very long sentence with colon at end introducing conclusion. Also has em-dashes and parenthetical.
@@ -237,20 +233,14 @@ Wait, let me find the "said calmly" example:
 
 #### 042: Ellipsis before dramatic detail in dialogue
 **Pattern:** `days... to pack` - dramatic pause in speech
-**Lines:** 104
-**Context:** "No answer. "Dave, I have an idea. Let's get away. I need to get away too—it's a long story. I've seen some beach towns on the coast of California that have cheap vacation rentals this time of the year. You know I won't tell anyone about this. So you can just disappear—forget New York, forget everything—let's just get away and hang out." No answer, but I knew he was there. Then finally, he said, "I need a few days... to pack. And put my dad's shotgun back.""
-**Expected:** ""I need a few days... to pack.""
-**Note:** Ellipsis creates dramatic pause before ominous detail
+**Lines:** 102-105
+**Context:** "No answer, but I knew he was there. Then finally, he said, "I need a few days... to pack. And put my dad's shotgun back." "That's fine, in a few days then. Three days good?""
+**Expected:** "Then finally, he said, "I need a few days... to pack. And put my dad's shotgun back.""
+**Note:** Ellipsis creates dramatic pause before ominous detail. Multi-sentence quote with attribution stays as one segmented sentence.
 
 ---
 
 ### CATEGORY: ABBREVIATIONS & NUMBERS (043-048)
-
-#### 043: DUPLICATE of 003
-**Note:** Possessive `Carmella's` before period already tested in scenario 003
-
-#### 044: DUPLICATE of 002
-**Note:** Number with comma `2,638` already tested in scenario 002
 
 #### 045: Time expression without period
 **Pattern:** `2am` - time expression, no period, not an abbreviation issue
@@ -258,11 +248,6 @@ Wait, let me find the "said calmly" example:
 **Context:** "Jesse's older brother said there was a strip club that wasn't strict about IDs. It was super late—maybe 2am. Kostya was driving because Jaime wanted to smoke weed."
 **Expected:** "It was super late—maybe 2am."
 **Note:** Tests that `2am` doesn't create false boundary (no period involved)
-
-#### 046: Single letter initials
-**Pattern:** Redacted names like `A—.` vs Roman numerals like `I.`
-**Note:** Context-dependent. Roman numerals at line start (### I.) are H3 headers (scenario 001). Redacted names `A—.` in dialogue have period after em-dash (scenario 009).
-**No separate scenario needed** - covered by existing tests
 
 #### 047: Terminal number in dialogue
 **Pattern:** `Terminal 4` - number in proper noun
@@ -276,7 +261,7 @@ Wait, let me find the "said calmly" example:
 **Lines:** 127
 **Context:** "And though I looked at my phone in pretend, my fingers opened the app by themselves, already ahead of a suspicion. I found myself looking at the driver's name: Kolya T. *Wasn't Kostya's real name Kolya?* I immediately thought."
 **Expected:** "I found myself looking at the driver's name: Kolya T."
-**Note:** Period after initial `T.` should NOT create sentence boundary (abbreviation)
+**Note:** Period after initial `T.` DOES end the sentence. Capital "W" in "*Wasn't*" confirms this. **IMPORTANT:** Capitalization of next word is a strong hint for sentence boundaries (though ambiguous with words like "I" that are always capitalized).
 
 ---
 
@@ -285,18 +270,9 @@ Wait, let me find the "said calmly" example:
 #### 049: Italic phrase with em-dash continuation
 **Pattern:** `*So it was*—the epidemic` - italic phrase followed by em-dash
 **Lines:** 7
-**Context:** "We shrugged and laughed. "Guess we'll just die," I'm pretty sure you said. *So it was*—the epidemic of being in our 20s. Drinking champagne with our shoes off and saying we'd rather be stuck for longer so we'd catch the sunset."
+**Context:** ""Guess we'll just die," I'm pretty sure you said. *So it was*—the epidemic of being in our 20s. Drinking champagne with our shoes off and saying we'd rather be stuck for longer so we'd catch the sunset."
 **Expected:** "*So it was*—the epidemic of being in our 20s."
 **Note:** Tests italic + em-dash combination, sentence stays together
-
-#### 050: DUPLICATE of 002
-**Note:** Italic mid-word emphasis `I *couldn't* tell` already tested in scenario 002
-
-#### 051: DUPLICATE of 002
-**Note:** Italic phrase mid-sentence `*upon a time*` already tested in scenario 002
-
-#### 052: Italic internal thought (COVERED in 016)
-**Note:** Pattern `*What if I waited too long.*` - italic internal thoughts follow quote rules, covered in scenario 016
 
 ---
 
@@ -309,11 +285,6 @@ Wait, let me find the "said calmly" example:
 **Expected:** "Kostya held the cigarette in his lips and cupped his hands to light it even though we were inside; he always did that, looking down with a grimace like he didn't trust the cigarette to light."
 **Note:** Semicolon is transparent - keeps sentence together
 
-#### 054: Semicolons in series (COVERED in 031)
-**Pattern:** Multiple semicolons in dialogue separating parallel questions
-**Lines:** 341
-**Note:** Already extracted as part of scenario 031 (long dialogue with colon). Semicolons within that quote test this pattern.
-
 #### 055: Semicolon with inference/conclusion
 **Pattern:** `statement; conclusion` - semicolon introduces logical inference
 **Lines:** 231
@@ -325,7 +296,7 @@ Wait, let me find the "said calmly" example:
 
 ## FINAL EXTRACTION STATUS
 
-### ✅ READY FOR USER REVIEW (21 new scenarios)
+### ✅ READY FOR USER REVIEW (15 new scenarios)
 
 **Em-dash patterns (8):**
 - 007: Parenthetical series
@@ -356,37 +327,32 @@ Wait, let me find the "said calmly" example:
 - 035: Parenthetical question standalone
 - 036: Philosophical question standalone
 
-**Ellipsis patterns (4):**
-- 037: DUPLICATE of 006
+**Ellipsis patterns (3):**
 - 038: In dialogue attribution
 - 039: Before "you know"
 - 040: At sentence end (trailing thought)
-- 041: DUPLICATE of 002
 - 042: Before dramatic detail
 
-**Abbreviations/numbers (3):**
-- 043-044: DUPLICATES of 003, 002
+**Abbreviations/numbers (2):**
 - 045: Time expression (2am)
-- 046: Covered by existing scenarios
 - 047: Terminal number in dialogue
 - 048: Initial with period (last name)
 
 **Italic/emphasis (1):**
 - 049: Italic phrase with em-dash
-- 050-052: DUPLICATES or covered
 
 **Semicolon patterns (2):**
 - 053: Joining related clauses
-- 054: COVERED in 031
 - 055: With inference/conclusion
 
 ### 📊 STATISTICS
 
-- **Total extracted:** 21 unique scenarios
-- **Duplicates removed:** 12
+- **Total extracted:** 15 unique scenarios
+- **Duplicates removed:** 18
 - **Discarded (normal behavior):** 3
 - **Invalid after manuscript fixes:** 2 (scenarios 017, 018 - Roman numerals now have Markdown headers)
-- **Combined with existing 6:** 27 total comprehensive scenarios
+- **Unnecessary (covered by existing):** 1
+- **Combined with existing 6:** 21 total comprehensive scenarios
 - **Status:** ✅ All scenarios confirmed and ready
 
 ---
