@@ -184,36 +184,22 @@ func markBoundaries(runes []rune, regions []nestedRegion) []boundaryMark {
 	// Helper: check if position is inside a nested region
 	insideNested := func(pos int) bool {
 		for _, r := range regions {
-			// Include both opening and closing delimiters in the protected region
-			if pos >= r.start && pos <= r.end {
+			if pos > r.start && pos < r.end {
 				return true
 			}
 		}
 		return false
 	}
 
-	// Helper: check if position is inside a quote, paren, or italic region (not brackets)
-	insideQuoteOrOther := func(pos int) bool {
-		for _, r := range regions {
-			if r.typ != '[' { // Exclude bracket regions
-				// Include both opening and closing delimiters in the protected region
-				if pos >= r.start && pos <= r.end {
-					return true
-				}
-			}
-		}
-		return false
-	}
-
-	// RULE 1: Editorial brackets create boundaries (unless the boundary would be inside quotes/parens/italics)
+	// RULE 1: Editorial brackets always create boundaries
 	for _, region := range regions {
 		if region.typ == '[' {
-			// Boundary before bracket (only if not inside quotes/parens/italics)
-			if region.start > 0 && !insideQuoteOrOther(region.start) {
+			// Boundary before bracket
+			if region.start > 0 {
 				boundaries = append(boundaries, boundaryMark{pos: region.start, reason: "before bracket"})
 			}
-			// Boundary after bracket (only if not inside quotes/parens/italics)
-			if region.end < len(runes)-1 && !insideQuoteOrOther(region.end+1) {
+			// Boundary after bracket
+			if region.end < len(runes)-1 {
 				boundaries = append(boundaries, boundaryMark{pos: region.end + 1, reason: "after bracket"})
 			}
 		}

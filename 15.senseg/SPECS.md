@@ -102,7 +102,7 @@
 
 ## Implementation Notes
 
-### V3 Architecture (Current: 38/38 passing)
+### V3 Architecture (Current: 45/45 passing)
 
 **3-Phase Pipeline:**
 1. **Mark Nested Structures** - Find all quotes, parens, brackets, italics (position ranges, 1-level only)
@@ -112,7 +112,9 @@
 **Critical details:**
 - **Quote detection:** Straight quotes `"` toggle open/close; curly quotes `"` `"` explicit
 - **Whitespace normalization:** Internal `\n` and `\t` → single space, collapse multiples
-- **Attribution detection:** Check for verb + comma before `\n\t"quote"` pattern; stop search at next quote to preserve split quotes
+- **Attribution detection:** After `\n\t"quote"`, check for lowercase word OR "I <lowercase>" pattern OR period on same line; stop search at next quote to preserve split quotes
+- **Abbreviation handling:** Skip sentence boundaries for common abbreviations (Dr., a.m., etc.) and when period is followed by lowercase word
+- **Editorial brackets:** `[...]` inside quotes/parens/italics do NOT create boundaries (protected by nested region detection)
 - **Paragraph breaks:** Both `\n\n` and `\n\t` (when not dialogue) create boundaries
 - **Markdown headers:** Lines starting with `#` create boundaries before and after
 
@@ -136,6 +138,7 @@
 | Quote with colon prefix | `you'd definitely remember, because: It was` | 14 | ✗ | - | Colon as quote introducer |
 | Standalone dialogue line | `\t"Hello?"` | 15 | ✓ | 004 | Tab-indented dialogue |
 | Action → newline → dialogue | `I yelled,\n\t"Ow! F—!"` | 18-19 | ✓ | 005 | Comma before newline quote |
+| Dialogue with "I said" attribution | `\t"Terminal 4, please," I said.` | 250-251 | ✓ | 058 | Attribution using "I <verb>" pattern |
 | Quote followed by question | `"I'm alright," and offered it` | 128 | ✗ | - | Quote in mid-action |
 | Direct address in quote | `"Hey A—, sorry if I'm"` | 22 | ✗ | - | Em-dash for redacted name |
 
@@ -224,8 +227,9 @@
 | Multi-sentence quotes | 031 |
 | Embedded dialogue | 003 |
 | Italics (like quotes) | 016, 049 |
-| Editorial placeholders | 021, 022 |
-| Abbreviations | 045, 047, 048 |
+| Editorial placeholders | 021, 022, 063, 064 |
+| Editorial `[...]` inside quotes | 062 |
+| Abbreviations | 045, 047, 048, 059, 060, 061 |
 | Numbers with commas | 002 |
 | Possessives | 003 |
 
@@ -243,3 +247,5 @@
 | 2026-03-24 | Multi-sentence quotes | User confirmed entire quote = one sentence | 031 |
 | 2026-03-24 | Period after attribution | Clarified period AFTER attribution ends sentence | 023, 024 |
 | 2026-03-25 | V3 complete (100%) | 3-phase architecture with whitespace normalization | All 36 |
+| 2026-03-27 | Editorial brackets protected | Fixed RULE 1: Brackets inside quotes/parens/italics don't create boundaries | 062, 063, 064 |
+| 2026-03-27 | More abbreviations | Added comprehensive abbreviation list (time, titles, Latin, locations, months, days, business) | 059, 060, 061 |

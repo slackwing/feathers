@@ -154,8 +154,22 @@ function markBoundaries(chars, regions) {
     // Helper: check if position is inside a nested region
     const insideNested = (pos) => {
         for (const r of regions) {
-            if (pos > r.start && pos < r.end) {
+            // Include both opening and closing delimiters in the protected region
+            if (pos >= r.start && pos <= r.end) {
                 return true;
+            }
+        }
+        return false;
+    };
+
+    // Helper: check if position is inside a quote, paren, or italic region (not brackets)
+    const insideQuoteOrOther = (pos) => {
+        for (const r of regions) {
+            if (r.typ !== '[') { // Exclude bracket regions
+                // Include both opening and closing delimiters in the protected region
+                if (pos >= r.start && pos <= r.end) {
+                    return true;
+                }
             }
         }
         return false;
@@ -167,15 +181,46 @@ function markBoundaries(chars, regions) {
     // Helper: check if character is uppercase
     const isUpper = (ch) => ch && ch.toUpperCase() === ch && ch.toLowerCase() !== ch;
 
-    // RULE 1: Editorial brackets always create boundaries
+    // Helper: check if word is a common abbreviation
+    const isCommonAbbreviation = (word) => {
+        const lower = word.toLowerCase();
+
+        // Common abbreviations
+        const abbreviations = [
+            'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr',
+            'st', 'ave', 'blvd', 'rd', 'ln', 'ct',
+            'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+            'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
+            'etc', 'vs', 'vol', 'no', 'pp', 'ed', 'eds',
+            'co', 'corp', 'inc', 'ltd'
+        ];
+
+        if (abbreviations.includes(lower)) {
+            return true;
+        }
+
+        // Check for a.m. and p.m. patterns (already has a period before)
+        if (lower === 'm') {
+            return true; // handles "a.m." and "p.m."
+        }
+
+        // Check for common Latin abbreviations
+        if (lower === 'e' || lower === 'i') {
+            return true; // handles "e.g.", "i.e."
+        }
+
+        return false;
+    };
+
+    // RULE 1: Editorial brackets create boundaries (unless the boundary would be inside quotes/parens/italics)
     for (const region of regions) {
         if (region.typ === '[') {
-            // Boundary before bracket
-            if (region.start > 0) {
+            // Boundary before bracket (only if not inside quotes/parens/italics)
+            if (region.start > 0 && !insideQuoteOrOther(region.start)) {
                 boundaries.push({ pos: region.start, reason: 'before bracket' });
             }
-            // Boundary after bracket
-            if (region.end < chars.length - 1) {
+            // Boundary after bracket (only if not inside quotes/parens/italics)
+            if (region.end < chars.length - 1 && !insideQuoteOrOther(region.end + 1)) {
                 boundaries.push({ pos: region.end + 1, reason: 'after bracket' });
             }
         }
@@ -229,8 +274,36 @@ function markBoundaries(chars, regions) {
                     while (j < chars.length && (chars[j] === ' ' || chars[j] === '\t')) {
                         j++;
                     }
-                    // If followed by lowercase letter, likely has attribution after
-                    if (j < chars.length && isLower(chars[j])) {
+
+                    // Check for attribution (lowercase word, "I <lowercase>", or period on same line)
+                    let hasAttribution = false;
+                    if (j < chars.length) {
+                        if (isLower(chars[j])) {
+                            hasAttribution = true;
+                        } else if (chars[j] === 'I') {
+                            // Check for "I <lowercase>" pattern (e.g., "I said")
+                            let k = j + 1;
+                            while (k < chars.length && (chars[k] === ' ' || chars[k] === '\t')) {
+                                k++;
+                            }
+                            if (k < chars.length && isLower(chars[k])) {
+                                hasAttribution = true;
+                            }
+                        } else if (isUpper(chars[j])) {
+                            // Check if there's a period on the same line (before newline)
+                            // This catches proper noun attributions like "Jaime said," or "Dave asked,"
+                            let k = j;
+                            while (k < chars.length && chars[k] !== '\n' && chars[k] !== '"' && chars[k] !== '\u201C') {
+                                if (chars[k] === '.') {
+                                    hasAttribution = true;
+                                    break;
+                                }
+                                k++;
+                            }
+                        }
+                    }
+
+                    if (hasAttribution) {
                         // Find end of sentence (period after attribution)
                         // Stop if we hit a quote (continuation of split quote) or newline
                         while (j < chars.length && chars[j] !== '.' && chars[j] !== '\n' && chars[j] !== '"' && chars[j] !== '\u201C') {
@@ -252,7 +325,36 @@ function markBoundaries(chars, regions) {
                     while (j < chars.length && (chars[j] === ' ' || chars[j] === '\t')) {
                         j++;
                     }
-                    if (j < chars.length && isLower(chars[j])) {
+
+                    // Check for attribution (lowercase word, "I <lowercase>", or period on same line)
+                    let hasAttribution = false;
+                    if (j < chars.length) {
+                        if (isLower(chars[j])) {
+                            hasAttribution = true;
+                        } else if (chars[j] === 'I') {
+                            // Check for "I <lowercase>" pattern (e.g., "I said")
+                            let k = j + 1;
+                            while (k < chars.length && (chars[k] === ' ' || chars[k] === '\t')) {
+                                k++;
+                            }
+                            if (k < chars.length && isLower(chars[k])) {
+                                hasAttribution = true;
+                            }
+                        } else if (isUpper(chars[j])) {
+                            // Check if there's a period on the same line (before newline)
+                            // This catches proper noun attributions like "Jaime said," or "Dave asked,"
+                            let k = j;
+                            while (k < chars.length && chars[k] !== '\n' && chars[k] !== '"' && chars[k] !== '\u201C') {
+                                if (chars[k] === '.') {
+                                    hasAttribution = true;
+                                    break;
+                                }
+                                k++;
+                            }
+                        }
+                    }
+
+                    if (hasAttribution) {
                         // Find end of sentence (period after attribution)
                         // Stop if we hit a quote (continuation of split quote) or newline
                         while (j < chars.length && chars[j] !== '.' && chars[j] !== '\n' && chars[j] !== '"' && chars[j] !== '\u201C') {
@@ -363,6 +465,42 @@ function markBoundaries(chars, regions) {
 
                 // Space or newline after punctuation
                 if (next === ' ' || next === '\n') {
+                    // For periods only: check for abbreviations
+                    if (ch === '.') {
+                        // Extract word before period
+                        let k = i - 1;
+                        while (k >= 0 && /[a-zA-Z0-9]/.test(chars[k])) {
+                            k--;
+                        }
+                        const wordStart = k + 1;
+                        if (wordStart <= i) {
+                            const word = chars.slice(wordStart, i).join('');
+                            if (isCommonAbbreviation(word)) {
+                                continue; // Skip this period, it's an abbreviation
+                            }
+
+                            // Check for initial pattern: single letter followed by another initial
+                            // e.g., "A. J. Smith" - don't split after "A."
+                            if (word.length === 1 && /[a-zA-Z]/.test(word[0])) {
+                                // Check if followed by space + single letter + period
+                                if (i + 3 < chars.length && chars[i + 1] === ' ' && /[a-zA-Z]/.test(chars[i + 2]) && chars[i + 3] === '.') {
+                                    continue; // This is an initial followed by another initial
+                                }
+                            }
+                        }
+
+                        // Check if followed by lowercase word (general heuristic for abbreviations)
+                        // Skip same special chars as capital letter check
+                        let j = i + 1;
+                        while (j < chars.length && (chars[j] === ' ' || chars[j] === '\t' || chars[j] === '\n' ||
+                            chars[j] === '*' || chars[j] === '"' || chars[j] === '\u201C' || chars[j] === '[')) {
+                            j++;
+                        }
+                        if (j < chars.length && isLower(chars[j])) {
+                            continue; // Followed by lowercase, likely abbreviation
+                        }
+                    }
+
                     // Check if followed by capital letter (skip asterisks, quotes, brackets)
                     let j = i + 1;
                     while (j < chars.length && (chars[j] === ' ' || chars[j] === '\t' || chars[j] === '\n' ||

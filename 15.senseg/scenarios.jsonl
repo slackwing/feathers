@@ -36,3 +36,10 @@
 {"id":"031","context":"Ha, because they heard we drink and smoke and shit, but we're just—Oh my god, ha! I almost forgot: There was never any music. Right?","expected":"I almost forgot: There was never any music."}
 {"id":"056","context":"Which reminds me exactly of what Dave said:\n\t\"No homo,\" he laughed, \"you have an incredibly soothing voice in situations like these.\"\n\t\"Ha, think I should work for the suicide hotline?\"","expected":"\"No homo,\" he laughed, \"you have an incredibly soothing voice in situations like these.\""}
 {"id":"057","context":"I have to move back to New York for a while to take care of things.\n### III.\n\nIt wasn't a complete lie, but maybe those are worse—calculated to be just so.","expected":"### III."}
+{"id":"058","context":"Then he glanced back at me and I quickly pretended to be on my phone.\n\t\"Terminal 4, please,\" I said.\n\t\"Okay.\"","expected":"\"Terminal 4, please,\" I said."}
+{"id":"059","context":"I woke up at 6 a.m. and couldn't fall back asleep. The meeting starts at 3 p.m. today.","expected":"I woke up at 6 a.m. and couldn't fall back asleep."}
+{"id":"060","context":"Dr. Smith said I should rest. Mr. Jones will be here soon.","expected":"Dr. Smith said I should rest."}
+{"id":"061","context":"I brought supplies, e.g., pens, paper, etc. for the class. They were helpful.","expected":"I brought supplies, e.g., pens, paper, etc. for the class."}
+{"id":"062","context":"\t\"Ah. Well, whenever you decide to come in, [...]\"\n\tThen you went inside.","expected":"\"Ah. Well, whenever you decide to come in, [...]\""}
+{"id":"063","context":"I exited the Uber without looking.\n\t[...]\n\t\"Yo! Heard you were in town, come over tonight!\"","expected":"[...]"}
+{"id":"064","context":"\"Later.\"\n\t[Bring back optimistic energy on the flight.]\n\t[...]","expected":"[Bring back optimistic energy on the flight.]"}

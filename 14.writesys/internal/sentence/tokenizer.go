@@ -5,43 +5,38 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/jdkato/prose/v2"
+	"writesys/internal/senseg"
 )
 
-// Tokenizer handles sentence splitting with custom fiction rules
+// Tokenizer handles sentence splitting using senseg library
 type Tokenizer struct {
-	// Patterns for fiction-specific rules
-	ellipsisPattern *regexp.Regexp
-	emDashPattern   *regexp.Regexp
 }
 
-// NewTokenizer creates a new tokenizer with fiction rules
+// NewTokenizer creates a new tokenizer
 func NewTokenizer() *Tokenizer {
-	return &Tokenizer{
-		ellipsisPattern: regexp.MustCompile(`\.{3,}`),
-		emDashPattern:   regexp.MustCompile(`—`),
-	}
+	return &Tokenizer{}
 }
 
-// SplitIntoSentences splits text into sentences using prose with custom fiction rules
+// SplitIntoSentences splits text into sentences using senseg library
 func (t *Tokenizer) SplitIntoSentences(text string) []string {
 	// Handle empty text
 	if strings.TrimSpace(text) == "" {
 		return []string{}
 	}
 
-	// Use prose library as base
-	doc, err := prose.NewDocument(text)
-	if err != nil {
-		// Fallback to simple splitting if prose fails
-		return simpleSplit(text)
+	// Use senseg library for sentence segmentation
+	sentences := senseg.Segment(text)
+
+	// Apply boundary cleaning
+	var result []string
+	for _, sent := range sentences {
+		cleaned := cleanSentenceBoundaries(sent)
+		if cleaned != "" {
+			result = append(result, cleaned)
+		}
 	}
 
-	// Get base sentences from prose
-	proseSentences := doc.Sentences()
-
-	// Apply fiction-specific post-processing
-	return t.applyFictionRules(text, proseSentences)
+	return result
 }
 
 // cleanSentenceBoundaries removes leading punctuation but keeps trailing punctuation
@@ -76,52 +71,6 @@ func cleanSentenceBoundaries(text string) string {
 	return trimmed
 }
 
-// applyFictionRules applies custom fiction rules to prose output
-func (t *Tokenizer) applyFictionRules(originalText string, proseSentences []prose.Sentence) []string {
-	var result []string
-
-	for _, sent := range proseSentences {
-		sentText := sent.Text
-
-		// Skip empty sentences
-		if strings.TrimSpace(sentText) == "" {
-			continue
-		}
-
-		// Apply dialogue handling (keep interrupted dialogue together)
-		// "I can't," he said, "believe this." → ONE sentence
-		// This is typically handled correctly by prose, but we preserve it
-
-		// Handle ellipses: check if continuation is uppercase (new sentence) or lowercase (same)
-		// This requires looking at context, which prose handles, but we can refine
-
-		// Clean boundaries: remove leading punctuation, keep trailing
-		cleaned := cleanSentenceBoundaries(sentText)
-
-		if cleaned != "" {
-			result = append(result, cleaned)
-		}
-	}
-
-	return result
-}
-
-// simpleSplit provides a fallback sentence splitting method
-func simpleSplit(text string) []string {
-	// Very basic splitting on common sentence terminators
-	splitter := regexp.MustCompile(`[.!?]+\s+`)
-	parts := splitter.Split(text, -1)
-
-	var result []string
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	return result
-}
 
 // CountWords counts alphanumeric word blobs in text
 // Matches the definition in PLAN.md: count of [a-zA-Z0-9]+ sequences
