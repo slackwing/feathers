@@ -288,6 +288,11 @@ const WriteSysAnnotations = {
 
     // Remove selection from sentences
     document.querySelectorAll('.sentence.selected').forEach(s => s.classList.remove('selected'));
+
+    // Clear the renderer's selected sentence tracking
+    if (window.WriteSysRenderer) {
+      window.WriteSysRenderer.currentSelectedSentenceId = null;
+    }
   }
 };
 

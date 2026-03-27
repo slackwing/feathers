@@ -18,7 +18,7 @@ import (
 func main() {
 	// Parse flags
 	repoPath := flag.String("repo", "", "Path to git repository")
-	storyFile := flag.String("file", "", "Story file name (e.g., the-wildfire.md)")
+	storyFile := flag.String("file", "", "Story file name (e.g., the-wildfire.manuscript)")
 	commitHash := flag.String("commit", "", "Specific commit to process")
 	yes := flag.Bool("yes", false, "Skip confirmations")
 	flag.Parse()

@@ -213,16 +213,16 @@ h3 {
 
 p {
   text-align: justify;
-  text-indent: 2em;
+  text-indent: 0;
   margin: 0;
   orphans: 2;
   widows: 2;
   hanging-punctuation: first last;
 }
 
-/* First paragraph has no indent */
-p:first-of-type {
-  text-indent: 0;
+/* Indented paragraphs (marked with tab in .manuscript format) */
+p.indented {
+  text-indent: 2em;
 }
 
 /* Sentence spans (for annotation) */
@@ -233,7 +233,8 @@ p:first-of-type {
 }
 
 /* Hover state - applies to all sentences, even when another is selected */
-.sentence:not(.selected):hover {
+.sentence:not(.selected):hover,
+.sentence:not(.selected).hover {
   background-color: rgba(66, 153, 225, 0.1) !important;
 }
 

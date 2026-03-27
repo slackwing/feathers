@@ -222,6 +222,7 @@ type ManuscriptResponse struct {
 
 type SentenceInfo struct {
 	ID        string `json:"id"`
+	Text      string `json:"text"`
 	WordCount int    `json:"wordCount"`
 }
 
@@ -282,6 +283,7 @@ func (s *Server) handleGetManuscript(w http.ResponseWriter, r *http.Request) {
 	for i, s := range sentences {
 		sentenceInfos[i] = SentenceInfo{
 			ID:        s.SentenceID,
+			Text:      s.Text,
 			WordCount: s.WordCount,
 		}
 	}

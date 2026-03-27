@@ -6,7 +6,7 @@
   <title>WriteSys - Book Annotation System</title>
 
   <!-- Book-style CSS -->
-  <link rel="stylesheet" href="/css/book.css?v=25">
+  <link rel="stylesheet" href="/css/book.css?v=26">
 
   <!-- Paged.js for book pagination - loaded but not auto-run -->
   <script>
@@ -28,7 +28,7 @@
       <label>Repo:</label>
       <input type="text" id="repo-path" value="manuscripts/test-repo" />
       <label>File:</label>
-      <input type="text" id="file-path" value="the-wildfire.md" />
+      <input type="text" id="file-path" value="the-wildfire.manuscript" />
       <button id="load-button">Load Manuscript</button>
     </div>
     <div class="control-group">
@@ -99,8 +99,11 @@
   <!-- Paged.js configuration (must load after Paged.js, before renderer) -->
   <script src="/js/pagedjs-config.js"></script>
 
+  <!-- Segmenter (must load before renderer) -->
+  <script src="/js/segmenter.js"></script>
+
   <!-- Application scripts -->
-  <script src="/js/renderer.js"></script>
-  <script src="/js/annotations.js"></script>
+  <script src="/js/renderer.js?v=40"></script>
+  <script src="/js/annotations.js?v=3"></script>
 </body>
 </html>

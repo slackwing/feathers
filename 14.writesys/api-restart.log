@@ -1,0 +1,4 @@
+2026/03/27 16:23:48 Successfully connected to database
+2026/03/27 16:23:48 Starting WriteSys API server on 0.0.0.0:5000
+2026/03/27 16:23:48 Server failed to start: listen tcp 0.0.0.0:5000: bind: address already in use
+exit status 1

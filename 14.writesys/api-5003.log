@@ -1,0 +1,6 @@
+2026/03/27 16:24:13 Successfully connected to database
+2026/03/27 16:24:13 Starting WriteSys API server on 0.0.0.0:5003
+2026/03/27 16:24:30 [blackwing/IeGiMgOLpn-000001] "GET http://localhost:5003/api/manuscripts/24575cf8242aa7eb31293441ff5e2239e0a7bffd?repo=manuscripts/test-repo&file=the-wildfire.manuscript HTTP/1.1" from [::1]:34776 - 500 74B in 1.194889ms
+2026/03/27 16:24:33 [blackwing/IeGiMgOLpn-000002] "GET http://localhost:5003/api/manuscripts/24575cf8242aa7eb31293441ff5e2239e0a7bffd?repo=manuscripts/test-repo&file=the-wildfire.manuscript HTTP/1.1" from [::1]:51262 - 500 74B in 1.26945ms
+2026/03/27 16:24:44 [blackwing/IeGiMgOLpn-000003] "GET http://localhost:5003/api/manuscripts/24575cf8242aa7eb31293441ff5e2239e0a7bffd?repo=manuscripts/test-repo&file=the-wildfire.manuscript HTTP/1.1" from [::1]:58200 - 500 74B in 1.14814ms
+2026/03/27 16:24:48 [blackwing/IeGiMgOLpn-000004] "GET http://localhost:5003/api/manuscripts/24575cf8242aa7eb31293441ff5e2239e0a7bffd?repo=manuscripts/test-repo&file=the-wildfire.manuscript HTTP/1.1" from [::1]:58206 - 500 74B in 1.332128ms
