@@ -13,8 +13,12 @@ case "$LANG" in
         cd "$(dirname "$0")/js"
         node segmenter_test.js
         ;;
+    rust)
+        cd "$(dirname "$0")/rust"
+        cargo test -- --nocapture
+        ;;
     *)
-        echo "Usage: $0 [go|js]"
+        echo "Usage: $0 [go|js|rust]"
         echo "  Default: go"
         exit 1
         ;;

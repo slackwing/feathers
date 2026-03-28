@@ -19,5 +19,11 @@ go build -o ../generated/01-segment-manuscript ../tools/scenario-building/01-seg
 go build -o ../generated/02-inspect-segments ../tools/scenario-building/02-inspect-segments/main.go
 go build -o ../generated/03-add-scenario ../tools/scenario-building/03-add-scenario/main.go
 
+# Rust tools
+echo "Building Rust tools..."
+cd ../rust
+cargo build --release --bin segment-manuscript
+cp target/release/segment-manuscript ../generated/segment-manuscript-rust
+
 echo "Done. Binaries in generated/"
 ls -lh ../generated/

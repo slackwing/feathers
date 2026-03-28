@@ -20,11 +20,27 @@
 - You may make file changes, but NEVER commit them
 - The user will handle all git commit operations themselves
 
+### Build Artifacts MUST Be Gitignored
+When adding support for a new language, **ALWAYS create a `.gitignore` file** in the language directory to exclude build artifacts:
+
+- **Rust** - `.gitignore` should contain:
+  - `/target/` - Contains compiled binaries, intermediate build files, caches
+
+- **Go** - Build artifacts typically not kept in language directory (built to `generated/`)
+
+- **JavaScript/Node.js** - If using `node_modules/`, add to `.gitignore`:
+  - `/node_modules/`
+
+- **General rule**: Any directory containing compiled binaries, dependency caches, or auto-generated build files should NEVER be committed to version control
+
 ## Supported Languages
 
 Currently supported segmenter implementations:
-- **Go** - `go/segmenter.go` (active)
-- **JavaScript** - `js/` (placeholder, not yet implemented)
+- **Go** - `go/segmenter.go`
+- **JavaScript** - `js/segmenter.js`
+- **Rust** - `rust/src/lib.rs`
+
+All three implementations pass all 45 test scenarios and produce identical output.
 
 ## Building Tools
 
@@ -74,7 +90,8 @@ When the user says "added a new scenario" or similar, follow this sequence:
 4. **Rebuild tools if needed**: If you modified any tools, run `./build-tools`
 5. **Regenerate segments**: For each supported language, run:
    - `./generated/01-segment-manuscript --lang go` → outputs to `segmented/the-wildfire/the-wildfire.go.jsonl`
-   - `./generated/01-segment-manuscript --lang js` → outputs to `segmented/the-wildfire/the-wildfire.js.jsonl` (when JS is implemented)
+   - `./js/segment-manuscript.js` → outputs to `segmented/the-wildfire/the-wildfire.js.jsonl`
+   - `./generated/segment-manuscript-rust` (or `cd rust && cargo run --bin segment-manuscript`) → outputs to `segmented/the-wildfire/the-wildfire.rust.jsonl`
 6. **Report results**: Tell the user the outcome (tests passing, which files were regenerated)
 
 ## General Workflow
