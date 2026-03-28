@@ -28,10 +28,16 @@ echo "---------------------------------------"
 ./test-e2e.sh || { echo "❌ E2E tests failed"; exit 1; }
 echo ""
 
-# 3. Visual UI Tests
-echo "3. Running Playwright UI tests..."
-echo "----------------------------------"
-node browser-testing/test-complete.js || { echo "❌ UI tests failed"; exit 1; }
+# 3. UI Integration Tests
+echo "3. Running UI integration tests..."
+echo "-----------------------------------"
+node tests/ui-integration.js || { echo "❌ UI integration tests failed"; exit 1; }
+echo ""
+
+# 4. Playwright E2E Tests
+echo "4. Running Playwright E2E tests..."
+echo "-----------------------------------"
+npx playwright test || { echo "❌ Playwright tests failed"; exit 1; }
 echo ""
 
 # Summary
@@ -40,6 +46,8 @@ echo "✅ ALL TESTS PASSED!"
 echo "========================================"
 echo ""
 echo "Test artifacts:"
-echo "  - browser-testing/test-complete.png  (UI screenshot)"
-echo "  - coverage.out                       (Go coverage)"
+echo "  - tests/screenshots/ui-integration.png  (UI screenshot)"
+echo "  - tests/screenshots/smoke.png           (Smoke test screenshot)"
+echo "  - playwright-report/                    (Playwright HTML report)"
+echo "  - coverage.out                          (Go coverage)"
 echo ""

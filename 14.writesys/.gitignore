@@ -1,6 +1,20 @@
 # Binaries
 bin/
 *.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Go coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# Logs
+*.log
 
 # Test files
 manuscripts/test-repo/
@@ -8,10 +22,29 @@ manuscripts/test-repo/
 # Environment
 .env
 docker/.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Browser testing
+browser-testing/test-results/
+browser-testing/playwright-report/
 
 # IDE
 .vscode/
 .idea/
+*.iml
 
 # OS
 .DS_Store
+Thumbs.db
+*~
+.swp
+.swo
+
+# Temporary files
+tmp/
+temp/
+*.tmp

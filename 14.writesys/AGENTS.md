@@ -19,6 +19,8 @@ The PLAN.md file contains:
 
 **Always read PLAN.md first** when working on this project.
 
+**Note:** Historical documentation files (REFACTOR_PLAN.md, ANALYSIS-MISTAKES.md) have been removed as their content has been integrated into the current codebase and testing practices.
+
 ## Quick Context
 
 - **Tech Stack:** Go (backend/CLI), PostgreSQL, Liquibase, Plain HTML/CSS/JS (frontend)
@@ -36,7 +38,7 @@ The PLAN.md file contains:
 
 ## Testing Philosophy
 
-**CRITICAL: Write tests for EVERYTHING**
+**CRITICAL: Write tests for EVERYTHING and RUN TESTS WITH EVERY CHANGE**
 
 Every feature, fix, or change MUST have corresponding tests. No exceptions.
 
@@ -52,11 +54,31 @@ Every feature, fix, or change MUST have corresponding tests. No exceptions.
 - Tests enable confident refactoring - you know immediately if you break something
 - Tests save time - catching bugs early is 10x faster than debugging later
 
+**MANDATORY: Run Tests With Every Change**
+
+**For MINOR changes** (small bug fixes, CSS tweaks, comment changes):
+- Run the most relevant test file for what you changed
+- Example: Changed CSS → `node tests/ui-integration.js`
+- Example: Changed API → `npx playwright test tests/e2e.spec.js`
+- Example: Changed Go code → `go test ./...`
+
+**For MAJOR changes** (new features, refactoring, API changes, UI architecture):
+- Run ALL tests: `./test-all.sh`
+- If tests fail, ask the user: "This test is failing: [test name]. Is this test still relevant?"
+- Update or remove tests based on user feedback
+- NEVER let tests diverge from the codebase
+
+**When Tests Fail:**
+- If the test is outdated → Update it to match current behavior
+- If the test is no longer relevant → Ask user if it should be deleted
+- If the change broke something → Fix the code, not the test
+
 **Test Types:**
 - **Unit Tests** (`go test ./...`): Test individual functions and modules
 - **Integration Tests** (`./bin/writesys`): Test CLI with real database
 - **API Tests** (`curl` commands): Test HTTP endpoints
-- **UI Tests** (`node browser-testing/test-complete.js`): Test browser behavior with Playwright
+- **UI Tests** (`node tests/ui-integration.js`): Test browser behavior with Playwright
+- **E2E Tests** (`npx playwright test`): Full end-to-end browser testing
 
 When you discover a bug or make a mistake:
 1. IMMEDIATELY write a test that would have caught it
@@ -168,8 +190,11 @@ cp ../15.senseg/go/segmenter.go internal/senseg/segmenter.go
 
 **After updating segmenters:**
 1. Reprocess any test commits if needed
-2. Run browser tests to verify wrapping still works: `node browser-testing/test-id-matching.js`
+2. Run UI tests to verify wrapping still works: `node tests/ui-integration.js`
 3. Check for disparities in console output
+4. Run complete test suite: `./test-all.sh`
+
+**Note:** Segmentation-specific tests have been removed from WriteSys since segmentation is now the responsibility of the 15.senseg project.
 
 ### Modifying Source Markdown Files
 
@@ -221,26 +246,51 @@ cd ../api && go run main.go
 
 ## Testing
 
+### Test Organization
+
+All tests are organized in a flat structure for easy discovery and execution:
+
+```
+tests/
+├── e2e.spec.js          - Playwright E2E tests (52 tests: smoke, auto-load, interactions, rendering, API)
+├── ui-integration.js    - Comprehensive UI integration tests (21 tests: controls, pagination, styling)
+├── smoke.js             - Quick smoke test for basic functionality
+└── screenshots/         - Test output screenshots
+
+Root directory:
+├── test-all.sh          - Run complete test suite (Go + UI + Playwright)
+├── test-e2e.sh          - Go end-to-end workflow test
+├── playwright.config.js - Playwright configuration
+└── package.json         - Node dependencies for Playwright
+```
+
 ### Quick Test Reference
 
 ```bash
-# Run all unit tests
-go test ./...
+# ===== COMPLETE TEST SUITE =====
+./test-all.sh            # Run ALL tests (recommended before commits)
 
-# Run specific test package
-go test -v ./internal/sentence
+# ===== GO TESTS =====
+go test ./...            # All unit tests
+go test -v ./internal/sentence                        # Specific package
+go test -v ./internal/sentence -run TestComputeSimilarity  # Specific test
 
-# Run specific test
-go test -v ./internal/sentence -run TestComputeSimilarity
+# ===== UI TESTS =====
+node tests/smoke.js           # Quick smoke test (~3 seconds)
+node tests/ui-integration.js  # Comprehensive UI tests (21 tests, ~8 seconds)
 
-# CLI bootstrap test (first commit)
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit b30bd0f --yes
+# ===== PLAYWRIGHT E2E TESTS =====
+npx playwright test                    # Run all Playwright tests (52 tests)
+npx playwright test tests/e2e.spec.js  # Run specific test file
+npx playwright test --headed           # Run with visible browser
+npx playwright test --ui               # Run with Playwright UI
+npx playwright show-report            # View HTML report
 
-# CLI migration test (second commit)
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit 76c9a7f --yes
+# ===== CLI INTEGRATION TESTS =====
+./test-e2e.sh            # Full workflow: bootstrap → annotate → migrate
 
-# Verify database results
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "SELECT * FROM processed_commit ORDER BY processed_at;"
+# ===== DATABASE VERIFICATION =====
+docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "SELECT * FROM migration ORDER BY created_at;"
 ```
 
 ### Unit Tests (56 total)
@@ -419,10 +469,18 @@ docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
 
 This creates a growing safety net that prevents repeating mistakes.
 
-**IMPORTANT: Always Run ALL Tests After Making Changes**
+**IMPORTANT: Always Run Relevant Tests After Making Changes**
+
+The test suite is consolidated into a flat structure for easy discovery:
+
 ```bash
-# Run complete test suite after any code changes
-./test-all.sh
+# ===== QUICK TESTS (run these frequently) =====
+node tests/smoke.js           # Quick smoke test (~3s) - basic functionality
+node tests/ui-integration.js  # UI integration tests (~8s) - all UI features
+
+# ===== COMPREHENSIVE TESTS (run before commits) =====
+npx playwright test           # All Playwright E2E tests (52 tests)
+./test-all.sh                 # Complete suite: Go + UI + Playwright
 ```
 
 **Start Web UI:**
@@ -439,27 +497,39 @@ open http://localhost:5003
 ALWAYS run Playwright tests after making changes to HTML, CSS, or JavaScript.
 
 ```bash
-# Complete UI test suite (21 tests) - see file for what it tests
-node browser-testing/test-complete.js
+# Run all E2E tests
+npx playwright test
 
-# Individual diagnostic tests - see browser-testing/ directory
-node browser-testing/test-auto-load.js  # Auto-load verification
-node browser-testing/test-ui-visual.js
-node browser-testing/test-ui-detailed.js
-node browser-testing/test-structure.js
+# Run with visible browser (for debugging)
+npx playwright test --headed
+
+# Run with Playwright UI (interactive mode)
+npx playwright test --ui
+
+# View HTML report after test run
+npx playwright show-report
 ```
 
 **The tests ARE the documentation.** Read the test files to understand what the UI should do:
-- `browser-testing/test-complete.js` - Complete specification (21 tests covering auto-load, rendering, styling, pagination)
-- `browser-testing/test-*.js` - Diagnostic tools for debugging
+- `tests/e2e.spec.js` - Complete Playwright E2E specification (52 tests)
+- `tests/ui-integration.js` - Comprehensive UI integration tests (21 tests)
+- `tests/smoke.js` - Quick smoke test for basic functionality
 
-**What test-complete.js verifies:**
-1. **Auto-load (Tests 1-4)**: Dropdown populated, latest commit selected, manuscript loads automatically
+**What tests/ui-integration.js verifies:**
+1. **Auto-load (Tests 1-4)**: Migration info displayed, manuscript auto-loads on page load
 2. **Controls (Tests 5-9)**: Visibility, positioning, outside Paged.js container
 3. **Styling (Tests 10-13)**: Page colors, borders, shadows, text justification
 4. **Content (Tests 14-17)**: Text rendering, sentence wrapping, page numbers
-5. **Layout (Tests 18-20)**: Page dimensions, content area size
+5. **Layout (Tests 18-20)**: Page dimensions (576×864), content area size (480×720)
 6. **Typography (Test 21)**: Short dialogue lines don't have stretched justification
+
+**What tests/e2e.spec.js verifies:**
+1. **Smoke Tests**: API health, page loads, CSS, JavaScript modules
+2. **Auto-load Tests**: Manuscript auto-loads, no console errors
+3. **Sentence Interaction**: Click opens sidebar, selection CSS, close button
+4. **Rendering Quality**: Structure, Paged.js pagination, controls positioning
+5. **API Tests**: Migrations endpoint works correctly
+6. **Annotations**: Form exists when sentence clicked
 
 **Reference Design:**
 - Live: https://andrewcheong.com/.staging/stories/
@@ -688,10 +758,50 @@ See PLAN.md → "Phase 1: Scope & Goals" for complete list.
 - **Sentence splitting:** `github.com/jdkato/prose` (Go NLP library)
 - **Fuzzy matching:** Levenshtein distance at word level
 
+## Codebase Cleanup & Test Consolidation (2026-03-28)
+
+The project has undergone aggressive cleanup and test consolidation to improve maintainability:
+
+**Files Deleted:**
+- All log files (*.log) - moved to .gitignore
+- test-annotation.json, test-update.json - example files, recreate as needed
+- REFACTOR_PLAN.md - recent refactor completed, content integrated
+- ANALYSIS-MISTAKES.md - lessons learned integrated into testing practices
+- .browser-testing/ - empty old directory
+- browser-testing/ - entire directory removed, moved to root
+- test-*.js - all standalone test files consolidated into tests/ directory
+- 30+ debug screenshots - old diagnostic images
+- 50+ diagnostic test scripts - consolidated into main test suite
+- Old documentation files (SOLUTION-SUMMARY.md, PAGEDJS-FIX.md)
+- Segmentation test files (test-id-matching.js, test-issues.js, test-new-issues.js) - moved to 15.senseg project
+
+**Test Consolidation:**
+- All tests moved to flat `tests/` directory structure
+- Playwright tests consolidated into `tests/e2e.spec.js` (52 tests)
+- UI integration tests in `tests/ui-integration.js` (21 tests)
+- Quick smoke test in `tests/smoke.js`
+- Playwright config moved to root: `playwright.config.js`
+- Node dependencies moved to root: `package.json`, `package-lock.json`, `node_modules/`
+
+**Code Cleanup:**
+- Removed 6 debug console.log statements from web/js/renderer.js
+- Kept operationally important logging (sentence counts, disparities, errors)
+
+**Configuration Updates:**
+- Enhanced .gitignore with comprehensive patterns for logs, coverage, test artifacts, OS files
+- Updated test-all.sh to reference new test locations
+
+**Current State:**
+- Clean, focused codebase with only essential files
+- Flat test structure: all tests in `tests/` directory
+- Playwright runs from root directory
+- All tests consolidated for easy discovery
+- Test-running instructions added to AGENTS.md to prevent divergence
+
 ## Questions?
 
 If anything is unclear or conflicts with PLAN.md, **ask the user** rather than making assumptions. The design is intentionally opinionated to avoid scope creep.
 
 ---
 
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-28

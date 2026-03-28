@@ -127,20 +127,13 @@ const WriteSysRenderer = {
     }
 
     // Wrap sentences in the unpaginated HTML
-    console.log('Wrapping sentences before pagination...');
     await this.wrapSentences(tempContainer);
 
     // Get the wrapped HTML
     const wrappedHtml = tempContainer.innerHTML;
 
-    // Debug: check HTML structure
-    console.log('Wrapped HTML sample (first 500 chars):', wrappedHtml.substring(0, 500));
-    console.log('Wrapped HTML has <p> tags:', wrappedHtml.includes('<p>'));
-    console.log('Wrapped HTML has <h1> tags:', wrappedHtml.includes('<h1>'));
-
     // If Paged.js is available, use it for pagination
     if (typeof Paged !== 'undefined') {
-      console.log('Using Paged.js for pagination');
 
       const paged = new Paged.Previewer();
       const appContainer = document.getElementById('app-container');
@@ -306,7 +299,6 @@ const WriteSysRenderer = {
    * Then "zipper" match with server sentences using first 3 words
    */
   async wrapSentences(container) {
-    console.log('Starting sentence wrapping...');
     console.log(`Server provided ${this.currentSentences.length} sentences`);
 
     // Segment the ORIGINAL MARKDOWN using the JS segmenter
