@@ -241,6 +241,19 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Format sentence text for preview
+   * - No quotes
+   * - Remove leading punctuation
+   * - Keep trailing punctuation
+   */
+  formatSentencePreview(text) {
+    let formatted = text.trim();
+
+    // Remove leading punctuation (but not letters/numbers)
+    formatted = formatted.replace(/^[.,;:!?]+/, '');
+
+    return formatted;
+  },
 
   /**
    * Show annotations for a specific sentence
@@ -282,12 +295,163 @@ const WriteSysAnnotations = {
     }
   },
 
+  /**
+   * Render annotations list
+   */
+  renderAnnotations() {
+    const container = document.getElementById('annotation-list');
 
+    if (this.annotations.length === 0) {
+      container.innerHTML = `
+        <p style="font-size: 12px; color: #999; font-family: Helvetica, sans-serif;">
+          No annotations yet.
+          <a href="#" style="color: #007bff; text-decoration: none;" onclick="WriteSysAnnotations.showAnnotationForm(); return false;">Add one?</a>
+        </p>
+      `;
+      return;
+    }
 
+    container.innerHTML = this.annotations.map(annotation => `
+      <div class="annotation-item" data-annotation-id="${annotation.annotation_id}">
+        <div class="annotation-header">
+          <span class="annotation-type">${annotation.type}</span>
+          <div class="annotation-actions">
+            <button onclick="WriteSysAnnotations.editAnnotation(${annotation.annotation_id})">Edit</button>
+            <button onclick="WriteSysAnnotations.deleteAnnotation(${annotation.annotation_id})">Delete</button>
+          </div>
+        </div>
+        <div class="annotation-content">
+          ${this.renderAnnotationContent(annotation)}
+        </div>
+        ${annotation.note ? `<div class="annotation-note">${annotation.note}</div>` : ''}
+      </div>
+    `).join('');
 
+    // Show add annotation button
+    container.innerHTML += `
+      <button style="margin-top: 10px; width: 100%; padding: 10px; font-family: Helvetica, sans-serif; font-size: 12px; background: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 4px; cursor: pointer;"
+        onclick="WriteSysAnnotations.showAnnotationForm()">
+        + Add Annotation
+      </button>
+    `;
+  },
 
+  /**
+   * Render annotation type-specific content
+   */
+  renderAnnotationContent(annotation) {
+    // Note: payload is currently not being returned by API
+    // This is simplified for now
+    if (annotation.type === 'highlight') {
+      return '<span style="padding: 3px 8px; background: rgba(255, 255, 0, 0.3); border-radius: 3px;">Highlight</span>';
+    } else if (annotation.type === 'tag') {
+      return '<span style="color: #007bff;">📌 Tag</span>';
+    } else if (annotation.type === 'task') {
+      return '<span style="color: #ff6b6b;">✓ Task</span>';
+    }
+    return '';
+  },
 
+  /**
+   * Show annotation form
+   */
+  showAnnotationForm() {
+    document.getElementById('annotation-form').classList.remove('hidden');
+    document.getElementById('annotation-list').style.display = 'none';
 
+    // Reset form
+    document.getElementById('annotation-type').value = 'highlight';
+    this.showAnnotationOptions('highlight');
+    document.getElementById('annotation-note').value = '';
+  },
+
+  /**
+   * Hide annotation form
+   */
+  hideAnnotationForm() {
+    document.getElementById('annotation-form').classList.add('hidden');
+    document.getElementById('annotation-list').style.display = 'block';
+  },
+
+  /**
+   * Show appropriate annotation options based on type
+   */
+  showAnnotationOptions(type) {
+    document.getElementById('highlight-options').classList.add('hidden');
+    document.getElementById('tag-options').classList.add('hidden');
+    document.getElementById('task-options').classList.add('hidden');
+
+    if (type === 'highlight') {
+      document.getElementById('highlight-options').classList.remove('hidden');
+    } else if (type === 'tag') {
+      document.getElementById('tag-options').classList.remove('hidden');
+    } else if (type === 'task') {
+      document.getElementById('task-options').classList.remove('hidden');
+    }
+  },
+
+  /**
+   * Save annotation (create or update)
+   */
+  async saveAnnotation() {
+    const type = document.getElementById('annotation-type').value;
+    const note = document.getElementById('annotation-note').value;
+
+    // Build payload based on type
+    let payload = { note: note || '' };
+
+    if (type === 'highlight') {
+      payload.color = document.getElementById('highlight-color').value;
+    } else if (type === 'tag') {
+      payload.tag = document.getElementById('tag-value').value;
+    } else if (type === 'task') {
+      payload.description = document.getElementById('task-description').value;
+      payload.priority = document.getElementById('task-priority').value;
+    }
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/annotations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: type,
+          sentence_id: this.currentSentenceId,
+          payload: payload
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      const result = await response.json();
+      console.log('Annotation created:', result);
+
+      // Refresh annotations
+      await this.showAnnotationsForSentence(this.currentSentenceId, this.currentSentenceText);
+
+      // Hide form
+      this.hideAnnotationForm();
+
+      // Reload manuscript to show new annotation styling
+      if (window.WriteSysRenderer) {
+        window.WriteSysRenderer.loadManuscript();
+      }
+
+    } catch (error) {
+      console.error('Failed to save annotation:', error);
+      alert(`Failed to save annotation: ${error.message}`);
+    }
+  },
+
+  /**
+   * Edit annotation
+   */
+  async editAnnotation(annotationId) {
+    // For now, just show a simple prompt
+    // In future, could populate the form with current values
+    alert('Edit functionality coming soon! For now, you can delete and create a new annotation.');
+  },
 
   /**
    * Delete annotation
@@ -336,6 +500,12 @@ const WriteSysAnnotations = {
     }
   },
 
+  /**
+   * @deprecated Use unselectSentence() instead
+   */
+  hideColorPalette() {
+    this.unselectSentence();
+  }
 };
 
 // Initialize when DOM is ready

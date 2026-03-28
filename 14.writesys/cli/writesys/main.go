@@ -156,12 +156,6 @@ func promptForManuscript() (string, string) {
 	fmt.Print("Repository path: ")
 	fmt.Scanln(&repo)
 
-	// Expand ~ to home directory
-	if strings.HasPrefix(repo, "~/") {
-		home, _ := os.UserHomeDir()
-		repo = filepath.Join(home, repo[2:])
-	}
-
 	fmt.Print("Story file name: ")
 	fmt.Scanln(&file)
 
