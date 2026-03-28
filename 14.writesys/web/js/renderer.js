@@ -6,6 +6,7 @@ const WriteSysRenderer = {
   currentManuscript: null,
   currentSentences: [],
   currentAnnotations: [],
+  currentCommitHash: null, // Current commit hash for ID generation
   sentenceMap: {}, // Maps sentence ID -> full sentence text (for split sentences)
   currentSelectedSentenceId: null, // Currently selected sentence ID
 
@@ -99,6 +100,7 @@ const WriteSysRenderer = {
       this.currentManuscript = data.markdown;
       this.currentSentences = data.sentences;
       this.currentAnnotations = data.annotations;
+      this.currentCommitHash = commitHash;
 
       // Build sentence map (ID -> full text) for annotation sidebar
       this.sentenceMap = {};
@@ -140,7 +142,7 @@ const WriteSysRenderer = {
 
     // Wrap sentences in the unpaginated HTML
     console.log('Wrapping sentences before pagination...');
-    this.wrapSentences(tempContainer);
+    await this.wrapSentences(tempContainer);
 
     // Get the wrapped HTML
     const wrappedHtml = tempContainer.innerHTML;
@@ -317,7 +319,7 @@ const WriteSysRenderer = {
    * Wrap sentences - segment the MARKDOWN using JS segmenter
    * Then "zipper" match with server sentences using first 3 words
    */
-  wrapSentences(container) {
+  async wrapSentences(container) {
     console.log('Starting sentence wrapping...');
     console.log(`Server provided ${this.currentSentences.length} sentences`);
 
@@ -330,124 +332,161 @@ const WriteSysRenderer = {
     const segments = rawSegments.map(s => this.cleanSentenceBoundaries(s)).filter(s => s !== '');
     console.log(`JS segmenter found ${segments.length} segments in markdown (after cleaning)`);
 
-    // Zipper through both lists in order
+    // Create a map of server sentence IDs for quick lookup
+    const serverSentenceMap = new Map();
+    this.currentSentences.forEach(s => {
+      serverSentenceMap.set(s.id, s);
+    });
+
     let wrapped = 0;
-    let mismatches = [];
+    let disparities = [];
 
-    const maxLength = Math.max(segments.length, this.currentSentences.length);
-
-    for (let i = 0; i < maxLength; i++) {
+    // Process each JS segment and calculate its expected ID
+    for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
-      const serverSentence = this.currentSentences[i];
+      const segmentClean = this.stripMarkdown(segment);
 
-      if (!segment && !serverSentence) {
-        break; // Both lists exhausted
-      }
+      // Calculate expected ID for this segment (ordinal = i, 0-indexed)
+      const expectedId = await this.generateSentenceID(segmentClean, i, this.currentCommitHash);
 
-      if (!segment) {
-        console.error(`ERROR: Server has sentence ${i} but JS segmenter doesn't: "${this.stripMarkdown(serverSentence.text).substring(0, 50)}..."`);
-        mismatches.push({ index: i, reason: 'missing-segment', serverText: serverSentence.text });
-        continue;
-      }
+      // Look for a server sentence with this exact ID
+      const serverSentence = serverSentenceMap.get(expectedId);
 
       if (!serverSentence) {
-        console.error(`ERROR: JS segmenter has segment ${i} but server doesn't: "${segment.substring(0, 50)}..."`);
-        mismatches.push({ index: i, reason: 'missing-server', segmentText: segment });
-        continue;
-      }
-
-      // Strip markdown from both for comparison
-      const segmentClean = this.stripMarkdown(segment);
-      const serverClean = this.stripMarkdown(serverSentence.text);
-
-      // Get first 3 words from both
-      const segmentWords = this.extractWords(segmentClean).slice(0, 3);
-      const serverWords = this.extractWords(serverClean).slice(0, 3);
-
-      // Check if first 3 words match
-      const wordsMatch = segmentWords.length === serverWords.length &&
-                         segmentWords.every((word, idx) => word.toLowerCase() === serverWords[idx].toLowerCase());
-
-      if (!wordsMatch) {
-        console.error(`ERROR: Mismatch at index ${i}:`);
-        console.error(`  JS segment: "${segmentClean.substring(0, 50)}..." (words: ${segmentWords.join(', ')})`);
-        console.error(`  Server text: "${serverClean.substring(0, 50)}..." (words: ${serverWords.join(', ')})`);
-        mismatches.push({
+        console.warn(`Disparity at segment ${i}: Expected ID "${expectedId}" not found in server sentences`);
+        console.warn(`  Segment text: "${segmentClean.substring(0, 80)}..."`);
+        disparities.push({
           index: i,
-          reason: 'word-mismatch',
-          segmentWords,
-          serverWords,
-          segmentText: segment,
-          serverText: serverSentence.text
+          reason: 'id-not-found',
+          expectedId,
+          segmentText: segmentClean
         });
         continue;
       }
 
-      // Words match! Find and wrap this segment
-      // Recalculate fullText from unwrapped nodes only (to avoid offset drift)
+      // IDs match! Find and wrap this segment in the DOM
       const fullText = this.getUnwrappedText(container);
 
-      // Normalize quotes to match rendered text (smartquotes converts them)
-      const segmentNormalized = this.normalizeQuotes(segmentClean);
-      let segmentIndex = fullText.indexOf(segmentNormalized);
+      // Try to find the segment text in the DOM
+      // Note: smartquotes has already been applied to the DOM, so we need to handle that
+      let segmentIndex = fullText.indexOf(segmentClean);
+      let segmentTextToWrap = segmentClean;
 
-      // If not found, try fallback: search for first N words
-      // This helps with sentences split across page breaks
+      // If not found with straight quotes, try with smart quotes
       if (segmentIndex === -1) {
-        const words = segmentNormalized.split(/\s+/);
-
-        // Try with decreasing word counts: 10, 7, 5, 3
-        const wordCounts = [10, 7, 5, 3];
-        let foundPartial = false;
-
-        for (const count of wordCounts) {
-          if (words.length >= count) {
-            const partial = words.slice(0, count).join(' ');
-            const partialIndex = fullText.indexOf(partial);
-            if (partialIndex !== -1) {
-              console.log(`Partial match for segment ${i} using first ${count} words`);
-              // Only wrap the partial match we found
-              this.wrapTextRange(container, partialIndex, partialIndex + partial.length, serverSentence.id);
-              wrapped++;
-              foundPartial = true;
-              break;
-            }
-          }
+        // Apply smartquotes to the segment text
+        const tempDiv = document.createElement('div');
+        tempDiv.textContent = segmentClean;
+        if (typeof smartquotes !== 'undefined') {
+          smartquotes.element(tempDiv);
         }
+        segmentTextToWrap = tempDiv.textContent;
+        segmentIndex = fullText.indexOf(segmentTextToWrap);
+      }
 
-        if (foundPartial) {
-          continue;
-        }
-
-        // Could not find this sentence
-        console.warn(`Could not find segment ${i}: "${segmentNormalized.substring(0, 50)}..."`);
-        mismatches.push({ index: i, reason: 'not-in-dom', segmentText: segment });
+      if (segmentIndex === -1) {
+        console.warn(`Disparity at segment ${i}: Text not found in DOM`);
+        console.warn(`  Expected ID: "${expectedId}"`);
+        console.warn(`  Segment text: "${segmentClean.substring(0, 80)}..."`);
+        disparities.push({
+          index: i,
+          reason: 'text-not-in-dom',
+          expectedId,
+          segmentText: segmentClean
+        });
         continue;
       }
 
-      // Check if there's a space before this sentence that we need to preserve
-      // If segmentIndex > 0 and the previous char is a space, we should NOT include it in the wrap
-      // because it belongs between sentences
-
       // Wrap this text range with the server's sentence ID
-      this.wrapTextRange(container, segmentIndex, segmentIndex + segmentNormalized.length, serverSentence.id);
+      this.wrapTextRange(container, segmentIndex, segmentIndex + segmentTextToWrap.length, expectedId);
       wrapped++;
     }
 
-    console.log(`Sentence wrapping complete: ${wrapped} wrapped, ${mismatches.length} mismatches`);
-    if (mismatches.length > 0) {
-      console.error(`TOTAL MISMATCHES: ${mismatches.length}`);
-      console.log('Mismatch summary:', mismatches.map(m => `${m.index}: ${m.reason}`).join(', '));
+    console.log(`Sentence wrapping complete: ${wrapped}/${segments.length} wrapped`);
+
+    if (disparities.length > 0) {
+      console.warn(`DISPARITIES: ${disparities.length} sentence(s) could not be matched`);
+      console.log('Disparity summary:', disparities.map(d => `${d.index}: ${d.reason} (${d.expectedId})`).join(', '));
+    }
+
+    // Check for server sentences that weren't matched
+    const wrappedIds = new Set();
+    container.querySelectorAll('.sentence').forEach(span => {
+      wrappedIds.add(span.dataset.sentenceId);
+    });
+
+    const unmatchedServerSentences = this.currentSentences.filter(s => !wrappedIds.has(s.id));
+    if (unmatchedServerSentences.length > 0) {
+      console.warn(`WARNING: ${unmatchedServerSentences.length} server sentence(s) were not wrapped:`);
+      unmatchedServerSentences.forEach(s => {
+        console.warn(`  - ${s.id}: "${s.text.substring(0, 80)}..."`);
+      });
     }
   },
 
   /**
-   * Extract words from text (alphanumeric sequences)
+   * Normalize text for ID generation (same as Go normalizeText)
+   * - Lowercase
+   * - Keep only letters, digits, and spaces
+   * - Normalize whitespace
    */
-  extractWords(text) {
-    const wordPattern = /[a-zA-Z0-9]+/g;
-    const matches = text.match(wordPattern);
-    return matches || [];
+  normalizeText(text) {
+    // Convert to lowercase
+    text = text.toLowerCase();
+
+    // Remove all non-alphanumeric characters except spaces
+    text = text.replace(/[^a-z0-9\s]/g, '');
+
+    // Normalize whitespace (collapse multiple spaces to one)
+    text = text.replace(/\s+/g, ' ').trim();
+
+    return text;
+  },
+
+  /**
+   * Extract words for ID generation (same as Go ExtractWords)
+   * Normalizes text and splits on whitespace
+   */
+  extractWordsForId(text) {
+    const normalized = this.normalizeText(text);
+    return normalized.split(/\s+/).filter(w => w.length > 0);
+  },
+
+  /**
+   * Generate deterministic sentence ID (same as Go GenerateSentenceID)
+   * Format: {first-three-words}-{8-hex-chars}
+   * The 8 hex chars are SHA-256 hash of: normalizedText + ordinal + commitHash
+   */
+  async generateSentenceID(text, ordinal, commitHash) {
+    // Extract first three alphanumeric words
+    const words = this.extractWordsForId(text);
+
+    // Build prefix from first 1-3 words
+    let prefix;
+    const numWords = Math.min(3, words.length);
+    if (numWords === 0) {
+      // No words (e.g., scene break markers like "***")
+      prefix = 'heading';
+    } else {
+      prefix = words.slice(0, numWords).join('-');
+    }
+
+    // Generate deterministic 8-character hex suffix
+    const normalizedText = this.normalizeText(text);
+    const data = `${normalizedText}-${ordinal}-${commitHash}`;
+
+    // SHA-256 hash using Web Crypto API
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = new Uint8Array(hashBuffer);
+
+    // Take first 4 bytes and convert to hex (8 chars)
+    const suffix = Array.from(hashArray.slice(0, 4))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    return `${prefix}-${suffix}`;
   },
 
   /**
@@ -534,39 +573,6 @@ const WriteSysRenderer = {
       .replace(/\*([^*]+)\*/g, '$1');  // Remove italic markers
   },
 
-  /**
-   * Normalize quotes for searching (straight to curly)
-   * The browser/smartquotes converts straight quotes to curly
-   * Uses smartquotes.string() to match exactly what appears in DOM
-   */
-  normalizeQuotes(text) {
-    // Use smartquotes library to convert the same way the DOM does
-    if (typeof smartquotes !== 'undefined' && smartquotes.string) {
-      return smartquotes.string(text);
-    }
-    // Fallback: simple conversion (not context-aware)
-    return text
-      .replace(/"/g, '"')
-      .replace(/'/g, "'");
-  },
-
-  /**
-   * Normalize text for comparison (same as Go code)
-   */
-  normalizeText(text) {
-    // First strip markdown syntax
-    let cleaned = text
-      .replace(/^#{1,6}\s+/g, '')  // Remove heading markers
-      .replace(/\*([^*]+)\*/g, '$1')  // Remove italic markers
-      .replace(/\*\*([^*]+)\*\*/g, '$1');  // Remove bold markers
-
-    // Then convert to lowercase, remove punctuation, normalize whitespace
-    return cleaned
-      .toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  },
 
   /**
    * Wrap a range of text in the DOM with a sentence span

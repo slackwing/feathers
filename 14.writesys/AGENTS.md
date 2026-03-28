@@ -89,6 +89,35 @@ This creates a growing safety net that makes the codebase more robust over time.
 - See: PLAN.md → "Rendering Pipeline" (API endpoints listed)
 - Code location: `api/`
 
+### Updating Sentence Segmenters
+
+**CRITICAL: Always Update Both Segmenters Together**
+
+WriteSys uses sentence segmenters from the `15.senseg` project. When the segmenter is updated (bug fixes, improvements), you MUST update both JavaScript and Go versions:
+
+**Location of canonical segmenters:**
+- JavaScript: `../15.senseg/js/segmenter.js`
+- Go: `../15.senseg/go/segmenter.go`
+
+**Update process:**
+```bash
+# From the 14.writesys directory
+cp ../15.senseg/js/segmenter.js web/js/segmenter.js
+cp ../15.senseg/go/segmenter.go internal/senseg/segmenter.go
+```
+
+**Why both must be updated:**
+- The JavaScript segmenter runs in the browser to wrap sentences in the DOM
+- The Go segmenter runs on the server to process manuscripts and generate sentence IDs
+- They MUST split sentences identically, or wrapping will fail
+- ID generation depends on exact segmentation (text + ordinal + commit hash)
+- A mismatch causes "disparity" warnings where JS and server sentence counts don't match
+
+**After updating segmenters:**
+1. Reprocess any test commits if needed
+2. Run browser tests to verify wrapping still works: `node browser-testing/test-id-matching.js`
+3. Check for disparities in console output
+
 ### Modifying Source Markdown Files
 
 **CRITICAL**: Whenever you change source markdown files in `manuscripts/`, you MUST:
@@ -612,4 +641,4 @@ If anything is unclear or conflicts with PLAN.md, **ask the user** rather than m
 
 ---
 
-**Last Updated:** 2026-03-19
+**Last Updated:** 2026-03-27

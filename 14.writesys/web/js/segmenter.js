@@ -154,8 +154,22 @@ function markBoundaries(chars, regions) {
     // Helper: check if position is inside a nested region
     const insideNested = (pos) => {
         for (const r of regions) {
-            if (pos > r.start && pos < r.end) {
+            // Include both opening and closing delimiters in the protected region
+            if (pos >= r.start && pos <= r.end) {
                 return true;
+            }
+        }
+        return false;
+    };
+
+    // Helper: check if position is inside a quote, paren, or italic region (not brackets)
+    const insideQuoteOrOther = (pos) => {
+        for (const r of regions) {
+            if (r.typ !== '[') { // Exclude bracket regions
+                // Include both opening and closing delimiters in the protected region
+                if (pos >= r.start && pos <= r.end) {
+                    return true;
+                }
             }
         }
         return false;
@@ -198,15 +212,15 @@ function markBoundaries(chars, regions) {
         return false;
     };
 
-    // RULE 1: Editorial brackets always create boundaries
+    // RULE 1: Editorial brackets create boundaries (unless the boundary would be inside quotes/parens/italics)
     for (const region of regions) {
         if (region.typ === '[') {
-            // Boundary before bracket
-            if (region.start > 0) {
+            // Boundary before bracket (only if not inside quotes/parens/italics)
+            if (region.start > 0 && !insideQuoteOrOther(region.start)) {
                 boundaries.push({ pos: region.start, reason: 'before bracket' });
             }
-            // Boundary after bracket
-            if (region.end < chars.length - 1) {
+            // Boundary after bracket (only if not inside quotes/parens/italics)
+            if (region.end < chars.length - 1 && !insideQuoteOrOther(region.end + 1)) {
                 boundaries.push({ pos: region.end + 1, reason: 'after bracket' });
             }
         }
