@@ -16,9 +16,22 @@
             <column name="sentence_id" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
-            <column name="payload" type="JSONB">
+
+            <!-- Annotation data at this version -->
+            <column name="color" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
+            <column name="note" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="priority" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="flagged" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Migration tracking -->
             <column name="sentence_id_history" type="JSONB">
                 <constraints nullable="false"/>
             </column>
@@ -34,6 +47,7 @@
             <column name="origin_commit_hash" type="VARCHAR(40)">
                 <constraints nullable="false"/>
             </column>
+
             <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
                 <constraints nullable="false"/>
             </column>

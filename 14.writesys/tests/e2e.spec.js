@@ -285,4 +285,95 @@ test.describe('WriteSys E2E Tests', () => {
       console.log('⊘ No add annotation button (may not be implemented yet)');
     }
   });
+
+  // ============================================================================
+  // COLOR PALETTE TESTS - New Redesign
+  // ============================================================================
+
+  test('color palette renders with 6 circles', async ({ page }) => {
+    await page.waitForSelector('#color-palette', { timeout: 5000 });
+
+    const circles = page.locator('.color-circle');
+    await expect(circles).toHaveCount(6);
+
+    // Verify each color exists
+    await expect(page.locator('.color-circle[data-color="yellow"]')).toBeVisible();
+    await expect(page.locator('.color-circle[data-color="green"]')).toBeVisible();
+    await expect(page.locator('.color-circle[data-color="blue"]')).toBeVisible();
+    await expect(page.locator('.color-circle[data-color="purple"]')).toBeVisible();
+    await expect(page.locator('.color-circle[data-color="red"]')).toBeVisible();
+    await expect(page.locator('.color-circle[data-color="orange"]')).toBeVisible();
+
+    console.log('✓ Color palette has all 6 colors');
+  });
+
+  test('clicking color circle creates highlight annotation', async ({ page }) => {
+    // Wait for Paged.js to render pages
+    await page.waitForSelector('.pagedjs_page', { timeout: 15000 });
+
+    // Wait for sentences to load
+    await page.waitForSelector('.sentence', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    // Select a sentence
+    const firstSentence = page.locator('.sentence').first();
+    await firstSentence.click();
+    await page.waitForTimeout(500);
+
+    // Click yellow color circle
+    await page.locator('.color-circle[data-color="yellow"]').click();
+    await page.waitForTimeout(1500);
+
+    // Verify sentence has yellow highlight
+    const hasYellowHighlight = await firstSentence.evaluate(el => {
+      return el.classList.contains('highlight-yellow');
+    });
+
+    expect(hasYellowHighlight).toBeTruthy();
+    console.log('✓ Yellow highlight applied to sentence');
+  });
+
+  test('clicking different color updates existing annotation', async ({ page }) => {
+    // Wait for Paged.js to render pages
+    await page.waitForSelector('.pagedjs_page', { timeout: 15000 });
+
+    // Wait for sentences to load
+    await page.waitForSelector('.sentence', { timeout: 15000 });
+    await page.waitForTimeout(2000);
+
+    // Select a sentence
+    const firstSentence = page.locator('.sentence').first();
+    await firstSentence.click();
+    await page.waitForTimeout(500);
+
+    // Apply yellow highlight
+    await page.locator('.color-circle[data-color="yellow"]').click();
+    await page.waitForTimeout(1500);
+
+    // Change to green highlight
+    await page.locator('.color-circle[data-color="green"]').click();
+    await page.waitForTimeout(1500);
+
+    // Verify sentence now has green highlight (not yellow)
+    const hasGreenHighlight = await firstSentence.evaluate(el => {
+      return el.classList.contains('highlight-green') && !el.classList.contains('highlight-yellow');
+    });
+
+    expect(hasGreenHighlight).toBeTruthy();
+    console.log('✓ Color changed from yellow to green');
+  });
+
+  test('annotation margin positioned correctly', async ({ page }) => {
+    const margin = page.locator('#annotation-margin');
+    await expect(margin).toBeVisible();
+
+    // Verify it's positioned to the right
+    const box = await margin.boundingBox();
+    const pageWidth = await page.evaluate(() => window.innerWidth);
+
+    expect(box).not.toBeNull();
+    expect(box.x).toBeGreaterThan(576); // Should be to the right of the page
+
+    console.log(`✓ Annotation margin at x=${box.x} (page width: ${pageWidth})`);
+  });
 });

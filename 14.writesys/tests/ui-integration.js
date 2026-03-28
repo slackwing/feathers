@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const { exit } = require('process');
 
 async function runTests() {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   let passed = 0;
@@ -122,9 +122,27 @@ async function runTests() {
     assert(pageNums.firstPageContent === 'none' && pageNums.secondPageContent === 'counter(page)',
       `Page numbers work correctly (first: ${pageNums.firstPageContent}, second: ${pageNums.secondPageContent})`);
 
-    // Test 13: Annotation sidebar exists
-    const sidebar = await page.locator('#annotation-sidebar').count();
-    assert(sidebar === 1, 'Annotation sidebar exists');
+    // Test 13: Color palette hidden initially
+    const paletteHidden = await page.evaluate(() => {
+      const palette = document.getElementById('color-palette');
+      return !palette.classList.contains('visible');
+    });
+    assert(paletteHidden, 'Color palette hidden initially');
+
+    // Test 13b: Color palette appears after clicking sentence
+    await page.locator('.sentence').first().click();
+    await page.waitForTimeout(500);
+    const paletteVisible = await page.evaluate(() => {
+      const palette = document.getElementById('color-palette');
+      return palette.classList.contains('visible');
+    });
+    assert(paletteVisible, 'Color palette visible after clicking sentence');
+
+    // Test 13c: Sentence gets selected class
+    const sentenceSelected = await page.evaluate(() => {
+      return document.querySelector('.sentence.selected') !== null;
+    });
+    assert(sentenceSelected, 'Sentence has selected class after click');
 
     // Test 14: Page dimensions match reference (within 5px tolerance)
     const pageBox = await page.locator('.pagedjs_page').first().boundingBox();
@@ -161,6 +179,45 @@ async function runTests() {
     });
     assert(dialogueSpacing.found && dialogueSpacing.isNormal,
       `Short dialogue lines have normal word spacing (found: ${dialogueSpacing.found}, spacing: ${dialogueSpacing.wordSpacing}, expected ≤1px)`);
+
+    // Test 17: Change highlight color
+    // Get the sentence ID first to track it reliably
+    const testSentenceId = await page.evaluate(() => {
+      return document.querySelectorAll('.sentence')[5].dataset.sentenceId;
+    });
+
+    // First, apply yellow highlight
+    await page.locator('.sentence').nth(5).click();
+    await page.waitForTimeout(500);
+    await page.locator('.color-circle[data-color="yellow"]').click();
+    await page.waitForTimeout(1000);
+
+    // Verify yellow highlight applied (check all fragments)
+    const hasYellow = await page.evaluate((sentenceId) => {
+      const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+      return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-yellow'));
+    }, testSentenceId);
+    assert(hasYellow, 'Sentence has yellow highlight after first click');
+
+    // Now change to green - click sentence again to reopen palette
+    await page.locator(`.sentence[data-sentence-id="${testSentenceId}"]`).first().click();
+    await page.waitForTimeout(500);
+    await page.locator('.color-circle[data-color="green"]').click();
+    await page.waitForTimeout(1000);
+
+    // Verify green highlight applied and yellow removed (check all fragments)
+    const colorChange = await page.evaluate((sentenceId) => {
+      const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+      const hasGreen = fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-green'));
+      const noYellow = fragments.length > 0 && Array.from(fragments).every(f => !f.classList.contains('highlight-yellow'));
+      return {
+        hasGreen,
+        hasYellow: !noYellow,
+        fragmentCount: fragments.length
+      };
+    }, testSentenceId);
+    assert(colorChange.hasGreen && !colorChange.hasYellow,
+      `Highlight color changed from yellow to green (green: ${colorChange.hasGreen}, yellow removed: ${!colorChange.hasYellow}, ${colorChange.fragmentCount} fragments)`);
 
     // Take screenshot for visual inspection
     await page.screenshot({ path: 'tests/screenshots/ui-integration.png', fullPage: true });

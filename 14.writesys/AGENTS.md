@@ -266,34 +266,55 @@ Root directory:
 
 **CRITICAL: Where to Add New Tests**
 
-**DO NOT create new test files.** Add tests to existing files:
+**🚨🚨🚨 STOP - READ THIS BEFORE WRITING ANY TEST CODE 🚨🚨🚨**
+
+**ABSOLUTELY FORBIDDEN: Creating new test files**
+
+**RULE: If you create a new `.js` test file in `tests/`, you have FAILED the task.**
+
+**YOU MUST:**
+1. ALWAYS add tests to existing test files (`e2e.spec.js`, `ui-integration.js`, `smoke.js`)
+2. NEVER create files like `tests/console-check.js`, `tests/interaction-test.js`, `tests/new-feature-test.js`
+3. ALWAYS use headless mode (`headless: true`) when launching Playwright browsers
+4. If you think you need a new test file, you are WRONG - add to existing files instead
 
 1. **Playwright E2E tests** → `tests/e2e.spec.js`
    - When: Testing browser interactions, UI behavior, API endpoints from browser
    - Examples: Clicking buttons, form submissions, page navigation, sidebar behavior
    - Pattern: Add new `test('description', async ({ page }) => { ... })` within the existing `test.describe()` block
+   - **HEADLESS MODE REQUIRED:** ALWAYS use `{ headless: true }` when launching browsers to avoid interrupting the user
 
 2. **UI Integration tests** → `tests/ui-integration.js`
-   - When: Testing visual rendering, layout, styling, Paged.js behavior
-   - Examples: Page dimensions, colors, fonts, positioning, pagination
+   - When: Testing visual rendering, layout, styling, Paged.js behavior, interactions
+   - Examples: Page dimensions, colors, fonts, positioning, pagination, color palette, sentence selection
    - Pattern: Add new test with `assert(condition, message)` function
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
 3. **Quick smoke tests** → `tests/smoke.js`
    - When: Testing absolute basics (page loads, auto-load works)
    - Pattern: Only add tests that must run very fast (<5 seconds total)
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
 4. **Go unit tests** → `internal/*/` subdirectories
    - When: Testing Go functions, sentence processing, matching algorithms
    - Pattern: Create `*_test.go` files in same package as code being tested
 
-**If you think you need a new test file, you probably don't. Ask yourself:**
-- Is this an E2E test? → Add to `tests/e2e.spec.js`
-- Is this a UI/visual test? → Add to `tests/ui-integration.js`
-- Is this a Go test? → Add to appropriate `internal/*_test.go`
+**❌ FORBIDDEN: Do NOT create files like:**
+- `tests/console-check.js` → Add to `tests/ui-integration.js`
+- `tests/interaction-test.js` → Add to `tests/ui-integration.js`
+- `tests/color-palette-test.js` → Add to `tests/ui-integration.js`
+- `tests/new-feature-test.js` → Add to appropriate existing test file
 
-**The only valid reason to create a new test file:**
+**✅ CORRECT: Add your test to existing files:**
+```javascript
+// In tests/ui-integration.js
+assert(paletteHidden, 'Color palette hidden initially');
+assert(paletteVisible, 'Color palette visible after click');
+```
+
+**The ONLY valid reason to create a new test file:**
 - You're adding an entirely new testing dimension (e.g., performance tests, security tests, load tests)
-- Ask the user first before creating any new test files
+- **YOU MUST ASK THE USER FIRST** before creating any new test files
 
 ### Quick Test Reference
 

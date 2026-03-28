@@ -230,23 +230,63 @@ p.indented {
   cursor: pointer;
   position: relative;
   transition: background-color 0.2s;
+  display: inline;
+  white-space: normal;
 }
 
 /* Hover state - applies to all sentences, even when another is selected */
-.sentence:not(.selected):hover,
-.sentence:not(.selected).hover {
-  background-color: rgba(66, 153, 225, 0.1) !important;
+/* But NOT to highlighted sentences */
+.sentence:not(.selected):not([class*="highlight-"]):hover,
+.sentence:not(.selected):not([class*="highlight-"]).hover {
+  background-color: #e0e0e0 !important; /* Light grey for mouseover */
 }
 
 /* Selected state - higher specificity, overrides hover */
-.sentence.selected {
-  background-color: rgba(66, 153, 225, 0.2) !important;
+/* But NOT for highlighted sentences */
+.sentence.selected:not([class*="highlight-"]) {
+  background-color: #d0d0d0 !important; /* Medium grey for selection */
 }
 
 /* Keep selected highlighted even when hovering over it */
-.sentence.selected:hover {
-  background-color: rgba(66, 153, 225, 0.2) !important;
+.sentence.selected:not([class*="highlight-"]):hover {
+  background-color: #d0d0d0 !important;
 }
+
+/* Kindle-like highlight colors */
+.sentence.highlight-yellow {
+  background-color: #FFF3A3 !important;
+  border-radius: 2px;
+}
+
+.sentence.highlight-green {
+  background-color: #C3FDB8 !important;
+  border-radius: 2px;
+}
+
+.sentence.highlight-blue {
+  background-color: #AEDFF7 !important;
+  border-radius: 2px;
+}
+
+.sentence.highlight-purple {
+  background-color: #E0BBE4 !important;
+  border-radius: 2px;
+}
+
+.sentence.highlight-red {
+  background-color: #FFCCCB !important;
+  border-radius: 2px;
+}
+
+.sentence.highlight-orange {
+  background-color: #FFD8A8 !important;
+  border-radius: 2px;
+}
+
+/* Removed: selected class is now removed from highlighted sentences to avoid dark artifact */
+/* .sentence.selected[class*="highlight-"] {
+  box-shadow: inset 0 0 0 2px rgba(51, 51, 51, 0.3);
+} */
 
 /* Annotations */
 .sentence.annotated-highlight {
@@ -498,10 +538,120 @@ p.indented {
   display: none !important;
 }
 
+/* Annotation margin container - floats in right grey margin */
+#annotation-margin {
+  position: fixed;
+  top: 60px; /* Below controls */
+  right: 0;
+  width: 300px; /* Initial width, will be adjusted by JS */
+  max-width: calc((100vw - 576px) / 2 - 40px); /* Leave 40px padding from page edge */
+  height: calc(100vh - 60px);
+  z-index: 100;
+  pointer-events: none; /* Allow clicks through to page */
+  overflow: visible;
+}
+
+.annotation-margin-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto; /* Re-enable clicks on actual content */
+  padding-left: 16px;
+  padding-right: 8px;
+  padding-top: 16px;
+}
+
+/* Color palette for highlights */
+.color-palette {
+  display: none; /* Hidden by default */
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+}
+
+.color-palette.visible {
+  display: flex; /* Show when sentence is selected */
+}
+
+.color-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.color-circle:hover {
+  border-color: #999;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-circle.active {
+  border: none;
+  outline: 4px solid;
+  outline-offset: -4px;
+}
+
+/* Darker outline colors for each highlight color */
+.color-circle[data-color="yellow"].active {
+  outline-color: #D4C300; /* Darker yellow */
+}
+
+.color-circle[data-color="green"].active {
+  outline-color: #7BC473; /* Darker green */
+}
+
+.color-circle[data-color="blue"].active {
+  outline-color: #6BB9DB; /* Darker blue */
+}
+
+.color-circle[data-color="purple"].active {
+  outline-color: #B57BB8; /* Darker purple */
+}
+
+.color-circle[data-color="red"].active {
+  outline-color: #E69999; /* Darker red */
+}
+
+.color-circle[data-color="orange"].active {
+  outline-color: #E6A85C; /* Darker orange */
+}
+
+/* Annotation item styling */
+.annotation-item {
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.annotation-item:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateX(-2px);
+}
+
+.annotation-item.yellow { border-left-color: #FFF3A3; background-color: rgba(255, 243, 163, 0.1); }
+.annotation-item.green { border-left-color: #C3FDB8; background-color: rgba(195, 253, 184, 0.1); }
+.annotation-item.blue { border-left-color: #AEDFF7; background-color: rgba(174, 223, 247, 0.1); }
+.annotation-item.purple { border-left-color: #E0BBE4; background-color: rgba(224, 187, 228, 0.1); }
+.annotation-item.red { border-left-color: #FFCCCB; background-color: rgba(255, 204, 203, 0.1); }
+.annotation-item.orange { border-left-color: #FFD8A8; background-color: rgba(255, 216, 168, 0.1); }
+
 /* Print styles */
 @media print {
   #controls,
-  #annotation-sidebar {
+  #annotation-sidebar,
+  #annotation-margin {
     display: none;
   }
 

@@ -13,7 +13,7 @@
             <column name="repo_path" type="TEXT">
                 <constraints nullable="false"/>
             </column>
-            <column name="story_file_path" type="TEXT">
+            <column name="file_path" type="TEXT">
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
@@ -23,7 +23,7 @@
 
         <addUniqueConstraint
             tableName="manuscript"
-            columnNames="repo_path, story_file_path"
+            columnNames="repo_path, file_path"
             constraintName="uq_manuscript_repo_file"/>
 
         <rollback>

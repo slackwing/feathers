@@ -295,14 +295,19 @@ type SentenceInfo struct {
 }
 
 type CreateAnnotationRequest struct {
-	Type       string                 `json:"type"`
-	SentenceID string                 `json:"sentence_id"`
-	Payload    map[string]interface{} `json:"payload"`
+	SentenceID string  `json:"sentence_id"`
+	Color      string  `json:"color"`
+	Note       *string `json:"note"`
+	Priority   string  `json:"priority"`
+	Flagged    bool    `json:"flagged"`
 }
 
 type UpdateAnnotationRequest struct {
-	SentenceID string                 `json:"sentence_id"`
-	Payload    map[string]interface{} `json:"payload"`
+	SentenceID string  `json:"sentence_id"`
+	Color      string  `json:"color"`
+	Note       *string `json:"note"`
+	Priority   string  `json:"priority"`
+	Flagged    bool    `json:"flagged"`
 }
 
 // Helper function to get manuscript file from git
@@ -492,20 +497,28 @@ func (s *Server) handleCreateAnnotation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Validate request
-	if req.Type == "" || req.SentenceID == "" {
-		http.Error(w, "Missing required fields: type, sentence_id", http.StatusBadRequest)
+	if req.Color == "" || req.SentenceID == "" {
+		http.Error(w, "Missing required fields: color, sentence_id", http.StatusBadRequest)
 		return
+	}
+
+	// Set default priority if empty
+	priority := req.Priority
+	if priority == "" {
+		priority = "none"
 	}
 
 	// Create annotation
 	annotation := &models.Annotation{
-		Type:      req.Type,
-		CreatedBy: "andrew", // Phase 1: hardcoded user
+		SentenceID: req.SentenceID,
+		UserID:     "andrew", // Phase 1: hardcoded user
+		Color:      req.Color,
+		Note:       req.Note,
+		Priority:   priority,
+		Flagged:    req.Flagged,
 	}
 
 	version := &models.AnnotationVersion{
-		SentenceID:          req.SentenceID,
-		Payload:             req.Payload,
 		MigrationConfidence: nil, // First version, no migration
 	}
 
@@ -540,18 +553,30 @@ func (s *Server) handleUpdateAnnotation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Validate request
-	if req.SentenceID == "" {
-		http.Error(w, "Missing required field: sentence_id", http.StatusBadRequest)
+	if req.SentenceID == "" || req.Color == "" {
+		http.Error(w, "Missing required fields: sentence_id, color", http.StatusBadRequest)
 		return
 	}
 
+	// Set default priority if empty
+	priority := req.Priority
+	if priority == "" {
+		priority = "none"
+	}
+
+	annotation := &models.Annotation{
+		SentenceID: req.SentenceID,
+		Color:      req.Color,
+		Note:       req.Note,
+		Priority:   priority,
+		Flagged:    req.Flagged,
+	}
+
 	version := &models.AnnotationVersion{
-		SentenceID:          req.SentenceID,
-		Payload:             req.Payload,
 		MigrationConfidence: nil, // Manual edit, no migration
 	}
 
-	if err := s.db.UpdateAnnotation(ctx, annotationID, version); err != nil {
+	if err := s.db.UpdateAnnotation(ctx, annotationID, annotation, version); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to update annotation: %v", err), http.StatusInternalServerError)
 		return
 	}

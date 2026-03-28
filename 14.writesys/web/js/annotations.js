@@ -11,31 +11,233 @@ const WriteSysAnnotations = {
    * Initialize annotations module
    */
   init() {
-    // Close sidebar button
-    document.getElementById('close-sidebar').addEventListener('click', () => this.hideSidebar());
-
-    // Annotation type selector
-    document.getElementById('annotation-type').addEventListener('change', (e) => {
-      this.showAnnotationOptions(e.target.value);
-    });
-
-    // Save annotation
-    document.getElementById('save-annotation').addEventListener('click', () => this.saveAnnotation());
-
-    // Cancel annotation
-    document.getElementById('cancel-annotation').addEventListener('click', () => this.hideAnnotationForm());
-
-    // Click outside sidebar to close
+    // Click on grey background (margins) to unselect sentence
     document.addEventListener('click', (e) => {
-      const sidebar = document.getElementById('annotation-sidebar');
-      const content = document.getElementById('manuscript-content');
+      const annotationMargin = document.getElementById('annotation-margin');
+      const annotationMarginInner = document.querySelector('.annotation-margin-inner');
+      const appContainer = document.getElementById('app-container');
+      const pagedPages = document.querySelector('.pagedjs_pages');
 
-      if (!sidebar.contains(e.target) && content.contains(e.target)) {
-        this.hideSidebar();
+      // Unselect if clicking directly on grey background elements
+      // (not on their children, which would be actual content like palette or pages)
+      const isGreyBackground =
+        e.target === annotationMargin ||           // The annotation margin container itself
+        e.target === annotationMarginInner ||       // The inner container of annotation margin
+        e.target === appContainer ||                // The app container
+        e.target === pagedPages ||                  // The paged.js container (grey background)
+        e.target === document.body;                 // The body
+
+      if (isGreyBackground) {
+        this.unselectSentence();
       }
     });
 
+    // Initialize annotation margin positioning
+    this.initAnnotationMargin();
+
+    // Initialize color palette
+    this.initColorPalette();
+
     console.log('WriteSys Annotations initialized');
+  },
+
+  /**
+   * Initialize color palette interactions
+   */
+  initColorPalette() {
+    const circles = document.querySelectorAll('.color-circle');
+    circles.forEach(circle => {
+      circle.addEventListener('click', (e) => {
+        const color = e.target.dataset.color;
+        this.handleColorSelection(color);
+      });
+    });
+  },
+
+  /**
+   * Handle color selection - creates, updates, or removes annotation
+   * Clicking the same color again removes the highlight (toggle behavior)
+   */
+  async handleColorSelection(color) {
+    // Get currently selected sentence
+    const selectedSentence = document.querySelector('.sentence.selected');
+    if (!selectedSentence) {
+      console.log('No sentence selected');
+      return;
+    }
+
+    const sentenceId = selectedSentence.dataset.sentenceId;
+    if (!sentenceId) {
+      console.error('Selected sentence has no sentence_id');
+      return;
+    }
+
+    // Check if annotation already exists for this sentence
+    const existingAnnotation = await this.getAnnotationForSentence(sentenceId);
+
+    try{
+      // If clicking the same color that's already applied, remove the highlight (toggle off)
+      if (existingAnnotation && existingAnnotation.color === color) {
+        // Ask for confirmation before deleting
+        if (!confirm('Delete this annotation?')) {
+          return;
+        }
+
+        // Remove highlight from all fragments
+        const allFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+        const highlightColors = ['yellow', 'green', 'blue', 'purple', 'red', 'orange'];
+        allFragments.forEach(fragment => {
+          highlightColors.forEach(c => fragment.classList.remove(`highlight-${c}`));
+        });
+
+        // Clear active circle
+        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+
+        // Delete annotation (will unselect sentence) - skip confirm since we already confirmed
+        await this.deleteAnnotation(existingAnnotation.annotation_id, true);
+        console.log(`Removed annotation ${existingAnnotation.annotation_id}`);
+      } else if (existingAnnotation) {
+        // Update existing annotation to new color
+        await this.updateAnnotationColor(existingAnnotation.annotation_id, sentenceId, color);
+        console.log(`Updated annotation ${existingAnnotation.annotation_id} to color: ${color}`);
+
+        // Update active circle
+        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.color-circle[data-color="${color}"]`).classList.add('active');
+
+        // Apply highlight to sentence
+        this.applyHighlightToSentence(selectedSentence, color);
+      } else {
+        // Create new annotation
+        await this.createHighlightAnnotation(sentenceId, color);
+        console.log(`Created new annotation for sentence ${sentenceId} with color: ${color}`);
+
+        // Update active circle
+        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.color-circle[data-color="${color}"]`).classList.add('active');
+
+        // Apply highlight to sentence
+        this.applyHighlightToSentence(selectedSentence, color);
+      }
+
+      // Keep palette open so user can change colors or toggle off
+    } catch (error) {
+      console.error('Failed to handle color selection:', error);
+      alert('Failed to save annotation');
+    }
+  },
+
+  /**
+   * Get annotation for a specific sentence (user: andrew)
+   */
+  async getAnnotationForSentence(sentenceId) {
+    const response = await fetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+    const data = await response.json();
+    const annotations = data.annotations || [];
+    // Return first annotation (should only be one per sentence per user)
+    return annotations.length > 0 ? annotations[0] : null;
+  },
+
+  /**
+   * Create new highlight annotation
+   */
+  async createHighlightAnnotation(sentenceId, color) {
+    const response = await fetch(`${this.apiBaseUrl}/annotations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sentence_id: sentenceId,
+        color: color,
+        note: null,
+        priority: 'none',
+        flagged: false
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Update annotation color
+   */
+  async updateAnnotationColor(annotationId, sentenceId, color) {
+    const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sentence_id: sentenceId,
+        color: color,
+        note: null,
+        priority: 'none',
+        flagged: false
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Apply highlight styling to a sentence element
+   * Updates ALL fragments with the same sentence_id
+   */
+  applyHighlightToSentence(sentenceElement, color) {
+    const sentenceId = sentenceElement.dataset.sentenceId;
+    if (!sentenceId) return;
+
+    // Find ALL fragments with this sentence_id (including across pages)
+    const allFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+
+    // Remove existing highlight classes from all fragments
+    const highlightColors = ['yellow', 'green', 'blue', 'purple', 'red', 'orange'];
+    allFragments.forEach(fragment => {
+      highlightColors.forEach(c => fragment.classList.remove(`highlight-${c}`));
+      // Keep selected class so user can continue changing/deleting the highlight
+    });
+
+    // Add new highlight class to all fragments
+    allFragments.forEach(fragment => {
+      fragment.classList.add(`highlight-${color}`);
+    });
+  },
+
+  /**
+   * Initialize and position the annotation margin container
+   */
+  initAnnotationMargin() {
+    const margin = document.getElementById('annotation-margin');
+    if (!margin) return;
+
+    // Position margin based on window size
+    const positionMargin = () => {
+      const pageWidth = 576; // Width of .pagedjs_page
+      const windowWidth = window.innerWidth;
+      const marginWidth = (windowWidth - pageWidth) / 2;
+
+      // Calculate available space for annotations (leave 40px padding)
+      const availableWidth = Math.max(200, marginWidth - 40);
+
+      // Position from right edge
+      const rightOffset = Math.max(20, marginWidth - availableWidth - 20);
+
+      margin.style.right = `${rightOffset}px`;
+      margin.style.width = `${Math.min(availableWidth, 400)}px`; // Max 400px
+    };
+
+    // Position on load and resize
+    positionMargin();
+    window.addEventListener('resize', positionMargin);
   },
 
   /**
@@ -60,15 +262,13 @@ const WriteSysAnnotations = {
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
-    // Update sentence text display (no quotes, clean punctuation)
-    document.getElementById('selected-sentence-text').textContent = this.formatSentencePreview(sentenceText);
+    // Show color palette
+    const palette = document.getElementById('color-palette');
+    if (palette) {
+      palette.classList.add('visible');
+    }
 
-    // Show sidebar
-    const sidebar = document.getElementById('annotation-sidebar');
-    sidebar.classList.remove('hidden');
-    sidebar.classList.add('visible');
-
-    // Fetch annotations for this sentence
+    // Fetch annotations for this sentence to highlight current color in palette
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
       if (!response.ok) {
@@ -78,12 +278,20 @@ const WriteSysAnnotations = {
       const data = await response.json();
       this.annotations = data.annotations || [];
 
-      // Render annotations
-      this.renderAnnotations();
+      // Clear all active states
+      document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+
+      // If sentence has a highlight, mark that color as active in the palette
+      const annotation = this.annotations.find(a => a.color);
+      if (annotation && annotation.color) {
+        const activeCircle = document.querySelector(`.color-circle[data-color="${annotation.color}"]`);
+        if (activeCircle) {
+          activeCircle.classList.add('active');
+        }
+      }
 
     } catch (error) {
       console.error('Failed to fetch annotations:', error);
-      document.getElementById('annotation-list').innerHTML = '<p style="color: #999;">Failed to load annotations</p>';
     }
   },
 
@@ -248,8 +456,8 @@ const WriteSysAnnotations = {
   /**
    * Delete annotation
    */
-  async deleteAnnotation(annotationId) {
-    if (!confirm('Delete this annotation?')) {
+  async deleteAnnotation(annotationId, skipConfirm = false) {
+    if (!skipConfirm && !confirm('Delete this annotation?')) {
       return;
     }
 
@@ -264,13 +472,8 @@ const WriteSysAnnotations = {
 
       console.log('Annotation deleted:', annotationId);
 
-      // Refresh annotations
-      await this.showAnnotationsForSentence(this.currentSentenceId, this.currentSentenceText);
-
-      // Reload manuscript to update styling
-      if (window.WriteSysRenderer) {
-        window.WriteSysRenderer.loadManuscript();
-      }
+      // Unselect the sentence (closes annotation menu)
+      this.unselectSentence();
 
     } catch (error) {
       console.error('Failed to delete annotation:', error);
@@ -279,12 +482,14 @@ const WriteSysAnnotations = {
   },
 
   /**
-   * Hide sidebar
+   * Unselect sentence - this is the single action that closes the annotation menu
    */
-  hideSidebar() {
-    const sidebar = document.getElementById('annotation-sidebar');
-    sidebar.classList.add('hidden');
-    sidebar.classList.remove('visible');
+  unselectSentence() {
+    // Hide color palette
+    const palette = document.getElementById('color-palette');
+    if (palette) {
+      palette.classList.remove('visible');
+    }
 
     // Remove selection from sentences
     document.querySelectorAll('.sentence.selected').forEach(s => s.classList.remove('selected'));
@@ -293,6 +498,13 @@ const WriteSysAnnotations = {
     if (window.WriteSysRenderer) {
       window.WriteSysRenderer.currentSelectedSentenceId = null;
     }
+  },
+
+  /**
+   * @deprecated Use unselectSentence() instead
+   */
+  hideColorPalette() {
+    this.unselectSentence();
   }
 };
 

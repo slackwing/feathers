@@ -27,10 +27,14 @@
           window.WriteSysRenderer.applyResponsiveScaling();
         }
 
-        // Wrap sentences in the paginated content
+        // Insert spaces between sentence spans
+        // (Paged.js strips whitespace text nodes during pagination)
         const pagedContent = document.querySelector('.pagedjs_pages');
         if (pagedContent && window.WriteSysRenderer) {
-          window.WriteSysRenderer.wrapSentences(pagedContent);
+          window.WriteSysRenderer.insertSpacesBetweenSentences(pagedContent);
+
+          // Setup click/hover handlers on the NEW sentence spans created by Paged.js
+          window.WriteSysRenderer.setupSentenceHover();
         }
 
         console.log(`Paged.js rendered ${pages.length} pages`);

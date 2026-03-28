@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
+
+    <changeSet id="010-fix-annotation-unique-constraint" author="andrew">
+        <!-- Drop the old constraint that doesn't account for soft deletes -->
+        <dropUniqueConstraint
+            tableName="annotation"
+            constraintName="annotation_sentence_id_user_id_key"/>
+
+        <!-- Replace with partial unique index that only applies to non-deleted annotations -->
+        <sql>
+            CREATE UNIQUE INDEX uq_annotation_sentence_user_active
+            ON annotation (sentence_id, user_id)
+            WHERE deleted_at IS NULL;
+        </sql>
+
+        <rollback>
+            <sql>DROP INDEX IF EXISTS uq_annotation_sentence_user_active;</sql>
+            <addUniqueConstraint
+                tableName="annotation"
+                columnNames="sentence_id, user_id"
+                constraintName="annotation_sentence_id_user_id_key"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

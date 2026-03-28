@@ -13,5 +13,8 @@
     <include file="005-create-annotation-table.xml"/>
     <include file="006-create-annotation-version-table.xml"/>
     <include file="007-seed-default-user.xml"/>
+    <include file="008-create-tag-table.xml"/>
+    <include file="009-create-annotation-tag-table.xml"/>
+    <include file="010-fix-annotation-unique-constraint.xml"/>
 
 </databaseChangeLog>

@@ -127,7 +127,11 @@ const WriteSysRenderer = {
     }
 
     // Wrap sentences in the unpaginated HTML
+    // Paged.js will duplicate these spans across page breaks automatically
     await this.wrapSentences(tempContainer);
+
+    // Apply annotations (highlights) to sentences before pagination
+    this.applyAnnotations(tempContainer);
 
     // Get the wrapped HTML
     const wrappedHtml = tempContainer.innerHTML;
@@ -147,10 +151,10 @@ const WriteSysRenderer = {
         originalContent.style.display = 'none';
       }
 
-      // Setup hover on the paginated content
-      this.setupSentenceHover();
+      // Note: setupSentenceHover() is called in pagedjs-config.js afterRendered handler
+      // after Paged.js has finished creating the DOM
 
-      // Apply responsive scaling
+      // Apply responsive scaling (will be called again in afterRendered)
       this.applyResponsiveScaling();
 
       // Listen for window resize
@@ -318,8 +322,12 @@ const WriteSysRenderer = {
 
     let wrapped = 0;
     let disparities = [];
+    const wrapQueue = []; // Collect all wraps before executing
 
-    // Process each JS segment and calculate its expected ID
+    // PHASE 1: Calculate all wrap positions (before any wrapping changes the DOM)
+    const initialFullText = this.getUnwrappedText(container);
+    let searchOffset = 0; // Track position in text to handle duplicates
+
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       const segmentClean = this.stripMarkdown(segment);
@@ -342,24 +350,19 @@ const WriteSysRenderer = {
         continue;
       }
 
-      // IDs match! Find and wrap this segment in the DOM
-      const fullText = this.getUnwrappedText(container);
-
-      // Try to find the segment text in the DOM
-      // Note: smartquotes has already been applied to the DOM, so we need to handle that
-      let segmentIndex = fullText.indexOf(segmentClean);
+      // Find this segment in the DOM (starting from searchOffset to handle duplicates)
       let segmentTextToWrap = segmentClean;
+      let segmentIndex = initialFullText.indexOf(segmentClean, searchOffset);
 
       // If not found with straight quotes, try with smart quotes
       if (segmentIndex === -1) {
-        // Apply smartquotes to the segment text
         const tempDiv = document.createElement('div');
         tempDiv.textContent = segmentClean;
         if (typeof smartquotes !== 'undefined') {
           smartquotes.element(tempDiv);
         }
         segmentTextToWrap = tempDiv.textContent;
-        segmentIndex = fullText.indexOf(segmentTextToWrap);
+        segmentIndex = initialFullText.indexOf(segmentTextToWrap, searchOffset);
       }
 
       if (segmentIndex === -1) {
@@ -375,8 +378,42 @@ const WriteSysRenderer = {
         continue;
       }
 
-      // Wrap this text range with the server's sentence ID
-      this.wrapTextRange(container, segmentIndex, segmentIndex + segmentTextToWrap.length, expectedId);
+      // Queue this wrap for later execution
+      wrapQueue.push({
+        startOffset: segmentIndex,
+        endOffset: segmentIndex + segmentTextToWrap.length,
+        sentenceId: expectedId
+      });
+
+      // Update search offset to after this sentence
+      searchOffset = segmentIndex + segmentTextToWrap.length;
+    }
+
+    // PHASE 2: Execute wraps using CURRENT unwrapped text position
+    // Instead of adjusting offsets, we search for each sentence in the current unwrapped text
+    console.log(`Executing ${wrapQueue.length} wraps...`);
+    for (let i = 0; i < wrapQueue.length; i++) {
+      const wrap = wrapQueue[i];
+
+      // Get current unwrapped text (excludes already-wrapped sentences)
+      const currentUnwrapped = this.getUnwrappedText(container);
+
+      // Calculate sentence text from original offsets
+      const sentenceLength = wrap.endOffset - wrap.startOffset;
+      const sentenceText = initialFullText.substring(wrap.startOffset, wrap.endOffset);
+
+      // Find this sentence in CURRENT unwrapped text
+      // It should be at the very beginning (or near it) since we're wrapping in order
+      const currentIndex = currentUnwrapped.indexOf(sentenceText);
+
+      if (currentIndex === -1) {
+        console.warn(`Could not find sentence in current unwrapped text: ${wrap.sentenceId}`);
+        console.warn(`  Looking for: "${sentenceText.substring(0, 60)}..."`);
+        continue;
+      }
+
+      // Wrap at the current position
+      this.wrapTextRange(container, currentIndex, currentIndex + sentenceLength, wrap.sentenceId);
       wrapped++;
     }
 
@@ -400,6 +437,41 @@ const WriteSysRenderer = {
         console.warn(`  - ${s.id}: "${s.text.substring(0, 80)}..."`);
       });
     }
+  },
+
+  /**
+   * Apply annotations (highlights) to wrapped sentences
+   */
+  applyAnnotations(container) {
+    if (!this.currentAnnotations || this.currentAnnotations.length === 0) {
+      console.log('No annotations to apply');
+      return;
+    }
+
+    console.log(`Applying ${this.currentAnnotations.length} annotations...`);
+
+    this.currentAnnotations.forEach(annotation => {
+      // Only apply if annotation has a color
+      if (!annotation.color) return;
+
+      const sentenceId = annotation.sentence_id;
+      const color = annotation.color;
+
+      // Find all sentence elements with this ID (including fragments)
+      const sentenceElements = container.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+
+      if (sentenceElements.length === 0) {
+        console.warn(`No sentence found with ID: ${sentenceId}`);
+        return;
+      }
+
+      // Apply highlight class to all fragments
+      sentenceElements.forEach(el => {
+        el.classList.add(`highlight-${color}`);
+      });
+
+      console.log(`Applied ${color} highlight to sentence ${sentenceId} (${sentenceElements.length} fragment(s))`);
+    });
   },
 
   /**
@@ -671,6 +743,31 @@ const WriteSysRenderer = {
   },
 
   /**
+   * Insert spaces between consecutive sentence spans
+   * Called after Paged.js renders (which strips whitespace text nodes)
+   */
+  insertSpacesBetweenSentences(container) {
+    // Find all paragraphs
+    const paragraphs = container.querySelectorAll('p');
+
+    paragraphs.forEach(p => {
+      const children = Array.from(p.childNodes);
+
+      // Walk backwards to avoid offset issues when inserting
+      for (let i = children.length - 1; i > 0; i--) {
+        const current = children[i];
+        const prev = children[i - 1];
+
+        // If both are sentence spans, insert a space between them
+        if (current.nodeType === 1 && current.classList?.contains('sentence') &&
+            prev.nodeType === 1 && prev.classList?.contains('sentence')) {
+          p.insertBefore(document.createTextNode(' '), current);
+        }
+      }
+    });
+  },
+
+  /**
    * Show status message
    */
   showStatus(message, type = 'info') {
@@ -679,6 +776,9 @@ const WriteSysRenderer = {
     statusEl.className = type;
   }
 };
+
+// Export to window for access by other modules
+window.WriteSysRenderer = WriteSysRenderer;
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
