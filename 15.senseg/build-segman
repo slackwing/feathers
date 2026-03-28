@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+
+# Build SEGMAN libraries and CLIs to exports/
+
+cd "$(dirname "$0")"
+
+echo "Building SEGMAN libraries and CLIs..."
+
+# Create lib and cli directories if they don't exist
+mkdir -p exports/lib exports/cli
+
+# ===== Go =====
+echo "Building Go..."
+cd src/segman/go
+
+# Copy library source to exports/lib/segman-go/ (exclude test files and cmd/)
+mkdir -p ../../../exports/lib/segman-go
+cp segman.go go.mod go.sum ../../../exports/lib/segman-go/
+
+# Build CLI binary
+go build -o ../../../exports/cli/segman-go-cli ./cmd/senseg
+
+cd ../../..
+
+# ===== JavaScript =====
+echo "Building JavaScript..."
+cd src/segman/js
+
+# Copy library to exports/lib/segman-js/
+mkdir -p ../../../exports/lib/segman-js
+cp segman.js ../../../exports/lib/segman-js/
+[ -f package.json ] && cp package.json ../../../exports/lib/segman-js/ || true
+
+# Build CLI that references library
+if [ -f segman-cli.js ]; then
+    # Update require path to reference library
+    sed 's|require(\x27./segman.js\x27)|require(\x27../lib/segman-js/segman.js\x27)|g' segman-cli.js > ../../../exports/cli/segman-node-cli
+    chmod +x ../../../exports/cli/segman-node-cli
+fi
+
+cd ../../..
+
+# ===== Rust =====
+echo "Building Rust..."
+cd src/segman/rust
+
+# Copy library source to exports/lib/segman-rust/ (only lib.rs, no bins)
+mkdir -p ../../../exports/lib/segman-rust/src
+cp src/lib.rs ../../../exports/lib/segman-rust/src/
+cp Cargo.lock ../../../exports/lib/segman-rust/
+
+# Create Cargo.toml without [[bin]] section (library only)
+sed '/^\[\[bin\]\]/,/^$/d' Cargo.toml > ../../../exports/lib/segman-rust/Cargo.toml
+
+# Build CLI binary
+cargo build --release --bin segman-cli
+cp target/release/segman-cli ../../../exports/cli/segman-rust-cli
+
+cd ../../..
+
+echo "Done! Library artifacts and CLIs in exports/"
+echo "Libraries:"
+ls -d exports/lib/*
+echo "CLIs:"
+ls exports/cli/
