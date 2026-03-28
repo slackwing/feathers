@@ -252,8 +252,8 @@ All tests are organized in a flat structure for easy discovery and execution:
 
 ```
 tests/
-├── e2e.spec.js          - Playwright E2E tests (52 tests: smoke, auto-load, interactions, rendering, API)
-├── ui-integration.js    - Comprehensive UI integration tests (21 tests: controls, pagination, styling)
+├── e2e.spec.js          - Playwright E2E tests (28 tests: smoke, auto-load, interactions, rendering, API)
+├── ui-integration.js    - Comprehensive UI integration tests (20 tests: controls, pagination, styling)
 ├── smoke.js             - Quick smoke test for basic functionality
 └── screenshots/         - Test output screenshots
 
@@ -263,6 +263,37 @@ Root directory:
 ├── playwright.config.js - Playwright configuration
 └── package.json         - Node dependencies for Playwright
 ```
+
+**CRITICAL: Where to Add New Tests**
+
+**DO NOT create new test files.** Add tests to existing files:
+
+1. **Playwright E2E tests** → `tests/e2e.spec.js`
+   - When: Testing browser interactions, UI behavior, API endpoints from browser
+   - Examples: Clicking buttons, form submissions, page navigation, sidebar behavior
+   - Pattern: Add new `test('description', async ({ page }) => { ... })` within the existing `test.describe()` block
+
+2. **UI Integration tests** → `tests/ui-integration.js`
+   - When: Testing visual rendering, layout, styling, Paged.js behavior
+   - Examples: Page dimensions, colors, fonts, positioning, pagination
+   - Pattern: Add new test with `assert(condition, message)` function
+
+3. **Quick smoke tests** → `tests/smoke.js`
+   - When: Testing absolute basics (page loads, auto-load works)
+   - Pattern: Only add tests that must run very fast (<5 seconds total)
+
+4. **Go unit tests** → `internal/*/` subdirectories
+   - When: Testing Go functions, sentence processing, matching algorithms
+   - Pattern: Create `*_test.go` files in same package as code being tested
+
+**If you think you need a new test file, you probably don't. Ask yourself:**
+- Is this an E2E test? → Add to `tests/e2e.spec.js`
+- Is this a UI/visual test? → Add to `tests/ui-integration.js`
+- Is this a Go test? → Add to appropriate `internal/*_test.go`
+
+**The only valid reason to create a new test file:**
+- You're adding an entirely new testing dimension (e.g., performance tests, security tests, load tests)
+- Ask the user first before creating any new test files
 
 ### Quick Test Reference
 
