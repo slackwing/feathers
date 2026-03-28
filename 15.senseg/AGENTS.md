@@ -186,3 +186,4 @@ To manually bump major/minor:
 - When in doubt about modifying the manuscript or scenarios, ASK the user first
 - The manuscript and test scenarios are sacred - they represent the user's creative work and careful curation
 - VERSION.json is managed by the pre-commit hook - only manually edit for major/minor bumps
+
