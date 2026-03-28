@@ -5,15 +5,21 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
 
-    <changeSet id="003-create-processed-commit-table" author="andrew">
-        <createTable tableName="processed_commit">
-            <column name="commit_hash" type="VARCHAR(40)">
+    <changeSet id="003-create-migration-table" author="andrew">
+        <createTable tableName="migration">
+            <column name="migration_id" type="SERIAL" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="manuscript_id" type="INTEGER">
                 <constraints nullable="false"/>
             </column>
-            <column name="parent_commit_hash" type="VARCHAR(40)">
+            <column name="commit_hash" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="segmenter" type="VARCHAR(50)" defaultValue="segman-1.0.0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_migration_id" type="INTEGER">
                 <constraints nullable="true"/>
             </column>
             <column name="branch_name" type="VARCHAR(255)">
@@ -39,40 +45,54 @@
             </column>
         </createTable>
 
+        <!-- Unique constraint: Each (manuscript_id, commit_hash, segmenter) combo is unique -->
+        <addUniqueConstraint
+            tableName="migration"
+            columnNames="manuscript_id, commit_hash, segmenter"
+            constraintName="unique_migration_commit_segmenter"/>
+
         <addForeignKeyConstraint
-            constraintName="fk_processed_commit_manuscript"
-            baseTableName="processed_commit"
+            constraintName="fk_migration_manuscript"
+            baseTableName="migration"
             baseColumnNames="manuscript_id"
             referencedTableName="manuscript"
             referencedColumnNames="manuscript_id"
             onDelete="CASCADE"/>
 
         <addForeignKeyConstraint
-            constraintName="fk_processed_commit_parent"
-            baseTableName="processed_commit"
-            baseColumnNames="parent_commit_hash"
-            referencedTableName="processed_commit"
-            referencedColumnNames="commit_hash"
+            constraintName="fk_migration_parent"
+            baseTableName="migration"
+            baseColumnNames="parent_migration_id"
+            referencedTableName="migration"
+            referencedColumnNames="migration_id"
             onDelete="SET NULL"/>
 
-        <createIndex tableName="processed_commit" indexName="idx_processed_commit_manuscript">
+        <createIndex tableName="migration" indexName="idx_migration_manuscript">
             <column name="manuscript_id"/>
         </createIndex>
 
-        <createIndex tableName="processed_commit" indexName="idx_processed_commit_branch">
+        <createIndex tableName="migration" indexName="idx_migration_commit">
+            <column name="commit_hash"/>
+        </createIndex>
+
+        <createIndex tableName="migration" indexName="idx_migration_segmenter">
+            <column name="segmenter"/>
+        </createIndex>
+
+        <createIndex tableName="migration" indexName="idx_migration_branch">
             <column name="branch_name"/>
         </createIndex>
 
-        <createIndex tableName="processed_commit" indexName="idx_processed_commit_processed_at">
+        <createIndex tableName="migration" indexName="idx_migration_processed_at">
             <column name="processed_at"/>
         </createIndex>
 
         <sql>
-            CREATE INDEX idx_processed_commit_sentence_array ON processed_commit USING GIN(sentence_id_array);
+            CREATE INDEX idx_migration_sentence_array ON migration USING GIN(sentence_id_array);
         </sql>
 
         <rollback>
-            <dropTable tableName="processed_commit"/>
+            <dropTable tableName="migration"/>
         </rollback>
     </changeSet>
 

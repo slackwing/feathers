@@ -28,6 +28,9 @@
             <column name="origin_sentence_id" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
+            <column name="origin_migration_id" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
             <column name="origin_commit_hash" type="VARCHAR(40)">
                 <constraints nullable="false"/>
             </column>
@@ -69,11 +72,11 @@
             onDelete="SET NULL"/>
 
         <addForeignKeyConstraint
-            constraintName="fk_annotation_version_origin_commit"
+            constraintName="fk_annotation_version_origin_migration"
             baseTableName="annotation_version"
-            baseColumnNames="origin_commit_hash"
-            referencedTableName="processed_commit"
-            referencedColumnNames="commit_hash"
+            baseColumnNames="origin_migration_id"
+            referencedTableName="migration"
+            referencedColumnNames="migration_id"
             onDelete="SET NULL"/>
 
         <createIndex tableName="annotation_version" indexName="idx_annotation_version_annotation">

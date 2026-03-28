@@ -59,130 +59,136 @@ func (db *DB) GetManuscript(ctx context.Context, repoPath, storyFilePath string)
 	return &m, nil
 }
 
-// GetLatestProcessedCommit gets the most recent processed commit for a manuscript
-func (db *DB) GetLatestProcessedCommit(ctx context.Context, manuscriptID int) (*models.ProcessedCommit, error) {
+// GetLatestMigration gets the most recent migration for a manuscript
+func (db *DB) GetLatestMigration(ctx context.Context, manuscriptID int) (*models.Migration, error) {
 	query := `
-		SELECT commit_hash, manuscript_id, parent_commit_hash, branch_name,
-		       processed_at, sentence_count, additions_count, deletions_count,
-		       changes_count, sentence_id_array
-		FROM processed_commit
+		SELECT migration_id, manuscript_id, commit_hash, segmenter,
+		       parent_migration_id, branch_name, processed_at, sentence_count,
+		       additions_count, deletions_count, changes_count, sentence_id_array
+		FROM migration
 		WHERE manuscript_id = $1
 		ORDER BY processed_at DESC
 		LIMIT 1
 	`
 
-	var pc models.ProcessedCommit
+	var m models.Migration
 	var sentenceIDArrayJSON []byte
 
 	err := db.Pool.QueryRow(ctx, query, manuscriptID).Scan(
-		&pc.CommitHash,
-		&pc.ManuscriptID,
-		&pc.ParentCommitHash,
-		&pc.BranchName,
-		&pc.ProcessedAt,
-		&pc.SentenceCount,
-		&pc.AdditionsCount,
-		&pc.DeletionsCount,
-		&pc.ChangesCount,
+		&m.MigrationID,
+		&m.ManuscriptID,
+		&m.CommitHash,
+		&m.Segmenter,
+		&m.ParentMigrationID,
+		&m.BranchName,
+		&m.ProcessedAt,
+		&m.SentenceCount,
+		&m.AdditionsCount,
+		&m.DeletionsCount,
+		&m.ChangesCount,
 		&sentenceIDArrayJSON,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest processed commit: %w", err)
+		return nil, fmt.Errorf("failed to get latest migration: %w", err)
 	}
 
 	// Parse JSONB array
-	if err := json.Unmarshal(sentenceIDArrayJSON, &pc.SentenceIDArray); err != nil {
+	if err := json.Unmarshal(sentenceIDArrayJSON, &m.SentenceIDArray); err != nil {
 		return nil, fmt.Errorf("failed to parse sentence_id_array: %w", err)
 	}
 
-	return &pc, nil
+	return &m, nil
 }
 
-// GetProcessedCommits gets all processed commits for a manuscript, ordered by most recent first
-func (db *DB) GetProcessedCommits(ctx context.Context, manuscriptID int) ([]models.ProcessedCommit, error) {
+// GetMigrations gets all migrations for a manuscript, ordered by most recent first
+func (db *DB) GetMigrations(ctx context.Context, manuscriptID int) ([]models.Migration, error) {
 	query := `
-		SELECT commit_hash, manuscript_id, parent_commit_hash, branch_name,
-		       processed_at, sentence_count, additions_count, deletions_count,
-		       changes_count, sentence_id_array
-		FROM processed_commit
+		SELECT migration_id, manuscript_id, commit_hash, segmenter,
+		       parent_migration_id, branch_name, processed_at, sentence_count,
+		       additions_count, deletions_count, changes_count, sentence_id_array
+		FROM migration
 		WHERE manuscript_id = $1
 		ORDER BY processed_at DESC
 	`
 
 	rows, err := db.Pool.Query(ctx, query, manuscriptID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get processed commits: %w", err)
+		return nil, fmt.Errorf("failed to get migrations: %w", err)
 	}
 	defer rows.Close()
 
-	var commits []models.ProcessedCommit
+	var migrations []models.Migration
 	for rows.Next() {
-		var pc models.ProcessedCommit
+		var m models.Migration
 		var sentenceIDArrayJSON []byte
 
 		err := rows.Scan(
-			&pc.CommitHash,
-			&pc.ManuscriptID,
-			&pc.ParentCommitHash,
-			&pc.BranchName,
-			&pc.ProcessedAt,
-			&pc.SentenceCount,
-			&pc.AdditionsCount,
-			&pc.DeletionsCount,
-			&pc.ChangesCount,
+			&m.MigrationID,
+			&m.ManuscriptID,
+			&m.CommitHash,
+			&m.Segmenter,
+			&m.ParentMigrationID,
+			&m.BranchName,
+			&m.ProcessedAt,
+			&m.SentenceCount,
+			&m.AdditionsCount,
+			&m.DeletionsCount,
+			&m.ChangesCount,
 			&sentenceIDArrayJSON,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan processed commit: %w", err)
+			return nil, fmt.Errorf("failed to scan migration: %w", err)
 		}
 
 		// Parse JSONB array
-		if err := json.Unmarshal(sentenceIDArrayJSON, &pc.SentenceIDArray); err != nil {
+		if err := json.Unmarshal(sentenceIDArrayJSON, &m.SentenceIDArray); err != nil {
 			return nil, fmt.Errorf("failed to parse sentence_id_array: %w", err)
 		}
 
-		commits = append(commits, pc)
+		migrations = append(migrations, m)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating processed commits: %w", err)
+		return nil, fmt.Errorf("error iterating migrations: %w", err)
 	}
 
-	return commits, nil
+	return migrations, nil
 }
 
-// CreateProcessedCommit creates a new processed commit record
-func (db *DB) CreateProcessedCommit(ctx context.Context, pc *models.ProcessedCommit) error {
+// CreateMigration creates a new migration record and returns the migration_id
+func (db *DB) CreateMigration(ctx context.Context, m *models.Migration) error {
 	// Convert sentence ID array to JSON
-	sentenceIDArrayJSON, err := json.Marshal(pc.SentenceIDArray)
+	sentenceIDArrayJSON, err := json.Marshal(m.SentenceIDArray)
 	if err != nil {
 		return fmt.Errorf("failed to marshal sentence_id_array: %w", err)
 	}
 
 	query := `
-		INSERT INTO processed_commit (
-			commit_hash, manuscript_id, parent_commit_hash, branch_name,
-			sentence_count, additions_count, deletions_count, changes_count,
-			sentence_id_array
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO migration (
+			manuscript_id, commit_hash, segmenter, parent_migration_id,
+			branch_name, sentence_count, additions_count, deletions_count,
+			changes_count, sentence_id_array
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING migration_id, processed_at
 	`
 
-	_, err = db.Pool.Exec(ctx, query,
-		pc.CommitHash,
-		pc.ManuscriptID,
-		pc.ParentCommitHash,
-		pc.BranchName,
-		pc.SentenceCount,
-		pc.AdditionsCount,
-		pc.DeletionsCount,
-		pc.ChangesCount,
+	err = db.Pool.QueryRow(ctx, query,
+		m.ManuscriptID,
+		m.CommitHash,
+		m.Segmenter,
+		m.ParentMigrationID,
+		m.BranchName,
+		m.SentenceCount,
+		m.AdditionsCount,
+		m.DeletionsCount,
+		m.ChangesCount,
 		sentenceIDArrayJSON,
-	)
+	).Scan(&m.MigrationID, &m.ProcessedAt)
 	if err != nil {
-		return fmt.Errorf("failed to create processed commit: %w", err)
+		return fmt.Errorf("failed to create migration: %w", err)
 	}
 
 	return nil
@@ -197,13 +203,14 @@ func (db *DB) CreateSentences(ctx context.Context, sentences []models.Sentence) 
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO sentence (sentence_id, commit_hash, text, word_count, ordinal)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO sentence (sentence_id, migration_id, commit_hash, text, word_count, ordinal)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	for _, s := range sentences {
 		_, err := tx.Exec(ctx, query,
 			s.SentenceID,
+			s.MigrationID,
 			s.CommitHash,
 			s.Text,
 			s.WordCount,
@@ -221,10 +228,134 @@ func (db *DB) CreateSentences(ctx context.Context, sentences []models.Sentence) 
 	return nil
 }
 
-// GetSentencesByCommit retrieves all sentences for a given commit
+// GetMigrationByID retrieves a migration by its ID
+func (db *DB) GetMigrationByID(ctx context.Context, migrationID int) (*models.Migration, error) {
+	query := `
+		SELECT migration_id, manuscript_id, commit_hash, segmenter,
+		       parent_migration_id, branch_name, processed_at, sentence_count,
+		       additions_count, deletions_count, changes_count, sentence_id_array
+		FROM migration
+		WHERE migration_id = $1
+	`
+
+	var m models.Migration
+	var sentenceIDArrayJSON []byte
+
+	err := db.Pool.QueryRow(ctx, query, migrationID).Scan(
+		&m.MigrationID,
+		&m.ManuscriptID,
+		&m.CommitHash,
+		&m.Segmenter,
+		&m.ParentMigrationID,
+		&m.BranchName,
+		&m.ProcessedAt,
+		&m.SentenceCount,
+		&m.AdditionsCount,
+		&m.DeletionsCount,
+		&m.ChangesCount,
+		&sentenceIDArrayJSON,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get migration by ID: %w", err)
+	}
+
+	// Parse JSONB array
+	if err := json.Unmarshal(sentenceIDArrayJSON, &m.SentenceIDArray); err != nil {
+		return nil, fmt.Errorf("failed to parse sentence_id_array: %w", err)
+	}
+
+	return &m, nil
+}
+
+// GetMigrationByCommitAndSegmenter retrieves a migration by commit hash and segmenter version
+func (db *DB) GetMigrationByCommitAndSegmenter(ctx context.Context, manuscriptID int, commitHash, segmenter string) (*models.Migration, error) {
+	query := `
+		SELECT migration_id, manuscript_id, commit_hash, segmenter,
+		       parent_migration_id, branch_name, processed_at, sentence_count,
+		       additions_count, deletions_count, changes_count, sentence_id_array
+		FROM migration
+		WHERE manuscript_id = $1 AND commit_hash = $2 AND segmenter = $3
+	`
+
+	var m models.Migration
+	var sentenceIDArrayJSON []byte
+
+	err := db.Pool.QueryRow(ctx, query, manuscriptID, commitHash, segmenter).Scan(
+		&m.MigrationID,
+		&m.ManuscriptID,
+		&m.CommitHash,
+		&m.Segmenter,
+		&m.ParentMigrationID,
+		&m.BranchName,
+		&m.ProcessedAt,
+		&m.SentenceCount,
+		&m.AdditionsCount,
+		&m.DeletionsCount,
+		&m.ChangesCount,
+		&sentenceIDArrayJSON,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get migration by commit and segmenter: %w", err)
+	}
+
+	// Parse JSONB array
+	if err := json.Unmarshal(sentenceIDArrayJSON, &m.SentenceIDArray); err != nil {
+		return nil, fmt.Errorf("failed to parse sentence_id_array: %w", err)
+	}
+
+	return &m, nil
+}
+
+// GetSentencesByMigration retrieves all sentences for a given migration_id
+func (db *DB) GetSentencesByMigration(ctx context.Context, migrationID int) ([]models.Sentence, error) {
+	query := `
+		SELECT sentence_id, migration_id, commit_hash, text, word_count, ordinal, created_at
+		FROM sentence
+		WHERE migration_id = $1
+		ORDER BY ordinal
+	`
+
+	rows, err := db.Pool.Query(ctx, query, migrationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query sentences: %w", err)
+	}
+	defer rows.Close()
+
+	var sentences []models.Sentence
+	for rows.Next() {
+		var s models.Sentence
+		err := rows.Scan(
+			&s.SentenceID,
+			&s.MigrationID,
+			&s.CommitHash,
+			&s.Text,
+			&s.WordCount,
+			&s.Ordinal,
+			&s.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan sentence: %w", err)
+		}
+		sentences = append(sentences, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating sentences: %w", err)
+	}
+
+	return sentences, nil
+}
+
+// GetSentencesByCommit retrieves all sentences for a given commit hash (for backward compatibility)
 func (db *DB) GetSentencesByCommit(ctx context.Context, commitHash string) ([]models.Sentence, error) {
 	query := `
-		SELECT sentence_id, commit_hash, text, word_count, ordinal, created_at
+		SELECT sentence_id, migration_id, commit_hash, text, word_count, ordinal, created_at
 		FROM sentence
 		WHERE commit_hash = $1
 		ORDER BY ordinal
@@ -241,6 +372,7 @@ func (db *DB) GetSentencesByCommit(ctx context.Context, commitHash string) ([]mo
 		var s models.Sentence
 		err := rows.Scan(
 			&s.SentenceID,
+			&s.MigrationID,
 			&s.CommitHash,
 			&s.Text,
 			&s.WordCount,
@@ -379,11 +511,12 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	// Get commit_hash for this sentence (for origin_commit_hash)
+	// Get commit_hash and migration_id for this sentence (for origin_commit_hash and origin_migration_id)
 	var commitHash string
-	query_commit := `SELECT commit_hash FROM sentence WHERE sentence_id = $1 LIMIT 1`
-	if err := tx.QueryRow(ctx, query_commit, version.SentenceID).Scan(&commitHash); err != nil {
-		return fmt.Errorf("failed to get commit hash for sentence: %w", err)
+	var migrationID int
+	query_commit := `SELECT commit_hash, migration_id FROM sentence WHERE sentence_id = $1 LIMIT 1`
+	if err := tx.QueryRow(ctx, query_commit, version.SentenceID).Scan(&commitHash, &migrationID); err != nil {
+		return fmt.Errorf("failed to get commit hash and migration_id for sentence: %w", err)
 	}
 
 	// Empty array for sentence_id_history
@@ -392,9 +525,9 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 	query2 := `
 		INSERT INTO annotation_version (
 			annotation_id, version, sentence_id, payload, migration_confidence,
-			origin_sentence_id, origin_commit_hash, sentence_id_history, created_by
+			origin_sentence_id, origin_migration_id, origin_commit_hash, sentence_id_history, created_by
 		)
-		VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8)
+		VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING created_at
 	`
 	err = tx.QueryRow(ctx, query2,
@@ -403,6 +536,7 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 		payloadJSON,
 		version.MigrationConfidence,
 		version.SentenceID,    // origin_sentence_id = same as sentence_id for first version
+		migrationID,          // origin_migration_id from sentence
 		commitHash,           // origin_commit_hash from sentence
 		historyJSON,          // empty history for first version
 		annotation.CreatedBy,
@@ -414,6 +548,7 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 	version.AnnotationID = annotation.AnnotationID
 	version.Version = 1
 	version.OriginSentenceID = version.SentenceID
+	version.OriginMigrationID = &migrationID
 	version.OriginCommitHash = commitHash
 
 	if err := tx.Commit(ctx); err != nil {
@@ -428,16 +563,18 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, version *m
 	// Get current max version and origin info
 	var maxVersion int
 	var originSentenceID, originCommitHash, createdBy string
+	var originMigrationID *int
 	query1 := `
 		SELECT
 			COALESCE(MAX(version), 0),
 			MIN(origin_sentence_id),
+			MIN(origin_migration_id),
 			MIN(origin_commit_hash),
 			MIN(created_by)
 		FROM annotation_version
 		WHERE annotation_id = $1
 	`
-	if err := db.Pool.QueryRow(ctx, query1, annotationID).Scan(&maxVersion, &originSentenceID, &originCommitHash, &createdBy); err != nil {
+	if err := db.Pool.QueryRow(ctx, query1, annotationID).Scan(&maxVersion, &originSentenceID, &originMigrationID, &originCommitHash, &createdBy); err != nil {
 		return fmt.Errorf("failed to get version info: %w", err)
 	}
 
@@ -467,9 +604,9 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, version *m
 	query2 := `
 		INSERT INTO annotation_version (
 			annotation_id, version, sentence_id, payload, migration_confidence,
-			origin_sentence_id, origin_commit_hash, sentence_id_history, created_by
+			origin_sentence_id, origin_migration_id, origin_commit_hash, sentence_id_history, created_by
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING created_at
 	`
 	err = db.Pool.QueryRow(ctx, query2,
@@ -478,8 +615,9 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, version *m
 		version.SentenceID,
 		payloadJSON,
 		version.MigrationConfidence,
-		originSentenceID,  // Keep original
-		originCommitHash,  // Keep original
+		originSentenceID,     // Keep original
+		originMigrationID,    // Keep original
+		originCommitHash,     // Keep original
 		newHistoryJSON,
 		createdBy,
 	).Scan(&version.CreatedAt)
@@ -490,6 +628,7 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, version *m
 	version.AnnotationID = annotationID
 	version.Version = maxVersion + 1
 	version.OriginSentenceID = originSentenceID
+	version.OriginMigrationID = originMigrationID
 	version.OriginCommitHash = originCommitHash
 
 	return nil
@@ -522,7 +661,7 @@ func (db *DB) GetLatestAnnotationVersion(ctx context.Context, annotationID int) 
 		SELECT
 			annotation_id, version, sentence_id, payload,
 			sentence_id_history, migration_confidence,
-			origin_sentence_id, origin_commit_hash, created_at, created_by
+			origin_sentence_id, origin_migration_id, origin_commit_hash, created_at, created_by
 		FROM annotation_version
 		WHERE annotation_id = $1
 		ORDER BY version DESC
@@ -541,6 +680,7 @@ func (db *DB) GetLatestAnnotationVersion(ctx context.Context, annotationID int) 
 		&historyJSON,
 		&av.MigrationConfidence,
 		&av.OriginSentenceID,
+		&av.OriginMigrationID,
 		&av.OriginCommitHash,
 		&av.CreatedAt,
 		&av.CreatedBy,

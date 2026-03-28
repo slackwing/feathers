@@ -10,6 +10,9 @@
             <column name="sentence_id" type="VARCHAR(100)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="migration_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
             <column name="commit_hash" type="VARCHAR(40)">
                 <constraints nullable="false"/>
             </column>
@@ -28,24 +31,28 @@
         </createTable>
 
         <addForeignKeyConstraint
-            constraintName="fk_sentence_commit"
+            constraintName="fk_sentence_migration"
             baseTableName="sentence"
-            baseColumnNames="commit_hash"
-            referencedTableName="processed_commit"
-            referencedColumnNames="commit_hash"
+            baseColumnNames="migration_id"
+            referencedTableName="migration"
+            referencedColumnNames="migration_id"
             onDelete="CASCADE"/>
 
         <addUniqueConstraint
             tableName="sentence"
-            columnNames="commit_hash, ordinal"
-            constraintName="uq_sentence_commit_ordinal"/>
+            columnNames="migration_id, ordinal"
+            constraintName="uq_sentence_migration_ordinal"/>
+
+        <createIndex tableName="sentence" indexName="idx_sentence_migration">
+            <column name="migration_id"/>
+        </createIndex>
 
         <createIndex tableName="sentence" indexName="idx_sentence_commit">
             <column name="commit_hash"/>
         </createIndex>
 
         <createIndex tableName="sentence" indexName="idx_sentence_ordinal">
-            <column name="commit_hash"/>
+            <column name="migration_id"/>
             <column name="ordinal"/>
         </createIndex>
 

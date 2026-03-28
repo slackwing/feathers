@@ -1,9 +1,38 @@
 package senseg
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
+	"sync"
 	"unicode"
 )
+
+var (
+	cachedVersion string
+	versionOnce   sync.Once
+)
+
+// Version returns the current SEGMAN version from VERSION.json
+func Version() string {
+	versionOnce.Do(func() {
+		data, err := os.ReadFile("../../VERSION.json")
+		if err != nil {
+			cachedVersion = "unknown"
+			return
+		}
+
+		var v struct {
+			Version string `json:"version"`
+		}
+		if err := json.Unmarshal(data, &v); err != nil {
+			cachedVersion = "unknown"
+			return
+		}
+		cachedVersion = v.Version
+	})
+	return cachedVersion
+}
 
 // nestedRegion represents a nested structure (quotes, parens, brackets, italics)
 type nestedRegion struct {
@@ -654,3 +683,4 @@ func splitAtBoundaries(runes []rune, boundaries []boundaryMark) []string {
 
 	return sentences
 }
+// Test comment

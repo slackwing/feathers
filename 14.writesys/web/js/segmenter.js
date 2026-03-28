@@ -654,7 +654,29 @@ function splitAtBoundaries(chars, boundaries) {
     return sentences;
 }
 
+/**
+ * Get the current SEGMAN version from VERSION.json
+ * @returns {string} - The version string
+ */
+let cachedVersion = null;
+function getVersion() {
+    if (cachedVersion) {
+        return cachedVersion;
+    }
+
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const versionFile = path.join(__dirname, '../../VERSION.json');
+        const data = JSON.parse(fs.readFileSync(versionFile, 'utf-8'));
+        cachedVersion = data.version;
+        return cachedVersion;
+    } catch (err) {
+        return 'unknown';
+    }
+}
+
 // Export for Node.js
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { segment };
+    module.exports = { segment, getVersion };
 }

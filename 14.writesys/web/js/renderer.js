@@ -6,7 +6,9 @@ const WriteSysRenderer = {
   currentManuscript: null,
   currentSentences: [],
   currentAnnotations: [],
-  currentCommitHash: null, // Current commit hash for ID generation
+  currentMigrationID: null, // Current migration ID
+  currentCommitHash: null, // Current commit hash (for display)
+  currentSegmenter: null, // Current segmenter version
   sentenceMap: {}, // Maps sentence ID -> full sentence text (for split sentences)
   currentSelectedSentenceId: null, // Currently selected sentence ID
 
@@ -14,82 +16,67 @@ const WriteSysRenderer = {
    * Initialize the renderer
    */
   async init() {
-    // Set up event listeners
-    document.getElementById('load-button').addEventListener('click', () => this.loadManuscript());
-
-    // Load on Enter key in inputs
-    ['repo-path', 'file-path'].forEach(id => {
-      document.getElementById(id).addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.loadManuscript();
-      });
-    });
-
-    // Load commits on select change
-    document.getElementById('commit-select').addEventListener('change', () => {
-      if (document.getElementById('commit-select').value) {
-        this.loadManuscript();
-      }
-    });
-
     console.log('WriteSys Renderer initialized');
 
-    // Load commits and auto-load latest
-    await this.loadCommits();
+    // Auto-load latest migration on startup
+    await this.loadLatestMigration();
   },
 
   /**
-   * Load commits from API and populate dropdown
+   * Load latest migration from API and display manuscript
    */
-  async loadCommits() {
+  async loadLatestMigration() {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/commits?manuscript_id=4`);
-      const data = await response.json();
+      const repoPath = document.getElementById('repo-path').value.trim();
+      const filePath = document.getElementById('file-path').value.trim();
 
-      const select = document.getElementById('commit-select');
-      select.innerHTML = ''; // Clear loading message
-
-      if (data.commits && data.commits.length > 0) {
-        data.commits.forEach(commit => {
-          const option = document.createElement('option');
-          option.value = commit.commit_hash;
-
-          // Format: short hash (date - sentences)
-          const shortHash = commit.commit_hash.substring(0, 7);
-          const date = new Date(commit.processed_at).toLocaleDateString();
-          option.textContent = `${shortHash} (${date} - ${commit.sentence_count} sentences)`;
-          select.appendChild(option);
-        });
-
-        // Auto-select and load the latest commit (first in list)
-        select.value = data.commits[0].commit_hash;
-        await this.loadManuscript();
-      } else {
-        select.innerHTML = '<option value="">No commits found</option>';
+      if (!repoPath || !filePath) {
+        this.showStatus('Error: Missing repo or file path', 'error');
+        return;
       }
+
+      this.showStatus('Loading latest migration...');
+
+      // Fetch latest migration info
+      // TODO(Phase 1): manuscript_id=1 is hardcoded, will need multi-manuscript support later
+      const response = await fetch(`${this.apiBaseUrl}/migrations/latest?manuscript_id=1`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      const migration = await response.json();
+      this.currentMigrationID = migration.migration_id;
+      this.currentCommitHash = migration.commit_hash;
+      this.currentSegmenter = migration.segmenter;
+
+      // Update info bar
+      const shortHash = migration.commit_hash.substring(0, 7);
+      const date = new Date(migration.processed_at).toLocaleDateString();
+      document.getElementById('migration-info').textContent =
+        `${shortHash} (${migration.segmenter}, ${date}, ${migration.sentence_count} sentences)`;
+
+      console.log(`Loading migration ${migration.migration_id}: ${shortHash} with segmenter ${migration.segmenter}`);
+
+      // Load manuscript for this migration
+      await this.loadManuscriptByMigration(migration.migration_id, repoPath, filePath);
+
     } catch (error) {
-      console.error('Failed to load commits:', error);
-      document.getElementById('commit-select').innerHTML = '<option value="">Error loading commits</option>';
+      console.error('Failed to load latest migration:', error);
+      this.showStatus(`Error: ${error.message}`, 'error');
+      document.getElementById('migration-info').textContent = 'Error loading migration';
     }
   },
 
   /**
-   * Load manuscript from API
+   * Load manuscript from API by migration_id
    */
-  async loadManuscript() {
-    const commitHash = document.getElementById('commit-select').value.trim();
-    const repoPath = document.getElementById('repo-path').value.trim();
-    const filePath = document.getElementById('file-path').value.trim();
-
-    if (!commitHash || !repoPath || !filePath) {
-      this.showStatus('Error: Missing required fields', 'error');
-      return;
-    }
-
+  async loadManuscriptByMigration(migrationID, repoPath, filePath) {
     try {
       this.showStatus('Loading manuscript...');
 
       // Fetch manuscript data from API
-      const url = `${this.apiBaseUrl}/manuscripts/${commitHash}?repo=${encodeURIComponent(repoPath)}&file=${encodeURIComponent(filePath)}`;
+      const url = `${this.apiBaseUrl}/migrations/${migrationID}/manuscript?repo=${encodeURIComponent(repoPath)}&file=${encodeURIComponent(filePath)}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -100,7 +87,6 @@ const WriteSysRenderer = {
       this.currentManuscript = data.markdown;
       this.currentSentences = data.sentences;
       this.currentAnnotations = data.annotations;
-      this.currentCommitHash = commitHash;
 
       // Build sentence map (ID -> full text) for annotation sidebar
       this.sentenceMap = {};
@@ -108,7 +94,7 @@ const WriteSysRenderer = {
         this.sentenceMap[s.id] = s.text;
       });
 
-      console.log(`Loaded ${this.currentSentences.length} sentences from server`);
+      console.log(`Loaded ${this.currentSentences.length} sentences from migration ${migrationID}`);
 
       // Render the manuscript
       await this.renderManuscript();

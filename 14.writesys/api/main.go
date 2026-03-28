@@ -125,8 +125,16 @@ func (s *Server) setupRoutes() {
 
 	// API routes
 	s.router.Route("/api", func(r chi.Router) {
-		r.Get("/commits", s.handleGetCommits)
+		// Migration endpoints
+		r.Get("/migrations", s.handleGetMigrations)
+		r.Get("/migrations/latest", s.handleGetLatestMigration)
+		r.Get("/migrations/{migration_id}/manuscript", s.handleGetManuscriptByMigration)
+
+		// Legacy commit-based endpoints (backward compatible)
+		r.Get("/commits", s.handleGetMigrations) // Alias for migrations
 		r.Get("/manuscripts/{commit_hash}", s.handleGetManuscript)
+
+		// Annotation endpoints
 		r.Get("/annotations/{commit_hash}", s.handleGetAnnotationsByCommit)
 		r.Get("/annotations/sentence/{sentence_id}", s.handleGetAnnotationsBySentence)
 		r.Post("/annotations", s.handleCreateAnnotation)
@@ -159,13 +167,12 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GET /api/commits
-// Returns list of processed commits for a manuscript
-func (s *Server) handleGetCommits(w http.ResponseWriter, r *http.Request) {
+// GET /api/migrations
+// Returns list of migrations for a manuscript
+func (s *Server) handleGetMigrations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Get manuscript ID from query params
-	// For Phase 1, we'll use manuscript_id=1 as default or from query param
 	manuscriptIDStr := r.URL.Query().Get("manuscript_id")
 	manuscriptID := 1 // Default to first manuscript
 	if manuscriptIDStr != "" {
@@ -177,15 +184,17 @@ func (s *Server) handleGetCommits(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	commits, err := s.db.GetProcessedCommits(ctx, manuscriptID)
+	migrations, err := s.db.GetMigrations(ctx, manuscriptID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get commits: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to get migrations: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	// Convert to simplified response (don't send full sentence_id_array)
-	type CommitInfo struct {
+	type MigrationInfo struct {
+		MigrationID    int       `json:"migration_id"`
 		CommitHash     string    `json:"commit_hash"`
+		Segmenter      string    `json:"segmenter"`
 		BranchName     string    `json:"branch_name"`
 		ProcessedAt    time.Time `json:"processed_at"`
 		SentenceCount  int       `json:"sentence_count"`
@@ -194,23 +203,82 @@ func (s *Server) handleGetCommits(w http.ResponseWriter, r *http.Request) {
 		ChangesCount   int       `json:"changes_count"`
 	}
 
-	commitInfos := make([]CommitInfo, len(commits))
-	for i, c := range commits {
-		commitInfos[i] = CommitInfo{
-			CommitHash:     c.CommitHash,
-			BranchName:     c.BranchName,
-			ProcessedAt:    c.ProcessedAt,
-			SentenceCount:  c.SentenceCount,
-			AdditionsCount: c.AdditionsCount,
-			DeletionsCount: c.DeletionsCount,
-			ChangesCount:   c.ChangesCount,
+	migrationInfos := make([]MigrationInfo, len(migrations))
+	for i, m := range migrations {
+		migrationInfos[i] = MigrationInfo{
+			MigrationID:    m.MigrationID,
+			CommitHash:     m.CommitHash,
+			Segmenter:      m.Segmenter,
+			BranchName:     m.BranchName,
+			ProcessedAt:    m.ProcessedAt,
+			SentenceCount:  m.SentenceCount,
+			AdditionsCount: m.AdditionsCount,
+			DeletionsCount: m.DeletionsCount,
+			ChangesCount:   m.ChangesCount,
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"commits": commitInfos,
+		"migrations": migrationInfos,
 	})
+}
+
+// GET /api/migrations/latest
+// Returns the latest migration for a manuscript
+func (s *Server) handleGetLatestMigration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get manuscript ID from query params
+	manuscriptIDStr := r.URL.Query().Get("manuscript_id")
+	manuscriptID := 1 // Default to first manuscript
+	if manuscriptIDStr != "" {
+		var err error
+		manuscriptID, err = strconv.Atoi(manuscriptIDStr)
+		if err != nil {
+			http.Error(w, "Invalid manuscript_id", http.StatusBadRequest)
+			return
+		}
+	}
+
+	migration, err := s.db.GetLatestMigration(ctx, manuscriptID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get latest migration: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if migration == nil {
+		http.Error(w, "No migrations found", http.StatusNotFound)
+		return
+	}
+
+	// Return simplified response
+	type MigrationInfo struct {
+		MigrationID    int       `json:"migration_id"`
+		CommitHash     string    `json:"commit_hash"`
+		Segmenter      string    `json:"segmenter"`
+		BranchName     string    `json:"branch_name"`
+		ProcessedAt    time.Time `json:"processed_at"`
+		SentenceCount  int       `json:"sentence_count"`
+		AdditionsCount int       `json:"additions_count"`
+		DeletionsCount int       `json:"deletions_count"`
+		ChangesCount   int       `json:"changes_count"`
+	}
+
+	migrationInfo := MigrationInfo{
+		MigrationID:    migration.MigrationID,
+		CommitHash:     migration.CommitHash,
+		Segmenter:      migration.Segmenter,
+		BranchName:     migration.BranchName,
+		ProcessedAt:    migration.ProcessedAt,
+		SentenceCount:  migration.SentenceCount,
+		AdditionsCount: migration.AdditionsCount,
+		DeletionsCount: migration.DeletionsCount,
+		ChangesCount:   migration.ChangesCount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(migrationInfo)
 }
 
 // API Response types
@@ -247,7 +315,78 @@ func getFileFromGit(repoPath, commitHash, filePath string) (string, error) {
 	return string(output), nil
 }
 
-// GET /api/manuscripts/:commit_hash
+// GET /api/migrations/:migration_id/manuscript
+// Returns markdown content, sentence list, and annotations for a migration
+func (s *Server) handleGetManuscriptByMigration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	migrationIDStr := chi.URLParam(r, "migration_id")
+	migrationID, err := strconv.Atoi(migrationIDStr)
+	if err != nil {
+		http.Error(w, "Invalid migration_id", http.StatusBadRequest)
+		return
+	}
+
+	// Get migration info
+	migration, err := s.db.GetMigrationByID(ctx, migrationID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get migration: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if migration == nil {
+		http.Error(w, "Migration not found", http.StatusNotFound)
+		return
+	}
+
+	// Get manuscript metadata
+	repoPath := r.URL.Query().Get("repo")
+	filePath := r.URL.Query().Get("file")
+	if repoPath == "" || filePath == "" {
+		http.Error(w, "Missing repo or file query parameters", http.StatusBadRequest)
+		return
+	}
+
+	// Get markdown content from git using commit hash from migration
+	markdown, err := getFileFromGit(repoPath, migration.CommitHash, filePath)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get file from git: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get sentences from database by migration_id
+	sentences, err := s.db.GetSentencesByMigration(ctx, migrationID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get sentences: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to sentence info
+	sentenceInfos := make([]SentenceInfo, len(sentences))
+	for i, s := range sentences {
+		sentenceInfos[i] = SentenceInfo{
+			ID:        s.SentenceID,
+			Text:      s.Text,
+			WordCount: s.WordCount,
+		}
+	}
+
+	// Get annotations for this commit (still using commit_hash for now)
+	annotations, err := s.db.GetAnnotationsByCommit(ctx, migration.CommitHash)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get annotations: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response := ManuscriptResponse{
+		Markdown:    markdown,
+		Sentences:   sentenceInfos,
+		Annotations: annotations,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GET /api/manuscripts/:commit_hash (legacy endpoint for backward compatibility)
 // Returns markdown content, sentence list, and annotations
 func (s *Server) handleGetManuscript(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

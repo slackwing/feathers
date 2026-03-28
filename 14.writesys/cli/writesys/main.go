@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -24,6 +25,10 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
+
+	// Read segmenter version
+	segmenterVersion := getSegmenterVersion()
+	fmt.Printf("Using segmenter version: %s\n\n", segmenterVersion)
 
 	// Connect to database
 	db, err := database.NewDB(ctx)
@@ -66,14 +71,14 @@ func main() {
 		fmt.Printf("Found existing manuscript (ID: %d)\n\n", manuscript.ManuscriptID)
 	}
 
-	// Check for latest processed commit
-	latestCommit, err := db.GetLatestProcessedCommit(ctx, manuscript.ManuscriptID)
+	// Check for latest migration
+	latestMigration, err := db.GetLatestMigration(ctx, manuscript.ManuscriptID)
 	if err != nil {
-		log.Fatalf("Failed to get latest processed commit: %v", err)
+		log.Fatalf("Failed to get latest migration: %v", err)
 	}
 
-	if latestCommit == nil {
-		fmt.Println("No commits processed yet. Starting bootstrap...")
+	if latestMigration == nil {
+		fmt.Println("No migrations processed yet. Starting bootstrap...")
 		fmt.Println()
 
 		// Bootstrap mode: process the first commit
@@ -91,26 +96,36 @@ func main() {
 			}
 		}
 
-		if err := processCommit(ctx, db, manuscript, *commitHash, nil, repo, file); err != nil {
+		if err := processCommit(ctx, db, manuscript, *commitHash, nil, repo, file, segmenterVersion); err != nil {
 			log.Fatalf("Failed to process commit: %v", err)
 		}
 
 		fmt.Println("\n✓ Bootstrap complete!")
 	} else {
-		fmt.Printf("Latest processed commit: %s\n", latestCommit.CommitHash)
-		fmt.Printf("  Branch: %s\n", latestCommit.BranchName)
-		fmt.Printf("  Sentences: %d\n", latestCommit.SentenceCount)
-		fmt.Printf("  Processed: %s\n\n", latestCommit.ProcessedAt.Format("2006-01-02 15:04:05"))
+		fmt.Printf("Latest migration: %s (segmenter: %s)\n", latestMigration.CommitHash, latestMigration.Segmenter)
+		fmt.Printf("  Branch: %s\n", latestMigration.BranchName)
+		fmt.Printf("  Sentences: %d\n", latestMigration.SentenceCount)
+		fmt.Printf("  Processed: %s\n\n", latestMigration.ProcessedAt.Format("2006-01-02 15:04:05"))
 
 		// Process next commit with migration
 		if *commitHash == "" {
 			*commitHash = getLatestCommitHash(repo)
 		}
 
-		// Check if this commit is already processed
-		if *commitHash == latestCommit.CommitHash {
-			fmt.Println("This commit is already processed.")
+		// Check if this exact commit+segmenter combination is already processed
+		existingMigration, err := db.GetMigrationByCommitAndSegmenter(ctx, manuscript.ManuscriptID, *commitHash, segmenterVersion)
+		if err != nil {
+			log.Fatalf("Failed to check for existing migration: %v", err)
+		}
+
+		if existingMigration != nil {
+			fmt.Printf("This commit with segmenter %s is already processed (migration_id: %d).\n", segmenterVersion, existingMigration.MigrationID)
 			return
+		}
+
+		// Check if commit is same but segmenter version is different (re-segmentation)
+		if *commitHash == latestMigration.CommitHash && segmenterVersion != latestMigration.Segmenter {
+			fmt.Printf("Re-processing commit %s with new segmenter version (%s -> %s)\n", *commitHash, latestMigration.Segmenter, segmenterVersion)
 		}
 
 		if !*yes {
@@ -123,8 +138,8 @@ func main() {
 			}
 		}
 
-		parentHash := latestCommit.CommitHash
-		if err := processCommitWithMigration(ctx, db, manuscript, *commitHash, &parentHash, repo, file); err != nil {
+		parentMigrationID := latestMigration.MigrationID
+		if err := processCommitWithMigration(ctx, db, manuscript, *commitHash, &parentMigrationID, repo, file, segmenterVersion); err != nil {
 			log.Fatalf("Failed to process commit: %v", err)
 		}
 
@@ -154,6 +169,35 @@ func isGitRepo(path string) bool {
 	gitDir := filepath.Join(path, ".git")
 	info, err := os.Stat(gitDir)
 	return err == nil && info.IsDir()
+}
+
+func getSegmenterVersion() string {
+	// Try to read VERSION.json from current directory
+	versionFile := "VERSION.json"
+	data, err := os.ReadFile(versionFile)
+	if err != nil {
+		// Default to 1.0.0 if file doesn't exist
+		return "segman-1.0.0"
+	}
+
+	var versionData struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(data, &versionData); err != nil {
+		log.Printf("Warning: Failed to parse %s: %v (using default)\n", versionFile, err)
+		return "segman-1.0.0"
+	}
+
+	if versionData.Version == "" {
+		return "segman-1.0.0"
+	}
+
+	// Ensure it has the "segman-" prefix
+	if !strings.HasPrefix(versionData.Version, "segman-") {
+		return "segman-" + versionData.Version
+	}
+
+	return versionData.Version
 }
 
 func getLatestCommitHash(repo string) string {
@@ -188,9 +232,10 @@ func processCommit(
 	db *database.DB,
 	manuscript *models.Manuscript,
 	commitHash string,
-	parentCommitHash *string,
+	parentMigrationID *int,
 	repoPath string,
 	filePath string,
+	segmenterVersion string,
 ) error {
 	fmt.Printf("Processing commit %s...\n", commitHash)
 
@@ -206,44 +251,50 @@ func processCommit(
 	sentences := tokenizer.SplitIntoSentences(content)
 	fmt.Printf("%d sentences found\n", len(sentences))
 
-	// Generate sentence IDs and count words
-	fmt.Print("  Generating sentence IDs... ")
-	var sentenceModels []models.Sentence
-	var sentenceIDs []string
+	// Create migration record first (required by foreign key)
+	fmt.Print("  Creating migration record... ")
+	branchName := getBranchName(repoPath)
 
+	// Generate sentence IDs temporarily to get count
+	var sentenceIDs []string
+	for i, sentText := range sentences {
+		sentID := sentence.GenerateSentenceID(sentText, i, commitHash)
+		sentenceIDs = append(sentenceIDs, sentID)
+	}
+
+	migration := &models.Migration{
+		ManuscriptID:      manuscript.ManuscriptID,
+		CommitHash:        commitHash,
+		Segmenter:         segmenterVersion,
+		ParentMigrationID: parentMigrationID,
+		BranchName:        branchName,
+		SentenceCount:     len(sentences),
+		AdditionsCount:    len(sentences), // Bootstrap: all are additions
+		DeletionsCount:    0,
+		ChangesCount:      0,
+		SentenceIDArray:   sentenceIDs,
+	}
+
+	if err := db.CreateMigration(ctx, migration); err != nil {
+		return fmt.Errorf("failed to create migration: %w", err)
+	}
+	fmt.Printf("Done (migration_id: %d)\n", migration.MigrationID)
+
+	// Generate sentence models with migration_id
+	fmt.Print("  Generating sentence models... ")
+	var sentenceModels []models.Sentence
 	for i, sentText := range sentences {
 		sentID := sentence.GenerateSentenceID(sentText, i, commitHash)
 		wordCount := sentence.CountWords(sentText)
 
 		sentenceModels = append(sentenceModels, models.Sentence{
-			SentenceID: sentID,
-			CommitHash: commitHash,
-			Text:       sentText,
-			WordCount:  wordCount,
-			Ordinal:    i,
+			SentenceID:  sentID,
+			MigrationID: migration.MigrationID,
+			CommitHash:  commitHash,
+			Text:        sentText,
+			WordCount:   wordCount,
+			Ordinal:     i,
 		})
-
-		sentenceIDs = append(sentenceIDs, sentID)
-	}
-	fmt.Println("Done")
-
-	// Create processed commit record first (required by foreign key)
-	fmt.Print("  Creating processed commit record... ")
-	branchName := getBranchName(repoPath)
-	processedCommit := &models.ProcessedCommit{
-		CommitHash:       commitHash,
-		ManuscriptID:     manuscript.ManuscriptID,
-		ParentCommitHash: parentCommitHash,
-		BranchName:       branchName,
-		SentenceCount:    len(sentences),
-		AdditionsCount:   len(sentences), // Bootstrap: all are additions
-		DeletionsCount:   0,
-		ChangesCount:     0,
-		SentenceIDArray:  sentenceIDs,
-	}
-
-	if err := db.CreateProcessedCommit(ctx, processedCommit); err != nil {
-		return fmt.Errorf("failed to create processed commit: %w", err)
 	}
 	fmt.Println("Done")
 
@@ -268,15 +319,16 @@ func processCommitWithMigration(
 	db *database.DB,
 	manuscript *models.Manuscript,
 	commitHash string,
-	parentCommitHash *string,
+	parentMigrationID *int,
 	repoPath string,
 	filePath string,
+	segmenterVersion string,
 ) error {
 	fmt.Printf("Processing commit %s with migration...\n", commitHash)
 
-	// Get old sentences from parent commit
-	fmt.Print("  Loading sentences from parent commit... ")
-	oldSentences, err := db.GetSentencesByCommit(ctx, *parentCommitHash)
+	// Get old sentences from parent migration
+	fmt.Print("  Loading sentences from parent migration... ")
+	oldSentences, err := db.GetSentencesByMigration(ctx, *parentMigrationID)
 	if err != nil {
 		return fmt.Errorf("failed to get old sentences: %w", err)
 	}
@@ -300,24 +352,13 @@ func processCommitWithMigration(
 	newSentenceTexts := tokenizer.SplitIntoSentences(content)
 	fmt.Printf("%d sentences found\n", len(newSentenceTexts))
 
-	// Generate IDs for new sentences
+	// Generate IDs for new sentences (first pass to get IDs for diff)
 	fmt.Print("  Generating sentence IDs... ")
-	var newSentenceModels []models.Sentence
 	var newSentenceIDs []string
 	newSentenceMap := make(map[string]string)
 
 	for i, sentText := range newSentenceTexts {
 		sentID := sentence.GenerateSentenceID(sentText, i, commitHash)
-		wordCount := sentence.CountWords(sentText)
-
-		newSentenceModels = append(newSentenceModels, models.Sentence{
-			SentenceID: sentID,
-			CommitHash: commitHash,
-			Text:       sentText,
-			WordCount:  wordCount,
-			Ordinal:    i,
-		})
-
 		newSentenceIDs = append(newSentenceIDs, sentID)
 		newSentenceMap[sentID] = sentText
 	}
@@ -368,23 +409,42 @@ func processCommitWithMigration(
 		}
 	}
 
-	// Create processed commit record
-	fmt.Print("\n  Creating processed commit record... ")
+	// Create migration record
+	fmt.Print("\n  Creating migration record... ")
 	branchName := getBranchName(repoPath)
-	processedCommit := &models.ProcessedCommit{
-		CommitHash:       commitHash,
-		ManuscriptID:     manuscript.ManuscriptID,
-		ParentCommitHash: parentCommitHash,
-		BranchName:       branchName,
-		SentenceCount:    len(newSentenceTexts),
-		AdditionsCount:   len(diff.Added),
-		DeletionsCount:   len(diff.Deleted),
-		ChangesCount:     len(diff.Deleted), // Changes = sentences that needed migration
-		SentenceIDArray:  newSentenceIDs,
+	migration := &models.Migration{
+		ManuscriptID:      manuscript.ManuscriptID,
+		CommitHash:        commitHash,
+		Segmenter:         segmenterVersion,
+		ParentMigrationID: parentMigrationID,
+		BranchName:        branchName,
+		SentenceCount:     len(newSentenceTexts),
+		AdditionsCount:    len(diff.Added),
+		DeletionsCount:    len(diff.Deleted),
+		ChangesCount:      len(diff.Deleted), // Changes = sentences that needed migration
+		SentenceIDArray:   newSentenceIDs,
 	}
 
-	if err := db.CreateProcessedCommit(ctx, processedCommit); err != nil {
-		return fmt.Errorf("failed to create processed commit: %w", err)
+	if err := db.CreateMigration(ctx, migration); err != nil {
+		return fmt.Errorf("failed to create migration: %w", err)
+	}
+	fmt.Printf("Done (migration_id: %d)\n", migration.MigrationID)
+
+	// Generate sentence models with migration_id
+	fmt.Print("  Generating sentence models... ")
+	var newSentenceModels []models.Sentence
+	for i, sentText := range newSentenceTexts {
+		sentID := sentence.GenerateSentenceID(sentText, i, commitHash)
+		wordCount := sentence.CountWords(sentText)
+
+		newSentenceModels = append(newSentenceModels, models.Sentence{
+			SentenceID:  sentID,
+			MigrationID: migration.MigrationID,
+			CommitHash:  commitHash,
+			Text:        sentText,
+			WordCount:   wordCount,
+			Ordinal:     i,
+		})
 	}
 	fmt.Println("Done")
 
@@ -450,9 +510,9 @@ func processCommitWithMigration(
 	}
 	fmt.Printf("\n✓ Processed %d sentences from commit %s\n", len(newSentenceTexts), shortHash)
 	fmt.Printf("  Added: %d, Deleted: %d, Changed: %d\n",
-		processedCommit.AdditionsCount,
-		processedCommit.DeletionsCount,
-		processedCommit.ChangesCount)
+		migration.AdditionsCount,
+		migration.DeletionsCount,
+		migration.ChangesCount)
 	if annotationsMigrated > 0 {
 		fmt.Printf("  Annotations Migrated: %d\n", annotationsMigrated)
 	}

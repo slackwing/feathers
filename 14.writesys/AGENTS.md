@@ -67,6 +67,59 @@ When you discover a bug or make a mistake:
 
 This creates a growing safety net that makes the codebase more robust over time.
 
+## Frontend Testing & Verification
+
+**CRITICAL: Always verify frontend actually works, not just API endpoints**
+
+When working on frontend or API changes, you MUST verify the actual browser experience:
+
+### How to Verify Frontend (AI Agent Instructions)
+
+**Problem:** AI agents cannot directly open a browser, but can verify frontend works by checking API server logs.
+
+**Solution:** Use API server logs to verify frontend requests succeed:
+
+1. **Start API with visible logs:**
+   ```bash
+   ./bin/api  # Will show all HTTP requests
+   ```
+
+2. **User opens browser to http://localhost:5003/**
+
+3. **Check API logs for errors:**
+   ```
+   ✅ Good: "GET /api/migrations/latest?manuscript_id=1" - 200
+   ❌ Bad:  "GET /api/migrations/latest?manuscript_id=1" - 404
+   ```
+
+4. **Common Frontend Issues to Check:**
+   - **Wrong manuscript_id:** Frontend JS has hardcoded `manuscript_id` - verify it matches database
+   - **API endpoint 404:** Check route exists in `api/main.go` setupRoutes()
+   - **CORS errors:** Check CORS middleware allows requests
+   - **Missing files:** Check static files served from `web/` directory
+
+5. **How to Debug Frontend Issues:**
+   ```bash
+   # Check what manuscript IDs exist
+   docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "SELECT manuscript_id FROM manuscript;"
+
+   # Watch API logs in real-time
+   tail -f api.log  # if running in background
+
+   # Test API endpoints directly
+   curl -s "http://localhost:5003/api/migrations/latest?manuscript_id=1" | jq .
+   ```
+
+6. **Frontend Configuration to Check:**
+   - `web/js/renderer.js` - Check `manuscript_id` in fetch() calls
+   - `web/index.html` - Check default repo/file paths
+   - `api/main.go` - Check FileServer route serves `/web` directory
+
+**REMEMBER:**
+- Testing API with curl ≠ Frontend works
+- Always ask user to verify in browser OR check API logs for frontend requests
+- If user reports "error loading", check API logs for 404s or 500s
+
 ## Common Tasks
 
 ### Working on the CLI (`writesys` command)

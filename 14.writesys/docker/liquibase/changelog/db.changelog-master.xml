@@ -8,7 +8,7 @@
     <!-- Include all changelog files in order -->
     <include file="001-create-user-table.xml"/>
     <include file="002-create-manuscript-table.xml"/>
-    <include file="003-create-processed-commit-table.xml"/>
+    <include file="003-create-migration-table.xml"/>
     <include file="004-create-sentence-table.xml"/>
     <include file="005-create-annotation-table.xml"/>
     <include file="006-create-annotation-version-table.xml"/>
