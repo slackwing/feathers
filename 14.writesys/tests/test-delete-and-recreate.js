@@ -4,8 +4,12 @@
  */
 
 const { chromium } = require('playwright');
+const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
 
 async function testDeleteAndRecreate() {
+  // Clean up any existing annotations before test
+  await cleanupTestAnnotations();
+
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
@@ -18,13 +22,19 @@ async function testDeleteAndRecreate() {
     }
   });
 
+  // Auto-accept confirmation dialogs for deletion
   page.on('dialog', async dialog => {
-    alerts.push(dialog.message());
-    console.log('❌ ALERT:', dialog.message());
-    await dialog.dismiss();
+    if (dialog.message().includes('Delete this annotation?')) {
+      console.log('   Accepting deletion confirmation');
+      await dialog.accept();
+    } else {
+      alerts.push(dialog.message());
+      console.log('❌ ALERT:', dialog.message());
+      await dialog.dismiss();
+    }
   });
 
-  await page.goto('http://localhost:5003');
+  await page.goto(TEST_URL);
   await page.waitForTimeout(8000);
 
   console.log('=== Test: Delete annotation and create new one ===\n');
@@ -106,6 +116,9 @@ async function testDeleteAndRecreate() {
   }
 
   await browser.close();
+
+  // Clean up annotations after test
+  await cleanupTestAnnotations();
 
   if (!hasGreen || alerts.length > 0) {
     console.log('\n❌ TEST FAILED: Cannot create new annotation after deleting old one');

@@ -5,8 +5,12 @@
 
 const { chromium } = require('playwright');
 const { exit } = require('process');
+const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
 
 async function runTests() {
+  // Clean up any existing annotations before test
+  await cleanupTestAnnotations();
+
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
@@ -27,7 +31,7 @@ async function runTests() {
     console.log('=== WriteSys UI Test Suite ===\n');
 
     // Load the page
-    await page.goto('http://localhost:5003');
+    await page.goto(TEST_URL);
     await page.waitForTimeout(8000); // Wait for auto-load to complete
 
     // Test 1: Controls visible on page load
@@ -229,6 +233,9 @@ async function runTests() {
     console.log(`Total: ${passed + failed}`);
     console.log(`\nScreenshot saved to tests/screenshots/ui-integration.png`);
 
+    // Clean up annotations after test
+    await cleanupTestAnnotations();
+
     if (failed > 0) {
       console.log('\n❌ Some tests failed');
       await browser.close();
@@ -241,6 +248,7 @@ async function runTests() {
 
   } catch (error) {
     console.error('\n❌ Test suite crashed:', error);
+    await cleanupTestAnnotations(); // Cleanup even on crash
     await browser.close();
     exit(1);
   }

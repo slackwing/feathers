@@ -18,6 +18,11 @@ const WriteSysRenderer = {
   async init() {
     console.log('WriteSys Renderer initialized');
 
+    // Get manuscript_id from URL parameter, default to 1
+    const urlParams = new URLSearchParams(window.location.search);
+    this.manuscriptId = parseInt(urlParams.get('manuscript_id') || '1', 10);
+    console.log(`Using manuscript_id: ${this.manuscriptId}`);
+
     // Auto-load latest migration on startup
     await this.loadLatestMigration();
   },
@@ -38,8 +43,7 @@ const WriteSysRenderer = {
       this.showStatus('Loading latest migration...');
 
       // Fetch latest migration info
-      // TODO(Phase 1): manuscript_id=1 is hardcoded, will need multi-manuscript support later
-      const response = await fetch(`${this.apiBaseUrl}/migrations/latest?manuscript_id=1`);
+      const response = await fetch(`${this.apiBaseUrl}/migrations/latest?manuscript_id=${this.manuscriptId}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${await response.text()}`);

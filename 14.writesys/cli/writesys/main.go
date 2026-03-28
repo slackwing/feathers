@@ -83,7 +83,7 @@ func main() {
 
 		// Bootstrap mode: process the first commit
 		if *commitHash == "" {
-			*commitHash = getLatestCommitHash(repo)
+			*commitHash = getLatestCommitHash(repo, file)
 		}
 
 		if !*yes {
@@ -109,7 +109,7 @@ func main() {
 
 		// Process next commit with migration
 		if *commitHash == "" {
-			*commitHash = getLatestCommitHash(repo)
+			*commitHash = getLatestCommitHash(repo, file)
 		}
 
 		// Check if this exact commit+segmenter combination is already processed
@@ -200,13 +200,18 @@ func getSegmenterVersion() string {
 	return versionData.Version
 }
 
-func getLatestCommitHash(repo string) string {
-	cmd := exec.Command("git", "-C", repo, "rev-parse", "HEAD")
+func getLatestCommitHash(repo, filePath string) string {
+	// Get the latest commit that modified this specific file
+	cmd := exec.Command("git", "-C", repo, "log", "-n", "1", "--format=%H", "--", filePath)
 	output, err := cmd.Output()
 	if err != nil {
-		log.Fatalf("Failed to get latest commit: %v", err)
+		log.Fatalf("Failed to get latest commit for file %s: %v", filePath, err)
 	}
-	return strings.TrimSpace(string(output))
+	hash := strings.TrimSpace(string(output))
+	if hash == "" {
+		log.Fatalf("No commits found for file %s", filePath)
+	}
+	return hash
 }
 
 func getBranchName(repo string) string {
@@ -477,15 +482,26 @@ func processCommitWithMigration(
 				continue
 			}
 
-			// Create new version pointing to new sentence
+			// Create updated annotation pointing to new sentence
 			confidence := confidenceMap[oldSentenceID]
+			updatedAnnotation := &models.Annotation{
+				SentenceID: newSentenceID,
+				Color:      latestVersion.Color,
+				Note:       latestVersion.Note,
+				Priority:   latestVersion.Priority,
+				Flagged:    latestVersion.Flagged,
+			}
+
 			newVersion := &models.AnnotationVersion{
 				SentenceID:          newSentenceID,
-				Payload:             latestVersion.Payload,
+				Color:               latestVersion.Color,
+				Note:                latestVersion.Note,
+				Priority:            latestVersion.Priority,
+				Flagged:             latestVersion.Flagged,
 				MigrationConfidence: &confidence,
 			}
 
-			if err := db.UpdateAnnotation(ctx, annotation.AnnotationID, newVersion); err != nil {
+			if err := db.UpdateAnnotation(ctx, annotation.AnnotationID, updatedAnnotation, newVersion); err != nil {
 				fmt.Printf("\n    Warning: Failed to migrate annotation %d: %v\n", annotation.AnnotationID, err)
 				annotationsFailed++
 			} else {

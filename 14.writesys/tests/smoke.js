@@ -1,10 +1,11 @@
 const { chromium } = require('playwright');
+const { TEST_URL } = require('./test-utils');
 
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1400 } });
 
-  await page.goto('http://localhost:5003');
+  await page.goto(TEST_URL);
   
   // Wait for commits to load and page to render
   await page.waitForTimeout(8000);
