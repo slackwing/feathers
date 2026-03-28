@@ -7,18 +7,28 @@ All integration tests now run on a separate test manuscript (`ui-test.manuscript
 ## Test Manuscript Setup
 
 ### Manuscripts in Database:
-- **manuscript_id=1**: `manuscripts/test-repo/the-wildfire.manuscript` (YOUR WORKING DOCUMENT)
+- **manuscript_id=1**: `the-wildfire.manuscript` (YOUR WORKING DOCUMENT)
+  - Repo path: `/home/slackwing/src/worktree-writesys/14.writesys/manuscripts/test-repo` (absolute)
   - Commit: 24575cf8242aa7eb31293441ff5e2239e0a7bffd
-  - Has 31 annotations (your work)
   - **Tests NEVER touch this manuscript**
 
-- **manuscript_id=2**: `manuscripts/test-repo/ui-test.manuscript` (TEST MANUSCRIPT)
+- **manuscript_id=2**: `ui-test.manuscript` (TEST MANUSCRIPT)
+  - Repo path: `/home/slackwing/src/worktree-writesys/14.writesys/manuscripts/test-repo` (absolute)
   - Commit: 6bb63c0f5dbdb06bb9456e404d2ec26cacbf51bd
   - Frozen for testing purposes
   - **All tests run on this manuscript**
   - Annotations are cleaned up before/after each test run
 
 ## How It Works
+
+### Absolute Path Handling
+The CLI automatically converts all repository paths to absolute paths:
+- Accepts relative paths (e.g., `manuscripts/test-repo`)
+- Accepts current directory (`.`)
+- Accepts tilde expansion (`~/manuscripts/test-repo`)
+- Accepts absolute paths (e.g., `/home/user/manuscripts/test-repo`)
+- All paths are normalized to absolute paths and stored in the database
+- This ensures consistent manuscript identification across different working directories
 
 ### Per-File Commit Tracking
 The CLI now tracks commits per manuscript file, not per repository HEAD:

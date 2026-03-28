@@ -49,6 +49,9 @@ func main() {
 		repo, file = promptForManuscript()
 	}
 
+	// Normalize repo path (expand ~, convert relative to absolute)
+	repo = normalizeRepoPath(repo)
+
 	// Validate repository
 	if !isGitRepo(repo) {
 		log.Fatalf("Error: %s is not a git repository", repo)
@@ -163,6 +166,27 @@ func promptForManuscript() (string, string) {
 	fmt.Scanln(&file)
 
 	return repo, file
+}
+
+// normalizeRepoPath converts relative paths to absolute paths
+// and expands ~ to home directory
+func normalizeRepoPath(path string) string {
+	// Expand ~ to home directory
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatalf("Failed to get home directory: %v", err)
+		}
+		path = filepath.Join(home, path[2:])
+	}
+
+	// Convert to absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		log.Fatalf("Failed to resolve absolute path for %s: %v", path, err)
+	}
+
+	return absPath
 }
 
 func isGitRepo(path string) bool {

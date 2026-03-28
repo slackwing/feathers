@@ -62,10 +62,35 @@ A sentence-level annotation system for tracking highlights, tags, and tasks in M
 
 ### Processing Your First Commit (Bootstrap)
 
+The CLI accepts both relative and absolute paths for the repository. All paths are automatically converted to absolute paths internally.
+
 ```bash
+# Using relative path (from current directory)
 ./bin/writesys \
-  --repo /path/to/your/manuscript-repo \
-  --file your-story.md \
+  --repo manuscripts/test-repo \
+  --file your-story.manuscript \
+  --commit abc123 \
+  --yes
+
+# Using current directory
+cd manuscripts/test-repo
+../../bin/writesys \
+  --repo . \
+  --file your-story.manuscript \
+  --commit abc123 \
+  --yes
+
+# Using absolute path
+./bin/writesys \
+  --repo /home/user/manuscripts/test-repo \
+  --file your-story.manuscript \
+  --commit abc123 \
+  --yes
+
+# Using tilde expansion
+./bin/writesys \
+  --repo ~/manuscripts/test-repo \
+  --file your-story.manuscript \
   --commit abc123 \
   --yes
 ```
@@ -188,10 +213,10 @@ Processing commit def456 with migration...
 
 ### Tables
 
-- **manuscript** - Tracks manuscript metadata (repo_path, file_path)
-- **processed_commit** - Records each processed git commit with statistics
+- **manuscript** - Tracks manuscript metadata (repo_path as absolute path, file_path)
+- **migration** - Records each processed git commit with statistics
 - **sentence** - Stores sentence instances (text, word_count, ordinal)
-- **annotation** - Annotation metadata (type, created_by, deleted_at)
+- **annotation** - Annotation metadata (sentence_id, color, note, created_by, deleted_at)
 - **annotation_version** - Version history with migration confidence
 - **user** - User management (Phase 1: hardcoded "andrew")
 
@@ -202,6 +227,8 @@ Processing commit def456 with migration...
 3. **Inline migration history** - `sentence_id_history` JSONB array in annotation_version
 4. **Append-only versions** - Never delete, only soft-delete
 5. **Git as source of truth** - Markdown stored in git, not database
+6. **Absolute paths in database** - CLI accepts relative paths (., .., ~/), converts to absolute
+7. **Per-file commit tracking** - Tracks last commit per manuscript file, not repo HEAD
 
 ## Testing
 
@@ -417,6 +444,6 @@ Andrew (with Claude Code)
 
 ---
 
-**Last Updated:** 2026-03-18
+**Last Updated:** 2026-03-28
 **Version:** 0.1.0-dev
 **Status:** Phase 1 Complete
