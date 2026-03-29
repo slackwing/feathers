@@ -6,7 +6,7 @@
   <title>WriteSys - Book Annotation System</title>
 
   <!-- Book-style CSS -->
-  <link rel="stylesheet" href="/css/book.css?v=38">
+  <link rel="stylesheet" href="/css/book.css?v=39">
 
   <!-- Paged.js for book pagination - loaded but not auto-run -->
   <script>
@@ -47,6 +47,18 @@
         <div class="color-circle" data-color="orange" style="background-color: #FFD8A8;" title="Orange"></div>
       </div>
 
+      <!-- Note textbox -->
+      <div id="note-container">
+        <textarea id="note-input" placeholder="Optional note..." rows="3"></textarea>
+      </div>
+
+      <!-- Tags section -->
+      <div id="tags-container">
+        <div id="tags-list">
+          <!-- Tag chips will appear here -->
+        </div>
+      </div>
+
       <!-- Annotation list -->
       <div id="margin-annotations">
         <!-- Annotations will appear here -->
@@ -73,7 +85,7 @@
   <script src="/js/segmenter.js"></script>
 
   <!-- Application scripts -->
-  <script src="/js/renderer.js?v=59"></script>
-  <script src="/js/annotations.js?v=16"></script>
+  <script src="/js/renderer.js?v=62"></script>
+  <script src="/js/annotations.js?v=31"></script>
 </body>
 </html>

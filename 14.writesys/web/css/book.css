@@ -291,11 +291,10 @@ p.indented {
 /* Annotation margin container - floats in right grey margin */
 #annotation-margin {
   position: fixed;
-  top: 60px; /* Below controls */
+  top: calc(33vh + 60px); /* Center third vertically (below controls) */
   right: 0;
   width: 300px; /* Initial width, will be adjusted by JS */
   max-width: calc((100vw - 576px) / 2 - 40px); /* Leave 40px padding from page edge */
-  height: calc(100vh - 60px);
   z-index: 100;
   pointer-events: none; /* Allow clicks through to page */
   overflow: visible;
@@ -304,19 +303,16 @@ p.indented {
 .annotation-margin-inner {
   position: relative;
   width: 100%;
-  height: 100%;
   pointer-events: auto; /* Re-enable clicks on actual content */
-  padding-left: 16px;
-  padding-right: 8px;
-  padding-top: 16px;
+  padding: 16px 12px;
 }
 
 /* Color palette for highlights */
 .color-palette {
   display: none; /* Hidden by default */
-  justify-content: space-between;
-  gap: 4px;
-  margin-bottom: 20px;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
   padding: 8px 0;
 }
 
@@ -325,8 +321,8 @@ p.indented {
 }
 
 .color-circle {
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid #ddd;
   cursor: pointer;
@@ -369,6 +365,99 @@ p.indented {
 
 .color-circle[data-color="orange"].active {
   outline-color: #E6A85C; /* Darker orange */
+}
+
+/* Note textbox */
+#note-container {
+  display: none; /* Hidden by default */
+  margin-bottom: 16px;
+}
+
+#note-container.visible {
+  display: block;
+}
+
+#note-input {
+  width: 100%;
+  font-family: "Helvetica", sans-serif;
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 60px;
+  background: white;
+  color: #333;
+}
+
+#note-input:focus {
+  outline: none;
+  border-color: #999;
+}
+
+#note-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* Tags section */
+#tags-container {
+  display: none; /* Hidden by default */
+  margin-bottom: 16px;
+}
+
+#tags-container.visible {
+  display: block;
+}
+
+#tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #e0e0e0;
+  border-radius: 16px;
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  color: #333;
+  cursor: default;
+  transition: background 0.2s;
+}
+
+.tag-chip:hover {
+  background: #d0d0d0;
+}
+
+.tag-chip-remove {
+  cursor: pointer;
+  font-weight: bold;
+  color: #666;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.tag-chip-remove:hover {
+  color: #333;
+}
+
+.tag-chip.new-tag {
+  background: transparent;
+  border: 1px dashed #ccc;
+  color: #999;
+  cursor: pointer;
+}
+
+.tag-chip.new-tag:hover {
+  background: #f5f5f5;
+  border-color: #999;
+  color: #666;
 }
 
 /* Annotation item styling */

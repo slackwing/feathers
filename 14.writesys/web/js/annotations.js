@@ -6,6 +6,15 @@ const WriteSysAnnotations = {
   currentSentenceId: null,
   currentSentenceText: '',
   annotations: [],
+  autoSaveTimeout: null,
+
+  // Session state for default-to-blue logic
+  currentAnnotationSession: {
+    sentenceId: null,
+    autoDefaultedToBlue: false,
+    originalColor: null,
+    lastKeystroke: null
+  },
 
   /**
    * Initialize annotations module
@@ -37,6 +46,12 @@ const WriteSysAnnotations = {
 
     // Initialize color palette
     this.initColorPalette();
+
+    // Initialize note input
+    this.initNoteInput();
+
+    // Initialize tags
+    this.initTags();
 
     console.log('WriteSys Annotations initialized');
   },
@@ -97,9 +112,17 @@ const WriteSysAnnotations = {
         await this.deleteAnnotation(existingAnnotation.annotation_id, true);
         console.log(`Removed annotation ${existingAnnotation.annotation_id}`);
       } else if (existingAnnotation) {
+        // Get current note text before updating
+        const noteInput = document.getElementById('note-input');
+        const noteText = noteInput ? noteInput.value.trim() : '';
+
         // Update existing annotation to new color
         await this.updateAnnotationColor(existingAnnotation.annotation_id, sentenceId, color);
         console.log(`Updated annotation ${existingAnnotation.annotation_id} to color: ${color}`);
+
+        // Update local annotation object
+        existingAnnotation.color = color;
+        existingAnnotation.note = noteText || null;  // Also save the note
 
         // Update active circle
         document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
@@ -109,8 +132,22 @@ const WriteSysAnnotations = {
         this.applyHighlightToSentence(selectedSentence, color);
       } else {
         // Create new annotation
-        await this.createHighlightAnnotation(sentenceId, color);
+        const apiResponse = await this.createHighlightAnnotation(sentenceId, color);
         console.log(`Created new annotation for sentence ${sentenceId} with color: ${color}`);
+
+        // Construct full annotation object for local array
+        const newAnnotation = {
+          annotation_id: apiResponse.annotation_id,
+          sentence_id: sentenceId,
+          color: color,
+          note: null,
+          priority: 'none',
+          flagged: false,
+          tags: []
+        };
+
+        // Add to local annotations array
+        this.annotations.push(newAnnotation);
 
         // Update active circle
         document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
@@ -169,15 +206,22 @@ const WriteSysAnnotations = {
    * Update annotation color
    */
   async updateAnnotationColor(annotationId, sentenceId, color) {
+    // Get current note text from input field
+    const noteInput = document.getElementById('note-input');
+    const noteText = noteInput ? noteInput.value.trim() : '';
+
+    // Get annotation from local array to preserve other fields
+    const annotation = this.annotations.find(a => a.annotation_id === annotationId);
+
     const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sentence_id: sentenceId,
         color: color,
-        note: null,
-        priority: 'none',
-        flagged: false
+        note: noteText || null,
+        priority: annotation?.priority || 'none',
+        flagged: annotation?.flagged || false
       })
     });
 
@@ -249,10 +293,30 @@ const WriteSysAnnotations = {
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
+    // Reset session state
+    this.currentAnnotationSession = {
+      sentenceId: sentenceId,
+      autoDefaultedToBlue: false,
+      originalColor: null,
+      lastKeystroke: null
+    };
+
     // Show color palette
     const palette = document.getElementById('color-palette');
     if (palette) {
       palette.classList.add('visible');
+    }
+
+    // Show note container
+    const noteContainer = document.getElementById('note-container');
+    if (noteContainer) {
+      noteContainer.classList.add('visible');
+    }
+
+    // Show tags container
+    const tagsContainer = document.getElementById('tags-container');
+    if (tagsContainer) {
+      tagsContainer.classList.add('visible');
     }
 
     // Fetch annotations for this sentence to highlight current color in palette
@@ -275,6 +339,22 @@ const WriteSysAnnotations = {
         if (activeCircle) {
           activeCircle.classList.add('active');
         }
+
+        // Populate note textbox
+        const noteInput = document.getElementById('note-input');
+        if (noteInput) {
+          noteInput.value = annotation.note || '';
+        }
+
+        // Load and render tags
+        this.renderTags(annotation.tags || []);
+      } else {
+        // No annotation - clear note and tags
+        const noteInput = document.getElementById('note-input');
+        if (noteInput) {
+          noteInput.value = '';
+        }
+        this.renderTags([]);
       }
 
     } catch (error) {
@@ -292,7 +372,7 @@ const WriteSysAnnotations = {
   /**
    * Delete annotation
    */
-  async deleteAnnotation(annotationId, skipConfirm = false) {
+  async deleteAnnotation(annotationId, skipConfirm = false, skipUnselect = false) {
     if (!skipConfirm && !confirm('Delete this annotation?')) {
       return;
     }
@@ -308,8 +388,25 @@ const WriteSysAnnotations = {
 
       console.log('Annotation deleted:', annotationId);
 
-      // Unselect the sentence (closes annotation menu)
-      this.unselectSentence();
+      // Remove from local annotations array
+      this.annotations = this.annotations.filter(a => a.annotation_id !== annotationId);
+
+      // Remove highlight from UI
+      const sentenceId = this.currentSentenceId;
+      if (sentenceId) {
+        document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`).forEach(el => {
+          el.classList.remove('highlight-yellow', 'highlight-green', 'highlight-blue',
+                             'highlight-purple', 'highlight-red', 'highlight-orange');
+        });
+      }
+
+      // Unselect the sentence (closes annotation menu) unless skipped
+      if (!skipUnselect) {
+        this.unselectSentence();
+      } else {
+        // Clear active circle since no annotation
+        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+      }
 
     } catch (error) {
       console.error('Failed to delete annotation:', error);
@@ -318,13 +415,284 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Initialize note input handling
+   */
+  initNoteInput() {
+    const noteInput = document.getElementById('note-input');
+    if (!noteInput) return;
+
+    noteInput.addEventListener('input', (e) => {
+      this.handleNoteInput(e);
+    });
+
+    noteInput.addEventListener('blur', () => {
+      // Save immediately on blur
+      this.saveAnnotation();
+    });
+  },
+
+  /**
+   * Initialize tags handling
+   */
+  initTags() {
+    const tagsContainer = document.getElementById('tags-list');
+    if (!tagsContainer) return;
+
+    // Event delegation for tag clicks
+    tagsContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tag-chip-remove')) {
+        const tagChip = e.target.closest('.tag-chip');
+        const tagName = tagChip.dataset.tag;
+        this.removeTag(tagName);
+      } else if (e.target.classList.contains('new-tag') || e.target.closest('.new-tag')) {
+        this.addNewTag();
+      }
+    });
+  },
+
+  /**
+   * Handle note input with default-to-blue logic
+   */
+  async handleNoteInput(event) {
+    const noteText = event.target.value;
+    const existingAnnotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+    const hasColor = existingAnnotation && existingAnnotation.color;
+
+    // First character typed, no color selected → default to blue
+    if (noteText.length === 1 && !hasColor) {
+      this.currentAnnotationSession.autoDefaultedToBlue = true;
+
+      try {
+        // Create annotation and get the response
+        const apiResponse = await this.createHighlightAnnotation(this.currentSentenceId, 'blue');
+        console.log('Auto-defaulted to blue highlight');
+
+        // Construct full annotation object for local array
+        const newAnnotation = {
+          annotation_id: apiResponse.annotation_id,
+          sentence_id: this.currentSentenceId,
+          color: 'blue',
+          note: null,
+          priority: 'none',
+          flagged: false,
+          tags: []
+        };
+
+        // Add to local annotations array
+        this.annotations.push(newAnnotation);
+
+        // Update active circle
+        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+        const blueCircle = document.querySelector('.color-circle[data-color="blue"]');
+        if (blueCircle) {
+          blueCircle.classList.add('active');
+        }
+
+        // Apply highlight to sentence
+        const selectedSentence = document.querySelector(`.sentence[data-sentence-id="${this.currentSentenceId}"]`);
+        if (selectedSentence) {
+          this.applyHighlightToSentence(selectedSentence, 'blue');
+        }
+      } catch (error) {
+        console.error('Failed to create auto-default blue annotation:', error);
+        this.currentAnnotationSession.autoDefaultedToBlue = false;
+      }
+    }
+
+    // Erased all text, and we auto-defaulted → undo blue
+    if (noteText.length === 0 && this.currentAnnotationSession.autoDefaultedToBlue) {
+      if (this.shouldUndoAutoBlue()) {
+        const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+        if (annotation) {
+          // Clear any pending auto-save
+          clearTimeout(this.autoSaveTimeout);
+
+          await this.deleteAnnotation(annotation.annotation_id, true, true); // skipConfirm=true, skipUnselect=true
+          this.currentAnnotationSession.autoDefaultedToBlue = false;
+          console.log('Undid auto-default blue highlight');
+          return;
+        }
+      }
+    }
+
+    // Schedule auto-save 1 second after last keystroke
+    this.scheduleAutoSave();
+  },
+
+  /**
+   * Check if we should undo auto-default blue
+   */
+  shouldUndoAutoBlue() {
+    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+    if (!annotation) return false;
+
+    const noteInput = document.getElementById('note-input');
+    const hasNote = noteInput && noteInput.value.trim().length > 0;
+
+    // TODO: Add checks for priority and flagged when implemented
+
+    return this.currentAnnotationSession.autoDefaultedToBlue &&
+           !hasNote &&
+           annotation.color === 'blue';
+  },
+
+  /**
+   * Schedule auto-save with debounce
+   */
+  scheduleAutoSave() {
+    clearTimeout(this.autoSaveTimeout);
+
+    this.autoSaveTimeout = setTimeout(() => {
+      this.saveAnnotation();
+    }, 1000); // 1 second debounce
+  },
+
+  /**
+   * Save annotation (note changes)
+   */
+  async saveAnnotation() {
+    if (!this.currentSentenceId) return;
+
+    const noteInput = document.getElementById('note-input');
+    const noteText = noteInput ? noteInput.value.trim() : '';
+
+    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+    if (!annotation) {
+      console.log('No annotation to save note to');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          sentence_id: this.currentSentenceId,
+          color: annotation.color,
+          note: noteText || null,
+          priority: annotation.priority || 'none',
+          flagged: annotation.flagged || false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      console.log('Note saved');
+
+      // Update local annotation
+      annotation.note = noteText || null;
+
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      alert('Failed to save note');
+    }
+  },
+
+  /**
+   * Load and render tags for current sentence
+   */
+  async loadTags() {
+    // TODO: Implement tags API endpoint
+    // For now, just render empty tags list with "new tag" chip
+    this.renderTags([]);
+  },
+
+  /**
+   * Render tags list
+   */
+  renderTags(tags) {
+    const tagsList = document.getElementById('tags-list');
+    if (!tagsList) return;
+
+    tagsList.innerHTML = '';
+
+    // Render existing tags
+    tags.forEach(tag => {
+      const chip = document.createElement('div');
+      chip.className = 'tag-chip';
+      chip.dataset.tag = tag;
+      chip.innerHTML = `
+        <span>${tag}</span>
+        <span class="tag-chip-remove">×</span>
+      `;
+      tagsList.appendChild(chip);
+    });
+
+    // Add "new tag" chip
+    const newTagChip = document.createElement('div');
+    newTagChip.className = 'tag-chip new-tag';
+    newTagChip.innerHTML = '+ tag';
+    tagsList.appendChild(newTagChip);
+  },
+
+  /**
+   * Add new tag
+   */
+  async addNewTag() {
+    const tagName = prompt('Enter tag name (lowercase, dash-separated):');
+    if (!tagName) return;
+
+    // Validate tag name
+    const valid = /^[a-z0-9-]+$/.test(tagName);
+    if (!valid) {
+      alert('Invalid tag name. Use only lowercase letters, numbers, and dashes.');
+      return;
+    }
+
+    // TODO: Save tag via API
+    console.log('Add tag:', tagName);
+
+    // For now, just re-render with new tag
+    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+    if (annotation) {
+      const tags = annotation.tags || [];
+      if (!tags.includes(tagName)) {
+        tags.push(tagName);
+        annotation.tags = tags;
+        this.renderTags(tags);
+      }
+    }
+  },
+
+  /**
+   * Remove tag
+   */
+  async removeTag(tagName) {
+    console.log('Remove tag:', tagName);
+
+    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+    if (annotation && annotation.tags) {
+      annotation.tags = annotation.tags.filter(t => t !== tagName);
+      this.renderTags(annotation.tags);
+    }
+  },
+
+  /**
    * Unselect sentence - this is the single action that closes the annotation menu
    */
   unselectSentence() {
+    // Save any pending note changes before unselecting
+    clearTimeout(this.autoSaveTimeout);
+    this.saveAnnotation();
+
     // Hide color palette
     const palette = document.getElementById('color-palette');
     if (palette) {
       palette.classList.remove('visible');
+    }
+
+    // Hide note container
+    const noteContainer = document.getElementById('note-container');
+    if (noteContainer) {
+      noteContainer.classList.remove('visible');
+    }
+
+    // Hide tags container
+    const tagsContainer = document.getElementById('tags-container');
+    if (tagsContainer) {
+      tagsContainer.classList.remove('visible');
     }
 
     // Remove selection from sentences
@@ -334,9 +702,20 @@ const WriteSysAnnotations = {
     if (window.WriteSysRenderer) {
       window.WriteSysRenderer.currentSelectedSentenceId = null;
     }
+
+    // Reset session state
+    this.currentAnnotationSession = {
+      sentenceId: null,
+      autoDefaultedToBlue: false,
+      originalColor: null,
+      lastKeystroke: null
+    };
   },
 
 };
+
+// Export for other modules BEFORE initialization
+window.WriteSysAnnotations = WriteSysAnnotations;
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
@@ -344,6 +723,3 @@ if (document.readyState === 'loading') {
 } else {
   WriteSysAnnotations.init();
 }
-
-// Export for other modules
-window.WriteSysAnnotations = WriteSysAnnotations;
