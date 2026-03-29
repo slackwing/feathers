@@ -56,7 +56,7 @@ function M.recalculate()
   local temp_file = vim.fn.tempname() .. '.sxiva'
 
   -- Run the Python CLI calculator with --fix flag, output to temp file
-  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli calculate "%s" --fix -o "%s"',
+  local cmd = string.format('cd "%s" && .venv/bin/python -m tools.sxiva.cli calculate "%s" --fix -o "%s"',
                            project_root,
                            filepath,
                            temp_file)
@@ -143,7 +143,7 @@ function M.log_now()
   end
 
   -- Run the Python CLI log-now command on temp file (modifies in place)
-  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli log-now "%s" > /dev/null 2>&1',
+  local cmd = string.format('cd "%s" && .venv/bin/python -m tools.sxiva.cli log-now "%s" > /dev/null 2>&1',
                            project_root,
                            temp_file)
 
@@ -208,7 +208,7 @@ function M.log_end()
   end
 
   -- Run the Python CLI log-end command on temp file (modifies in place)
-  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli log-end "%s" > /dev/null 2>&1',
+  local cmd = string.format('cd "%s" && .venv/bin/python -m tools.sxiva.cli log-end "%s" > /dev/null 2>&1',
                            project_root,
                            temp_file)
 
@@ -273,7 +273,7 @@ function M.repeat_entry()
   end
 
   -- Run the Python CLI repeat-entry command on temp file (modifies in place)
-  local cmd = string.format('cd "%s" && python3 -m tools.sxiva.cli repeat-entry "%s" 2>&1',
+  local cmd = string.format('cd "%s" && .venv/bin/python -m tools.sxiva.cli repeat-entry "%s" 2>&1',
                            project_root,
                            temp_file)
 

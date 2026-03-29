@@ -9,5 +9,5 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 # Save original PWD before cd (for --all flag to work correctly)
 export SXIVA_ORIGINAL_DIR="$PWD"
 
-# Run the Python CLI from the tools directory
-cd "$SCRIPT_DIR/tools" && python3 -m sxiva.cli "$@"
+# Run the Python CLI from the tools directory using venv
+cd "$SCRIPT_DIR/tools" && "$SCRIPT_DIR/.venv/bin/python" -m sxiva.cli "$@"
