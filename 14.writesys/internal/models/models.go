@@ -52,7 +52,7 @@ type Annotation struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 	DeletedAt    *time.Time `json:"deleted_at"`
-	Tags         []Tag      `json:"tags,omitempty"` // Populated via JOIN
+	Tags         []Tag      `json:"tags"` // Populated via JOIN - always serialize, even if empty
 }
 
 // Tag represents a tag that can be applied to annotations

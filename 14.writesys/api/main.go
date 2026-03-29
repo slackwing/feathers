@@ -140,6 +140,11 @@ func (s *Server) setupRoutes() {
 		r.Post("/annotations", s.handleCreateAnnotation)
 		r.Put("/annotations/{annotation_id}", s.handleUpdateAnnotation)
 		r.Delete("/annotations/{annotation_id}", s.handleDeleteAnnotation)
+
+		// Tag endpoints
+		r.Get("/annotations/{annotation_id}/tags", s.handleGetTagsForAnnotation)
+		r.Post("/annotations/{annotation_id}/tags", s.handleAddTagToAnnotation)
+		r.Delete("/annotations/{annotation_id}/tags/{tag_id}", s.handleRemoveTagFromAnnotation)
 	})
 
 	// Serve static files (web UI)
@@ -604,6 +609,104 @@ func (s *Server) handleDeleteAnnotation(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "Annotation not found", http.StatusNotFound)
 		} else {
 			http.Error(w, fmt.Sprintf("Failed to delete annotation: %v", err), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /api/annotations/:annotation_id/tags
+// Returns all tags for a specific annotation
+func (s *Server) handleGetTagsForAnnotation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	annotationIDStr := chi.URLParam(r, "annotation_id")
+	annotationID, err := strconv.Atoi(annotationIDStr)
+	if err != nil {
+		http.Error(w, "Invalid annotation_id", http.StatusBadRequest)
+		return
+	}
+
+	tags, err := s.db.GetTagsForAnnotation(ctx, annotationID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get tags: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"tags": tags,
+	})
+}
+
+// POST /api/annotations/:annotation_id/tags
+// Adds a tag to an annotation
+func (s *Server) handleAddTagToAnnotation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	annotationIDStr := chi.URLParam(r, "annotation_id")
+	annotationID, err := strconv.Atoi(annotationIDStr)
+	if err != nil {
+		http.Error(w, "Invalid annotation_id", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		TagName     string `json:"tag_name"`
+		MigrationID int    `json:"migration_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.TagName == "" || req.MigrationID == 0 {
+		http.Error(w, "Missing required fields: tag_name, migration_id", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.db.AddTagToAnnotation(ctx, annotationID, req.TagName, req.MigrationID); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to add tag: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get all tags for the annotation to return
+	tags, err := s.db.GetTagsForAnnotation(ctx, annotationID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get tags: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"tags": tags,
+	})
+}
+
+// DELETE /api/annotations/:annotation_id/tags/:tag_id
+// Removes a tag from an annotation
+func (s *Server) handleRemoveTagFromAnnotation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	annotationIDStr := chi.URLParam(r, "annotation_id")
+	tagIDStr := chi.URLParam(r, "tag_id")
+
+	annotationID, err := strconv.Atoi(annotationIDStr)
+	if err != nil {
+		http.Error(w, "Invalid annotation_id", http.StatusBadRequest)
+		return
+	}
+
+	tagID, err := strconv.Atoi(tagIDStr)
+	if err != nil {
+		http.Error(w, "Invalid tag_id", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.db.RemoveTagFromAnnotation(ctx, annotationID, tagID); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "Tag not found on annotation", http.StatusNotFound)
+		} else {
+			http.Error(w, fmt.Sprintf("Failed to remove tag: %v", err), http.StatusInternalServerError)
 		}
 		return
 	}

@@ -474,6 +474,14 @@ func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID string) (
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan annotation: %w", err)
 		}
+
+		// Load tags for this annotation
+		tags, err := db.GetTagsForAnnotation(ctx, a.AnnotationID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tags for annotation %d: %w", a.AnnotationID, err)
+		}
+		a.Tags = tags
+
 		annotations = append(annotations, a)
 	}
 
@@ -783,4 +791,161 @@ func (db *DB) GetActiveAnnotationsForSentence(ctx context.Context, sentenceID st
 	}
 
 	return annotations, nil
+}
+
+// GetOrCreateTag gets an existing tag or creates it if it doesn't exist
+func (db *DB) GetOrCreateTag(ctx context.Context, tagName string, migrationID int) (*models.Tag, error) {
+	// First try to get existing tag
+	var tag models.Tag
+	query := `
+		SELECT tag_id, tag_name, migration_id, created_at
+		FROM tag
+		WHERE tag_name = $1 AND migration_id = $2
+	`
+	err := db.Pool.QueryRow(ctx, query, tagName, migrationID).Scan(
+		&tag.TagID,
+		&tag.TagName,
+		&tag.MigrationID,
+		&tag.CreatedAt,
+	)
+	if err == nil {
+		return &tag, nil
+	}
+	if err != pgx.ErrNoRows {
+		return nil, fmt.Errorf("failed to query tag: %w", err)
+	}
+
+	// Tag doesn't exist, create it
+	createQuery := `
+		INSERT INTO tag (tag_name, migration_id)
+		VALUES ($1, $2)
+		RETURNING tag_id, tag_name, migration_id, created_at
+	`
+	err = db.Pool.QueryRow(ctx, createQuery, tagName, migrationID).Scan(
+		&tag.TagID,
+		&tag.TagName,
+		&tag.MigrationID,
+		&tag.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tag: %w", err)
+	}
+
+	return &tag, nil
+}
+
+// AddTagToAnnotation adds a tag to an annotation (creates tag if needed)
+func (db *DB) AddTagToAnnotation(ctx context.Context, annotationID int, tagName string, migrationID int) error {
+	// Get or create the tag
+	tag, err := db.GetOrCreateTag(ctx, tagName, migrationID)
+	if err != nil {
+		return err
+	}
+
+	// Add the tag to the annotation (ignore if already exists)
+	query := `
+		INSERT INTO annotation_tag (annotation_id, tag_id)
+		VALUES ($1, $2)
+		ON CONFLICT (annotation_id, tag_id) DO NOTHING
+	`
+	_, err = db.Pool.Exec(ctx, query, annotationID, tag.TagID)
+	if err != nil {
+		return fmt.Errorf("failed to add tag to annotation: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveTagFromAnnotation removes a tag from an annotation
+func (db *DB) RemoveTagFromAnnotation(ctx context.Context, annotationID int, tagID int) error {
+	query := `
+		DELETE FROM annotation_tag
+		WHERE annotation_id = $1 AND tag_id = $2
+	`
+	result, err := db.Pool.Exec(ctx, query, annotationID, tagID)
+	if err != nil {
+		return fmt.Errorf("failed to remove tag from annotation: %w", err)
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("tag not found on annotation")
+	}
+
+	return nil
+}
+
+// GetTagsForAnnotation retrieves all tags for a specific annotation
+func (db *DB) GetTagsForAnnotation(ctx context.Context, annotationID int) ([]models.Tag, error) {
+	query := `
+		SELECT t.tag_id, t.tag_name, t.migration_id, t.created_at
+		FROM tag t
+		JOIN annotation_tag at ON t.tag_id = at.tag_id
+		WHERE at.annotation_id = $1
+		ORDER BY t.tag_name
+	`
+
+	rows, err := db.Pool.Query(ctx, query, annotationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tags: %w", err)
+	}
+	defer rows.Close()
+
+	tags := []models.Tag{}
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.TagID,
+			&tag.TagName,
+			&tag.MigrationID,
+			&tag.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan tag: %w", err)
+		}
+		tags = append(tags, tag)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating tags: %w", err)
+	}
+
+	return tags, nil
+}
+
+// GetAllTagsForMigration retrieves all unique tags used in a migration
+func (db *DB) GetAllTagsForMigration(ctx context.Context, migrationID int) ([]models.Tag, error) {
+	query := `
+		SELECT tag_id, tag_name, migration_id, created_at
+		FROM tag
+		WHERE migration_id = $1
+		ORDER BY tag_name
+	`
+
+	rows, err := db.Pool.Query(ctx, query, migrationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tags: %w", err)
+	}
+	defer rows.Close()
+
+	tags := []models.Tag{}
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.TagID,
+			&tag.TagName,
+			&tag.MigrationID,
+			&tag.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan tag: %w", err)
+		}
+		tags = append(tags, tag)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating tags: %w", err)
+	}
+
+	return tags, nil
 }

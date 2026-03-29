@@ -76,16 +76,10 @@ const WriteSysAnnotations = {
   async handleColorSelection(color) {
     // Get currently selected sentence
     const selectedSentence = document.querySelector('.sentence.selected');
-    if (!selectedSentence) {
-      console.log('No sentence selected');
-      return;
-    }
+    if (!selectedSentence) return;
 
     const sentenceId = selectedSentence.dataset.sentenceId;
-    if (!sentenceId) {
-      console.error('Selected sentence has no sentence_id');
-      return;
-    }
+    if (!sentenceId) return;
 
     // Check if annotation already exists for this sentence
     const existingAnnotation = await this.getAnnotationForSentence(sentenceId);
@@ -116,9 +110,14 @@ const WriteSysAnnotations = {
         const noteInput = document.getElementById('note-input');
         const noteText = noteInput ? noteInput.value.trim() : '';
 
+        // IMPORTANT: Manual color change "commits" the annotation
+        // Disable session-based auto-undo because user has explicitly chosen a color
+        if (this.currentAnnotationSession.autoDefaultedToBlue) {
+          this.currentAnnotationSession.autoDefaultedToBlue = false;
+        }
+
         // Update existing annotation to new color
         await this.updateAnnotationColor(existingAnnotation.annotation_id, sentenceId, color);
-        console.log(`Updated annotation ${existingAnnotation.annotation_id} to color: ${color}`);
 
         // Update local annotation object
         existingAnnotation.color = color;
@@ -133,7 +132,6 @@ const WriteSysAnnotations = {
       } else {
         // Create new annotation
         const apiResponse = await this.createHighlightAnnotation(sentenceId, color);
-        console.log(`Created new annotation for sentence ${sentenceId} with color: ${color}`);
 
         // Construct full annotation object for local array
         const newAnnotation = {
@@ -332,12 +330,15 @@ const WriteSysAnnotations = {
       // Clear all active states
       document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
 
-      // If sentence has a highlight, mark that color as active in the palette
-      const annotation = this.annotations.find(a => a.color);
-      if (annotation && annotation.color) {
-        const activeCircle = document.querySelector(`.color-circle[data-color="${annotation.color}"]`);
-        if (activeCircle) {
-          activeCircle.classList.add('active');
+      // Find annotation for this sentence (may or may not have color)
+      const annotation = this.annotations[0]; // There should only be one annotation per sentence
+      if (annotation) {
+        // If annotation has a color, mark it as active in the palette
+        if (annotation.color) {
+          const activeCircle = document.querySelector(`.color-circle[data-color="${annotation.color}"]`);
+          if (activeCircle) {
+            activeCircle.classList.add('active');
+          }
         }
 
         // Populate note textbox
@@ -442,8 +443,9 @@ const WriteSysAnnotations = {
     tagsContainer.addEventListener('click', (e) => {
       if (e.target.classList.contains('tag-chip-remove')) {
         const tagChip = e.target.closest('.tag-chip');
-        const tagName = tagChip.dataset.tag;
-        this.removeTag(tagName);
+        const tagId = parseInt(tagChip.dataset.tagId);
+        const tagName = tagChip.dataset.tagName;
+        this.removeTag(tagId, tagName);
       } else if (e.target.classList.contains('new-tag') || e.target.closest('.new-tag')) {
         this.addNewTag();
       }
@@ -465,7 +467,6 @@ const WriteSysAnnotations = {
       try {
         // Create annotation and get the response
         const apiResponse = await this.createHighlightAnnotation(this.currentSentenceId, 'blue');
-        console.log('Auto-defaulted to blue highlight');
 
         // Construct full annotation object for local array
         const newAnnotation = {
@@ -509,7 +510,6 @@ const WriteSysAnnotations = {
 
           await this.deleteAnnotation(annotation.annotation_id, true, true); // skipConfirm=true, skipUnselect=true
           this.currentAnnotationSession.autoDefaultedToBlue = false;
-          console.log('Undid auto-default blue highlight');
           return;
         }
       }
@@ -557,10 +557,7 @@ const WriteSysAnnotations = {
     const noteText = noteInput ? noteInput.value.trim() : '';
 
     const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (!annotation) {
-      console.log('No annotation to save note to');
-      return;
-    }
+    if (!annotation) return;
 
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
@@ -579,8 +576,6 @@ const WriteSysAnnotations = {
         throw new Error(`HTTP ${response.status}: ${await response.text()}`);
       }
 
-      console.log('Note saved');
-
       // Update local annotation
       annotation.note = noteText || null;
 
@@ -588,15 +583,6 @@ const WriteSysAnnotations = {
       console.error('Failed to save note:', error);
       alert('Failed to save note');
     }
-  },
-
-  /**
-   * Load and render tags for current sentence
-   */
-  async loadTags() {
-    // TODO: Implement tags API endpoint
-    // For now, just render empty tags list with "new tag" chip
-    this.renderTags([]);
   },
 
   /**
@@ -608,13 +594,14 @@ const WriteSysAnnotations = {
 
     tagsList.innerHTML = '';
 
-    // Render existing tags
+    // Render existing tags (now tag objects with tag_id and tag_name)
     tags.forEach(tag => {
       const chip = document.createElement('div');
       chip.className = 'tag-chip';
-      chip.dataset.tag = tag;
+      chip.dataset.tagId = tag.tag_id;
+      chip.dataset.tagName = tag.tag_name;
       chip.innerHTML = `
-        <span>${tag}</span>
+        <span>${tag.tag_name}</span>
         <span class="tag-chip-remove">×</span>
       `;
       tagsList.appendChild(chip);
@@ -641,31 +628,86 @@ const WriteSysAnnotations = {
       return;
     }
 
-    // TODO: Save tag via API
-    console.log('Add tag:', tagName);
+    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
 
-    // For now, just re-render with new tag
-    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (annotation) {
-      const tags = annotation.tags || [];
-      if (!tags.includes(tagName)) {
-        tags.push(tagName);
-        annotation.tags = tags;
-        this.renderTags(tags);
+    // If no annotation exists yet, create one with blue color first
+    if (!annotation || !annotation.annotation_id) {
+      try {
+        // Create annotation with blue color
+        await this.handleColorSelection('blue');
+        this.currentAnnotationSession.autoDefaultedToBlue = true;
+
+        // Get the newly created annotation
+        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+        if (!annotation || !annotation.annotation_id) {
+          alert('Failed to create annotation');
+          return;
+        }
+      } catch (error) {
+        alert(`Error creating annotation: ${error.message}`);
+        return;
       }
+    }
+
+    try {
+      // Get migration ID from global state (set by renderer)
+      const migrationId = window.WriteSysRenderer?.currentMigrationID;
+      if (!migrationId) {
+        throw new Error('Migration ID not available');
+      }
+
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tag_name: tagName,
+          migration_id: migrationId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      annotation.tags = data.tags;
+      this.renderTags(data.tags);
+    } catch (error) {
+      console.error('Failed to add tag:', error);
+      alert(`Failed to add tag: ${error.message}`);
     }
   },
 
   /**
    * Remove tag
    */
-  async removeTag(tagName) {
-    console.log('Remove tag:', tagName);
-
+  async removeTag(tagId, tagName) {
     const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (annotation && annotation.tags) {
-      annotation.tags = annotation.tags.filter(t => t !== tagName);
+    if (!annotation || !annotation.annotation_id) return;
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags/${tagId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok && response.status !== 204) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Remove from local tags array
+      annotation.tags = annotation.tags.filter(t => t.tag_id !== tagId);
       this.renderTags(annotation.tags);
+
+      // If this was the last tag AND we auto-defaulted to blue AND there's no note, undo the auto-blue
+      if (annotation.tags.length === 0 &&
+          this.currentAnnotationSession.autoDefaultedToBlue &&
+          (!annotation.note || annotation.note.trim() === '')) {
+        await this.deleteAnnotation(annotation.annotation_id, true); // skipUnselect = true
+      }
+    } catch (error) {
+      console.error('Failed to remove tag:', error);
+      alert(`Failed to remove tag: ${error.message}`);
     }
   },
 
