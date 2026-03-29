@@ -1,60 +1,91 @@
 # WriteSys - Project Guide for AI Agents
 
-## Project Overview
+## 🚨 CRITICAL RULES - READ FIRST 🚨
 
-WriteSys is a book annotation system that tracks highlights, tags, and tasks on sentences in a Markdown manuscript. Annotations intelligently migrate as the text evolves through git commits.
+### Rule #1: ALL Database Schema Changes via Liquibase
 
-## Key Resources
+**NEVER MODIFY DATABASE SCHEMA DIRECTLY. ALWAYS USE LIQUIBASE CHANGELOGS.**
 
-**📋 Primary Design Document:** [PLAN.md](./PLAN.md)
+**Forbidden:**
+```sql
+-- ❌ NEVER DO THIS
+ALTER TABLE annotation ADD COLUMN new_field TEXT;
+CREATE TABLE new_table (...);
+```
 
-The PLAN.md file contains:
-- Complete system architecture
-- Database schema with all tables
-- Sentence processing and migration algorithms
-- Git workflow and commit processing
-- Web UI design and interaction patterns
-- Implementation milestones
-- Edge cases and design decisions
+**Required:**
+```bash
+# ✅ ALWAYS DO THIS
+# 1. Create new changelog file
+docker/liquibase/changelog/NNN-description.xml
 
-**Always read PLAN.md first** when working on this project.
+# 2. Add to master changelog
+docker/liquibase/changelog/db.changelog-master.xml
 
-**Note:** Historical documentation files (REFACTOR_PLAN.md, ANALYSIS-MISTAKES.md) have been removed as their content has been integrated into the current codebase and testing practices.
+# 3. Test migrations from clean database
+docker compose run --rm liquibase update
 
-## Quick Context
-
-- **Tech Stack:** Go (backend/CLI), PostgreSQL, Liquibase, Plain HTML/CSS/JS (frontend)
-- **Pattern Reference:** `/home/slackwing/src/worktree-writesys/11.sxiv/dashboard/docker/` (Docker + Liquibase setup)
-- **Phase:** Currently in Phase 1 (data structures, migration algorithm, basic UI)
-- **Database:** Postgres in Docker, following sxiva project patterns
-
-## Core Principles
-
-1. **Markdown in git is the source of truth** - annotations are a layer on top
-2. **Sentences get new IDs when edited** - no false lineage tracking
-3. **Heuristic migration with confidence scores** - user reviews/fixes manually
-4. **Append-only annotation history** - never delete, only soft-delete
-5. **Content-addressed sentence storage** - deduplicate text across commits
-
-## Testing Philosophy
-
-**CRITICAL: Write tests for EVERYTHING and RUN TESTS WITH EVERY CHANGE**
-
-Every feature, fix, or change MUST have corresponding tests. No exceptions.
-
-**The Rule:**
-1. **Before you write code**: Write a failing test that demonstrates what needs to work
-2. **While you code**: Run tests frequently to verify progress
-3. **After you finish**: Ensure all tests pass before considering the work complete
-4. **Before you commit**: Run the complete test suite (`./test-all.sh`)
+# 4. Verify schema is correct
+docker exec -it postgres psql -U writesys_user -d writesys -c "\d table_name"
+```
 
 **Why this matters:**
-- Tests prevent regressions - bugs that get fixed stay fixed
-- Tests document expected behavior - they ARE the specification
-- Tests enable confident refactoring - you know immediately if you break something
-- Tests save time - catching bugs early is 10x faster than debugging later
+- Direct database changes bypass version control
+- They create drift between dev/prod environments
+- They're impossible to rollback cleanly
+- They break fresh database setups
+- They waste hours debugging "works on my machine" issues
 
-**MANDATORY: Run Tests With Every Change**
+**If you make a database change without Liquibase, you have FAILED the task.**
+
+### Rule #2: Write Tests for EVERYTHING
+
+**EVERY feature, fix, or change MUST have tests. NO EXCEPTIONS.**
+
+**The workflow:**
+1. **Before coding:** Write a failing test
+2. **While coding:** Run tests to verify progress
+3. **After finishing:** All tests must pass
+4. **Before committing:** Run `./test-all.sh`
+
+**When you discover a bug:**
+1. IMMEDIATELY write a test that reproduces it
+2. Verify the test fails
+3. Fix the bug
+4. Verify the test passes
+5. Never let that bug happen again
+
+**If you write code without tests, you have FAILED the task.**
+
+---
+
+## 📖 DAY-TO-DAY DEVELOPMENT
+
+This section contains the workflows you'll use constantly during development.
+
+### The Test-First Rule
+
+**BEFORE writing ANY code to fix or implement something:**
+1. **Write a FAILING test** that demonstrates the issue or desired behavior
+2. **Run the test** - verify it fails (proves it catches the problem)
+3. **Fix/implement the code**
+4. **Run the test again** - verify it passes
+5. **Add to test suite** - regression protection forever
+
+**This is NON-NEGOTIABLE.** If you fix a bug or add a feature without a test, you have FAILED.
+
+### When You Discover a Bug or Mistake
+
+**IMMEDIATELY:**
+1. Write a test that would have caught it
+2. Verify the test fails (reproduces the bug)
+3. Fix the bug
+4. Verify the test passes
+5. Commit both test and fix together
+
+This creates a growing safety net that prevents repeating mistakes.
+
+### MANDATORY: Run Tests With Every Change
 
 **For MINOR changes** (small bug fixes, CSS tweaks, comment changes):
 - Run the most relevant test file for what you changed
@@ -66,103 +97,138 @@ Every feature, fix, or change MUST have corresponding tests. No exceptions.
 - Run ALL tests: `./test-all.sh`
 - If tests fail, ask the user: "This test is failing: [test name]. Is this test still relevant?"
 - Update or remove tests based on user feedback
-- NEVER let tests diverge from the codebase
+- **NEVER let tests diverge from the codebase**
 
-**When Tests Fail:**
-- If the test is outdated → Update it to match current behavior
-- If the test is no longer relevant → Ask user if it should be deleted
-- If the change broke something → Fix the code, not the test
+### Where to Add Tests (NEVER Create New Test Files)
 
-**Test Types:**
-- **Unit Tests** (`go test ./...`): Test individual functions and modules
-- **Integration Tests** (`./bin/writesys`): Test CLI with real database
-- **API Tests** (`curl` commands): Test HTTP endpoints
-- **UI Tests** (`node tests/ui-integration.js`): Test browser behavior with Playwright
-- **E2E Tests** (`npx playwright test`): Full end-to-end browser testing
+**🚨🚨🚨 STOP - READ THIS BEFORE WRITING ANY TEST CODE 🚨🚨🚨**
 
-When you discover a bug or make a mistake:
-1. IMMEDIATELY write a test that would have caught it
-2. Verify the test fails (reproduces the bug)
-3. Fix the bug
-4. Verify the test passes
-5. Add it to the test suite
+**ABSOLUTELY FORBIDDEN: Creating new test files**
 
-This creates a growing safety net that makes the codebase more robust over time.
+**RULE: If you create a new `.js` test file in `tests/`, you have FAILED the task.**
 
-## Frontend Testing & Verification
+**YOU MUST:**
+1. ALWAYS add tests to existing test files (`e2e.spec.js`, `ui-integration.js`, `smoke.js`, `test-*.js`)
+2. NEVER create files like `tests/console-check.js`, `tests/interaction-test.js`, `tests/new-feature-test.js`, `tests/debug-*.js`
+3. ALWAYS use headless mode (`headless: true`) when launching Playwright browsers
+4. If you think you need a new test file, you are WRONG - add to existing files instead
 
-**CRITICAL: Always verify frontend actually works, not just API endpoints**
+**✅ REQUIRED: Add tests to existing files:**
 
-When working on frontend or API changes, you MUST verify the actual browser experience:
+1. **Playwright E2E tests** → `tests/e2e.spec.js`
+   - When: Testing browser interactions, UI behavior, API endpoints from browser
+   - Examples: Clicking buttons, form submissions, page navigation, sidebar behavior
+   - Pattern: Add new `test('description', async ({ page }) => { ... })` within existing `test.describe()` block
+   - **HEADLESS MODE REQUIRED:** ALWAYS use `{ headless: true }` when launching browsers to avoid interrupting the user
 
-### How to Verify Frontend (AI Agent Instructions)
+2. **UI Integration tests** → `tests/ui-integration.js`
+   - When: Testing visual rendering, layout, styling, Paged.js behavior, interactions
+   - Examples: Page dimensions, colors, fonts, positioning, pagination, color palette, sentence selection
+   - Pattern: Add new test with `assert(condition, message)` function
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
-**Problem:** AI agents cannot directly open a browser, but can verify frontend works by checking API server logs.
+3. **Feature-specific tests** → `tests/test-*.js` (tags, annotations, etc)
+   - When: Testing specific features (tag API, note and tags, delete and recreate)
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true` if using Playwright
 
-**Solution:** Use API server logs to verify frontend requests succeed:
+4. **Quick smoke tests** → `tests/smoke.js`
+   - When: Testing absolute basics (page loads, auto-load works)
+   - Pattern: Only add tests that must run very fast (<5 seconds total)
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
-1. **Start API with visible logs:**
-   ```bash
-   ./bin/api  # Will show all HTTP requests
-   ```
+5. **Go unit tests** → `internal/*_test.go`
+   - When: Testing Go functions and modules
+   - Pattern: Same package as code being tested
 
-2. **User opens browser to http://localhost:5003/**
+**Ask the user FIRST** if you think you need a new test file.
 
-3. **Check API logs for errors:**
-   ```
-   ✅ Good: "GET /api/migrations/latest?manuscript_id=1" - 200
-   ❌ Bad:  "GET /api/migrations/latest?manuscript_id=1" - 404
-   ```
+### Quick Test Commands
 
-4. **Common Frontend Issues to Check:**
-   - **Wrong manuscript_id:** Frontend JS has hardcoded `manuscript_id` - verify it matches database
-   - **API endpoint 404:** Check route exists in `api/main.go` setupRoutes()
-   - **CORS errors:** Check CORS middleware allows requests
-   - **Missing files:** Check static files served from `web/` directory
+```bash
+# Complete suite (run before commits)
+./test-all.sh
 
-5. **How to Debug Frontend Issues:**
-   ```bash
-   # Check what manuscript IDs exist
-   docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "SELECT manuscript_id FROM manuscript;"
+# Quick tests (run frequently)
+go test ./...                           # Go unit tests
+node tests/test-tags-comprehensive.js   # Tag functionality
+node tests/smoke.js                     # Basic smoke test
+npx playwright test                     # All E2E tests
 
-   # Watch API logs in real-time
-   tail -f api.log  # if running in background
+# Specific feature tests
+node tests/test-tag-api.js              # Tag API
+node tests/test-note-and-tags.js        # Note and tag interactions
+```
 
-   # Test API endpoints directly
-   curl -s "http://localhost:5003/api/migrations/latest?manuscript_id=1" | jq .
-   ```
+**When tests fail:**
+- Test is outdated → Update it to match current behavior
+- Test is irrelevant → Ask user if it should be deleted
+- Code broke something → Fix the code, NOT the test
 
-6. **Frontend Configuration to Check:**
-   - `web/js/renderer.js` - Check `manuscript_id` in fetch() calls
-   - `web/index.html` - Check default repo/file paths
-   - `api/main.go` - Check FileServer route serves `/web` directory
+---
 
-**REMEMBER:**
-- Testing API with curl ≠ Frontend works
-- Always ask user to verify in browser OR check API logs for frontend requests
-- If user reports "error loading", check API logs for 404s or 500s
+## 📋 PROJECT OVERVIEW
 
-## Common Tasks
+WriteSys is a book annotation system that tracks highlights, tags, and tasks on sentences in a Markdown manuscript. Annotations intelligently migrate as the text evolves through git commits.
 
-### Working on the CLI (`writesys` command)
-- See: PLAN.md → "Sentence Processing Algorithm" and "Git Processing Flow"
-- Code location: `cmd/writesys/`
+**📋 Primary Design Document:** [PLAN.md](./PLAN.md) - Read this first for architecture, database schema, algorithms, and design decisions.
 
-### Working on Migration Algorithm
-- See: PLAN.md → "Migration Algorithm (Commit A → Commit B)"
-- Code location: `internal/sentence/matcher.go`
+### Quick Context
 
-### Working on Database Schema
-- See: PLAN.md → "Data Model" section
-- Liquibase changelogs: `docker/liquibase/changelog/`
+- **Tech Stack:** Go (backend/CLI), PostgreSQL, Liquibase, Plain HTML/CSS/JS (frontend)
+- **Database:** Postgres on host (localhost:5432), managed via Liquibase
+- **Phase:** Phase 1 (data structures, migration algorithm, basic UI)
 
-### Working on Web UI
-- See: PLAN.md → "Web UI Design" section
-- Code location: `web/`
+### Core Principles
 
-### Working on API Endpoints
-- See: PLAN.md → "Rendering Pipeline" (API endpoints listed)
-- Code location: `api/`
+1. **Markdown in git is the source of truth** - annotations are a layer on top
+2. **Sentences get new IDs when edited** - no false lineage tracking
+3. **Heuristic migration with confidence scores** - user reviews/fixes manually
+4. **Append-only annotation history** - never delete, only soft-delete
+5. **All schema changes via Liquibase** - no direct database modifications
+
+### Code Locations
+
+- **CLI:** `cmd/writesys/` - See PLAN.md "Sentence Processing Algorithm"
+- **Migration:** `internal/sentence/matcher.go` - See PLAN.md "Migration Algorithm"
+- **Database Schema:** `docker/liquibase/changelog/` - See PLAN.md "Data Model"
+- **Web UI:** `web/` - See PLAN.md "Web UI Design"
+- **API:** `api/` - See PLAN.md "Rendering Pipeline"
+
+---
+
+## 🚀 DEVELOPMENT WORKFLOW
+
+```bash
+# Start API (serves both API and web UI)
+API_PORT=5003 ./bin/api
+
+# Process a manuscript
+./bin/writesys -repo manuscripts/test-repo -file the-wildfire.manuscript -yes
+
+# Run tests
+./test-all.sh              # Complete suite before commits
+go test ./...              # Go unit tests
+node tests/smoke.js        # Quick smoke test
+npx playwright test        # E2E tests
+```
+
+**Initial setup (if needed):**
+```bash
+# Start database
+cd docker && docker compose up -d
+
+# Run migrations
+docker compose --profile migrate up liquibase
+
+# Build CLI
+cd ../cmd/writesys && go build -o writesys
+```
+
+---
+
+## ⚙️ SPECIALIZED PROCEDURES
+
+These procedures are less frequent but critical when needed.
 
 ### Updating Sentence Segmenters
 
@@ -196,664 +262,38 @@ cp ../15.senseg/go/segmenter.go internal/senseg/segmenter.go
 
 **Note:** Segmentation-specific tests have been removed from WriteSys since segmentation is now the responsibility of the 15.senseg project.
 
-### Modifying Source Markdown Files
+### Modifying Source Markdown
 
-**CRITICAL**: Whenever you change source markdown files in `manuscripts/`, you MUST:
+When changing manuscripts: (1) commit to git, (2) reprocess with WriteSys CLI, (3) update test commit hashes
 
-1. Commit the changes to git in the test repository:
-   ```bash
-   cd manuscripts/test-repo
-   git add the-wildfire.md
-   git commit -m "fix: describe your change"
-   ```
+### Frontend Verification
 
-2. Reprocess the commit to update the database:
-   ```bash
-   # Delete old processed commit first
-   docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "
-   DELETE FROM annotation_version WHERE sentence_id IN (SELECT sentence_id FROM sentence WHERE commit_hash = 'OLD_HASH');
-   DELETE FROM annotation WHERE annotation_id IN (SELECT DISTINCT annotation_id FROM annotation_version WHERE sentence_id IN (SELECT sentence_id FROM sentence WHERE commit_hash = 'OLD_HASH'));
-   DELETE FROM sentence WHERE commit_hash = 'OLD_HASH';
-   DELETE FROM processed_commit WHERE commit_hash = 'OLD_HASH';
-   "
+**AI agents can't open browsers, but can verify frontend via API logs:**
 
-   # Process new commit
-   ./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit NEW_HASH --yes
-   ```
+1. Start API: `API_PORT=5003 ./bin/api`
+2. User opens browser to http://localhost:5003
+3. Check API logs for errors (404s, 500s)
+4. Test API directly: `curl http://localhost:5003/api/migrations/latest?manuscript_id=1`
 
-3. Update any tests that reference the old commit hash to use the new hash
-
-Without reprocessing, the UI will continue showing the old version from the database.
-
-## Development Workflow
-
-```bash
-# Start database
-cd docker && docker compose up -d
-
-# Run migrations
-docker compose --profile migrate up liquibase
-
-# Build CLI
-cd ../cmd/writesys && go build -o writesys
-
-# Process a commit
-./writesys process --file ../../manuscripts/the-wildfire.md
-
-# Start API server
-cd ../api && go run main.go
-```
-
-## Testing
-
-### Test Organization
-
-All tests are organized in a flat structure for easy discovery and execution:
-
-```
-tests/
-├── e2e.spec.js          - Playwright E2E tests (28 tests: smoke, auto-load, interactions, rendering, API)
-├── ui-integration.js    - Comprehensive UI integration tests (20 tests: controls, pagination, styling)
-├── smoke.js             - Quick smoke test for basic functionality
-└── screenshots/         - Test output screenshots
-
-Root directory:
-├── test-all.sh          - Run complete test suite (Go + UI + Playwright)
-├── test-e2e.sh          - Go end-to-end workflow test
-├── playwright.config.js - Playwright configuration
-└── package.json         - Node dependencies for Playwright
-```
-
-**CRITICAL: Where to Add New Tests**
-
-**🚨🚨🚨 STOP - READ THIS BEFORE WRITING ANY TEST CODE 🚨🚨🚨**
-
-**ABSOLUTELY FORBIDDEN: Creating new test files**
-
-**RULE: If you create a new `.js` test file in `tests/`, you have FAILED the task.**
-
-**YOU MUST:**
-1. ALWAYS add tests to existing test files (`e2e.spec.js`, `ui-integration.js`, `smoke.js`)
-2. NEVER create files like `tests/console-check.js`, `tests/interaction-test.js`, `tests/new-feature-test.js`
-3. ALWAYS use headless mode (`headless: true`) when launching Playwright browsers
-4. If you think you need a new test file, you are WRONG - add to existing files instead
-
-1. **Playwright E2E tests** → `tests/e2e.spec.js`
-   - When: Testing browser interactions, UI behavior, API endpoints from browser
-   - Examples: Clicking buttons, form submissions, page navigation, sidebar behavior
-   - Pattern: Add new `test('description', async ({ page }) => { ... })` within the existing `test.describe()` block
-   - **HEADLESS MODE REQUIRED:** ALWAYS use `{ headless: true }` when launching browsers to avoid interrupting the user
-
-2. **UI Integration tests** → `tests/ui-integration.js`
-   - When: Testing visual rendering, layout, styling, Paged.js behavior, interactions
-   - Examples: Page dimensions, colors, fonts, positioning, pagination, color palette, sentence selection
-   - Pattern: Add new test with `assert(condition, message)` function
-   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
-
-3. **Quick smoke tests** → `tests/smoke.js`
-   - When: Testing absolute basics (page loads, auto-load works)
-   - Pattern: Only add tests that must run very fast (<5 seconds total)
-   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
-
-4. **Go unit tests** → `internal/*/` subdirectories
-   - When: Testing Go functions, sentence processing, matching algorithms
-   - Pattern: Create `*_test.go` files in same package as code being tested
-
-**❌ FORBIDDEN: Do NOT create files like:**
-- `tests/console-check.js` → Add to `tests/ui-integration.js`
-- `tests/interaction-test.js` → Add to `tests/ui-integration.js`
-- `tests/color-palette-test.js` → Add to `tests/ui-integration.js`
-- `tests/new-feature-test.js` → Add to appropriate existing test file
-
-**✅ CORRECT: Add your test to existing files:**
-```javascript
-// In tests/ui-integration.js
-assert(paletteHidden, 'Color palette hidden initially');
-assert(paletteVisible, 'Color palette visible after click');
-```
-
-**The ONLY valid reason to create a new test file:**
-- You're adding an entirely new testing dimension (e.g., performance tests, security tests, load tests)
-- **YOU MUST ASK THE USER FIRST** before creating any new test files
-
-### Quick Test Reference
-
-```bash
-# ===== COMPLETE TEST SUITE =====
-./test-all.sh            # Run ALL tests (recommended before commits)
-
-# ===== GO TESTS =====
-go test ./...            # All unit tests
-go test -v ./internal/sentence                        # Specific package
-go test -v ./internal/sentence -run TestComputeSimilarity  # Specific test
-
-# ===== UI TESTS =====
-node tests/smoke.js           # Quick smoke test (~3 seconds)
-node tests/ui-integration.js  # Comprehensive UI tests (21 tests, ~8 seconds)
-
-# ===== PLAYWRIGHT E2E TESTS =====
-npx playwright test                    # Run all Playwright tests (52 tests)
-npx playwright test tests/e2e.spec.js  # Run specific test file
-npx playwright test --headed           # Run with visible browser
-npx playwright test --ui               # Run with Playwright UI
-npx playwright show-report            # View HTML report
-
-# ===== CLI INTEGRATION TESTS =====
-./test-e2e.sh            # Full workflow: bootstrap → annotate → migrate
-
-# ===== DATABASE VERIFICATION =====
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "SELECT * FROM migration ORDER BY created_at;"
-```
-
-### Unit Tests (56 total)
-
-**Tokenizer Tests** (`internal/sentence/tokenizer_test.go`)
-- TestSplitIntoSentences (20 cases): edge cases, abbreviations, quotes, lists
-- TestCountWords (10 cases): word counting with various inputs
-- TestNormalizeText (8 cases): lowercase, punctuation removal
-- TestExtractWords (5 cases): word extraction for IDs
-
-**Sentence ID Tests** (`internal/sentence/id_test.go`)
-- TestGenerateSentenceID (6 cases): format validation, determinism, uniqueness
-
-**Matcher Tests** (`internal/sentence/matcher_test.go`)
-- TestComputeSimilarity (10 cases): word-level similarity scoring
-- TestLevenshteinDistance (7 cases): edit distance computation
-- TestComputeSentenceDiff (5 cases): added/deleted/unchanged detection
-- TestComputeMigrationMap (3 cases): fuzzy matching with confidence
-
-### Integration Tests
-
-**Test Data:** `manuscripts/test-repo/` (nested git repo)
-- Commit b30bd0f: Initial draft (214 sentences)
-- Commit 76c9a7f: Added Section III (216 sentences, +2)
-
-**Bootstrap Test:**
-```bash
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit b30bd0f --yes
-```
-Expected: 214 sentences stored, additions_count=214
-
-**Migration Test:**
-```bash
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit 76c9a7f --yes
-```
-Expected: 216 sentences, 214 exact matches, 2 additions
-
-### Database Verification
-
-```bash
-# View all processed commits
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT commit_hash, sentence_count, additions_count, deletions_count FROM processed_commit ORDER BY processed_at;"
-
-# Count sentences per commit
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT commit_hash, COUNT(*) FROM sentence GROUP BY commit_hash;"
-
-# Sample sentences
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT sentence_id, text, ordinal FROM sentence WHERE commit_hash = 'b30bd0f' LIMIT 5;"
-```
-
-### Cleanup and Re-run
-
-```bash
-# Clear test data
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "
-  DELETE FROM sentence WHERE commit_hash IN ('b30bd0f', '76c9a7f');
-  DELETE FROM processed_commit WHERE manuscript_id = 1;
-  DELETE FROM manuscript WHERE manuscript_id = 1;
-"
-
-# Re-run tests
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit b30bd0f --yes
-./bin/writesys --repo manuscripts/test-repo --file the-wildfire.md --commit 76c9a7f --yes
-```
-
-### Test Coverage
-
-```bash
-# Generate coverage report
-go test -coverprofile=coverage.out ./internal/sentence
-
-# View in terminal
-go tool cover -func=coverage.out
-
-# Generate HTML
-go tool cover -html=coverage.out -o coverage.html
-```
-
-### API Tests
-
-**Start API Server:**
-```bash
-# Build API
-cd api && go build -o ../bin/writesys-api && cd ..
-
-# Start server (default port 5000)
-./bin/writesys-api
-
-# Start on custom port
-API_PORT=5003 ./bin/writesys-api
-```
-
-**Health Check:**
-```bash
-curl http://localhost:5000/health | jq .
-# Expected: {"status":"ok","database":"connected","version":"0.1.0-dev"}
-```
-
-**GET /api/manuscripts/:commit_hash**
-```bash
-curl -s "http://localhost:5000/api/manuscripts/b30bd0f?repo=manuscripts/test-repo&file=the-wildfire.md" | jq '.sentences | length'
-# Expected: 214
-```
-
-**GET /api/annotations/sentence/:sentence_id**
-```bash
-curl -s "http://localhost:5000/api/annotations/sentence/chapter-1-i-dbd5ba08" | jq .
-# Expected: Array of annotations for that sentence
-```
-
-**POST /api/annotations** (Create)
-```bash
-# Create test file
-cat > test-annotation.json <<EOF
-{
-  "type": "highlight",
-  "sentence_id": "chapter-1-i-dbd5ba08",
-  "payload": {
-    "color": "yellow",
-    "note": "Great opening line!"
-  }
-}
-EOF
-
-# Create annotation
-curl -s -X POST http://localhost:5000/api/annotations \
-  -H "Content-Type: application/json" \
-  -d @test-annotation.json | jq .
-# Expected: {"annotation_id":1,"version":1}
-```
-
-**PUT /api/annotations/:annotation_id** (Update)
-```bash
-# Create update file
-cat > test-update.json <<EOF
-{
-  "sentence_id": "chapter-1-i-dbd5ba08",
-  "payload": {
-    "color": "green",
-    "note": "Updated note!"
-  }
-}
-EOF
-
-# Update annotation
-curl -s -X PUT http://localhost:5000/api/annotations/1 \
-  -H "Content-Type: application/json" \
-  -d @test-update.json | jq .
-# Expected: {"annotation_id":1,"version":2}
-```
-
-**DELETE /api/annotations/:annotation_id** (Soft Delete)
-```bash
-curl -s -X DELETE http://localhost:5000/api/annotations/1 -w "\nHTTP Status: %{http_code}"
-# Expected: HTTP Status: 204
-
-# Verify soft delete
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT annotation_id, type, deleted_at FROM annotation WHERE annotation_id = 1;"
-# Expected: deleted_at should have a timestamp
-```
-
-### Web UI Tests
-
-**CRITICAL: Test-Driven Issue Discovery**
-
-**When you discover a mistake in your analysis or find a new issue:**
-1. **IMMEDIATELY write a test** that would have caught the issue
-2. **Run the test** to verify it fails (reproduces the issue)
-3. **Fix the issue**
-4. **Verify the test passes**
-5. **Add the test to the suite** for future regression protection
-
-This creates a growing safety net that prevents repeating mistakes.
-
-**IMPORTANT: Always Run Relevant Tests After Making Changes**
-
-The test suite is consolidated into a flat structure for easy discovery:
-
-```bash
-# ===== QUICK TESTS (run these frequently) =====
-node tests/smoke.js           # Quick smoke test (~3s) - basic functionality
-node tests/ui-integration.js  # UI integration tests (~8s) - all UI features
-
-# ===== COMPREHENSIVE TESTS (run before commits) =====
-npx playwright test           # All Playwright E2E tests (52 tests)
-./test-all.sh                 # Complete suite: Go + UI + Playwright
-```
-
-**Start Web UI:**
-```bash
-# API server serves both API endpoints and static web files
-API_PORT=5003 ./bin/writesys-api
-
-# Open in browser
-open http://localhost:5003
-```
-
-**Visual Testing with Playwright:**
-
-ALWAYS run Playwright tests after making changes to HTML, CSS, or JavaScript.
-
-```bash
-# Run all E2E tests
-npx playwright test
-
-# Run with visible browser (for debugging)
-npx playwright test --headed
-
-# Run with Playwright UI (interactive mode)
-npx playwright test --ui
-
-# View HTML report after test run
-npx playwright show-report
-```
-
-**The tests ARE the documentation.** Read the test files to understand what the UI should do:
-- `tests/e2e.spec.js` - Complete Playwright E2E specification (52 tests)
-- `tests/ui-integration.js` - Comprehensive UI integration tests (21 tests)
-- `tests/smoke.js` - Quick smoke test for basic functionality
-
-**What tests/ui-integration.js verifies:**
-1. **Auto-load (Tests 1-4)**: Migration info displayed, manuscript auto-loads on page load
-2. **Controls (Tests 5-9)**: Visibility, positioning, outside Paged.js container
-3. **Styling (Tests 10-13)**: Page colors, borders, shadows, text justification
-4. **Content (Tests 14-17)**: Text rendering, sentence wrapping, page numbers
-5. **Layout (Tests 18-20)**: Page dimensions (576×864), content area size (480×720)
-6. **Typography (Test 21)**: Short dialogue lines don't have stretched justification
-
-**What tests/e2e.spec.js verifies:**
-1. **Smoke Tests**: API health, page loads, CSS, JavaScript modules
-2. **Auto-load Tests**: Manuscript auto-loads, no console errors
-3. **Sentence Interaction**: Click opens sidebar, selection CSS, close button
-4. **Rendering Quality**: Structure, Paged.js pagination, controls positioning
-5. **API Tests**: Migrations endpoint works correctly
-6. **Annotations**: Form exists when sentence clicked
-
-**Reference Design:**
-- Live: https://andrewcheong.com/.staging/stories/
-- Live (Wildfire): https://andrewcheong.com/.staging/wildfire/
-- Source: `$HOME/src/worktree-stories/foundry/website/html/stories/`
-- Source (common): `$HOME/src/worktree-stories/foundry/website/html/common/book.css` and `book.js`
-- Source (Wildfire): `$HOME/src/worktree-stories/foundry/website/html/wildfire/`
-
-**Manual Testing Checklist:**
-
-1. **Page Load**
-   - ✓ Page loads with controls at top
-   - ✓ Default values populated (commit: b30bd0f, repo: manuscripts/test-repo, file: the-wildfire.md)
-   - ✓ Click "Load Manuscript" button
-   - ✓ Status shows "Loading manuscript..."
-   - ✓ Manuscript renders with book-style formatting
-   - ✓ Sentence count displayed (should show "214 sentences")
-
-2. **Sentence Wrapping**
-   - ✓ All text is wrapped in `.sentence` spans
-   - ✓ Hover over sentence shows blue highlight
-   - ✓ Click sentence to select (blue background)
-   - ✓ Open browser console: Check for "Wrapped X sentences" log
-   - ✓ Verify no "Mismatch" warnings in console
-
-3. **Annotation Sidebar**
-   - ✓ Click any sentence
-   - ✓ Sidebar slides in from right
-   - ✓ Selected sentence text displayed in italics
-   - ✓ "No annotations yet" message shown
-   - ✓ Click "Add one?" link
-   - ✓ Annotation form appears
-
-4. **Create Highlight Annotation**
-   - ✓ Select sentence
-   - ✓ Click "Add one?" or "+ Add Annotation"
-   - ✓ Type: "Highlight" (default)
-   - ✓ Color: "Yellow" (default)
-   - ✓ Optional note: "Great opening line!"
-   - ✓ Click "Save"
-   - ✓ Annotation appears in list
-   - ✓ Sentence gets yellow background
-
-5. **Create Tag Annotation**
-   - ✓ Select another sentence
-   - ✓ Add annotation
-   - ✓ Type: "Tag"
-   - ✓ Tag value: "character"
-   - ✓ Save
-   - ✓ Sentence gets blue underline
-
-6. **Create Task Annotation**
-   - ✓ Select another sentence
-   - ✓ Add annotation
-   - ✓ Type: "Task"
-   - ✓ Task description: "Revise this sentence"
-   - ✓ Priority: "P2 - Medium"
-   - ✓ Save
-   - ✓ Sentence gets red folded corner (top-right)
-
-7. **Delete Annotation**
-   - ✓ Click on annotated sentence
-   - ✓ Sidebar shows annotation
-   - ✓ Click "Delete" button
-   - ✓ Confirm deletion dialog
-   - ✓ Annotation removed from list
-   - ✓ Sentence styling removed
-
-8. **Close Sidebar**
-   - ✓ Click X button in sidebar header
-   - ✓ Sidebar slides out
-   - ✓ Click anywhere on manuscript
-   - ✓ Sidebar closes if open
-
-**Automated UI Tests:**
-```bash
-# Test manuscript endpoint for web UI
-curl -s "http://localhost:5003/api/manuscripts/b30bd0f?repo=manuscripts/test-repo&file=the-wildfire.md" \
-  | jq '{sentences_count: (.sentences | length), markdown_length: (.markdown | length)}'
-# Expected: {"sentences_count": 214, "markdown_length": 15950}
-
-# Verify web UI is being served
-curl -s http://localhost:5003/ | grep "WriteSys - Book Annotation System"
-# Expected: <title>WriteSys - Book Annotation System</title>
-
-# Verify CSS is served
-curl -s http://localhost:5003/css/book.css | head -5
-# Expected: CSS content
-
-# Verify JS is served
-curl -s http://localhost:5003/js/renderer.js | head -5
-# Expected: JS content with WriteSysRenderer
-```
-
-### End-to-End Tests
-
-**Run Complete Workflow Test:**
-```bash
-./test-e2e.sh
-```
-
-This script tests the complete lifecycle:
-1. Clean database
-2. Bootstrap first commit (b30bd0f) - 214 sentences
-3. Create 3 annotations (highlight, tag, task)
-4. Process second commit (76c9a7f) with migration - 216 sentences
-5. Verify annotations migrated correctly
-6. Check API returns migrated annotations
-
-**Expected Output:**
-```
-========================================
-Test Summary
-========================================
-  Bootstrap:              ✓    214 sentences
-  Annotations Created:    ✓      3
-  Migration:              ✓    216 sentences
-  Annotations Preserved:  ✓      3
-  API Retrieval:          ✓ 3
-
-✓ End-to-End Test Complete!
-```
-
-**Annotation Migration Verification:**
-```bash
-# Check annotation versions in database
-docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT annotation_id, version, sentence_id, migration_confidence
-   FROM annotation_version ORDER BY annotation_id, version;"
-```
-
-Expected: Each annotation should have 2 versions
-- Version 1: Original sentence ID, no confidence (bootstrap)
-- Version 2: New sentence ID, confidence = 1.00 (migrated)
-
-### Last Test Run: 2026-03-19
-
-- Unit tests: 56/56 passing
-- Bootstrap test: PASSED (214 sentences)
-- Migration test: PASSED (216 sentences, 214 exact matches, 2 additions)
-- Database verification: All foreign keys satisfied, JSONB arrays properly formatted
-- API tests: All endpoints PASSED
-  - Health check: PASSED
-  - GET /api/manuscripts/:commit_hash: PASSED (214 sentences)
-  - GET /api/commits: PASSED (6 commits returned)
-  - GET /api/annotations/sentence/:sentence_id: PASSED
-  - POST /api/annotations: PASSED (annotation_id: 3, version: 1)
-  - PUT /api/annotations/:annotation_id: PASSED (version: 2)
-  - DELETE /api/annotations/:annotation_id: PASSED (soft delete confirmed)
-- Web UI tests: PASSED (21/21 tests)
-  - Auto-load: PASSED (dropdown populated with 6 commits, latest auto-selected and loaded)
-  - Controls visibility and positioning: PASSED
-  - Paged.js pagination: PASSED (10 pages rendered)
-  - Page styling: PASSED (white background, borders, shadows, gray container)
-  - Typography: PASSED (justified paragraphs, no stretched dialogue)
-  - Sentence wrapping: PASSED (319 .sentence elements)
-  - Page numbers: PASSED (hidden on first page, visible on others)
-  - Layout dimensions: PASSED (576×864 pages, 480×720 content area)
-  - Screenshot: browser-testing/test-complete.png
-- Annotation Migration tests: PASSED
-  - Created 3 annotations on commit b30bd0f
-  - Processed commit 76c9a7f with migration
-  - All 3 annotations migrated successfully
-  - Migration confidence: 1.00 (exact matches)
-  - API retrieval: All 3 annotations returned for new commit
-- End-to-End Workflow: PASSED
-  - Full lifecycle test script (./test-e2e.sh)
-  - Bootstrap → Annotate → Edit → Migrate
-  - All steps completed successfully
-
-## Architecture at a Glance
-
-```
-Markdown (git) → writesys CLI → Postgres DB ← API Server ← Web UI
-                      ↓
-              Sentence tokenizer
-              ID generator
-              Migration algorithm
-```
-
-## Important Design Decisions
-
-1. **Why no `sentence_anchor`?** We don't track sentence identity across commits. Annotations migrate heuristically, user fixes manually.
-
-2. **Why 8 hex chars in IDs?** 4.3 billion possible values = collision-proof without runtime checks. Deterministic from hash (text + ordinal + commit).
-
-3. **Why no separate `sentence_text` table?** Text stored directly in `sentence` table. Space savings (~8%) not worth the complexity. ~304MB for full novel lifecycle is acceptable.
-
-4. **Why store sentence ID array uncompressed?** Acts as integrity check and backup. Human-readable for debugging. JSONB in Postgres is efficient enough (~100KB for 7,500 sentences).
-
-5. **Why NOT store markdown in database?** Git already stores it. Use `git show <hash>:path` to retrieve any commit's content.
-
-6. **Why tokenizer parity?** Frontend uses sequential DOM wrapping (fast, robust). Requires Go and JavaScript tokenizers to split sentences identically. One-time porting effort with high payoff.
-
-7. **Why confidence scores?** Makes low-quality migrations visible in UI so user knows to review.
-
-## Phase 1 Boundaries
-
-**In scope:**
-- Local development (Docker)
-- Single user ("andrew")
-- Desktop UI only
-- Basic annotations (highlights, tags, tasks)
-
-**Out of scope:**
-- Multi-user auth
-- Mobile optimization
-- Real-time collaboration
-- Search/filter/export
-- AI features
-
-See PLAN.md → "Phase 1: Scope & Goals" for complete list.
-
-## Key Files to Read
-
-1. **PLAN.md** - Complete design (READ THIS FIRST)
-2. `docker/docker-compose.yml` - Infrastructure setup
-3. `docker/liquibase/changelog/db.changelog-master.xml` - Database schema evolution
-4. `cmd/writesys/main.go` - CLI entry point
-5. `internal/sentence/tokenizer.go` - Sentence splitting logic
-6. `api/handlers.go` - API endpoints
-
-## External References
-
-- **Pattern source:** `/home/slackwing/src/worktree-writesys/11.sxiv/` (sxiva dashboard Docker/Liquibase patterns)
-- **Sentence splitting:** `github.com/jdkato/prose` (Go NLP library)
-- **Fuzzy matching:** Levenshtein distance at word level
-
-## Codebase Cleanup & Test Consolidation (2026-03-28)
-
-The project has undergone aggressive cleanup and test consolidation to improve maintainability:
-
-**Files Deleted:**
-- All log files (*.log) - moved to .gitignore
-- test-annotation.json, test-update.json - example files, recreate as needed
-- REFACTOR_PLAN.md - recent refactor completed, content integrated
-- ANALYSIS-MISTAKES.md - lessons learned integrated into testing practices
-- .browser-testing/ - empty old directory
-- browser-testing/ - entire directory removed, moved to root
-- test-*.js - all standalone test files consolidated into tests/ directory
-- 30+ debug screenshots - old diagnostic images
-- 50+ diagnostic test scripts - consolidated into main test suite
-- Old documentation files (SOLUTION-SUMMARY.md, PAGEDJS-FIX.md)
-- Segmentation test files (test-id-matching.js, test-issues.js, test-new-issues.js) - moved to 15.senseg project
-
-**Test Consolidation:**
-- All tests moved to flat `tests/` directory structure
-- Playwright tests consolidated into `tests/e2e.spec.js` (52 tests)
-- UI integration tests in `tests/ui-integration.js` (21 tests)
-- Quick smoke test in `tests/smoke.js`
-- Playwright config moved to root: `playwright.config.js`
-- Node dependencies moved to root: `package.json`, `package-lock.json`, `node_modules/`
-
-**Code Cleanup:**
-- Removed 6 debug console.log statements from web/js/renderer.js
-- Kept operationally important logging (sentence counts, disparities, errors)
-
-**Configuration Updates:**
-- Enhanced .gitignore with comprehensive patterns for logs, coverage, test artifacts, OS files
-- Updated test-all.sh to reference new test locations
-
-**Current State:**
-- Clean, focused codebase with only essential files
-- Flat test structure: all tests in `tests/` directory
-- Playwright runs from root directory
-- All tests consolidated for easy discovery
-- Test-running instructions added to AGENTS.md to prevent divergence
-
-## Questions?
-
-If anything is unclear or conflicts with PLAN.md, **ask the user** rather than making assumptions. The design is intentionally opinionated to avoid scope creep.
+**Common issues:** Wrong manuscript_id, missing routes in `api/main.go`, CORS errors, missing static files
 
 ---
 
-**Last Updated:** 2026-03-28
+## 🎯 KEY DESIGN DECISIONS
+
+See PLAN.md for full details.
+
+1. **No sentence identity tracking** - Annotations migrate heuristically with confidence scores
+2. **8-char hex sentence IDs** - Deterministic from content hash, collision-proof
+3. **Tokenizer parity required** - JS and Go must split identically for DOM wrapping
+4. **Markdown stays in git** - Don't duplicate in database
+
+---
+
+## ❓ QUESTIONS?
+
+If anything is unclear or conflicts with PLAN.md, **ask the user** rather than making assumptions.
+
+---
+
+**Last Updated:** 2026-03-29
