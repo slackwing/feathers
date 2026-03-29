@@ -16,7 +16,10 @@ You are helping the user add a new hobby category to the SXIVA dashboard.
    - Create a commit with the message: `feat(sxiva): add [xyz] as hobby category` (where xyz is the actual category code)
    - DO NOT push to remote unless the user explicitly asks
 
-4. **Confirm to the user** that the category has been added and committed.
+4. **Confirm to the user** that the category has been added and committed, then remind them to deploy by running:
+   ```
+   ssha ; feathers ; html ; ws_prod
+   ```
 
 ## Important Notes
 
