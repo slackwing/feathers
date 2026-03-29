@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
+const { TEST_URL, TEST_MANUSCRIPT_ID, cleanupTestAnnotations } = require('./test-utils');
 
 (async () => {
   console.log('=== Tag API Test ===\n');
@@ -46,7 +46,7 @@ const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
     console.log(`✓ Annotation created with ID: ${annotationId}`);
 
     // Get the migration ID from the latest migration
-    const migrationResp = await fetch(`${apiUrl}/api/migrations/latest?manuscript_id=1`);
+    const migrationResp = await fetch(`${apiUrl}/api/migrations/latest?manuscript_id=${TEST_MANUSCRIPT_ID}`);
     const migrationData = await migrationResp.json();
     const migrationId = migrationData.migration_id;
     console.log(`✓ Using migration ID: ${migrationId}`);

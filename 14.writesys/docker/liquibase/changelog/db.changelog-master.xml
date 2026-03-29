@@ -16,5 +16,6 @@
     <include file="008-create-tag-table.xml"/>
     <include file="009-create-annotation-tag-table.xml"/>
     <include file="010-fix-annotation-unique-constraint.xml"/>
+    <include file="011-fix-sentence-primary-key.xml"/>
 
 </databaseChangeLog>

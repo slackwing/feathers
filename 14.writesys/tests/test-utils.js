@@ -2,7 +2,7 @@
  * Test utilities for WriteSys integration tests
  */
 
-const TEST_MANUSCRIPT_ID = 2; // ui-test.manuscript
+const TEST_MANUSCRIPT_ID = 2; // test.manuscript (updated after full reset)
 const TEST_URL = `http://localhost:5003?manuscript_id=${TEST_MANUSCRIPT_ID}`;
 const API_BASE_URL = 'http://localhost:5003/api';
 

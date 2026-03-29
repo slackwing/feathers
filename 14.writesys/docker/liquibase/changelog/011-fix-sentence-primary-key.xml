@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
+
+    <changeSet id="011-fix-sentence-primary-key" author="andrew">
+        <comment>
+            Change sentence PRIMARY KEY from sentence_id to (sentence_id, migration_id).
+            This allows the same sentence ID to appear in multiple migrations, which happens
+            when the segmenter version changes but the commit hasn't changed.
+        </comment>
+
+        <!-- Drop foreign key constraints that depend on sentence_pkey -->
+        <sql>
+            ALTER TABLE annotation_version DROP CONSTRAINT fk_annotation_version_sentence;
+            ALTER TABLE annotation_version DROP CONSTRAINT fk_annotation_version_origin_sentence;
+        </sql>
+
+        <!-- Drop the old PRIMARY KEY on sentence_id -->
+        <sql>
+            ALTER TABLE sentence DROP CONSTRAINT sentence_pkey;
+        </sql>
+
+        <!-- Add new composite PRIMARY KEY on (sentence_id, migration_id) -->
+        <addPrimaryKey
+            tableName="sentence"
+            columnNames="sentence_id, migration_id"
+            constraintName="pk_sentence"/>
+
+        <!-- Note: We do NOT re-add foreign key constraints from annotation_version to sentence.
+             annotation_version only has sentence_id, not (sentence_id, migration_id),
+             so it cannot reference the new composite primary key.
+             The application logic will handle referential integrity. -->
+
+        <rollback>
+            <!-- Rollback: drop foreign keys, drop composite key, restore single-column key and foreign keys -->
+            <sql>
+                ALTER TABLE annotation_version DROP CONSTRAINT fk_annotation_version_sentence;
+                ALTER TABLE annotation_version DROP CONSTRAINT fk_annotation_version_origin_sentence;
+                ALTER TABLE sentence DROP CONSTRAINT pk_sentence;
+            </sql>
+            <addPrimaryKey
+                tableName="sentence"
+                columnNames="sentence_id"
+                constraintName="sentence_pkey"/>
+            <sql>
+                ALTER TABLE annotation_version
+                ADD CONSTRAINT fk_annotation_version_sentence
+                FOREIGN KEY (sentence_id)
+                REFERENCES sentence(sentence_id) ON DELETE RESTRICT;
+
+                ALTER TABLE annotation_version
+                ADD CONSTRAINT fk_annotation_version_origin_sentence
+                FOREIGN KEY (origin_sentence_id)
+                REFERENCES sentence(sentence_id) ON DELETE SET NULL;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

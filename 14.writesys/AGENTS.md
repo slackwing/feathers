@@ -2,6 +2,74 @@
 
 ## 🚨 CRITICAL RULES - READ FIRST 🚨
 
+### Rule #0: MANUSCRIPT USAGE RULES
+
+**⚠️ CRITICAL: Understand which manuscripts are for what!**
+
+- **`the-wildfire.manuscript`** = USER'S WORKING DOCUMENT
+  - Bootstrap this ONCE after schema changes
+  - NEVER run tests on it
+  - NEVER debug with it
+  - NEVER delete or truncate its data
+  - This contains the user's real annotations!
+
+- **`test.manuscript`** (formerly ui-test.manuscript) = TEST MANUSCRIPT
+  - Use this for ALL testing and debugging
+  - Tests should clean up their own data
+  - Safe to truncate and re-bootstrap
+  - Should be manuscript_id=2 in database
+
+**If you run tests on the-wildfire.manuscript, you have FAILED.**
+
+---
+
+## 🔄 FULL DATABASE RESET PROCEDURE
+
+**⚠️ ONLY DO THIS WHEN EXPLICITLY ASKED BY THE USER!**
+
+This procedure completely resets the database and bootstraps both manuscripts.
+
+```bash
+# Step 1: Delete Liquibase changelock
+docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c "DELETE FROM databasechangeloglock;"
+
+# Step 2: Drop all WriteSys tables
+docker exec sxiva-timescaledb psql -U writesys_user -d writesys <<EOF
+DROP TABLE IF EXISTS annotation_version CASCADE;
+DROP TABLE IF EXISTS annotation_tag CASCADE;
+DROP TABLE IF EXISTS annotation CASCADE;
+DROP TABLE IF EXISTS tag CASCADE;
+DROP TABLE IF EXISTS sentence CASCADE;
+DROP TABLE IF EXISTS migration CASCADE;
+DROP TABLE IF EXISTS manuscript CASCADE;
+DROP TABLE IF EXISTS databasechangelog CASCADE;
+DROP TABLE IF EXISTS databasechangeloglock CASCADE;
+EOF
+
+# Step 3: Run Liquibase migrations
+cd docker && docker compose --profile migrate up liquibase && cd ..
+
+# Step 4: Bootstrap the-wildfire.manuscript (USER'S WORKING DOCUMENT)
+./bin/writesys --repo manuscripts/test-repo --file the-wildfire.manuscript --yes
+
+# Step 5: Bootstrap test.manuscript (TEST MANUSCRIPT)
+./bin/writesys --repo manuscripts/test-repo --file test.manuscript --yes
+
+# Step 6: Verify manuscript IDs
+docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
+  "SELECT manuscript_id, file_path FROM manuscript ORDER BY manuscript_id;"
+
+# Step 7: Update test configuration with correct manuscript_id for test.manuscript
+# Edit tests/test-utils.js and set TEST_MANUSCRIPT_ID to the test.manuscript ID (should be 2)
+```
+
+**After reset, verify:**
+- manuscript_id=1 should be the-wildfire.manuscript
+- manuscript_id=2 should be test.manuscript
+- Update `tests/test-utils.js` if IDs are different
+
+---
+
 ### Rule #1: ALL Database Schema Changes via Liquibase
 
 **NEVER MODIFY DATABASE SCHEMA DIRECTLY. ALWAYS USE LIQUIBASE CHANGELOGS.**
@@ -229,6 +297,41 @@ cd ../cmd/writesys && go build -o writesys
 ## ⚙️ SPECIALIZED PROCEDURES
 
 These procedures are less frequent but critical when needed.
+
+### Bootstrapping Test Manuscripts After Schema Changes
+
+**⚠️ CRITICAL WARNING: ONLY Bootstrap ui-test.manuscript**
+
+**NEVER run tests on or bootstrap `the-wildfire.manuscript` - that is the user's working document!**
+
+**When to do this:** After applying Liquibase migrations that change the sentence or migration tables, you must re-bootstrap the test manuscript.
+
+**How to bootstrap the UI test manuscript:**
+```bash
+# Bootstrap ONLY the UI test manuscript
+./bin/writesys --repo manuscripts/test-repo --file ui-test.manuscript --yes
+
+# DO NOT bootstrap the-wildfire.manuscript - it's the user's working document!
+```
+
+**After bootstrapping, update test configuration:**
+1. Check which manuscript_id was assigned:
+   ```bash
+   docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
+     "SELECT manuscript_id, file_path FROM manuscript WHERE file_path = 'ui-test.manuscript';"
+   ```
+
+2. Update `tests/test-utils.js` with the ui-test.manuscript ID:
+   ```javascript
+   const TEST_MANUSCRIPT_ID = X; // Use the ID from query above
+   ```
+
+**Test File Clarification:**
+- `the-wildfire.md` (used by E2E tests) - Test file with multiple commits, safe to use
+- `the-wildfire.manuscript` - **USER'S WORKING DOCUMENT, NEVER TOUCH!**
+- `ui-test.manuscript` - Frozen test file, bootstrap this one only
+
+**Why this is needed:** Database migrations may change the primary key structure or other schema elements that require re-creating all sentence and migration records with the new schema.
 
 ### Updating Sentence Segmenters
 

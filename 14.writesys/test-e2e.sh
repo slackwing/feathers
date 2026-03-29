@@ -40,7 +40,7 @@ docker exec sxiva-timescaledb psql -U writesys_user -d writesys -q <<EOF
 DELETE FROM annotation_version WHERE annotation_id IN (SELECT annotation_id FROM annotation);
 DELETE FROM annotation;
 DELETE FROM sentence WHERE commit_hash IN ('$COMMIT_1', '$COMMIT_2');
-DELETE FROM processed_commit WHERE manuscript_id = 1;
+DELETE FROM migration WHERE manuscript_id = 1;
 DELETE FROM manuscript WHERE manuscript_id = 1;
 EOF
 print_success "Database cleaned"
@@ -73,21 +73,21 @@ print_step "Step 4: Creating annotations..."
 # Create highlight annotation
 RESPONSE_1=$(curl -s -X POST $API_URL/annotations \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"highlight\",\"sentence_id\":\"$SENTENCE_1\",\"payload\":{\"color\":\"yellow\",\"note\":\"Test highlight\"}}")
+  -d "{\"sentence_id\":\"$SENTENCE_1\",\"color\":\"yellow\",\"note\":\"Test highlight\"}")
 ANNOTATION_1=$(echo $RESPONSE_1 | grep -o '"annotation_id":[0-9]*' | grep -o '[0-9]*')
 print_success "Created highlight annotation (ID: $ANNOTATION_1)"
 
 # Create tag annotation
 RESPONSE_2=$(curl -s -X POST $API_URL/annotations \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"tag\",\"sentence_id\":\"$SENTENCE_2\",\"payload\":{\"tag\":\"character\",\"note\":\"Test tag\"}}")
+  -d "{\"sentence_id\":\"$SENTENCE_2\",\"color\":\"green\",\"note\":\"Test tag\"}")
 ANNOTATION_2=$(echo $RESPONSE_2 | grep -o '"annotation_id":[0-9]*' | grep -o '[0-9]*')
 print_success "Created tag annotation (ID: $ANNOTATION_2)"
 
 # Create task annotation
 RESPONSE_3=$(curl -s -X POST $API_URL/annotations \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"task\",\"sentence_id\":\"$SENTENCE_3\",\"payload\":{\"description\":\"Revise this\",\"priority\":\"P2\",\"note\":\"Test task\"}}")
+  -d "{\"sentence_id\":\"$SENTENCE_3\",\"color\":\"red\",\"priority\":\"P2\",\"note\":\"Test task\"}")
 ANNOTATION_3=$(echo $RESPONSE_3 | grep -o '"annotation_id":[0-9]*' | grep -o '[0-9]*')
 print_success "Created task annotation (ID: $ANNOTATION_3)"
 
@@ -99,7 +99,7 @@ echo ""
 # Step 5: Verify annotations
 print_step "Step 5: Verifying annotations in database..."
 docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT annotation_id, type, created_by FROM annotation WHERE deleted_at IS NULL ORDER BY annotation_id;" | head -10
+  "SELECT annotation_id, color, user_id FROM annotation WHERE deleted_at IS NULL ORDER BY annotation_id;" | head -10
 echo ""
 
 # Step 6: Process second commit (with migration)
@@ -110,10 +110,10 @@ NEW_SENTENCE_COUNT=$(docker exec sxiva-timescaledb psql -U writesys_user -d writ
 print_success "Migration complete: $NEW_SENTENCE_COUNT sentences in new commit"
 echo ""
 
-# Step 7: Check processed commits
-print_step "Step 7: Checking processed commits..."
+# Step 7: Check migrations
+print_step "Step 7: Checking migrations..."
 docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-  "SELECT commit_hash, sentence_count, additions_count, deletions_count, changes_count FROM processed_commit ORDER BY processed_at;"
+  "SELECT commit_hash, sentence_count, additions_count, deletions_count, changes_count FROM migration ORDER BY processed_at;"
 echo ""
 
 # Step 8: Verify annotations still exist
@@ -157,21 +157,27 @@ print_success "End-to-End Test Complete!"
 echo ""
 
 # Optional: Keep data for manual inspection or clean up
-read -p "Clean up test data? [y/N]: " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_step "Cleaning up..."
-    docker exec sxiva-timescaledb psql -U writesys_user -d writesys -q <<EOF
-    DELETE FROM annotation_version WHERE annotation_id IN (SELECT annotation_id FROM annotation);
-    DELETE FROM annotation;
-    DELETE FROM sentence WHERE commit_hash IN ('$COMMIT_1', '$COMMIT_2');
-    DELETE FROM processed_commit WHERE manuscript_id = 1;
-    DELETE FROM manuscript WHERE manuscript_id = 1;
+# Only prompt if running interactively
+if [ -t 0 ]; then
+    read -p "Clean up test data? [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_step "Cleaning up..."
+        docker exec sxiva-timescaledb psql -U writesys_user -d writesys -q <<EOF
+        DELETE FROM annotation_version WHERE annotation_id IN (SELECT annotation_id FROM annotation);
+        DELETE FROM annotation;
+        DELETE FROM sentence WHERE commit_hash IN ('$COMMIT_1', '$COMMIT_2');
+        DELETE FROM migration WHERE manuscript_id = 1;
+        DELETE FROM manuscript WHERE manuscript_id = 1;
 EOF
-    print_success "Cleanup complete"
+        print_success "Cleanup complete"
+    else
+        echo "Test data preserved. You can now:"
+        echo "  1. Open http://localhost:5003 in browser"
+        echo "  2. Load commit $COMMIT_2 to see annotations"
+        echo "  3. Run queries against the database"
+    fi
 else
-    echo "Test data preserved. You can now:"
-    echo "  1. Open http://localhost:5003 in browser"
-    echo "  2. Load commit $COMMIT_2 to see annotations"
-    echo "  3. Run queries against the database"
+    # Non-interactive mode (running from test-all.sh): skip cleanup
+    echo "Test data preserved for inspection."
 fi
