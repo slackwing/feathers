@@ -57,6 +57,9 @@ const WriteSysAnnotations = {
     // Initialize priority/flag chips
     this.initPriorityFlagChips();
 
+    // Initialize trash icon for deletion
+    this.initTrashIcon();
+
     console.log('WriteSys Annotations initialized');
   },
 
@@ -89,26 +92,9 @@ const WriteSysAnnotations = {
     const existingAnnotation = await this.getAnnotationForSentence(sentenceId);
 
     try{
-      // If clicking the same color that's already applied, remove the highlight (toggle off)
+      // If clicking the same color that's already applied, do nothing (use trash can to delete)
       if (existingAnnotation && existingAnnotation.color === color) {
-        // Ask for confirmation before deleting
-        if (!confirm('Delete this annotation?')) {
-          return;
-        }
-
-        // Remove highlight from all fragments
-        const allFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
-        const highlightColors = ['yellow', 'green', 'blue', 'purple', 'red', 'orange'];
-        allFragments.forEach(fragment => {
-          highlightColors.forEach(c => fragment.classList.remove(`highlight-${c}`));
-        });
-
-        // Clear active circle
-        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-
-        // Delete annotation (will unselect sentence) - skip confirm since we already confirmed
-        await this.deleteAnnotation(existingAnnotation.annotation_id, true);
-        console.log(`Removed annotation ${existingAnnotation.annotation_id}`);
+        return;
       } else if (existingAnnotation) {
         // Get current note text before updating
         const noteInput = document.getElementById('note-input');
@@ -277,14 +263,19 @@ const WriteSysAnnotations = {
       const windowWidth = window.innerWidth;
       const marginWidth = (windowWidth - pageWidth) / 2;
 
-      // Calculate available space for annotations (leave 40px padding)
-      const availableWidth = Math.max(200, marginWidth - 40);
+      // Vertical gap between pages is 2em = 32px (from .pagedjs_pages gap)
+      // We want 1.5x that for horizontal margin from page
+      const horizontalMargin = 48; // 1.5 * 32px
 
-      // Position from right edge
-      const rightOffset = Math.max(20, marginWidth - availableWidth - 20);
+      // Calculate annotation area width (max 400px)
+      const availableWidth = Math.max(200, marginWidth - horizontalMargin - 20);
+      const annotationWidth = Math.min(availableWidth, 400);
 
-      margin.style.right = `${rightOffset}px`;
-      margin.style.width = `${Math.min(availableWidth, 400)}px`; // Max 400px
+      // Position close to page (hug left of right margin)
+      const rightOffset = marginWidth - annotationWidth - horizontalMargin;
+
+      margin.style.right = `${Math.max(20, rightOffset)}px`;
+      margin.style.width = `${annotationWidth}px`;
     };
 
     // Position on load and resize
@@ -301,6 +292,9 @@ const WriteSysAnnotations = {
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
+    // Reset trash can state (in case it was "ran away" from previous sentence)
+    this.cancelTrashRunAway();
+
     // Reset session state
     this.currentAnnotationSession = {
       sentenceId: sentenceId,
@@ -309,6 +303,17 @@ const WriteSysAnnotations = {
       lastKeystroke: null,
       committed: false
     };
+
+    // Show sentence preview (first 3 words)
+    const preview = document.getElementById('sentence-preview');
+    if (preview) {
+      const words = sentenceText.trim().split(/\s+/);
+      let firstThreeWords = words.slice(0, 3).join(' ');
+      // Remove trailing non-alphanumeric characters
+      firstThreeWords = firstThreeWords.replace(/\W+$/, '');
+      preview.textContent = `${firstThreeWords}...`;
+      preview.classList.add('visible');
+    }
 
     // Show color palette
     const palette = document.getElementById('color-palette');
@@ -394,9 +399,7 @@ const WriteSysAnnotations = {
    * Delete annotation
    */
   async deleteAnnotation(annotationId, skipConfirm = false, skipUnselect = false) {
-    if (!skipConfirm && !confirm('Delete this annotation?')) {
-      return;
-    }
+    // skipConfirm parameter is kept for backward compatibility but not used anymore
 
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
@@ -660,6 +663,78 @@ const WriteSysAnnotations = {
     if (container) {
       container.style.display = 'none';
     }
+  },
+
+  /**
+   * Initialize trash icon for deletion
+   */
+  initTrashIcon() {
+    const trashIcon = document.getElementById('trash-icon');
+    const cancelDelete = document.getElementById('cancel-delete');
+
+    if (trashIcon) {
+      trashIcon.addEventListener('click', () => {
+        if (trashIcon.classList.contains('ran-away')) {
+          // Second click - actually delete
+          this.handleTrashDelete();
+        } else {
+          // First click - run away
+          this.showTrashRunAway();
+        }
+      });
+    }
+
+    if (cancelDelete) {
+      cancelDelete.addEventListener('click', () => {
+        this.cancelTrashRunAway();
+      });
+    }
+  },
+
+  /**
+   * Show trash "running away" animation
+   */
+  showTrashRunAway() {
+    const trashIcon = document.getElementById('trash-icon');
+    const cancelDelete = document.getElementById('cancel-delete');
+
+    if (trashIcon) {
+      trashIcon.classList.add('ran-away');
+    }
+
+    if (cancelDelete) {
+      cancelDelete.classList.add('visible');
+    }
+  },
+
+  /**
+   * Cancel trash run away - return to normal
+   */
+  cancelTrashRunAway() {
+    const trashIcon = document.getElementById('trash-icon');
+    const cancelDelete = document.getElementById('cancel-delete');
+
+    if (trashIcon) {
+      trashIcon.classList.remove('ran-away');
+    }
+
+    if (cancelDelete) {
+      cancelDelete.classList.remove('visible');
+    }
+  },
+
+  /**
+   * Handle actual deletion when trash is clicked second time
+   */
+  async handleTrashDelete() {
+    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+    if (annotation && annotation.annotation_id) {
+      await this.deleteAnnotation(annotation.annotation_id, true); // skipConfirm = true
+    }
+
+    // Reset trash state
+    this.cancelTrashRunAway();
   },
 
   /**
@@ -1007,6 +1082,12 @@ const WriteSysAnnotations = {
     // Save any pending note changes before unselecting
     clearTimeout(this.autoSaveTimeout);
     this.saveAnnotation();
+
+    // Hide sentence preview
+    const preview = document.getElementById('sentence-preview');
+    if (preview) {
+      preview.classList.remove('visible');
+    }
 
     // Hide color palette
     const palette = document.getElementById('color-palette');

@@ -49,14 +49,15 @@ const { TEST_URL, TEST_MANUSCRIPT_ID, cleanupTestAnnotations } = require('./test
       process.exit(1);
     }
 
-    // Clean up - delete annotation
-    // Set up dialog handler BEFORE clicking to avoid race condition
-    const dialogPromise = page.waitForEvent('dialog');
-    await yellowCircle.click(); // Toggle off
+    // Clean up - delete annotation using trash icon
+    const trashIcon = await page.locator('#trash-icon');
 
-    // Handle the deletion confirmation dialog
-    const dialog = await dialogPromise;
-    await dialog.accept();
+    // Click trash once (runs away)
+    await trashIcon.click();
+    await page.waitForTimeout(300);
+
+    // Click trash again (actually deletes)
+    await trashIcon.click();
     await page.waitForTimeout(500);
 
     // ===== Test 3: Visibility after note typing (with blue default) =====

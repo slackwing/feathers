@@ -307,17 +307,45 @@ p.indented {
   padding: 16px 12px;
 }
 
+/* Sentence preview (first 3 words) */
+.sentence-preview {
+  display: none;
+  text-align: center;
+  font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+  font-size: 16px;
+  color: #999;
+  margin-bottom: 12px;
+  padding: 0 8px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+  font-style: italic;
+}
+
+.sentence-preview.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Color palette for highlights */
 .color-palette {
   display: none; /* Hidden by default */
   justify-content: center;
+  align-items: center;
   gap: 8px;
   margin-bottom: 16px;
   padding: 8px 0;
+  position: relative;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .color-palette.visible {
   display: flex; /* Show when sentence is selected */
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .color-circle {
@@ -371,10 +399,15 @@ p.indented {
 #note-container {
   display: none; /* Hidden by default */
   margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 #note-container.visible {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 #note-input {
@@ -404,10 +437,15 @@ p.indented {
 #tags-container {
   display: none; /* Hidden by default */
   margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 #tags-container.visible {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 #tags-list {
@@ -482,6 +520,57 @@ p.indented {
   font-style: italic;
 }
 
+/* Trash icon for deletion */
+.trash-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.trash-icon:hover {
+  color: #666;
+  transform: scale(1.1);
+}
+
+.trash-icon.ran-away {
+  transform: translateX(0px);
+  color: #dc3545;
+  font-weight: bold;
+  z-index: 3;
+}
+
+/* Cancel X (appears when trash runs away) */
+.cancel-delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: #666;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.cancel-delete.visible {
+  display: flex;
+  opacity: 1;
+}
+
+.cancel-delete:hover {
+  color: #333;
+  transform: scale(1.1);
+}
+
 /* Annotation item styling */
 .annotation-item {
   font-family: "Helvetica", sans-serif;
@@ -511,6 +600,17 @@ p.indented {
 /* Priority/Flag section */
 #priority-flag-container {
   margin-top: 8px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+#priority-flag-container[style*="display: block"] {
+  opacity: 1;
+  max-height: 100px;
+  transform: translateY(0);
 }
 
 #priority-flag-chips {
