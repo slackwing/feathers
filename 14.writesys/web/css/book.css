@@ -486,6 +486,90 @@ p.indented {
 .annotation-item.red { border-left-color: #FFCCCB; background-color: rgba(255, 204, 203, 0.1); }
 .annotation-item.orange { border-left-color: #FFD8A8; background-color: rgba(255, 216, 168, 0.1); }
 
+/* Priority/Flag section */
+#priority-flag-container {
+  margin-top: 8px;
+}
+
+#priority-flag-chips {
+  display: flex;
+  justify-content: flex-end;  /* Right-align */
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.priority-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px dashed #ccc;
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  font-weight: normal;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.priority-chip:hover {
+  background: #f5f5f5;
+  border-color: #999;
+  color: #666;
+}
+
+.priority-chip.active {
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+  color: #333;
+}
+
+.flag-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.flag-chip .flag-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.flag-chip .flag-staff {
+  stroke: #999;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.flag-chip .flag-shape {
+  stroke: #999;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.flag-chip:hover .flag-staff,
+.flag-chip:hover .flag-shape {
+  stroke: #666;
+}
+
+.flag-chip.active .flag-staff {
+  stroke: #000;
+  fill: none;
+}
+
+.flag-chip.active .flag-shape {
+  stroke: #dc3545;
+  fill: #dc3545;
+}
+
 /* Print styles */
 @media print {
   #controls,

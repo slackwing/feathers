@@ -13,7 +13,8 @@ const WriteSysAnnotations = {
     sentenceId: null,
     autoDefaultedToBlue: false,
     originalColor: null,
-    lastKeystroke: null
+    lastKeystroke: null,
+    committed: false  // Set to true if P or flag is selected
   },
 
   /**
@@ -52,6 +53,9 @@ const WriteSysAnnotations = {
 
     // Initialize tags
     this.initTags();
+
+    // Initialize priority/flag chips
+    this.initPriorityFlagChips();
 
     console.log('WriteSys Annotations initialized');
   },
@@ -153,6 +157,12 @@ const WriteSysAnnotations = {
 
         // Apply highlight to sentence
         this.applyHighlightToSentence(selectedSentence, color);
+
+        // Show P/flag section since annotation now exists
+        this.showPriorityFlagSection();
+
+        // Update P/flag UI
+        this.updatePriorityFlagUI(newAnnotation);
       }
 
       // Keep palette open so user can change colors or toggle off
@@ -296,7 +306,8 @@ const WriteSysAnnotations = {
       sentenceId: sentenceId,
       autoDefaultedToBlue: false,
       originalColor: null,
-      lastKeystroke: null
+      lastKeystroke: null,
+      committed: false
     };
 
     // Show color palette
@@ -349,6 +360,12 @@ const WriteSysAnnotations = {
 
         // Load and render tags
         this.renderTags(annotation.tags || []);
+
+        // Show P/flag section since annotation exists
+        this.showPriorityFlagSection();
+
+        // Update P/flag UI
+        this.updatePriorityFlagUI(annotation);
       } else {
         // No annotation - clear note and tags
         const noteInput = document.getElementById('note-input');
@@ -356,6 +373,9 @@ const WriteSysAnnotations = {
           noteInput.value = '';
         }
         this.renderTags([]);
+
+        // Hide P/flag section
+        this.hidePriorityFlagSection();
       }
 
     } catch (error) {
@@ -453,6 +473,196 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Initialize priority/flag chips handling
+   */
+  initPriorityFlagChips() {
+    // Initialize event listeners for priority chips (P0-P3)
+    document.querySelectorAll('.priority-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const priority = chip.dataset.priority;
+        this.handlePriorityClick(priority);
+      });
+    });
+
+    // Initialize event listener for flag chip
+    const flagChip = document.querySelector('.flag-chip');
+    if (flagChip) {
+      flagChip.addEventListener('click', () => {
+        this.handleFlagClick();
+      });
+    }
+  },
+
+  /**
+   * Handle priority chip click (radio behavior - P0, P1, P2, P3)
+   */
+  async handlePriorityClick(priority) {
+    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+    // If no annotation exists, create one with blue color first
+    if (!annotation || !annotation.annotation_id) {
+      try {
+        await this.handleColorSelection('blue');
+        this.currentAnnotationSession.autoDefaultedToBlue = true;
+        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+        if (!annotation || !annotation.annotation_id) {
+          alert('Failed to create annotation');
+          return;
+        }
+      } catch (error) {
+        alert(`Error creating annotation: ${error.message}`);
+        return;
+      }
+    }
+
+    // Toggle behavior: if clicking the same priority, deselect it
+    const newPriority = (annotation.priority === priority) ? 'none' : priority;
+
+    // Mark as committed (prevents auto-blue undo)
+    if (newPriority !== 'none') {
+      this.currentAnnotationSession.committed = true;
+      this.currentAnnotationSession.autoDefaultedToBlue = false;
+    }
+
+    try {
+      // Update annotation with new priority
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence_id: this.currentSentenceId,
+          color: annotation.color,
+          note: annotation.note || null,
+          priority: newPriority,
+          flagged: annotation.flagged || false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Update local annotation
+      annotation.priority = newPriority;
+
+      // Update UI
+      this.updatePriorityFlagUI(annotation);
+
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      alert('Failed to update priority');
+    }
+  },
+
+  /**
+   * Handle flag chip click (toggle behavior)
+   */
+  async handleFlagClick() {
+    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+    // If no annotation exists, create one with blue color first
+    if (!annotation || !annotation.annotation_id) {
+      try {
+        await this.handleColorSelection('blue');
+        this.currentAnnotationSession.autoDefaultedToBlue = true;
+        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
+
+        if (!annotation || !annotation.annotation_id) {
+          alert('Failed to create annotation');
+          return;
+        }
+      } catch (error) {
+        alert(`Error creating annotation: ${error.message}`);
+        return;
+      }
+    }
+
+    // Toggle flagged state
+    const newFlagged = !annotation.flagged;
+
+    // Mark as committed (prevents auto-blue undo)
+    if (newFlagged) {
+      this.currentAnnotationSession.committed = true;
+      this.currentAnnotationSession.autoDefaultedToBlue = false;
+    }
+
+    try {
+      // Update annotation with new flagged state
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence_id: this.currentSentenceId,
+          color: annotation.color,
+          note: annotation.note || null,
+          priority: annotation.priority || 'none',
+          flagged: newFlagged
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Update local annotation
+      annotation.flagged = newFlagged;
+
+      // Update UI
+      this.updatePriorityFlagUI(annotation);
+
+    } catch (error) {
+      console.error('Failed to update flag:', error);
+      alert('Failed to update flag');
+    }
+  },
+
+  /**
+   * Update priority/flag chip UI based on annotation state
+   */
+  updatePriorityFlagUI(annotation) {
+    // Update priority chips
+    document.querySelectorAll('.priority-chip').forEach(chip => {
+      const priority = chip.dataset.priority;
+      if (annotation.priority === priority) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+
+    // Update flag chip
+    const flagChip = document.querySelector('.flag-chip');
+    if (flagChip) {
+      if (annotation.flagged) {
+        flagChip.classList.add('active');
+      } else {
+        flagChip.classList.remove('active');
+      }
+    }
+  },
+
+  /**
+   * Show priority/flag section (only when annotation exists)
+   */
+  showPriorityFlagSection() {
+    const container = document.getElementById('priority-flag-container');
+    if (container) {
+      container.style.display = 'block';
+    }
+  },
+
+  /**
+   * Hide priority/flag section
+   */
+  hidePriorityFlagSection() {
+    const container = document.getElementById('priority-flag-container');
+    if (container) {
+      container.style.display = 'none';
+    }
+  },
+
+  /**
    * Handle note input with default-to-blue logic
    */
   async handleNoteInput(event) {
@@ -494,6 +704,12 @@ const WriteSysAnnotations = {
         if (selectedSentence) {
           this.applyHighlightToSentence(selectedSentence, 'blue');
         }
+
+        // Show P/flag section since annotation now exists
+        this.showPriorityFlagSection();
+
+        // Update P/flag UI
+        this.updatePriorityFlagUI(newAnnotation);
       } catch (error) {
         console.error('Failed to create auto-default blue annotation:', error);
         this.currentAnnotationSession.autoDefaultedToBlue = false;
@@ -529,7 +745,18 @@ const WriteSysAnnotations = {
     const noteInput = document.getElementById('note-input');
     const hasNote = noteInput && noteInput.value.trim().length > 0;
 
-    // TODO: Add checks for priority and flagged when implemented
+    // Don't undo if committed via P/flag selection
+    if (this.currentAnnotationSession.committed) {
+      return false;
+    }
+
+    // Don't undo if priority is set or flagged
+    if (annotation.priority && annotation.priority !== 'none') {
+      return false;
+    }
+    if (annotation.flagged) {
+      return false;
+    }
 
     return this.currentAnnotationSession.autoDefaultedToBlue &&
            !hasNote &&
@@ -737,6 +964,9 @@ const WriteSysAnnotations = {
       tagsContainer.classList.remove('visible');
     }
 
+    // Hide priority/flag container
+    this.hidePriorityFlagSection();
+
     // Remove selection from sentences
     document.querySelectorAll('.sentence.selected').forEach(s => s.classList.remove('selected'));
 
@@ -750,7 +980,8 @@ const WriteSysAnnotations = {
       sentenceId: null,
       autoDefaultedToBlue: false,
       originalColor: null,
-      lastKeystroke: null
+      lastKeystroke: null,
+      committed: false
     };
   },
 

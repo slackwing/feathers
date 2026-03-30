@@ -6,7 +6,7 @@
   <title>WriteSys - Book Annotation System</title>
 
   <!-- Book-style CSS -->
-  <link rel="stylesheet" href="/css/book.css?v=39">
+  <link rel="stylesheet" href="/css/book.css?v=43">
 
   <!-- Paged.js for book pagination - loaded but not auto-run -->
   <script>
@@ -56,6 +56,22 @@
       <div id="tags-container">
         <div id="tags-list">
           <!-- Tag chips will appear here -->
+        </div>
+      </div>
+
+      <!-- Priority/Flag chips (right-aligned, only visible when annotation exists) -->
+      <div id="priority-flag-container" style="display: none;">
+        <div id="priority-flag-chips">
+          <div class="priority-chip" data-priority="P0">P0</div>
+          <div class="priority-chip" data-priority="P1">P1</div>
+          <div class="priority-chip" data-priority="P2">P2</div>
+          <div class="priority-chip" data-priority="P3">P3</div>
+          <div class="flag-chip" data-flag="true" title="Flag">
+            <svg width="20" height="20" viewBox="0 0 20 20" class="flag-icon">
+              <path class="flag-staff" d="M4 1v18"/>
+              <path class="flag-shape" d="M4 3h10l-2.5 5 2.5 5H4"/>
+            </svg>
+          </div>
         </div>
       </div>
 
