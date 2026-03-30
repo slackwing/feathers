@@ -285,13 +285,15 @@ const { TEST_URL, TEST_MANUSCRIPT_ID, cleanupTestAnnotations } = require('./test
     // Add a tag (should create blue annotation)
     const newTagChip = await page.locator('.new-tag');
 
-    // Set up dialog handler for tag name prompt
-    page.once('dialog', async dialog => {
-      await dialog.accept('test-tag');
-    });
-
+    // Click to create editable chip
     await newTagChip.click();
-    await page.waitForTimeout(2000); // Wait for annotation creation and tag addition
+    await page.waitForTimeout(300);
+
+    // Type tag name and press Enter
+    const tagInput = await page.locator('.tag-input');
+    await tagInput.type('test-tag');
+    await tagInput.press('Enter');
+    await page.waitForTimeout(1500); // Wait for annotation creation and tag addition
 
     // Check if blue is applied
     const hasBlueTag = await fourthSentence.evaluate(el => el.classList.contains('highlight-blue'));

@@ -845,9 +845,71 @@ const WriteSysAnnotations = {
    * Add new tag
    */
   async addNewTag() {
-    const tagName = prompt('Enter tag name (lowercase, dash-separated):');
-    if (!tagName) return;
+    // Create inline editable chip
+    this.createEditableTagChip();
+  },
 
+  /**
+   * Create inline editable tag chip
+   */
+  createEditableTagChip() {
+    const tagsList = document.getElementById('tags-list');
+    const newTagChip = tagsList.querySelector('.new-tag');
+
+    // Create editable input styled as a chip
+    const editableChip = document.createElement('div');
+    editableChip.className = 'tag-chip editable-tag';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tag-input';
+    input.placeholder = 'tag-name';
+    input.maxLength = 50;
+
+    editableChip.appendChild(input);
+
+    // Insert before the "+tag" chip
+    tagsList.insertBefore(editableChip, newTagChip);
+
+    // Focus the input
+    input.focus();
+
+    // Flag to track if tag creation was cancelled
+    let cancelled = false;
+
+    // Handle finishing tag creation
+    const finishTagCreation = async (e) => {
+      if (cancelled) return;
+
+      const tagName = input.value.trim();
+
+      // Remove the editable chip
+      editableChip.remove();
+
+      if (!tagName) return;
+
+      // Validate and create tag
+      await this.finalizeTagCreation(tagName);
+    };
+
+    // Listen for completion events
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab') {
+        e.preventDefault();
+        finishTagCreation(e);
+      } else if (e.key === 'Escape') {
+        cancelled = true;
+        editableChip.remove();
+      }
+    });
+
+    input.addEventListener('blur', finishTagCreation);
+  },
+
+  /**
+   * Finalize tag creation with validation
+   */
+  async finalizeTagCreation(tagName) {
     // Validate tag name
     const valid = /^[a-z0-9-]+$/.test(tagName);
     if (!valid) {
