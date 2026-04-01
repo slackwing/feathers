@@ -6,7 +6,7 @@
   <title>WriteSys - Book Annotation System</title>
 
   <!-- Book-style CSS -->
-  <link rel="stylesheet" href="/css/book.css?v=56">
+  <link rel="stylesheet" href="/css/book.css?v=65">
 
   <!-- Paged.js for book pagination - loaded but not auto-run -->
   <script>
@@ -64,30 +64,36 @@
         </div>
       </div>
 
-      <!-- Note textbox -->
-      <div id="note-container">
-        <textarea id="note-input" placeholder="Optional note..." rows="3"></textarea>
-      </div>
-
-      <!-- Tags section -->
-      <div id="tags-container">
-        <div id="tags-list">
-          <!-- Tag chips will appear here -->
+      <!-- Sticky Note Container -->
+      <div id="sticky-note-container">
+        <!-- Note textbox -->
+        <div id="note-container">
+          <textarea id="note-input" placeholder="Write a note..." rows="3"></textarea>
         </div>
-      </div>
 
-      <!-- Priority/Flag chips (right-aligned, only visible when annotation exists) -->
-      <div id="priority-flag-container" style="display: none;">
-        <div id="priority-flag-chips">
-          <div class="priority-chip" data-priority="P0">P0</div>
-          <div class="priority-chip" data-priority="P1">P1</div>
-          <div class="priority-chip" data-priority="P2">P2</div>
-          <div class="priority-chip" data-priority="P3">P3</div>
-          <div class="flag-chip" data-flag="true" title="Flag">
-            <svg width="20" height="20" viewBox="0 0 20 20" class="flag-icon">
-              <path class="flag-staff" d="M4 1v18"/>
-              <path class="flag-shape" d="M4 3h10l-2.5 5 2.5 5H4"/>
-            </svg>
+        <!-- Combined bottom controls: Tags, Priority, Flag -->
+        <div id="sticky-bottom-controls">
+          <!-- Tags section -->
+          <div id="tags-container">
+            <div id="tags-list">
+              <!-- Tag chips will appear here -->
+            </div>
+          </div>
+
+          <!-- Priority/Flag chips (only visible when annotation exists) -->
+          <div id="priority-flag-container" style="display: none;">
+            <div id="priority-flag-chips">
+              <div class="priority-chip" data-priority="P0">P0</div>
+              <div class="priority-chip" data-priority="P1">P1</div>
+              <div class="priority-chip" data-priority="P2">P2</div>
+              <div class="priority-chip" data-priority="P3">P3</div>
+              <div class="flag-chip" data-flag="true" title="Flag">
+                <svg width="20" height="20" viewBox="0 0 20 20" class="flag-icon">
+                  <path class="flag-staff" d="M4 1v18"/>
+                  <path class="flag-shape" d="M4 3h10l-2.5 5 2.5 5H4"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -119,6 +125,6 @@
 
   <!-- Application scripts -->
   <script src="/js/renderer.js?v=62"></script>
-  <script src="/js/annotations.js?v=41"></script>
+  <script src="/js/annotations.js?v=51"></script>
 </body>
 </html>

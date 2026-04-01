@@ -8,6 +8,16 @@ const WriteSysAnnotations = {
   annotations: [],
   autoSaveTimeout: null,
 
+  // Available annotation colors
+  COLORS: ['yellow', 'green', 'blue', 'purple', 'red', 'orange'],
+
+  // Spacing constants - must match CSS variables in book.css
+  SPACING: {
+    PAGE_WIDTH: 576,           // Width of .pagedjs_page
+    ANNOTATION_WIDTH: 240,     // --annotation-width
+    HORIZONTAL_GAP: 32,        // --horizontal-gap (page to annotation margin)
+  },
+
   // Session state for default-to-blue logic
   currentAnnotationSession: {
     sentenceId: null,
@@ -119,6 +129,9 @@ const WriteSysAnnotations = {
 
         // Apply highlight to sentence
         this.applyHighlightToSentence(selectedSentence, color);
+
+        // Update sticky note background color
+        this.applyStickyNoteColor(color);
       } else {
         // Create new annotation
         const apiResponse = await this.createHighlightAnnotation(sentenceId, color);
@@ -143,6 +156,9 @@ const WriteSysAnnotations = {
 
         // Apply highlight to sentence
         this.applyHighlightToSentence(selectedSentence, color);
+
+        // Update sticky note background color
+        this.applyStickyNoteColor(color);
 
         // Show P/flag section since annotation now exists
         this.showPriorityFlagSection();
@@ -169,7 +185,7 @@ const WriteSysAnnotations = {
     }
     const data = await response.json();
     const annotations = data.annotations || [];
-    // Return first annotation (should only be one per sentence per user)
+    // Return first annotation (if multiple exist, pick first for display)
     return annotations.length > 0 ? annotations[0] : null;
   },
 
@@ -251,6 +267,34 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Apply color class to sticky note container
+   * @param {string} color - Color name (yellow, green, blue, purple, red, orange) or null for grey
+   */
+  applyStickyNoteColor(color) {
+    const stickyNote = document.getElementById('sticky-note-container');
+    if (!stickyNote) return;
+
+    // Remove all color classes
+    this.COLORS.forEach(c => stickyNote.classList.remove(`color-${c}`));
+
+    // Add new color class
+    if (color) {
+      stickyNote.classList.add(`color-${color}`);
+    }
+  },
+
+  /**
+   * Remove color from sticky note (revert to grey)
+   */
+  removeStickyNoteColor() {
+    const stickyNote = document.getElementById('sticky-note-container');
+    if (!stickyNote) return;
+
+    // Remove all color classes (reverts to default grey background)
+    this.COLORS.forEach(c => stickyNote.classList.remove(`color-${c}`));
+  },
+
+  /**
    * Initialize and position the annotation margin container
    */
   initAnnotationMargin() {
@@ -259,23 +303,15 @@ const WriteSysAnnotations = {
 
     // Position margin based on window size
     const positionMargin = () => {
-      const pageWidth = 576; // Width of .pagedjs_page
       const windowWidth = window.innerWidth;
-      const marginWidth = (windowWidth - pageWidth) / 2;
+      const marginWidth = (windowWidth - this.SPACING.PAGE_WIDTH) / 2;
 
-      // Vertical gap between pages is 2em = 32px (from .pagedjs_pages gap)
-      // We want 1.5x that for horizontal margin from page
-      const horizontalMargin = 48; // 1.5 * 32px
+      // CONSTANT gap from page edge - matches vertical gap between pages
+      // Position: distance from viewport right edge
+      // = marginWidth (to page right) - gap - containerWidth
+      const rightPosition = marginWidth - this.SPACING.HORIZONTAL_GAP - this.SPACING.ANNOTATION_WIDTH;
 
-      // Calculate annotation area width (max 400px)
-      const availableWidth = Math.max(200, marginWidth - horizontalMargin - 20);
-      const annotationWidth = Math.min(availableWidth, 400);
-
-      // Position close to page (hug left of right margin)
-      const rightOffset = marginWidth - annotationWidth - horizontalMargin;
-
-      margin.style.right = `${Math.max(20, rightOffset)}px`;
-      margin.style.width = `${annotationWidth}px`;
+      margin.style.right = `${rightPosition}px`;
     };
 
     // Position on load and resize
@@ -284,9 +320,9 @@ const WriteSysAnnotations = {
   },
 
   /**
-
-  /**
    * Show annotations for a specific sentence
+   * @param {string} sentenceId - The ID of the sentence to annotate
+   * @param {string} sentenceText - The full text of the sentence
    */
   async showAnnotationsForSentence(sentenceId, sentenceText) {
     this.currentSentenceId = sentenceId;
@@ -321,16 +357,10 @@ const WriteSysAnnotations = {
       palette.classList.add('visible');
     }
 
-    // Show note container
-    const noteContainer = document.getElementById('note-container');
-    if (noteContainer) {
-      noteContainer.classList.add('visible');
-    }
-
-    // Show tags container
-    const tagsContainer = document.getElementById('tags-container');
-    if (tagsContainer) {
-      tagsContainer.classList.add('visible');
+    // Show sticky note container (contains note, tags, priority, flag)
+    const stickyNoteContainer = document.getElementById('sticky-note-container');
+    if (stickyNoteContainer) {
+      stickyNoteContainer.classList.add('visible');
     }
 
     // Fetch annotations for this sentence to highlight current color in palette
@@ -355,12 +385,20 @@ const WriteSysAnnotations = {
           if (activeCircle) {
             activeCircle.classList.add('active');
           }
+          // Apply sticky note color
+          this.applyStickyNoteColor(annotation.color);
+        } else {
+          // No color yet - keep grey
+          this.removeStickyNoteColor();
         }
 
         // Populate note textbox
         const noteInput = document.getElementById('note-input');
         if (noteInput) {
           noteInput.value = annotation.note || '';
+          // Resize textarea to fit existing content
+          noteInput.style.height = 'auto';
+          noteInput.style.height = noteInput.scrollHeight + 'px';
         }
 
         // Load and render tags
@@ -376,8 +414,13 @@ const WriteSysAnnotations = {
         const noteInput = document.getElementById('note-input');
         if (noteInput) {
           noteInput.value = '';
+          // Reset textarea height
+          noteInput.style.height = 'auto';
         }
         this.renderTags([]);
+
+        // No color - keep grey
+        this.removeStickyNoteColor();
 
         // Hide P/flag section
         this.hidePriorityFlagSection();
@@ -445,14 +488,24 @@ const WriteSysAnnotations = {
     const noteInput = document.getElementById('note-input');
     if (!noteInput) return;
 
+    // Auto-resize textarea function
+    const autoResize = () => {
+      noteInput.style.height = 'auto'; // Reset height to recalculate
+      noteInput.style.height = noteInput.scrollHeight + 'px'; // Set to scroll height
+    };
+
     noteInput.addEventListener('input', (e) => {
       this.handleNoteInput(e);
+      autoResize(); // Resize on input
     });
 
     noteInput.addEventListener('blur', () => {
       // Save immediately on blur
       this.saveAnnotation();
     });
+
+    // Initial resize in case there's existing content
+    autoResize();
   },
 
   /**
@@ -780,6 +833,9 @@ const WriteSysAnnotations = {
           this.applyHighlightToSentence(selectedSentence, 'blue');
         }
 
+        // Apply sticky note color
+        this.applyStickyNoteColor('blue');
+
         // Show P/flag section since annotation now exists
         this.showPriorityFlagSection();
 
@@ -798,6 +854,9 @@ const WriteSysAnnotations = {
         if (annotation) {
           // Clear any pending auto-save
           clearTimeout(this.autoSaveTimeout);
+
+          // Revert sticky note to grey before deleting
+          this.removeStickyNoteColor();
 
           await this.deleteAnnotation(annotation.annotation_id, true, true); // skipConfirm=true, skipUnselect=true
           this.currentAnnotationSession.autoDefaultedToBlue = false;
@@ -1095,17 +1154,14 @@ const WriteSysAnnotations = {
       palette.classList.remove('visible');
     }
 
-    // Hide note container
-    const noteContainer = document.getElementById('note-container');
-    if (noteContainer) {
-      noteContainer.classList.remove('visible');
+    // Hide sticky note container (contains note, tags, priority, flag)
+    const stickyNoteContainer = document.getElementById('sticky-note-container');
+    if (stickyNoteContainer) {
+      stickyNoteContainer.classList.remove('visible');
     }
 
-    // Hide tags container
-    const tagsContainer = document.getElementById('tags-container');
-    if (tagsContainer) {
-      tagsContainer.classList.remove('visible');
-    }
+    // Clear sticky note color (will be reset when next sentence is selected)
+    this.removeStickyNoteColor();
 
     // Hide priority/flag container
     this.hidePriorityFlagSection();

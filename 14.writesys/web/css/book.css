@@ -1,3 +1,53 @@
+/* Spacing constants - critical invariants tested in spacing-invariants-test.js */
+:root {
+  --page-gap: 2em;              /* Vertical gap between pages (32px) */
+  --horizontal-gap: 32px;        /* Gap from page edge to annotation margin */
+  --annotation-top: 150px;       /* Top margin from viewport to annotations */
+  --annotation-width: 240px;     /* Fixed width of annotation container */
+
+  /* Color system - Kindle-like highlights and sticky notes */
+  /* Highlight colors (sentence backgrounds) */
+  --highlight-yellow: #FFF3A3;
+  --highlight-green: #C3FDB8;
+  --highlight-blue: #AEDFF7;
+  --highlight-purple: #E0BBE4;
+  --highlight-red: #FFCCCB;
+  --highlight-orange: #FFD8A8;
+
+  /* Sticky note backgrounds (lighter versions) */
+  --sticky-yellow: #fef3c7;
+  --sticky-green: #d4f4cc;
+  --sticky-blue: #cce7f5;
+  --sticky-purple: #e8d4ec;
+  --sticky-red: #ffe0de;
+  --sticky-orange: #ffe7d1;
+
+  /* Tag/chip colors (darker shades for contrast) */
+  --chip-yellow: #f4d03f;
+  --chip-yellow-text: #5a4a0f;
+  --chip-green: #85e085;
+  --chip-green-text: #1e4d1e;
+  --chip-blue: #6fc3ed;
+  --chip-blue-text: #1a4d6b;
+  --chip-purple: #c299d4;
+  --chip-purple-text: #4a2d5a;
+  --chip-red: #ff9999;
+  --chip-red-text: #660000;
+  --chip-orange: #ffc170;
+  --chip-orange-text: #663800;
+
+  /* Palette outline colors (active state) */
+  --outline-yellow: #D4C300;
+  --outline-green: #7BC473;
+  --outline-blue: #6BB9DB;
+  --outline-purple: #B57BB8;
+  --outline-red: #E69999;
+  --outline-orange: #E6A85C;
+
+  /* Neutral colors */
+  --sticky-default: #e8e8e8;     /* Default grey (no annotation) */
+}
+
 /* Reset and base styles */
 * {
   margin: 0;
@@ -96,7 +146,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2em;
+  gap: var(--page-gap);
   padding: 2em;
   background: #f5f5f5;
   min-height: calc(100vh - 60px);
@@ -254,32 +304,32 @@ p.indented {
 
 /* Kindle-like highlight colors */
 .sentence.highlight-yellow {
-  background-color: #FFF3A3 !important;
+  background-color: var(--highlight-yellow) !important;
   border-radius: 2px;
 }
 
 .sentence.highlight-green {
-  background-color: #C3FDB8 !important;
+  background-color: var(--highlight-green) !important;
   border-radius: 2px;
 }
 
 .sentence.highlight-blue {
-  background-color: #AEDFF7 !important;
+  background-color: var(--highlight-blue) !important;
   border-radius: 2px;
 }
 
 .sentence.highlight-purple {
-  background-color: #E0BBE4 !important;
+  background-color: var(--highlight-purple) !important;
   border-radius: 2px;
 }
 
 .sentence.highlight-red {
-  background-color: #FFCCCB !important;
+  background-color: var(--highlight-red) !important;
   border-radius: 2px;
 }
 
 .sentence.highlight-orange {
-  background-color: #FFD8A8 !important;
+  background-color: var(--highlight-orange) !important;
   border-radius: 2px;
 }
 
@@ -291,10 +341,8 @@ p.indented {
 /* Annotation margin container - floats in right grey margin */
 #annotation-margin {
   position: fixed;
-  top: calc(33vh + 60px); /* Center third vertically (below controls) */
+  top: var(--annotation-top);
   right: 0;
-  width: 300px; /* Initial width, will be adjusted by JS */
-  max-width: calc((100vw - 576px) / 2 - 40px); /* Leave 40px padding from page edge */
   z-index: 100;
   pointer-events: none; /* Allow clicks through to page */
   overflow: visible;
@@ -302,9 +350,8 @@ p.indented {
 
 .annotation-margin-inner {
   position: relative;
-  width: 100%;
+  width: var(--annotation-width);
   pointer-events: auto; /* Re-enable clicks on actual content */
-  padding: 16px 12px;
 }
 
 /* Sentence preview (first 3 words) */
@@ -372,80 +419,153 @@ p.indented {
 
 /* Darker outline colors for each highlight color */
 .color-circle[data-color="yellow"].active {
-  outline-color: #D4C300; /* Darker yellow */
+  outline-color: var(--outline-yellow);
 }
 
 .color-circle[data-color="green"].active {
-  outline-color: #7BC473; /* Darker green */
+  outline-color: var(--outline-green);
 }
 
 .color-circle[data-color="blue"].active {
-  outline-color: #6BB9DB; /* Darker blue */
+  outline-color: var(--outline-blue);
 }
 
 .color-circle[data-color="purple"].active {
-  outline-color: #B57BB8; /* Darker purple */
+  outline-color: var(--outline-purple);
 }
 
 .color-circle[data-color="red"].active {
-  outline-color: #E69999; /* Darker red */
+  outline-color: var(--outline-red);
 }
 
 .color-circle[data-color="orange"].active {
-  outline-color: #E6A85C; /* Darker orange */
+  outline-color: var(--outline-orange);
+}
+
+/* Sticky Note Container */
+#sticky-note-container {
+  display: none; /* Hidden by default */
+  margin: 0 0 16px 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+  background: var(--sticky-default);
+  padding: 12px;
+  border-radius: 2px;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  position: relative;
+  width: 100%; /* Fill container width */
+  box-sizing: border-box;
+  /* No min-height - let it grow naturally based on content */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Color-specific backgrounds (lighter versions for readability) */
+#sticky-note-container.color-yellow { background: var(--sticky-yellow); }
+#sticky-note-container.color-green { background: var(--sticky-green); }
+#sticky-note-container.color-blue { background: var(--sticky-blue); }
+#sticky-note-container.color-purple { background: var(--sticky-purple); }
+#sticky-note-container.color-red { background: var(--sticky-red); }
+#sticky-note-container.color-orange { background: var(--sticky-orange); }
+
+#sticky-note-container.visible {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Color-specific tag and priority chip colors (darker shades matching sticky) */
+/* Exclude .new-tag and .editable-tag from color styling */
+#sticky-note-container.color-yellow .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-yellow .priority-chip.active {
+  background: var(--chip-yellow);
+  border-color: var(--chip-yellow);
+  color: var(--chip-yellow-text);
+}
+
+#sticky-note-container.color-green .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-green .priority-chip.active {
+  background: var(--chip-green);
+  border-color: var(--chip-green);
+  color: var(--chip-green-text);
+}
+
+#sticky-note-container.color-blue .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-blue .priority-chip.active {
+  background: var(--chip-blue);
+  border-color: var(--chip-blue);
+  color: var(--chip-blue-text);
+}
+
+#sticky-note-container.color-purple .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-purple .priority-chip.active {
+  background: var(--chip-purple);
+  border-color: var(--chip-purple);
+  color: var(--chip-purple-text);
+}
+
+#sticky-note-container.color-red .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-red .priority-chip.active {
+  background: var(--chip-red);
+  border-color: var(--chip-red);
+  color: var(--chip-red-text);
+}
+
+#sticky-note-container.color-orange .tag-chip:not(.new-tag):not(.editable-tag),
+#sticky-note-container.color-orange .priority-chip.active {
+  background: var(--chip-orange);
+  border-color: var(--chip-orange);
+  color: var(--chip-orange-text);
 }
 
 /* Note textbox */
 #note-container {
-  display: none; /* Hidden by default */
-  margin-bottom: 16px;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-#note-container.visible {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
+  display: flex;
+  flex-direction: column;
+  min-height: 120px; /* Fixed minimum height - doesn't shrink when tags wrap */
 }
 
 #note-input {
   width: 100%;
   font-family: "Helvetica", sans-serif;
   font-size: 12px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  resize: vertical;
-  min-height: 60px;
-  background: white;
+  line-height: 1.4;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: #333;
+  resize: none;
+  overflow: hidden; /* Hide scrollbar - will auto-resize via JS */
+  min-height: 60px; /* Minimum textarea height */
+  box-sizing: border-box;
 }
 
 #note-input:focus {
   outline: none;
-  border-color: #999;
 }
 
 #note-input::placeholder {
-  color: #999;
+  color: #a87;
   font-style: italic;
+}
+
+/* Sticky note bottom controls container */
+#sticky-bottom-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Tags section */
 #tags-container {
-  display: none; /* Hidden by default */
-  margin-bottom: 16px;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-#tags-container.visible {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
+  display: inline-flex; /* Always part of the flow */
 }
 
 #tags-list {
@@ -599,25 +719,19 @@ p.indented {
 
 /* Priority/Flag section */
 #priority-flag-container {
-  margin-top: 8px;
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transform: translateY(-8px);
-  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+  display: inline-flex; /* Part of the flow */
+  opacity: 1;
 }
 
-#priority-flag-container[style*="display: block"] {
-  opacity: 1;
-  max-height: 100px;
-  transform: translateY(0);
+#priority-flag-container[style*="display: none"] {
+  display: none !important;
 }
 
 #priority-flag-chips {
   display: flex;
-  justify-content: flex-end;  /* Right-align */
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .priority-chip {
