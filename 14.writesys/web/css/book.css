@@ -212,13 +212,6 @@ body {
   visibility: visible !important;
 }
 
-.loading {
-  text-align: center;
-  font-family: "Helvetica", sans-serif;
-  color: #999;
-  padding: 3in 0;
-}
-
 /* Book-style pages with Paged.js */
 @page {
   size: 6in 9in;
