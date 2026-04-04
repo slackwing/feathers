@@ -10,6 +10,9 @@ const WriteSysAnnotations = {
   // Available annotation colors
   COLORS: ['yellow', 'green', 'blue', 'purple', 'red', 'orange'],
 
+  // Default color for new annotations
+  DEFAULT_COLOR: 'yellow',
+
   // Spacing constants - must match CSS variables in book.css
   SPACING: {
     PAGE_WIDTH: 576,           // Width of .pagedjs_page
@@ -338,8 +341,9 @@ const WriteSysAnnotations = {
     textarea.addEventListener('input', async (e) => {
       if (!noteCreated && e.target.value.trim().length > 0) {
         noteCreated = true;
-        // Create note with blue color by default
-        await this.handleAddNewNote('blue');
+        const currentText = e.target.value;
+        // Create note with default color
+        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
         // Re-render will happen automatically
       }
     });
@@ -417,7 +421,8 @@ const WriteSysAnnotations = {
     textarea.addEventListener('input', async (e) => {
       if (!noteCreated && e.target.value.trim().length > 0) {
         noteCreated = true;
-        await this.handleAddNewNote('blue');
+        const currentText = e.target.value;
+        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
       }
     });
 
@@ -620,8 +625,9 @@ const WriteSysAnnotations = {
   /**
    * Handle adding a new note
    * @param {string} color - The initial color
+   * @param {string} initialNote - Optional initial note text
    */
-  async handleAddNewNote(color) {
+  async handleAddNewNote(color, initialNote = null) {
     if (!this.currentSentenceId) return;
 
     try {
@@ -632,7 +638,7 @@ const WriteSysAnnotations = {
         body: JSON.stringify({
           sentence_id: this.currentSentenceId,
           color: color,
-          note: null,
+          note: initialNote,
           priority: 'none',
           flagged: false
         })
@@ -649,7 +655,7 @@ const WriteSysAnnotations = {
         annotation_id: apiResponse.annotation_id,
         sentence_id: this.currentSentenceId,
         color: color,
-        note: null,
+        note: initialNote,
         priority: 'none',
         flagged: false,
         tags: []
@@ -659,6 +665,17 @@ const WriteSysAnnotations = {
 
       // Re-render
       this.renderStickyNotes();
+
+      // Restore focus to the newly created note's textarea
+      const newNoteElement = document.querySelector(`.sticky-note[data-annotation-id="${apiResponse.annotation_id}"]`);
+      if (newNoteElement) {
+        const textarea = newNoteElement.querySelector('.note-input');
+        if (textarea) {
+          textarea.focus();
+          // Move cursor to end
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+      }
 
       // Update sentence highlights
       this.updateSentenceHighlights();

@@ -863,6 +863,12 @@ p.indented {
   opacity: 0;
   transform: translateY(-8px);
   transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+
+  /* Make scrollable when content overflows */
+  max-height: calc(100vh - var(--annotation-top) - 32px); /* Leave 32px bottom padding */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--page-gap); /* Space for scrollbar (2em = 32px) */
 }
 
 #sticky-notes-container.visible {
@@ -881,10 +887,10 @@ p.indented {
     0 0 0 1px rgba(0, 0, 0, 0.05);
   position: relative;
   width: 100%;
-  min-height: 272px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;  /* Prevent compression when scrollable */
   transition: all 0.2s ease;
   overflow: visible;  /* Allow circles to extend beyond note bounds */
 }
@@ -1101,6 +1107,11 @@ p.indented {
 /* Uncreated notes - base styles */
 .uncreated-note {
   cursor: text;
+  /* Match the minimum height of colored notes:
+     - note padding (12+12) + note-container min-height (120)
+     + bottom-controls (8+1) + tag-chip (~27) + priority-flag (6) + priority-chip (~27)
+     = 24 + 120 + 9 + 27 + 6 + 27 = 213px + ~2px rounding = 215px */
+  min-height: 215px;
 }
 
 /* First uncreated note - full grey UI, always visible */

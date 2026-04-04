@@ -204,49 +204,49 @@ async function runTests() {
     await page.locator('.sentence').nth(10).click();
     await page.waitForTimeout(500);
 
-    // Type in the uncreated note to create an annotation (default color: blue)
+    // Type in the uncreated note to create an annotation (default color: yellow)
     await page.locator('.uncreated-note .note-input').first().type('Test note');
     await page.waitForTimeout(1000);
 
-    // Verify blue highlight applied by default
-    const hasBlue = await page.evaluate((sentenceId) => {
-      const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
-      return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-blue'));
-    }, testSentenceId);
-    assert(hasBlue, 'Sentence has blue highlight after creating note');
-
-    // Hover over color circle to show palette, then click yellow
-    await page.locator('.sticky-note:not(.uncreated-note) .sticky-note-color-circle').first().hover();
-    await page.waitForTimeout(300);
-    await page.locator('.sticky-note:not(.uncreated-note) .color-circle[data-color="yellow"]').first().click();
-    await page.waitForTimeout(1000);
-
-    // Verify yellow highlight applied (check all fragments)
+    // Verify yellow highlight applied by default
     const hasYellow = await page.evaluate((sentenceId) => {
       const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
       return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-yellow'));
     }, testSentenceId);
-    assert(hasYellow, 'Sentence has yellow highlight after clicking yellow');
+    assert(hasYellow, 'Sentence has yellow highlight after creating note');
 
-    // Hover over color circle again and change to green
+    // Hover over color circle to show palette, then click green
     await page.locator('.sticky-note:not(.uncreated-note) .sticky-note-color-circle').first().hover();
     await page.waitForTimeout(300);
     await page.locator('.sticky-note:not(.uncreated-note) .color-circle[data-color="green"]').first().click();
     await page.waitForTimeout(1000);
 
-    // Verify green highlight applied and yellow removed (check all fragments)
+    // Verify green highlight applied (check all fragments)
+    const hasGreen = await page.evaluate((sentenceId) => {
+      const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+      return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-green'));
+    }, testSentenceId);
+    assert(hasGreen, 'Sentence has green highlight after clicking green');
+
+    // Hover over color circle again and change to blue
+    await page.locator('.sticky-note:not(.uncreated-note) .sticky-note-color-circle').first().hover();
+    await page.waitForTimeout(300);
+    await page.locator('.sticky-note:not(.uncreated-note) .color-circle[data-color="blue"]').first().click();
+    await page.waitForTimeout(1000);
+
+    // Verify blue highlight applied and green removed (check all fragments)
     const colorChange = await page.evaluate((sentenceId) => {
       const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
-      const hasGreen = fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-green'));
-      const noYellow = fragments.length > 0 && Array.from(fragments).every(f => !f.classList.contains('highlight-yellow'));
+      const hasBlue = fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-blue'));
+      const noGreen = fragments.length > 0 && Array.from(fragments).every(f => !f.classList.contains('highlight-green'));
       return {
-        hasGreen,
-        hasYellow: !noYellow,
+        hasBlue,
+        hasGreen: !noGreen,
         fragmentCount: fragments.length
       };
     }, testSentenceId);
-    assert(colorChange.hasGreen && !colorChange.hasYellow,
-      `Highlight color changed from yellow to green (green: ${colorChange.hasGreen}, yellow removed: ${!colorChange.hasYellow}, ${colorChange.fragmentCount} fragments)`);
+    assert(colorChange.hasBlue && !colorChange.hasGreen,
+      `Highlight color changed from green to blue (blue: ${colorChange.hasBlue}, green removed: ${!colorChange.hasGreen}, ${colorChange.fragmentCount} fragments)`);
 
     // Take screenshot for visual inspection
     await page.screenshot({ path: 'tests/screenshots/ui-integration.png', fullPage: true });
