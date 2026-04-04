@@ -3,7 +3,7 @@
   --page-gap: 2em;              /* Vertical gap between pages (32px) */
   --horizontal-gap: 32px;        /* Gap from page edge to annotation margin */
   --annotation-top: 150px;       /* Top margin from viewport to annotations */
-  --annotation-width: 240px;     /* Fixed width of annotation container */
+  --annotation-width: 272px;     /* Fixed width of annotation container (240 + 32px page gap) */
 
   /* Color system - Kindle-like highlights and sticky notes */
   /* Highlight colors (sentence backgrounds) */
@@ -46,6 +46,14 @@
 
   /* Neutral colors */
   --sticky-default: #e8e8e8;     /* Default grey (no annotation) */
+
+  /* Color circle dimensions and spacing */
+  --circle-size: 22px;           /* Inner circle size (excluding border) */
+  --circle-border: 2px;          /* Border width */
+  --circle-total: 26px;          /* Total outer diameter: 22 + 2*2 = 26px */
+  --circle-radius: 13px;         /* Half of total: 26 / 2 = 13px */
+  --circle-gap: 6px;             /* Gap between circle edges */
+  --circle-spacing: 32px;        /* Center-to-center distance: 26 + 6 = 32px */
 }
 
 /* Reset and base styles */
@@ -458,7 +466,7 @@ p.indented {
   position: relative;
   width: 100%; /* Fill container width */
   box-sizing: border-box;
-  /* No min-height - let it grow naturally based on content */
+  min-height: 272px; /* Square dimensions: 272x272 (240 + 32px page gap) */
   display: flex;
   flex-direction: column;
 }
@@ -522,13 +530,14 @@ p.indented {
 }
 
 /* Note textbox */
-#note-container {
+.note-container {
   display: flex;
   flex-direction: column;
-  min-height: 120px; /* Fixed minimum height - doesn't shrink when tags wrap */
+  flex: 1; /* Take up available space */
+  min-height: 120px;
 }
 
-#note-input {
+.note-input {
   width: 100%;
   font-family: "Helvetica", sans-serif;
   font-size: 12px;
@@ -539,36 +548,37 @@ p.indented {
   color: #333;
   resize: none;
   overflow: hidden; /* Hide scrollbar - will auto-resize via JS */
-  min-height: 60px; /* Minimum textarea height */
+  min-height: 80px;
+  flex: 1;
   box-sizing: border-box;
 }
 
-#note-input:focus {
+.note-input:focus {
   outline: none;
 }
 
-#note-input::placeholder {
-  color: #a87;
+.note-input::placeholder {
+  color: #999;
   font-style: italic;
 }
 
 /* Sticky note bottom controls container */
-#sticky-bottom-controls {
+.sticky-bottom-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-top: 8px;
+  margin-top: auto;
   padding-top: 8px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Tags section */
-#tags-container {
-  display: inline-flex; /* Always part of the flow */
+.tags-container {
+  display: inline-flex;
 }
 
-#tags-list {
+.tags-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -717,17 +727,20 @@ p.indented {
 .annotation-item.red { border-left-color: #FFCCCB; background-color: rgba(255, 204, 203, 0.1); }
 .annotation-item.orange { border-left-color: #FFD8A8; background-color: rgba(255, 216, 168, 0.1); }
 
-/* Priority/Flag section */
-#priority-flag-container {
-  display: inline-flex; /* Part of the flow */
+/* Priority/Flag section - always on separate line */
+.priority-flag-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
   opacity: 1;
 }
 
-#priority-flag-container[style*="display: none"] {
+.priority-flag-container[style*="display: none"] {
   display: none !important;
 }
 
-#priority-flag-chips {
+.priority-flag-chips {
   display: flex;
   gap: 6px;
   flex-wrap: nowrap;
@@ -804,6 +817,351 @@ p.indented {
 .flag-chip.active .flag-shape {
   stroke: #dc3545;
   fill: #dc3545;
+}
+
+/* Trash icon in priority container */
+.note-trash {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: 1px dashed #ccc;
+  border-radius: 50%;
+  color: #999;
+}
+
+.note-trash:hover {
+  background: #fee;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.note-trash.confirming {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  animation: pulse 0.3s ease-in-out;
+}
+
+.note-trash svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+/* ===== MULTI-NOTE UI STYLES ===== */
+
+/* Container for all sticky notes (vertical stack) */
+#sticky-notes-container {
+  display: none; /* Hidden by default */
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+#sticky-notes-container.visible {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Individual Sticky Note */
+.sticky-note {
+  background: var(--sticky-default);
+  border-radius: 2px;
+  padding: 12px;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  position: relative;
+  width: 100%;
+  min-height: 272px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  overflow: visible;  /* Allow circles to extend beyond note bounds */
+}
+
+/* Color-specific backgrounds */
+.sticky-note.color-yellow { background: var(--sticky-yellow); }
+.sticky-note.color-green { background: var(--sticky-green); }
+.sticky-note.color-blue { background: var(--sticky-blue); }
+.sticky-note.color-purple { background: var(--sticky-purple); }
+.sticky-note.color-red { background: var(--sticky-red); }
+.sticky-note.color-orange { background: var(--sticky-orange); }
+
+/* Color-specific tag and priority chip colors */
+.sticky-note.color-yellow .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-yellow .priority-chip.active {
+  background: var(--chip-yellow);
+  border-color: var(--chip-yellow);
+  color: var(--chip-yellow-text);
+}
+
+.sticky-note.color-green .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-green .priority-chip.active {
+  background: var(--chip-green);
+  border-color: var(--chip-green);
+  color: var(--chip-green-text);
+}
+
+.sticky-note.color-blue .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-blue .priority-chip.active {
+  background: var(--chip-blue);
+  border-color: var(--chip-blue);
+  color: var(--chip-blue-text);
+}
+
+.sticky-note.color-purple .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-purple .priority-chip.active {
+  background: var(--chip-purple);
+  border-color: var(--chip-purple);
+  color: var(--chip-purple-text);
+}
+
+.sticky-note.color-red .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-red .priority-chip.active {
+  background: var(--chip-red);
+  border-color: var(--chip-red);
+  color: var(--chip-red-text);
+}
+
+.sticky-note.color-orange .tag-chip:not(.new-tag):not(.editable-tag),
+.sticky-note.color-orange .priority-chip.active {
+  background: var(--chip-orange);
+  border-color: var(--chip-orange);
+  color: var(--chip-orange-text);
+}
+
+/* Per-note color circle (centered on upper-right corner) */
+.sticky-note-color-circle {
+  position: absolute;
+  /* Center on exact corner: offset by half total size in both directions */
+  top: calc(-1 * var(--circle-radius));
+  right: calc(-1 * var(--circle-radius));
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 50%;
+  border: var(--circle-border) solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  z-index: 10;
+  box-sizing: content-box;  /* Border adds to size */
+}
+
+.sticky-note:hover .sticky-note-color-circle {
+  opacity: 1;
+}
+
+/* Pie chart with 6 distinct colors (60deg each) */
+.sticky-note-color-circle.rainbow {
+  background: conic-gradient(
+    from 0deg,
+    var(--highlight-yellow) 0deg 60deg,
+    var(--highlight-green) 60deg 120deg,
+    var(--highlight-blue) 120deg 180deg,
+    var(--highlight-purple) 180deg 240deg,
+    var(--highlight-red) 240deg 300deg,
+    var(--highlight-orange) 300deg 360deg
+  );
+}
+
+/* Solid color for committed notes */
+.sticky-note-color-circle.color-yellow { background-color: var(--highlight-yellow); }
+.sticky-note-color-circle.color-green { background-color: var(--highlight-green); }
+.sticky-note-color-circle.color-blue { background-color: var(--highlight-blue); }
+.sticky-note-color-circle.color-purple { background-color: var(--highlight-purple); }
+.sticky-note-color-circle.color-red { background-color: var(--highlight-red); }
+.sticky-note-color-circle.color-orange { background-color: var(--highlight-orange); }
+
+/* Expandable color palette (floating circles without background) */
+.sticky-note-palette {
+  position: absolute;
+  /* Palette is child of color-circle, so position relative to it */
+  /* Offset from color circle center: radius - border - 2px empirical = 13 - 2 - 2 = 9px */
+  top: calc(var(--circle-radius) - var(--circle-border) - 2px);
+  /* Align horizontally with color circle center */
+  right: calc(-1 * var(--circle-radius));
+  display: none;
+  width: 60px;  /* Just needs to contain the circles + hover padding */
+  height: 200px;  /* Tall enough for all circles */
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.sticky-note-palette.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Wrapper for each circle to create hover zones */
+.sticky-note-palette > div {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Extend hover zone */
+  padding: 8px 20px;
+  /* Positioned by nth-child rules below */
+}
+
+/* Position each wrapper so circle centers are 32px apart */
+/* First circle at spacing distance, then N*spacing increments */
+.sticky-note-palette > div:nth-child(1) { top: calc(var(--circle-spacing) - var(--circle-radius) + 2px); }  /* 32 - 13 + 2 = 21px */
+.sticky-note-palette > div:nth-child(2) { top: calc(var(--circle-spacing) * 2 - var(--circle-radius) + 2px); }  /* 64 - 13 + 2 = 53px */
+.sticky-note-palette > div:nth-child(3) { top: calc(var(--circle-spacing) * 3 - var(--circle-radius) + 2px); }  /* 96 - 13 + 2 = 85px */
+.sticky-note-palette > div:nth-child(4) { top: calc(var(--circle-spacing) * 4 - var(--circle-radius) + 2px); }  /* 128 - 13 + 2 = 117px */
+.sticky-note-palette > div:nth-child(5) { top: calc(var(--circle-spacing) * 5 - var(--circle-radius) + 2px); }  /* 160 - 13 + 2 = 149px */
+.sticky-note-palette > div:nth-child(6) { top: calc(var(--circle-spacing) * 6 - var(--circle-radius) + 2px); }  /* 192 - 13 + 2 = 181px */
+
+.sticky-note-palette .color-circle {
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 50%;
+  border: var(--circle-border) solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: content-box;  /* Border adds to size */
+  position: absolute;
+  /* Align centers with note right edge (radius - 2px empirical adjustment) */
+  right: calc(var(--circle-radius) - 2px);
+  top: 0;
+}
+
+.sticky-note-palette .color-circle:hover {
+  width: 24px;  /* 22px * 1.09 ≈ 24px */
+  height: 24px;
+  border-width: 3px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  /* Compensate for size increase to keep centered: (30-26)/2 = 2px shift each side */
+  right: calc(var(--circle-radius) - 4px);
+  top: -2px;
+}
+
+.sticky-note-palette .color-circle.active {
+  border-color: #333;
+  border-width: 3px;
+}
+
+/* Trash icon in palette */
+.sticky-note-palette .palette-trash {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #666;
+}
+
+.sticky-note-palette .palette-trash:hover {
+  border-color: #dc3545;
+  background: #fee;
+  width: 24px;
+  height: 24px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sticky-note-palette .palette-trash.confirming {
+  border-color: #dc3545;
+  border-width: 3px;
+  background: #dc3545;
+  color: white;
+  animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.sticky-note-palette .palette-trash svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+/* Uncreated notes - base styles */
+.uncreated-note {
+  cursor: text;
+}
+
+/* First uncreated note - full grey UI, always visible */
+.first-uncreated {
+  background: var(--sticky-default);
+}
+
+/* Subsequent uncreated notes - gradient transparency (fades entire note) */
+.subsequent-uncreated {
+  background: var(--sticky-default);
+  position: relative;
+  /* Use mask to fade entire note including borders/shadows */
+  -webkit-mask-image: linear-gradient(to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.8) 30%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.8) 30%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0) 100%);
+}
+
+/* + sign for subsequent uncreated notes */
+.uncreated-plus {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 56px;
+  color: #888;  /* Darker grey */
+  font-weight: 400;  /* Slightly bolder */
+  opacity: 0.9;  /* More opaque */
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 5;
+}
+
+/* Hide content on subsequent uncreated until hovered */
+.subsequent-uncreated .note-container,
+.subsequent-uncreated .sticky-bottom-controls {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* On hover or when focused, remove mask and show full UI */
+.subsequent-uncreated.hovered {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.subsequent-uncreated.hovered .uncreated-plus {
+  opacity: 0;
+}
+
+.subsequent-uncreated.hovered .note-container,
+.subsequent-uncreated.hovered .sticky-bottom-controls {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Print styles */

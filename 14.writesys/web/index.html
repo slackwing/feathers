@@ -40,67 +40,9 @@
       <!-- Sentence preview (first 3 words) -->
       <div id="sentence-preview" class="sentence-preview"></div>
 
-      <!-- Color palette for highlights -->
-      <div id="color-palette" class="color-palette">
-        <div class="color-circle" data-color="yellow" style="background-color: #FFF3A3;" title="Yellow"></div>
-        <div class="color-circle" data-color="green" style="background-color: #C3FDB8;" title="Green"></div>
-        <div class="color-circle" data-color="blue" style="background-color: #AEDFF7;" title="Blue"></div>
-        <div class="color-circle" data-color="purple" style="background-color: #E0BBE4;" title="Purple"></div>
-        <div class="color-circle" data-color="red" style="background-color: #FFCCCB;" title="Red"></div>
-        <div class="color-circle" data-color="orange" style="background-color: #FFD8A8;" title="Orange"></div>
-
-        <!-- Cancel X (appears when trash runs away) -->
-        <div id="cancel-delete" class="cancel-delete" title="Cancel">
-          <svg width="24" height="24" viewBox="0 0 24 24">
-            <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-
-        <!-- Trash can icon for deletion -->
-        <div id="trash-icon" class="trash-icon" title="Delete annotation">
-          <svg width="20" height="20" viewBox="0 0 20 20">
-            <path d="M6 2h8M3 5h14M5 5l1 12h8l1-12M8 8v6M12 8v6" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-      </div>
-
-      <!-- Sticky Note Container -->
-      <div id="sticky-note-container">
-        <!-- Note textbox -->
-        <div id="note-container">
-          <textarea id="note-input" placeholder="Write a note..." rows="3"></textarea>
-        </div>
-
-        <!-- Combined bottom controls: Tags, Priority, Flag -->
-        <div id="sticky-bottom-controls">
-          <!-- Tags section -->
-          <div id="tags-container">
-            <div id="tags-list">
-              <!-- Tag chips will appear here -->
-            </div>
-          </div>
-
-          <!-- Priority/Flag chips (only visible when annotation exists) -->
-          <div id="priority-flag-container" style="display: none;">
-            <div id="priority-flag-chips">
-              <div class="priority-chip" data-priority="P0">P0</div>
-              <div class="priority-chip" data-priority="P1">P1</div>
-              <div class="priority-chip" data-priority="P2">P2</div>
-              <div class="priority-chip" data-priority="P3">P3</div>
-              <div class="flag-chip" data-flag="true" title="Flag">
-                <svg width="20" height="20" viewBox="0 0 20 20" class="flag-icon">
-                  <path class="flag-staff" d="M4 1v18"/>
-                  <path class="flag-shape" d="M4 3h10l-2.5 5 2.5 5H4"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Annotation list -->
-      <div id="margin-annotations">
-        <!-- Annotations will appear here -->
+      <!-- Container for all sticky notes (rendered dynamically) -->
+      <div id="sticky-notes-container">
+        <!-- Multiple sticky notes will be rendered here -->
       </div>
     </div>
   </div>

@@ -1,12 +1,11 @@
-// WriteSys Annotations
-// Handles annotation sidebar, CRUD operations, and UI interactions
+// WriteSys Annotations - Multi-Note Support
+// Handles multiple annotations per sentence with per-note color controls
 
 const WriteSysAnnotations = {
   apiBaseUrl: 'http://localhost:5003/api',
   currentSentenceId: null,
   currentSentenceText: '',
-  annotations: [],
-  autoSaveTimeout: null,
+  annotations: [], // Array of all annotations for current sentence
 
   // Available annotation colors
   COLORS: ['yellow', 'green', 'blue', 'purple', 'red', 'orange'],
@@ -14,17 +13,8 @@ const WriteSysAnnotations = {
   // Spacing constants - must match CSS variables in book.css
   SPACING: {
     PAGE_WIDTH: 576,           // Width of .pagedjs_page
-    ANNOTATION_WIDTH: 240,     // --annotation-width
+    ANNOTATION_WIDTH: 272,     // --annotation-width (240 + 32px page gap)
     HORIZONTAL_GAP: 32,        // --horizontal-gap (page to annotation margin)
-  },
-
-  // Session state for default-to-blue logic
-  currentAnnotationSession: {
-    sentenceId: null,
-    autoDefaultedToBlue: false,
-    originalColor: null,
-    lastKeystroke: null,
-    committed: false  // Set to true if P or flag is selected
   },
 
   /**
@@ -38,14 +28,12 @@ const WriteSysAnnotations = {
       const appContainer = document.getElementById('app-container');
       const pagedPages = document.querySelector('.pagedjs_pages');
 
-      // Unselect if clicking directly on grey background elements
-      // (not on their children, which would be actual content like palette or pages)
       const isGreyBackground =
-        e.target === annotationMargin ||           // The annotation margin container itself
-        e.target === annotationMarginInner ||       // The inner container of annotation margin
-        e.target === appContainer ||                // The app container
-        e.target === pagedPages ||                  // The paged.js container (grey background)
-        e.target === document.body;                 // The body
+        e.target === annotationMargin ||
+        e.target === annotationMarginInner ||
+        e.target === appContainer ||
+        e.target === pagedPages ||
+        e.target === document.body;
 
       if (isGreyBackground) {
         this.unselectSentence();
@@ -55,243 +43,7 @@ const WriteSysAnnotations = {
     // Initialize annotation margin positioning
     this.initAnnotationMargin();
 
-    // Initialize color palette
-    this.initColorPalette();
-
-    // Initialize note input
-    this.initNoteInput();
-
-    // Initialize tags
-    this.initTags();
-
-    // Initialize priority/flag chips
-    this.initPriorityFlagChips();
-
-    // Initialize trash icon for deletion
-    this.initTrashIcon();
-
-    console.log('WriteSys Annotations initialized');
-  },
-
-  /**
-   * Initialize color palette interactions
-   */
-  initColorPalette() {
-    const circles = document.querySelectorAll('.color-circle');
-    circles.forEach(circle => {
-      circle.addEventListener('click', (e) => {
-        const color = e.target.dataset.color;
-        this.handleColorSelection(color);
-      });
-    });
-  },
-
-  /**
-   * Handle color selection - creates, updates, or removes annotation
-   * Clicking the same color again removes the highlight (toggle behavior)
-   */
-  async handleColorSelection(color) {
-    // Get currently selected sentence
-    const selectedSentence = document.querySelector('.sentence.selected');
-    if (!selectedSentence) return;
-
-    const sentenceId = selectedSentence.dataset.sentenceId;
-    if (!sentenceId) return;
-
-    // Check if annotation already exists for this sentence
-    const existingAnnotation = await this.getAnnotationForSentence(sentenceId);
-
-    try{
-      // If clicking the same color that's already applied, do nothing (use trash can to delete)
-      if (existingAnnotation && existingAnnotation.color === color) {
-        return;
-      } else if (existingAnnotation) {
-        // Get current note text before updating
-        const noteInput = document.getElementById('note-input');
-        const noteText = noteInput ? noteInput.value.trim() : '';
-
-        // IMPORTANT: Manual color change "commits" the annotation
-        // Disable session-based auto-undo because user has explicitly chosen a color
-        if (this.currentAnnotationSession.autoDefaultedToBlue) {
-          this.currentAnnotationSession.autoDefaultedToBlue = false;
-        }
-
-        // Update existing annotation to new color
-        await this.updateAnnotationColor(existingAnnotation.annotation_id, sentenceId, color);
-
-        // Update local annotation object
-        existingAnnotation.color = color;
-        existingAnnotation.note = noteText || null;  // Also save the note
-
-        // Update active circle
-        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-        document.querySelector(`.color-circle[data-color="${color}"]`).classList.add('active');
-
-        // Apply highlight to sentence
-        this.applyHighlightToSentence(selectedSentence, color);
-
-        // Update sticky note background color
-        this.applyStickyNoteColor(color);
-      } else {
-        // Create new annotation
-        const apiResponse = await this.createHighlightAnnotation(sentenceId, color);
-
-        // Construct full annotation object for local array
-        const newAnnotation = {
-          annotation_id: apiResponse.annotation_id,
-          sentence_id: sentenceId,
-          color: color,
-          note: null,
-          priority: 'none',
-          flagged: false,
-          tags: []
-        };
-
-        // Add to local annotations array
-        this.annotations.push(newAnnotation);
-
-        // Update active circle
-        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-        document.querySelector(`.color-circle[data-color="${color}"]`).classList.add('active');
-
-        // Apply highlight to sentence
-        this.applyHighlightToSentence(selectedSentence, color);
-
-        // Update sticky note background color
-        this.applyStickyNoteColor(color);
-
-        // Show P/flag section since annotation now exists
-        this.showPriorityFlagSection();
-
-        // Update P/flag UI
-        this.updatePriorityFlagUI(newAnnotation);
-      }
-
-      // Keep palette open so user can change colors or toggle off
-    } catch (error) {
-      console.error('Failed to handle color selection:', error);
-      alert('Failed to save annotation');
-    }
-  },
-
-  /**
-   * Get annotation for a specific sentence (user: andrew)
-   */
-  async getAnnotationForSentence(sentenceId) {
-    const response = await fetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
-    if (!response.ok) {
-      if (response.status === 404) return null;
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
-    const data = await response.json();
-    const annotations = data.annotations || [];
-    // Return first annotation (if multiple exist, pick first for display)
-    return annotations.length > 0 ? annotations[0] : null;
-  },
-
-  /**
-   * Create new highlight annotation
-   */
-  async createHighlightAnnotation(sentenceId, color) {
-    const response = await fetch(`${this.apiBaseUrl}/annotations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sentence_id: sentenceId,
-        color: color,
-        note: null,
-        priority: 'none',
-        flagged: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
-
-    return await response.json();
-  },
-
-  /**
-   * Update annotation color
-   */
-  async updateAnnotationColor(annotationId, sentenceId, color) {
-    // Get current note text from input field
-    const noteInput = document.getElementById('note-input');
-    const noteText = noteInput ? noteInput.value.trim() : '';
-
-    // Get annotation from local array to preserve other fields
-    const annotation = this.annotations.find(a => a.annotation_id === annotationId);
-
-    const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sentence_id: sentenceId,
-        color: color,
-        note: noteText || null,
-        priority: annotation?.priority || 'none',
-        flagged: annotation?.flagged || false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
-
-    return await response.json();
-  },
-
-  /**
-   * Apply highlight styling to a sentence element
-   * Updates ALL fragments with the same sentence_id
-   */
-  applyHighlightToSentence(sentenceElement, color) {
-    const sentenceId = sentenceElement.dataset.sentenceId;
-    if (!sentenceId) return;
-
-    // Find ALL fragments with this sentence_id (including across pages)
-    const allFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
-
-    // Remove existing highlight classes from all fragments
-    const highlightColors = ['yellow', 'green', 'blue', 'purple', 'red', 'orange'];
-    allFragments.forEach(fragment => {
-      highlightColors.forEach(c => fragment.classList.remove(`highlight-${c}`));
-      // Keep selected class so user can continue changing/deleting the highlight
-    });
-
-    // Add new highlight class to all fragments
-    allFragments.forEach(fragment => {
-      fragment.classList.add(`highlight-${color}`);
-    });
-  },
-
-  /**
-   * Apply color class to sticky note container
-   * @param {string} color - Color name (yellow, green, blue, purple, red, orange) or null for grey
-   */
-  applyStickyNoteColor(color) {
-    const stickyNote = document.getElementById('sticky-note-container');
-    if (!stickyNote) return;
-
-    // Remove all color classes
-    this.COLORS.forEach(c => stickyNote.classList.remove(`color-${c}`));
-
-    // Add new color class
-    if (color) {
-      stickyNote.classList.add(`color-${color}`);
-    }
-  },
-
-  /**
-   * Remove color from sticky note (revert to grey)
-   */
-  removeStickyNoteColor() {
-    const stickyNote = document.getElementById('sticky-note-container');
-    if (!stickyNote) return;
-
-    // Remove all color classes (reverts to default grey background)
-    this.COLORS.forEach(c => stickyNote.classList.remove(`color-${c}`));
+    console.log('WriteSys Annotations (Multi-Note) initialized');
   },
 
   /**
@@ -301,20 +53,13 @@ const WriteSysAnnotations = {
     const margin = document.getElementById('annotation-margin');
     if (!margin) return;
 
-    // Position margin based on window size
     const positionMargin = () => {
       const windowWidth = window.innerWidth;
       const marginWidth = (windowWidth - this.SPACING.PAGE_WIDTH) / 2;
-
-      // CONSTANT gap from page edge - matches vertical gap between pages
-      // Position: distance from viewport right edge
-      // = marginWidth (to page right) - gap - containerWidth
       const rightPosition = marginWidth - this.SPACING.HORIZONTAL_GAP - this.SPACING.ANNOTATION_WIDTH;
-
       margin.style.right = `${rightPosition}px`;
     };
 
-    // Position on load and resize
     positionMargin();
     window.addEventListener('resize', positionMargin);
   },
@@ -328,122 +73,630 @@ const WriteSysAnnotations = {
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
-    // Reset trash can state (in case it was "ran away" from previous sentence)
-    this.cancelTrashRunAway();
-
-    // Reset session state
-    this.currentAnnotationSession = {
-      sentenceId: sentenceId,
-      autoDefaultedToBlue: false,
-      originalColor: null,
-      lastKeystroke: null,
-      committed: false
-    };
-
     // Show sentence preview (first 3 words)
     const preview = document.getElementById('sentence-preview');
     if (preview) {
       const words = sentenceText.trim().split(/\s+/);
       let firstThreeWords = words.slice(0, 3).join(' ');
-      // Remove trailing non-alphanumeric characters
       firstThreeWords = firstThreeWords.replace(/\W+$/, '');
       preview.textContent = `${firstThreeWords}...`;
       preview.classList.add('visible');
     }
 
-    // Show color palette
-    const palette = document.getElementById('color-palette');
-    if (palette) {
-      palette.classList.add('visible');
-    }
-
-    // Show sticky note container (contains note, tags, priority, flag)
-    const stickyNoteContainer = document.getElementById('sticky-note-container');
-    if (stickyNoteContainer) {
-      stickyNoteContainer.classList.add('visible');
-    }
-
-    // Fetch annotations for this sentence to highlight current color in palette
+    // Fetch annotations for this sentence
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          this.annotations = [];
+        } else {
+          throw new Error(`HTTP ${response.status}`);
+        }
+      } else {
+        const data = await response.json();
+        this.annotations = data.annotations || [];
+      }
+
+      // Render all sticky notes
+      this.renderStickyNotes();
+
+    } catch (error) {
+      console.error('Failed to fetch annotations:', error);
+      this.annotations = [];
+      this.renderStickyNotes();
+    }
+  },
+
+  /**
+   * Render all sticky notes for the current sentence
+   */
+  renderStickyNotes() {
+    const container = document.getElementById('sticky-notes-container');
+    if (!container) return;
+
+    // Clear container
+    container.innerHTML = '';
+
+    // Render each existing annotation
+    this.annotations.forEach(annotation => {
+      const noteElement = this.createStickyNoteElement(annotation);
+      container.appendChild(noteElement);
+    });
+
+    // Add "add new note" element
+    // First note: full grey UI, subsequent notes: gradient with + sign
+    const isFirstNote = this.annotations.length === 0;
+    const addNewNote = this.createAddNewNoteElement(isFirstNote);
+    container.appendChild(addNewNote);
+
+    // Show container
+    container.classList.add('visible');
+  },
+
+  /**
+   * Create a sticky note DOM element
+   * @param {Object} annotation - The annotation object
+   * @returns {HTMLElement} The sticky note element
+   */
+  createStickyNoteElement(annotation) {
+    const note = document.createElement('div');
+    note.className = 'sticky-note';
+    note.dataset.annotationId = annotation.annotation_id;
+
+    // Add color class if annotation has color
+    if (annotation.color) {
+      note.classList.add(`color-${annotation.color}`);
+    }
+
+    // Create note structure
+    note.innerHTML = `
+      <div class="note-container">
+        <textarea class="note-input" placeholder="Write a note..." rows="3">${annotation.note || ''}</textarea>
+      </div>
+      <div class="sticky-bottom-controls">
+        <div class="tags-container">
+          <div class="tags-list"></div>
+        </div>
+      </div>
+      <div class="priority-flag-container" style="display: ${annotation.color ? 'flex' : 'none'}">
+        <div class="priority-flag-chips">
+          <div class="priority-chip" data-priority="P0">P0</div>
+          <div class="priority-chip" data-priority="P1">P1</div>
+          <div class="priority-chip" data-priority="P2">P2</div>
+          <div class="priority-chip" data-priority="P3">P3</div>
+          <div class="flag-chip" data-flag="true" title="Flag">
+            <svg width="20" height="20" viewBox="0 0 20 20" class="flag-icon">
+              <path class="flag-staff" d="M4 1v18"/>
+              <path class="flag-shape" d="M4 3h10l-2.5 5 2.5 5H4"/>
+            </svg>
+          </div>
+        </div>
+        <div class="note-trash" title="Delete note">
+          <svg width="16" height="16" viewBox="0 0 20 20">
+            <path d="M6 2h8M3 5h14M5 5l1 12h8l1-12M8 8v6M12 8v6"
+                  stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    `;
+
+    // Add color circle
+    const colorCircle = this.createColorCircleElement(annotation);
+    note.appendChild(colorCircle);
+
+    // Setup event listeners
+    this.setupNoteEventListeners(note, annotation);
+
+    // Render tags
+    this.renderTagsForNote(note, annotation.tags || []);
+
+    // Update priority/flag UI
+    this.updatePriorityFlagUIForNote(note, annotation);
+
+    // Auto-resize textarea
+    const textarea = note.querySelector('.note-input');
+    this.autoResizeTextarea(textarea);
+
+    return note;
+  },
+
+  /**
+   * Create color circle element for a sticky note
+   * @param {Object} annotation - The annotation object
+   * @returns {HTMLElement} The color circle element
+   */
+  createColorCircleElement(annotation) {
+    const circle = document.createElement('div');
+    circle.className = 'sticky-note-color-circle';
+
+    // Rainbow gradient for grey (uncommitted) notes
+    if (!annotation.color) {
+      circle.classList.add('rainbow');
+    } else {
+      circle.classList.add(`color-${annotation.color}`);
+    }
+
+    // Create palette
+    const palette = this.createPaletteElement(annotation);
+    circle.appendChild(palette);
+
+    // Show palette on hover
+    circle.addEventListener('mouseenter', () => {
+      palette.classList.add('visible');
+    });
+
+    // Hide palette on mouse leave (with delay to allow clicking)
+    let hideTimeout;
+    circle.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        palette.classList.remove('visible');
+      }, 200);
+    });
+
+    palette.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+    });
+
+    palette.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        palette.classList.remove('visible');
+      }, 200);
+    });
+
+    return circle;
+  },
+
+  /**
+   * Create expandable palette element
+   * @param {Object} annotation - The annotation object
+   * @returns {HTMLElement} The palette element
+   */
+  createPaletteElement(annotation) {
+    const palette = document.createElement('div');
+    palette.className = 'sticky-note-palette';
+
+    // Determine which colors to show
+    const colorsToShow = annotation.color
+      ? this.COLORS.filter(c => c !== annotation.color)  // Show 5 other colors
+      : this.COLORS;  // Show all 6 colors for grey notes
+
+    // Add color circles (wrapped in divs for hover zones)
+    colorsToShow.forEach(color => {
+      const wrapper = document.createElement('div');
+
+      const colorCircle = document.createElement('div');
+      colorCircle.className = 'color-circle';
+      colorCircle.dataset.color = color;
+
+      // Set background color using CSS variables
+      const colorVar = `var(--highlight-${color})`;
+      colorCircle.style.backgroundColor = colorVar;
+
+      colorCircle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleColorSelectionForNote(annotation.annotation_id, color);
+      });
+
+      wrapper.appendChild(colorCircle);
+      palette.appendChild(wrapper);
+    });
+
+    return palette;
+  },
+
+  /**
+   * Create "add new note" element
+   * @param {boolean} isFirstNote - Whether this is the first uncreated note
+   * @returns {HTMLElement} The add new note element
+   */
+  createAddNewNoteElement(isFirstNote) {
+    if (isFirstNote) {
+      // First note: full grey sticky note UI
+      return this.createFirstUncreatedNote();
+    } else {
+      // Subsequent notes: gradient with + sign
+      return this.createSubsequentUncreatedNote();
+    }
+  },
+
+  /**
+   * Create first uncreated note (full grey UI)
+   * @returns {HTMLElement} The note element
+   */
+  createFirstUncreatedNote() {
+    const note = document.createElement('div');
+    note.className = 'sticky-note uncreated-note first-uncreated';
+
+    // Create note structure
+    note.innerHTML = `
+      <div class="note-container">
+        <textarea class="note-input" placeholder="Write a note..." rows="3"></textarea>
+      </div>
+      <div class="sticky-bottom-controls">
+        <div class="tags-container">
+          <div class="tags-list">
+            <div class="tag-chip new-tag">+ tag</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add color circle (rainbow)
+    const colorCircle = this.createColorCircleForUncreated();
+    note.appendChild(colorCircle);
+
+    // Setup textarea handler to create note on first input
+    const textarea = note.querySelector('.note-input');
+    let noteCreated = false;
+
+    textarea.addEventListener('focus', () => {
+      // Show color circle on focus
+      colorCircle.style.opacity = '1';
+      colorCircle.style.transform = 'scale(1)';
+    });
+
+    textarea.addEventListener('input', async (e) => {
+      if (!noteCreated && e.target.value.trim().length > 0) {
+        noteCreated = true;
+        // Create note with blue color by default
+        await this.handleAddNewNote('blue');
+        // Re-render will happen automatically
+      }
+    });
+
+    // Auto-resize textarea
+    textarea.addEventListener('input', () => {
+      this.autoResizeTextarea(textarea);
+    });
+
+    return note;
+  },
+
+  /**
+   * Create subsequent uncreated note (gradient with + sign)
+   * @returns {HTMLElement} The note element
+   */
+  createSubsequentUncreatedNote() {
+    const note = document.createElement('div');
+    note.className = 'sticky-note uncreated-note subsequent-uncreated';
+
+    // Create note structure (same as first, but will be styled with gradient)
+    note.innerHTML = `
+      <div class="uncreated-plus">+</div>
+      <div class="note-container">
+        <textarea class="note-input" placeholder="Write a note..." rows="3"></textarea>
+      </div>
+      <div class="sticky-bottom-controls">
+        <div class="tags-container">
+          <div class="tags-list">
+            <div class="tag-chip new-tag">+ tag</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add color circle (rainbow)
+    const colorCircle = this.createColorCircleForUncreated();
+    note.appendChild(colorCircle);
+
+    // On hover, show full UI
+    note.addEventListener('mouseenter', () => {
+      note.classList.add('hovered');
+      colorCircle.style.opacity = '1';
+      colorCircle.style.transform = 'scale(1)';
+    });
+
+    note.addEventListener('mouseleave', () => {
+      // Only remove hover if not focused
+      const textarea = note.querySelector('.note-input');
+      if (document.activeElement !== textarea) {
+        note.classList.remove('hovered');
+        colorCircle.style.opacity = '0';
+        colorCircle.style.transform = 'scale(0.8)';
+      }
+    });
+
+    // Setup textarea handler to create note on first input
+    const textarea = note.querySelector('.note-input');
+    let noteCreated = false;
+
+    textarea.addEventListener('focus', () => {
+      note.classList.add('hovered');
+      colorCircle.style.opacity = '1';
+      colorCircle.style.transform = 'scale(1)';
+    });
+
+    textarea.addEventListener('blur', () => {
+      if (!noteCreated) {
+        note.classList.remove('hovered');
+        colorCircle.style.opacity = '0';
+        colorCircle.style.transform = 'scale(0.8)';
+      }
+    });
+
+    textarea.addEventListener('input', async (e) => {
+      if (!noteCreated && e.target.value.trim().length > 0) {
+        noteCreated = true;
+        await this.handleAddNewNote('blue');
+      }
+    });
+
+    textarea.addEventListener('input', () => {
+      this.autoResizeTextarea(textarea);
+    });
+
+    return note;
+  },
+
+  /**
+   * Create color circle for uncreated notes
+   * @returns {HTMLElement} The color circle element
+   */
+  createColorCircleForUncreated() {
+    const colorCircle = document.createElement('div');
+    colorCircle.className = 'sticky-note-color-circle rainbow';
+
+    // Create palette with all 6 colors
+    const palette = this.createAddNotePaletteElement();
+    colorCircle.appendChild(palette);
+
+    // Show palette on hover
+    colorCircle.addEventListener('mouseenter', () => {
+      palette.classList.add('visible');
+    });
+
+    let hideTimeout;
+    colorCircle.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        palette.classList.remove('visible');
+      }, 200);
+    });
+
+    palette.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+    });
+
+    palette.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        palette.classList.remove('visible');
+      }, 200);
+    });
+
+    return colorCircle;
+  },
+
+  /**
+   * Create palette for add-new-note element
+   * @returns {HTMLElement} The palette element
+   */
+  createAddNotePaletteElement() {
+    const palette = document.createElement('div');
+    palette.className = 'sticky-note-palette';
+
+    // Add all 6 color circles (wrapped in divs for hover zones)
+    this.COLORS.forEach(color => {
+      const wrapper = document.createElement('div');
+
+      const colorCircle = document.createElement('div');
+      colorCircle.className = 'color-circle';
+      colorCircle.dataset.color = color;
+
+      const colorVar = `var(--highlight-${color})`;
+      colorCircle.style.backgroundColor = colorVar;
+
+      colorCircle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleAddNewNote(color);
+      });
+
+      wrapper.appendChild(colorCircle);
+      palette.appendChild(wrapper);
+    });
+
+    return palette;
+  },
+
+  /**
+   * Setup event listeners for a sticky note
+   * @param {HTMLElement} note - The sticky note element
+   * @param {Object} annotation - The annotation object
+   */
+  setupNoteEventListeners(note, annotation) {
+    // Note input
+    const textarea = note.querySelector('.note-input');
+    let saveTimeout;
+
+    textarea.addEventListener('input', () => {
+      this.autoResizeTextarea(textarea);
+
+      // Auto-save after 1 second
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        this.saveNoteText(annotation.annotation_id, textarea.value);
+      }, 1000);
+    });
+
+    textarea.addEventListener('blur', () => {
+      clearTimeout(saveTimeout);
+      this.saveNoteText(annotation.annotation_id, textarea.value);
+    });
+
+    // Priority chips
+    note.querySelectorAll('.priority-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const priority = chip.dataset.priority;
+        this.handlePriorityClick(annotation, priority, note);
+      });
+    });
+
+    // Flag chip
+    const flagChip = note.querySelector('.flag-chip');
+    if (flagChip) {
+      flagChip.addEventListener('click', () => {
+        this.handleFlagClick(annotation, note);
+      });
+    }
+
+    // Tags
+    const tagsList = note.querySelector('.tags-list');
+    if (tagsList) {
+      tagsList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tag-chip-remove')) {
+          const tagChip = e.target.closest('.tag-chip');
+          const tagId = parseInt(tagChip.dataset.tagId);
+          const tagName = tagChip.dataset.tagName;
+          this.removeTag(annotation, tagId, tagName, note);
+        } else if (e.target.classList.contains('new-tag') || e.target.closest('.new-tag')) {
+          this.addNewTag(annotation, note);
+        }
+      });
+    }
+
+    // Trash icon
+    const trash = note.querySelector('.note-trash');
+    if (trash) {
+      let clickCount = 0;
+      let resetTimeout;
+
+      trash.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        if (clickCount === 0) {
+          // First click - show confirmation
+          trash.classList.add('confirming');
+          clickCount = 1;
+
+          // Reset after 2 seconds
+          resetTimeout = setTimeout(() => {
+            trash.classList.remove('confirming');
+            clickCount = 0;
+          }, 2000);
+        } else {
+          // Second click - actually delete
+          clearTimeout(resetTimeout);
+          this.deleteAnnotation(annotation.annotation_id);
+        }
+      });
+    }
+  },
+
+  /**
+   * Auto-resize textarea to fit content
+   * @param {HTMLTextAreaElement} textarea - The textarea element
+   */
+  autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  },
+
+  /**
+   * Handle color selection for a specific note
+   * @param {number} annotationId - The annotation ID
+   * @param {string} color - The color name
+   */
+  async handleColorSelectionForNote(annotationId, color) {
+    const annotation = this.annotations.find(a => a.annotation_id === annotationId);
+    if (!annotation) return;
+
+    try {
+      // Update annotation color via API
+      await this.updateAnnotationColor(annotationId, color);
+
+      // Update local annotation
+      annotation.color = color;
+
+      // Re-render to update UI
+      this.renderStickyNotes();
+
+      // Update sentence highlights
+      this.updateSentenceHighlights();
+
+    } catch (error) {
+      console.error('Failed to update color:', error);
+      alert('Failed to update color');
+    }
+  },
+
+  /**
+   * Handle adding a new note
+   * @param {string} color - The initial color
+   */
+  async handleAddNewNote(color) {
+    if (!this.currentSentenceId) return;
+
+    try {
+      // Create new annotation
+      const response = await fetch(`${this.apiBaseUrl}/annotations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence_id: this.currentSentenceId,
+          color: color,
+          note: null,
+          priority: 'none',
+          flagged: false
+        })
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await response.json();
-      this.annotations = data.annotations || [];
+      const apiResponse = await response.json();
 
-      // Clear all active states
-      document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+      // Add to local array
+      const newAnnotation = {
+        annotation_id: apiResponse.annotation_id,
+        sentence_id: this.currentSentenceId,
+        color: color,
+        note: null,
+        priority: 'none',
+        flagged: false,
+        tags: []
+      };
 
-      // Find annotation for this sentence (may or may not have color)
-      const annotation = this.annotations[0]; // There should only be one annotation per sentence
-      if (annotation) {
-        // If annotation has a color, mark it as active in the palette
-        if (annotation.color) {
-          const activeCircle = document.querySelector(`.color-circle[data-color="${annotation.color}"]`);
-          if (activeCircle) {
-            activeCircle.classList.add('active');
-          }
-          // Apply sticky note color
-          this.applyStickyNoteColor(annotation.color);
-        } else {
-          // No color yet - keep grey
-          this.removeStickyNoteColor();
-        }
+      this.annotations.push(newAnnotation);
 
-        // Populate note textbox
-        const noteInput = document.getElementById('note-input');
-        if (noteInput) {
-          noteInput.value = annotation.note || '';
-          // Resize textarea to fit existing content
-          noteInput.style.height = 'auto';
-          noteInput.style.height = noteInput.scrollHeight + 'px';
-        }
+      // Re-render
+      this.renderStickyNotes();
 
-        // Load and render tags
-        this.renderTags(annotation.tags || []);
-
-        // Show P/flag section since annotation exists
-        this.showPriorityFlagSection();
-
-        // Update P/flag UI
-        this.updatePriorityFlagUI(annotation);
-      } else {
-        // No annotation - clear note and tags
-        const noteInput = document.getElementById('note-input');
-        if (noteInput) {
-          noteInput.value = '';
-          // Reset textarea height
-          noteInput.style.height = 'auto';
-        }
-        this.renderTags([]);
-
-        // No color - keep grey
-        this.removeStickyNoteColor();
-
-        // Hide P/flag section
-        this.hidePriorityFlagSection();
-      }
+      // Update sentence highlights
+      this.updateSentenceHighlights();
 
     } catch (error) {
-      console.error('Failed to fetch annotations:', error);
+      console.error('Failed to create annotation:', error);
+      alert('Failed to create annotation');
     }
   },
 
+  /**
+   * Update sentence highlights for all annotations
+   */
+  updateSentenceHighlights() {
+    if (!this.currentSentenceId) return;
 
+    const sentenceFragments = document.querySelectorAll(`.sentence[data-sentence-id="${this.currentSentenceId}"]`);
 
+    // Remove all highlight classes
+    sentenceFragments.forEach(fragment => {
+      this.COLORS.forEach(c => fragment.classList.remove(`highlight-${c}`));
+    });
 
-
-
-
+    // Apply highlights based on annotations
+    // If multiple annotations, apply the first color (could be customized)
+    if (this.annotations.length > 0 && this.annotations[0].color) {
+      const color = this.annotations[0].color;
+      sentenceFragments.forEach(fragment => {
+        fragment.classList.add(`highlight-${color}`);
+      });
+    }
+  },
 
   /**
    * Delete annotation
+   * @param {number} annotationId - The annotation ID
    */
-  async deleteAnnotation(annotationId, skipConfirm = false, skipUnselect = false) {
-    // skipConfirm parameter is kept for backward compatibility but not used anymore
-
+  async deleteAnnotation(annotationId) {
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
         method: 'DELETE'
@@ -455,134 +708,95 @@ const WriteSysAnnotations = {
 
       console.log('Annotation deleted:', annotationId);
 
-      // Remove from local annotations array
+      // Remove from local array
       this.annotations = this.annotations.filter(a => a.annotation_id !== annotationId);
 
-      // Remove highlight from UI
-      const sentenceId = this.currentSentenceId;
-      if (sentenceId) {
-        document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`).forEach(el => {
-          el.classList.remove('highlight-yellow', 'highlight-green', 'highlight-blue',
-                             'highlight-purple', 'highlight-red', 'highlight-orange');
-        });
-      }
+      // Re-render
+      this.renderStickyNotes();
 
-      // Unselect the sentence (closes annotation menu) unless skipped
-      if (!skipUnselect) {
-        this.unselectSentence();
-      } else {
-        // Clear active circle since no annotation
-        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-      }
+      // Update sentence highlights
+      this.updateSentenceHighlights();
 
     } catch (error) {
       console.error('Failed to delete annotation:', error);
-      alert(`Failed to delete annotation: ${error.message}`);
+      alert('Failed to delete annotation');
     }
   },
 
   /**
-   * Initialize note input handling
+   * Update annotation color via API
+   * @param {number} annotationId - The annotation ID
+   * @param {string} color - The new color
    */
-  initNoteInput() {
-    const noteInput = document.getElementById('note-input');
-    if (!noteInput) return;
+  async updateAnnotationColor(annotationId, color) {
+    const annotation = this.annotations.find(a => a.annotation_id === annotationId);
+    if (!annotation) return;
 
-    // Auto-resize textarea function
-    const autoResize = () => {
-      noteInput.style.height = 'auto'; // Reset height to recalculate
-      noteInput.style.height = noteInput.scrollHeight + 'px'; // Set to scroll height
-    };
-
-    noteInput.addEventListener('input', (e) => {
-      this.handleNoteInput(e);
-      autoResize(); // Resize on input
+    const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sentence_id: this.currentSentenceId,
+        color: color,
+        note: annotation.note || null,
+        priority: annotation.priority || 'none',
+        flagged: annotation.flagged || false
+      })
     });
 
-    noteInput.addEventListener('blur', () => {
-      // Save immediately on blur
-      this.saveAnnotation();
-    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-    // Initial resize in case there's existing content
-    autoResize();
+    return await response.json();
   },
 
   /**
-   * Initialize tags handling
+   * Save note text
+   * @param {number} annotationId - The annotation ID
+   * @param {string} noteText - The note text
    */
-  initTags() {
-    const tagsContainer = document.getElementById('tags-list');
-    if (!tagsContainer) return;
-
-    // Event delegation for tag clicks
-    tagsContainer.addEventListener('click', (e) => {
-      if (e.target.classList.contains('tag-chip-remove')) {
-        const tagChip = e.target.closest('.tag-chip');
-        const tagId = parseInt(tagChip.dataset.tagId);
-        const tagName = tagChip.dataset.tagName;
-        this.removeTag(tagId, tagName);
-      } else if (e.target.classList.contains('new-tag') || e.target.closest('.new-tag')) {
-        this.addNewTag();
-      }
-    });
-  },
-
-  /**
-   * Initialize priority/flag chips handling
-   */
-  initPriorityFlagChips() {
-    // Initialize event listeners for priority chips (P0-P3)
-    document.querySelectorAll('.priority-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const priority = chip.dataset.priority;
-        this.handlePriorityClick(priority);
-      });
-    });
-
-    // Initialize event listener for flag chip
-    const flagChip = document.querySelector('.flag-chip');
-    if (flagChip) {
-      flagChip.addEventListener('click', () => {
-        this.handleFlagClick();
-      });
-    }
-  },
-
-  /**
-   * Handle priority chip click (radio behavior - P0, P1, P2, P3)
-   */
-  async handlePriorityClick(priority) {
-    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-    // If no annotation exists, create one with blue color first
-    if (!annotation || !annotation.annotation_id) {
-      try {
-        await this.handleColorSelection('blue');
-        this.currentAnnotationSession.autoDefaultedToBlue = true;
-        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-        if (!annotation || !annotation.annotation_id) {
-          alert('Failed to create annotation');
-          return;
-        }
-      } catch (error) {
-        alert(`Error creating annotation: ${error.message}`);
-        return;
-      }
-    }
-
-    // Toggle behavior: if clicking the same priority, deselect it
-    const newPriority = (annotation.priority === priority) ? 'none' : priority;
-
-    // Mark as committed (prevents auto-blue undo)
-    if (newPriority !== 'none') {
-      this.currentAnnotationSession.committed = true;
-      this.currentAnnotationSession.autoDefaultedToBlue = false;
-    }
+  async saveNoteText(annotationId, noteText) {
+    const annotation = this.annotations.find(a => a.annotation_id === annotationId);
+    if (!annotation) return;
 
     try {
-      // Update annotation with new priority
+      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence_id: this.currentSentenceId,
+          color: annotation.color,
+          note: noteText.trim() || null,
+          priority: annotation.priority || 'none',
+          flagged: annotation.flagged || false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Update local annotation
+      annotation.note = noteText.trim() || null;
+
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      alert('Failed to save note');
+    }
+  },
+
+  /**
+   * Handle priority chip click
+   * @param {Object} annotation - The annotation object
+   * @param {string} priority - The priority value (P0, P1, P2, P3)
+   * @param {HTMLElement} note - The note element
+   */
+  async handlePriorityClick(annotation, priority, note) {
+    // Toggle behavior
+    const newPriority = (annotation.priority === priority) ? 'none' : priority;
+
+    try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -603,7 +817,7 @@ const WriteSysAnnotations = {
       annotation.priority = newPriority;
 
       // Update UI
-      this.updatePriorityFlagUI(annotation);
+      this.updatePriorityFlagUIForNote(note, annotation);
 
     } catch (error) {
       console.error('Failed to update priority:', error);
@@ -612,39 +826,14 @@ const WriteSysAnnotations = {
   },
 
   /**
-   * Handle flag chip click (toggle behavior)
+   * Handle flag chip click
+   * @param {Object} annotation - The annotation object
+   * @param {HTMLElement} note - The note element
    */
-  async handleFlagClick() {
-    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-    // If no annotation exists, create one with blue color first
-    if (!annotation || !annotation.annotation_id) {
-      try {
-        await this.handleColorSelection('blue');
-        this.currentAnnotationSession.autoDefaultedToBlue = true;
-        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-        if (!annotation || !annotation.annotation_id) {
-          alert('Failed to create annotation');
-          return;
-        }
-      } catch (error) {
-        alert(`Error creating annotation: ${error.message}`);
-        return;
-      }
-    }
-
-    // Toggle flagged state
+  async handleFlagClick(annotation, note) {
     const newFlagged = !annotation.flagged;
 
-    // Mark as committed (prevents auto-blue undo)
-    if (newFlagged) {
-      this.currentAnnotationSession.committed = true;
-      this.currentAnnotationSession.autoDefaultedToBlue = false;
-    }
-
     try {
-      // Update annotation with new flagged state
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -665,7 +854,7 @@ const WriteSysAnnotations = {
       annotation.flagged = newFlagged;
 
       // Update UI
-      this.updatePriorityFlagUI(annotation);
+      this.updatePriorityFlagUIForNote(note, annotation);
 
     } catch (error) {
       console.error('Failed to update flag:', error);
@@ -674,11 +863,13 @@ const WriteSysAnnotations = {
   },
 
   /**
-   * Update priority/flag chip UI based on annotation state
+   * Update priority/flag UI for a note
+   * @param {HTMLElement} note - The note element
+   * @param {Object} annotation - The annotation object
    */
-  updatePriorityFlagUI(annotation) {
+  updatePriorityFlagUIForNote(note, annotation) {
     // Update priority chips
-    document.querySelectorAll('.priority-chip').forEach(chip => {
+    note.querySelectorAll('.priority-chip').forEach(chip => {
       const priority = chip.dataset.priority;
       if (annotation.priority === priority) {
         chip.classList.add('active');
@@ -688,7 +879,7 @@ const WriteSysAnnotations = {
     });
 
     // Update flag chip
-    const flagChip = document.querySelector('.flag-chip');
+    const flagChip = note.querySelector('.flag-chip');
     if (flagChip) {
       if (annotation.flagged) {
         flagChip.classList.add('active');
@@ -699,263 +890,17 @@ const WriteSysAnnotations = {
   },
 
   /**
-   * Show priority/flag section (only when annotation exists)
+   * Render tags for a note
+   * @param {HTMLElement} note - The note element
+   * @param {Array} tags - The tags array
    */
-  showPriorityFlagSection() {
-    const container = document.getElementById('priority-flag-container');
-    if (container) {
-      container.style.display = 'block';
-    }
-  },
-
-  /**
-   * Hide priority/flag section
-   */
-  hidePriorityFlagSection() {
-    const container = document.getElementById('priority-flag-container');
-    if (container) {
-      container.style.display = 'none';
-    }
-  },
-
-  /**
-   * Initialize trash icon for deletion
-   */
-  initTrashIcon() {
-    const trashIcon = document.getElementById('trash-icon');
-    const cancelDelete = document.getElementById('cancel-delete');
-
-    if (trashIcon) {
-      trashIcon.addEventListener('click', () => {
-        if (trashIcon.classList.contains('ran-away')) {
-          // Second click - actually delete
-          this.handleTrashDelete();
-        } else {
-          // First click - run away
-          this.showTrashRunAway();
-        }
-      });
-    }
-
-    if (cancelDelete) {
-      cancelDelete.addEventListener('click', () => {
-        this.cancelTrashRunAway();
-      });
-    }
-  },
-
-  /**
-   * Show trash "running away" animation
-   */
-  showTrashRunAway() {
-    const trashIcon = document.getElementById('trash-icon');
-    const cancelDelete = document.getElementById('cancel-delete');
-
-    if (trashIcon) {
-      trashIcon.classList.add('ran-away');
-    }
-
-    if (cancelDelete) {
-      cancelDelete.classList.add('visible');
-    }
-  },
-
-  /**
-   * Cancel trash run away - return to normal
-   */
-  cancelTrashRunAway() {
-    const trashIcon = document.getElementById('trash-icon');
-    const cancelDelete = document.getElementById('cancel-delete');
-
-    if (trashIcon) {
-      trashIcon.classList.remove('ran-away');
-    }
-
-    if (cancelDelete) {
-      cancelDelete.classList.remove('visible');
-    }
-  },
-
-  /**
-   * Handle actual deletion when trash is clicked second time
-   */
-  async handleTrashDelete() {
-    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-    if (annotation && annotation.annotation_id) {
-      await this.deleteAnnotation(annotation.annotation_id, true); // skipConfirm = true
-    }
-
-    // Reset trash state
-    this.cancelTrashRunAway();
-  },
-
-  /**
-   * Handle note input with default-to-blue logic
-   */
-  async handleNoteInput(event) {
-    const noteText = event.target.value;
-    const existingAnnotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    const hasColor = existingAnnotation && existingAnnotation.color;
-
-    // First character typed, no color selected → default to blue
-    if (noteText.length === 1 && !hasColor) {
-      this.currentAnnotationSession.autoDefaultedToBlue = true;
-
-      try {
-        // Create annotation and get the response
-        const apiResponse = await this.createHighlightAnnotation(this.currentSentenceId, 'blue');
-
-        // Construct full annotation object for local array
-        const newAnnotation = {
-          annotation_id: apiResponse.annotation_id,
-          sentence_id: this.currentSentenceId,
-          color: 'blue',
-          note: null,
-          priority: 'none',
-          flagged: false,
-          tags: []
-        };
-
-        // Add to local annotations array
-        this.annotations.push(newAnnotation);
-
-        // Update active circle
-        document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-        const blueCircle = document.querySelector('.color-circle[data-color="blue"]');
-        if (blueCircle) {
-          blueCircle.classList.add('active');
-        }
-
-        // Apply highlight to sentence
-        const selectedSentence = document.querySelector(`.sentence[data-sentence-id="${this.currentSentenceId}"]`);
-        if (selectedSentence) {
-          this.applyHighlightToSentence(selectedSentence, 'blue');
-        }
-
-        // Apply sticky note color
-        this.applyStickyNoteColor('blue');
-
-        // Show P/flag section since annotation now exists
-        this.showPriorityFlagSection();
-
-        // Update P/flag UI
-        this.updatePriorityFlagUI(newAnnotation);
-      } catch (error) {
-        console.error('Failed to create auto-default blue annotation:', error);
-        this.currentAnnotationSession.autoDefaultedToBlue = false;
-      }
-    }
-
-    // Erased all text, and we auto-defaulted → undo blue
-    if (noteText.length === 0 && this.currentAnnotationSession.autoDefaultedToBlue) {
-      if (this.shouldUndoAutoBlue()) {
-        const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-        if (annotation) {
-          // Clear any pending auto-save
-          clearTimeout(this.autoSaveTimeout);
-
-          // Revert sticky note to grey before deleting
-          this.removeStickyNoteColor();
-
-          await this.deleteAnnotation(annotation.annotation_id, true, true); // skipConfirm=true, skipUnselect=true
-          this.currentAnnotationSession.autoDefaultedToBlue = false;
-          return;
-        }
-      }
-    }
-
-    // Schedule auto-save 1 second after last keystroke
-    this.scheduleAutoSave();
-  },
-
-  /**
-   * Check if we should undo auto-default blue
-   */
-  shouldUndoAutoBlue() {
-    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (!annotation) return false;
-
-    const noteInput = document.getElementById('note-input');
-    const hasNote = noteInput && noteInput.value.trim().length > 0;
-
-    // Don't undo if committed via P/flag selection
-    if (this.currentAnnotationSession.committed) {
-      return false;
-    }
-
-    // Don't undo if priority is set or flagged
-    if (annotation.priority && annotation.priority !== 'none') {
-      return false;
-    }
-    if (annotation.flagged) {
-      return false;
-    }
-
-    return this.currentAnnotationSession.autoDefaultedToBlue &&
-           !hasNote &&
-           annotation.color === 'blue';
-  },
-
-  /**
-   * Schedule auto-save with debounce
-   */
-  scheduleAutoSave() {
-    clearTimeout(this.autoSaveTimeout);
-
-    this.autoSaveTimeout = setTimeout(() => {
-      this.saveAnnotation();
-    }, 1000); // 1 second debounce
-  },
-
-  /**
-   * Save annotation (note changes)
-   */
-  async saveAnnotation() {
-    if (!this.currentSentenceId) return;
-
-    const noteInput = document.getElementById('note-input');
-    const noteText = noteInput ? noteInput.value.trim() : '';
-
-    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (!annotation) return;
-
-    try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          sentence_id: this.currentSentenceId,
-          color: annotation.color,
-          note: noteText || null,
-          priority: annotation.priority || 'none',
-          flagged: annotation.flagged || false
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-      }
-
-      // Update local annotation
-      annotation.note = noteText || null;
-
-    } catch (error) {
-      console.error('Failed to save note:', error);
-      alert('Failed to save note');
-    }
-  },
-
-  /**
-   * Render tags list
-   */
-  renderTags(tags) {
-    const tagsList = document.getElementById('tags-list');
+  renderTagsForNote(note, tags) {
+    const tagsList = note.querySelector('.tags-list');
     if (!tagsList) return;
 
     tagsList.innerHTML = '';
 
-    // Render existing tags (now tag objects with tag_id and tag_name)
+    // Render existing tags
     tags.forEach(tag => {
       const chip = document.createElement('div');
       chip.className = 'tag-chip';
@@ -977,20 +922,14 @@ const WriteSysAnnotations = {
 
   /**
    * Add new tag
+   * @param {Object} annotation - The annotation object
+   * @param {HTMLElement} note - The note element
    */
-  async addNewTag() {
-    // Create inline editable chip
-    this.createEditableTagChip();
-  },
-
-  /**
-   * Create inline editable tag chip
-   */
-  createEditableTagChip() {
-    const tagsList = document.getElementById('tags-list');
+  async addNewTag(annotation, note) {
+    const tagsList = note.querySelector('.tags-list');
     const newTagChip = tagsList.querySelector('.new-tag');
 
-    // Create editable input styled as a chip
+    // Create editable input
     const editableChip = document.createElement('div');
     editableChip.className = 'tag-chip editable-tag';
 
@@ -1001,36 +940,59 @@ const WriteSysAnnotations = {
     input.maxLength = 50;
 
     editableChip.appendChild(input);
-
-    // Insert before the "+tag" chip
     tagsList.insertBefore(editableChip, newTagChip);
-
-    // Focus the input
     input.focus();
 
-    // Flag to track if tag creation was cancelled
     let cancelled = false;
 
-    // Handle finishing tag creation
-    const finishTagCreation = async (e) => {
+    const finishTagCreation = async () => {
       if (cancelled) return;
 
       const tagName = input.value.trim();
-
-      // Remove the editable chip
       editableChip.remove();
 
       if (!tagName) return;
 
-      // Validate and create tag
-      await this.finalizeTagCreation(tagName);
+      // Validate tag name
+      const valid = /^[a-z0-9-]+$/.test(tagName);
+      if (!valid) {
+        alert('Invalid tag name. Use only lowercase letters, numbers, and dashes.');
+        return;
+      }
+
+      try {
+        const migrationId = window.WriteSysRenderer?.currentMigrationID;
+        if (!migrationId) {
+          throw new Error('Migration ID not available');
+        }
+
+        const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tag_name: tagName,
+            migration_id: migrationId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        annotation.tags = data.tags;
+        this.renderTagsForNote(note, data.tags);
+
+      } catch (error) {
+        console.error('Failed to add tag:', error);
+        alert(`Failed to add tag: ${error.message}`);
+      }
     };
 
-    // Listen for completion events
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab') {
         e.preventDefault();
-        finishTagCreation(e);
+        finishTagCreation();
       } else if (e.key === 'Escape') {
         cancelled = true;
         editableChip.remove();
@@ -1041,74 +1003,13 @@ const WriteSysAnnotations = {
   },
 
   /**
-   * Finalize tag creation with validation
-   */
-  async finalizeTagCreation(tagName) {
-    // Validate tag name
-    const valid = /^[a-z0-9-]+$/.test(tagName);
-    if (!valid) {
-      alert('Invalid tag name. Use only lowercase letters, numbers, and dashes.');
-      return;
-    }
-
-    let annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-    // If no annotation exists yet, create one with blue color first
-    if (!annotation || !annotation.annotation_id) {
-      try {
-        // Create annotation with blue color
-        await this.handleColorSelection('blue');
-        this.currentAnnotationSession.autoDefaultedToBlue = true;
-
-        // Get the newly created annotation
-        annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-
-        if (!annotation || !annotation.annotation_id) {
-          alert('Failed to create annotation');
-          return;
-        }
-      } catch (error) {
-        alert(`Error creating annotation: ${error.message}`);
-        return;
-      }
-    }
-
-    try {
-      // Get migration ID from global state (set by renderer)
-      const migrationId = window.WriteSysRenderer?.currentMigrationID;
-      if (!migrationId) {
-        throw new Error('Migration ID not available');
-      }
-
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tag_name: tagName,
-          migration_id: migrationId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      annotation.tags = data.tags;
-      this.renderTags(data.tags);
-    } catch (error) {
-      console.error('Failed to add tag:', error);
-      alert(`Failed to add tag: ${error.message}`);
-    }
-  },
-
-  /**
    * Remove tag
+   * @param {Object} annotation - The annotation object
+   * @param {number} tagId - The tag ID
+   * @param {string} tagName - The tag name
+   * @param {HTMLElement} note - The note element
    */
-  async removeTag(tagId, tagName) {
-    const annotation = this.annotations.find(a => a.sentence_id === this.currentSentenceId);
-    if (!annotation || !annotation.annotation_id) return;
-
+  async removeTag(annotation, tagId, tagName, note) {
     try {
       const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags/${tagId}`, {
         method: 'DELETE'
@@ -1120,70 +1021,43 @@ const WriteSysAnnotations = {
 
       // Remove from local tags array
       annotation.tags = annotation.tags.filter(t => t.tag_id !== tagId);
-      this.renderTags(annotation.tags);
+      this.renderTagsForNote(note, annotation.tags);
 
-      // If this was the last tag AND we auto-defaulted to blue AND there's no note, undo the auto-blue
-      if (annotation.tags.length === 0 &&
-          this.currentAnnotationSession.autoDefaultedToBlue &&
-          (!annotation.note || annotation.note.trim() === '')) {
-        await this.deleteAnnotation(annotation.annotation_id, true); // skipUnselect = true
-      }
     } catch (error) {
       console.error('Failed to remove tag:', error);
-      alert(`Failed to remove tag: ${error.message}`);
+      alert('Failed to remove tag');
     }
   },
 
   /**
-   * Unselect sentence - this is the single action that closes the annotation menu
+   * Unselect sentence - closes annotation UI
    */
   unselectSentence() {
-    // Save any pending note changes before unselecting
-    clearTimeout(this.autoSaveTimeout);
-    this.saveAnnotation();
-
     // Hide sentence preview
     const preview = document.getElementById('sentence-preview');
     if (preview) {
       preview.classList.remove('visible');
     }
 
-    // Hide color palette
-    const palette = document.getElementById('color-palette');
-    if (palette) {
-      palette.classList.remove('visible');
+    // Hide sticky notes container
+    const container = document.getElementById('sticky-notes-container');
+    if (container) {
+      container.classList.remove('visible');
     }
-
-    // Hide sticky note container (contains note, tags, priority, flag)
-    const stickyNoteContainer = document.getElementById('sticky-note-container');
-    if (stickyNoteContainer) {
-      stickyNoteContainer.classList.remove('visible');
-    }
-
-    // Clear sticky note color (will be reset when next sentence is selected)
-    this.removeStickyNoteColor();
-
-    // Hide priority/flag container
-    this.hidePriorityFlagSection();
 
     // Remove selection from sentences
     document.querySelectorAll('.sentence.selected').forEach(s => s.classList.remove('selected'));
 
-    // Clear the renderer's selected sentence tracking
+    // Clear renderer's tracking
     if (window.WriteSysRenderer) {
       window.WriteSysRenderer.currentSelectedSentenceId = null;
     }
 
-    // Reset session state
-    this.currentAnnotationSession = {
-      sentenceId: null,
-      autoDefaultedToBlue: false,
-      originalColor: null,
-      lastKeystroke: null,
-      committed: false
-    };
+    // Clear state
+    this.currentSentenceId = null;
+    this.currentSentenceText = '';
+    this.annotations = [];
   },
-
 };
 
 // Export for other modules BEFORE initialization

@@ -391,6 +391,34 @@ See PLAN.md for full details.
 3. **Tokenizer parity required** - JS and Go must split identically for DOM wrapping
 4. **Markdown stays in git** - Don't duplicate in database
 
+### CSS Styling Rules
+
+**NEVER use `scale()` transforms for sizing**
+
+When asked to make elements bigger or smaller, recalculate actual dimensions using px, em, or rem:
+
+**❌ FORBIDDEN:**
+```css
+.element:hover {
+  transform: scale(1.2);  /* NO! */
+}
+```
+
+**✅ REQUIRED:**
+```css
+.element {
+  width: 22px;
+  height: 22px;
+}
+
+.element:hover {
+  width: 26px;  /* Explicitly calculate: 22 * 1.18 ≈ 26 */
+  height: 26px;
+}
+```
+
+**Why:** `scale()` creates positioning and alignment issues, especially with nested absolute positioning. Explicit dimensions are more predictable and maintainable.
+
 ---
 
 ## ❓ QUESTIONS?

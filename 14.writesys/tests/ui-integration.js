@@ -126,27 +126,37 @@ async function runTests() {
     assert(pageNums.firstPageContent === 'none' && pageNums.secondPageContent === 'counter(page)',
       `Page numbers work correctly (first: ${pageNums.firstPageContent}, second: ${pageNums.secondPageContent})`);
 
-    // Test 13: Color palette hidden initially
-    const paletteHidden = await page.evaluate(() => {
-      const palette = document.getElementById('color-palette');
-      return !palette.classList.contains('visible');
+    // Test 13: Annotations panel hidden before clicking sentence
+    const panelHiddenBefore = await page.evaluate(() => {
+      const container = document.getElementById('sticky-notes-container');
+      return !container || !container.classList.contains('visible');
     });
-    assert(paletteHidden, 'Color palette hidden initially');
+    assert(panelHiddenBefore, 'Annotations panel hidden initially');
 
-    // Test 13b: Color palette appears after clicking sentence
+    // Test 13b: Click sentence shows sticky notes panel with uncreated note
     await page.locator('.sentence').first().click();
     await page.waitForTimeout(500);
-    const paletteVisible = await page.evaluate(() => {
-      const palette = document.getElementById('color-palette');
-      return palette.classList.contains('visible');
+    const panelShownWithNote = await page.evaluate(() => {
+      const container = document.getElementById('sticky-notes-container');
+      const uncreatedNote = document.querySelector('.sticky-note.uncreated-note');
+      return container && container.classList.contains('visible') && uncreatedNote !== null;
     });
-    assert(paletteVisible, 'Color palette visible after clicking sentence');
+    assert(panelShownWithNote, 'Sticky notes panel shown with uncreated note after click');
 
     // Test 13c: Sentence gets selected class
     const sentenceSelected = await page.evaluate(() => {
       return document.querySelector('.sentence.selected') !== null;
     });
     assert(sentenceSelected, 'Sentence has selected class after click');
+
+    // Test 13d: Color palette shows on hover of color circle
+    await page.locator('.sticky-note-color-circle').first().hover();
+    await page.waitForTimeout(300);
+    const paletteVisible = await page.evaluate(() => {
+      const palette = document.querySelector('.sticky-note-palette.visible');
+      return palette !== null;
+    });
+    assert(paletteVisible, 'Color palette visible on hover of color circle');
 
     // Test 14: Page dimensions match reference (within 5px tolerance)
     const pageBox = await page.locator('.pagedjs_page').first().boundingBox();
@@ -184,16 +194,31 @@ async function runTests() {
     assert(dialogueSpacing.found && dialogueSpacing.isNormal,
       `Short dialogue lines have normal word spacing (found: ${dialogueSpacing.found}, spacing: ${dialogueSpacing.wordSpacing}, expected ≤1px)`);
 
-    // Test 17: Change highlight color
+    // Test 17: Create annotation and change highlight color
     // Get the sentence ID first to track it reliably
     const testSentenceId = await page.evaluate(() => {
-      return document.querySelectorAll('.sentence')[5].dataset.sentenceId;
+      return document.querySelectorAll('.sentence')[10].dataset.sentenceId;
     });
 
-    // First, apply yellow highlight
-    await page.locator('.sentence').nth(5).click();
+    // Click sentence to show sticky notes panel
+    await page.locator('.sentence').nth(10).click();
     await page.waitForTimeout(500);
-    await page.locator('.color-circle[data-color="yellow"]').click();
+
+    // Type in the uncreated note to create an annotation (default color: blue)
+    await page.locator('.uncreated-note .note-input').first().type('Test note');
+    await page.waitForTimeout(1000);
+
+    // Verify blue highlight applied by default
+    const hasBlue = await page.evaluate((sentenceId) => {
+      const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+      return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-blue'));
+    }, testSentenceId);
+    assert(hasBlue, 'Sentence has blue highlight after creating note');
+
+    // Hover over color circle to show palette, then click yellow
+    await page.locator('.sticky-note:not(.uncreated-note) .sticky-note-color-circle').first().hover();
+    await page.waitForTimeout(300);
+    await page.locator('.sticky-note:not(.uncreated-note) .color-circle[data-color="yellow"]').first().click();
     await page.waitForTimeout(1000);
 
     // Verify yellow highlight applied (check all fragments)
@@ -201,12 +226,12 @@ async function runTests() {
       const fragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
       return fragments.length > 0 && Array.from(fragments).every(f => f.classList.contains('highlight-yellow'));
     }, testSentenceId);
-    assert(hasYellow, 'Sentence has yellow highlight after first click');
+    assert(hasYellow, 'Sentence has yellow highlight after clicking yellow');
 
-    // Now change to green - click sentence again to reopen palette
-    await page.locator(`.sentence[data-sentence-id="${testSentenceId}"]`).first().click();
-    await page.waitForTimeout(500);
-    await page.locator('.color-circle[data-color="green"]').click();
+    // Hover over color circle again and change to green
+    await page.locator('.sticky-note:not(.uncreated-note) .sticky-note-color-circle').first().hover();
+    await page.waitForTimeout(300);
+    await page.locator('.sticky-note:not(.uncreated-note) .color-circle[data-color="green"]').first().click();
     await page.waitForTimeout(1000);
 
     // Verify green highlight applied and yellow removed (check all fragments)
