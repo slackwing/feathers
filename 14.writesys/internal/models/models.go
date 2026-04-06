@@ -49,6 +49,7 @@ type Annotation struct {
 	Note         *string    `json:"note"`  // Optional
 	Priority     string     `json:"priority"`
 	Flagged      bool       `json:"flagged"`
+	Position     string     `json:"position"` // Fractional index for ordering annotations
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 	DeletedAt    *time.Time `json:"deleted_at"`

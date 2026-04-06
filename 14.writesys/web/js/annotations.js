@@ -616,6 +616,11 @@ const WriteSysAnnotations = {
       // Update sentence highlights
       this.updateSentenceHighlights();
 
+      // Update rainbow bars for all sentences
+      if (window.WriteSysRenderer) {
+        window.WriteSysRenderer.addRainbowBars();
+      }
+
     } catch (error) {
       console.error('Failed to update color:', error);
       alert('Failed to update color');
@@ -680,6 +685,11 @@ const WriteSysAnnotations = {
       // Update sentence highlights
       this.updateSentenceHighlights();
 
+      // Update rainbow bars for all sentences
+      if (window.WriteSysRenderer) {
+        window.WriteSysRenderer.addRainbowBars();
+      }
+
     } catch (error) {
       console.error('Failed to create annotation:', error);
       alert('Failed to create annotation');
@@ -733,6 +743,11 @@ const WriteSysAnnotations = {
 
       // Update sentence highlights
       this.updateSentenceHighlights();
+
+      // Update rainbow bars for all sentences
+      if (window.WriteSysRenderer) {
+        window.WriteSysRenderer.addRainbowBars();
+      }
 
     } catch (error) {
       console.error('Failed to delete annotation:', error);

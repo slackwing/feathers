@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"writesys/internal/fractional"
 	"writesys/internal/models"
 
 	"github.com/jackc/pgx/v5"
@@ -396,12 +397,12 @@ func (db *DB) GetSentencesByCommit(ctx context.Context, commitHash string) ([]mo
 func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash string) ([]models.Annotation, error) {
 	query := `
 		SELECT a.annotation_id, a.sentence_id, a.user_id, a.color, a.note,
-		       a.priority, a.flagged, a.created_at, a.updated_at, a.deleted_at
+		       a.priority, a.flagged, a.position, a.created_at, a.updated_at, a.deleted_at
 		FROM annotation a
 		JOIN sentence s ON a.sentence_id = s.sentence_id
 		WHERE s.commit_hash = $1
 		  AND a.deleted_at IS NULL
-		ORDER BY s.ordinal, a.created_at
+		ORDER BY s.ordinal, a.position
 	`
 
 	rows, err := db.Pool.Query(ctx, query, commitHash)
@@ -421,6 +422,7 @@ func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash string) ([]
 			&a.Note,
 			&a.Priority,
 			&a.Flagged,
+			&a.Position,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 			&a.DeletedAt,
@@ -442,11 +444,11 @@ func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash string) ([]
 func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID string) ([]models.Annotation, error) {
 	query := `
 		SELECT a.annotation_id, a.sentence_id, a.user_id, a.color, a.note,
-		       a.priority, a.flagged, a.created_at, a.updated_at, a.deleted_at
+		       a.priority, a.flagged, a.position, a.created_at, a.updated_at, a.deleted_at
 		FROM annotation a
 		WHERE a.sentence_id = $1
 		  AND a.deleted_at IS NULL
-		ORDER BY a.created_at
+		ORDER BY a.position
 	`
 
 	rows, err := db.Pool.Query(ctx, query, sentenceID)
@@ -467,6 +469,7 @@ func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID string) (
 			&a.Note,
 			&a.Priority,
 			&a.Flagged,
+			&a.Position,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 			&a.DeletedAt,
@@ -500,10 +503,30 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 	}
 	defer tx.Rollback(ctx)
 
+	// Calculate position for new annotation
+	// Get the maximum position for this sentence
+	var maxPosition string
+	queryMaxPos := `SELECT COALESCE(MAX(position), 'a') FROM annotation WHERE sentence_id = $1`
+	if err := tx.QueryRow(ctx, queryMaxPos, annotation.SentenceID).Scan(&maxPosition); err != nil {
+		return fmt.Errorf("failed to get max position: %w", err)
+	}
+
+	// Generate next position (simple increment for now)
+	// Format: "a0000", "a0001", "a0002", etc.
+	var nextPosition string
+	if maxPosition == "a" {
+		nextPosition = "a0000"
+	} else {
+		// Extract numeric part and increment
+		var num int
+		fmt.Sscanf(maxPosition, "a%d", &num)
+		nextPosition = fmt.Sprintf("a%04d", num+1)
+	}
+
 	// Create annotation record
 	query1 := `
-		INSERT INTO annotation (sentence_id, user_id, color, note, priority, flagged)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO annotation (sentence_id, user_id, color, note, priority, flagged, position)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING annotation_id, created_at, updated_at
 	`
 	err = tx.QueryRow(ctx, query1,
@@ -513,6 +536,7 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 		annotation.Note,
 		annotation.Priority,
 		annotation.Flagged,
+		nextPosition,
 	).Scan(
 		&annotation.AnnotationID,
 		&annotation.CreatedAt,
@@ -521,6 +545,9 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 	if err != nil {
 		return fmt.Errorf("failed to create annotation: %w", err)
 	}
+
+	// Set the position in the annotation struct
+	annotation.Position = nextPosition
 
 	// Get commit_hash and migration_id for this sentence (for origin_commit_hash and origin_migration_id)
 	var commitHash string
@@ -757,7 +784,7 @@ func (db *DB) GetLatestAnnotationVersion(ctx context.Context, annotationID int) 
 func (db *DB) GetActiveAnnotationsForSentence(ctx context.Context, sentenceID string) ([]models.Annotation, error) {
 	query := `
 		SELECT a.annotation_id, a.sentence_id, a.user_id, a.color, a.note,
-		       a.priority, a.flagged, a.created_at, a.updated_at, a.deleted_at
+		       a.priority, a.flagged, a.position, a.created_at, a.updated_at, a.deleted_at
 		FROM annotation a
 		WHERE a.sentence_id = $1
 		  AND a.deleted_at IS NULL
@@ -780,6 +807,7 @@ func (db *DB) GetActiveAnnotationsForSentence(ctx context.Context, sentenceID st
 			&a.Note,
 			&a.Priority,
 			&a.Flagged,
+			&a.Position,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 			&a.DeletedAt,
@@ -948,4 +976,54 @@ func (db *DB) GetAllTagsForMigration(ctx context.Context, migrationID int) ([]mo
 	}
 
 	return tags, nil
+}
+
+// ReorderAnnotation updates the position of an annotation based on the target index
+// within the list of annotations for a given sentence
+func (db *DB) ReorderAnnotation(ctx context.Context, annotationID int, sentenceID string, newIndex int) error {
+	tx, err := db.Pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Get all positions for this sentence, ordered by position
+	query := `SELECT position FROM annotation WHERE sentence_id = $1 AND deleted_at IS NULL ORDER BY position`
+	rows, err := tx.Query(ctx, query, sentenceID)
+	if err != nil {
+		return fmt.Errorf("failed to query positions: %w", err)
+	}
+	defer rows.Close()
+
+	var positions []string
+	for rows.Next() {
+		var pos string
+		if err := rows.Scan(&pos); err != nil {
+			return fmt.Errorf("failed to scan position: %w", err)
+		}
+		positions = append(positions, pos)
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating positions: %w", err)
+	}
+
+	// Use fractional indexing to calculate new position
+	newPosition, err := fractional.GetPositionAtIndex(positions, newIndex)
+	if err != nil {
+		return fmt.Errorf("failed to calculate new position: %w", err)
+	}
+
+	// Update the annotation's position
+	updateQuery := `UPDATE annotation SET position = $1, updated_at = NOW() WHERE annotation_id = $2`
+	_, err = tx.Exec(ctx, updateQuery, newPosition, annotationID)
+	if err != nil {
+		return fmt.Errorf("failed to update annotation position: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

@@ -454,12 +454,25 @@ const WriteSysRenderer = {
 
     console.log(`Applying ${this.currentAnnotations.length} annotations...`);
 
+    // Group annotations by sentence_id to find the first annotation per sentence
+    const annotationsBySentence = {};
     this.currentAnnotations.forEach(annotation => {
-      // Only apply if annotation has a color
       if (!annotation.color) return;
-
       const sentenceId = annotation.sentence_id;
-      const color = annotation.color;
+      if (!annotationsBySentence[sentenceId]) {
+        annotationsBySentence[sentenceId] = [];
+      }
+      annotationsBySentence[sentenceId].push(annotation);
+    });
+
+    // Apply only the FIRST annotation's color to each sentence
+    Object.keys(annotationsBySentence).forEach(sentenceId => {
+      const annotations = annotationsBySentence[sentenceId];
+      if (annotations.length === 0) return;
+
+      // Get the first annotation's color (they're already sorted by position from API)
+      const firstAnnotation = annotations[0];
+      const color = firstAnnotation.color;
 
       // Find all sentence elements with this ID (including fragments)
       const sentenceElements = container.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
@@ -474,7 +487,7 @@ const WriteSysRenderer = {
         el.classList.add(`highlight-${color}`);
       });
 
-      console.log(`Applied ${color} highlight to sentence ${sentenceId} (${sentenceElements.length} fragment(s))`);
+      console.log(`Applied ${color} highlight to sentence ${sentenceId} (${sentenceElements.length} fragment(s), ${annotations.length} total annotations)`);
     });
   },
 
@@ -778,6 +791,108 @@ const WriteSysRenderer = {
     const statusEl = document.getElementById('status');
     statusEl.textContent = message;
     statusEl.className = type;
+  },
+
+  /**
+   * Add rainbow sidebar bars for sentences with multiple annotations
+   * Uses rainbowSlice() to determine which colors to show
+   */
+  addRainbowBars() {
+    // Remove any existing rainbow bar containers
+    document.querySelectorAll('.rainbow-bar-container').forEach(el => el.remove());
+
+    if (!this.currentAnnotations || this.currentAnnotations.length === 0) {
+      return;
+    }
+
+    // Color name to hex mapping
+    const colorMap = {
+      yellow: '#FFF3A3',
+      green: '#C3FDB8',
+      blue: '#AEDFF7',
+      purple: '#E0BBE4',
+      red: '#FFCCCB',
+      orange: '#FFD8A8'
+    };
+
+    // Group annotations by sentence_id
+    const annotationsBySentence = {};
+    this.currentAnnotations.forEach(annotation => {
+      if (!annotation.color) return;
+      const sentenceId = annotation.sentence_id;
+      if (!annotationsBySentence[sentenceId]) {
+        annotationsBySentence[sentenceId] = [];
+      }
+      annotationsBySentence[sentenceId].push(annotation);
+    });
+
+    // For each sentence with multiple annotations, add rainbow bars
+    Object.keys(annotationsBySentence).forEach(sentenceId => {
+      const annotations = annotationsBySentence[sentenceId];
+
+      // Only show rainbow bars if there are 2+ annotations
+      if (annotations.length < 2) return;
+
+      // Get colors array from annotations
+      const colors = annotations.map(a => a.color);
+
+      // Use rainbowSlice to determine which colors to show as bars
+      // skip=1 (first color is sentence highlight), maxSize=4 (max 4 bars)
+      const barColors = rainbowSlice(colors, { skip: 1, maxSize: 4 });
+
+      // Find all sentence fragments with this ID
+      const sentenceFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
+
+      sentenceFragments.forEach(sentence => {
+        // Get the page this sentence is in
+        const page = sentence.closest('.pagedjs_page');
+        if (!page) return;
+
+        // Get page content area
+        const pageArea = page.querySelector('.pagedjs_page_content');
+        if (!pageArea) return;
+
+        // Get bounding rectangles
+        const sentenceRect = sentence.getBoundingClientRect();
+        const pageRect = pageArea.getBoundingClientRect();
+
+        // Calculate position relative to page (round to avoid sub-pixel gaps)
+        const top = Math.round(sentenceRect.top - pageRect.top);
+        const height = Math.round(sentenceRect.height);
+
+        // Create container for bars
+        const container = document.createElement('div');
+        container.className = 'rainbow-bar-container';
+        container.style.position = 'absolute';
+        container.style.top = `${top}px`;
+        container.style.left = 'calc(100% + 5px)'; // Start 5px to the right of content edge
+        container.style.width = `${barColors.length * 0.5}em`; // Total width for all bars
+        container.style.height = `${height}px`;
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '10';
+
+        // Create bars inside container, stacked left to right (no gaps)
+        barColors.forEach((colorName, index) => {
+          const bar = document.createElement('div');
+          bar.className = 'rainbow-bar';
+          bar.style.position = 'absolute';
+          bar.style.top = '0';
+          bar.style.left = `${index * 0.5}em`; // Stack from left to right with no gaps
+          bar.style.width = '0.5em'; // 8px at base font size (16px)
+          bar.style.height = '100%';
+          bar.style.backgroundColor = colorMap[colorName] || '#ccc';
+
+          container.appendChild(bar);
+        });
+
+        pageArea.appendChild(container);
+      });
+    });
+
+    const totalBars = document.querySelectorAll('.rainbow-bar-container').length;
+    if (totalBars > 0) {
+      console.log(`Added rainbow bars for ${totalBars} sentence fragments`);
+    }
   }
 };
 

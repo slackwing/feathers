@@ -744,7 +744,7 @@ p.indented {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  padding: 4px 6px;
   border-radius: 16px;
   background: transparent;
   border: 1px dashed #ccc;
@@ -773,16 +773,24 @@ p.indented {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 4px 6px;
+  height: 28px;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px dashed #ccc;
+  font-family: "Helvetica", sans-serif;
+  font-size: 11px;
+  font-weight: normal;
+  color: #999;
   cursor: pointer;
   transition: all 0.2s;
-  background: none;
-  border: none;
-  padding: 0;
+  user-select: none;
+  box-sizing: border-box;
 }
 
 .flag-chip .flag-icon {
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
 }
 
 .flag-chip .flag-staff {
@@ -797,13 +805,24 @@ p.indented {
   stroke-width: 1.5;
 }
 
+.flag-chip:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
 .flag-chip:hover .flag-staff,
 .flag-chip:hover .flag-shape {
   stroke: #666;
 }
 
+.flag-chip.active {
+  background: #fee;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+}
+
 .flag-chip.active .flag-staff {
-  stroke: #000;
+  stroke: #dc3545;
   fill: none;
 }
 
@@ -817,8 +836,8 @@ p.indented {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
   transition: all 0.2s;
   background: transparent;
@@ -841,8 +860,8 @@ p.indented {
 }
 
 .note-trash svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
 }
 
@@ -862,6 +881,7 @@ p.indented {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: var(--page-gap); /* Space for scrollbar (2em = 32px) */
+  padding-top: var(--circle-radius); /* Space for color circle (13px) so it doesn't get cut off */
 }
 
 #sticky-notes-container.visible {
@@ -950,7 +970,7 @@ p.indented {
   border-radius: 50%;
   border: var(--circle-border) solid #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
+  cursor: pointer; /* Default for rainbow circle */
   opacity: 0;
   transition: opacity 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
   z-index: 10;
@@ -981,6 +1001,16 @@ p.indented {
 .sticky-note-color-circle.color-purple { background-color: var(--highlight-purple); }
 .sticky-note-color-circle.color-red { background-color: var(--highlight-red); }
 .sticky-note-color-circle.color-orange { background-color: var(--highlight-orange); }
+
+/* Draggable cursor for colored (non-rainbow) circles */
+.sticky-note-color-circle.color-yellow,
+.sticky-note-color-circle.color-green,
+.sticky-note-color-circle.color-blue,
+.sticky-note-color-circle.color-purple,
+.sticky-note-color-circle.color-red,
+.sticky-note-color-circle.color-orange {
+  cursor: move !important;
+}
 
 /* Expandable color palette (floating circles without background) */
 .sticky-note-palette {

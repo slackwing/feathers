@@ -8,5 +8,6 @@
     <!-- Consolidated schema with multi-annotation support -->
     <include file="changelog/001-initial-schema.xml"/>
     <include file="changelog/002-seed-default-user.xml"/>
+    <include file="changelog/003-add-annotation-position.xml"/>
 
 </databaseChangeLog>

@@ -35,6 +35,9 @@
 
           // Setup click/hover handlers on the NEW sentence spans created by Paged.js
           window.WriteSysRenderer.setupSentenceHover();
+
+          // Add rainbow bars for sentences with multiple annotations
+          window.WriteSysRenderer.addRainbowBars();
         }
 
         console.log(`Paged.js rendered ${pages.length} pages`);

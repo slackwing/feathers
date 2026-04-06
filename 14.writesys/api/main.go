@@ -139,6 +139,7 @@ func (s *Server) setupRoutes() {
 		r.Get("/annotations/sentence/{sentence_id}", s.handleGetAnnotationsBySentence)
 		r.Post("/annotations", s.handleCreateAnnotation)
 		r.Put("/annotations/{annotation_id}", s.handleUpdateAnnotation)
+		r.Put("/annotations/{annotation_id}/reorder", s.handleReorderAnnotation)
 		r.Delete("/annotations/{annotation_id}", s.handleDeleteAnnotation)
 
 		// Tag endpoints
@@ -737,4 +738,49 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// ReorderAnnotationRequest is the request payload for reordering an annotation
+type ReorderAnnotationRequest struct {
+	SentenceID string `json:"sentence_id"`
+	NewIndex   int    `json:"new_index"`
+}
+
+// PUT /api/annotations/:annotation_id/reorder
+// Reorders an annotation to a new position
+func (s *Server) handleReorderAnnotation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	annotationIDStr := chi.URLParam(r, "annotation_id")
+	annotationID, err := strconv.Atoi(annotationIDStr)
+	if err != nil {
+		http.Error(w, "Invalid annotation_id", http.StatusBadRequest)
+		return
+	}
+
+	var req ReorderAnnotationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate request
+	if req.SentenceID == "" {
+		http.Error(w, "Missing required field: sentence_id", http.StatusBadRequest)
+		return
+	}
+
+	if req.NewIndex < 0 {
+		http.Error(w, "Invalid new_index: must be >= 0", http.StatusBadRequest)
+		return
+	}
+
+	// Reorder the annotation
+	if err := s.db.ReorderAnnotation(ctx, annotationID, req.SentenceID, req.NewIndex); err != nil {
+		log.Printf("Failed to reorder annotation: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to reorder annotation: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Annotation reordered successfully"})
 }
