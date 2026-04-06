@@ -79,6 +79,10 @@ const WriteSysRenderer = {
     try {
       this.showStatus('Loading manuscript...');
 
+      // Store repo and file paths for refreshRainbowBars()
+      this.currentRepoPath = repoPath;
+      this.currentFilePath = filePath;
+
       // Fetch manuscript data from API
       const url = `${this.apiBaseUrl}/migrations/${migrationID}/manuscript?repo=${encodeURIComponent(repoPath)}&file=${encodeURIComponent(filePath)}`;
       const response = await fetch(url);
@@ -892,6 +896,39 @@ const WriteSysRenderer = {
     const totalBars = document.querySelectorAll('.rainbow-bar-container').length;
     if (totalBars > 0) {
       console.log(`Added rainbow bars for ${totalBars} sentence fragments`);
+    }
+  },
+
+  /**
+   * Refresh rainbow bars by reloading all annotations from the API
+   * This is needed when annotations are added/updated/deleted
+   */
+  async refreshRainbowBars() {
+    console.log('[refreshRainbowBars] Called');
+    if (!this.currentMigrationID || !this.currentRepoPath || !this.currentFilePath) {
+      console.warn('No migration loaded, cannot refresh rainbow bars');
+      return;
+    }
+
+    try {
+      // Fetch manuscript data which includes annotations
+      console.log(`[refreshRainbowBars] Fetching annotations for migration ${this.currentMigrationID}`);
+      const url = `${this.apiBaseUrl}/migrations/${this.currentMigrationID}/manuscript?repo=${encodeURIComponent(this.currentRepoPath)}&file=${encodeURIComponent(this.currentFilePath)}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const oldCount = this.currentAnnotations ? this.currentAnnotations.length : 0;
+      this.currentAnnotations = data.annotations || [];
+      console.log(`[refreshRainbowBars] Updated annotations: ${oldCount} -> ${this.currentAnnotations.length}`);
+
+      // Re-render rainbow bars with updated annotations
+      this.addRainbowBars();
+      console.log('[refreshRainbowBars] Rainbow bars refreshed');
+    } catch (error) {
+      console.error('Failed to refresh rainbow bars:', error);
     }
   }
 };

@@ -617,8 +617,8 @@ const WriteSysAnnotations = {
       this.updateSentenceHighlights();
 
       // Update rainbow bars for all sentences
-      if (window.WriteSysRenderer) {
-        window.WriteSysRenderer.addRainbowBars();
+      if (window.WriteSysRenderer && window.WriteSysRenderer.refreshRainbowBars) {
+        await window.WriteSysRenderer.refreshRainbowBars();
       }
 
     } catch (error) {
@@ -686,8 +686,8 @@ const WriteSysAnnotations = {
       this.updateSentenceHighlights();
 
       // Update rainbow bars for all sentences
-      if (window.WriteSysRenderer) {
-        window.WriteSysRenderer.addRainbowBars();
+      if (window.WriteSysRenderer && window.WriteSysRenderer.refreshRainbowBars) {
+        await window.WriteSysRenderer.refreshRainbowBars();
       }
 
     } catch (error) {
@@ -745,8 +745,15 @@ const WriteSysAnnotations = {
       this.updateSentenceHighlights();
 
       // Update rainbow bars for all sentences
-      if (window.WriteSysRenderer) {
-        window.WriteSysRenderer.addRainbowBars();
+      console.log('[deleteAnnotation] Checking for WriteSysRenderer...');
+      console.log('[deleteAnnotation] window.WriteSysRenderer:', !!window.WriteSysRenderer);
+      console.log('[deleteAnnotation] refreshRainbowBars:', !!window.WriteSysRenderer?.refreshRainbowBars);
+      if (window.WriteSysRenderer && window.WriteSysRenderer.refreshRainbowBars) {
+        console.log('[deleteAnnotation] Calling refreshRainbowBars...');
+        await window.WriteSysRenderer.refreshRainbowBars();
+        console.log('[deleteAnnotation] refreshRainbowBars complete');
+      } else {
+        console.log('[deleteAnnotation] Skipping refreshRainbowBars');
       }
 
     } catch (error) {
