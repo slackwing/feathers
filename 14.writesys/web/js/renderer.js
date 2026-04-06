@@ -758,6 +758,18 @@ const WriteSysRenderer = {
           // Use full sentence text from map (not the clicked fragment)
           const fullText = this.sentenceMap[sentenceId] || span.textContent;
           window.WriteSysAnnotations.showAnnotationsForSentence(sentenceId, fullText);
+
+          // Scroll to and pulse the first note (which colors the sentence)
+          setTimeout(() => {
+            const firstNote = document.querySelector('.sticky-note');
+            if (firstNote) {
+              firstNote.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              firstNote.classList.add('flash-highlight');
+              setTimeout(() => {
+                firstNote.classList.remove('flash-highlight');
+              }, 600);
+            }
+          }, 300);
         }
       });
     });
@@ -844,6 +856,22 @@ const WriteSysRenderer = {
       // skip=1 (first color is sentence highlight), maxSize=4 (max 4 bars)
       const barColors = rainbowSlice(colors, { skip: 1, maxSize: 4 });
 
+      // Map bar colors back to their annotation indices
+      // We need to track which annotation each bar corresponds to
+      const barAnnotations = [];
+      let searchStartIndex = 1; // Start after the sentence highlight annotation
+
+      barColors.forEach(colorName => {
+        // Find the next annotation with this color starting from searchStartIndex
+        for (let i = searchStartIndex; i < annotations.length; i++) {
+          if (annotations[i].color === colorName) {
+            barAnnotations.push(annotations[i]);
+            searchStartIndex = i + 1; // Next search starts after this one
+            break;
+          }
+        }
+      });
+
       // Find all sentence fragments with this ID
       const sentenceFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
 
@@ -870,13 +898,13 @@ const WriteSysRenderer = {
         container.style.position = 'absolute';
         container.style.top = `${top}px`;
         container.style.left = 'calc(100% + 5px)'; // Start 5px to the right of content edge
-        container.style.width = `${barColors.length * 0.5}em`; // Total width for all bars
+        container.style.width = `${barAnnotations.length * 0.5}em`; // Total width for all bars
         container.style.height = `${height}px`;
         container.style.pointerEvents = 'none';
         container.style.zIndex = '10';
 
         // Create bars inside container, stacked left to right (no gaps)
-        barColors.forEach((colorName, index) => {
+        barAnnotations.forEach((annotation, index) => {
           const bar = document.createElement('div');
           bar.className = 'rainbow-bar';
           bar.style.position = 'absolute';
@@ -884,7 +912,20 @@ const WriteSysRenderer = {
           bar.style.left = `${index * 0.5}em`; // Stack from left to right with no gaps
           bar.style.width = '0.5em'; // 8px at base font size (16px)
           bar.style.height = '100%';
-          bar.style.backgroundColor = colorMap[colorName] || '#ccc';
+          bar.style.backgroundColor = colorMap[annotation.color] || '#ccc';
+          bar.style.pointerEvents = 'auto'; // Make clickable
+          bar.style.cursor = 'pointer';
+
+          // Use annotation_id which is what's stored in the data attribute
+          const annId = annotation.annotation_id || annotation.id;
+          bar.dataset.annotationId = annId;
+          bar.dataset.sentenceId = sentenceId;
+          bar.dataset.color = annotation.color;
+
+          bar.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent sentence click
+            this.handleRainbowBarClick(sentenceId, annId, annotation.color);
+          });
 
           container.appendChild(bar);
         });
@@ -897,6 +938,68 @@ const WriteSysRenderer = {
     if (totalBars > 0) {
       console.log(`Added rainbow bars for ${totalBars} sentence fragments`);
     }
+  },
+
+  /**
+   * Handle click on a rainbow bar
+   * Shows annotations for the sentence and scrolls to the specific note
+   */
+  handleRainbowBarClick(sentenceId, annotationId, color) {
+    console.log(`Rainbow bar clicked: sentence=${sentenceId}, annotation=${annotationId}, color=${color}`);
+
+    // Highlight sentence (like clicking it)
+    if (this.currentSelectedSentenceId) {
+      document.querySelectorAll(`.sentence[data-sentence-id="${this.currentSelectedSentenceId}"]`).forEach(fragment => {
+        fragment.classList.remove('selected');
+      });
+    }
+
+    document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`).forEach(fragment => {
+      fragment.classList.add('selected');
+    });
+
+    this.currentSelectedSentenceId = sentenceId;
+
+    // Show annotations for this sentence
+    if (window.WriteSysAnnotations) {
+      const fullText = this.sentenceMap[sentenceId] || '';
+      window.WriteSysAnnotations.showAnnotationsForSentence(sentenceId, fullText);
+
+      // Scroll to and highlight the specific annotation
+      setTimeout(() => {
+        this.scrollToAndHighlightAnnotation(annotationId);
+      }, 300); // Delay to let notes render
+    }
+  },
+
+  /**
+   * Scroll to a specific annotation and add a flash animation
+   */
+  scrollToAndHighlightAnnotation(annotationId) {
+    console.log(`[scrollToAndHighlightAnnotation] Looking for annotation ${annotationId}`);
+
+    const noteElement = document.querySelector(`.sticky-note[data-annotation-id="${annotationId}"]`);
+    if (!noteElement) {
+      console.warn(`Note element not found for annotation ${annotationId}`);
+      // Debug: log all available notes
+      const allNotes = document.querySelectorAll('.sticky-note');
+      console.log(`Available notes (${allNotes.length}):`,
+        Array.from(allNotes).map(n => n.dataset.annotationId));
+      return;
+    }
+
+    console.log(`[scrollToAndHighlightAnnotation] Found note element, scrolling and highlighting`);
+
+    // Scroll the note into view
+    noteElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Add flash animation
+    noteElement.classList.add('flash-highlight');
+
+    // Remove animation class after it completes
+    setTimeout(() => {
+      noteElement.classList.remove('flash-highlight');
+    }, 600); // Match CSS animation duration
   },
 
   /**
