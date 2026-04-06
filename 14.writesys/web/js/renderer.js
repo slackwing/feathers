@@ -810,6 +810,86 @@ const WriteSysRenderer = {
   },
 
   /**
+   * Get color value from CSS variable
+   */
+  getColorValue(colorName) {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue(`--highlight-${colorName}`).trim();
+  },
+
+  /**
+   * Get rainbow bar colors for a sentence with multiple annotations
+   * @param {Array} annotations - Array of annotations for the sentence
+   * @returns {Array} Array of {annotation, color} objects to display as bars
+   */
+  getRainbowBarAnnotations(annotations) {
+    if (annotations.length < 2) return [];
+
+    const colors = annotations.map(a => a.color);
+    const barColors = rainbowSlice(colors, { skip: 1, maxSize: 4 });
+
+    const barAnnotations = [];
+    let searchStartIndex = 1;
+
+    barColors.forEach(colorName => {
+      for (let i = searchStartIndex; i < annotations.length; i++) {
+        if (annotations[i].color === colorName) {
+          barAnnotations.push(annotations[i]);
+          searchStartIndex = i + 1;
+          break;
+        }
+      }
+    });
+
+    return barAnnotations;
+  },
+
+  /**
+   * Calculate position of rainbow bar relative to page content area
+   * @param {DOMRect} sentenceRect - Bounding rect of sentence element
+   * @param {DOMRect} pageRect - Bounding rect of page content area
+   * @returns {Object} Object with {top, height} in pixels
+   */
+  calculateRainbowBarPosition(sentenceRect, pageRect) {
+    return {
+      top: Math.round(sentenceRect.top - pageRect.top),
+      height: Math.round(sentenceRect.height)
+    };
+  },
+
+  /**
+   * Create a single rainbow bar element
+   * @param {Object} annotation - The annotation object
+   * @param {number} index - The bar index (0-based)
+   * @param {string} sentenceId - The sentence ID
+   * @returns {HTMLElement} The bar element
+   */
+  createRainbowBar(annotation, index, sentenceId) {
+    const bar = document.createElement('div');
+    bar.className = 'rainbow-bar';
+    bar.style.position = 'absolute';
+    bar.style.top = '0';
+    bar.style.left = `${index * 0.5}em`;
+    bar.style.width = '0.5em';
+    bar.style.height = '100%';
+    bar.style.backgroundColor = this.getColorValue(annotation.color) || '#ccc';
+    bar.style.pointerEvents = 'auto';
+    bar.style.cursor = 'pointer';
+
+    const annId = annotation.annotation_id || annotation.id;
+    bar.dataset.annotationId = annId;
+    bar.dataset.sentenceId = sentenceId;
+    bar.dataset.color = annotation.color;
+
+    bar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.handleRainbowBarClick(sentenceId, annId, annotation.color);
+    });
+
+    return bar;
+  },
+
+  /**
    * Add rainbow sidebar bars for sentences with multiple annotations
    * Uses rainbowSlice() to determine which colors to show
    */
@@ -820,16 +900,6 @@ const WriteSysRenderer = {
     if (!this.currentAnnotations || this.currentAnnotations.length === 0) {
       return;
     }
-
-    // Color name to hex mapping
-    const colorMap = {
-      yellow: '#FFF3A3',
-      green: '#C3FDB8',
-      blue: '#AEDFF7',
-      purple: '#E0BBE4',
-      red: '#FFCCCB',
-      orange: '#FFD8A8'
-    };
 
     // Group annotations by sentence_id
     const annotationsBySentence = {};
@@ -845,88 +915,38 @@ const WriteSysRenderer = {
     // For each sentence with multiple annotations, add rainbow bars
     Object.keys(annotationsBySentence).forEach(sentenceId => {
       const annotations = annotationsBySentence[sentenceId];
+      const barAnnotations = this.getRainbowBarAnnotations(annotations);
 
-      // Only show rainbow bars if there are 2+ annotations
-      if (annotations.length < 2) return;
-
-      // Get colors array from annotations
-      const colors = annotations.map(a => a.color);
-
-      // Use rainbowSlice to determine which colors to show as bars
-      // skip=1 (first color is sentence highlight), maxSize=4 (max 4 bars)
-      const barColors = rainbowSlice(colors, { skip: 1, maxSize: 4 });
-
-      // Map bar colors back to their annotation indices
-      // We need to track which annotation each bar corresponds to
-      const barAnnotations = [];
-      let searchStartIndex = 1; // Start after the sentence highlight annotation
-
-      barColors.forEach(colorName => {
-        // Find the next annotation with this color starting from searchStartIndex
-        for (let i = searchStartIndex; i < annotations.length; i++) {
-          if (annotations[i].color === colorName) {
-            barAnnotations.push(annotations[i]);
-            searchStartIndex = i + 1; // Next search starts after this one
-            break;
-          }
-        }
-      });
+      if (barAnnotations.length === 0) return;
 
       // Find all sentence fragments with this ID
       const sentenceFragments = document.querySelectorAll(`.sentence[data-sentence-id="${sentenceId}"]`);
 
       sentenceFragments.forEach(sentence => {
-        // Get the page this sentence is in
         const page = sentence.closest('.pagedjs_page');
         if (!page) return;
 
-        // Get page content area
         const pageArea = page.querySelector('.pagedjs_page_content');
         if (!pageArea) return;
 
-        // Get bounding rectangles
         const sentenceRect = sentence.getBoundingClientRect();
         const pageRect = pageArea.getBoundingClientRect();
-
-        // Calculate position relative to page (round to avoid sub-pixel gaps)
-        const top = Math.round(sentenceRect.top - pageRect.top);
-        const height = Math.round(sentenceRect.height);
+        const position = this.calculateRainbowBarPosition(sentenceRect, pageRect);
 
         // Create container for bars
         const container = document.createElement('div');
         container.className = 'rainbow-bar-container';
         container.style.position = 'absolute';
-        container.style.top = `${top}px`;
-        container.style.left = 'calc(100% + 5px)'; // Start 5px to the right of content edge
-        container.style.width = `${barAnnotations.length * 0.5}em`; // Total width for all bars
-        container.style.height = `${height}px`;
+        container.style.top = `${position.top}px`;
+        container.style.left = 'calc(100% + 5px)';
+        container.style.width = `${barAnnotations.length * 0.5}em`;
+        container.style.height = `${position.height}px`;
         container.style.pointerEvents = 'none';
         container.style.zIndex = '10';
 
-        // Create bars inside container, stacked left to right (no gaps)
+        // Create bars inside container
         barAnnotations.forEach((annotation, index) => {
-          const bar = document.createElement('div');
-          bar.className = 'rainbow-bar';
-          bar.style.position = 'absolute';
-          bar.style.top = '0';
-          bar.style.left = `${index * 0.5}em`; // Stack from left to right with no gaps
-          bar.style.width = '0.5em'; // 8px at base font size (16px)
-          bar.style.height = '100%';
-          bar.style.backgroundColor = colorMap[annotation.color] || '#ccc';
-          bar.style.pointerEvents = 'auto'; // Make clickable
-          bar.style.cursor = 'pointer';
-
-          // Use annotation_id which is what's stored in the data attribute
-          const annId = annotation.annotation_id || annotation.id;
-          bar.dataset.annotationId = annId;
-          bar.dataset.sentenceId = sentenceId;
-          bar.dataset.color = annotation.color;
-
-          bar.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent sentence click
-            this.handleRainbowBarClick(sentenceId, annId, annotation.color);
-          });
-
+          const bar = this.createRainbowBar(annotation, index, sentenceId);
           container.appendChild(bar);
         });
 
@@ -1007,15 +1027,11 @@ const WriteSysRenderer = {
    * This is needed when annotations are added/updated/deleted
    */
   async refreshRainbowBars() {
-    console.log('[refreshRainbowBars] Called');
     if (!this.currentMigrationID || !this.currentRepoPath || !this.currentFilePath) {
-      console.warn('No migration loaded, cannot refresh rainbow bars');
       return;
     }
 
     try {
-      // Fetch manuscript data which includes annotations
-      console.log(`[refreshRainbowBars] Fetching annotations for migration ${this.currentMigrationID}`);
       const url = `${this.apiBaseUrl}/migrations/${this.currentMigrationID}/manuscript?repo=${encodeURIComponent(this.currentRepoPath)}&file=${encodeURIComponent(this.currentFilePath)}`;
       const response = await fetch(url);
       if (!response.ok) {
@@ -1023,13 +1039,10 @@ const WriteSysRenderer = {
       }
 
       const data = await response.json();
-      const oldCount = this.currentAnnotations ? this.currentAnnotations.length : 0;
       this.currentAnnotations = data.annotations || [];
-      console.log(`[refreshRainbowBars] Updated annotations: ${oldCount} -> ${this.currentAnnotations.length}`);
 
       // Re-render rainbow bars with updated annotations
       this.addRainbowBars();
-      console.log('[refreshRainbowBars] Rainbow bars refreshed');
     } catch (error) {
       console.error('Failed to refresh rainbow bars:', error);
     }

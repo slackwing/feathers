@@ -303,6 +303,47 @@ const WriteSysAnnotations = {
   },
 
   /**
+   * Setup textarea handlers for creating a new note
+   * @param {HTMLElement} note - The note element
+   * @param {HTMLTextAreaElement} textarea - The textarea element
+   * @param {HTMLElement} colorCircle - The color circle element
+   * @param {boolean} requiresHover - Whether the note needs hover handling
+   */
+  setupUncreatedNoteHandlers(note, textarea, colorCircle, requiresHover) {
+    let noteCreated = false;
+
+    textarea.addEventListener('focus', () => {
+      if (requiresHover) {
+        note.classList.add('hovered');
+      }
+      colorCircle.style.opacity = '1';
+      colorCircle.style.transform = 'scale(1)';
+    });
+
+    if (requiresHover) {
+      textarea.addEventListener('blur', () => {
+        if (!noteCreated) {
+          note.classList.remove('hovered');
+          colorCircle.style.opacity = '0';
+          colorCircle.style.transform = 'scale(0.8)';
+        }
+      });
+    }
+
+    textarea.addEventListener('input', async (e) => {
+      if (!noteCreated && e.target.value.trim().length > 0) {
+        noteCreated = true;
+        const currentText = e.target.value;
+        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
+      }
+    });
+
+    textarea.addEventListener('input', () => {
+      this.autoResizeTextarea(textarea);
+    });
+  },
+
+  /**
    * Create first uncreated note (full grey UI)
    * @returns {HTMLElement} The note element
    */
@@ -328,30 +369,9 @@ const WriteSysAnnotations = {
     const colorCircle = this.createColorCircleForUncreated();
     note.appendChild(colorCircle);
 
-    // Setup textarea handler to create note on first input
+    // Setup event handlers
     const textarea = note.querySelector('.note-input');
-    let noteCreated = false;
-
-    textarea.addEventListener('focus', () => {
-      // Show color circle on focus
-      colorCircle.style.opacity = '1';
-      colorCircle.style.transform = 'scale(1)';
-    });
-
-    textarea.addEventListener('input', async (e) => {
-      if (!noteCreated && e.target.value.trim().length > 0) {
-        noteCreated = true;
-        const currentText = e.target.value;
-        // Create note with default color
-        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
-        // Re-render will happen automatically
-      }
-    });
-
-    // Auto-resize textarea
-    textarea.addEventListener('input', () => {
-      this.autoResizeTextarea(textarea);
-    });
+    this.setupUncreatedNoteHandlers(note, textarea, colorCircle, false);
 
     return note;
   },
@@ -383,6 +403,10 @@ const WriteSysAnnotations = {
     const colorCircle = this.createColorCircleForUncreated();
     note.appendChild(colorCircle);
 
+    // Setup event handlers
+    const textarea = note.querySelector('.note-input');
+    this.setupUncreatedNoteHandlers(note, textarea, colorCircle, true);
+
     // On hover, show full UI
     note.addEventListener('mouseenter', () => {
       note.classList.add('hovered');
@@ -392,42 +416,11 @@ const WriteSysAnnotations = {
 
     note.addEventListener('mouseleave', () => {
       // Only remove hover if not focused
-      const textarea = note.querySelector('.note-input');
       if (document.activeElement !== textarea) {
         note.classList.remove('hovered');
         colorCircle.style.opacity = '0';
         colorCircle.style.transform = 'scale(0.8)';
       }
-    });
-
-    // Setup textarea handler to create note on first input
-    const textarea = note.querySelector('.note-input');
-    let noteCreated = false;
-
-    textarea.addEventListener('focus', () => {
-      note.classList.add('hovered');
-      colorCircle.style.opacity = '1';
-      colorCircle.style.transform = 'scale(1)';
-    });
-
-    textarea.addEventListener('blur', () => {
-      if (!noteCreated) {
-        note.classList.remove('hovered');
-        colorCircle.style.opacity = '0';
-        colorCircle.style.transform = 'scale(0.8)';
-      }
-    });
-
-    textarea.addEventListener('input', async (e) => {
-      if (!noteCreated && e.target.value.trim().length > 0) {
-        noteCreated = true;
-        const currentText = e.target.value;
-        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
-      }
-    });
-
-    textarea.addEventListener('input', () => {
-      this.autoResizeTextarea(textarea);
     });
 
     return note;
@@ -745,15 +738,8 @@ const WriteSysAnnotations = {
       this.updateSentenceHighlights();
 
       // Update rainbow bars for all sentences
-      console.log('[deleteAnnotation] Checking for WriteSysRenderer...');
-      console.log('[deleteAnnotation] window.WriteSysRenderer:', !!window.WriteSysRenderer);
-      console.log('[deleteAnnotation] refreshRainbowBars:', !!window.WriteSysRenderer?.refreshRainbowBars);
       if (window.WriteSysRenderer && window.WriteSysRenderer.refreshRainbowBars) {
-        console.log('[deleteAnnotation] Calling refreshRainbowBars...');
         await window.WriteSysRenderer.refreshRainbowBars();
-        console.log('[deleteAnnotation] refreshRainbowBars complete');
-      } else {
-        console.log('[deleteAnnotation] Skipping refreshRainbowBars');
       }
 
     } catch (error) {

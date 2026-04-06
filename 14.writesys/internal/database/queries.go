@@ -440,6 +440,68 @@ func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash string) ([]
 	return annotations, nil
 }
 
+// getAnnotationOriginInfo retrieves origin metadata for an annotation
+func getAnnotationOriginInfo(ctx context.Context, tx pgx.Tx, annotationID int) (originSentenceID, originCommitHash, createdBy string, originMigrationID *int, err error) {
+	query := `
+		SELECT
+			MIN(origin_sentence_id),
+			MIN(origin_migration_id),
+			MIN(origin_commit_hash),
+			MIN(created_by)
+		FROM annotation_version
+		WHERE annotation_id = $1
+	`
+	err = tx.QueryRow(ctx, query, annotationID).Scan(&originSentenceID, &originMigrationID, &originCommitHash, &createdBy)
+	return
+}
+
+// getSentenceHistory retrieves and appends to the sentence_id_history for an annotation
+func getSentenceHistory(ctx context.Context, tx pgx.Tx, annotationID int, version int, newSentenceID string) ([]byte, error) {
+	query := `
+		SELECT sentence_id_history
+		FROM annotation_version
+		WHERE annotation_id = $1 AND version = $2
+	`
+	var historyJSON []byte
+	if err := tx.QueryRow(ctx, query, annotationID, version).Scan(&historyJSON); err != nil {
+		return nil, fmt.Errorf("failed to get sentence history: %w", err)
+	}
+
+	var history []string
+	json.Unmarshal(historyJSON, &history)
+	history = append(history, newSentenceID)
+	newHistoryJSON, _ := json.Marshal(history)
+	return newHistoryJSON, nil
+}
+
+// insertAnnotationVersion creates a new annotation version record
+func insertAnnotationVersion(ctx context.Context, tx pgx.Tx, version *models.AnnotationVersion, historyJSON []byte) error {
+	query := `
+		INSERT INTO annotation_version (
+			annotation_id, version, sentence_id, color, note, priority, flagged,
+			migration_confidence, origin_sentence_id, origin_migration_id, origin_commit_hash,
+			sentence_id_history, created_by
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING created_at
+	`
+	return tx.QueryRow(ctx, query,
+		version.AnnotationID,
+		version.Version,
+		version.SentenceID,
+		version.Color,
+		version.Note,
+		version.Priority,
+		version.Flagged,
+		version.MigrationConfidence,
+		version.OriginSentenceID,
+		version.OriginMigrationID,
+		version.OriginCommitHash,
+		historyJSON,
+		version.CreatedBy,
+	).Scan(&version.CreatedAt)
+}
+
 // GetAnnotationsBySentence retrieves all active annotations for a specific sentence
 func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID string) ([]models.Annotation, error) {
 	query := `
@@ -557,36 +619,8 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 		return fmt.Errorf("failed to get commit hash and migration_id for sentence: %w", err)
 	}
 
-	// Empty array for sentence_id_history
+	// Create first version using helper
 	historyJSON, _ := json.Marshal([]string{})
-
-	// Create first version
-	query2 := `
-		INSERT INTO annotation_version (
-			annotation_id, version, sentence_id, color, note, priority, flagged,
-			migration_confidence, origin_sentence_id, origin_migration_id, origin_commit_hash,
-			sentence_id_history, created_by
-		)
-		VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		RETURNING created_at
-	`
-	err = tx.QueryRow(ctx, query2,
-		annotation.AnnotationID,
-		annotation.SentenceID,
-		annotation.Color,
-		annotation.Note,
-		annotation.Priority,
-		annotation.Flagged,
-		version.MigrationConfidence,
-		annotation.SentenceID,  // origin_sentence_id = same as sentence_id for first version
-		migrationID,           // origin_migration_id from sentence
-		commitHash,            // origin_commit_hash from sentence
-		historyJSON,           // empty history for first version
-		annotation.UserID,     // created_by = user_id
-	).Scan(&version.CreatedAt)
-	if err != nil {
-		return fmt.Errorf("failed to create annotation version: %w", err)
-	}
 
 	version.AnnotationID = annotation.AnnotationID
 	version.Version = 1
@@ -598,6 +632,11 @@ func (db *DB) CreateAnnotation(ctx context.Context, annotation *models.Annotatio
 	version.OriginSentenceID = annotation.SentenceID
 	version.OriginMigrationID = &migrationID
 	version.OriginCommitHash = commitHash
+	version.CreatedBy = annotation.UserID
+
+	if err := insertAnnotationVersion(ctx, tx, version, historyJSON); err != nil {
+		return fmt.Errorf("failed to create annotation version: %w", err)
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
@@ -633,70 +672,26 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, annotation
 		return fmt.Errorf("failed to update annotation: %w", err)
 	}
 
-	// Get current max version and origin info
+	// Get current max version
 	var maxVersion int
-	var originSentenceID, originCommitHash, createdBy string
-	var originMigrationID *int
-	query2 := `
-		SELECT
-			COALESCE(MAX(version), 0),
-			MIN(origin_sentence_id),
-			MIN(origin_migration_id),
-			MIN(origin_commit_hash),
-			MIN(created_by)
-		FROM annotation_version
-		WHERE annotation_id = $1
-	`
-	if err := tx.QueryRow(ctx, query2, annotationID).Scan(&maxVersion, &originSentenceID, &originMigrationID, &originCommitHash, &createdBy); err != nil {
-		return fmt.Errorf("failed to get version info: %w", err)
+	query2 := `SELECT COALESCE(MAX(version), 0) FROM annotation_version WHERE annotation_id = $1`
+	if err := tx.QueryRow(ctx, query2, annotationID).Scan(&maxVersion); err != nil {
+		return fmt.Errorf("failed to get max version: %w", err)
 	}
 
-	// Get current sentence_id_history from latest version
-	var historyJSON []byte
-	query_history := `
-		SELECT sentence_id_history
-		FROM annotation_version
-		WHERE annotation_id = $1 AND version = $2
-	`
-	if err := tx.QueryRow(ctx, query_history, annotationID, maxVersion).Scan(&historyJSON); err != nil {
-		return fmt.Errorf("failed to get sentence history: %w", err)
+	// Get origin info
+	originSentenceID, originCommitHash, createdBy, originMigrationID, err := getAnnotationOriginInfo(ctx, tx, annotationID)
+	if err != nil {
+		return fmt.Errorf("failed to get origin info: %w", err)
 	}
 
-	// Unmarshal, append new sentence_id, re-marshal
-	var history []string
-	json.Unmarshal(historyJSON, &history)
-	history = append(history, annotation.SentenceID)
-	newHistoryJSON, _ := json.Marshal(history)
+	// Get updated sentence history
+	newHistoryJSON, err := getSentenceHistory(ctx, tx, annotationID, maxVersion, annotation.SentenceID)
+	if err != nil {
+		return err
+	}
 
 	// Create new version
-	query3 := `
-		INSERT INTO annotation_version (
-			annotation_id, version, sentence_id, color, note, priority, flagged,
-			migration_confidence, origin_sentence_id, origin_migration_id, origin_commit_hash,
-			sentence_id_history, created_by
-		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		RETURNING created_at
-	`
-	err = tx.QueryRow(ctx, query3,
-		annotationID,
-		maxVersion+1,
-		annotation.SentenceID,
-		annotation.Color,
-		annotation.Note,
-		annotation.Priority,
-		annotation.Flagged,
-		version.MigrationConfidence,
-		originSentenceID,     // Keep original
-		originMigrationID,    // Keep original
-		originCommitHash,     // Keep original
-		newHistoryJSON,
-		createdBy,
-	).Scan(&version.CreatedAt)
-	if err != nil {
-		return fmt.Errorf("failed to create annotation version: %w", err)
-	}
-
 	version.AnnotationID = annotationID
 	version.Version = maxVersion + 1
 	version.SentenceID = annotation.SentenceID
@@ -707,6 +702,11 @@ func (db *DB) UpdateAnnotation(ctx context.Context, annotationID int, annotation
 	version.OriginSentenceID = originSentenceID
 	version.OriginMigrationID = originMigrationID
 	version.OriginCommitHash = originCommitHash
+	version.CreatedBy = createdBy
+
+	if err := insertAnnotationVersion(ctx, tx, version, newHistoryJSON); err != nil {
+		return fmt.Errorf("failed to create annotation version: %w", err)
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)

@@ -6,7 +6,7 @@
   --annotation-width: 272px;     /* Fixed width of annotation container (240 + 32px page gap) */
 
   /* Color system - Kindle-like highlights and sticky notes */
-  /* Highlight colors (sentence backgrounds) */
+  /* Highlight colors (sentence backgrounds) - used across highlight classes and rainbow bars */
   --highlight-yellow: #FFF3A3;
   --highlight-green: #C3FDB8;
   --highlight-blue: #AEDFF7;
