@@ -56,15 +56,41 @@ function rainbowSlice(array, options = {}) {
     return remaining;
   }
 
-  // Too many items to fit - deduplicate to maximize unique values shown
+  // Too many items to fit - deduplicate from the back bit by bit
+  // Remove duplicates from the end until we fit in maxSize
+  // This preserves as much quantity/order information as possible
+
+  const uniqueInRemaining = new Set(remaining).size;
+
+  // If only one unique value, just take first maxSize (no duplicates to remove)
+  if (uniqueInRemaining === 1) {
+    return remaining.slice(0, maxSize);
+  }
+
+  // Multiple unique values - deduplicate from the back
+  // Strategy: Remove items from the end if they're duplicates of earlier items
   const result = [];
-  const seen = new Set();
+  const seenFromFront = new Set();
 
   for (const item of remaining) {
+    // Stop if we've collected enough items
     if (result.length >= maxSize) break;
-    if (!seen.has(item)) {
-      seen.add(item);
+
+    // Always include first occurrence
+    if (!seenFromFront.has(item)) {
+      seenFromFront.add(item);
       result.push(item);
+    } else {
+      // This is a duplicate - check if we should include it
+      // Only include duplicates if we have room after accounting for remaining uniques
+      const remainingItems = remaining.slice(result.length);
+      const remainingUniques = new Set(remainingItems.filter(x => !seenFromFront.has(x))).size;
+      const slotsLeft = maxSize - result.length;
+
+      // Include this duplicate if we have room after all uniques
+      if (slotsLeft > remainingUniques) {
+        result.push(item);
+      }
     }
   }
 

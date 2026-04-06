@@ -36,11 +36,11 @@ function runTests() {
 
   console.log('=== rainbow-slice.js Tests ===\n');
 
-  // Test 1: All unique colors represented - deduplicate to show variety
+  // Test 1: All unique colors represented - deduplicate from back bit by bit
   test(
     ['yellow', 'yellow', 'green', 'yellow', 'blue', 'yellow'],
-    ['yellow', 'green', 'blue'],
-    'All 3 unique colors fit in 4 slots - deduplicate'
+    ['yellow', 'green', 'yellow', 'blue'],
+    'All 3 unique colors fit in 4 slots - deduplicate from back'
   );
 
   // Test 2: Duplicates hide unique colors - deduplicate and take first occurrence of each
@@ -81,8 +81,8 @@ function runTests() {
   // Test 7: Adjacent duplicates
   test(
     ['yellow', 'green', 'green', 'blue', 'blue', 'purple'],
-    ['green', 'blue', 'purple'],
-    'Three unique fit in 4 slots - deduplicate'
+    ['green', 'green', 'blue', 'purple'],
+    'Three unique fit in 4 slots - deduplicate from back, keep one duplicate'
   );
 
   // Test 8: Empty array
@@ -102,8 +102,8 @@ function runTests() {
   // Test 10: Alternating pattern
   test(
     ['yellow', 'green', 'yellow', 'green', 'yellow', 'green'],
-    ['green', 'yellow'],
-    'Two unique colors - deduplicate to show both'
+    ['green', 'yellow', 'green', 'yellow'],
+    'Two unique colors - deduplicate from back, preserve pattern'
   );
 
   // Test 11: Three of one, one of another
@@ -144,8 +144,8 @@ function runTests() {
   // Test 16: Alternating duplicates
   test(
     ['yellow', 'red', 'green', 'red', 'green', 'blue'],
-    ['red', 'green', 'blue'],
-    'Three unique - deduplicate alternating pattern'
+    ['red', 'green', 'red', 'blue'],
+    'Three unique - deduplicate from back, preserve one duplicate'
   );
 
   // Test 17: Three duplicates at end
@@ -169,7 +169,21 @@ function runTests() {
     'Non-dedupe (2 items) fits in 4 slots and represents all colors - keep duplicates'
   );
 
-  // Test 21: Custom skip parameter (skip 2)
+  // Test 20: Only one unique color in remaining array - don't deduplicate
+  test(
+    ['blue', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow'],
+    ['yellow', 'yellow', 'yellow', 'yellow'],
+    'Five yellows but only 1 unique - take first 4 (deduplication would lose quantity info)'
+  );
+
+  // Test 21: Multiple colors with many duplicates - deduplicate from back bit by bit
+  test(
+    ['b', 'y', 'g', 'g', 'y', 'y', 'y', 'g'],
+    ['y', 'g', 'g', 'y'],
+    'Complex pattern - deduplicate from back preserving quantity info'
+  );
+
+  // Test 22: Custom skip parameter (skip 2)
   const custom1 = rainbowSlice(['a', 'b', 'c', 'd', 'e', 'f'], { skip: 2, maxSize: 4 });
   const custom1Expected = ['c', 'd', 'e', 'f'];
   if (arrayEqual(custom1, custom1Expected)) {
