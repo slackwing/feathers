@@ -302,16 +302,16 @@ These procedures are less frequent but critical when needed.
 
 ### Bootstrapping Test Manuscripts After Schema Changes
 
-**⚠️ CRITICAL WARNING: ONLY Bootstrap ui-test.manuscript**
+**⚠️ CRITICAL WARNING: ONLY Bootstrap test.manuscript**
 
 **NEVER run tests on or bootstrap `the-wildfire.manuscript` - that is the user's working document!**
 
 **When to do this:** After applying Liquibase migrations that change the sentence or migration tables, you must re-bootstrap the test manuscript.
 
-**How to bootstrap the UI test manuscript:**
+**How to bootstrap the test manuscript:**
 ```bash
-# Bootstrap ONLY the UI test manuscript
-./bin/writesys --repo manuscripts/test-repo --file ui-test.manuscript --yes
+# Bootstrap ONLY the test manuscript
+./bin/writesys --repo manuscripts/test-repo --file test.manuscript --yes
 
 # DO NOT bootstrap the-wildfire.manuscript - it's the user's working document!
 ```
@@ -320,10 +320,10 @@ These procedures are less frequent but critical when needed.
 1. Check which manuscript_id was assigned:
    ```bash
    docker exec sxiva-timescaledb psql -U writesys_user -d writesys -c \
-     "SELECT manuscript_id, file_path FROM manuscript WHERE file_path = 'ui-test.manuscript';"
+     "SELECT manuscript_id, file_path FROM manuscript WHERE file_path = 'test.manuscript';"
    ```
 
-2. Update `tests/test-utils.js` with the ui-test.manuscript ID:
+2. Update `tests/test-utils.js` with the test.manuscript ID:
    ```javascript
    const TEST_MANUSCRIPT_ID = X; // Use the ID from query above
    ```
@@ -331,7 +331,7 @@ These procedures are less frequent but critical when needed.
 **Test File Clarification:**
 - `the-wildfire.md` (used by E2E tests) - Test file with multiple commits, safe to use
 - `the-wildfire.manuscript` - **USER'S WORKING DOCUMENT, NEVER TOUCH!**
-- `ui-test.manuscript` - Frozen test file, bootstrap this one only
+- `test.manuscript` - Frozen test file, bootstrap this one only
 
 **Why this is needed:** Database migrations may change the primary key structure or other schema elements that require re-creating all sentence and migration records with the new schema.
 
@@ -429,4 +429,4 @@ If anything is unclear or conflicts with PLAN.md, **ask the user** rather than m
 
 ---
 
-**Last Updated:** 2026-03-29
+**Last Updated:** 2026-04-07

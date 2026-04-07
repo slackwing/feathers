@@ -83,3 +83,41 @@ Standard palette colors (CSS variables):
 - Purple: `--highlight-purple`
 - Red: `--highlight-red`
 - Orange: `--highlight-orange`
+
+## "Never Mind" Functionality
+
+**Purpose:** Allow users to abandon uncommitted annotation creation by deleting all text
+
+### Feature Behavior
+
+When a user creates a new sticky note but hasn't committed it (i.e., hasn't blurred/clicked away):
+1. User starts typing → note is auto-created (uncommitted state)
+2. User deletes all text while still focused → note is automatically deleted
+3. This provides a "never mind, I don't want this note" escape mechanism
+
+### Implementation
+
+**State Tracking:**
+- Single state object: `neverMindState` tracks the uncommitted note
+- Located in `web/js/annotations.js` (lines 17-20)
+
+**Event Handlers:**
+1. **Input Handler** (line 527 in `setupNoteEventListeners()`):
+   - Checks if text is empty (line 533)
+   - If empty and note is uncommitted → calls `deleteAnnotation()`
+   - Otherwise → auto-saves changes
+
+2. **Blur Handler** (line 549 in `setupNoteEventListeners()`):
+   - Marks note as committed when user clicks away
+   - Saves final state
+
+**Key Functions:**
+- `handleAddNewNote()` - Sets uncommitted state when auto-creating (line 350)
+- `deleteAnnotation()` - Called for "never mind" deletion (line 536)
+
+### Technical Details
+
+- **Files:** `web/js/annotations.js`, `tests/never-mind-test.js`
+- **State:** Simple boolean flag, no database columns needed
+- **Isolation:** All logic contained in one state object and handlers
+- **No conflicts:** Separate from trash icon deletion (line 625)

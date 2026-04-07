@@ -9,8 +9,11 @@ A sentence-level annotation system for tracking highlights, tags, and tasks in M
 - **Confidence Scoring:** Migration confidence (0.0-1.0) helps identify uncertain mappings
 - **Book-Style UI:** Beautiful typography with Paged.js pagination
 - **Git Integration:** Processes manuscripts directly from git commits
-- **Annotation Types:** Highlights (4 colors), Tags, and Tasks with priorities
-- **Version History:** Complete audit trail of annotation changes
+- **Multiple Notes per Sentence:** Create multiple color-coded sticky notes (6 colors) on any sentence
+- **Tags:** Inline tag creation with autocomplete
+- **Priority Flags:** Mark notes with priority levels (P0-P3)
+- **Rainbow Sidebar:** Visual position indicator showing all annotations in the manuscript
+- **Version History:** Complete audit trail of annotation changes with migration tracking
 
 ## Quick Start
 
@@ -155,23 +158,26 @@ Processing commit def456 with migration...
    - Enter commit hash, repo path, and file path
    - Click "Load Manuscript"
 
-2. **Create Annotations**
-   - Click any sentence
-   - Sidebar slides in from right
-   - Click "+ Add Annotation"
-   - Choose type: Highlight, Tag, or Task
-   - Add optional note
-   - Click "Save"
+2. **Create Sticky Notes**
+   - Click any sentence to open the sidebar
+   - Click the trash can icon to create a new sticky note
+   - Choose a color from the palette (yellow, green, blue, purple, red, orange)
+   - Type your note (auto-saves as you type)
+   - Add tags inline using #hashtag syntax
+   - Set priority flags (P0-P3) if needed
+   - Click away to commit the note, or delete all text to cancel ("never mind")
 
 3. **View Annotations**
-   - Click annotated sentences (highlighted in yellow/green/blue/pink)
-   - Sidebar shows all annotations for that sentence
+   - Annotated sentences show a colored underline
+   - Rainbow sidebar on right shows all annotations positionally
+   - Click any sentence to view all its notes in the sidebar
+   - Click rainbow sidebar slices to jump to annotations
    - Version history visible with migration confidence
 
 4. **Delete Annotations**
-   - Click annotated sentence
-   - Click "Delete" button
-   - Confirm deletion (soft delete, preserves history)
+   - Click annotated sentence to open sidebar
+   - Double-click the trash icon on any note
+   - Soft delete preserves history and migration tracking
 
 ## Architecture
 
@@ -444,6 +450,6 @@ Andrew (with Claude Code)
 
 ---
 
-**Last Updated:** 2026-03-28
+**Last Updated:** 2026-04-07
 **Version:** 0.1.0-dev
-**Status:** Phase 1 Complete
+**Status:** Phase 1 Complete - Multi-note UI & Rainbow Sidebar
