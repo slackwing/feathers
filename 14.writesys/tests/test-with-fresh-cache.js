@@ -1,7 +1,8 @@
+const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
 const { chromium } = require('playwright');
 
 (async () => {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     // Clear cache by ignoring cache headers
     ignoreHTTPSErrors: true,
@@ -29,10 +30,11 @@ const { chromium } = require('playwright');
   });
 
   try {
+    await cleanupTestAnnotations();
     console.log('=== Testing with Fresh Cache ===\n');
 
     // Force reload without cache
-    await page.goto('http://localhost:5003', { waitUntil: 'networkidle' });
+    await page.goto(TEST_URL, { waitUntil: 'networkidle' });
     await page.reload({ waitUntil: 'networkidle' });
 
     await page.waitForSelector('.sentence', { timeout: 30000 });

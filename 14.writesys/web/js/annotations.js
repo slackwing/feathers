@@ -13,6 +13,12 @@ const WriteSysAnnotations = {
   // Default color for new annotations
   DEFAULT_COLOR: 'yellow',
 
+  // Track "never mind" state for auto-created notes
+  neverMindState: {
+    annotationId: null,  // ID of the auto-created annotation
+    isCommitted: false   // Whether user has committed (clicked anything)
+  },
+
   // Spacing constants - must match CSS variables in book.css
   SPACING: {
     PAGE_WIDTH: 576,           // Width of .pagedjs_page
@@ -73,6 +79,11 @@ const WriteSysAnnotations = {
    * @param {string} sentenceText - The full text of the sentence
    */
   async showAnnotationsForSentence(sentenceId, sentenceText) {
+    // Switching sentences commits any pending note
+    if (this.neverMindState.annotationId) {
+      this.neverMindState.isCommitted = true;
+    }
+
     this.currentSentenceId = sentenceId;
     this.currentSentenceText = sentenceText;
 
@@ -311,6 +322,7 @@ const WriteSysAnnotations = {
    */
   setupUncreatedNoteHandlers(note, textarea, colorCircle, requiresHover) {
     let noteCreated = false;
+    let isCreating = false; // Guard against multiple rapid inputs
 
     textarea.addEventListener('focus', () => {
       if (requiresHover) {
@@ -331,10 +343,18 @@ const WriteSysAnnotations = {
     }
 
     textarea.addEventListener('input', async (e) => {
-      if (!noteCreated && e.target.value.trim().length > 0) {
+      if (!noteCreated && !isCreating && e.target.value.trim().length > 0) {
+        isCreating = true;
         noteCreated = true;
         const currentText = e.target.value;
-        await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
+        const annotation = await this.handleAddNewNote(this.DEFAULT_COLOR, currentText);
+
+        // Track this as a "never mind" candidate until user commits
+        if (annotation && annotation.annotation_id) {
+          this.neverMindState.annotationId = annotation.annotation_id;
+          this.neverMindState.isCommitted = false;
+        }
+        isCreating = false;
       }
     });
 
@@ -504,8 +524,20 @@ const WriteSysAnnotations = {
     const textarea = note.querySelector('.note-input');
     let saveTimeout;
 
-    textarea.addEventListener('input', () => {
+    textarea.addEventListener('input', async () => {
       this.autoResizeTextarea(textarea);
+
+      // Check for "never mind" - empty text on uncommitted auto-created note
+      if (this.neverMindState.annotationId === annotation.annotation_id &&
+          !this.neverMindState.isCommitted &&
+          textarea.value.trim().length === 0) {
+        // Never mind - delete the annotation and revert to grey
+        clearTimeout(saveTimeout);
+        await this.deleteAnnotation(annotation.annotation_id);
+        this.neverMindState.annotationId = null;
+        this.neverMindState.isCommitted = false;
+        return; // Don't save
+      }
 
       // Auto-save after 1 second
       clearTimeout(saveTimeout);
@@ -515,6 +547,11 @@ const WriteSysAnnotations = {
     });
 
     textarea.addEventListener('blur', () => {
+      // Losing focus commits the note
+      if (this.neverMindState.annotationId === annotation.annotation_id) {
+        this.neverMindState.isCommitted = true;
+      }
+
       clearTimeout(saveTimeout);
       this.saveNoteText(annotation.annotation_id, textarea.value);
     });
@@ -522,6 +559,10 @@ const WriteSysAnnotations = {
     // Priority chips
     note.querySelectorAll('.priority-chip').forEach(chip => {
       chip.addEventListener('click', () => {
+        // Clicking commits the note
+        if (this.neverMindState.annotationId === annotation.annotation_id) {
+          this.neverMindState.isCommitted = true;
+        }
         const priority = chip.dataset.priority;
         this.handlePriorityClick(annotation, priority, note);
       });
@@ -531,6 +572,10 @@ const WriteSysAnnotations = {
     const flagChip = note.querySelector('.flag-chip');
     if (flagChip) {
       flagChip.addEventListener('click', () => {
+        // Clicking commits the note
+        if (this.neverMindState.annotationId === annotation.annotation_id) {
+          this.neverMindState.isCommitted = true;
+        }
         this.handleFlagClick(annotation, note);
       });
     }
@@ -539,6 +584,11 @@ const WriteSysAnnotations = {
     const tagsList = note.querySelector('.tags-list');
     if (tagsList) {
       tagsList.addEventListener('click', (e) => {
+        // Clicking commits the note
+        if (this.neverMindState.annotationId === annotation.annotation_id) {
+          this.neverMindState.isCommitted = true;
+        }
+
         if (e.target.classList.contains('tag-chip-remove')) {
           const tagChip = e.target.closest('.tag-chip');
           const tagId = parseInt(tagChip.dataset.tagId);
@@ -595,6 +645,11 @@ const WriteSysAnnotations = {
   async handleColorSelectionForNote(annotationId, color) {
     const annotation = this.annotations.find(a => a.annotation_id === annotationId);
     if (!annotation) return;
+
+    // Clicking color commits the note
+    if (this.neverMindState.annotationId === annotationId) {
+      this.neverMindState.isCommitted = true;
+    }
 
     try {
       // Update annotation color via API
@@ -683,9 +738,12 @@ const WriteSysAnnotations = {
         await window.WriteSysRenderer.refreshRainbowBars();
       }
 
+      return newAnnotation;
+
     } catch (error) {
       console.error('Failed to create annotation:', error);
       alert('Failed to create annotation');
+      return null;
     }
   },
 

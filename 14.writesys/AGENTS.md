@@ -167,37 +167,35 @@ This creates a growing safety net that prevents repeating mistakes.
 - Update or remove tests based on user feedback
 - **NEVER let tests diverge from the codebase**
 
-### Where to Add Tests (NEVER Create New Test Files)
+### Where to Add Tests
 
-**🚨🚨🚨 STOP - READ THIS BEFORE WRITING ANY TEST CODE 🚨🚨🚨**
-
-**ABSOLUTELY FORBIDDEN: Creating new test files**
-
-**RULE: If you create a new `.js` test file in `tests/`, you have FAILED the task.**
+**🚨🚨🚨 CRITICAL TEST REQUIREMENTS 🚨🚨🚨**
 
 **YOU MUST:**
-1. ALWAYS add tests to existing test files (`e2e.spec.js`, `ui-integration.js`, `smoke.js`, `test-*.js`)
-2. NEVER create files like `tests/console-check.js`, `tests/interaction-test.js`, `tests/new-feature-test.js`, `tests/debug-*.js`
+1. ALWAYS use the test manuscript: Load `http://localhost:5003?manuscript_id=2` (test.manuscript)
+2. NEVER test on manuscript_id=1 (the-wildfire.manuscript) - that's the user's working document
 3. ALWAYS use headless mode (`headless: true`) when launching Playwright browsers
-4. If you think you need a new test file, you are WRONG - add to existing files instead
+4. NEVER create `debug-*.js` or temporary test files - use proper test files
 
-**✅ REQUIRED: Add tests to existing files:**
+**✅ Test File Organization:**
 
-1. **Playwright E2E tests** → `tests/e2e.spec.js`
-   - When: Testing browser interactions, UI behavior, API endpoints from browser
-   - Examples: Clicking buttons, form submissions, page navigation, sidebar behavior
-   - Pattern: Add new `test('description', async ({ page }) => { ... })` within existing `test.describe()` block
-   - **HEADLESS MODE REQUIRED:** ALWAYS use `{ headless: true }` when launching browsers to avoid interrupting the user
-
-2. **UI Integration tests** → `tests/ui-integration.js`
-   - When: Testing visual rendering, layout, styling, Paged.js behavior, interactions
-   - Examples: Page dimensions, colors, fonts, positioning, pagination, color palette, sentence selection
-   - Pattern: Add new test with `assert(condition, message)` function
+1. **Feature-specific tests** → `tests/test-*.js`
+   - When: Testing specific features (tags, annotations, rainbow bars, trash, etc)
+   - Examples: `test-tags-ui.js`, `test-note-and-tags.js`, `test-trash-deletion.js`
+   - Pattern: Standalone test file that can be run independently
+   - **MUST use `TEST_URL` from `test-utils.js` or `?manuscript_id=2` parameter**
    - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
-3. **Feature-specific tests** → `tests/test-*.js` (tags, annotations, etc)
-   - When: Testing specific features (tag API, note and tags, delete and recreate)
-   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true` if using Playwright
+2. **Playwright E2E tests** → `tests/e2e.spec.js`
+   - When: Testing browser interactions, UI behavior, API endpoints from browser
+   - Examples: Clicking buttons, form submissions, page navigation
+   - Pattern: Add new `test('description', async ({ page }) => { ... })` within `test.describe()` block
+   - **HEADLESS MODE REQUIRED:** ALWAYS use `{ headless: true }`
+
+3. **UI Integration tests** → `tests/ui-integration.js`
+   - When: Testing visual rendering, layout, styling, Paged.js behavior
+   - Examples: Page dimensions, colors, fonts, positioning, pagination
+   - **HEADLESS MODE REQUIRED:** Browser launches MUST use `headless: true`
 
 4. **Quick smoke tests** → `tests/smoke.js`
    - When: Testing absolute basics (page loads, auto-load works)
@@ -208,7 +206,11 @@ This creates a growing safety net that prevents repeating mistakes.
    - When: Testing Go functions and modules
    - Pattern: Same package as code being tested
 
-**Ask the user FIRST** if you think you need a new test file.
+**Creating new test files:**
+- OK to create `tests/test-feature-name.js` for new features
+- Follow the pattern from existing `test-*.js` files
+- Must use test.manuscript (manuscript_id=2)
+- Must use headless mode
 
 ### Quick Test Commands
 

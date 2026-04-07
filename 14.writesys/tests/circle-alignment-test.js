@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -6,8 +7,11 @@ const { chromium } = require('playwright');
   await page.setViewportSize({ width: 1920, height: 1080 });
 
   try {
-    console.log('Loading WriteSys...');
-    await page.goto('http://localhost:5003', { waitUntil: 'networkidle', timeout: 10000 });
+    // Clean up test manuscript data
+    await cleanupTestAnnotations();
+
+    console.log('Loading WriteSys (test.manuscript)...');
+    await page.goto(TEST_URL, { waitUntil: 'networkidle', timeout: 10000 });
 
     await page.waitForSelector('.sentence', { timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
