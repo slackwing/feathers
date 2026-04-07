@@ -4,6 +4,21 @@ import (
 	"time"
 )
 
+// User represents a user with authentication credentials
+type User struct {
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"-"` // Never expose password hash in JSON
+	Role         string    `json:"role"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// ManuscriptAccess represents user access to a manuscript
+type ManuscriptAccess struct {
+	Username       string    `json:"username"`
+	ManuscriptName string    `json:"manuscript_name"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
 // Manuscript represents a manuscript being tracked
 type Manuscript struct {
 	ManuscriptID int       `json:"manuscript_id"`

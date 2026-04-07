@@ -18,6 +18,9 @@ const { chromium } = require('playwright');
   try {
     console.log('=== Debugging Rainbow Bars Refresh ===\n');
 
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto('http://localhost:5003');
     await page.waitForLoadState('networkidle');
     await page.waitForSelector('.sentence', { timeout: 30000 });

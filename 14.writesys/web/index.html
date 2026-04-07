@@ -31,6 +31,7 @@
     <div class="control-group">
       <span id="status">Ready</span>
       <span id="sentence-count"></span>
+      <button id="logout-btn" onclick="logout()" style="margin-left: 20px; padding: 5px 10px; cursor: pointer;">Logout</button>
     </div>
   </div>
 
@@ -53,6 +54,30 @@
     <div id="manuscript-content">
     </div>
   </div>
+
+  <!-- Auth check (must run first) -->
+  <script src="/js/auth.js"></script>
+  <script>
+    // Check authentication before loading the app
+    (async function() {
+      const session = await checkAuth();
+      if (!session) return; // Will redirect to login
+
+      // Store session info for the app to use
+      window.currentSession = session;
+
+      // Store CSRF token in sessionStorage if present
+      if (session.csrf_token) {
+        sessionStorage.setItem('csrf_token', session.csrf_token);
+      }
+
+      // Update UI with user info
+      const statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.textContent = `Logged in as ${session.username} | ${session.manuscript_name}`;
+      }
+    })();
+  </script>
 
   <!-- External libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/smartquotes/2.3.2/smartquotes.min.js"></script>

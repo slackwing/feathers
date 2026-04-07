@@ -28,6 +28,9 @@ const { chromium } = require('playwright');
     await cleanupTestAnnotations();
     console.log('=== Testing Rainbow Bar Clickability and Animation (test.manuscript) ===\n');
 
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL, { waitUntil: 'networkidle' });
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForSelector('.sentence', { timeout: 30000 });

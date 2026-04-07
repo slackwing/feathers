@@ -34,6 +34,9 @@ const { chromium } = require('playwright');
     console.log('=== Testing with Fresh Cache ===\n');
 
     // Force reload without cache
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL, { waitUntil: 'networkidle' });
     await page.reload({ waitUntil: 'networkidle' });
 

@@ -7,6 +7,9 @@ const { chromium } = require('playwright');
 
   try {
     console.log('Loading WriteSys...');
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto('http://localhost:5003', { waitUntil: 'networkidle', timeout: 10000 });
 
     // Wait for manuscript to load

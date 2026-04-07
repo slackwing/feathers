@@ -29,6 +29,9 @@ async function runTests() {
     console.log('=== Scrollable Sticky Notes Test ===\n');
 
     // Load the page
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL);
     await page.waitForTimeout(8000);
 

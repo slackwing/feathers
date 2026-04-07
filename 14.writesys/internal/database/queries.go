@@ -393,19 +393,20 @@ func (db *DB) GetSentencesByCommit(ctx context.Context, commitHash string) ([]mo
 	return sentences, nil
 }
 
-// GetAnnotationsByCommit retrieves all active annotations for sentences in a commit
-func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash string) ([]models.Annotation, error) {
+// GetAnnotationsByCommit retrieves all active annotations for sentences in a commit for a specific user
+func (db *DB) GetAnnotationsByCommit(ctx context.Context, commitHash, username string) ([]models.Annotation, error) {
 	query := `
 		SELECT a.annotation_id, a.sentence_id, a.user_id, a.color, a.note,
 		       a.priority, a.flagged, a.position, a.created_at, a.updated_at, a.deleted_at
 		FROM annotation a
 		JOIN sentence s ON a.sentence_id = s.sentence_id
 		WHERE s.commit_hash = $1
+		  AND a.user_id = $2
 		  AND a.deleted_at IS NULL
 		ORDER BY s.ordinal, a.position
 	`
 
-	rows, err := db.Pool.Query(ctx, query, commitHash)
+	rows, err := db.Pool.Query(ctx, query, commitHash, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query annotations by commit: %w", err)
 	}
@@ -503,17 +504,18 @@ func insertAnnotationVersion(ctx context.Context, tx pgx.Tx, version *models.Ann
 }
 
 // GetAnnotationsBySentence retrieves all active annotations for a specific sentence
-func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID string) ([]models.Annotation, error) {
+func (db *DB) GetAnnotationsBySentence(ctx context.Context, sentenceID, username string) ([]models.Annotation, error) {
 	query := `
 		SELECT a.annotation_id, a.sentence_id, a.user_id, a.color, a.note,
 		       a.priority, a.flagged, a.position, a.created_at, a.updated_at, a.deleted_at
 		FROM annotation a
 		WHERE a.sentence_id = $1
+		  AND a.user_id = $2
 		  AND a.deleted_at IS NULL
 		ORDER BY a.position
 	`
 
-	rows, err := db.Pool.Query(ctx, query, sentenceID)
+	rows, err := db.Pool.Query(ctx, query, sentenceID, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query annotations by sentence: %w", err)
 	}
@@ -1026,4 +1028,142 @@ func (db *DB) ReorderAnnotation(ctx context.Context, annotationID int, sentenceI
 	}
 
 	return nil
+}
+
+// GetUserByUsername retrieves a user by username
+func (db *DB) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	query := `
+		SELECT username, password_hash, role, created_at
+		FROM "user"
+		WHERE username = $1
+	`
+
+	var u models.User
+	err := db.Pool.QueryRow(ctx, query, username).Scan(
+		&u.Username,
+		&u.PasswordHash,
+		&u.Role,
+		&u.CreatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return &u, nil
+}
+
+// GetAllUsers retrieves all users
+func (db *DB) GetAllUsers(ctx context.Context) ([]models.User, error) {
+	query := `
+		SELECT username, password_hash, role, created_at
+		FROM "user"
+		ORDER BY username
+	`
+
+	rows, err := db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating users: %w", err)
+	}
+
+	return users, nil
+}
+
+// GetManuscriptAccessForUser retrieves all manuscripts a user can access
+func (db *DB) GetManuscriptAccessForUser(ctx context.Context, username string) ([]models.ManuscriptAccess, error) {
+	query := `
+		SELECT username, manuscript_name, created_at
+		FROM manuscript_access
+		WHERE username = $1
+		ORDER BY manuscript_name
+	`
+
+	rows, err := db.Pool.Query(ctx, query, username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query manuscript access: %w", err)
+	}
+	defer rows.Close()
+
+	var access []models.ManuscriptAccess
+	for rows.Next() {
+		var ma models.ManuscriptAccess
+		if err := rows.Scan(&ma.Username, &ma.ManuscriptName, &ma.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan manuscript access: %w", err)
+		}
+		access = append(access, ma)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating manuscript access: %w", err)
+	}
+
+	return access, nil
+}
+
+// HasManuscriptAccess checks if a user has access to a specific manuscript
+func (db *DB) HasManuscriptAccess(ctx context.Context, username, manuscriptName string) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM manuscript_access
+			WHERE username = $1 AND manuscript_name = $2
+		)
+	`
+
+	var exists bool
+	err := db.Pool.QueryRow(ctx, query, username, manuscriptName).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check manuscript access: %w", err)
+	}
+
+	return exists, nil
+}
+
+// GetAnnotationByID retrieves an annotation by its ID
+func (db *DB) GetAnnotationByID(ctx context.Context, annotationID int) (*models.Annotation, error) {
+	query := `
+		SELECT annotation_id, sentence_id, user_id, color, note,
+		       priority, flagged, position, created_at, updated_at, deleted_at
+		FROM annotation
+		WHERE annotation_id = $1
+		  AND deleted_at IS NULL
+	`
+
+	var a models.Annotation
+	err := db.Pool.QueryRow(ctx, query, annotationID).Scan(
+		&a.AnnotationID,
+		&a.SentenceID,
+		&a.UserID,
+		&a.Color,
+		&a.Note,
+		&a.Priority,
+		&a.Flagged,
+		&a.Position,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+		&a.DeletedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get annotation: %w", err)
+	}
+
+	return &a, nil
 }

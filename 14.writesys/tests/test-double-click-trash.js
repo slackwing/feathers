@@ -18,6 +18,9 @@ const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
     await cleanupTestAnnotations();
     console.log('=== Testing Double-Click Trash (test.manuscript) ===\n');
 
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL, { waitUntil: 'networkidle' });
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForSelector('.sentence', { timeout: 30000 });

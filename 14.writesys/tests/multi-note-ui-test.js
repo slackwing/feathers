@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { TEST_URL } = require('./test-utils');
+const { TEST_URL, loginAsTestUser } = require('./test-utils');
 
 (async () => {
   console.log('\n=== Multi-Note UI Test ===\n');
@@ -14,6 +14,9 @@ const { TEST_URL } = require('./test-utils');
   try {
     // Navigate to app
     console.log('Loading WriteSys...');
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL, { waitUntil: 'networkidle', timeout: 10000 });
 
     // Wait for manuscript to load

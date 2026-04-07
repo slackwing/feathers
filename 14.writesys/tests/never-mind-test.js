@@ -13,6 +13,9 @@ const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
     await cleanupTestAnnotations();
 
     console.log('Loading WriteSys (test.manuscript)...');
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL, { waitUntil: 'networkidle', timeout: 10000 });
     await page.waitForSelector('.sentence', { timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));

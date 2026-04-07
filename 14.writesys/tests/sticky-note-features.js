@@ -8,6 +8,9 @@ const { chromium } = require('playwright');
   console.log('Testing sticky note features...\n');
 
   // Open the manuscript viewer
+  // Login first
+  await loginAsTestUser(page);
+
   await page.goto('http://localhost:5003?manuscript_id=1', { waitUntil: 'networkidle' });
   await page.waitForTimeout(3000);
 

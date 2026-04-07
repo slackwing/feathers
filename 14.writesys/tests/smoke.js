@@ -1,9 +1,12 @@
 const { chromium } = require('playwright');
-const { TEST_URL } = require('./test-utils');
+const { TEST_URL, loginAsTestUser } = require('./test-utils');
 
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1400 } });
+
+  // Login first
+  await loginAsTestUser(page);
 
   await page.goto(TEST_URL);
   

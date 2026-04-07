@@ -34,6 +34,9 @@ async function testDeleteAndRecreate() {
     }
   });
 
+  // Login first
+  await loginAsTestUser(page);
+
   await page.goto(TEST_URL);
   await page.waitForTimeout(8000);
 

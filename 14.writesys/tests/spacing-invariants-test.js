@@ -21,6 +21,9 @@ async function testSpacing(windowWidth, windowHeight, testName) {
   const page = await browser.newPage();
   await page.setViewportSize({ width: windowWidth, height: windowHeight });
 
+  // Login first
+  await loginAsTestUser(page);
+
   await page.goto('http://localhost:5003?manuscript_id=1', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2000);
 

@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const { loginAsTestUser } = require('./test-utils');
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -7,6 +8,9 @@ const { chromium } = require('playwright');
 
   try {
     console.log('Loading WriteSys...');
+    // Login first
+    await loginAsTestUser(page);
+
     await page.goto('http://localhost:5003', { waitUntil: 'networkidle', timeout: 10000 });
 
     await page.waitForSelector('.sentence', { timeout: 15000 });

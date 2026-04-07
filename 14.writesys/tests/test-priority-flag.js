@@ -11,6 +11,9 @@ const { TEST_URL, TEST_MANUSCRIPT_ID, cleanupTestAnnotations } = require('./test
 
   try {
     // Load the page
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL);
     await page.waitForSelector('.pagedjs_page', { timeout: 30000 });
     await page.waitForSelector('.sentence', { timeout: 5000 });

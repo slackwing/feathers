@@ -12,6 +12,9 @@ const { TEST_URL, cleanupTestAnnotations } = require('./test-utils');
 
   try {
     // Navigate to test manuscript
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL);
     await page.waitForSelector('.pagedjs_page', { timeout: 30000 });
     await page.waitForSelector('.sentence', { timeout: 5000 });

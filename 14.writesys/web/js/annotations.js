@@ -99,7 +99,7 @@ const WriteSysAnnotations = {
 
     // Fetch annotations for this sentence
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/sentence/${sentenceId}`);
       if (!response.ok) {
         if (response.status === 404) {
           this.annotations = [];
@@ -685,7 +685,7 @@ const WriteSysAnnotations = {
 
     try {
       // Create new annotation
-      const response = await fetch(`${this.apiBaseUrl}/annotations`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -776,7 +776,7 @@ const WriteSysAnnotations = {
    */
   async deleteAnnotation(annotationId) {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
         method: 'DELETE'
       });
 
@@ -815,7 +815,7 @@ const WriteSysAnnotations = {
     const annotation = this.annotations.find(a => a.annotation_id === annotationId);
     if (!annotation) return;
 
-    const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+    const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -844,7 +844,7 @@ const WriteSysAnnotations = {
     if (!annotation) return;
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -880,7 +880,7 @@ const WriteSysAnnotations = {
     const newPriority = (annotation.priority === priority) ? 'none' : priority;
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -917,7 +917,7 @@ const WriteSysAnnotations = {
     const newFlagged = !annotation.flagged;
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1049,7 +1049,7 @@ const WriteSysAnnotations = {
           throw new Error('Migration ID not available');
         }
 
-        const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags`, {
+        const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1094,7 +1094,7 @@ const WriteSysAnnotations = {
    */
   async removeTag(annotation, tagId, tagName, note) {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags/${tagId}`, {
+      const response = await authenticatedFetch(`${this.apiBaseUrl}/annotations/${annotation.annotation_id}/tags/${tagId}`, {
         method: 'DELETE'
       });
 

@@ -10,6 +10,9 @@ const { chromium } = require('playwright');
 
     // Navigate to the app
     console.log('1. Navigating to http://localhost:5003...');
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto('http://localhost:5003');
     await page.waitForLoadState('networkidle');
 

@@ -25,6 +25,12 @@ docker/.env
 .env.local
 .env.*.local
 
+# Seed data (contains password hashes)
+docker/seed.sql
+
+# Liquibase temporary files
+docker/liquibase/temp_*.properties
+
 # Dependencies
 node_modules/
 

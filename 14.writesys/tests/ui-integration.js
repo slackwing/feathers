@@ -31,6 +31,9 @@ async function runTests() {
     console.log('=== WriteSys UI Test Suite ===\n');
 
     // Load the page
+  // Login first
+  await loginAsTestUser(page);
+
     await page.goto(TEST_URL);
     await page.waitForTimeout(8000); // Wait for auto-load to complete
 

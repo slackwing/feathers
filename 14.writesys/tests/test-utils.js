@@ -52,9 +52,48 @@ async function cleanupTestAnnotations() {
   }
 }
 
+/**
+ * Login to the application with test credentials
+ * @param {Page} page - Playwright page object
+ */
+async function loginAsTestUser(page) {
+  const loginUrl = 'http://localhost:5003/login.html';
+
+  // Navigate to login page
+  await page.goto(loginUrl, { waitUntil: 'networkidle' });
+
+  // Wait for page to load
+  await page.waitForLoadState('domcontentloaded');
+
+  // Wait a bit for users dropdown to populate via JS
+  await page.waitForTimeout(1000);
+
+  // Select testsys user
+  await page.selectOption('#username', 'testsys');
+
+  // Wait for manuscripts to populate
+  await page.waitForTimeout(500);
+
+  // Fill in password
+  await page.fill('#password', 'beebo');
+
+  // Select test.manuscript
+  await page.selectOption('#manuscript', 'test.manuscript');
+
+  // Click login
+  await page.click('#login-btn');
+
+  // Wait for redirect to main app
+  await page.waitForURL('http://localhost:5003/', { timeout: 5000 });
+
+  // Wait for app to be ready
+  await page.waitForTimeout(1000);
+}
+
 module.exports = {
   TEST_MANUSCRIPT_ID,
   TEST_URL,
   API_BASE_URL,
-  cleanupTestAnnotations
+  cleanupTestAnnotations,
+  loginAsTestUser
 };

@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"writesys/internal/auth"
 	"writesys/internal/database"
 	"writesys/internal/models"
 
@@ -22,8 +23,10 @@ import (
 )
 
 type Server struct {
-	router *chi.Mux
-	db     *database.DB
+	router       *chi.Mux
+	db           *database.DB
+	sessionStore *auth.SessionStore
+	isProduction bool
 }
 
 type HealthResponse struct {
@@ -36,6 +39,7 @@ func main() {
 	// Get configuration from environment
 	port := getEnv("API_PORT", "5000")
 	host := getEnv("API_HOST", "0.0.0.0")
+	env := getEnv("ENV", "development") // development or production
 
 	// Create database connection
 	ctx := context.Background()
@@ -48,7 +52,7 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	// Create server
-	server := NewServer(db)
+	server := NewServer(db, env)
 
 	// Create HTTP server
 	addr := fmt.Sprintf("%s:%s", host, port)
@@ -86,10 +90,12 @@ func main() {
 	log.Println("Server stopped gracefully")
 }
 
-func NewServer(db *database.DB) *Server {
+func NewServer(db *database.DB, env string) *Server {
 	s := &Server{
-		router: chi.NewRouter(),
-		db:     db,
+		router:       chi.NewRouter(),
+		db:           db,
+		sessionStore: auth.NewSessionStore(),
+		isProduction: env == "production",
 	}
 
 	// Middleware
@@ -99,12 +105,28 @@ func NewServer(db *database.DB) *Server {
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.Timeout(60 * time.Second))
 
-	// CORS middleware for local development
+	// CORS middleware with strict origin checking
 	s.router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			origin := r.Header.Get("Origin")
+
+			// Allowed origins - add your production domain here
+			allowedOrigins := map[string]bool{
+				"http://localhost:5003":  true,
+				"http://127.0.0.1:5003":  true,
+				// Add your production domain when deploying:
+				// "https://writesys.yourdomain.com": true,
+			}
+
+			// Check if origin is allowed
+			if allowedOrigins[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token")
+
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
@@ -125,7 +147,19 @@ func (s *Server) setupRoutes() {
 
 	// API routes
 	s.router.Route("/api", func(r chi.Router) {
-		// Migration endpoints
+		// Auth endpoints (no auth required)
+		r.Post("/login", s.handleLogin)
+		r.Post("/logout", s.handleLogout)
+		r.Get("/users", s.handleGetUsers)
+		r.Get("/session", s.handleGetSession)
+
+		// Protected routes
+		r.Group(func(r chi.Router) {
+			// Apply auth and CSRF middleware to all routes in this group
+			r.Use(auth.Middleware(s.sessionStore))
+			r.Use(auth.CSRFMiddleware(s.sessionStore))
+
+			// Migration endpoints
 		r.Get("/migrations", s.handleGetMigrations)
 		r.Get("/migrations/latest", s.handleGetLatestMigration)
 		r.Get("/migrations/{migration_id}/manuscript", s.handleGetManuscriptByMigration)
@@ -142,10 +176,11 @@ func (s *Server) setupRoutes() {
 		r.Put("/annotations/{annotation_id}/reorder", s.handleReorderAnnotation)
 		r.Delete("/annotations/{annotation_id}", s.handleDeleteAnnotation)
 
-		// Tag endpoints
-		r.Get("/annotations/{annotation_id}/tags", s.handleGetTagsForAnnotation)
-		r.Post("/annotations/{annotation_id}/tags", s.handleAddTagToAnnotation)
-		r.Delete("/annotations/{annotation_id}/tags/{tag_id}", s.handleRemoveTagFromAnnotation)
+			// Tag endpoints
+			r.Get("/annotations/{annotation_id}/tags", s.handleGetTagsForAnnotation)
+			r.Post("/annotations/{annotation_id}/tags", s.handleAddTagToAnnotation)
+			r.Delete("/annotations/{annotation_id}/tags/{tag_id}", s.handleRemoveTagFromAnnotation)
+		})
 	})
 
 	// Serve static files (web UI)
@@ -318,12 +353,72 @@ type UpdateAnnotationRequest struct {
 
 // Helper function to get manuscript file from git
 func getFileFromGit(repoPath, commitHash, filePath string) (string, error) {
+	// Validate inputs to prevent command injection
+	if err := validateGitPath(repoPath); err != nil {
+		return "", fmt.Errorf("invalid repo path: %w", err)
+	}
+	if err := validateCommitHash(commitHash); err != nil {
+		return "", fmt.Errorf("invalid commit hash: %w", err)
+	}
+	if err := validateFilePath(filePath); err != nil {
+		return "", fmt.Errorf("invalid file path: %w", err)
+	}
+
 	cmd := exec.Command("git", "-C", repoPath, "show", fmt.Sprintf("%s:%s", commitHash, filePath))
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get file from git: %w", err)
 	}
 	return string(output), nil
+}
+
+// validateGitPath ensures the repo path is safe
+func validateGitPath(path string) error {
+	// Only allow paths starting with "manuscripts/" to prevent path traversal
+	if !strings.HasPrefix(path, "manuscripts/") {
+		return fmt.Errorf("repo path must start with 'manuscripts/'")
+	}
+	// Check for path traversal attempts
+	if strings.Contains(path, "..") {
+		return fmt.Errorf("path traversal not allowed")
+	}
+	// Check for shell metacharacters
+	if strings.ContainsAny(path, ";|&$`<>") {
+		return fmt.Errorf("invalid characters in path")
+	}
+	return nil
+}
+
+// validateCommitHash ensures the commit hash is valid
+func validateCommitHash(hash string) error {
+	// Git commit hashes are 40 hex characters (SHA-1) or 64 (SHA-256)
+	if len(hash) != 40 && len(hash) != 64 {
+		return fmt.Errorf("invalid commit hash length")
+	}
+	// Check that it's only hexadecimal characters
+	for _, c := range hash {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return fmt.Errorf("commit hash must be hexadecimal")
+		}
+	}
+	return nil
+}
+
+// validateFilePath ensures the file path is safe
+func validateFilePath(path string) error {
+	// Check for path traversal
+	if strings.Contains(path, "..") {
+		return fmt.Errorf("path traversal not allowed")
+	}
+	// Only allow .manuscript files
+	if !strings.HasSuffix(path, ".manuscript") {
+		return fmt.Errorf("only .manuscript files are allowed")
+	}
+	// Check for shell metacharacters
+	if strings.ContainsAny(path, ";|&$`<>") {
+		return fmt.Errorf("invalid characters in path")
+	}
+	return nil
 }
 
 // GET /api/migrations/:migration_id/manuscript
@@ -380,8 +475,15 @@ func (s *Server) handleGetManuscriptByMigration(w http.ResponseWriter, r *http.R
 		}
 	}
 
-	// Get annotations for this commit (still using commit_hash for now)
-	annotations, err := s.db.GetAnnotationsByCommit(ctx, migration.CommitHash)
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get annotations for this commit for this user
+	annotations, err := s.db.GetAnnotationsByCommit(ctx, migration.CommitHash, session.Username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get annotations: %v", err), http.StatusInternalServerError)
 		return
@@ -438,8 +540,15 @@ func (s *Server) handleGetManuscript(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get annotations
-	annotations, err := s.db.GetAnnotationsByCommit(ctx, commitHash)
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get annotations for this user
+	annotations, err := s.db.GetAnnotationsByCommit(ctx, commitHash, session.Username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get annotations: %v", err), http.StatusInternalServerError)
 		return
@@ -456,12 +565,19 @@ func (s *Server) handleGetManuscript(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /api/annotations/:commit_hash
-// Returns all annotations for a commit
+// Returns all annotations for a commit for the logged-in user
 func (s *Server) handleGetAnnotationsByCommit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commitHash := chi.URLParam(r, "commit_hash")
 
-	annotations, err := s.db.GetAnnotationsByCommit(ctx, commitHash)
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	annotations, err := s.db.GetAnnotationsByCommit(ctx, commitHash, session.Username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get annotations: %v", err), http.StatusInternalServerError)
 		return
@@ -474,12 +590,19 @@ func (s *Server) handleGetAnnotationsByCommit(w http.ResponseWriter, r *http.Req
 }
 
 // GET /api/annotations/sentence/:sentence_id
-// Returns annotations for a specific sentence
+// Returns annotations for a specific sentence for the logged-in user
 func (s *Server) handleGetAnnotationsBySentence(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	sentenceID := chi.URLParam(r, "sentence_id")
 
-	annotations, err := s.db.GetAnnotationsBySentence(ctx, sentenceID)
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	annotations, err := s.db.GetAnnotationsBySentence(ctx, sentenceID, session.Username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get annotations: %v", err), http.StatusInternalServerError)
 		return
@@ -508,6 +631,13 @@ func (s *Server) handleCreateAnnotation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	// Set default priority if empty
 	priority := req.Priority
 	if priority == "" {
@@ -517,7 +647,7 @@ func (s *Server) handleCreateAnnotation(w http.ResponseWriter, r *http.Request) 
 	// Create annotation
 	annotation := &models.Annotation{
 		SentenceID: req.SentenceID,
-		UserID:     "andrew", // Phase 1: hardcoded user
+		UserID:     session.Username,
 		Color:      req.Color,
 		Note:       req.Note,
 		Priority:   priority,
@@ -549,6 +679,29 @@ func (s *Server) handleUpdateAnnotation(w http.ResponseWriter, r *http.Request) 
 	annotationID, err := strconv.Atoi(annotationIDStr)
 	if err != nil {
 		http.Error(w, "Invalid annotation_id", http.StatusBadRequest)
+		return
+	}
+
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify ownership
+	existing, err := s.db.GetAnnotationByID(ctx, annotationID)
+	if err != nil {
+		log.Printf("Error getting annotation %d: %v", annotationID, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existing == nil {
+		http.Error(w, "Annotation not found", http.StatusNotFound)
+		return
+	}
+	if existing.UserID != session.Username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -605,11 +758,35 @@ func (s *Server) handleDeleteAnnotation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify ownership
+	existing, err := s.db.GetAnnotationByID(ctx, annotationID)
+	if err != nil {
+		log.Printf("Error getting annotation %d: %v", annotationID, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existing == nil {
+		http.Error(w, "Annotation not found", http.StatusNotFound)
+		return
+	}
+	if existing.UserID != session.Username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	if err := s.db.SoftDeleteAnnotation(ctx, annotationID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			http.Error(w, "Annotation not found", http.StatusNotFound)
 		} else {
-			http.Error(w, fmt.Sprintf("Failed to delete annotation: %v", err), http.StatusInternalServerError)
+			log.Printf("Failed to delete annotation: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -651,6 +828,29 @@ func (s *Server) handleAddTagToAnnotation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify ownership
+	existing, err := s.db.GetAnnotationByID(ctx, annotationID)
+	if err != nil {
+		log.Printf("Error getting annotation %d: %v", annotationID, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existing == nil {
+		http.Error(w, "Annotation not found", http.StatusNotFound)
+		return
+	}
+	if existing.UserID != session.Username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	var req struct {
 		TagName     string `json:"tag_name"`
 		MigrationID int    `json:"migration_id"`
@@ -666,7 +866,8 @@ func (s *Server) handleAddTagToAnnotation(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := s.db.AddTagToAnnotation(ctx, annotationID, req.TagName, req.MigrationID); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to add tag: %v", err), http.StatusInternalServerError)
+		log.Printf("Failed to add tag: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -703,11 +904,35 @@ func (s *Server) handleRemoveTagFromAnnotation(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify ownership
+	existing, err := s.db.GetAnnotationByID(ctx, annotationID)
+	if err != nil {
+		log.Printf("Error getting annotation %d: %v", annotationID, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existing == nil {
+		http.Error(w, "Annotation not found", http.StatusNotFound)
+		return
+	}
+	if existing.UserID != session.Username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	if err := s.db.RemoveTagFromAnnotation(ctx, annotationID, tagID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			http.Error(w, "Tag not found on annotation", http.StatusNotFound)
 		} else {
-			http.Error(w, fmt.Sprintf("Failed to remove tag: %v", err), http.StatusInternalServerError)
+			log.Printf("Failed to remove tag: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -757,6 +982,29 @@ func (s *Server) handleReorderAnnotation(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Get user from session
+	session, err := auth.GetSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify ownership
+	existing, err := s.db.GetAnnotationByID(ctx, annotationID)
+	if err != nil {
+		log.Printf("Error getting annotation %d: %v", annotationID, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existing == nil {
+		http.Error(w, "Annotation not found", http.StatusNotFound)
+		return
+	}
+	if existing.UserID != session.Username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	var req ReorderAnnotationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -777,10 +1025,193 @@ func (s *Server) handleReorderAnnotation(w http.ResponseWriter, r *http.Request)
 	// Reorder the annotation
 	if err := s.db.ReorderAnnotation(ctx, annotationID, req.SentenceID, req.NewIndex); err != nil {
 		log.Printf("Failed to reorder annotation: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to reorder annotation: %v", err), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Annotation reordered successfully"})
+}
+
+// Login request and response types
+type LoginRequest struct {
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	ManuscriptName string `json:"manuscript_name"`
+}
+
+type LoginResponse struct {
+	Username       string `json:"username"`
+	ManuscriptName string `json:"manuscript_name"`
+	CSRFToken      string `json:"csrf_token"`
+}
+
+// POST /api/login
+// Authenticates a user and creates a session
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Password == "" || req.ManuscriptName == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	// Get user from database
+	user, err := s.db.GetUserByUsername(ctx, req.Username)
+	if err != nil {
+		log.Printf("Database error during login: %v", err)
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Constant-time login: always verify password even if user doesn't exist
+	// Use a dummy hash with same cost as real bcrypt to prevent timing attacks
+	dummyHash := "$2a$10$dummyhashtopreventtimingattacksxxxxxxxxxxxxxxxxxxxxxxxxx"
+	var passwordValid bool
+
+	if user != nil {
+		passwordValid = auth.VerifyPassword(req.Password, user.PasswordHash)
+	} else {
+		// Run bcrypt anyway to maintain constant timing
+		auth.VerifyPassword(req.Password, dummyHash)
+		passwordValid = false
+	}
+
+	// Check manuscript access (also done for non-existent users to maintain timing)
+	var hasAccess bool
+	if user != nil && passwordValid {
+		hasAccess, err = s.db.HasManuscriptAccess(ctx, req.Username, req.ManuscriptName)
+		if err != nil {
+			log.Printf("Error checking manuscript access: %v", err)
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Fail with generic message if any check failed
+	if user == nil || !passwordValid || !hasAccess {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Create session
+	token, err := s.sessionStore.Create(req.Username, req.ManuscriptName)
+	if err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
+
+	// Get session to retrieve CSRF token
+	session, _ := s.sessionStore.Get(token)
+
+	// Set session cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   86400, // 24 hours
+		HttpOnly: true,
+		Secure:   s.isProduction, // Only send over HTTPS in production
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	response := LoginResponse{
+		Username:       user.Username,
+		ManuscriptName: req.ManuscriptName,
+		CSRFToken:      session.CSRFToken,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// POST /api/logout
+// Destroys the current session
+func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err == nil {
+		s.sessionStore.Delete(cookie.Value)
+	}
+
+	// Clear cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   s.isProduction,
+	})
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /api/users
+// Returns all users (for login dropdown)
+func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	users, err := s.db.GetAllUsers(ctx)
+	if err != nil {
+		http.Error(w, "Failed to get users", http.StatusInternalServerError)
+		return
+	}
+
+	// Return simplified user info (no password hash)
+	type UserInfo struct {
+		Username string `json:"username"`
+	}
+
+	userInfos := make([]UserInfo, len(users))
+	for i, u := range users {
+		userInfos[i] = UserInfo{Username: u.Username}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"users": userInfos,
+	})
+}
+
+// GET /api/session
+// Returns current session info
+func (s *Server) handleGetSession(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "Not logged in", http.StatusUnauthorized)
+		return
+	}
+
+	session, valid := s.sessionStore.Get(cookie.Value)
+	if !valid {
+		http.Error(w, "Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	// Get accessible manuscripts for this user
+	ctx := r.Context()
+	manuscripts, err := s.db.GetManuscriptAccessForUser(ctx, session.Username)
+	if err != nil {
+		http.Error(w, "Failed to get manuscript access", http.StatusInternalServerError)
+		return
+	}
+
+	manuscriptNames := make([]string, len(manuscripts))
+	for i, m := range manuscripts {
+		manuscriptNames[i] = m.ManuscriptName
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"username":               session.Username,
+		"manuscript_name":        session.ManuscriptName,
+		"csrf_token":             session.CSRFToken,
+		"accessible_manuscripts": manuscriptNames,
+	})
 }
