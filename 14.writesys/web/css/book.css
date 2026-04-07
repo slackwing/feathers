@@ -54,6 +54,7 @@
   --circle-radius: 13px;         /* Half of total: 26 / 2 = 13px */
   --circle-gap: 6px;             /* Gap between circle edges */
   --circle-spacing: 32px;        /* Center-to-center distance: 26 + 6 = 32px */
+  --palette-hover-padding: 16px; /* Hover zone padding around palette circles */
 }
 
 /* Reset and base styles */
@@ -1019,13 +1020,14 @@ p.indented {
 .sticky-note-palette {
   position: absolute;
   /* Palette is child of color-circle, so position relative to it */
-  /* Offset from color circle center: radius - border - 2px empirical = 13 - 2 - 2 = 9px */
-  top: calc(var(--circle-radius) - var(--circle-border) - 2px);
-  /* Align horizontally with color circle center */
-  right: calc(-1 * var(--circle-radius));
+  /* Offset from color circle center, accounting for top hover padding */
+  top: calc(var(--circle-radius) - var(--circle-border) - 2px - var(--palette-hover-padding));
+  /* Align horizontally, accounting for left hover padding */
+  right: calc(-1 * var(--circle-radius) - var(--palette-hover-padding));
   display: none;
-  width: 60px;  /* Just needs to contain the circles + hover padding */
-  height: 200px;  /* Tall enough for all circles */
+  /* Width and height expanded to include hover padding on all sides */
+  width: calc(60px + 2 * var(--palette-hover-padding));
+  height: calc(200px + 2 * var(--palette-hover-padding));
   z-index: 20;
   opacity: 0;
   transform: translateY(-4px);
@@ -1043,19 +1045,19 @@ p.indented {
   position: absolute;
   left: 0;
   right: 0;
-  /* Extend hover zone */
-  padding: 8px 20px;
+  /* Extend hover zone equally on all sides using CSS variable */
+  padding: var(--palette-hover-padding);
   /* Positioned by nth-child rules below */
 }
 
 /* Position each wrapper so circle centers are 32px apart */
-/* First circle at spacing distance, then N*spacing increments */
-.sticky-note-palette > div:nth-child(1) { top: calc(var(--circle-spacing) - var(--circle-radius) + 2px); }  /* 32 - 13 + 2 = 21px */
-.sticky-note-palette > div:nth-child(2) { top: calc(var(--circle-spacing) * 2 - var(--circle-radius) + 2px); }  /* 64 - 13 + 2 = 53px */
-.sticky-note-palette > div:nth-child(3) { top: calc(var(--circle-spacing) * 3 - var(--circle-radius) + 2px); }  /* 96 - 13 + 2 = 85px */
-.sticky-note-palette > div:nth-child(4) { top: calc(var(--circle-spacing) * 4 - var(--circle-radius) + 2px); }  /* 128 - 13 + 2 = 117px */
-.sticky-note-palette > div:nth-child(5) { top: calc(var(--circle-spacing) * 5 - var(--circle-radius) + 2px); }  /* 160 - 13 + 2 = 149px */
-.sticky-note-palette > div:nth-child(6) { top: calc(var(--circle-spacing) * 6 - var(--circle-radius) + 2px); }  /* 192 - 13 + 2 = 181px */
+/* Add palette-hover-padding to compensate for palette container's shifted top position */
+.sticky-note-palette > div:nth-child(1) { top: calc(var(--circle-spacing) - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
+.sticky-note-palette > div:nth-child(2) { top: calc(var(--circle-spacing) * 2 - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
+.sticky-note-palette > div:nth-child(3) { top: calc(var(--circle-spacing) * 3 - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
+.sticky-note-palette > div:nth-child(4) { top: calc(var(--circle-spacing) * 4 - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
+.sticky-note-palette > div:nth-child(5) { top: calc(var(--circle-spacing) * 5 - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
+.sticky-note-palette > div:nth-child(6) { top: calc(var(--circle-spacing) * 6 - var(--circle-radius) + 2px + var(--palette-hover-padding)); }
 
 .sticky-note-palette .color-circle {
   width: var(--circle-size);
@@ -1067,8 +1069,8 @@ p.indented {
   transition: all 0.15s ease;
   box-sizing: content-box;  /* Border adds to size */
   position: absolute;
-  /* Align centers with note right edge (radius - 2px empirical adjustment) */
-  right: calc(var(--circle-radius) - 2px);
+  /* Align centers with note right edge, accounting for wrapper padding */
+  right: calc(var(--circle-radius) - 2px + var(--palette-hover-padding));
   top: 0;
 }
 
@@ -1077,8 +1079,8 @@ p.indented {
   height: 24px;
   border-width: 3px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-  /* Compensate for size increase to keep centered: (30-26)/2 = 2px shift each side */
-  right: calc(var(--circle-radius) - 4px);
+  /* Compensate for size increase to keep centered, accounting for wrapper padding */
+  right: calc(var(--circle-radius) - 4px + var(--palette-hover-padding));
   top: -2px;
 }
 
