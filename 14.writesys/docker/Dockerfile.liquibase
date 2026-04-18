@@ -1,0 +1,10 @@
+FROM liquibase/liquibase:4.25-alpine
+
+# Set working directory
+WORKDIR /liquibase
+
+# Copy changelog files
+COPY liquibase/changelog /liquibase/changelog
+
+# Default command
+CMD ["--changelog-file=/liquibase/changelog/db.changelog-master.xml", "update"]

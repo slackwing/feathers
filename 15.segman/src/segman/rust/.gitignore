@@ -1,0 +1,6 @@
+# Rust build artifacts
+/target/
+
+# Cargo.lock (optional - include for applications, exclude for libraries)
+# We're including it since this is an application
+# Cargo.lock

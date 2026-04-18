@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+# Default to go if no language specified
+LANG="${1:-go}"
+
+case "$LANG" in
+    go)
+        cd "$(dirname "$0")/src/segman/go"
+        go test -v
+        ;;
+    js)
+        cd "$(dirname "$0")/src/segman/js"
+        node segman_test.js
+        ;;
+    rust)
+        cd "$(dirname "$0")/src/segman/rust"
+        cargo test -- --nocapture
+        ;;
+    *)
+        echo "Usage: $0 [go|js|rust]"
+        echo "  Default: go"
+        exit 1
+        ;;
+esac

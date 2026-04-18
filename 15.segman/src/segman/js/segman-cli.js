@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+/**
+ * SEGMAN CLI - Segment text using JavaScript segmenter
+ *
+ * Reads from stdin or file argument and outputs sentences as JSON
+ */
+
+const fs = require('fs');
+const { segment } = require('./segman.js');
+
+function main() {
+    let input;
+
+    // Read from file if argument provided, otherwise stdin
+    if (process.argv.length > 2) {
+        try {
+            input = fs.readFileSync(process.argv[2], 'utf-8');
+        } catch (err) {
+            console.error(`Error reading file: ${err.message}`);
+            process.exit(1);
+        }
+    } else {
+        // Read from stdin
+        input = fs.readFileSync(0, 'utf-8');
+    }
+
+    // Segment
+    const sentences = segment(input);
+
+    // Output as JSON
+    console.log(JSON.stringify(sentences, null, 2));
+}
+
+if (require.main === module) {
+    main();
+}

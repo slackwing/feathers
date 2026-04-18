@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+# Build all tools from src/tools/ to exports/
+
+cd "$(dirname "$0")"
+
+echo "Building tools to exports/..."
+
+# Change to Go directory for building
+cd src/segman/go
+
+# Manuscript tools (Go)
+go build -o ../../../exports/00-sanitize-manuscript ../../../src/tools/manuscript/00-sanitize-manuscript/main.go
+
+# Scenario-building tools
+go build -o ../../../exports/01-segment-reference ../../../src/tools/scenario-building/01-segment-reference/main.go
+go build -o ../../../exports/02-inspect-segments ../../../src/tools/scenario-building/02-inspect-segments/main.go
+go build -o ../../../exports/03-add-scenario ../../../src/tools/scenario-building/03-add-scenario/main.go
+
+# Go back to root
+cd ../../..
+
+# Bash tools
+cp src/tools/manuscript/04-manuscript-context exports/04-manuscript-context
+chmod +x exports/04-manuscript-context
+
+echo "Done. Binaries in exports/"
+ls -lh exports/ | grep -v "^d"
