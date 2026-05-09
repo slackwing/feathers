@@ -139,9 +139,12 @@ class SxivaDataExtractor:
         """
         Extract {attributes} section.
 
-        Returns dict with all attribute fields (sleep_score, dep_min, etc.)
+        Walks the tree-sitter `attributes_section` node and parses each
+        `attributes_line` individually so values can never bleed across lines
+        or into following sections (preserved notes, freeform, ===).
 
-        Uses regex directly on content since tree-sitter sometimes splits lines.
+        Numeric attribute values must contain at least one digit; a lone "-"
+        placeholder for an uncalculated attribute is treated as absent.
         """
         attributes = {
             'sleep_score': None,
@@ -161,65 +164,70 @@ class SxivaDataExtractor:
             'save': None
         }
 
-        # Find {attributes} section in content
-        attr_match = re.search(r'\{attributes\}(.*?)(?:\n\{|$)', content, re.DOTALL)
-        if not attr_match:
+        attr_node = self._find_node_by_type(tree.root_node, 'attributes_section')
+        if not attr_node:
             return attributes
 
-        attr_section = attr_match.group(1)
+        NUM = r'-?\d[\d.]*'  # signed number with at least one digit
+        int_attrs = {'soc', 'out', 'exe', 'xmx'}
+        float_attrs = {'dist', 'alc', 'wea'}
 
-        # Parse [sleep] 79 7.0 ~ ✓
-        match = re.search(r'\[sleep\]\s+(\d+)\s+([\d.]+)', attr_section)
-        if match:
-            attributes['sleep_score'] = int(match.group(1))
-            attributes['sleep_hours'] = float(match.group(2))
+        for line_node in attr_node.children:
+            if line_node.type != 'attributes_line':
+                continue
 
-        # Parse [dep] value1 value2 value3 ... = computed_avg ✓
-        # Format: [dep] -0.5 0 -0.5 = -0.3 ✓
-        # Extract the list of values before the = sign and compute our own min/max/avg
-        match = re.search(r'\[dep\]\s+([\d.\s-]+?)\s*=', attr_section)
-        if match:
-            # Parse all numeric values before the = sign
-            values_str = match.group(1)
-            dep_values = [float(x) for x in re.findall(r'[\d.-]+', values_str)]
-            if dep_values:
-                attributes['dep_min'] = min(dep_values)
-                attributes['dep_max'] = max(dep_values)
-                attributes['dep_avg'] = sum(dep_values) / len(dep_values)
+            line = content[line_node.start_byte:line_node.end_byte].strip()
+            cat_match = re.match(r'\[([^\]]+)\]\s*(.*)', line)
+            if not cat_match:
+                continue
 
-        # Parse other single-value attributes
-        for attr_name in ['dist', 'soc', 'out', 'exe', 'alc', 'xmx', 'wea']:
-            match = re.search(rf'\[{attr_name}\]\s+([\d.-]+)', attr_section)
-            if match:
-                value = match.group(1)
-                # Integer fields: soc, out, exe, xmx
-                if attr_name in ['soc', 'out', 'exe', 'xmx']:
-                    attributes[attr_name] = int(float(value))
-                else:
-                    # Decimal fields: dist, alc, wea
-                    attributes[attr_name] = float(value)
+            name, rest = cat_match.group(1), cat_match.group(2)
 
-        # Parse [meet] with time format (e.g., 75m, 1h20m, 2:05)
-        meet_match = re.search(r'\[meet\]\s+([^\s✓]+)', attr_section)
-        if meet_match:
-            time_str = meet_match.group(1)
-            minutes = self._parse_meeting_time(time_str)
-            if minutes is not None:
-                attributes['meet'] = minutes
+            if name == 'sleep':
+                m = re.match(rf'({NUM})\s+({NUM})', rest)
+                if m:
+                    attributes['sleep_score'] = int(m.group(1))
+                    attributes['sleep_hours'] = float(m.group(2))
 
-        # Parse [abi] - floating point with 1 decimal place (can be negative)
-        abi_match = re.search(r'\[abi\]\s+([-\d.]+)', attr_section)
-        if abi_match:
-            attributes['abi'] = float(abi_match.group(1))
+            elif name == 'dep':
+                # [dep] v1 v2 ... = avg ✓
+                eq_split = rest.split('=', 1)[0]
+                dep_values = [float(x) for x in re.findall(NUM, eq_split)]
+                if dep_values:
+                    attributes['dep_min'] = min(dep_values)
+                    attributes['dep_max'] = max(dep_values)
+                    attributes['dep_avg'] = sum(dep_values) / len(dep_values)
 
-        # Parse [save] - dollar string like "$4500" or "-$1500"
-        save_match = re.search(r'\[save\]\s+(-?\$\d+)', attr_section)
-        if save_match:
-            value_str = save_match.group(1)
-            is_negative = value_str.startswith('-')
-            amount_str = value_str[2:] if is_negative else value_str[1:]  # Skip -$ or $
-            amount = int(amount_str)
-            attributes['save'] = -amount if is_negative else amount
+            elif name in int_attrs:
+                m = re.match(rf'({NUM})', rest)
+                if m:
+                    attributes[name] = int(float(m.group(1)))
+
+            elif name in float_attrs:
+                m = re.match(rf'({NUM})', rest)
+                if m:
+                    attributes[name] = float(m.group(1))
+
+            elif name == 'meet':
+                m = re.match(r'([^\s✓]+)', rest)
+                if m:
+                    minutes = self._parse_meeting_time(m.group(1))
+                    if minutes is not None:
+                        attributes['meet'] = minutes
+
+            elif name == 'abi':
+                m = re.match(rf'({NUM})', rest)
+                if m:
+                    attributes['abi'] = float(m.group(1))
+
+            elif name == 'save':
+                m = re.match(r'(-?\$\d+)', rest)
+                if m:
+                    value_str = m.group(1)
+                    is_negative = value_str.startswith('-')
+                    amount_str = value_str[2:] if is_negative else value_str[1:]
+                    amount = int(amount_str)
+                    attributes['save'] = -amount if is_negative else amount
 
         return attributes
 
