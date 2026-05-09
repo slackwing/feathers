@@ -1,29 +1,36 @@
+---
+name: add-hobby-category
+description: Add one or more new hobby categories to the SXIVA dashboard's HOBBY_CATEGORIES array. Use when the user says "add [xyz] as a hobby category" or lists category codes (e.g., "add wre wrf wri as hobby categories").
+---
+
 # Add Hobby Category Skill
 
-You are helping the user add a new hobby category to the SXIVA dashboard.
+You are helping the user add one or more new hobby categories to the SXIVA dashboard.
 
 ## Instructions
 
-1. **Extract the category code** from the user's message. The user will say something like "add [xyz] as a hobby category" or "add [wrs] as a hobby category". Extract the category code (e.g., "xyz", "wrs").
+1. **Extract the category code(s)** from the user's message. The user may give one or several at once — examples: "add [xyz] as a hobby category", "add wrs", "add wre wrf wri wrj wro". Strip any surrounding `[ ]` and collect the codes in the order given.
 
 2. **Update the frontend JavaScript** file at `/home/slackwing/src/feathers/foundry/website/html/status/js/app.js`:
    - Find the line: `const HOBBY_CATEGORIES = ['wf', 'wr', ...];`
-   - Add the new category code to the end of the array (keep it alphabetically unsorted, just append)
-   - Use the Edit tool to make this change
+   - Append each new category code to the end of the array, in the order the user gave them. Do not sort.
+   - Skip any code that's already present (don't duplicate).
+   - Use the Edit tool to make this change.
 
 3. **Commit the change** using git:
-   - Use `git add` to stage the changed file
-   - Create a commit with the message: `feat(sxiva): add [xyz] as hobby category` (where xyz is the actual category code)
-   - DO NOT push to remote unless the user explicitly asks
+   - Stage the changed file with `git add`.
+   - Commit message format:
+     - Single category: `feat(sxiva): add [xyz] as hobby category`
+     - Multiple categories: `feat(sxiva): add [a], [b], [c] as hobby categories`
+   - DO NOT push to remote unless the user explicitly asks.
 
-4. **Confirm to the user** that the category has been added and committed, then remind them to deploy by running:
+4. **Confirm to the user** which categories were added (and which, if any, were already present and skipped), then remind them to deploy by running:
    ```
    ssha ; feathers ; html ; ws_prod
    ```
 
 ## Important Notes
 
-- The backend API doesn't need changes - it dynamically queries categories from the database
-- Once .sxiva files with the new category are synced, they'll automatically appear in the dashboard
-- Only modify the HOBBY_CATEGORIES array in the frontend JavaScript file
-- Always commit with the exact format: `feat(sxiva): add [category] as hobby category`
+- The backend API doesn't need changes — it dynamically queries categories from the database.
+- Once .sxiva files with the new category are synced, they'll automatically appear in the dashboard.
+- Only modify the HOBBY_CATEGORIES array in the frontend JavaScript file.
