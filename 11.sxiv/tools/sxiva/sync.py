@@ -36,14 +36,16 @@ class SxivaSyncClient:
         self.api_token = api_token
         self.extractor = SxivaDataExtractor()
 
-    def get_last_sync_timestamp(self) -> Optional[datetime]:
+    def get_last_sync_timestamp(self) -> tuple[bool, Optional[datetime]]:
         """
         Get the last sync timestamp from the server.
 
-        Returns: datetime object or None if request fails
+        Returns: (reachable, timestamp) where reachable is False if the server
+        could not be contacted. timestamp is None when the server responded but
+        has no prior sync recorded.
         """
         if not requests:
-            return None
+            return (False, None)
 
         try:
             response = requests.get(
@@ -56,16 +58,15 @@ class SxivaSyncClient:
                 data = response.json()
                 timestamp_str = data.get('last_sync_timestamp')
                 if timestamp_str:
-                    # Parse ISO format timestamp
-                    return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                return None
+                    return (True, datetime.fromisoformat(timestamp_str.replace('Z', '+00:00')))
+                return (True, None)
             else:
                 print(f"Warning: Failed to get last sync timestamp: {response.status_code}", file=sys.stderr)
-                return None
+                return (False, None)
 
         except Exception as e:
             print(f"Warning: Failed to contact sync server: {e}", file=sys.stderr)
-            return None
+            return (False, None)
 
     def sync_file(self, file_path: Path, verbose: bool = False) -> bool:
         """
@@ -210,7 +211,12 @@ def sync_now(data_dir: Optional[Path] = None, verbose: bool = True, api_url: Opt
         client = SxivaSyncClient(api_url=api_url)
 
         # Get last sync timestamp from server
-        last_sync_timestamp = client.get_last_sync_timestamp()
+        reachable, last_sync_timestamp = client.get_last_sync_timestamp()
+
+        if not reachable:
+            if verbose:
+                print("Sync skipped: server unreachable (possibly offline)", file=sys.stderr)
+            return True
 
         if verbose:
             if last_sync_timestamp:
