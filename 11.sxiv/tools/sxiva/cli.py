@@ -240,13 +240,14 @@ def recalculate_all_files():
 @click.version_option(version="0.1.0")
 @click.option('-d', '--date', metavar='YYYYMMDD', help='Open file for specific date (format: YYYYMMDD)')
 @click.option('-y', '--yesterday', is_flag=True, help='Open yesterday\'s file')
+@click.option('-t', '--tomorrow', is_flag=True, help='Open tomorrow\'s file')
 @click.option('-p', '--preserve', metavar='YYYYMMDD', help='Preserve notes section from specified date (default: yesterday)')
 @click.option('-l', '--list', 'list_files', is_flag=True, help='List last 10 YYYYMMDD sxiva files in reverse chronological order')
 @click.option('-o', '--open', 'open_nth', metavar='N', type=int, help='Open the Nth file from the list (1-based index)')
 @click.option('-a', '--all', 'recalculate_all', is_flag=True, help='Recalculate all .sxiva files in current directory')
 @click.option('--local', 'sync_local', is_flag=True, help='Sync to local database (localhost:5000) instead of remote')
 @click.pass_context
-def cli(ctx, date, yesterday, preserve, list_files, open_nth, recalculate_all, sync_local):
+def cli(ctx, date, yesterday, tomorrow, preserve, list_files, open_nth, recalculate_all, sync_local):
     """SXIVA CLI tools for parsing and calculating points.
 
     When called without a subcommand, opens today's SXIVA file from $SXIVA_DATA.
@@ -274,7 +275,7 @@ def cli(ctx, date, yesterday, preserve, list_files, open_nth, recalculate_all, s
     # Store sync_local in context for open_today to access
     ctx.ensure_object(dict)
     ctx.obj['sync_local'] = sync_local
-    open_today(date, yesterday, preserve, sync_local=sync_local)
+    open_today(date, yesterday, preserve, sync_local=sync_local, tomorrow=tomorrow)
 
 
 def _sanitize_section_markers(file_path):
@@ -371,12 +372,13 @@ def _preserve_notes_section(data_path, target_file, preserve_date_str, target_da
         pass
 
 
-def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False):
+def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False, tomorrow=False):
     """Open or create today's SXIVA file.
 
     Args:
         date_str: Optional date string in YYYYMMDD format
         yesterday: If True, open yesterday's file
+        tomorrow: If True, open tomorrow's file
         sync_local: If True, sync to local database instead of remote
         preserve: Optional date string to preserve notes from (YYYYMMDD), or True for auto-yesterday
     """
@@ -395,6 +397,10 @@ def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False):
         # Yesterday
         from datetime import timedelta
         target_date = datetime.now() - timedelta(days=1)
+    elif tomorrow:
+        # Tomorrow
+        from datetime import timedelta
+        target_date = datetime.now() + timedelta(days=1)
     else:
         # Today (default)
         target_date = datetime.now()
