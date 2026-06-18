@@ -2,6 +2,36 @@
 
 Subdirectory of the source-controlled website, published to `andrewcheong.com/rv`.
 
+---
+
+## 🔒 PROVENANCE RULES — READ BEFORE EDITING `rv/assets/trip.json`
+
+Every fact and structural field in `trip.json` carries provenance metadata
+(`author`, `confidence`, `pinned`). These exist so Andrew can vet things over
+time and so future Claude sessions don't blow away verified work.
+
+### THE TWO HARD RULES
+
+**🚫 NEVER MODIFY ANY FIELD OR FACT WHERE `pinned: true` WITHOUT EXPLICIT PERMISSION FROM ANDREW.**
+
+**🚫 NEVER MODIFY ANY FIELD OR FACT WHERE `author: "andrew"` WITHOUT EXPLICIT PERMISSION FROM ANDREW.**
+
+These rules apply even during sweeping rebuilds. They apply even if the data
+looks "obviously wrong." Ask first. Always.
+
+**Exception (the only one):** Fixing literal typos or pure-cosmetic reformatting
+(whitespace, quote style, json formatting) is allowed without permission. If
+the change has *any* semantic content — even adjusting a number by 1 or rewording
+a sentence — it requires explicit permission.
+
+When in doubt, ask. The cost of asking is low; the cost of overwriting Andrew's
+vetted work is high.
+
+See `rv/assets/META.md` for the full schema and authoring rules. See the
+`rv-itinerary-rebuild` skill for the rebuild pipeline.
+
+---
+
 ## Project summary
 
 Andrew and his partner Abi are planning an RV trip across the United States, driving from San Diego to New York City. This site serves a dual purpose:

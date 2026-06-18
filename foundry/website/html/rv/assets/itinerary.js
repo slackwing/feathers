@@ -69,10 +69,14 @@
       ? `Days ${startDay}–${endDay}`
       : `Day ${startDay}`;
 
-    // Activities rendered as <li> items.
-    const activities = (stop.activities_md || [])
-      .map(line => `<li>${line}</li>`)
-      .join("\n          ");
+    // Render facts. Section-header kind → <p class="lead">; everything else
+    // is an <li>. Adjacent <li>s get wrapped in a single <ul class="activities">
+    // so the visual matches the pre-migration look exactly.
+    //
+    // Provenance metadata (author/confidence/pinned) is intentionally NOT
+    // surfaced in the UI per the user's spec.
+    const facts = stop.facts || [];
+    const rendered = renderFacts(facts);
 
     const isArrival = stop.sleep_type === "home";
     const sectionClass = isArrival ? "stop arrival" : "stop";
@@ -84,11 +88,32 @@
         <h2>${stop.heading || stop.short_name || stop.label}</h2>
       </div>
       <div class="stop-card">
-        <ul class="activities">
-          ${activities}
-        </ul>
+        ${rendered}
       </div>
     </section>`;
+  }
+
+  // Render an array of facts as a sequence of <ul> blocks and section headers.
+  // Section headers (kind=section_header) break the list and render as
+  // <p class="lead">. Consecutive non-header facts collapse into one <ul>.
+  function renderFacts(facts) {
+    let out = "";
+    let buffer = [];
+    function flush() {
+      if (buffer.length === 0) return;
+      out += `<ul class="activities">\n          ${buffer.map(t => `<li>${t}</li>`).join("\n          ")}\n        </ul>\n`;
+      buffer = [];
+    }
+    for (const f of facts) {
+      if (f.kind === "section_header") {
+        flush();
+        out += `<p class="lead">${f.text}</p>\n`;
+      } else {
+        buffer.push(f.text);
+      }
+    }
+    flush();
+    return out;
   }
 
   function renderDriveCard(drive) {
