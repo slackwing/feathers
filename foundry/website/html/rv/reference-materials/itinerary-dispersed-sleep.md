@@ -1,5 +1,13 @@
 # Dispersed-Sleep Itinerary Review (15 days, San Diego → NYC)
 
+> **⚠️ 2026-06-18 update:** This doc still describes the dispersed-sleep philosophy and reasoning,
+> but the day-by-day structure has shifted. **3 SD nights** (was 2), **Day 4 Gila Bend hotel**
+> (splurge motel night, no dispersed), **Day 5 Willcox Walmart** (Tucson activities during drive-through),
+> Aguirre Spring + Allentown dropped. White Sands now happens Day 6 morning instead of Day 5. The
+> dispersed-sleep run is now Days 6–10 (was Days 5–9). See `itinerary-verified.md` for the current
+> day-by-day plan. Most of the philosophy + sleep-spot rationale below still applies; only the day
+> numbers shifted.
+
 **Vehicle:** 2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)
 **Dates:** Jul 6–20, 2026 (early) OR Jul 16–30, 2026 (late). Same daily structure.
 **Philosophy:** Decouple sleeping from activities. Sleep on free public land, BLM dispersed, or NF dispersed between destinations whenever heat + geography allow. Wake "in the middle of nowhere," drive 1–2 hr to breakfast town, drive another 1–2 hr to the day's main activity, do activity, drive again in the evening to next sleep spot — dinner along the way.

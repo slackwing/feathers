@@ -75,6 +75,8 @@ def expand_stops(trip):
     expanded = []
     day = 1
     for stop in trip["stops"]:
+        if stop.get("dropped_at"):
+            continue
         for night_idx in range(stop["nights"]):
             expanded.append({
                 "day": day,
@@ -88,7 +90,8 @@ def expand_stops(trip):
 
 def main():
     trip = json.loads(TRIP_JSON.read_text())
-    start_dates = {k: date.fromisoformat(v) for k, v in trip["start_dates"].items()}
+    # start_dates has {early, late, meta}; filter out meta
+    start_dates = {k: date.fromisoformat(v) for k, v in trip["start_dates"].items() if k != "meta"}
     expanded = expand_stops(trip)
 
     # Dedup coords for archive fetches
@@ -124,7 +127,7 @@ def main():
 
     OUT_JSON.write_text(json.dumps({
         "stops": out_stops,
-        "start_dates": trip["start_dates"],
+        "start_dates": {k: v for k, v in trip["start_dates"].items() if k != "meta"},
         "source": "Open-Meteo ERA5 archive 1995-2024 (30-year average of daily min temp)",
     }, indent=2))
     print(f"\nWrote {OUT_JSON}", file=sys.stderr)

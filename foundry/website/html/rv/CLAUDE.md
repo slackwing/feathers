@@ -24,6 +24,13 @@ looks "obviously wrong." Ask first. Always.
 the change has *any* semantic content — even adjusting a number by 1 or rewording
 a sentence — it requires explicit permission.
 
+### Never delete — soft-delete instead
+
+When data becomes obsolete (e.g., user shifts the plan and old facts no longer
+apply), **mark with `dropped_at` (ISO 8601) and `dropped_reason`** instead of
+deleting. The item stays in `trip.json` for archaeology; scripts and renderers
+filter dropped items at runtime. See `rv/assets/META.md` for the schema.
+
 When in doubt, ask. The cost of asking is low; the cost of overwriting Andrew's
 vetted work is high.
 

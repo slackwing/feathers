@@ -123,8 +123,10 @@ function svgIcon(kind, cx, cy, size = 14) {
 
   // Build DRIVE_HOURS array: length N-1, indexed by transition from day i to i+1.
   // Same-coord consecutive nights (multi-night stops) get 0; real transitions
-  // pull from trip.drives keyed by from_day → to_day.
-  const drivesByFrom = new Map(trip.drives.map(d => [d.from_day, d]));
+  // pull from trip.drives keyed by from_day → to_day. Skip dropped drives.
+  const drivesByFrom = new Map(
+    trip.drives.filter(d => !d.dropped_at).map(d => [d.from_day, d])
+  );
   const DRIVE_HOURS = [];
   for (let i = 0; i < stops.length - 1; i++) {
     const fromDay = stops[i].day;
@@ -140,15 +142,15 @@ function svgIcon(kind, cx, cy, size = 14) {
   // Build `places` array from trip activities + passthroughs (shape compatible
   // with the old places.json structure that the map renderer expects).
   // Spread the whole entry so per-stop optional fields like `hours` and
-  // `label_dir` flow through.
+  // `label_dir` flow through. Skip dropped items.
   const places = [
-    ...trip.activities.map(a => ({
+    ...trip.activities.filter(a => !a.dropped_at).map(a => ({
       ...a,
       type: "activity",
       early_day: a.day,
       late_day: a.day,
     })),
-    ...trip.passthroughs.map(p => ({
+    ...trip.passthroughs.filter(p => !p.dropped_at).map(p => ({
       ...p,
       type: "passthrough",
     })),
@@ -190,9 +192,9 @@ function svgIcon(kind, cx, cy, size = 14) {
     // After consolidating BB+MW (Day 6) and rebalancing midwest to ~5hr days,
     // the trip is 15 nights. Sleep at elevation tempers heat almost entirely.
     document.getElementById("verdict-text").innerHTML = `
-      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>5 of 15 nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. Only 1 night per trip is hotter than ${fmtT(70, 0)} (Tucson, both starts). Trip averages are essentially identical: ${fmtT(earlyTempAvg)} (early) vs. ${fmtT(lateTempAvg)} (late), within ${absDelta}.</p>
-      <p><strong>Rain:</strong> Early start (Jul 6) is meaningfully drier in the first half (${earlyFirstRain}% vs. ${lateFirstRain}% avg wet-day probability across SD → Last Dollar Rd). The North American Monsoon kicks in around Jul 4–15 and intensifies through August — the early window front-runs it. The spike is most visible at the high-elevation NM dispersed nights: <strong>Cloudcroft (Day 5) jumps from 37% → 49% wet-day probability</strong> between the two start dates, and Hyde Park (Day 6) goes 42% → 46%. The second half (Denver → NYC) is essentially a tie (${earlySecondRain}% vs ${lateSecondRain}%).</p>
-      <p><strong>Trade-off:</strong> With sleep at elevation, heat stops being a real decider. <strong>Rain is the decisive factor — and rain hits hardest at exactly the days we most want dry weather</strong> (White Sands sledding, Mesa Verde tours, dirt-road dispersed access in CO). Jul 6 wins clearly. <em>Leaning July 6.</em></p>
+      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>5 of 15 nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. The 2 hot nights are <strong>Gila Bend (~${fmtT(83, 0)}, splurge motel night) and Willcox (~${fmtT(72, 0)}, Walmart)</strong>. Trip averages: ${fmtT(earlyTempAvg)} (early) vs. ${fmtT(lateTempAvg)} (late), within ${absDelta}.</p>
+      <p><strong>Rain:</strong> Early start (Jul 6) is drier in the first half (${earlyFirstRain}% vs. ${lateFirstRain}% avg wet-day probability across SD → Mancos). The North American Monsoon kicks in around Jul 4–15 and intensifies through August — the early window front-runs it. The spike shows hardest at the high-elevation NM dispersed nights: <strong>Cloudcroft (Day 6) goes 38% → 49%</strong> wet-day probability between the two starts, and Hyde Park (Day 7) goes 40% → 48%. The second half (Denver → NYC) is close (${earlySecondRain}% vs ${lateSecondRain}%).</p>
+      <p><strong>Trade-off:</strong> With sleep at elevation, heat stops being a real decider. <strong>Rain is the decisive factor — and rain hits hardest at exactly the days we most want dry weather</strong> (White Sands sledding, Mesa Verde tours, dirt-road dispersed access in CO). Jul 6 still wins. <em>Leaning July 6.</em></p>
     `;
   }
   renderVerdict();

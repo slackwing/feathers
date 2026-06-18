@@ -18,6 +18,45 @@ Optional:
 
 - **`source`** — URL or short citation, when relevant
 - **`note`** — context (e.g., "user confirmed 2026-06-18")
+- **`dropped_at`** — ISO 8601 timestamp marking when this item was removed from active use. Items with this set are "soft-deleted" — preserved for archaeology but ignored at runtime. See below.
+- **`dropped_reason`** — short explanation of why it was dropped (e.g., "user added Gila Bend hotel night, removed long single-day push")
+
+## Soft-delete via `dropped_at`
+
+**Never delete a fact or field outright. Mark it as dropped instead.**
+
+When the user shifts the plan and existing facts/fields no longer apply, set
+`dropped_at` (ISO 8601 with timezone) and `dropped_reason`. The item stays in
+`trip.json` but is filtered out by:
+
+- The renderer (`itinerary.js`) — dropped facts don't render
+- The data scripts (`fetch_weather.py`, `fetch_rain.py`) — dropped stops/drives are skipped
+- The audit script (`audit_provenance.py`) — dropped items are hidden by default; surfaced with `--include-dropped`
+
+**To revive a dropped item:** delete the `dropped_at` and `dropped_reason` keys.
+This is intentionally manual — reviving requires explicit thought.
+
+**Example:**
+
+```jsonc
+{
+  "text": "<strong>Long push:</strong> San Diego → Tucson — start early!",
+  "kind": "transit",
+  "author": "claude", "confidence": "researched", "pinned": false,
+  "dropped_at": "2026-06-18T15:23:00-07:00",
+  "dropped_reason": "user split SD→Tucson across 2 days with Gila Bend overnight"
+}
+```
+
+**For dropping a structural field** (in a `meta` block), the `dropped_at` and
+`dropped_reason` keys sit alongside `author`/`confidence`/`pinned`. The value
+itself stays in the parent object (don't null it out — that breaks readers).
+Readers should treat a field as gone if its meta entry is dropped.
+
+**Why soft-delete instead of git revert?** Git remembers but you'd need a hash
+to find it. Inline soft-deletes are revivable without git surgery and carry
+context (the reason) inline. They're also auditable: "what did we drop in the
+last week?" is a one-line query.
 
 ### Confidence levels
 

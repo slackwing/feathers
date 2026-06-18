@@ -23,9 +23,11 @@
   // Expand stops: each entry covers one or more nights at the same coord.
   // For display, we keep ONE card per stop entry (multi-night collapses).
   // The starting day-of-stop and date span are derived.
+  // Soft-deleted stops (dropped_at set) are filtered out.
+  const activeStops = trip.stops.filter(s => !s.dropped_at);
   const expanded = [];
   let day = 1;
-  for (const stop of trip.stops) {
+  for (const stop of activeStops) {
     expanded.push({
       stop,
       startDay: day,
@@ -34,8 +36,10 @@
     day += stop.nights;
   }
 
-  // Map drives by from_day for quick lookup
-  const drivesByFrom = new Map(trip.drives.map(d => [d.from_day, d]));
+  // Map drives by from_day for quick lookup. Filter out dropped drives.
+  const drivesByFrom = new Map(
+    trip.drives.filter(d => !d.dropped_at).map(d => [d.from_day, d])
+  );
 
   // ---- date helpers ----
   function dateForDay(dayNum, which) {
@@ -73,9 +77,10 @@
     // is an <li>. Adjacent <li>s get wrapped in a single <ul class="activities">
     // so the visual matches the pre-migration look exactly.
     //
+    // Soft-deleted facts (dropped_at set) are filtered out.
     // Provenance metadata (author/confidence/pinned) is intentionally NOT
     // surfaced in the UI per the user's spec.
-    const facts = stop.facts || [];
+    const facts = (stop.facts || []).filter(f => !f.dropped_at);
     const rendered = renderFacts(facts);
 
     const isArrival = stop.sleep_type === "home";

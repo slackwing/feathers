@@ -90,6 +90,8 @@ def expand_stops(trip):
     expanded = []
     day = 1
     for stop in trip["stops"]:
+        if stop.get("dropped_at"):
+            continue
         for night_idx in range(stop["nights"]):
             expanded.append({
                 "day": day,
@@ -103,7 +105,7 @@ def expand_stops(trip):
 
 def main():
     trip = json.loads(TRIP_JSON.read_text())
-    start_dates = {k: date.fromisoformat(v) for k, v in trip["start_dates"].items()}
+    start_dates = {k: date.fromisoformat(v) for k, v in trip["start_dates"].items() if k != "meta"}
     expanded = expand_stops(trip)
 
     unique = {}

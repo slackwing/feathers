@@ -25,36 +25,57 @@ def short(text, n=70):
     return s if len(s) <= n else s[:n - 1] + "…"
 
 
-def collect(trip):
-    """Walk trip.json and yield (kind, location, key, value, meta_dict) tuples."""
+def collect(trip, include_dropped=False):
+    """Walk trip.json and yield (kind, location, key, value, meta_dict) tuples.
+
+    By default, items whose meta has `dropped_at` are skipped, as are fields
+    on objects whose top-level `dropped_at` is set. Pass include_dropped=True
+    to surface everything for archaeology.
+    """
+    def skip(item):
+        if include_dropped:
+            return False
+        return bool(item.get("dropped_at"))
+
     # trip-level meta
     for k, m in trip.get("trip", {}).get("meta", {}).items():
+        if skip(m): continue
         yield ("trip", "trip", k, trip["trip"].get(k), m)
     # start_dates meta
     sd = trip.get("start_dates", {})
     for k, m in sd.get("meta", {}).items():
+        if skip(m): continue
         yield ("start_date", "start_dates", k, sd.get(k), m)
     # stops: meta + facts
     for s in trip.get("stops", []):
+        if skip(s): continue
         loc = f"stop day {s['day']} ({s.get('short_name', s.get('label', '?'))})"
         for k, m in s.get("meta", {}).items():
+            if skip(m): continue
             yield ("stop_field", loc, k, s.get(k), m)
         for i, f in enumerate(s.get("facts", [])):
+            if skip(f): continue
             yield ("fact", loc, f"facts[{i}]", f.get("text"), f)
     # drives
     for d in trip.get("drives", []):
+        if skip(d): continue
         loc = f"drive {d['from_day']}->{d['to_day']} ({d.get('from_label')}->{d.get('to_label')})"
         for k, m in d.get("meta", {}).items():
+            if skip(m): continue
             yield ("drive_field", loc, k, d.get(k), m)
     # activities
     for a in trip.get("activities", []):
+        if skip(a): continue
         loc = f"activity '{a.get('name')}'"
         for k, m in a.get("meta", {}).items():
+            if skip(m): continue
             yield ("activity_field", loc, k, a.get(k), m)
     # passthroughs
     for p in trip.get("passthroughs", []):
+        if skip(p): continue
         loc = f"passthrough '{p.get('name')}'"
         for k, m in p.get("meta", {}).items():
+            if skip(m): continue
             yield ("passthrough_field", loc, k, p.get(k), m)
 
 
@@ -66,10 +87,16 @@ def main():
     p.add_argument("--unpinned-only", action="store_true", help="show only unpinned items")
     p.add_argument("--summary", action="store_true", help="counts only")
     p.add_argument("--kind", help="filter by record kind (trip/start_date/stop_field/fact/drive_field/activity_field/passthrough_field)")
+    p.add_argument("--include-dropped", action="store_true", help="also show items with dropped_at set (archaeology)")
+    p.add_argument("--dropped-only", action="store_true", help="only show items with dropped_at set")
     args = p.parse_args()
 
     trip = json.loads(TRIP.read_text())
-    items = list(collect(trip))
+    if args.dropped_only:
+        # Surface everything, then filter to only dropped
+        items = [r for r in collect(trip, include_dropped=True) if r[4].get("dropped_at")]
+    else:
+        items = list(collect(trip, include_dropped=args.include_dropped))
 
     # Apply filters
     def keep(rec):
@@ -103,11 +130,18 @@ def main():
     for loc in sorted(by_loc.keys()):
         print(f"\n## {loc}")
         for kind, _, key, val, meta in by_loc[loc]:
-            pin = "[P] " if meta.get("pinned") else "    "
+            flags = ""
+            if meta.get("pinned"): flags += "[P]"
+            if meta.get("dropped_at"): flags += "[X]"
+            flags = flags.ljust(4)
             auth = meta.get("author", "?")
             conf = meta.get("confidence", "?")
-            note = f" - {meta['note']}" if meta.get("note") else ""
-            print(f"  {pin}{auth:6s}/{conf:11s}  {key:20s}  {short(val)}{note}")
+            extra = ""
+            if meta.get("dropped_reason"):
+                extra = f" - dropped: {meta['dropped_reason']}"
+            elif meta.get("note"):
+                extra = f" - {meta['note']}"
+            print(f"  {flags}{auth:6s}/{conf:11s}  {key:20s}  {short(val)}{extra}")
 
     print(f"\n{len(filtered)} items shown ({len(items)} total in trip.json).")
 

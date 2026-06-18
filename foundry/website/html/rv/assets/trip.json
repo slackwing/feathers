@@ -53,45 +53,174 @@
       "short_name": "San Diego",
       "lat": 32.7595,
       "lon": -117.2528,
-      "nights": 2,
+      "nights": 3,
       "sleep_type": "paid_campground",
-      "eyebrow": "Days 1–2 · Fly in & settle",
+      "eyebrow": "Days 1–3 · Fly in, prep, explore SD",
       "heading": "San Diego",
       "facts": [
         {
-          "text": "<span class='tag'>beach</span> Breweries — Stone, Ballast Point, AleSmith, Mission Brewery (West Coast IPAs!)",
-          "kind": "activity",
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "text": "<strong>Day 1 (7/6 Mon)</strong>",
+          "kind": "section_header",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         },
         {
-          "text": "Tacos Al Gordo",
-          "kind": "activity",
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "text": "Fly in to San Diego",
+          "kind": "transit",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         },
         {
-          "text": "<span class='frog'>🐸</span> <strong>Sunset Cliffs Natural Park</strong> — watch sunset, cliff walks, sea cave (super low tide ~-2)",
-          "kind": "activity",
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "text": "Pick up the RV and ready it for the trip",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         },
         {
-          "text": "<strong>Tide pools (La Jolla)</strong> — low tide < 1 ft for best pooling. Negative tides ideal. Check chart for the right calendar day.",
+          "text": "<strong>Sunset Cliffs</strong> if there's time",
           "kind": "activity",
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Shower at Planet Fitness (9420 Scranton Rd, Kearny Mesa)",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Park somewhere overnight (TBD)",
+          "kind": "sleep",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<strong>Day 2 (7/7 Tue)</strong>",
+          "kind": "section_header",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<span class='frog'>🐸</span> Early morning: <strong>La Jolla tide pools</strong> (check low-tide chart)",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Flexible all-day SD activities (TBD)",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Sunset Cliffs if we didn't catch it Day 1",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Maybe Shout House (dueling piano bar, Gaslamp Quarter)",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Shower at Planet Fitness Scranton or try the RV's shower",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<strong>Day 3 morning (7/8 Wed)</strong>",
+          "kind": "section_header",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Early AM: <strong>Solana Beach / Fletcher's Cove cliff walk</strong> — from Del Mar dog beach up to Solana Beach along the bluffs",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Show Abi around Solana Beach (where Andrew used to live)",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<strong>Roberto's Taco Shop</strong> (445 N Hwy 101, Solana Beach)",
+          "kind": "food",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Walk back to the RV, then start driving east toward Gila Bend in the afternoon",
+          "kind": "transit",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         },
         {
           "text": "Stock the RV, fuel up, dump tanks clean. Get groceries. Sleep early before the big drive.",
           "kind": "reminder",
           "author": "claude",
           "confidence": "guessed",
-          "pinned": false
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+        },
+        {
+          "text": "<strong>Tide pools (La Jolla)</strong> — low tide < 1 ft for best pooling. Negative tides ideal. Check chart for the right calendar day.",
+          "kind": "activity",
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+        },
+        {
+          "text": "<span class='frog'>🐸</span> <strong>Sunset Cliffs Natural Park</strong> — watch sunset, cliff walks, sea cave (super low tide ~-2)",
+          "kind": "activity",
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+        },
+        {
+          "text": "Tacos Al Gordo",
+          "kind": "activity",
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+        },
+        {
+          "text": "<span class='tag'>beach</span> Breweries — Stone, Ballast Point, AleSmith, Mission Brewery (West Coast IPAs!)",
+          "kind": "activity",
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
         }
       ],
       "meta": {
@@ -119,12 +248,191 @@
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true,
-          "note": "user: 'i just wanna stay 2 nights in san diego'"
+          "note": "user: 3 SD nights, fly in 7/6, depart partial 7/8"
         },
         "sleep_type": {
           "author": "claude",
           "confidence": "recalled",
           "pinned": false
+        },
+        "eyebrow": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        },
+        "heading": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "day": 4,
+      "label": "Gila Bend, AZ (Best Western Space Age Lodge)",
+      "short_name": "Gila Bend",
+      "lat": 32.9478,
+      "lon": -112.7166,
+      "nights": 1,
+      "sleep_type": "hotel",
+      "eyebrow": "Day 4 · Splurge night: Best Western",
+      "heading": "Gila Bend, AZ",
+      "facts": [
+        {
+          "text": "Sleep at the <strong>Best Western Space Age Lodge</strong> (✨iconic vintage motel✨)",
+          "kind": "sleep",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Splurge night — nighttime temps in the desert are too hot for the RV and the SD→Tucson push is too long to do in one go",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Real shower, real AC, real bed",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        }
+      ],
+      "meta": {
+        "label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "short_name": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "lat": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "Gila Bend AZ, Best Western Space Age Lodge"
+        },
+        "lon": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "nights": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user picked this Gila Bend hotel night"
+        },
+        "sleep_type": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "splurge motel night"
+        },
+        "eyebrow": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        },
+        "heading": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "day": 5,
+      "label": "Willcox, AZ (Walmart Supercenter)",
+      "short_name": "Willcox",
+      "lat": 32.2526,
+      "lon": -109.8323,
+      "nights": 1,
+      "sleep_type": "walmart",
+      "eyebrow": "Day 5 · Tucson activities + push to Willcox",
+      "heading": "Tucson activities, Willcox overnight",
+      "facts": [
+        {
+          "text": "Wake at Gila Bend, finish drive to Tucson (~3.5 hr)",
+          "kind": "transit",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<span class='frog'>🐸</span> <strong>Arizona-Sonora Desert Museum</strong>",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<strong>Signal Hill Petroglyphs</strong> in Saguaro NP West",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<strong>Gates Pass overlook</strong> (approach via Kinney Rd if length-restricted)",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Continue driving east on I-10 in the late afternoon",
+          "kind": "transit",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Sleep at <strong>Willcox Walmart Supercenter</strong>, park by the garden center side (Andrew called and confirmed OK)",
+          "kind": "sleep",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "source": "phone call to Willcox Walmart, 2026-06-18"
+        }
+      ],
+      "meta": {
+        "label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "short_name": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "lat": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "Willcox AZ Walmart Supercenter"
+        },
+        "lon": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "nights": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user picked Willcox Walmart"
+        },
+        "sleep_type": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         },
         "eyebrow": {
           "author": "claude",
@@ -220,7 +528,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user split SD→Tucson into 2 days with Gila Bend overnight; Tucson activities now happen during Day 5 drive-through (no overnight in Tucson)"
     },
     {
       "day": 4,
@@ -296,19 +606,28 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "trip restructure adds 2 days at front (Gila Bend, Willcox); to keep 15 days total, Aguirre Spring dropped (it was a reposition stop, not a destination). White Sands now happens as a Day 6 early-morning stop on the drive Willcox → Cloudcroft."
     },
     {
-      "day": 5,
+      "day": 6,
       "label": "Cloudcroft / Lincoln NF",
       "short_name": "Cloudcroft",
       "lat": 32.9569,
       "lon": -105.743,
       "nights": 1,
       "sleep_type": "free_dispersed",
-      "eyebrow": "Day 5 · White Sands AM, Cloudcroft PM",
+      "eyebrow": "Day 6 · White Sands AM, Cloudcroft PM",
       "heading": "White Sands National Park",
       "facts": [
+        {
+          "text": "Wake at Willcox Walmart early (~6 AM) to beat White Sands heat",
+          "kind": "transit",
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        },
         {
           "text": "<span class='frog'>🐸</span> <strong>Dunes Drive loop</strong> 9am–noon — best drive in the park",
           "kind": "activity",
@@ -382,14 +701,14 @@
       }
     },
     {
-      "day": 6,
+      "day": 7,
       "label": "Hyde Park Rd / Santa Fe NF",
       "short_name": "Hyde Park Rd",
       "lat": 35.78,
       "lon": -105.82,
       "nights": 1,
       "sleep_type": "free_dispersed",
-      "eyebrow": "Day 6 · BB tour + Meow Wolf in one go",
+      "eyebrow": "Day 7 · BB tour + Meow Wolf in one go",
       "heading": "Albuquerque <span class='amp'>&</span> Santa Fe",
       "facts": [
         {
@@ -493,14 +812,14 @@
       }
     },
     {
-      "day": 7,
+      "day": 8,
       "label": "Mancos / San Juan NF",
       "short_name": "Mancos",
       "lat": 37.42,
       "lon": -108.2,
       "nights": 1,
       "sleep_type": "free_dispersed",
-      "eyebrow": "Day 7 · Mesa Verde",
+      "eyebrow": "Day 8 · Mesa Verde",
       "heading": "Mancos (Mesa Verde)",
       "facts": [
         {
@@ -569,14 +888,14 @@
       }
     },
     {
-      "day": 8,
+      "day": 9,
       "label": "Last Dollar Rd / Uncompahgre NF",
       "short_name": "Last Dollar Rd",
       "lat": 37.99,
       "lon": -107.92,
       "nights": 1,
       "sleep_type": "free_dispersed",
-      "eyebrow": "Day 8 · Telluride + Hot Springs",
+      "eyebrow": "Day 9 · Telluride + Hot Springs",
       "heading": "Telluride",
       "facts": [
         {
@@ -645,14 +964,14 @@
       }
     },
     {
-      "day": 9,
+      "day": 10,
       "label": "Cement Creek Rd / Gunnison NF",
       "short_name": "Cement Creek Rd",
       "lat": 38.81,
       "lon": -106.85,
       "nights": 1,
       "sleep_type": "free_dispersed",
-      "eyebrow": "Day 9 · Black Canyon + Crested Butte",
+      "eyebrow": "Day 10 · Black Canyon + Crested Butte",
       "heading": "Black Canyon &amp; Crested Butte",
       "facts": [
         {
@@ -721,14 +1040,14 @@
       }
     },
     {
-      "day": 10,
+      "day": 11,
       "label": "Denver (Cherry Creek SP)",
       "short_name": "Denver",
       "lat": 39.65,
       "lon": -104.85,
       "nights": 1,
       "sleep_type": "paid_campground",
-      "eyebrow": "Day 10 · Mid-trip hookups + friends",
+      "eyebrow": "Day 11 · Mid-trip hookups + friends",
       "heading": "Denver",
       "facts": [
         {
@@ -797,14 +1116,14 @@
       }
     },
     {
-      "day": 11,
+      "day": 12,
       "label": "Ogallala NE (Lake McConaughy)",
       "short_name": "Ogallala",
       "lat": 41.23,
       "lon": -101.7,
       "nights": 1,
       "sleep_type": "cheap_public_land",
-      "eyebrow": "Day 11 · Lake McConaughy",
+      "eyebrow": "Day 12 · Lake McConaughy",
       "heading": "Ogallala, NE",
       "facts": [
         {
@@ -873,14 +1192,14 @@
       }
     },
     {
-      "day": 12,
+      "day": 13,
       "label": "Des Moines IA (Walmart)",
       "short_name": "Des Moines",
       "lat": 41.6,
       "lon": -93.6,
       "nights": 1,
       "sleep_type": "walmart",
-      "eyebrow": "Day 12 · Midwest museum sweep",
+      "eyebrow": "Day 13 · Midwest museum sweep",
       "heading": "Lincoln · Omaha · Des Moines",
       "facts": [
         {
@@ -991,14 +1310,14 @@
       }
     },
     {
-      "day": 13,
+      "day": 14,
       "label": "South Bend IN (Walmart)",
       "short_name": "South Bend",
       "lat": 41.68,
       "lon": -86.25,
       "nights": 1,
       "sleep_type": "walmart",
-      "eyebrow": "Day 13 · Indiana",
+      "eyebrow": "Day 14 · Indiana, then long final drive tomorrow",
       "heading": "South Bend, IN",
       "facts": [
         {
@@ -1140,7 +1459,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend; to stay 15 days, Allentown dropped — final drive becomes South Bend → NYC (one long day)"
     },
     {
       "day": 15,
@@ -1154,11 +1475,20 @@
       "heading": "New York City",
       "facts": [
         {
+          "text": "15 days · 13 active stops · 3 nights in SD · 1 splurge motel night (Gila Bend) · ~3,400 miles · one hedgehog · one frog · one Sprinter.",
+          "kind": "section_header",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
           "text": "15 days · 14 stops · 2 nights in SD · ~3,340 miles · 5 nights free public-land dispersed · one hedgehog · one frog · one Sprinter.",
           "kind": "sleep",
           "author": "claude",
           "confidence": "guessed",
-          "pinned": false
+          "pinned": false,
+          "dropped_at": "2026-06-18T16:00:00-07:00",
+          "dropped_reason": "trip restructure: 3 SD nights, Gila Bend hotel, Willcox, dropped Aguirre + Allentown"
         },
         {
           "text": "Arrive midday/early afternoon. Unpack. Order delivery. Sleep in a stationary bed.",
@@ -1217,6 +1547,524 @@
   "_comment_drives": "drives[] is indexed by the day NUMBER it represents (i.e. drives[i].from_day → drives[i].to_day). 0-hour drives between two same-coord nights (e.g. SD Day 1 → SD Day 2) are implied by `nights: 2` on the stop and not listed here. The drives list always represents real travel between distinct stop coords.",
   "drives": [
     {
+      "from_day": 3,
+      "to_day": 4,
+      "from_label": "San Diego",
+      "to_label": "Gila Bend",
+      "miles": 280,
+      "hours": 4.5,
+      "route": "I-8 E through Imperial Valley → AZ",
+      "notes_html": "<strong>Day 3 PM · Afternoon drive:</strong> San Diego → Gila Bend",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "SD to Gila Bend via I-8"
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded; sunset arrival"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 4,
+      "to_day": 5,
+      "from_label": "Gila Bend",
+      "to_label": "Willcox",
+      "miles": 250,
+      "hours": 4.5,
+      "route": "I-8 E → I-10 E through Tucson",
+      "notes_html": "<strong>Day 5 · Tucson + push east:</strong> Gila Bend → Tucson (activities) → Willcox",
+      "meta": {
+        "from_label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "to_label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "~3.5 hr Gila Bend→Tucson + ~1 hr Tucson→Willcox, plus activity stops"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 5,
+      "to_day": 6,
+      "from_label": "Willcox",
+      "to_label": "Cloudcroft",
+      "miles": 280,
+      "hours": 5,
+      "route": "I-10 E → US-70 (White Sands stop) → NM-82 to Cloudcroft",
+      "notes_html": "<strong>Day 6 · Early start for White Sands:</strong> Willcox → White Sands AM → Cloudcroft",
+      "meta": {
+        "from_label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "includes 3 hr to White Sands, dunes time, then 2 hr to Cloudcroft"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 6,
+      "to_day": 7,
+      "from_label": "Cloudcroft",
+      "to_label": "Hyde Park Rd",
+      "miles": 290,
+      "hours": 3,
+      "route": "US-54 N → I-25 N → NM-475",
+      "notes_html": "<strong>Big consolidated day:</strong> Cloudcroft → Albuquerque (BB tour) → Santa Fe (Meow Wolf) → Hyde Park Rd",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 7,
+      "to_day": 8,
+      "from_label": "Hyde Park Rd",
+      "to_label": "Mancos",
+      "miles": 250,
+      "hours": 5.5,
+      "route": "US-84 N → US-160 W · Pagosa Springs lunch · Durango pass-through",
+      "notes_html": "<strong>Driving day:</strong> Hyde Park Rd → Mancos area",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 8,
+      "to_day": 9,
+      "from_label": "Mancos",
+      "to_label": "Last Dollar Rd",
+      "miles": 110,
+      "hours": 3,
+      "route": "US-160 → US-491 → CO-145 over Lizard Head Pass (10,222 ft)",
+      "notes_html": "<strong>Driving day:</strong> Mancos → Telluride → Last Dollar Rd",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 9,
+      "to_day": 10,
+      "from_label": "Last Dollar Rd",
+      "to_label": "Cement Creek Rd",
+      "miles": 130,
+      "hours": 3,
+      "route": "US-550 N → US-50 E → CO-92 (Black Canyon N Rim) → CO-135 N",
+      "notes_html": "<strong>Driving day:</strong> Last Dollar → Black Canyon → Crested Butte → Cement Creek",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 10,
+      "to_day": 11,
+      "from_label": "Cement Creek",
+      "to_label": "Denver",
+      "miles": 220,
+      "hours": 4.5,
+      "route": "CO-135 S → US-50 → US-285 over Kenosha Pass (10,001 ft)",
+      "notes_html": "<strong>Driving day:</strong> Cement Creek → Denver",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 11,
+      "to_day": 12,
+      "from_label": "Denver",
+      "to_label": "Ogallala",
+      "miles": 225,
+      "hours": 3.5,
+      "route": "I-76 E into Nebraska",
+      "notes_html": "<strong>Chiller plains day:</strong> Denver → Ogallala NE",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 12,
+      "to_day": 13,
+      "from_label": "Ogallala",
+      "to_label": "Des Moines",
+      "miles": 370,
+      "hours": 5,
+      "route": "I-80 E across NE · Lincoln AM + Omaha midday stops",
+      "notes_html": "<strong>Driving day:</strong> Ogallala → Lincoln (Sheldon AM) → Omaha (Joslyn lunch) → Des Moines IA",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 13,
+      "to_day": 14,
+      "from_label": "Des Moines",
+      "to_label": "South Bend",
+      "miles": 380,
+      "hours": 5,
+      "route": "I-80 E across IA & IL · skirt Chicago south on I-80",
+      "notes_html": "<strong>Driving day:</strong> Des Moines → South Bend IN",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "RV-padded estimate (car time + 10-25%)"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
+      "from_day": 14,
+      "to_day": 15,
+      "from_label": "South Bend",
+      "to_label": "New York City",
+      "miles": 660,
+      "hours": 9.5,
+      "route": "I-80 E through OH and mountainous PA → I-78 E into NJ → NYC",
+      "notes_html": "<strong>Day 15 · Long final drive:</strong> South Bend → New York City",
+      "meta": {
+        "from_label": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "to_label": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "miles": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "South Bend to NYC direct, no Allentown"
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "long final day; user accepted"
+        },
+        "route": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "notes_html": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false
+        }
+      }
+    },
+    {
       "from_day": 2,
       "to_day": 3,
       "from_label": "San Diego",
@@ -1257,7 +2105,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     },
     {
       "from_day": 3,
@@ -1300,7 +2150,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     },
     {
       "from_day": 4,
@@ -1343,351 +2195,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
-    },
-    {
-      "from_day": 5,
-      "to_day": 6,
-      "from_label": "Cloudcroft",
-      "to_label": "Hyde Park Rd",
-      "miles": 290,
-      "hours": 3,
-      "route": "US-54 N → I-25 N → NM-475",
-      "notes_html": "<strong>Big consolidated day:</strong> Cloudcroft → Albuquerque (BB tour) → Santa Fe (Meow Wolf) → Hyde Park Rd",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 6,
-      "to_day": 7,
-      "from_label": "Hyde Park Rd",
-      "to_label": "Mancos",
-      "miles": 250,
-      "hours": 5.5,
-      "route": "US-84 N → US-160 W · Pagosa Springs lunch · Durango pass-through",
-      "notes_html": "<strong>Driving day:</strong> Hyde Park Rd → Mancos area",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 7,
-      "to_day": 8,
-      "from_label": "Mancos",
-      "to_label": "Last Dollar Rd",
-      "miles": 110,
-      "hours": 3,
-      "route": "US-160 → US-491 → CO-145 over Lizard Head Pass (10,222 ft)",
-      "notes_html": "<strong>Driving day:</strong> Mancos → Telluride → Last Dollar Rd",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 8,
-      "to_day": 9,
-      "from_label": "Last Dollar Rd",
-      "to_label": "Cement Creek Rd",
-      "miles": 130,
-      "hours": 3,
-      "route": "US-550 N → US-50 E → CO-92 (Black Canyon N Rim) → CO-135 N",
-      "notes_html": "<strong>Driving day:</strong> Last Dollar → Black Canyon → Crested Butte → Cement Creek",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 9,
-      "to_day": 10,
-      "from_label": "Cement Creek",
-      "to_label": "Denver",
-      "miles": 220,
-      "hours": 4.5,
-      "route": "CO-135 S → US-50 → US-285 over Kenosha Pass (10,001 ft)",
-      "notes_html": "<strong>Driving day:</strong> Cement Creek → Denver",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 10,
-      "to_day": 11,
-      "from_label": "Denver",
-      "to_label": "Ogallala",
-      "miles": 225,
-      "hours": 3.5,
-      "route": "I-76 E into Nebraska",
-      "notes_html": "<strong>Chiller plains day:</strong> Denver → Ogallala NE",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 11,
-      "to_day": 12,
-      "from_label": "Ogallala",
-      "to_label": "Des Moines",
-      "miles": 370,
-      "hours": 5,
-      "route": "I-80 E across NE · Lincoln AM + Omaha midday stops",
-      "notes_html": "<strong>Driving day:</strong> Ogallala → Lincoln (Sheldon AM) → Omaha (Joslyn lunch) → Des Moines IA",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
-    },
-    {
-      "from_day": 12,
-      "to_day": 13,
-      "from_label": "Des Moines",
-      "to_label": "South Bend",
-      "miles": 380,
-      "hours": 5,
-      "route": "I-80 E across IA & IL · skirt Chicago south on I-80",
-      "notes_html": "<strong>Driving day:</strong> Des Moines → South Bend IN",
-      "meta": {
-        "from_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "to_label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "miles": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "hours": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
-        },
-        "route": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
-        },
-        "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
-        }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     },
     {
       "from_day": 13,
@@ -1730,7 +2240,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     },
     {
       "from_day": 14,
@@ -1773,7 +2285,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-18T16:00:00-07:00",
+      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     }
   ],
   "activities": [
@@ -1878,7 +2392,7 @@
       "icon": "mountain",
       "lat": 32.2272,
       "lon": -111.1267,
-      "day": 3,
+      "day": 5,
       "hours": 1,
       "label_dir": "left",
       "meta": {
@@ -1905,7 +2419,8 @@
         "day": {
           "author": "claude",
           "confidence": "researched",
-          "pinned": false
+          "pinned": false,
+          "note": "shifted to Day 5 (Tucson now a drive-through day)"
         },
         "hours": {
           "author": "claude",
@@ -1926,7 +2441,7 @@
       "icon": "museum",
       "lat": 32.2415,
       "lon": -111.1683,
-      "day": 3,
+      "day": 5,
       "hours": 4,
       "label_dir": "below",
       "meta": {
@@ -1953,7 +2468,8 @@
         "day": {
           "author": "claude",
           "confidence": "researched",
-          "pinned": false
+          "pinned": false,
+          "note": "shifted to Day 5 (Tucson now a drive-through day)"
         },
         "hours": {
           "author": "claude",
@@ -1974,7 +2490,7 @@
       "icon": "natural",
       "lat": 32.2842,
       "lon": -111.2079,
-      "day": 3,
+      "day": 5,
       "hours": 1.5,
       "label_dir": "left",
       "meta": {
@@ -2001,7 +2517,8 @@
         "day": {
           "author": "claude",
           "confidence": "researched",
-          "pinned": false
+          "pinned": false,
+          "note": "shifted to Day 5 (Tucson now a drive-through day)"
         },
         "hours": {
           "author": "claude",
@@ -2022,7 +2539,7 @@
       "icon": "park",
       "lat": 32.7872,
       "lon": -106.3257,
-      "day": 5,
+      "day": 6,
       "hours": 3,
       "label_dir": "right",
       "meta": {
@@ -2070,7 +2587,7 @@
       "icon": "food",
       "lat": 35.1107,
       "lon": -106.61,
-      "day": 6,
+      "day": 7,
       "hours": 3,
       "label_dir": "left",
       "meta": {
@@ -2118,7 +2635,7 @@
       "icon": "museum",
       "lat": 35.6889,
       "lon": -106.0001,
-      "day": 6,
+      "day": 7,
       "hours": 3,
       "label_dir": "right",
       "meta": {
@@ -2166,7 +2683,7 @@
       "icon": "park",
       "lat": 37.2308,
       "lon": -108.4618,
-      "day": 7,
+      "day": 8,
       "hours": 4,
       "label_dir": "left",
       "meta": {
@@ -2214,7 +2731,7 @@
       "icon": "mountain",
       "lat": 37.9375,
       "lon": -107.8123,
-      "day": 8,
+      "day": 9,
       "hours": 3,
       "label_dir": "left",
       "meta": {
@@ -2262,7 +2779,7 @@
       "icon": "natural",
       "lat": 38.134,
       "lon": -107.7717,
-      "day": 8,
+      "day": 9,
       "hours": 2,
       "label_dir": "right",
       "meta": {
@@ -2310,7 +2827,7 @@
       "icon": "park",
       "lat": 38.5919,
       "lon": -107.709,
-      "day": 9,
+      "day": 10,
       "hours": 2,
       "label_dir": "left",
       "meta": {
@@ -2358,7 +2875,7 @@
       "icon": "mountain",
       "lat": 38.8697,
       "lon": -106.9878,
-      "day": 9,
+      "day": 10,
       "hours": 2,
       "label_dir": "right",
       "meta": {
@@ -2406,7 +2923,7 @@
       "icon": "museum",
       "lat": 39.7556,
       "lon": -105.0027,
-      "day": 10,
+      "day": 11,
       "hours": 3,
       "label_dir": "right",
       "meta": {
@@ -2454,7 +2971,7 @@
       "icon": "museum",
       "lat": 40.8201,
       "lon": -96.7016,
-      "day": 12,
+      "day": 13,
       "hours": 1.5,
       "label_dir": "left",
       "meta": {
@@ -2502,7 +3019,7 @@
       "icon": "museum",
       "lat": 41.2616,
       "lon": -95.9322,
-      "day": 12,
+      "day": 13,
       "hours": 2,
       "label_dir": "right",
       "meta": {
