@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐸🦔 Hedgie & Frogie's RV Adventure</title>
+<meta name="description" content="Andrew and Abi's cross-country RV trip itinerary, San Diego to NYC, July 2026.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-photo-wrap">
+    <img src="assets/photos/hero-brunch.jpg" alt="Andrew and Abi at brunch" class="hero-photo">
+  </div>
+  <div class="hero-text">
+    <p class="kicker">A trip across America</p>
+    <h1>Hedgie <span class="amp">&</span> Frogie's<br>RV Adventure</h1>
+    <p class="subtitle">San Diego → New York City · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a></p>
+    <div class="legend">
+      <div class="legend-item">
+        <img src="assets/photos/abi-avatar.jpg" alt="Abi" class="avatar">
+        <span class="legend-icon">🐸</span>
+        <span class="legend-label">Abi's must-dos</span>
+      </div>
+      <div class="legend-item">
+        <img src="assets/photos/andrew-avatar.jpg" alt="Andrew" class="avatar">
+        <span class="legend-icon">🦔</span>
+        <span class="legend-label">Andrew's must-dos</span>
+      </div>
+      <div class="legend-item legend-rv">
+        <span class="legend-icon">🚐</span>
+        <span class="legend-label">where we sleep</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="trip">
+  <!-- Vertical timeline rail (populated by itinerary.js after cards render) -->
+  <aside class="timeline" aria-label="Trip timeline">
+    <ol class="timeline-list">
+      <!-- populated by JS -->
+    </ol>
+  </aside>
+
+  <div class="stops" id="itinerary">
+    <!-- Day cards rendered by itinerary.js from assets/trip.json -->
+  </div>
+</main>
+
+<footer class="footer">
+  <p>🦔 + 🐸 · Built with love · <a href="weather.html">Weather &amp; rain analysis</a></p>
+</footer>
+
+<script src="assets/itinerary.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+{
+  "stops": [
+    {
+      "day": 1,
+      "label": "San Diego (Mission Bay)",
+      "lat": 32.7595,
+      "lon": -117.2528,
+      "early_date": "2026-07-06",
+      "late_date": "2026-07-16",
+      "early_normal_low_f": 62.4,
+      "late_normal_low_f": 63.8
+    },
+    {
+      "day": 2,
+      "label": "San Diego (Mission Bay)",
+      "lat": 32.7595,
+      "lon": -117.2528,
+      "early_date": "2026-07-07",
+      "late_date": "2026-07-17",
+      "early_normal_low_f": 62.6,
+      "late_normal_low_f": 63.9
+    },
+    {
+      "day": 3,
+      "label": "Tucson (Gilbert Ray)",
+      "lat": 32.2486,
+      "lon": -111.1647,
+      "early_date": "2026-07-08",
+      "late_date": "2026-07-18",
+      "early_normal_low_f": 75.0,
+      "late_normal_low_f": 74.9
+    },
+    {
+      "day": 4,
+      "label": "Aguirre Spring BLM",
+      "lat": 32.378,
+      "lon": -106.563,
+      "early_date": "2026-07-09",
+      "late_date": "2026-07-19",
+      "early_normal_low_f": 68.5,
+      "late_normal_low_f": 68.9
+    },
+    {
+      "day": 5,
+      "label": "Cloudcroft / Lincoln NF",
+      "lat": 32.9569,
+      "lon": -105.743,
+      "early_date": "2026-07-10",
+      "late_date": "2026-07-20",
+      "early_normal_low_f": 54.6,
+      "late_normal_low_f": 54.7
+    },
+    {
+      "day": 6,
+      "label": "Hyde Park Rd / Santa Fe NF",
+      "lat": 35.78,
+      "lon": -105.82,
+      "early_date": "2026-07-11",
+      "late_date": "2026-07-21",
+      "early_normal_low_f": 51.1,
+      "late_normal_low_f": 50.9
+    },
+    {
+      "day": 7,
+      "label": "Mancos / San Juan NF",
+      "lat": 37.42,
+      "lon": -108.2,
+      "early_date": "2026-07-12",
+      "late_date": "2026-07-22",
+      "early_normal_low_f": 50.8,
+      "late_normal_low_f": 51.5
+    },
+    {
+      "day": 8,
+      "label": "Last Dollar Rd / Uncompahgre NF",
+      "lat": 37.99,
+      "lon": -107.92,
+      "early_date": "2026-07-13",
+      "late_date": "2026-07-23",
+      "early_normal_low_f": 41.4,
+      "late_normal_low_f": 42.1
+    },
+    {
+      "day": 9,
+      "label": "Cement Creek Rd / Gunnison NF",
+      "lat": 38.81,
+      "lon": -106.85,
+      "early_date": "2026-07-14",
+      "late_date": "2026-07-24",
+      "early_normal_low_f": 39.7,
+      "late_normal_low_f": 40.3
+    },
+    {
+      "day": 10,
+      "label": "Denver (Cherry Creek SP)",
+      "lat": 39.65,
+      "lon": -104.85,
+      "early_date": "2026-07-15",
+      "late_date": "2026-07-25",
+      "early_normal_low_f": 61.1,
+      "late_normal_low_f": 62.1
+    },
+    {
+      "day": 11,
+      "label": "Ogallala NE (Lake McConaughy)",
+      "lat": 41.23,
+      "lon": -101.7,
+      "early_date": "2026-07-16",
+      "late_date": "2026-07-26",
+      "early_normal_low_f": 67.1,
+      "late_normal_low_f": 67.1
+    },
+    {
+      "day": 12,
+      "label": "Des Moines IA (Walmart)",
+      "lat": 41.6,
+      "lon": -93.6,
+      "early_date": "2026-07-17",
+      "late_date": "2026-07-27",
+      "early_normal_low_f": 69.5,
+      "late_normal_low_f": 68.2
+    },
+    {
+      "day": 13,
+      "label": "South Bend IN (Walmart)",
+      "lat": 41.68,
+      "lon": -86.25,
+      "early_date": "2026-07-18",
+      "late_date": "2026-07-28",
+      "early_normal_low_f": 66.9,
+      "late_normal_low_f": 66.1
+    },
+    {
+      "day": 14,
+      "label": "Allentown PA (Walmart)",
+      "lat": 40.608,
+      "lon": -75.49,
+      "early_date": "2026-07-19",
+      "late_date": "2026-07-29",
+      "early_normal_low_f": 67.0,
+      "late_normal_low_f": 66.2
+    },
+    {
+      "day": 15,
+      "label": "New York, NY (home)",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "early_date": "2026-07-20",
+      "late_date": "2026-07-30",
+      "early_normal_low_f": 68.9,
+      "late_normal_low_f": 68.6
+    }
+  ],
+  "start_dates": {
+    "early": "2026-07-06",
+    "late": "2026-07-16"
+  },
+  "source": "Open-Meteo ERA5 archive 1995-2024 (30-year average of daily min temp)"
+}

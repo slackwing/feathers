@@ -1,0 +1,424 @@
+{
+  "_comment": "Single source of truth for the RV trip structure. Both index.html (via itinerary.js) and weather.html (via weather.js) read from this. The Python data-fetch scripts also read this for the sleep STOPS list. Weather/rain data lives in separate generated files (weather-data.json, rain-data.json) keyed by day number.",
+
+  "trip": {
+    "title": "Hedgie & Frogie's RV Adventure",
+    "subtitle_html": "San Diego → New York City",
+    "vehicle": "2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)",
+    "leaning": "early"
+  },
+
+  "start_dates": {
+    "early": "2026-07-06",
+    "late":  "2026-07-16"
+  },
+
+  "stops": [
+    {
+      "day": 1,
+      "label": "San Diego (Mission Bay)",
+      "short_name": "San Diego",
+      "lat": 32.7595,
+      "lon": -117.2528,
+      "nights": 2,
+      "sleep_type": "paid_campground",
+      "eyebrow": "Days 1–2 · Fly in & settle",
+      "heading": "San Diego",
+      "activities_md": [
+        "<span class='tag'>beach</span> Breweries — Stone, Ballast Point, AleSmith, Mission Brewery (West Coast IPAs!)",
+        "Tacos Al Gordo",
+        "<span class='frog'>🐸</span> <strong>Sunset Cliffs Natural Park</strong> — watch sunset, cliff walks, sea cave (super low tide ~-2)",
+        "<strong>Tide pools (La Jolla)</strong> — low tide < 1 ft for best pooling. Negative tides ideal. Check chart for the right calendar day.",
+        "Stock the RV, fuel up, dump tanks clean. Get groceries. Sleep early before the big drive."
+      ]
+    },
+    {
+      "day": 3,
+      "label": "Tucson (Gilbert Ray)",
+      "short_name": "Tucson",
+      "lat": 32.2486,
+      "lon": -111.1647,
+      "nights": 1,
+      "sleep_type": "paid_campground_heat",
+      "eyebrow": "Day 3 · Arrive Tucson",
+      "heading": "Tucson",
+      "activities_md": [
+        "Sleep at <strong>Gilbert Ray Campground</strong> (Tucson Mountain Park, ~3,000 ft, shaded — heat necessity in July)",
+        "Evening: <strong>Gates Pass overlook</strong> for sunset (approach via Kinney Rd if length-restriction signs flag the 24ft Sprinter)",
+        "Star gazing from camp",
+        "Morning Day 4 (before departure): <span class='frog'>🐸</span> <strong>Arizona-Sonora Desert Museum</strong> 7:30am open — beat the heat · <strong>Signal Hill Petroglyphs</strong> in Saguaro NP West"
+      ]
+    },
+    {
+      "day": 4,
+      "label": "Aguirre Spring BLM",
+      "short_name": "Aguirre Spring",
+      "lat": 32.378,
+      "lon": -106.563,
+      "nights": 1,
+      "sleep_type": "cheap_public_land",
+      "eyebrow": "Day 4 · Sleep in the Organ Mountains",
+      "heading": "Aguirre Spring BLM",
+      "activities_md": [
+        "Sleep at <strong>Aguirre Spring Campground</strong> ($7 BLM, 5,700 ft, dramatic Organ Mountains views)",
+        "Positions us 30 min from White Sands at dawn — beat the heat tomorrow",
+        "Optional dinner detour: Old Mesilla green chile in Las Cruces"
+      ]
+    },
+    {
+      "day": 5,
+      "label": "Cloudcroft / Lincoln NF",
+      "short_name": "Cloudcroft",
+      "lat": 32.9569,
+      "lon": -105.743,
+      "nights": 1,
+      "sleep_type": "free_dispersed",
+      "eyebrow": "Day 5 · White Sands AM, Cloudcroft PM",
+      "heading": "White Sands National Park",
+      "activities_md": [
+        "<span class='frog'>🐸</span> <strong>Dunes Drive loop</strong> 9am–noon — best drive in the park",
+        "<span class='frog'>🐸</span> <strong>Sledding</strong> $17 at White Sands Trading Company on the road in",
+        "Lunch in Alamogordo (Pizza Patio), dump tanks at Boot Hill RV",
+        "<strong>Sleep at Cloudcroft</strong> (Lincoln NF dispersed off NM-130, 8,600 ft) — dramatic cool-down from 100°F dunes to 55°F pines"
+      ]
+    },
+    {
+      "day": 6,
+      "label": "Hyde Park Rd / Santa Fe NF",
+      "short_name": "Hyde Park Rd",
+      "lat": 35.78,
+      "lon": -105.82,
+      "nights": 1,
+      "sleep_type": "free_dispersed",
+      "eyebrow": "Day 6 · BB tour + Meow Wolf in one go",
+      "heading": "Albuquerque <span class='amp'>&</span> Santa Fe",
+      "activities_md": [
+        "<strong>Morning — Albuquerque (BB tour)</strong>",
+        "Breakfast burritos in ABQ Old Town",
+        "<span class='frog'>🐸</span> <strong>Breaking Bad self-guided tour</strong> — hit the highlights (3 hr): Walter's house (3828 Piermont Dr NE), Los Pollos Hermanos / Twisters (4257 Isleta Blvd SW), A1A Car Wash, Crossroads Motel",
+        "<strong>Afternoon — Santa Fe (Meow Wolf)</strong>",
+        "1 hr drive ABQ → Santa Fe",
+        "<strong>Meow Wolf — House of Eternal Return</strong> 2–3 hr, $32 (book ahead)",
+        "Plaza walk, green chile dinner (Tia Sophia's or Shake Foundation)",
+        "<strong>Sleep at Hyde Park Rd</strong> (Santa Fe NF dispersed, ~10,000 ft, stargazing)"
+      ]
+    },
+    {
+      "day": 7,
+      "label": "Mancos / San Juan NF",
+      "short_name": "Mancos",
+      "lat": 37.42,
+      "lon": -108.2,
+      "nights": 1,
+      "sleep_type": "free_dispersed",
+      "eyebrow": "Day 7 · Mesa Verde",
+      "heading": "Mancos (Mesa Verde)",
+      "activities_md": [
+        "<span class='frog'>🐸</span> <strong>Mesa Verde National Park</strong> — book a tour (tickets release ~Jul 4) · Mesa Top Loop Road at golden hour",
+        "Sleep at <strong>San Juan NF FR 561 dispersed</strong> near Mancos (pine forest, accessible to the Sprinter on dry forest road)",
+        "Pagosa Springs lunch + Durango pass-through on the way in"
+      ]
+    },
+    {
+      "day": 8,
+      "label": "Last Dollar Rd / Uncompahgre NF",
+      "short_name": "Last Dollar Rd",
+      "lat": 37.99,
+      "lon": -107.92,
+      "nights": 1,
+      "sleep_type": "free_dispersed",
+      "eyebrow": "Day 8 · Telluride + Hot Springs",
+      "heading": "Telluride",
+      "activities_md": [
+        "<span class='frog'>🐸</span> <strong>Telluride</strong> via Lizard Head Pass (10,222ft) — free gondola, box canyon walk, Million Dollar Hwy",
+        "Soak at <strong>Orvis Hot Springs</strong> in Ridgway ($30, worth it)",
+        "Sleep on <strong>Last Dollar Rd</strong> (high alpine, ~42°F nights, lower 3 mi of FR 638 accessible to Sprinter on dry gravel)"
+      ]
+    },
+    {
+      "day": 9,
+      "label": "Cement Creek Rd / Gunnison NF",
+      "short_name": "Cement Creek Rd",
+      "lat": 38.81,
+      "lon": -106.85,
+      "nights": 1,
+      "sleep_type": "free_dispersed",
+      "eyebrow": "Day 9 · Black Canyon + Crested Butte",
+      "heading": "Black Canyon &amp; Crested Butte",
+      "activities_md": [
+        "<span class='frog'>🐸</span> <strong>Black Canyon of the Gunnison — North Rim</strong> via CO-92 from Hotchkiss <span class='warn'>⚠ South Rim Drive is < 22 ft only — North Rim is open to all vehicles, less crowded, arguably better views.</span>",
+        "<span class='frog'>🐸</span> <strong>Crested Butte</strong> — Elk Ave old mining-town main street, wildflower season",
+        "Sleep at <strong>Cement Creek Rd FR 740</strong> (Gunnison NF, ~2–6 mi up from CO-135, creek-side pine forest)"
+      ]
+    },
+    {
+      "day": 10,
+      "label": "Denver (Cherry Creek SP)",
+      "short_name": "Denver",
+      "lat": 39.65,
+      "lon": -104.85,
+      "nights": 1,
+      "sleep_type": "paid_campground",
+      "eyebrow": "Day 10 · Mid-trip hookups + friends",
+      "heading": "Denver",
+      "activities_md": [
+        "<strong>Meow Wolf Denver — Convergence Station</strong> 10am–10pm, $38",
+        "Dinner with Andrew's friends",
+        "Sleep at <strong>Cherry Creek SP</strong> ($41 full hookups — water, dump, showers, charge everything)"
+      ]
+    },
+    {
+      "day": 11,
+      "label": "Ogallala NE (Lake McConaughy)",
+      "short_name": "Ogallala",
+      "lat": 41.23,
+      "lon": -101.7,
+      "nights": 1,
+      "sleep_type": "cheap_public_land",
+      "eyebrow": "Day 11 · Lake McConaughy",
+      "heading": "Ogallala, NE",
+      "activities_md": [
+        "Sleep at <strong>Lake McConaughy SRA</strong> ($8 NE state recreation area, beach camping on the reservoir)",
+        "Afternoon swim if hot · sunset over the water",
+        "Short drive day = recover from Colorado, prep for the eastern stretch"
+      ]
+    },
+    {
+      "day": 12,
+      "label": "Des Moines IA (Walmart)",
+      "short_name": "Des Moines",
+      "lat": 41.6,
+      "lon": -93.6,
+      "nights": 1,
+      "sleep_type": "walmart",
+      "eyebrow": "Day 12 · Midwest museum sweep",
+      "heading": "Lincoln · Omaha · Des Moines",
+      "activities_md": [
+        "<strong>Morning — Lincoln</strong>",
+        "Thrifting (10am–7pm)",
+        "<strong>Sheldon Museum of Art</strong> — free, on UNL campus",
+        "Quick lunch in Haymarket District",
+        "<strong>Midday — Omaha</strong>",
+        "<strong>Joslyn Art Museum</strong> — free, closes 4pm (reopened 2024)",
+        "Walking around Riverfront — Gene Leahy Mall + pedestrian bridge into Iowa",
+        "<strong>Evening — Des Moines, IA</strong>",
+        "Sleep at Walmart Supercenter or Cabela's lot, dinner along I-80"
+      ]
+    },
+    {
+      "day": 13,
+      "label": "South Bend IN (Walmart)",
+      "short_name": "South Bend",
+      "lat": 41.68,
+      "lon": -86.25,
+      "nights": 1,
+      "sleep_type": "walmart",
+      "eyebrow": "Day 13 · Indiana",
+      "heading": "South Bend, IN",
+      "activities_md": [
+        "Optional leg-stretch at <strong>Indiana Dunes</strong> earlier in the day (Lake Michigan)",
+        "Sleep at Walmart Supercenter",
+        "Dinner along I-80 in IL or IN (Cracker Barrel = backup overnight option)"
+      ]
+    },
+    {
+      "day": 14,
+      "label": "Allentown PA (Walmart)",
+      "short_name": "Allentown",
+      "lat": 40.608,
+      "lon": -75.49,
+      "nights": 1,
+      "sleep_type": "walmart",
+      "eyebrow": "Day 14 · One more night out",
+      "heading": "Allentown, PA",
+      "activities_md": [
+        "Sleep at Walmart Supercenter",
+        "Dinner at a Cracker Barrel along I-80 PA",
+        "Easy 2.5 hr final push to NYC tomorrow morning"
+      ]
+    },
+    {
+      "day": 15,
+      "label": "New York, NY (home)",
+      "short_name": "New York",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "nights": 1,
+      "sleep_type": "home",
+      "eyebrow": "🏁 Day 15 · Home",
+      "heading": "New York City",
+      "activities_md": [
+        "15 days · 14 stops · 2 nights in SD · ~3,340 miles · 5 nights free public-land dispersed · one hedgehog · one frog · one Sprinter.",
+        "Arrive midday/early afternoon. Unpack. Order delivery. Sleep in a stationary bed."
+      ]
+    }
+  ],
+
+  "_comment_drives": "drives[] is indexed by the day NUMBER it represents (i.e. drives[i].from_day → drives[i].to_day). 0-hour drives between two same-coord nights (e.g. SD Day 1 → SD Day 2) are implied by `nights: 2` on the stop and not listed here. The drives list always represents real travel between distinct stop coords.",
+  "drives": [
+    {
+      "from_day": 2,
+      "to_day": 3,
+      "from_label": "San Diego",
+      "to_label": "Tucson",
+      "miles": 410,
+      "hours": 7,
+      "route": "I-8 E → I-10 E",
+      "notes_html": "<strong>Long push:</strong> San Diego → Tucson — start early!"
+    },
+    {
+      "from_day": 3,
+      "to_day": 4,
+      "from_label": "Tucson",
+      "to_label": "Aguirre Spring",
+      "miles": 280,
+      "hours": 2.5,
+      "route": "I-10 E · lunch in Lordsburg NM",
+      "notes_html": "<strong>Reposition for White Sands:</strong> Tucson → Aguirre Spring BLM"
+    },
+    {
+      "from_day": 4,
+      "to_day": 5,
+      "from_label": "Aguirre Spring",
+      "to_label": "Cloudcroft",
+      "miles": 110,
+      "hours": 2,
+      "route": "US-70 over San Augustin Pass → White Sands → NM-82 to Cloudcroft",
+      "notes_html": "<strong>Short drive + escape to elevation:</strong> White Sands AM, climb to 8,600 ft pines"
+    },
+    {
+      "from_day": 5,
+      "to_day": 6,
+      "from_label": "Cloudcroft",
+      "to_label": "Hyde Park Rd",
+      "miles": 290,
+      "hours": 3,
+      "route": "US-54 N → I-25 N → NM-475",
+      "notes_html": "<strong>Big consolidated day:</strong> Cloudcroft → Albuquerque (BB tour) → Santa Fe (Meow Wolf) → Hyde Park Rd"
+    },
+    {
+      "from_day": 6,
+      "to_day": 7,
+      "from_label": "Hyde Park Rd",
+      "to_label": "Mancos",
+      "miles": 250,
+      "hours": 5.5,
+      "route": "US-84 N → US-160 W · Pagosa Springs lunch · Durango pass-through",
+      "notes_html": "<strong>Driving day:</strong> Hyde Park Rd → Mancos area"
+    },
+    {
+      "from_day": 7,
+      "to_day": 8,
+      "from_label": "Mancos",
+      "to_label": "Last Dollar Rd",
+      "miles": 110,
+      "hours": 3,
+      "route": "US-160 → US-491 → CO-145 over Lizard Head Pass (10,222 ft)",
+      "notes_html": "<strong>Driving day:</strong> Mancos → Telluride → Last Dollar Rd"
+    },
+    {
+      "from_day": 8,
+      "to_day": 9,
+      "from_label": "Last Dollar Rd",
+      "to_label": "Cement Creek Rd",
+      "miles": 130,
+      "hours": 3,
+      "route": "US-550 N → US-50 E → CO-92 (Black Canyon N Rim) → CO-135 N",
+      "notes_html": "<strong>Driving day:</strong> Last Dollar → Black Canyon → Crested Butte → Cement Creek"
+    },
+    {
+      "from_day": 9,
+      "to_day": 10,
+      "from_label": "Cement Creek",
+      "to_label": "Denver",
+      "miles": 220,
+      "hours": 4.5,
+      "route": "CO-135 S → US-50 → US-285 over Kenosha Pass (10,001 ft)",
+      "notes_html": "<strong>Driving day:</strong> Cement Creek → Denver"
+    },
+    {
+      "from_day": 10,
+      "to_day": 11,
+      "from_label": "Denver",
+      "to_label": "Ogallala",
+      "miles": 225,
+      "hours": 3.5,
+      "route": "I-76 E into Nebraska",
+      "notes_html": "<strong>Chiller plains day:</strong> Denver → Ogallala NE"
+    },
+    {
+      "from_day": 11,
+      "to_day": 12,
+      "from_label": "Ogallala",
+      "to_label": "Des Moines",
+      "miles": 370,
+      "hours": 5,
+      "route": "I-80 E across NE · Lincoln AM + Omaha midday stops",
+      "notes_html": "<strong>Driving day:</strong> Ogallala → Lincoln (Sheldon AM) → Omaha (Joslyn lunch) → Des Moines IA"
+    },
+    {
+      "from_day": 12,
+      "to_day": 13,
+      "from_label": "Des Moines",
+      "to_label": "South Bend",
+      "miles": 380,
+      "hours": 5,
+      "route": "I-80 E across IA & IL · skirt Chicago south on I-80",
+      "notes_html": "<strong>Driving day:</strong> Des Moines → South Bend IN"
+    },
+    {
+      "from_day": 13,
+      "to_day": 14,
+      "from_label": "South Bend",
+      "to_label": "Allentown",
+      "miles": 470,
+      "hours": 5,
+      "route": "I-80 E through OH, mountainous PA",
+      "notes_html": "<strong>Driving day:</strong> South Bend → Allentown PA"
+    },
+    {
+      "from_day": 14,
+      "to_day": 15,
+      "from_label": "Allentown",
+      "to_label": "New York City",
+      "miles": 95,
+      "hours": 2.5,
+      "route": "I-78 E into NJ → home",
+      "notes_html": "<strong>Final drive:</strong> Allentown → New York City"
+    }
+  ],
+
+  "_comment_activities": "Each entry can optionally include `label_dir` (\"left\", \"right\", \"above\", \"below\", or \"auto\") to control which side of the icon the text label sits on. Default is \"auto\" which prefers right then left, then above/below. Override per item to resolve cluster overlaps cleanly.",
+  "activities": [
+    { "name": "Sunset Cliffs",          "icon": "coast",    "lat": 32.7191, "lon": -117.2552, "day": 1, "hours": 2,   "label_dir": "left" },
+    { "name": "La Jolla tide pools",    "icon": "coast",    "lat": 32.85,   "lon": -117.273,  "day": 2, "hours": 2,   "label_dir": "left" },
+    { "name": "Gates Pass",             "icon": "mountain", "lat": 32.2272, "lon": -111.1267, "day": 3, "hours": 1,   "label_dir": "left" },
+    { "name": "Desert Museum",          "icon": "museum",   "lat": 32.2415, "lon": -111.1683, "day": 3, "hours": 4,   "label_dir": "below" },
+    { "name": "Signal Hill Petroglyphs","icon": "natural",  "lat": 32.2842, "lon": -111.2079, "day": 3, "hours": 1.5, "label_dir": "left" },
+    { "name": "White Sands NP",         "icon": "park",     "lat": 32.7872, "lon": -106.3257, "day": 5, "hours": 3,   "label_dir": "right" },
+    { "name": "Breaking Bad tour",      "icon": "food",     "lat": 35.1107, "lon": -106.61,   "day": 6, "hours": 3,   "label_dir": "left" },
+    { "name": "Meow Wolf SF",           "icon": "museum",   "lat": 35.6889, "lon": -106.0001, "day": 6, "hours": 3,   "label_dir": "right" },
+    { "name": "Mesa Verde NP",          "icon": "park",     "lat": 37.2308, "lon": -108.4618, "day": 7, "hours": 4,   "label_dir": "left" },
+    { "name": "Telluride",              "icon": "mountain", "lat": 37.9375, "lon": -107.8123, "day": 8, "hours": 3,   "label_dir": "left" },
+    { "name": "Orvis Hot Springs",      "icon": "natural",  "lat": 38.134,  "lon": -107.7717, "day": 8, "hours": 2,   "label_dir": "right" },
+    { "name": "Black Canyon NP",        "icon": "park",     "lat": 38.5919, "lon": -107.709,  "day": 9, "hours": 2,   "label_dir": "left" },
+    { "name": "Crested Butte",          "icon": "mountain", "lat": 38.8697, "lon": -106.9878, "day": 9, "hours": 2,   "label_dir": "right" },
+    { "name": "Meow Wolf Denver",       "icon": "museum",   "lat": 39.7556, "lon": -105.0027, "day": 10, "hours": 3,  "label_dir": "right" },
+    { "name": "Sheldon Museum",         "icon": "museum",   "lat": 40.8201, "lon": -96.7016,  "day": 12, "hours": 1.5,"label_dir": "left" },
+    { "name": "Joslyn Art Museum",      "icon": "museum",   "lat": 41.2616, "lon": -95.9322,  "day": 12, "hours": 2,  "label_dir": "right" }
+  ],
+
+  "passthroughs": [
+    { "name": "Las Cruces",     "lat": 32.3199, "lon": -106.7637 },
+    { "name": "Alamogordo",     "lat": 32.8995, "lon": -105.9603 },
+    { "name": "Albuquerque",    "lat": 35.1107, "lon": -106.61 },
+    { "name": "Pagosa Springs", "lat": 37.2695, "lon": -107.0098 },
+    { "name": "Durango",        "lat": 37.2753, "lon": -107.8801 },
+    { "name": "Ridgway",        "lat": 38.1525, "lon": -107.7548 },
+    { "name": "Gunnison",       "lat": 38.5458, "lon": -106.9253 },
+    { "name": "Lincoln NE",     "lat": 40.8136, "lon": -96.7026 },
+    { "name": "Omaha NE",       "lat": 41.2565, "lon": -95.9345 },
+    { "name": "Chicago",        "lat": 41.85,   "lon": -87.65 },
+    { "name": "Cleveland",      "lat": 41.4993, "lon": -81.6944 }
+  ]
+}

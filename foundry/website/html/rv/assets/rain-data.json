@@ -1,0 +1,275 @@
+{
+  "stops": [
+    {
+      "day": 1,
+      "label": "San Diego (Mission Bay)",
+      "lat": 32.7595,
+      "lon": -117.2528,
+      "early_date": "2026-07-06",
+      "late_date": "2026-07-16",
+      "early_rain": {
+        "wet_day_pct": 0.0,
+        "avg_daily_precip_in": 0.001,
+        "avg_daily_precip_hr": 0.1
+      },
+      "late_rain": {
+        "wet_day_pct": 0.5,
+        "avg_daily_precip_in": 0.004,
+        "avg_daily_precip_hr": 0.11
+      }
+    },
+    {
+      "day": 2,
+      "label": "San Diego (Mission Bay)",
+      "lat": 32.7595,
+      "lon": -117.2528,
+      "early_date": "2026-07-07",
+      "late_date": "2026-07-17",
+      "early_rain": {
+        "wet_day_pct": 0.0,
+        "avg_daily_precip_in": 0.001,
+        "avg_daily_precip_hr": 0.09
+      },
+      "late_rain": {
+        "wet_day_pct": 0.5,
+        "avg_daily_precip_in": 0.004,
+        "avg_daily_precip_hr": 0.13
+      }
+    },
+    {
+      "day": 3,
+      "label": "Tucson (Gilbert Ray)",
+      "lat": 32.2486,
+      "lon": -111.1647,
+      "early_date": "2026-07-08",
+      "late_date": "2026-07-18",
+      "early_rain": {
+        "wet_day_pct": 5.7,
+        "avg_daily_precip_in": 0.029,
+        "avg_daily_precip_hr": 1.04
+      },
+      "late_rain": {
+        "wet_day_pct": 13.3,
+        "avg_daily_precip_in": 0.043,
+        "avg_daily_precip_hr": 1.4
+      }
+    },
+    {
+      "day": 4,
+      "label": "Aguirre Spring BLM",
+      "lat": 32.378,
+      "lon": -106.563,
+      "early_date": "2026-07-09",
+      "late_date": "2026-07-19",
+      "early_rain": {
+        "wet_day_pct": 14.8,
+        "avg_daily_precip_in": 0.068,
+        "avg_daily_precip_hr": 2.08
+      },
+      "late_rain": {
+        "wet_day_pct": 21.4,
+        "avg_daily_precip_in": 0.074,
+        "avg_daily_precip_hr": 2.55
+      }
+    },
+    {
+      "day": 5,
+      "label": "Cloudcroft / Lincoln NF",
+      "lat": 32.9569,
+      "lon": -105.743,
+      "early_date": "2026-07-10",
+      "late_date": "2026-07-20",
+      "early_rain": {
+        "wet_day_pct": 36.7,
+        "avg_daily_precip_in": 0.159,
+        "avg_daily_precip_hr": 4.08
+      },
+      "late_rain": {
+        "wet_day_pct": 49.0,
+        "avg_daily_precip_in": 0.202,
+        "avg_daily_precip_hr": 4.84
+      }
+    },
+    {
+      "day": 6,
+      "label": "Hyde Park Rd / Santa Fe NF",
+      "lat": 35.78,
+      "lon": -105.82,
+      "early_date": "2026-07-11",
+      "late_date": "2026-07-21",
+      "early_rain": {
+        "wet_day_pct": 41.9,
+        "avg_daily_precip_in": 0.152,
+        "avg_daily_precip_hr": 3.94
+      },
+      "late_rain": {
+        "wet_day_pct": 46.2,
+        "avg_daily_precip_in": 0.198,
+        "avg_daily_precip_hr": 4.8
+      }
+    },
+    {
+      "day": 7,
+      "label": "Mancos / San Juan NF",
+      "lat": 37.42,
+      "lon": -108.2,
+      "early_date": "2026-07-12",
+      "late_date": "2026-07-22",
+      "early_rain": {
+        "wet_day_pct": 17.6,
+        "avg_daily_precip_in": 0.056,
+        "avg_daily_precip_hr": 2.21
+      },
+      "late_rain": {
+        "wet_day_pct": 22.4,
+        "avg_daily_precip_in": 0.082,
+        "avg_daily_precip_hr": 2.78
+      }
+    },
+    {
+      "day": 8,
+      "label": "Last Dollar Rd / Uncompahgre NF",
+      "lat": 37.99,
+      "lon": -107.92,
+      "early_date": "2026-07-13",
+      "late_date": "2026-07-23",
+      "early_rain": {
+        "wet_day_pct": 27.1,
+        "avg_daily_precip_in": 0.085,
+        "avg_daily_precip_hr": 3.03
+      },
+      "late_rain": {
+        "wet_day_pct": 38.6,
+        "avg_daily_precip_in": 0.148,
+        "avg_daily_precip_hr": 4.22
+      }
+    },
+    {
+      "day": 9,
+      "label": "Cement Creek Rd / Gunnison NF",
+      "lat": 38.81,
+      "lon": -106.85,
+      "early_date": "2026-07-14",
+      "late_date": "2026-07-24",
+      "early_rain": {
+        "wet_day_pct": 16.7,
+        "avg_daily_precip_in": 0.047,
+        "avg_daily_precip_hr": 2.29
+      },
+      "late_rain": {
+        "wet_day_pct": 24.8,
+        "avg_daily_precip_in": 0.067,
+        "avg_daily_precip_hr": 3.21
+      }
+    },
+    {
+      "day": 10,
+      "label": "Denver (Cherry Creek SP)",
+      "lat": 39.65,
+      "lon": -104.85,
+      "early_date": "2026-07-15",
+      "late_date": "2026-07-25",
+      "early_rain": {
+        "wet_day_pct": 13.3,
+        "avg_daily_precip_in": 0.044,
+        "avg_daily_precip_hr": 1.22
+      },
+      "late_rain": {
+        "wet_day_pct": 11.4,
+        "avg_daily_precip_in": 0.048,
+        "avg_daily_precip_hr": 1.79
+      }
+    },
+    {
+      "day": 11,
+      "label": "Ogallala NE (Lake McConaughy)",
+      "lat": 41.23,
+      "lon": -101.7,
+      "early_date": "2026-07-16",
+      "late_date": "2026-07-26",
+      "early_rain": {
+        "wet_day_pct": 11.4,
+        "avg_daily_precip_in": 0.053,
+        "avg_daily_precip_hr": 1.58
+      },
+      "late_rain": {
+        "wet_day_pct": 21.0,
+        "avg_daily_precip_in": 0.076,
+        "avg_daily_precip_hr": 2.5
+      }
+    },
+    {
+      "day": 12,
+      "label": "Des Moines IA (Walmart)",
+      "lat": 41.6,
+      "lon": -93.6,
+      "early_date": "2026-07-17",
+      "late_date": "2026-07-27",
+      "early_rain": {
+        "wet_day_pct": 23.8,
+        "avg_daily_precip_in": 0.101,
+        "avg_daily_precip_hr": 1.94
+      },
+      "late_rain": {
+        "wet_day_pct": 20.5,
+        "avg_daily_precip_in": 0.104,
+        "avg_daily_precip_hr": 2.04
+      }
+    },
+    {
+      "day": 13,
+      "label": "South Bend IN (Walmart)",
+      "lat": 41.68,
+      "lon": -86.25,
+      "early_date": "2026-07-18",
+      "late_date": "2026-07-28",
+      "early_rain": {
+        "wet_day_pct": 32.9,
+        "avg_daily_precip_in": 0.146,
+        "avg_daily_precip_hr": 3.63
+      },
+      "late_rain": {
+        "wet_day_pct": 22.4,
+        "avg_daily_precip_in": 0.116,
+        "avg_daily_precip_hr": 3.07
+      }
+    },
+    {
+      "day": 14,
+      "label": "Allentown PA (Walmart)",
+      "lat": 40.608,
+      "lon": -75.49,
+      "early_date": "2026-07-19",
+      "late_date": "2026-07-29",
+      "early_rain": {
+        "wet_day_pct": 22.9,
+        "avg_daily_precip_in": 0.107,
+        "avg_daily_precip_hr": 2.84
+      },
+      "late_rain": {
+        "wet_day_pct": 23.8,
+        "avg_daily_precip_in": 0.122,
+        "avg_daily_precip_hr": 3.45
+      }
+    },
+    {
+      "day": 15,
+      "label": "New York, NY (home)",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "early_date": "2026-07-20",
+      "late_date": "2026-07-30",
+      "early_rain": {
+        "wet_day_pct": 28.6,
+        "avg_daily_precip_in": 0.144,
+        "avg_daily_precip_hr": 3.36
+      },
+      "late_rain": {
+        "wet_day_pct": 26.2,
+        "avg_daily_precip_in": 0.125,
+        "avg_daily_precip_hr": 3.55
+      }
+    }
+  ],
+  "source": "Open-Meteo ERA5 archive 1995-2024, \u00b13 day window, wet = >=0.1in"
+}
