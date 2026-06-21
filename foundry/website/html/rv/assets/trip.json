@@ -29,107 +29,121 @@
     }
   },
   "start_dates": {
-    "early": "2026-07-06",
+    "early": "2026-07-05",
     "late": "2026-07-16",
     "meta": {
       "early": {
         "author": "andrew",
         "confidence": "vetted",
         "pinned": true,
-        "note": "user picked Jul 6 explicitly"
+        "note": "user shifted -1 day: Alaska Airlines 11:30 AM Sun 7/5, arrive 2:27 PM (was Mon 7/6)"
       },
       "late": {
         "author": "andrew",
         "confidence": "vetted",
         "pinned": true,
-        "note": "user picked Jul 16 explicitly"
+        "note": "user kept late = 7/16 (only early shifted)"
       }
     }
   },
   "stops": [
     {
       "day": 1,
-      "label": "San Diego (Mission Bay)",
+      "label": "San Diego (Pacific Beach)",
       "short_name": "San Diego",
-      "lat": 32.7595,
-      "lon": -117.2528,
+      "lat": 32.7975,
+      "lon": -117.237,
       "nights": 3,
       "sleep_type": "paid_campground",
       "eyebrow": "Days 1–3 · Fly in, prep, explore SD",
       "heading": "San Diego",
       "facts": [
         {
-          "text": "<strong>Day 1 (7/6 Mon)</strong>",
+          "text": "<strong>Day 1 (7/5 Sun) — Fly in & settle</strong>",
           "kind": "section_header",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Fly in to San Diego",
+          "text": "<strong>Alaska Airlines</strong> — depart 11:30 AM, arrive SAN 2:27 PM",
           "kind": "transit",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Pick up the RV and ready it for the trip",
+          "text": "Pick up the RV near <strong>North Park</strong>, refuel",
           "kind": "reminder",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "<strong>Sunset Cliffs</strong> if there's time",
+          "text": "Drive to <strong>Coronado</strong> for water refill station",
+          "kind": "reminder",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Early dinner at <strong>Musita Abyssinian Bistro</strong> (University Heights) — opens 5 PM Sun. <strong>RV parking:</strong> drive west on Madison Ave, cars get sparser there.",
+          "kind": "food",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "<span class='frog'>🐸</span> <strong>Sunset Cliffs</strong> for sunset (8 PM)",
           "kind": "activity",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Shower at Planet Fitness (9420 Scranton Rd, Kearny Mesa)",
+          "text": "Shower at <strong>Planet Fitness Scranton</strong> (9420 Scranton Rd, Kearny Mesa) — or try the RV's shower",
           "kind": "reminder",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Park somewhere overnight (TBD)",
+          "text": "End up in <strong>Pacific Beach</strong> for the night",
           "kind": "sleep",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "<strong>Day 2 (7/7 Tue)</strong>",
+          "text": "<strong>Day 2 (7/6 Mon) — Tide pools + chill SD day</strong>",
           "kind": "section_header",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "<span class='frog'>🐸</span> Early morning: <strong>La Jolla tide pools</strong> (check low-tide chart)",
+          "text": "<span class='frog'>🐸</span> <strong>La Jolla tide pools</strong> — arrive 7:15 AM to find parking and walk in. <strong>Low tide 0.8 ft at 7:52 AM</strong> — peak pooling.",
           "kind": "activity",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Flexible all-day SD activities (TBD)",
+          "text": "Breakfast / brunch after the tide pools",
+          "kind": "food",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Free day — shopping for trip supplies, Amazon locker pickups, etc.",
           "kind": "activity",
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true
         },
         {
-          "text": "Sunset Cliffs if we didn't catch it Day 1",
-          "kind": "activity",
-          "author": "andrew",
-          "confidence": "vetted",
-          "pinned": true
-        },
-        {
-          "text": "Maybe Shout House (dueling piano bar, Gaslamp Quarter)",
+          "text": "Maybe a <strong>brewery + Shout House</strong> evening — take the train (Coaster/Trolley) so the RV doesn't move",
           "kind": "activity",
           "author": "andrew",
           "confidence": "vetted",
@@ -143,7 +157,7 @@
           "pinned": true
         },
         {
-          "text": "<strong>Day 3 morning (7/8 Wed)</strong>",
+          "text": "<strong>Day 3 morning (7/7 Tue) — Solana Beach send-off</strong>",
           "kind": "section_header",
           "author": "andrew",
           "confidence": "vetted",
@@ -225,9 +239,10 @@
       ],
       "meta": {
         "label": {
-          "author": "claude",
-          "confidence": "researched",
-          "pinned": false
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user: end up in Pacific Beach for the night"
         },
         "short_name": {
           "author": "claude",
@@ -237,18 +252,20 @@
         "lat": {
           "author": "claude",
           "confidence": "researched",
-          "pinned": false
+          "pinned": false,
+          "note": "Pacific Beach approx (was Mission Bay 32.7595)"
         },
         "lon": {
           "author": "claude",
           "confidence": "researched",
-          "pinned": false
+          "pinned": false,
+          "note": "Pacific Beach approx (was Mission Bay -117.2528)"
         },
         "nights": {
           "author": "andrew",
           "confidence": "vetted",
           "pinned": true,
-          "note": "user: 3 SD nights, fly in 7/6, depart partial 7/8"
+          "note": "user: 3 SD nights, fly in 7/5 Sun, depart partial 7/7 Tue"
         },
         "sleep_type": {
           "author": "claude",
@@ -2291,6 +2308,56 @@
     }
   ],
   "activities": [
+    {
+      "name": "Musita Bistro",
+      "icon": "food",
+      "lat": 32.7625,
+      "lon": -117.1369,
+      "day": 1,
+      "hours": 1.5,
+      "label_dir": "right",
+      "meta": {
+        "name": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "Musita Abyssinian Bistro, University Heights — opens 5 PM Sun"
+        },
+        "icon": {
+          "author": "claude",
+          "confidence": "recalled",
+          "pinned": false
+        },
+        "lat": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "University Heights, SD approx"
+        },
+        "lon": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "day": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "hours": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "note": "dinner duration estimate"
+        },
+        "label_dir": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "note": "visual placement on map"
+        }
+      }
+    },
     {
       "name": "Sunset Cliffs",
       "icon": "coast",

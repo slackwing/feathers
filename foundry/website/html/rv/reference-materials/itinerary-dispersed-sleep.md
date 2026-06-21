@@ -1,40 +1,48 @@
 # Dispersed-Sleep Itinerary Review (15 days, San Diego → NYC)
 
-> **⚠️ 2026-06-18 update:** This doc still describes the dispersed-sleep philosophy and reasoning,
-> but the day-by-day structure has shifted. **3 SD nights** (was 2), **Day 4 Gila Bend hotel**
-> (splurge motel night, no dispersed), **Day 5 Willcox Walmart** (Tucson activities during drive-through),
-> Aguirre Spring + Allentown dropped. White Sands now happens Day 6 morning instead of Day 5. The
-> dispersed-sleep run is now Days 6–10 (was Days 5–9). See `itinerary-verified.md` for the current
-> day-by-day plan. Most of the philosophy + sleep-spot rationale below still applies; only the day
-> numbers shifted.
+> **⚠️ 2026-06-20 update:** Early start shifted **−1 day** (Sun Jul 5 instead of Mon Jul 6 — Alaska
+> Airlines 11:30 AM → 2:27 PM arrival). Late start unchanged at Jul 16 (asymmetric: 11-day comparison
+> gap). SD sleep coords moved Mission Bay → Pacific Beach to match where they actually end up Day 1.
+> Day 1 fully specified (Musita Bistro dinner, Coronado water refill, Sunset Cliffs 8 PM sunset).
+> Day 2 fully specified (tide pools 7:15 AM for the 7:52 AM 0.8 ft low tide, shopping + Amazon
+> locker, brewery + Shout House by train so RV doesn't move). See `itinerary-verified.md` for the
+> day-by-day plan.
+>
+> **⚠️ 2026-06-18 update (still applies):** **3 SD nights** (was 2), **Day 4 Gila Bend hotel**
+> (splurge motel night, no dispersed), **Day 5 Willcox Walmart** (Tucson activities during
+> drive-through), Aguirre Spring + Allentown dropped. White Sands now happens Day 6 morning
+> instead of Day 5. The dispersed-sleep run is now Days 6–10 (was Days 5–9). Most of the philosophy
+> + sleep-spot rationale below still applies; only the day numbers shifted.
 
 **Vehicle:** 2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)
-**Dates:** Jul 6–20, 2026 (early) OR Jul 16–30, 2026 (late). Same daily structure.
+**Dates:** Jul 5–19, 2026 (early) OR Jul 16–30, 2026 (late). Same daily structure.
 **Philosophy:** Decouple sleeping from activities. Sleep on free public land, BLM dispersed, or NF dispersed between destinations whenever heat + geography allow. Wake "in the middle of nowhere," drive 1–2 hr to breakfast town, drive another 1–2 hr to the day's main activity, do activity, drive again in the evening to next sleep spot — dinner along the way.
 
 This review walks the trip day by day, names specific sleep spots, calls out where the model breaks (cities, NPs, eastern half), and lays out a water/dump/shower rhythm. Where I name a specific FR or pullout, that's based on regional knowledge — verify on iOverlander/Campendium/FreeCampsites.net before relying on it for a 24ft Sprinter.
 
 ---
 
-## Day 1 — Jul 6 / Jul 16 — Fly into San Diego
+## Day 1 — Sun Jul 5 / Jul 16 — Fly into San Diego
 
-**Sleep:** Mission Bay area, San Diego (32.7595, -117.2528). De Anza Cove (Mission Bay), Campland on the Bay, or street parking near OB/Sunset Cliffs.
+**Sleep:** Pacific Beach area, San Diego (~32.7975, -117.2370). Specific spot TBD (street parking near OB/PB, or Mission Bay campground).
 
-**Morning flow:** They're flying in and picking up the RV. Stock + fuel + dump tanks clean. No real flow needed.
+**Afternoon/evening flow:** Alaska Airlines 11:30 AM → SAN 2:27 PM. Pick up the RV near North Park, refuel. Drive to Coronado for water refill station. Head to **Musita Abyssinian Bistro** in University Heights for early dinner (opens 5 PM Sun — RV parking: drive west on Madison Ave, cars get sparser). Then **Sunset Cliffs** for the 8 PM sunset. Optional shower at Planet Fitness Scranton (9420 Scranton Rd) or try the RV shower. End up in Pacific Beach.
 
-**Philosophy break:** Yes — city night, no public land near the coast. Mission Bay is the right pay-for-it choice.
+**Philosophy break:** Yes — city night, no public land near the coast. Pacific Beach is the right pay-for-it choice.
 
 ---
 
-## Day 2 — Jul 7 / Jul 17 — San Diego (second night)
+## Day 2 — Mon Jul 6 / Jul 17 — San Diego (second night)
 
-**Sleep:** Same Mission Bay area.
+**Sleep:** Same Pacific Beach area.
 
-**Morning flow:** Sunset Cliffs golden hour, La Jolla tide pools at low tide, breweries (Stone, Ballast Point, AleSmith), Tacos Al Gordo. Full SD day.
+**Morning flow:** **La Jolla tide pools** at 7:15 AM (low tide 0.8 ft at 7:52 AM — peak pooling). Breakfast/brunch after.
+
+**Afternoon/evening flow:** Free day. Shopping for trip supplies, Amazon locker pickups. Optional **brewery + Shout House** evening — take the train (Coaster/Trolley) so the RV doesn't have to move.
 
 **Philosophy break:** Same — still a city night, deliberately so.
 
-**Water/dump:** Trip starts here, so tanks should be clean/full from the start. Mission Bay campgrounds offer full hookups.
+**Water/dump:** Trip starts here, so tanks should be clean/full from the start. Mission Bay-area campgrounds offer full hookups.
 
 ---
 
