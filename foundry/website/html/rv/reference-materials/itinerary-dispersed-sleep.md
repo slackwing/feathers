@@ -1,5 +1,11 @@
-# Dispersed-Sleep Itinerary Review (15 days, San Diego → NYC)
+# Dispersed-Sleep Itinerary Review (16 days, San Diego → NYC)
 
+> **⚠️ 2026-06-21 update:** Trip extended to **16 days** (was 15). Revived Allentown PA Walmart as
+> Day 15 to split the long South Bend → NYC drive into 2 days. New Day 16 includes a ~3 hr stop in
+> **Hasbrouck Heights, NJ** to visit Andrew's mom + sister (not sleeping there). Trip end shifts
+> Jul 19 → **Mon Jul 20** (early) / Jul 31 (late). No effect on the dispersed-sleep philosophy
+> stretch (Days 6–10); only the eastern tail changed.
+>
 > **⚠️ 2026-06-20 update:** Early start shifted **−1 day** (Sun Jul 5 instead of Mon Jul 6 — Alaska
 > Airlines 11:30 AM → 2:27 PM arrival). Late start unchanged at Jul 16 (asymmetric: 11-day comparison
 > gap). SD sleep coords moved Mission Bay → Pacific Beach to match where they actually end up Day 1.
@@ -10,12 +16,12 @@
 >
 > **⚠️ 2026-06-18 update (still applies):** **3 SD nights** (was 2), **Day 4 Gila Bend hotel**
 > (splurge motel night, no dispersed), **Day 5 Willcox Walmart** (Tucson activities during
-> drive-through), Aguirre Spring + Allentown dropped. White Sands now happens Day 6 morning
-> instead of Day 5. The dispersed-sleep run is now Days 6–10 (was Days 5–9). Most of the philosophy
-> + sleep-spot rationale below still applies; only the day numbers shifted.
+> drive-through), Aguirre Spring dropped. White Sands now happens Day 6 morning instead of Day 5.
+> The dispersed-sleep run is now Days 6–10 (was Days 5–9). Most of the philosophy + sleep-spot
+> rationale below still applies; only the day numbers shifted.
 
 **Vehicle:** 2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)
-**Dates:** Jul 5–19, 2026 (early) OR Jul 16–30, 2026 (late). Same daily structure.
+**Dates:** Jul 5–20, 2026 (early) OR Jul 16–31, 2026 (late). Same daily structure.
 **Philosophy:** Decouple sleeping from activities. Sleep on free public land, BLM dispersed, or NF dispersed between destinations whenever heat + geography allow. Wake "in the middle of nowhere," drive 1–2 hr to breakfast town, drive another 1–2 hr to the day's main activity, do activity, drive again in the evening to next sleep spot — dinner along the way.
 
 This review walks the trip day by day, names specific sleep spots, calls out where the model breaks (cities, NPs, eastern half), and lays out a water/dump/shower rhythm. Where I name a specific FR or pullout, that's based on regional knowledge — verify on iOverlander/Campendium/FreeCampsites.net before relying on it for a 24ft Sprinter.

@@ -142,13 +142,23 @@
     },
     {
       "day": 15,
+      "label": "Allentown PA (Walmart)",
+      "lat": 40.608,
+      "lon": -75.49,
+      "early_date": "2026-07-19",
+      "late_date": "2026-07-30",
+      "early_normal_low_f": 67.0,
+      "late_normal_low_f": 65.7
+    },
+    {
+      "day": 16,
       "label": "New York, NY (home)",
       "lat": 40.7128,
       "lon": -74.006,
-      "early_date": "2026-07-19",
-      "late_date": "2026-07-30",
-      "early_normal_low_f": 69.7,
-      "late_normal_low_f": 68.6
+      "early_date": "2026-07-20",
+      "late_date": "2026-07-31",
+      "early_normal_low_f": 68.9,
+      "late_normal_low_f": 67.1
     }
   ],
   "start_dates": {

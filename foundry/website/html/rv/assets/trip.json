@@ -1403,14 +1403,14 @@
       }
     },
     {
-      "day": 14,
+      "day": 15,
       "label": "Allentown PA (Walmart)",
       "short_name": "Allentown",
       "lat": 40.608,
       "lon": -75.49,
       "nights": 1,
       "sleep_type": "walmart",
-      "eyebrow": "Day 14 · One more night out",
+      "eyebrow": "Day 15 · One more night out",
       "heading": "Allentown, PA",
       "facts": [
         {
@@ -1428,11 +1428,11 @@
           "pinned": false
         },
         {
-          "text": "Easy 2.5 hr final push to NYC tomorrow morning",
+          "text": "<strong>Day 16 plan:</strong> morning drive to <strong>Hasbrouck Heights, NJ</strong> (~1.5 hr) to see mom + sister for ~3 hr (not sleeping there), then final ~30 min push into NYC",
           "kind": "activity",
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
         }
       ],
       "meta": {
@@ -1457,9 +1457,10 @@
           "pinned": false
         },
         "nights": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user revived Allentown (2026-06-21) to split long South Bend→NYC drive across 2 days"
         },
         "sleep_type": {
           "author": "claude",
@@ -1476,27 +1477,41 @@
           "confidence": "guessed",
           "pinned": false
         }
-      },
-      "dropped_at": "2026-06-18T16:00:00-07:00",
-      "dropped_reason": "user added Day 3 Gila Bend; to stay 15 days, Allentown dropped — final drive becomes South Bend → NYC (one long day)"
+      }
     },
     {
-      "day": 15,
+      "day": 16,
       "label": "New York, NY (home)",
       "short_name": "New York",
       "lat": 40.7128,
       "lon": -74.006,
       "nights": 1,
       "sleep_type": "home",
-      "eyebrow": "🏁 Day 15 · Home",
+      "eyebrow": "🏁 Day 16 · Home",
       "heading": "New York City",
       "facts": [
+        {
+          "text": "16 days · 14 active stops · 3 nights in SD · 1 splurge motel night (Gila Bend) · ~3,400 miles · one hedgehog · one frog · one Sprinter.",
+          "kind": "section_header",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        {
+          "text": "Morning drive Allentown → <strong>Hasbrouck Heights, NJ</strong> for a ~3 hr stop to see mom + sister (not sleeping there). Then final push into NYC.",
+          "kind": "activity",
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
         {
           "text": "15 days · 13 active stops · 3 nights in SD · 1 splurge motel night (Gila Bend) · ~3,400 miles · one hedgehog · one frog · one Sprinter.",
           "kind": "section_header",
           "author": "andrew",
           "confidence": "vetted",
-          "pinned": true
+          "pinned": true,
+          "dropped_at": "2026-06-21T12:00:00-07:00",
+          "dropped_reason": "user added Day 16 + Hasbrouck Heights stop (2026-06-21); trip now 16 days"
         },
         {
           "text": "15 days · 14 stops · 2 nights in SD · ~3,340 miles · 5 nights free public-land dispersed · one hedgehog · one frog · one Sprinter.",
@@ -1508,7 +1523,7 @@
           "dropped_reason": "trip restructure: 3 SD nights, Gila Bend hotel, Willcox, dropped Aguirre + Allentown"
         },
         {
-          "text": "Arrive midday/early afternoon. Unpack. Order delivery. Sleep in a stationary bed.",
+          "text": "Arrive late afternoon. Unpack. Order delivery. Sleep in a stationary bed.",
           "kind": "activity",
           "author": "claude",
           "confidence": "guessed",
@@ -2079,7 +2094,9 @@
           "confidence": "guessed",
           "pinned": false
         }
-      }
+      },
+      "dropped_at": "2026-06-21T12:00:00-07:00",
+      "dropped_reason": "user revived Allentown (2026-06-21); long South Bend→NYC drive split back into 2 days"
     },
     {
       "from_day": 2,
@@ -2217,14 +2234,14 @@
       "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
     },
     {
-      "from_day": 13,
-      "to_day": 14,
+      "from_day": 14,
+      "to_day": 15,
       "from_label": "South Bend",
       "to_label": "Allentown",
       "miles": 470,
-      "hours": 5,
+      "hours": 7.5,
       "route": "I-80 E through OH, mountainous PA",
-      "notes_html": "<strong>Driving day:</strong> South Bend → Allentown PA",
+      "notes_html": "<strong>Day 15 · Driving day:</strong> South Bend → Allentown PA",
       "meta": {
         "from_label": {
           "author": "claude",
@@ -2245,7 +2262,7 @@
           "author": "claude",
           "confidence": "researched",
           "pinned": false,
-          "note": "RV-padded estimate (car time + 10-25%)"
+          "note": "RV-padded estimate for 470 mi through mountainous PA"
         },
         "route": {
           "author": "claude",
@@ -2257,19 +2274,17 @@
           "confidence": "guessed",
           "pinned": false
         }
-      },
-      "dropped_at": "2026-06-18T16:00:00-07:00",
-      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+      }
     },
     {
-      "from_day": 14,
-      "to_day": 15,
+      "from_day": 15,
+      "to_day": 16,
       "from_label": "Allentown",
       "to_label": "New York City",
       "miles": 95,
       "hours": 2.5,
-      "route": "I-78 E into NJ → home",
-      "notes_html": "<strong>Final drive:</strong> Allentown → New York City",
+      "route": "I-78 E into NJ → Hasbrouck Heights stop → I-95 → NYC",
+      "notes_html": "<strong>Day 16 · Final drive:</strong> Allentown → Hasbrouck Heights, NJ (~3 hr visit with mom + sister) → New York City",
       "meta": {
         "from_label": {
           "author": "claude",
@@ -2298,13 +2313,12 @@
           "pinned": false
         },
         "notes_html": {
-          "author": "claude",
-          "confidence": "guessed",
-          "pinned": false
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user added Hasbrouck Heights 3hr stop on Day 16 (2026-06-21)"
         }
-      },
-      "dropped_at": "2026-06-18T16:00:00-07:00",
-      "dropped_reason": "user added Day 3 Gila Bend hotel + Day 4 Willcox Walmart; old SD→Tucson long push split across 2 days"
+      }
     }
   ],
   "activities": [
@@ -3072,6 +3086,56 @@
           "confidence": "researched",
           "pinned": false,
           "note": "visit duration estimate"
+        },
+        "label_dir": {
+          "author": "claude",
+          "confidence": "guessed",
+          "pinned": false,
+          "note": "visual placement on map"
+        }
+      }
+    },
+    {
+      "name": "Hasbrouck Heights (mom + sister)",
+      "icon": "home",
+      "lat": 40.8584,
+      "lon": -74.0762,
+      "day": 16,
+      "hours": 3,
+      "label_dir": "left",
+      "meta": {
+        "name": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user: mom + sister live here; ~3 hr visit, not sleeping"
+        },
+        "icon": {
+          "author": "claude",
+          "confidence": "recalled",
+          "pinned": false
+        },
+        "lat": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false,
+          "note": "Hasbrouck Heights, NJ"
+        },
+        "lon": {
+          "author": "claude",
+          "confidence": "researched",
+          "pinned": false
+        },
+        "day": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true
+        },
+        "hours": {
+          "author": "andrew",
+          "confidence": "vetted",
+          "pinned": true,
+          "note": "user: ~3 hr"
         },
         "label_dir": {
           "author": "claude",

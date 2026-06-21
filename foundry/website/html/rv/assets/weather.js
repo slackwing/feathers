@@ -190,9 +190,9 @@ function svgIcon(kind, cx, cy, size = 14) {
     const absDeltaConv = currentUnit === "C" ? absDeltaF * 5 / 9 : absDeltaF;
     const absDelta = `${absDeltaConv.toFixed(1)}°${currentUnit}`;
     // After consolidating BB+MW (Day 6) and rebalancing midwest to ~5hr days,
-    // the trip is 15 nights. Sleep at elevation tempers heat almost entirely.
+    // the trip is 16 nights. Sleep at elevation tempers heat almost entirely.
     document.getElementById("verdict-text").innerHTML = `
-      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>5 of 15 nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. The 2 hot nights are <strong>Gila Bend (~${fmtT(83, 0)}, splurge motel night) and Willcox (~${fmtT(72, 0)}, Walmart)</strong>. Trip averages: ${fmtT(earlyTempAvg)} (early) vs. ${fmtT(lateTempAvg)} (late), within ${absDelta}.</p>
+      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>5 of 16 nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. The 2 hot nights are <strong>Gila Bend (~${fmtT(83, 0)}, splurge motel night) and Willcox (~${fmtT(72, 0)}, Walmart)</strong>. Trip averages: ${fmtT(earlyTempAvg)} (early) vs. ${fmtT(lateTempAvg)} (late), within ${absDelta}.</p>
       <p><strong>Rain:</strong> Early start (Jul 5) is drier in the first half (${earlyFirstRain}% vs. ${lateFirstRain}% avg wet-day probability across SD → Mancos). The North American Monsoon kicks in around Jul 4–15 and intensifies through August — the early window front-runs it. The spike shows hardest at the high-elevation NM dispersed nights: <strong>Cloudcroft (Day 6) goes 37% → 49%</strong> wet-day probability between the two starts, and Hyde Park (Day 7) goes 42% → 48%. The second half (Denver → NYC) is close (${earlySecondRain}% vs ${lateSecondRain}%).</p>
       <p><strong>Trade-off:</strong> With sleep at elevation, heat stops being a real decider. <strong>Rain is the decisive factor — and rain hits hardest at exactly the days we most want dry weather</strong> (White Sands sledding, Mesa Verde tours, dirt-road dispersed access in CO). Jul 5 still wins. <em>Leaning July 5.</em></p>
     `;

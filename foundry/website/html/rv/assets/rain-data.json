@@ -254,20 +254,38 @@
     },
     {
       "day": 15,
-      "label": "New York, NY (home)",
-      "lat": 40.7128,
-      "lon": -74.006,
+      "label": "Allentown PA (Walmart)",
+      "lat": 40.608,
+      "lon": -75.49,
       "early_date": "2026-07-19",
       "late_date": "2026-07-30",
       "early_rain": {
+        "wet_day_pct": 22.9,
+        "avg_daily_precip_in": 0.107,
+        "avg_daily_precip_hr": 2.84
+      },
+      "late_rain": {
         "wet_day_pct": 24.8,
-        "avg_daily_precip_in": 0.121,
-        "avg_daily_precip_hr": 2.91
+        "avg_daily_precip_in": 0.128,
+        "avg_daily_precip_hr": 3.48
+      }
+    },
+    {
+      "day": 16,
+      "label": "New York, NY (home)",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "early_date": "2026-07-20",
+      "late_date": "2026-07-31",
+      "early_rain": {
+        "wet_day_pct": 28.6,
+        "avg_daily_precip_in": 0.144,
+        "avg_daily_precip_hr": 3.36
       },
       "late_rain": {
         "wet_day_pct": 26.2,
-        "avg_daily_precip_in": 0.125,
-        "avg_daily_precip_hr": 3.55
+        "avg_daily_precip_in": 0.118,
+        "avg_daily_precip_hr": 3.53
       }
     }
   ],

@@ -1,10 +1,15 @@
-# Verified RV Itinerary (15 days, San Diego → NYC)
+# Verified RV Itinerary (16 days, San Diego → NYC)
 
-24ft Sprinter. Two interchangeable start dates: **Jul 5 → Jul 19, 2026** OR **Jul 16 → Jul 30, 2026**. Same route, same daily plan.
+24ft Sprinter. Two interchangeable start dates: **Jul 5 → Jul 20, 2026** OR **Jul 16 → Jul 31, 2026**. Same route, same daily plan.
 
-**Latest restructure (2026-06-20):**
-- Shift early start −1 day: fly Alaska Airlines Sun Jul 5 (was Mon Jul 6). Trip end shifts to Sun Jul 19.
-- Late start unchanged at Jul 16 (asymmetric comparison: 11-day gap now)
+**Latest restructure (2026-06-21):**
+- Added +1 day: revived Allentown PA Walmart as Day 15; NYC arrival is now Day 16 (Mon Jul 20 early / Fri Jul 31 late)
+- Split the long South Bend → NYC drive (9.5 hr) into two days: Day 15 South Bend → Allentown (~7.5 hr), Day 16 Allentown → Hasbrouck Heights NJ (~3 hr stop) → NYC (~30 min)
+- New Day 16 activity: **Hasbrouck Heights, NJ** — ~3 hr visit with mom + sister (not sleeping there)
+
+**Prior restructure (2026-06-20):**
+- Shifted early start −1 day: fly Alaska Airlines Sun Jul 5 (was Mon Jul 6)
+- Late start unchanged at Jul 16 (asymmetric comparison: 11-day gap)
 - SD sleep coords moved Mission Bay → Pacific Beach (where they actually end up Day 1)
 - Day 1 (Sun 7/5): Alaska 11:30 AM → 2:27 PM arrival; RV pickup near North Park, refuel; Coronado water refill; Musita Abyssinian Bistro dinner (University Heights, 5 PM open, park W on Madison Ave); Sunset Cliffs sunset (8 PM); Pacific Beach overnight
 - Day 2 (Mon 7/6): La Jolla tide pools 7:15 AM arrival (low tide 0.8 ft at 7:52 AM); brunch; shopping + Amazon locker; brewery + Shout House by train so RV doesn't move
@@ -30,20 +35,21 @@ Drive times are conservative RV estimates (cars ~15–25% faster). Mountain segm
 | 12 | Ogallala NE (Lake McConaughy SRA) | 41.2300, -101.7000 | 225 | 3.5 | Chiller plains day, lake camping |
 | 13 | Des Moines IA (Walmart) | 41.6000, -93.6000 | 370 | 5.0 | Lincoln AM (Sheldon), Omaha midday (Joslyn), Des Moines PM |
 | 14 | South Bend IN (Walmart) | 41.6800, -86.2500 | 380 | 5.0 | I-80 across IA & IL, skirt Chicago |
-| 15 | New York, NY (home) | 40.7128, -74.0060 | 660 | 9.5 | Long final push direct from South Bend, no Allentown stop |
+| 15 | **Allentown PA (Walmart)** | 40.6080, -75.4900 | 470 | 7.5 | South Bend → Allentown through OH + mountainous PA |
+| 16 | New York, NY (home) | 40.7128, -74.0060 | 95 | 2.5 | Allentown → **Hasbrouck Heights** (~3 hr stop with mom + sister) → NYC |
 
 **Trip totals:**
-- **Total drive distance:** ~3,725 mi
-- **Total drive time:** ~60 hr
-- **Average per day:** ~248 mi, ~4 hr
-- **Days driving:** 12 of 15 (Days 1, 2 zero-drive; Day 3 partial)
-- **Long days (≥6 hr):** 1 (Day 15 South Bend → NYC, 9.5 hr — accepted as the long final day)
+- **Total drive distance:** ~3,350 mi
+- **Total drive time:** ~56.5 hr (across 13 driving days)
+- **Average per day:** ~209 mi, ~3.5 hr
+- **Days driving:** 13 of 16 (Days 1, 2 zero-drive; Day 3 partial)
+- **Long days (≥6 hr):** 1 (Day 15 South Bend → Allentown, 7.5 hr — split out from the previous 9.5 hr single-day final push)
 - **Free public-land nights:** 5 (Days 6, 7, 8, 9, 10)
 - **Cheap public-land nights:** 1 (Day 12 Lake McConaughy $8)
 - **Paid campground nights:** 3 (Days 1, 2, 3 Pacific Beach area; Day 11 Cherry Creek SP)
 - **Splurge motel:** 1 (Day 4 Gila Bend Best Western)
-- **Walmart-style nights:** 3 (Days 5 Willcox, 13 Des Moines, 14 South Bend)
-- **Home:** 1 (Day 15)
+- **Walmart-style nights:** 4 (Days 5 Willcox, 13 Des Moines, 14 South Bend, 15 Allentown)
+- **Home:** 1 (Day 16)
 
 ---
 
@@ -125,29 +131,40 @@ Drive times are conservative RV estimates (cars ~15–25% faster). Mountain segm
 - **Drive:** ~380 mi, ~5 hr via I-80 E, skirt Chicago south.
 - **Activities:** Optional Indiana Dunes leg-stretch.
 
-## Day 14 — Sat Jul 18 / Jul 29 — South Bend (rest day) or push partial PA
+## Day 14 — Sat Jul 18 / Jul 29 — Des Moines → South Bend
 
-- **Sleep:** South Bend Walmart (per current plan — single Walmart night) OR push into PA if energy
-- **Drive:** 0 mi (per current 15-day chain) — the long South Bend → NYC drive is Day 15
-- *(See "Day numbering note" below — the chain as encoded has South Bend on Day 14 and the long final drive on Day 15.)*
+- **Sleep:** South Bend Walmart Supercenter
+- **Drive:** ~380 mi, ~5 hr via I-80 E, skirt Chicago south.
+- *(Listed under Day 13 above — repeated here for clarity since this is also the calendar-Day-14 sleep.)*
 
-## Day 15 — Sun Jul 19 / Jul 30 — South Bend → New York City (Home)
+## Day 15 — Sun Jul 19 / Jul 30 — South Bend → Allentown PA
+
+- **Sleep:** Allentown PA Walmart Supercenter
+- **Drive:** ~470 mi, ~7.5 hr. I-80 E through OH and mountainous PA.
+- **Activities:** Pure transit. Dinner at a Cracker Barrel along I-80 PA. Plan to leave South Bend by ~7 AM to be at Allentown by mid-late afternoon.
+
+## Day 16 — Mon Jul 20 / Jul 31 — Allentown → Hasbrouck Heights → New York City (Home)
 
 - **Sleep:** Home in NYC
-- **Drive:** ~660 mi, ~9.5 hr. I-80 E through OH and PA → I-78 → NYC. Long final day.
-- **Activities:** Pure transit. Unpack at home in the evening.
+- **Drive:** ~95 mi, ~2.5 hr. I-78 E into NJ → Hasbrouck Heights → I-95 → NYC.
+- **Activities:** Morning drive Allentown → **Hasbrouck Heights, NJ** (~1.5 hr) to see Andrew's mom + sister for ~3 hr (not sleeping there). Then final ~30 min push into NYC. Unpack at home in the evening.
 
 ---
 
-## What changed in this restructure (2026-06-20)
+## What changed in this restructure (2026-06-21)
+
+- **+1 day:** revived Allentown PA Walmart (Day 15). Trip is now 16 days.
+- **Hasbrouck Heights, NJ added** as a Day 16 ~3 hr stop with Andrew's mom + sister, not an overnight.
+- **No more 9.5 hr final day:** the South Bend → NYC drive splits into Day 15 (470 mi / 7.5 hr to Allentown) + Day 16 (95 mi / 2.5 hr via Hasbrouck Heights to NYC).
+- **Trip end shifts:** Jul 19 → Mon **Jul 20** (early) / Jul 31 (late).
+
+## What changed in the prior restructure (2026-06-20)
 
 - **Early start shifted −1 day** to Sun Jul 5 (Alaska 11:30 AM flight)
 - **SD coords moved Mission Bay → Pacific Beach** to match where they actually end up
 - **Day 1 fully specified:** Musita Abyssinian Bistro dinner, Coronado water, Sunset Cliffs sunset
 - **Day 2 fully specified:** tide pools at 7:15 AM (low tide 0.8 ft at 7:52 AM), shopping + Amazon locker, brewery + Shout House via train (no RV moving)
 - **Late start kept at Jul 16** — only early window shifted; comparison gap is now 11 days
-
-Net: still 15 nights, end shifted to Sun Jul 19 (was Mon Jul 20).
 
 ## Notes on the new structure
 
@@ -156,4 +173,5 @@ Net: still 15 nights, end shifted to Sun Jul 19 (was Mon Jul 20).
 - **Day 4 Gila Bend** is the only motel on the trip. ~$120/night. Worth it: nightly low averages 83°F outside (≈95°F inside the RV) — that's the trip's worst sleep night by far, and the SD→Tucson alternative is a brutal 7-hour day.
 - **Day 5 is dense:** finish 3.5 hr drive to Tucson, 4-5 hr of activities, then 1 hr push to Willcox. Start early from Gila Bend.
 - **Day 6 still does White Sands** but as a morning stop on the drive Willcox → Cloudcroft. Need to wake at ~6 AM to beat the heat. ~3 hr drive to White Sands.
-- **Day 15 final drive (9.5 hr)** is the trip's longest. Pre-plan fuel and food stops. Plan to leave South Bend by 7 AM to be home by 6 PM.
+- **Day 15 South Bend → Allentown (7.5 hr)** is the longest driving day now. Mountainous PA is slow in the RV. Plan to leave South Bend by 7 AM to be at Allentown by mid-late afternoon.
+- **Day 16 Hasbrouck Heights timing:** Allentown → Hasbrouck Heights is ~1.5 hr. Leave Allentown by ~9 AM, arrive Hasbrouck ~10:30 AM, 3 hr visit, depart ~1:30 PM, NYC by ~2 PM.
