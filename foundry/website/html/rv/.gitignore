@@ -1,0 +1,5 @@
+# Open-Meteo + Google Directions API response cache.
+# Survives locally across runs (instant re-runs), but not in the repo to
+# keep clone size small. Fresh clones will refetch on first run of
+# scripts/compute_everything.py.
+.cache/

@@ -9,6 +9,11 @@
 </head>
 <body>
 
+<div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
+  <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
+  <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+</div>
+
 <header class="hero">
   <div class="hero-photo-wrap">
     <img src="assets/photos/hero-brunch.jpg" alt="Andrew and Abi at brunch" class="hero-photo">
@@ -16,7 +21,7 @@
   <div class="hero-text">
     <p class="kicker">A trip across America</p>
     <h1>Hedgie <span class="amp">&</span> Frogie's<br>RV Adventure</h1>
-    <p class="subtitle">San Diego → New York City · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a></p>
+    <p class="subtitle">San Diego → New York City · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a> · <a href="prep.html" style="color:var(--accent)">prep checklist</a></p>
     <div class="legend">
       <div class="legend-item">
         <img src="assets/photos/abi-avatar.jpg" alt="Abi" class="avatar">
@@ -36,6 +41,17 @@
   </div>
 </header>
 
+<!-- Route Map V2 — separate from weather-page maps. Real-coord projection
+     with pan/zoom. Major destinations as large dots; sleep spots as 🚐
+     emojis at real (lat,lon). See MAP_V2_PLAN.md. -->
+<section class="route-map-v2-section" aria-label="Route map">
+  <div class="route-map-v2-wrap">
+    <div class="route-map-v2-viewport" id="route-map-v2-viewport">
+      <svg class="route-map-v2-svg" id="route-map-v2-svg" preserveAspectRatio="none" role="img" aria-label="Cross-country route with sleep spots"></svg>
+    </div>
+  </div>
+</section>
+
 <main class="trip">
   <!-- Vertical timeline rail (populated by itinerary.js after cards render) -->
   <aside class="timeline" aria-label="Trip timeline">
@@ -50,9 +66,11 @@
 </main>
 
 <footer class="footer">
-  <p>🦔 + 🐸 · Built with love · <a href="weather.html">Weather &amp; rain analysis</a></p>
+  <p>🦔 + 🐸 · Built with love · <a href="weather.html">Weather &amp; rain analysis</a> · <a href="prep.html">Prep checklist</a></p>
 </footer>
 
+<script src="assets/site-unit.js"></script>
 <script src="assets/itinerary.js"></script>
+<script src="assets/map-v2.js"></script>
 </body>
 </html>

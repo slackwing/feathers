@@ -183,6 +183,6 @@
     const heroStart = shortDate(dateForDay(1));
     const heroEnd   = shortDate(dateForDay(lastDay));
     const startYear = dateForDay(1).getFullYear();
-    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear} · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a>`;
+    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear} · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a> · <a href="prep.html" style="color:var(--accent)">prep checklist</a>`;
   }
 })();

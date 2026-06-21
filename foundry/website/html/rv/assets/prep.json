@@ -1,0 +1,45 @@
+{
+  "_comment": "Prep checklist source. `section` groups items (before/during). `depends_on` references another item's `id` and means: this item is greyed out until the parent is checked. Render order is the array order here.",
+  "sections": [
+    { "id": "before",  "title": "Before the trip" },
+    { "id": "during",  "title": "During the trip" }
+  ],
+  "items": [
+    { "id": "figma_board",            "section": "before", "text": "Figma board with preliminary itinerary for launching point!" },
+    { "id": "nick_kat_rv",            "section": "before", "text": "Hang out with Nick and Kat and ask questions about RV!" },
+    { "id": "shortlist_shoes",        "section": "before", "text": "Shortlist Andrew's hiking shoes." },
+    { "id": "order_shoes",            "section": "before", "text": "Decide and order Andrew's hiking shoes.", "depends_on": "shortlist_shoes" },
+    { "id": "try_shoes",              "section": "before", "text": "Try Andrew's hiking shoes.",            "depends_on": "order_shoes" },
+    { "id": "schedule_haircut",       "section": "before", "text": "Schedule haircut with Maho." },
+    { "id": "call_walmart",           "section": "before", "text": "Call a Walmart to see if it's true we can park overnight." },
+    { "id": "call_planet_fitness",    "section": "before", "text": "Call a Planet Fitness to see if it's true we can just come in and shower." },
+    { "id": "ask_nick_victoria",      "section": "before", "text": "Ask Nick & Victoria to look after our cats and plants." },
+    { "id": "buy_abi_backpack",       "section": "before", "text": "Buy Abi's travel backpack." },
+    { "id": "buy_shower_duffel",      "section": "before", "text": "Buy or find sports duffel bag for showers." },
+    { "id": "research_starlink",      "section": "before", "text": "Research how to obtain Starlink and what passing to Nick would be like." },
+    { "id": "move_doctor",            "section": "before", "text": "Move Andrew's doctor's appointment." },
+    { "id": "permission_marlena",     "section": "before", "text": "Get permission for travel dates from Marlena." },
+    { "id": "book_pto",               "section": "before", "text": "Officially book and announce PTO to team and update calendar." },
+    { "id": "pf_black_card",          "section": "before", "text": "Sign up for a PF Black Card membership." },
+    { "id": "national_parks_pass",    "section": "before", "text": "Sign up for national parks pass." },
+    { "id": "renew_abi_passport",     "section": "before", "text": "Renew Abi's passport." },
+    { "id": "clean_under_bed",        "section": "before", "text": "Clean out under bed." },
+    { "id": "find_mujin_grinder",     "section": "before", "text": "Find Mujin grinder.", "depends_on": "clean_under_bed" },
+    { "id": "cat_plant_instructions", "section": "before", "text": "Prepare cat & plant instructions again for Nick & Victoria." },
+    { "id": "read_airhead",           "section": "before", "text": "Read up on Airhead composting toilet instructions." },
+    { "id": "hg_practice_622",        "section": "before", "date": "Mon 6/22", "text": "Haunting Ghosts practice." },
+    { "id": "haircut_maho_627",       "section": "before", "date": "Sat 6/27", "text": "Haircut with Maho." },
+    { "id": "hg_hart_bar_630",        "section": "before", "date": "Tue 6/30", "text": "Haunting Ghosts @ Hart Bar." },
+    { "id": "remind_nick_lot_630",    "section": "before", "date": "Tue 6/30", "text": "Remind Nick to call lot to leave out RV." },
+    { "id": "packed_ready_72",        "section": "before", "date": "Thu 7/2",  "text": "Be packed and ready to go! Order items to Amazon locker!" },
+    { "id": "remind_nick_lot_73",     "section": "before", "date": "Fri 7/3",  "text": "Remind Nick to call lot to leave out RV." },
+    { "id": "dinner_grace_73",        "section": "before", "date": "Fri 7/3",  "text": "Dinner w/ Grace." },
+    { "id": "hg_delancey_73",         "section": "before", "date": "Fri 7/3",  "text": "Haunting Ghosts @ The Delancey." },
+    { "id": "put_out_cat_plant_74",   "section": "before", "date": "Sat 7/4",  "text": "Put out cat & plant instructions." },
+
+    { "id": "pick_up_rv",             "section": "during", "text": "Pick up the RV!" },
+    { "id": "check_pee_cap",          "section": "during", "text": "Check make and model of pee container and try to order a cap." },
+    { "id": "makeshift_pee_cap",      "section": "during", "text": "Make a makeshift cap for pee container.", "depends_on": "check_pee_cap" },
+    { "id": "mesa_verde_tickets",     "section": "during", "text": "Buy Mesa Verde tickets." }
+  ]
+}

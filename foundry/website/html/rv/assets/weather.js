@@ -572,15 +572,8 @@ function svgIcon(kind, cx, cy, size = 14) {
   fillRainTable();
 
   // ===========================================================
-  // UNIT TOGGLE
+  // REACT TO SITE-WIDE UNIT CHANGES (site-unit.js drives the cookie)
   // ===========================================================
-  function applyUnitToButtons() {
-    document.querySelectorAll("#unit-toggle button").forEach((b) => {
-      const active = b.dataset.unit === currentUnit;
-      b.classList.toggle("is-active", active);
-      b.setAttribute("aria-selected", active ? "true" : "false");
-    });
-  }
   function rerenderTempViews() {
     renderVerdict();
     renderStaticTempCaptions();
@@ -588,16 +581,9 @@ function svgIcon(kind, cx, cy, size = 14) {
     renderTempMap();
     fillTempTable();
   }
-  applyUnitToButtons();
-  document.querySelectorAll("#unit-toggle button").forEach((b) => {
-    b.addEventListener("click", () => {
-      const u = b.dataset.unit;
-      if (u === currentUnit) return;
-      currentUnit = u;
-      writeUnitCookie(u);
-      applyUnitToButtons();
-      rerenderTempViews();
-    });
+  window.addEventListener("rv:unit-change", (e) => {
+    currentUnit = e.detail.unit;
+    rerenderTempViews();
   });
 
   // ===========================================================

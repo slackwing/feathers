@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prep checklist — Hedgie & Frogie's RV Adventure</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.prep-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+@media (min-width: 760px) {
+  .prep-page { padding: 56px 32px 100px; }
+}
+.prep-page h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  margin: 0 0 6px;
+}
+.prep-page .lede {
+  color: var(--ink-soft);
+  margin: 0 0 32px;
+}
+.prep-section {
+  margin-bottom: 40px;
+}
+.prep-section h2 {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  margin: 0 0 12px;
+  color: var(--ink);
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 6px;
+}
+.prep-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.prep-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.prep-item:hover { background: rgba(0,0,0,0.025); }
+.prep-item input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.prep-item input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.prep-dep-arrow {
+  flex: 0 0 auto;
+  width: 14px;
+  margin-top: 1px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1;
+  user-select: none;
+  /* The arrow ↳ visually points from above to the right at the text. */
+}
+.prep-item.is-dependent.is-locked .prep-dep-arrow {
+  opacity: 0.5;
+}
+.prep-date {
+  display: inline-block;
+  background: var(--bg-warm);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 8px;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.prep-text {
+  flex: 1 1 auto;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.prep-item.is-locked .prep-text,
+.prep-item.is-locked .prep-date {
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+.prep-item.is-done .prep-text {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+.prep-back {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.prep-back:hover { text-decoration: underline; }
+.prep-progress {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
+  <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
+  <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+</div>
+
+<div class="prep-page">
+  <a class="prep-back" href="index.html">← Back to itinerary</a>
+  <h1>Prep checklist</h1>
+  <p class="lede">A flat list of everything to wrap up before (and during) the trip. Progress saves locally to this browser.</p>
+  <p class="prep-progress" id="prep-progress">Loading…</p>
+
+  <div id="prep-root"></div>
+</div>
+
+<footer class="footer">
+  <p>🦔 + 🐸 · <a href="index.html">Back to itinerary</a></p>
+</footer>
+
+<script src="assets/site-unit.js"></script>
+<script src="assets/prep.js"></script>
+</body>
+</html>

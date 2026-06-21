@@ -1,0 +1,348 @@
+{
+  "_comment": "Hand-edited source file for the V2 map. Edit this; run scripts/build_map.py; the script writes assets/map.json. See MAP_V2_MECHANICS.md for the data model.",
+  "version": 2,
+
+  "locations": [
+    {
+      "id": "san_diego",
+      "kind": "major",
+      "name": "San Diego",
+      "lat": 32.7157,
+      "lon": -117.1611
+    },
+    {
+      "id": "yuma",
+      "kind": "minor",
+      "name": "Yuma",
+      "lat": 32.6927,
+      "lon": -114.6277
+    },
+    {
+      "id": "gila_bend",
+      "kind": "minor",
+      "name": "Gila Bend",
+      "lat": 32.9478,
+      "lon": -112.7166
+    },
+    {
+      "id": "gila_bend_hotel",
+      "kind": "sleep",
+      "name": "Best Western Space Age Lodge (Gila Bend)",
+      "lat": 32.9478,
+      "lon": -112.7166,
+      "sleep_type": "hotel"
+    },
+    {
+      "id": "tucson",
+      "kind": "major",
+      "name": "Tucson",
+      "lat": 32.2226,
+      "lon": -110.9747
+    },
+    {
+      "id": "willcox_walmart",
+      "kind": "sleep",
+      "name": "Willcox Walmart",
+      "lat": 32.2526,
+      "lon": -109.8323,
+      "sleep_type": "walmart"
+    },
+    {
+      "id": "lordsburg",
+      "kind": "minor",
+      "name": "Lordsburg",
+      "lat": 32.3506,
+      "lon": -108.7087
+    },
+    {
+      "id": "las_cruces",
+      "kind": "minor",
+      "name": "Las Cruces",
+      "lat": 32.3199,
+      "lon": -106.7637
+    },
+    {
+      "id": "white_sands",
+      "kind": "major",
+      "name": "White Sands NP",
+      "lat": 32.3829,
+      "lon": -106.4836,
+      "_note": "Coords are White Sands NP visitor center on US-70 (was 32.7872, -106.3257 = deep inside dunes, no road)"
+    },
+    {
+      "id": "alamogordo",
+      "kind": "minor",
+      "name": "Alamogordo",
+      "lat": 32.8995,
+      "lon": -105.9603
+    },
+    {
+      "id": "cloudcroft",
+      "kind": "sleep",
+      "name": "Cloudcroft / Lincoln NF",
+      "lat": 32.9569,
+      "lon": -105.7430,
+      "sleep_type": "free_dispersed"
+    },
+    {
+      "id": "albuquerque",
+      "kind": "major",
+      "name": "Albuquerque",
+      "lat": 35.0844,
+      "lon": -106.6504
+    },
+    {
+      "id": "santa_fe",
+      "kind": "major",
+      "name": "Santa Fe",
+      "lat": 35.6870,
+      "lon": -105.9378
+    },
+    {
+      "id": "hyde_park",
+      "kind": "sleep",
+      "name": "Hyde Park Rd (Santa Fe NF)",
+      "lat": 35.7800,
+      "lon": -105.8200,
+      "sleep_type": "free_dispersed"
+    },
+    {
+      "id": "pagosa_springs",
+      "kind": "minor",
+      "name": "Pagosa Springs",
+      "lat": 37.2695,
+      "lon": -107.0098
+    },
+    {
+      "id": "durango",
+      "kind": "minor",
+      "name": "Durango",
+      "lat": 37.2753,
+      "lon": -107.8801
+    },
+    {
+      "id": "mesa_verde",
+      "kind": "major",
+      "name": "Mesa Verde NP",
+      "lat": 37.2308,
+      "lon": -108.4618
+    },
+    {
+      "id": "mancos_nf",
+      "kind": "sleep",
+      "name": "Mancos / San Juan NF",
+      "lat": 37.4200,
+      "lon": -108.2000,
+      "sleep_type": "free_dispersed"
+    },
+    {
+      "id": "telluride",
+      "kind": "major",
+      "name": "Telluride",
+      "lat": 37.9375,
+      "lon": -107.8123
+    },
+    {
+      "id": "last_dollar",
+      "kind": "sleep",
+      "name": "Last Dollar Rd",
+      "lat": 37.9900,
+      "lon": -107.9200,
+      "sleep_type": "free_dispersed"
+    },
+    {
+      "id": "ridgway",
+      "kind": "minor",
+      "name": "Ridgway",
+      "lat": 38.1525,
+      "lon": -107.7548
+    },
+    {
+      "id": "black_canyon",
+      "kind": "major",
+      "name": "Black Canyon",
+      "lat": 38.5919,
+      "lon": -107.7090
+    },
+    {
+      "id": "crested_butte",
+      "kind": "major",
+      "name": "Crested Butte",
+      "lat": 38.8697,
+      "lon": -106.9878
+    },
+    {
+      "id": "cement_creek",
+      "kind": "sleep",
+      "name": "Cement Creek Rd",
+      "lat": 38.8100,
+      "lon": -106.8500,
+      "sleep_type": "free_dispersed"
+    },
+    {
+      "id": "gunnison",
+      "kind": "minor",
+      "name": "Gunnison",
+      "lat": 38.5458,
+      "lon": -106.9253
+    },
+    {
+      "id": "denver",
+      "kind": "major",
+      "name": "Denver",
+      "lat": 39.7392,
+      "lon": -104.9903
+    },
+    {
+      "id": "cherry_creek_sp",
+      "kind": "sleep",
+      "name": "Cherry Creek SP",
+      "lat": 39.6500,
+      "lon": -104.8500,
+      "sleep_type": "paid_campground"
+    },
+    {
+      "id": "ogallala",
+      "kind": "minor",
+      "name": "Ogallala NE",
+      "lat": 41.1281,
+      "lon": -101.7196
+    },
+    {
+      "id": "lake_mcconaughy",
+      "kind": "sleep",
+      "name": "Lake McConaughy",
+      "lat": 41.2300,
+      "lon": -101.7000,
+      "sleep_type": "cheap_public_land"
+    },
+    {
+      "id": "lincoln",
+      "kind": "major",
+      "name": "Lincoln",
+      "lat": 40.8136,
+      "lon": -96.7026
+    },
+    {
+      "id": "omaha",
+      "kind": "major",
+      "name": "Omaha",
+      "lat": 41.2565,
+      "lon": -95.9345
+    },
+    {
+      "id": "des_moines",
+      "kind": "minor",
+      "name": "Des Moines",
+      "lat": 41.5868,
+      "lon": -93.6250
+    },
+    {
+      "id": "des_moines_walmart",
+      "kind": "sleep",
+      "name": "Des Moines Walmart",
+      "lat": 41.6000,
+      "lon": -93.6000,
+      "sleep_type": "walmart"
+    },
+    {
+      "id": "chicago",
+      "kind": "major",
+      "name": "Chicago",
+      "lat": 41.8781,
+      "lon": -87.6298
+    },
+    {
+      "id": "south_bend",
+      "kind": "minor",
+      "name": "South Bend",
+      "lat": 41.6764,
+      "lon": -86.2520
+    },
+    {
+      "id": "south_bend_walmart",
+      "kind": "sleep",
+      "name": "South Bend Walmart",
+      "lat": 41.6800,
+      "lon": -86.2500,
+      "sleep_type": "walmart"
+    },
+    {
+      "id": "cleveland",
+      "kind": "major",
+      "name": "Cleveland",
+      "lat": 41.4993,
+      "lon": -81.6944
+    },
+    {
+      "id": "allentown",
+      "kind": "minor",
+      "name": "Allentown",
+      "lat": 40.6084,
+      "lon": -75.4902
+    },
+    {
+      "id": "allentown_walmart",
+      "kind": "sleep",
+      "name": "Allentown Walmart",
+      "lat": 40.6080,
+      "lon": -75.4900,
+      "sleep_type": "walmart"
+    },
+    {
+      "id": "new_york",
+      "kind": "major",
+      "name": "New York City",
+      "lat": 40.7128,
+      "lon": -74.0060
+    }
+  ],
+
+  "_comment_route": "Ordered list of location ids that define the main route line. Off-route sleeps and far-off minors are NOT in this list — they get junctions inserted by build_map.py. On-route minors (within 5 mi of the line, like Yuma) ARE in this list.",
+  "route": [
+    "san_diego",
+    "yuma",
+    "gila_bend",
+    "tucson",
+    "lordsburg",
+    "las_cruces",
+    "white_sands",
+    "alamogordo",
+    "albuquerque",
+    "santa_fe",
+    "pagosa_springs",
+    "durango",
+    "mesa_verde",
+    "telluride",
+    "ridgway",
+    "black_canyon",
+    "gunnison",
+    "denver",
+    "ogallala",
+    "lincoln",
+    "omaha",
+    "des_moines",
+    "chicago",
+    "south_bend",
+    "cleveland",
+    "allentown",
+    "new_york"
+  ],
+
+  "_comment_off_route": "Locations that are NOT in route[] but exist in locations[]. The build script will compute their nearest point on the main route line and emit junctions for those > 5 mi off. (sleep spots are always off-route conceptually; far-off minors like Crested Butte and Gila Bend hotel also live here.)",
+  "off_route": [
+    "gila_bend_hotel",
+    "willcox_walmart",
+    "cloudcroft",
+    "hyde_park",
+    "mancos_nf",
+    "last_dollar",
+    "crested_butte",
+    "cement_creek",
+    "cherry_creek_sp",
+    "lake_mcconaughy",
+    "des_moines_walmart",
+    "south_bend_walmart",
+    "allentown_walmart"
+  ]
+}
