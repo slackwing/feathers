@@ -52,9 +52,21 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 - **Cross-platform smoothness is critical.** The site must work well on iOS (Abi's iPhone + iPad), Android (Andrew's phone), and desktop (Andrew's laptop). Favor well-established, cross-compatible web technologies and design patterns over anything experimental or device-specific.
 - **Helper pages** are okay alongside the main itinerary page — e.g., RV maintenance notes.
 
-## In-progress planning
+## Current state (as of 2026-06-21)
 
-See `PLAN.md` in this directory for the evolving build plan.
+- **index.html** — main itinerary page. Renders day-by-day cards from
+  `assets/trip.json` (via `assets/itinerary.js`), plus the V2 route map
+  (via `assets/map-v2.js`, reading `assets/map.json`).
+- **prep.html** — pre-trip checklist with dependency arrows + localStorage.
+  Reads `assets/prep.json`, runs `assets/prep.js`.
+- **assets/site-unit.js** — site-wide °C/°F toggle, fixed top-right of every
+  page, cookie-backed.
+- **scripts/compute_everything.py** — single pipeline that reads
+  `assets/map-sources.json` + `assets/trip.json`, calls Google Directions
+  + Open-Meteo (cached in gitignored `.cache/`), writes `assets/map.json`.
+  Run when locations/routes change.
+- **assets/META.md** — provenance schema for `trip.json`.
+- **MAP_V2_MECHANICS.md** — data model for the V2 route map.
 
 ## Publishing
 

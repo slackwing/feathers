@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Unified data pipeline: directions + weather for the RV trip.
+"""Unified data pipeline: directions + weather for the RV trip's V2 route map.
 
 Reads:
 - assets/map-sources.json (locations + route + off_route)
-- assets/trip.json        (for sleep-spot dates)
+- assets/trip.json        (for trip start_date + total_days; sleep dates
+                           are predicted by route position fraction)
 
 Writes:
 - assets/map.json           (locations + junctions + route + segments;
-                             sleep locations get `night_temp_f` embedded)
-- assets/weather-data.json  (per-stop nightly low for weather.html)
-- assets/rain-data.json     (per-stop wet-day pct for weather.html)
+                             sleep locations get `night_temp_f` embedded,
+                             majors get `wet_day_pct` embedded)
 
-Content-addressed cache lives in .cache/ (checked into the repo).
-Each API call's key is sha1 of its inputs. Re-runs only hit APIs for
-new or changed inputs.
+Content-addressed cache lives in .cache/ (gitignored). Each API call's
+key is sha1 of its inputs. Re-runs only hit APIs for new or changed
+inputs. Fresh clones rebuild the cache on first run.
 
 Reads Google Maps key from ~/.config/rv-trip/google-maps-key.
 
@@ -39,8 +39,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCES = REPO_ROOT / "assets" / "map-sources.json"
 TRIP = REPO_ROOT / "assets" / "trip.json"
 MAP_OUT = REPO_ROOT / "assets" / "map.json"
-WEATHER_OUT = REPO_ROOT / "assets" / "weather-data.json"
-RAIN_OUT = REPO_ROOT / "assets" / "rain-data.json"
 
 CACHE_DIR = REPO_ROOT / ".cache"
 DIRECTIONS_CACHE = CACHE_DIR / "directions"
@@ -484,82 +482,6 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
 
 
 # ============================================================
-# Build weather-data.json + rain-data.json (for weather.html)
-# ============================================================
-
-def build_weather_and_rain(trip, force):
-    """Per-night nightly low + rain stats at each trip.json sleep stop.
-    Identical output shape to the legacy fetch_weather.py / fetch_rain.py
-    so weather.html keeps working."""
-    start = date.fromisoformat(trip["start_dates"]["early"])
-    expanded = []
-    day = 1
-    for stop in trip["stops"]:
-        if stop.get("dropped_at"):
-            continue
-        for _ in range(stop["nights"]):
-            expanded.append({
-                "day": day,
-                "label": stop["label"],
-                "lat": stop["lat"],
-                "lon": stop["lon"],
-            })
-            day += 1
-
-    unique = {}
-    for s in expanded:
-        unique.setdefault((s["lat"], s["lon"]), s["label"])
-
-    n_hits, n_misses = 0, 0
-    archives = {}
-    for (lat, lon), label in unique.items():
-        archive, hit = get_openmeteo_archive(lat, lon, force)
-        archives[(lat, lon)] = archive
-        if hit:
-            n_hits += 1
-        else:
-            n_misses += 1
-
-    weather_stops = []
-    rain_stops = []
-    for s in expanded:
-        d = start + timedelta(days=s["day"] - 1)
-        archive = archives[(s["lat"], s["lon"])]
-        low = climate_normal_low(archive, d)
-        rain = rain_stats(archive, d)
-        weather_stops.append({
-            "day": s["day"],
-            "label": s["label"],
-            "lat": s["lat"],
-            "lon": s["lon"],
-            "date": d.isoformat(),
-            "normal_low_f": low,
-        })
-        rain_stops.append({
-            "day": s["day"],
-            "label": s["label"],
-            "lat": s["lat"],
-            "lon": s["lon"],
-            "date": d.isoformat(),
-            "rain": rain,
-        })
-
-    print(f"\n[WEATHER for trip nights] cache: {n_hits} hits, {n_misses} new fetches", file=sys.stderr)
-
-    weather_out = {
-        "stops": weather_stops,
-        "start_date": start.isoformat(),
-        "source": "Open-Meteo ERA5 archive 1995-2024 (30-year average of daily min temp)",
-    }
-    rain_out = {
-        "stops": rain_stops,
-        "start_date": start.isoformat(),
-        "source": "Open-Meteo ERA5 archive 1995-2024, ±3 day window, wet = >=0.1in",
-    }
-    return weather_out, rain_out
-
-
-# ============================================================
 # Main
 # ============================================================
 
@@ -578,16 +500,8 @@ def main():
     print(f"Trip: {start} + {total_days} days", file=sys.stderr)
 
     map_out = build_map(sources, key, args.force, start, total_days)
-    weather_out, rain_out = build_weather_and_rain(trip, args.force)
-
     MAP_OUT.write_text(json.dumps(map_out, indent=2))
-    WEATHER_OUT.write_text(json.dumps(weather_out, indent=2))
-    RAIN_OUT.write_text(json.dumps(rain_out, indent=2))
-
-    print(f"\nWrote:", file=sys.stderr)
-    print(f"  {MAP_OUT}", file=sys.stderr)
-    print(f"  {WEATHER_OUT}", file=sys.stderr)
-    print(f"  {RAIN_OUT}", file=sys.stderr)
+    print(f"\nWrote {MAP_OUT}", file=sys.stderr)
 
 
 if __name__ == "__main__":

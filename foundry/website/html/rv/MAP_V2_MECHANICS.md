@@ -181,8 +181,8 @@ The junction layer makes the graph uniform.
 
 ## Build process
 
-When we add/edit/remove a location, a Python script (TBD:
-`scripts/build_map.py`) does:
+When we add/edit/remove a location, `scripts/compute_everything.py`
+does:
 
 1. For each off-route location (any location where straight-line
    distance to nearest main-route point > 5 mi), compute the nearest

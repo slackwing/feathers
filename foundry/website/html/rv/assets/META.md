@@ -30,7 +30,7 @@ When the user shifts the plan and existing facts/fields no longer apply, set
 `trip.json` but is filtered out by:
 
 - The renderer (`itinerary.js`) — dropped facts don't render
-- The data scripts (`fetch_weather.py`, `fetch_rain.py`) — dropped stops/drives are skipped
+- The data script (`compute_everything.py`) — dropped stops are skipped when computing trip total days
 - The audit script (`audit_provenance.py`) — dropped items are hidden by default; surfaced with `--include-dropped`
 
 **To revive a dropped item:** delete the `dropped_at` and `dropped_reason` keys.

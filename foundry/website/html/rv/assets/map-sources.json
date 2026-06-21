@@ -1,5 +1,5 @@
 {
-  "_comment": "Hand-edited source file for the V2 map. Edit this; run scripts/build_map.py; the script writes assets/map.json. See MAP_V2_MECHANICS.md for the data model.",
+  "_comment": "Hand-edited source file for the V2 map. Edit this; run scripts/compute_everything.py; the script writes assets/map.json. See MAP_V2_MECHANICS.md for the data model.",
   "version": 2,
 
   "locations": [
@@ -298,7 +298,7 @@
     }
   ],
 
-  "_comment_route": "Ordered list of location ids that define the main route line. Off-route sleeps and far-off minors are NOT in this list — they get junctions inserted by build_map.py. On-route minors (within 5 mi of the line, like Yuma) ARE in this list.",
+  "_comment_route": "Ordered list of location ids that define the main route line. Off-route sleeps and far-off minors are NOT in this list — they get junctions inserted by compute_everything.py. On-route minors (within 5 mi of the line, like Yuma) ARE in this list.",
   "route": [
     "san_diego",
     "yuma",
