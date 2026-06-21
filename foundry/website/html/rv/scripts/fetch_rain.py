@@ -121,25 +121,22 @@ def main():
     out_stops = []
     for s in expanded:
         offset = s["day"] - 1
-        early_d = start_dates["early"] + timedelta(days=offset)
-        late_d  = start_dates["late"]  + timedelta(days=offset)
+        d = start_dates["early"] + timedelta(days=offset)
         arch = archives[(s["lat"], s["lon"])]
-        e = rain_stats(arch, early_d)
-        l = rain_stats(arch, late_d)
-        print(f"  Day {s['day']} {s['label']}: early={e} late={l}", file=sys.stderr)
+        rain = rain_stats(arch, d)
+        print(f"  Day {s['day']} {s['label']}: {rain}", file=sys.stderr)
         out_stops.append({
             "day": s["day"],
             "label": s["label"],
             "lat": s["lat"],
             "lon": s["lon"],
-            "early_date": early_d.isoformat(),
-            "late_date":  late_d.isoformat(),
-            "early_rain": e,
-            "late_rain":  l,
+            "date": d.isoformat(),
+            "rain": rain,
         })
 
     OUT_JSON.write_text(json.dumps({
         "stops": out_stops,
+        "start_date": start_dates["early"].isoformat(),
         "source": "Open-Meteo ERA5 archive 1995-2024, ±3 day window, wet = >=0.1in",
     }, indent=2))
     print(f"\nWrote {OUT_JSON}", file=sys.stderr)

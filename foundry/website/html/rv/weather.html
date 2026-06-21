@@ -45,8 +45,6 @@ table.weather-table th, table.weather-table td { padding: 8px 10px; text-align: 
 table.weather-table th { background: var(--bg); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
 table.weather-table th.num { text-align: right; }
 table.weather-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-table.weather-table .cooler-late, table.weather-table .drier-late { color: var(--accent); font-weight: 600; }
-table.weather-table .cooler-early, table.weather-table .drier-early { color: var(--accent-warm); font-weight: 600; }
 
 .caveats {
   background: var(--bg-warm);
@@ -61,33 +59,6 @@ table.weather-table .cooler-early, table.weather-table .drier-early { color: var
 .caveats li { padding: 3px 0; }
 
 .map-stop { font: 600 11px var(--font-sans); fill: var(--ink); }
-
-.map-tabs {
-  display: inline-flex;
-  background: var(--bg);
-  border-radius: 999px;
-  padding: 4px;
-  margin: 12px 0 18px;
-  gap: 4px;
-}
-.map-tab {
-  border: none;
-  background: transparent;
-  font: inherit;
-  font-size: 0.88rem;
-  color: var(--ink-soft);
-  padding: 6px 14px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.18s, color 0.18s;
-}
-.map-tab:hover { color: var(--ink); }
-.map-tab.is-active {
-  background: var(--card);
-  color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
 
 .section-divider {
   font-family: var(--font-serif);
@@ -135,7 +106,7 @@ table.weather-table .cooler-early, table.weather-table .drier-early { color: var
 <div class="weather-page">
   <a class="back-link" href="index.html">← Back to itinerary</a>
   <h1>How cool will the nights be? Will it rain?</h1>
-  <p class="lede">Comparing two possible start dates — fly in <strong>July 5</strong> vs. <strong>July 16</strong> — using 30-year averages at each night's <em>actual sleep location</em> (BLM/NF dispersed where geography allows). Both trips: 16 days, 3 SD nights, 1 Gila Bend hotel splurge, identical day-by-day plan, end in NYC. 🌙 sleep dots show climate-normal overnight lows; activity icons + grey pass-through labels round out the route.</p>
+  <p class="lede">Fly in <strong>Sunday, July 5</strong>. 30-year averages at each night's <em>actual sleep location</em> (BLM/NF dispersed where geography allows). 16 days, 3 SD nights, 1 Gila Bend hotel splurge, end in NYC. 🌙 sleep dots show climate-normal overnight lows; activity icons + grey pass-through labels round out the route.</p>
 
   <div class="unit-toggle-row">
     <div class="unit-toggle" id="unit-toggle" role="tablist" aria-label="Temperature unit">
@@ -154,10 +125,9 @@ table.weather-table .cooler-early, table.weather-table .drier-early { color: var
   <div class="chart-wrap">
     <h2>Night-by-night overnight lows</h2>
     <p class="sub">Climate normal (1995–2024 average) of the daily minimum temperature at each night's sleep location.</p>
-    <svg class="chart" id="chart" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart comparing nightly overnight lows for the two start dates"></svg>
+    <svg class="chart" id="chart" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of nightly overnight lows"></svg>
     <div class="legend-row">
-      <span><span class="swatch" style="background:#2f8a6e"></span>July 16 start (late)</span>
-      <span><span class="swatch" style="background:#d97b3a"></span>July 5 start (early)</span>
+      <span><span class="swatch" style="background:#d97b3a"></span>Climate-normal overnight low</span>
       <span><span class="swatch" style="background:#c9dfd2"></span><span id="comfort-band-label">Comfortable sleep band (55–68°F outside)</span></span>
     </div>
     <p class="sub" id="rv-warmer-note" style="margin-top:14px;">⚠️ <strong>Inside the RV runs 10–20°F warmer</strong> than outside lows for the first half of the night — so a 70°F outside reading often means a sticky 80°F+ inside, especially after a day baking in the sun. Mitigations: park in shade, use the roof vent / Fantastic Fan, reflectix the windshield, sleep at elevation when you can.</p>
@@ -166,24 +136,18 @@ table.weather-table .cooler-early, table.weather-table .drier-early { color: var
   <div class="map-wrap">
     <h2>Route — sleep moons (with temp), activity icons, pass-throughs</h2>
     <p class="sub" style="margin: 0 0 0;">🌙 sleep dots show temperature (cool blue → warm orange). Hover any sleep dot or icon for details and date. Drive hours noted on each segment.</p>
-    <div class="map-tabs" id="temp-tabs" role="tablist" aria-label="Temperature start date">
-      <button class="map-tab is-active" data-which="early" data-mode="temp" role="tab" aria-selected="true">July 5 start</button>
-      <button class="map-tab" data-which="late" data-mode="temp" role="tab" aria-selected="false">July 16 start</button>
-    </div>
     <svg class="map" id="temp-map" viewBox="0 0 900 1520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Map of trip stops colored by overnight low temperature"></svg>
   </div>
 
   <div class="chart-wrap">
     <h2>Temperature — the numbers</h2>
-    <p class="sub">Difference column = late start minus early start. Negative = late start has cooler nights at that stop.</p>
+    <p class="sub">Climate-normal overnight low at each sleep stop.</p>
     <table class="weather-table" id="temp-table">
       <thead>
         <tr>
           <th class="num">Day</th>
           <th>Where you sleep</th>
-          <th class="num">Early low</th>
-          <th class="num">Late low</th>
-          <th class="num">Δ</th>
+          <th class="num">Normal low</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -195,35 +159,28 @@ table.weather-table .cooler-early, table.weather-table .drier-early { color: var
   <div class="chart-wrap">
     <h2>Likelihood of a rainy day at each stop</h2>
     <p class="sub">% of historical days (within ±3 days of the calendar date) that received ≥0.1 inch of rain. Same 1995–2024 ERA5 archive.</p>
-    <svg class="chart" id="rain-chart" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart comparing rain probability for both start dates"></svg>
+    <svg class="chart" id="rain-chart" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of rain probability"></svg>
     <div class="legend-row">
-      <span><span class="swatch" style="background:#2f8a6e"></span>July 16 start</span>
-      <span><span class="swatch" style="background:#d97b3a"></span>July 5 start</span>
+      <span><span class="swatch" style="background:#d97b3a"></span>Wet-day probability</span>
     </div>
-    <p class="sub" style="margin-top:14px;">📍 <strong>Monsoon context:</strong> The North American Monsoon kicks in across the Southwest typically between Jul 4–15, intensifying through August. The early-July window front-runs it; mid-July sits inside it. Rain in monsoon country is short, intense afternoon thunderstorms (3–6pm) — not all-day drizzle. But White Sands dune drives, Mesa Verde tours, and dirt-road dispersed camping can all be affected.</p>
+    <p class="sub" style="margin-top:14px;">📍 <strong>Monsoon context:</strong> The North American Monsoon kicks in across the Southwest typically between Jul 4–15, intensifying through August. The Jul 5 start front-runs it. Rain in monsoon country is short, intense afternoon thunderstorms (3–6pm) — not all-day drizzle. But White Sands dune drives, Mesa Verde tours, and dirt-road dispersed camping can all be affected.</p>
   </div>
 
   <div class="map-wrap">
     <h2>Route — sleep moons (with rain), activity icons, pass-throughs</h2>
     <p class="sub" style="margin: 0 0 0;">Sleep dots show wet-day probability (light → dark blue). Hover for details.</p>
-    <div class="map-tabs" id="rain-tabs" role="tablist" aria-label="Rain start date">
-      <button class="map-tab is-active" data-which="early" data-mode="rain" role="tab" aria-selected="true">July 5 start</button>
-      <button class="map-tab" data-which="late" data-mode="rain" role="tab" aria-selected="false">July 16 start</button>
-    </div>
     <svg class="map" id="rain-map" viewBox="0 0 900 1520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Map of trip stops colored by rain probability"></svg>
   </div>
 
   <div class="chart-wrap">
     <h2>Rain — the numbers</h2>
-    <p class="sub">Difference column = late start minus early start. Negative = late start is drier at that stop.</p>
+    <p class="sub">Wet-day probability at each sleep stop.</p>
     <table class="weather-table" id="rain-table">
       <thead>
         <tr>
           <th class="num">Day</th>
           <th>Where you sleep</th>
-          <th class="num">Early wet-day %</th>
-          <th class="num">Late wet-day %</th>
-          <th class="num">Δ</th>
+          <th class="num">Wet-day %</th>
         </tr>
       </thead>
       <tbody></tbody>

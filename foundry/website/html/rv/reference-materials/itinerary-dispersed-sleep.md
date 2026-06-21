@@ -21,14 +21,14 @@
 > rationale below still applies; only the day numbers shifted.
 
 **Vehicle:** 2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)
-**Dates:** Jul 5–20, 2026 (early) OR Jul 16–31, 2026 (late). Same daily structure.
+**Dates:** Sun Jul 5 → Mon Jul 20, 2026 (cemented).
 **Philosophy:** Decouple sleeping from activities. Sleep on free public land, BLM dispersed, or NF dispersed between destinations whenever heat + geography allow. Wake "in the middle of nowhere," drive 1–2 hr to breakfast town, drive another 1–2 hr to the day's main activity, do activity, drive again in the evening to next sleep spot — dinner along the way.
 
 This review walks the trip day by day, names specific sleep spots, calls out where the model breaks (cities, NPs, eastern half), and lays out a water/dump/shower rhythm. Where I name a specific FR or pullout, that's based on regional knowledge — verify on iOverlander/Campendium/FreeCampsites.net before relying on it for a 24ft Sprinter.
 
 ---
 
-## Day 1 — Sun Jul 5 / Jul 16 — Fly into San Diego
+## Day 1 — Sun Jul 5 — Fly into San Diego
 
 **Sleep:** Pacific Beach area, San Diego (~32.7975, -117.2370). Specific spot TBD (street parking near OB/PB, or Mission Bay campground).
 
@@ -38,7 +38,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 2 — Mon Jul 6 / Jul 17 — San Diego (second night)
+## Day 2 — Mon Jul 6 — San Diego (second night)
 
 **Sleep:** Same Pacific Beach area.
 
@@ -52,7 +52,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 3 — Jul 8 / Jul 18 — SD → Tucson
+## Day 3 — Jul 8 — SD → Tucson
 
 **Sleep:** Gilbert Ray Campground, Tucson Mountain Park (32.2486, -111.1647). $20/night, ~3,000 ft, shaded sites.
 
@@ -66,7 +66,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 4 — Jul 9 / Jul 19 — Tucson AM → Aguirre Spring BLM
+## Day 4 — Jul 9 — Tucson AM → Aguirre Spring BLM
 
 **Sleep:** Aguirre Spring Campground (32.378, -106.563). BLM, $7/night, 5,700 ft, east side of the Organ Mountains. Dramatic sunset/dawn views of the dunes from the pass.
 
@@ -82,7 +82,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 5 — Jul 10 / Jul 20 — White Sands AM → Cloudcroft NF
+## Day 5 — Jul 10 — White Sands AM → Cloudcroft NF
 
 **Sleep:** Cloudcroft / Lincoln National Forest dispersed off NM-130 (32.9569, -105.743). 8,600 ft, pine forest, free. Specific area: **Sleepygrass Campground vicinity / FR 24** has well-documented dispersed sites.
 
@@ -96,7 +96,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 6 — Jul 11 / Jul 21 — Cloudcroft → ABQ + Santa Fe (consolidated) → Hyde Park Rd
+## Day 6 — Jul 11 — Cloudcroft → ABQ + Santa Fe (consolidated) → Hyde Park Rd
 
 **Sleep:** Hyde Park Road / Santa Fe National Forest dispersed (~35.78, -105.82). Climbs from city to ~10,000 ft over 16 miles on NM-475. Dispersed allowed along FRs branching off. Cool, pine forest, stargazing.
 
@@ -114,7 +114,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 7 — Jul 12 / Jul 22 — Hyde Park → Mancos (Mesa Verde)
+## Day 7 — Jul 12 — Hyde Park → Mancos (Mesa Verde)
 
 **Sleep:** San Juan National Forest dispersed near Mancos along **FR 561** and the Transfer Park area (~37.42, -108.20). Pine forest, accessible to a Sprinter on dry forest road.
 
@@ -130,7 +130,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 8 — Jul 13 / Jul 23 — Mancos → Telluride/Ridgway → Last Dollar Rd
+## Day 8 — Jul 13 — Mancos → Telluride/Ridgway → Last Dollar Rd
 
 **Sleep:** **Last Dollar Road (FR 638)** between Telluride and Ridgway (~37.99, -107.92). High-elevation Uncompahgre NF dispersed with epic views of the Sneffels Range. **Lower 3 miles are accessible to a 2WD Sprinter on dry gravel; upper sections need 4WD.** Verify recent road condition — washboards after rains.
 
@@ -146,7 +146,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 9 — Jul 14 / Jul 24 — Last Dollar → Black Canyon → Crested Butte → Cement Creek
+## Day 9 — Jul 14 — Last Dollar → Black Canyon → Crested Butte → Cement Creek
 
 **Sleep:** **Cement Creek Road FR 740 dispersed** (Gunnison NF, ~2-6 miles up from CO-135 north of Gunnison, ~38.81, -106.85). Pine forest, creek-side sites, well-established. Confirmed Sprinter-friendly.
 
@@ -160,7 +160,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 10 — Jul 15 / Jul 25 — Cement Creek → Denver
+## Day 10 — Jul 15 — Cement Creek → Denver
 
 **Sleep:** **Cherry Creek State Park** ($41/night, full hookups). Close-in to Denver, easy in/out for Meow Wolf + friends-dinner.
 
@@ -174,7 +174,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 11 — Jul 16 / Jul 26 — Denver → Ogallala (Lake McConaughy)
+## Day 11 — Jul 16 — Denver → Ogallala (Lake McConaughy)
 
 **Sleep:** **Lake McConaughy State Recreation Area** (~41.23, -101.74). Nebraska state recreation area, ~$8/night beach camping on the reservoir. RV-friendly. This is a notable upgrade from a Walmart night — they're actually camping near water.
 
@@ -188,7 +188,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 12 — Jul 17 / Jul 27 — Ogallala → Lincoln → Omaha → Des Moines
+## Day 12 — Jul 17 — Ogallala → Lincoln → Omaha → Des Moines
 
 **Sleep:** **Des Moines Walmart Supercenter** or Cabela's. BLM is long gone east of the Front Range; Walmart is the philosophy translated to the plains.
 
@@ -204,7 +204,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 13 — Jul 18 / Jul 28 — Des Moines → South Bend
+## Day 13 — Jul 18 — Des Moines → South Bend
 
 **Sleep:** **South Bend Walmart Supercenter** in Indiana. Solid, RV-friendly, on the I-80 corridor.
 
@@ -220,7 +220,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 14 — Jul 19 / Jul 29 — South Bend → Allentown PA
+## Day 14 — Jul 19 — South Bend → Allentown PA
 
 **Sleep:** **Allentown PA Walmart Supercenter**. Last night out before home.
 
@@ -232,7 +232,7 @@ This review walks the trip day by day, names specific sleep spots, calls out whe
 
 ---
 
-## Day 15 — Jul 20 / Jul 30 — Allentown → NYC (home)
+## Day 15 — Jul 20 — Allentown → NYC (home)
 
 **Sleep:** Home (40.7128, -74.0060).
 
@@ -302,5 +302,5 @@ That's roughly every 3-5 days, with the Cherry Creek hookup at the mid-trip pivo
 ### Final notes
 
 - **5 straight nights of free public-land dispersed sleeping** (Days 5–9, Cloudcroft → Hyde Park → Mancos → Last Dollar → Cement Creek) is the dream stretch. The elevation drops sleep temps 10–15°F vs. nearby town stays.
-- **July monsoon caveat:** The high-elevation NM stops (Cloudcroft, Hyde Park) hit 40-50% wet-day probability on the late start. Dirt-road dispersed access can degrade after storms. Have a backup paid option in pocket (Santa Fe Skies, Boot Hill RV).
-- **The dream stretch (Days 5-9) is also why the early Jul 6 start matters most** — those are exactly the days where 6% vs 13% wet-day probability hits hardest. Drier early-July = better access to the spots we're paying $0 for.
+- **July monsoon caveat:** The high-elevation NM stops (Cloudcroft, Hyde Park) hit ~37–42% wet-day probability even with the Jul 5 head start. Dirt-road dispersed access can degrade after storms. Have a backup paid option in pocket (Santa Fe Skies, Boot Hill RV).
+- **The dream stretch (Days 5-9) is also why the Jul 5 start matters** — those are exactly the days where the early window's drier monsoon profile pays off, giving better access to the dirt-road dispersed spots we're paying $0 for.

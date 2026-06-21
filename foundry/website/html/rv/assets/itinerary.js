@@ -15,10 +15,7 @@
     return;
   }
 
-  // Pick which date to display in eyebrows/data-date.
-  // Default to the "leaning" date set; show both dates if they differ.
-  const leaning = trip.trip.leaning || "early";
-  const startDates = trip.start_dates; // {early, late}
+  const startDate = trip.start_dates.early;
 
   // Expand stops: each entry covers one or more nights at the same coord.
   // For display, we keep ONE card per stop entry (multi-night collapses).
@@ -42,14 +39,13 @@
   );
 
   // ---- date helpers ----
-  function dateForDay(dayNum, which) {
+  function dateForDay(dayNum) {
     // dayNum is 1-indexed; offset 0 = start date
-    const start = new Date(startDates[which] + "T00:00:00");
+    const start = new Date(startDate + "T00:00:00");
     start.setDate(start.getDate() + (dayNum - 1));
     return start;
   }
   function shortDate(d) {
-    // "Jul 6"
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   function dateRange(startD, endD) {
@@ -60,14 +56,9 @@
   // ---- render helpers ----
   function renderStopCard(entry) {
     const { stop, startDay, endDay } = entry;
-    const earlyStart = dateForDay(startDay, "early");
-    const earlyEnd   = dateForDay(endDay, "early");
-    const earlyRange = dateRange(earlyStart, earlyEnd);
-
-    // data-date attribute uses leaning's range for the timeline rail
-    const railStart = dateForDay(startDay, leaning);
-    const railEnd   = dateForDay(endDay, leaning);
-    const railRange = dateRange(railStart, railEnd);
+    const dateStart = dateForDay(startDay);
+    const dateEnd   = dateForDay(endDay);
+    const railRange = dateRange(dateStart, dateEnd);
 
     const dayLabel = stop.nights > 1
       ? `Days ${startDay}–${endDay}`
@@ -89,7 +80,7 @@
     return `
     <section class="${sectionClass}" id="day-${startDay}" data-label="${escapeAttr(stop.short_name || stop.label)}" data-date="${railRange}">
       <div class="stop-header">
-        <p class="stop-eyebrow">${stop.eyebrow ? stop.eyebrow : `${dayLabel} · ${earlyRange}`}</p>
+        <p class="stop-eyebrow">${stop.eyebrow ? stop.eyebrow : `${dayLabel} · ${railRange}`}</p>
         <h2>${stop.heading || stop.short_name || stop.label}</h2>
       </div>
       <div class="stop-card">
@@ -122,10 +113,7 @@
   }
 
   function renderDriveCard(drive) {
-    const earlyDate = dateForDay(drive.to_day, "early");
-    const railDate  = dateForDay(drive.to_day, leaning);
-    const earlyRange = shortDate(earlyDate);
-    const railRange  = shortDate(railDate);
+    const railRange = shortDate(dateForDay(drive.to_day));
     return `
     <section class="drive" data-label="→ ${escapeAttr(drive.to_label)}" data-date="${railRange}">
       <div class="drive-inner">
@@ -192,10 +180,9 @@
   const subtitle = document.querySelector(".hero-text .subtitle");
   if (subtitle) {
     const lastDay = expanded[expanded.length - 1].endDay;
-    const heroStart = shortDate(dateForDay(1, leaning));
-    const heroEnd   = shortDate(dateForDay(lastDay, leaning));
-    const startYear = dateForDay(1, leaning).getFullYear();
-    const leanText = leaning === "early" ? " (leaning early)" : " (leaning late)";
-    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear}${leanText} · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a>`;
+    const heroStart = shortDate(dateForDay(1));
+    const heroEnd   = shortDate(dateForDay(lastDay));
+    const startYear = dateForDay(1).getFullYear();
+    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear} · <a href="weather.html" style="color:var(--accent)">weather &amp; rain analysis</a>`;
   }
 })();

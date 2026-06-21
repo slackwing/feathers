@@ -108,26 +108,22 @@ def main():
     out_stops = []
     for s in expanded:
         offset = s["day"] - 1
-        early_d = start_dates["early"] + timedelta(days=offset)
-        late_d  = start_dates["late"]  + timedelta(days=offset)
+        d = start_dates["early"] + timedelta(days=offset)
         arch = archives[(s["lat"], s["lon"])]
-        e_low = climate_normal_for(arch, early_d)
-        l_low = climate_normal_for(arch, late_d)
-        print(f"  Day {s['day']} {s['label']}: early({early_d})={e_low}°F late({late_d})={l_low}°F", file=sys.stderr)
+        low = climate_normal_for(arch, d)
+        print(f"  Day {s['day']} {s['label']}: ({d})={low}°F", file=sys.stderr)
         out_stops.append({
             "day": s["day"],
             "label": s["label"],
             "lat": s["lat"],
             "lon": s["lon"],
-            "early_date": early_d.isoformat(),
-            "late_date":  late_d.isoformat(),
-            "early_normal_low_f": e_low,
-            "late_normal_low_f":  l_low,
+            "date": d.isoformat(),
+            "normal_low_f": low,
         })
 
     OUT_JSON.write_text(json.dumps({
         "stops": out_stops,
-        "start_dates": {k: v for k, v in trip["start_dates"].items() if k != "meta"},
+        "start_date": start_dates["early"].isoformat(),
         "source": "Open-Meteo ERA5 archive 1995-2024 (30-year average of daily min temp)",
     }, indent=2))
     print(f"\nWrote {OUT_JSON}", file=sys.stderr)

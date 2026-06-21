@@ -4,7 +4,6 @@
     "title": "Hedgie & Frogie's RV Adventure",
     "subtitle_html": "San Diego → New York City",
     "vehicle": "2018 Mercedes Benz Sprinter 2500 Extended (24ft × 7.7ft)",
-    "leaning": "early",
     "meta": {
       "title": {
         "author": "claude",
@@ -20,29 +19,17 @@
         "author": "andrew",
         "confidence": "vetted",
         "pinned": true
-      },
-      "leaning": {
-        "author": "andrew",
-        "confidence": "vetted",
-        "pinned": true
       }
     }
   },
   "start_dates": {
     "early": "2026-07-05",
-    "late": "2026-07-16",
     "meta": {
       "early": {
         "author": "andrew",
         "confidence": "vetted",
         "pinned": true,
-        "note": "user shifted -1 day: Alaska Airlines 11:30 AM Sun 7/5, arrive 2:27 PM (was Mon 7/6)"
-      },
-      "late": {
-        "author": "andrew",
-        "confidence": "vetted",
-        "pinned": true,
-        "note": "user kept late = 7/16 (only early shifted)"
+        "note": "user cemented Jul 5 (2026-06-21); removed late=Jul 16 comparison"
       }
     }
   },

@@ -1,7 +1,7 @@
 // ============================================================
-// Weather + rain comparison
-// Renders: line charts (temp, rain), tabbed route maps with sleep moons +
-// activity icons + passthrough labels, data tables, combined verdict.
+// Weather + rain (single-window: Jul 5 cemented)
+// Renders: line charts (temp, rain), route maps with sleep moons +
+// activity icons + passthrough labels, data tables, verdict.
 // ============================================================
 
 // ---------- Unit handling ----------
@@ -20,11 +20,6 @@ function convT(f) { return currentUnit === "C" ? fToC(f) : Number(f); }
 function fmtT(f, digits = 1) {
   return `${convT(f).toFixed(digits)}°${currentUnit}`;
 }
-function fmtTDelta(f, digits = 1) {
-  const v = currentUnit === "C" ? Number(f) * 5 / 9 : Number(f);
-  const sign = v > 0 ? "+" : "";
-  return `${sign}${v.toFixed(digits)}°${currentUnit}`;
-}
 function fmtTRange(fLow, fHigh, digits = 0) {
   return `${convT(fLow).toFixed(digits)}–${convT(fHigh).toFixed(digits)}°${currentUnit}`;
 }
@@ -34,10 +29,6 @@ function fmtTDeltaRange(fLow, fHigh, digits = 0) {
   return `${lo.toFixed(digits)}–${hi.toFixed(digits)}°${currentUnit}`;
 }
 
-// DRIVE_HOURS is derived from trip.json at runtime. See buildDriveHours() below.
-// Length will be (totalNights - 1). Zero-hour entries represent same-coord
-// transitions between consecutive nights at a multi-night stop.
-
 function shortName(name) {
   return name
     .replace(/, [A-Z]{2}.*$/, "")
@@ -45,7 +36,6 @@ function shortName(name) {
     .replace(/Gunnison\//, "");
 }
 
-// HTML/SVG attribute escaping for tooltip strings.
 function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -53,32 +43,11 @@ function escapeText(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Inline SVG icons. Each is a path/group designed to render at a given (cx, cy)
-// at scale ~14px. Returned strings are <g> blocks that should be appended to
-// the map SVG. Color comes via stroke="currentColor" with the parent setting
-// fill/stroke on the wrapper.
 function svgIcon(kind, cx, cy, size = 14) {
   const r = size / 2;
   switch (kind) {
     case "moon":
-      // Classic crescent built as a single closed path with two arcs.
-      // The path traces:
-      //   1. Up the outer arc (left side of the moon) from bottom to top.
-      //   2. Down the inner arc (right side) from top back to bottom.
-      // Both arcs share their endpoints (top and bottom of the crescent),
-      // producing one continuous outline. One stroke, no artifacts.
-      //
-      // Geometry: outer arc has radius r centered at (0, 0); inner arc has
-      // radius ir (smaller than r — bigger ir = thinner crescent). The two
-      // arcs meet at (0, -r) and (0, r). We use sweep flags to make outer
-      // bulge left and inner bulge left less (so the crescent opens right).
       {
-        // Crescent opening RIGHT, built via evenodd fill rule:
-        //   - outer subpath: full circle radius r at origin (drawn as two arcs)
-        //   - inner subpath: full circle radius ir, offset to the right by ox
-        // Evenodd fills only the region inside outer-but-outside-inner — the
-        // moon's lit area. Visually verified at r=20, ir=16, ox=8: produces
-        // a clean fat crescent with no artifacts.
         const ir = r * 0.8;
         const ox = r * 0.4;
         return `<g transform="translate(${cx} ${cy})"><path fill-rule="evenodd" d="M 0 ${-r} A ${r} ${r} 0 1 0 0 ${r} A ${r} ${r} 0 1 0 0 ${-r} Z M ${ox} ${-ir} A ${ir} ${ir} 0 1 0 ${ox} ${ir} A ${ir} ${ir} 0 1 0 ${ox} ${-ir} Z" fill="__FILL__" stroke="white" stroke-width="1.5"/></g>`;
@@ -86,19 +55,14 @@ function svgIcon(kind, cx, cy, size = 14) {
     case "mountain":
       return `<g transform="translate(${cx} ${cy})"><path d="M ${-r} ${r * 0.55} L ${-r * 0.25} ${-r * 0.5} L ${r * 0.15} ${r * 0.05} L ${r * 0.45} ${-r * 0.85} L ${r} ${r * 0.55} Z" fill="#6b8478" stroke="white" stroke-width="0.8"/></g>`;
     case "park":
-      // pine-tree silhouette
       return `<g transform="translate(${cx} ${cy})"><path d="M 0 ${-r} L ${-r * 0.55} ${-r * 0.1} L ${-r * 0.3} ${-r * 0.1} L ${-r * 0.7} ${r * 0.45} L ${-r * 0.4} ${r * 0.45} L ${-r * 0.4} ${r * 0.8} L ${r * 0.4} ${r * 0.8} L ${r * 0.4} ${r * 0.45} L ${r * 0.7} ${r * 0.45} L ${r * 0.3} ${-r * 0.1} L ${r * 0.55} ${-r * 0.1} Z" fill="#2f8a6e" stroke="white" stroke-width="0.6"/></g>`;
     case "museum":
-      // Greek column silhouette
       return `<g transform="translate(${cx} ${cy})"><rect x="${-r * 0.9}" y="${-r}" width="${r * 1.8}" height="${r * 0.18}" fill="#7a6a4f" stroke="white" stroke-width="0.5"/><path d="M ${-r * 0.85} ${-r * 0.75} L ${r * 0.85} ${-r * 0.75} L ${r * 0.65} ${-r * 0.82} L ${-r * 0.65} ${-r * 0.82} Z" fill="#7a6a4f" stroke="white" stroke-width="0.5"/><rect x="${-r * 0.7}" y="${-r * 0.7}" width="${r * 0.18}" height="${r * 1.4}" fill="#7a6a4f"/><rect x="${-r * 0.1}" y="${-r * 0.7}" width="${r * 0.18}" height="${r * 1.4}" fill="#7a6a4f"/><rect x="${r * 0.5}" y="${-r * 0.7}" width="${r * 0.18}" height="${r * 1.4}" fill="#7a6a4f"/><rect x="${-r}" y="${r * 0.7}" width="${r * 2}" height="${r * 0.25}" fill="#7a6a4f" stroke="white" stroke-width="0.5"/></g>`;
     case "natural":
-      // hot spring / water drop
       return `<g transform="translate(${cx} ${cy})"><path d="M 0 ${-r} C ${r * 0.7} ${-r * 0.2} ${r * 0.7} ${r * 0.55} 0 ${r * 0.85} C ${-r * 0.7} ${r * 0.55} ${-r * 0.7} ${-r * 0.2} 0 ${-r} Z" fill="#4a7fa0" stroke="white" stroke-width="0.8"/></g>`;
     case "food":
-      // chef hat / dining
       return `<g transform="translate(${cx} ${cy})"><path d="M ${-r * 0.65} ${r * 0.2} A ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.05} ${-r * 0.6} A ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.65} ${r * 0.2} Z" fill="#d97b3a" stroke="white" stroke-width="0.7"/><rect x="${-r * 0.65}" y="${r * 0.2}" width="${r * 1.3}" height="${r * 0.45}" fill="#d97b3a" stroke="white" stroke-width="0.7"/></g>`;
     case "coast":
-      // wave
       return `<g transform="translate(${cx} ${cy})"><path d="M ${-r} ${r * 0.2} Q ${-r * 0.5} ${-r * 0.45} 0 ${r * 0.2} Q ${r * 0.5} ${r * 0.85} ${r} ${r * 0.2}" stroke="#4a7fa0" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M ${-r} ${r * 0.65} Q ${-r * 0.5} 0 0 ${r * 0.65} Q ${r * 0.5} ${r * 1.3} ${r} ${r * 0.65}" stroke="#4a7fa0" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/></g>`;
     case "home":
       return `<g transform="translate(${cx} ${cy})"><path d="M 0 ${-r} L ${r} 0 L ${r * 0.7} 0 L ${r * 0.7} ${r * 0.8} L ${-r * 0.7} ${r * 0.8} L ${-r * 0.7} 0 L ${-r} 0 Z" fill="#d97b3a" stroke="white" stroke-width="0.7"/></g>`;
@@ -121,16 +85,12 @@ function svgIcon(kind, cx, cy, size = 14) {
 
   const N = stops.length;
 
-  // Build DRIVE_HOURS array: length N-1, indexed by transition from day i to i+1.
-  // Same-coord consecutive nights (multi-night stops) get 0; real transitions
-  // pull from trip.drives keyed by from_day → to_day. Skip dropped drives.
   const drivesByFrom = new Map(
     trip.drives.filter(d => !d.dropped_at).map(d => [d.from_day, d])
   );
   const DRIVE_HOURS = [];
   for (let i = 0; i < stops.length - 1; i++) {
     const fromDay = stops[i].day;
-    const toDay   = stops[i + 1].day;
     if (stops[i].lat === stops[i + 1].lat && stops[i].lon === stops[i + 1].lon) {
       DRIVE_HOURS.push(0);
     } else {
@@ -139,16 +99,10 @@ function svgIcon(kind, cx, cy, size = 14) {
     }
   }
 
-  // Build `places` array from trip activities + passthroughs (shape compatible
-  // with the old places.json structure that the map renderer expects).
-  // Spread the whole entry so per-stop optional fields like `hours` and
-  // `label_dir` flow through. Skip dropped items.
   const places = [
     ...trip.activities.filter(a => !a.dropped_at).map(a => ({
       ...a,
       type: "activity",
-      early_day: a.day,
-      late_day: a.day,
     })),
     ...trip.passthroughs.filter(p => !p.dropped_at).map(p => ({
       ...p,
@@ -157,44 +111,36 @@ function svgIcon(kind, cx, cy, size = 14) {
   ];
 
   // ---------- VERDICT ----------
-  let earlyTotal = 0, lateTotal = 0;
-  let earlyHotNights = 0, lateHotNights = 0;
+  let total = 0;
+  let coldNights = 0;
+  let hotNights = 0;
   stops.forEach((s) => {
-    earlyTotal += s.early_normal_low_f;
-    lateTotal  += s.late_normal_low_f;
-    if (s.early_normal_low_f > 70) earlyHotNights++;
-    if (s.late_normal_low_f  > 70) lateHotNights++;
+    total += s.normal_low_f;
+    if (s.normal_low_f < 55) coldNights++;
+    if (s.normal_low_f > 70) hotNights++;
   });
-  const earlyTempAvg = (earlyTotal / N).toFixed(1);
-  const lateTempAvg  = (lateTotal  / N).toFixed(1);
-  const tempDelta = (lateTempAvg - earlyTempAvg).toFixed(1);
+  const tempAvg = (total / N).toFixed(1);
 
-  // Rain first/second half split (first half = stops 1-8, second = 9-N)
-  let efr = 0, lfr = 0, esr = 0, lsr = 0, fhc = 0, shc = 0;
+  // First half = stops 1-8 (SD → Mancos), second = 9-N (Telluride → NYC)
+  let firstRainSum = 0, secondRainSum = 0, fhc = 0, shc = 0;
   stops.forEach((s, i) => {
     const r = rainByDay.get(s.day);
     if (!r) return;
-    if (i < 8) {
-      efr += r.early_rain.wet_day_pct; lfr += r.late_rain.wet_day_pct; fhc++;
-    } else {
-      esr += r.early_rain.wet_day_pct; lsr += r.late_rain.wet_day_pct; shc++;
-    }
+    if (i < 8) { firstRainSum += r.rain.wet_day_pct; fhc++; }
+    else       { secondRainSum += r.rain.wet_day_pct; shc++; }
   });
-  const earlyFirstRain = (efr / fhc).toFixed(1);
-  const lateFirstRain  = (lfr / fhc).toFixed(1);
-  const earlySecondRain = (esr / shc).toFixed(1);
-  const lateSecondRain  = (lsr / shc).toFixed(1);
+  const firstRainAvg  = (firstRainSum  / fhc).toFixed(1);
+  const secondRainAvg = (secondRainSum / shc).toFixed(1);
 
   function renderVerdict() {
-    const absDeltaF = Math.abs(parseFloat(tempDelta));
-    const absDeltaConv = currentUnit === "C" ? absDeltaF * 5 / 9 : absDeltaF;
-    const absDelta = `${absDeltaConv.toFixed(1)}°${currentUnit}`;
-    // After consolidating BB+MW (Day 6) and rebalancing midwest to ~5hr days,
-    // the trip is 16 nights. Sleep at elevation tempers heat almost entirely.
+    const cloudcroftDay = stops.find(s => s.label.startsWith("Cloudcroft"));
+    const hydeDay = stops.find(s => s.label.startsWith("Hyde Park"));
+    const cloudcroftRain = cloudcroftDay ? rainByDay.get(cloudcroftDay.day).rain.wet_day_pct.toFixed(0) : "?";
+    const hydeRain = hydeDay ? rainByDay.get(hydeDay.day).rain.wet_day_pct.toFixed(0) : "?";
     document.getElementById("verdict-text").innerHTML = `
-      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>5 of 16 nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. The 2 hot nights are <strong>Gila Bend (~${fmtT(83, 0)}, splurge motel night) and Willcox (~${fmtT(72, 0)}, Walmart)</strong>. Trip averages: ${fmtT(earlyTempAvg)} (early) vs. ${fmtT(lateTempAvg)} (late), within ${absDelta}.</p>
-      <p><strong>Rain:</strong> Early start (Jul 5) is drier in the first half (${earlyFirstRain}% vs. ${lateFirstRain}% avg wet-day probability across SD → Mancos). The North American Monsoon kicks in around Jul 4–15 and intensifies through August — the early window front-runs it. The spike shows hardest at the high-elevation NM dispersed nights: <strong>Cloudcroft (Day 6) goes 37% → 49%</strong> wet-day probability between the two starts, and Hyde Park (Day 7) goes 42% → 48%. The second half (Denver → NYC) is close (${earlySecondRain}% vs ${lateSecondRain}%).</p>
-      <p><strong>Trade-off:</strong> With sleep at elevation, heat stops being a real decider. <strong>Rain is the decisive factor — and rain hits hardest at exactly the days we most want dry weather</strong> (White Sands sledding, Mesa Verde tours, dirt-road dispersed access in CO). Jul 5 still wins. <em>Leaning July 5.</em></p>
+      <p><strong>Heat:</strong> Sleep at elevation (Cloudcroft, Hyde Park, Mancos NF, Last Dollar Rd, Cement Creek) makes heat almost a non-issue — <strong>${coldNights} of ${N} nights drop below ${fmtT(55, 0)}</strong>, with Cement Creek averaging ${fmtT(40, 0)}. The hot nights are <strong>Gila Bend (~${fmtT(83, 0)}, splurge motel night) and Willcox (~${fmtT(72, 0)}, Walmart)</strong>. Trip average: ${fmtT(tempAvg)}.</p>
+      <p><strong>Rain:</strong> The early-July window front-runs the North American Monsoon (which intensifies Jul 4–15 through August). First-half (SD → Mancos) averages ${firstRainAvg}% wet-day probability; the high-elevation NM stops are the wettest — <strong>Cloudcroft (Day 6) ~${cloudcroftRain}%, Hyde Park (Day 7) ~${hydeRain}%</strong>. Second half (Denver → NYC) averages ${secondRainAvg}%.</p>
+      <p><strong>Plan:</strong> Rain hits hardest at exactly the days we most want dry weather — White Sands sledding, Mesa Verde tours, dirt-road dispersed access in CO. Have a paid backup (Santa Fe Skies, Boot Hill RV) in pocket for the high-elevation NM stops if a storm rolls through.</p>
     `;
   }
   renderVerdict();
@@ -210,21 +156,20 @@ function svgIcon(kind, cx, cy, size = 14) {
   renderStaticTempCaptions();
 
   // ===========================================================
-  // LINE CHARTS (unchanged structure)
+  // LINE CHARTS
   // ===========================================================
-  function buildLineChart(svgId, getEarlyRaw, getLateRaw, yUnit, comfortBandRaw, convert) {
+  function buildLineChart(svgId, getRaw, yUnit, comfortBandRaw, convert) {
     const svg = document.getElementById(svgId);
     const W = 900, H = 380;
     const M = { l: 55, r: 20, t: 18, b: 80 };
     const innerW = W - M.l - M.r, innerH = H - M.t - M.b;
 
-    const getEarly = s => convert ? convert(getEarlyRaw(s)) : getEarlyRaw(s);
-    const getLate  = s => convert ? convert(getLateRaw(s))  : getLateRaw(s);
+    const getVal = s => convert ? convert(getRaw(s)) : getRaw(s);
     const comfortBand = (comfortBandRaw && convert)
       ? [convert(comfortBandRaw[0]), convert(comfortBandRaw[1])]
       : comfortBandRaw;
 
-    const allVals = stops.flatMap(s => [getEarly(s), getLate(s)]);
+    const allVals = stops.map(s => getVal(s));
     const yMin = Math.floor(Math.min(...allVals) / 5) * 5 - 2;
     const yMax = Math.ceil(Math.max(...allVals) / 5) * 5 + 2;
     const xAt = i => M.l + (i / (N - 1)) * innerW;
@@ -249,14 +194,11 @@ function svgIcon(kind, cx, cy, size = 14) {
       inner += `<text x="${x}" y="${H - M.b + 14}" font-size="10" fill="#4a5a52" text-anchor="end" transform="rotate(-40 ${x} ${H - M.b + 14})" font-family="system-ui, sans-serif">D${s.day} ${shortName(s.label)}</text>`;
     });
 
-    const earlyPath = stops.map((s, i) => `${i === 0 ? "M" : "L"} ${xAt(i)} ${yAt(getEarly(s))}`).join(" ");
-    inner += `<path d="${earlyPath}" fill="none" stroke="#d97b3a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const latePath = stops.map((s, i) => `${i === 0 ? "M" : "L"} ${xAt(i)} ${yAt(getLate(s))}`).join(" ");
-    inner += `<path d="${latePath}" fill="none" stroke="#2f8a6e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const path = stops.map((s, i) => `${i === 0 ? "M" : "L"} ${xAt(i)} ${yAt(getVal(s))}`).join(" ");
+    inner += `<path d="${path}" fill="none" stroke="#d97b3a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
 
     stops.forEach((s, i) => {
-      inner += `<circle cx="${xAt(i)}" cy="${yAt(getEarly(s))}" r="3.5" fill="#d97b3a"/>`;
-      inner += `<circle cx="${xAt(i)}" cy="${yAt(getLate(s))}" r="3.5" fill="#2f8a6e"/>`;
+      inner += `<circle cx="${xAt(i)}" cy="${yAt(getVal(s))}" r="3.5" fill="#d97b3a"/>`;
     });
 
     svg.innerHTML = inner;
@@ -264,8 +206,7 @@ function svgIcon(kind, cx, cy, size = 14) {
 
   function renderTempChart() {
     buildLineChart("chart",
-      s => s.early_normal_low_f,
-      s => s.late_normal_low_f,
+      s => s.normal_low_f,
       `°${currentUnit}`,
       [55, 68],
       convT);
@@ -273,8 +214,7 @@ function svgIcon(kind, cx, cy, size = 14) {
   renderTempChart();
 
   buildLineChart("rain-chart",
-    s => rainByDay.get(s.day).early_rain.wet_day_pct,
-    s => rainByDay.get(s.day).late_rain.wet_day_pct,
+    s => rainByDay.get(s.day).rain.wet_day_pct,
     "%",
     null,
     null);
@@ -282,15 +222,12 @@ function svgIcon(kind, cx, cy, size = 14) {
   // ===========================================================
   // MAP — sleep moons, activity icons, passthrough labels
   // ===========================================================
-  // Build coord bounds from sleep + places combined
   const allLats = [...stops.map(s => s.lat), ...places.map(p => p.lat)];
   const allLons = [...stops.map(s => s.lon), ...places.map(p => p.lon)];
   const latMin = Math.min(...allLats), latMax = Math.max(...allLats);
   const lonMin = Math.min(...allLons), lonMax = Math.max(...allLons);
   const midLat = (latMin + latMax) / 2;
   const lonScale = Math.cos(midLat * Math.PI / 180);
-  // 2x tall map
-  // Map viewBox is 2x tall (1520) to give labels and icons breathing room.
   const mW = 900, mH = 1520;
   const mM = { l: 50, r: 50, t: 40, b: 50 };
   const project = (lat, lon) => {
@@ -302,7 +239,6 @@ function svgIcon(kind, cx, cy, size = 14) {
   function tempColor(t) {
     const tt = Math.max(35, Math.min(85, t));
     const ratio = (tt - 35) / 50;
-    // 35°F = cool teal, 85°F = warm orange
     const r = Math.round(70 + (217 - 70) * ratio);
     const g = Math.round(140 + (123 - 140) * ratio);
     const b = Math.round(160 + (58 - 160) * ratio);
@@ -317,13 +253,11 @@ function svgIcon(kind, cx, cy, size = 14) {
     return `rgb(${r},${g},${b})`;
   }
 
-  // Format month/day
   function mmdd(iso) {
     const d = new Date(iso + "T00:00:00");
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
-  // Group consecutive same-coord sleep stops (e.g. SD x2 nights)
   function buildSleepGroups() {
     const groups = [];
     stops.forEach((s) => {
@@ -337,17 +271,13 @@ function svgIcon(kind, cx, cy, size = 14) {
     return groups;
   }
 
-  // Bounding box overlap helper for label placement
   function overlaps(a, b, pad = 2) {
     return !(a.x2 < b.x1 - pad || a.x1 > b.x2 + pad || a.y2 < b.y1 - pad || a.y1 > b.y2 + pad);
   }
 
-  function renderMap(svgEl, mode, which) {
+  function renderMap(svgEl, mode) {
     let inner = "";
-    const dateField = which === "late" ? "late_date" : "early_date";
-    const dayField  = which === "late" ? "late_day"  : "early_day";
 
-    // ----- LAYER 0: route line + drive-hour pills -----
     for (let i = 0; i < stops.length - 1; i++) {
       const [x1, y1] = project(stops[i].lat, stops[i].lon);
       const [x2, y2] = project(stops[i + 1].lat, stops[i + 1].lon);
@@ -363,27 +293,12 @@ function svgIcon(kind, cx, cy, size = 14) {
       }
     }
 
-    // ----- BUILD: all icons/dots with their fixed (x,y) + tooltip data -----
-    // Three categories:
-    //   1. passthrough markers (small grey dot at fixed coord)
-    //   2. activity icons (svg icon at fixed coord) + label
-    //   3. sleep moons (crescent at fixed coord) + value label
-    //
-    // Each has a 'core' bbox (the icon/dot itself, immovable) and an optional
-    // 'label' that we'll place after all cores are pinned.
+    const SLEEP_R = 9;
+    const ICON_R = 8;
+    const PASS_R = 2.5;
 
-    const SLEEP_R = 9;       // crescent radius
-    const ICON_R = 8;        // activity icon radius
-    const PASS_R = 2.5;      // pass-through dot radius
-
-    // Build the route polyline (projected coords of sleep stops). Activities
-    // and pass-throughs snap to the nearest point on this line so they sit
-    // visually on the route rather than drifting into empty space.
     const routePoints = stops.map(s => project(s.lat, s.lon));
 
-    // For a point (px, py), find the nearest point on the polyline made up of
-    // routePoints[0..N-1]. Returns {x, y, segIdx, t} where segIdx is which
-    // segment was closest and t in [0,1] is position along it.
     function snapToRoute(px, py) {
       let best = { x: px, y: py, segIdx: 0, t: 0, dist: Infinity };
       for (let i = 0; i < routePoints.length - 1; i++) {
@@ -400,17 +315,8 @@ function svgIcon(kind, cx, cy, size = 14) {
       return best;
     }
 
-    // Decide a label-direction order from the per-item `label_dir` hint and
-    // the local route orientation. Returns an array of candidate (dx, dy)
-    // offset CENTERS for the label rectangle. The first non-colliding one wins.
-    //
-    // Directions: "right", "left", "above", "below", "auto" (default).
-    // The "auto" default prefers horizontal placement (left/right) since the
-    // map is now 2x tall and we want to use the horizontal whitespace. Tight
-    // ring tried first, then medium, then wide.
     function makePositions(dir, labelW, labelH, iconR) {
       const halfW = labelW / 2;
-      // Distance from icon center to label center: icon radius + padding + half label
       const NEAR = iconR + 4 + halfW;
       const MID  = NEAR + 14;
       const FAR  = NEAR + 32;
@@ -442,15 +348,13 @@ function svgIcon(kind, cx, cy, size = 14) {
         case "below":  return [...below,  ...right, ...left,  ...above];
         case "auto":
         default:
-          // Prefer horizontal first (use the tall map's horizontal space).
           return [...right, ...left, ...above, ...below];
       }
     }
 
-    const items = []; // {coreBox, label, labelW, labelH, x, y, tooltip, drawCore, drawLabel, positions}
+    const items = [];
     const sleepGroups = buildSleepGroups();
 
-    // 1) Pass-throughs — snap to route, label_dir from data or default "auto".
     places.filter(p => p.type === "passthrough").forEach(p => {
       const [rawX, rawY] = project(p.lat, p.lon);
       const snap = snapToRoute(rawX, rawY);
@@ -470,14 +374,12 @@ function svgIcon(kind, cx, cy, size = 14) {
       });
     });
 
-    // 2) Activity icons — snap to route, hours in tooltip, label_dir from data.
     places.filter(p => p.type === "activity").forEach(p => {
       const [rawX, rawY] = project(p.lat, p.lon);
       const snap = snapToRoute(rawX, rawY);
       const x = snap.x, y = snap.y;
-      const day = p[dayField];
-      const stop = stops.find(s => s.day === day);
-      const dateStr = stop ? mmdd(stop[dateField]) : "";
+      const stop = stops.find(s => s.day === p.day);
+      const dateStr = stop ? mmdd(stop.date) : "";
       const hours = p.hours != null ? `~${p.hours} hr` : "";
       const tooltipParts = [p.name, dateStr, hours].filter(s => s);
       const tooltip = tooltipParts.join(" · ");
@@ -496,27 +398,23 @@ function svgIcon(kind, cx, cy, size = 14) {
       });
     });
 
-    // 3) Sleep moons (one per group; same-coord nights collapse). Color
-    // carries the value; the temp/rain number lives only in the tooltip.
     sleepGroups.forEach((g) => {
       const [x, y] = project(g.lat, g.lon);
       const rep = g.stops[g.stops.length - 1];
-      const dStrs = g.stops.map(s => mmdd(s[dateField]));
+      const dStrs = g.stops.map(s => mmdd(s.date));
       const dateStr = dStrs.length === 1 ? dStrs[0] : `${dStrs[0]}–${dStrs[dStrs.length - 1]}`;
       let value, fillColor;
       if (mode === "temp") {
-        const raw = which === "late" ? rep.late_normal_low_f : rep.early_normal_low_f;
+        const raw = rep.normal_low_f;
         value = `${convT(raw).toFixed(0)}°${currentUnit}`;
         fillColor = tempColor(raw);
       } else {
         const r = rainByDay.get(rep.day);
-        const raw = which === "late" ? r.late_rain.wet_day_pct : r.early_rain.wet_day_pct;
+        const raw = r.rain.wet_day_pct;
         value = `${raw.toFixed(0)}%`;
         fillColor = rainColor(raw);
       }
       const tooltip = `${shortName(rep.label)} · ${dateStr} · ${value}`;
-      // No visible label — the color carries the value, and hovering reveals
-      // the name + date + value. Less clutter, lets the route read clearly.
       items.push({
         kind: "sleep",
         x, y,
@@ -533,12 +431,8 @@ function svgIcon(kind, cx, cy, size = 14) {
       });
     });
 
-    // ----- COLLISION: place labels around fixed cores -----
-    // Step 1: collect all immovable rectangles (the cores).
     const obstacles = items.map(it => it.coreBox);
 
-    // Step 2: place labels greedily using per-item position candidates.
-    // Items with drawLabel=null skip placement (sleep moons rely on color).
     const labelPlacements = items.map(it => {
       if (!it.drawLabel) return null;
       const halfW = it.labelW / 2, halfH = it.labelH / 2;
@@ -556,7 +450,6 @@ function svgIcon(kind, cx, cy, size = 14) {
         }
         if (!bad) { chosen = { cx, cy, box, pos }; break; }
       }
-      // Fallback: use the first preferred position even if it overlaps.
       if (!chosen) {
         const pos = it.positions[0];
         const cx = it.x + pos.dx, cy = it.y + pos.dy;
@@ -570,14 +463,10 @@ function svgIcon(kind, cx, cy, size = 14) {
       return chosen;
     });
 
-    // ----- DRAW: cores first, then leader lines, then labels -----
-    items.forEach((it) => {
-      inner += it.drawCore();
-    });
+    items.forEach((it) => { inner += it.drawCore(); });
     items.forEach((it, i) => {
       const lp = labelPlacements[i];
       if (!lp) return;
-      // Draw a thin leader line if the label is far from the core
       const dist = Math.hypot(lp.pos.dx, lp.pos.dy);
       if (dist > 24) {
         const nx = Math.max(lp.box.x1, Math.min(it.x, lp.box.x2));
@@ -591,7 +480,6 @@ function svgIcon(kind, cx, cy, size = 14) {
       inner += it.drawLabel(lp.cx, lp.cy);
     });
 
-    // ===== Color scale legend (bottom-left) =====
     const lgX = 30, lgY = mH - 25;
     const samples = 40;
     if (mode === "temp") {
@@ -616,35 +504,15 @@ function svgIcon(kind, cx, cy, size = 14) {
     svgEl.innerHTML = inner;
   }
 
-  let currentTempMapWhich = "early";
-  let currentRainMapWhich = "early";
-
-  function renderTempMap(which) {
-    currentTempMapWhich = which;
-    renderMap(document.getElementById("temp-map"), "temp", which);
+  function renderTempMap() {
+    renderMap(document.getElementById("temp-map"), "temp");
   }
-  function renderRainMap(which) {
-    currentRainMapWhich = which;
-    renderMap(document.getElementById("rain-map"), "rain", which);
+  function renderRainMap() {
+    renderMap(document.getElementById("rain-map"), "rain");
   }
 
-  renderTempMap("early");
-  renderRainMap("early");
-
-  document.querySelectorAll(".map-tab").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const which = btn.dataset.which;
-      const mode = btn.dataset.mode;
-      const tabContainer = btn.parentElement;
-      tabContainer.querySelectorAll(".map-tab").forEach((b) => {
-        const active = b === btn;
-        b.classList.toggle("is-active", active);
-        b.setAttribute("aria-selected", active ? "true" : "false");
-      });
-      if (mode === "temp") renderTempMap(which);
-      else renderRainMap(which);
-    });
-  });
+  renderTempMap();
+  renderRainMap();
 
   // ===========================================================
   // TABLES
@@ -653,29 +521,21 @@ function svgIcon(kind, cx, cy, size = 14) {
     const tbody = document.querySelector("#temp-table tbody");
     tbody.innerHTML = "";
     stops.forEach((s) => {
-      const dRaw = s.late_normal_low_f - s.early_normal_low_f;
-      const cls = dRaw < -0.5 ? "cooler-late" : (dRaw > 0.5 ? "cooler-early" : "");
-      const arrow = dRaw < -0.5 ? "▼" : (dRaw > 0.5 ? "▲" : "—");
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="num">${s.day}</td>
         <td>${shortName(s.label)}</td>
-        <td class="num">${fmtT(s.early_normal_low_f)}</td>
-        <td class="num">${fmtT(s.late_normal_low_f)}</td>
-        <td class="num ${cls}">${arrow} ${fmtTDelta(dRaw)}</td>
+        <td class="num">${fmtT(s.normal_low_f)}</td>
       `;
       tbody.appendChild(tr);
     });
     const tr = document.createElement("tr");
     tr.style.borderTop = "2px solid var(--line)";
     tr.style.fontWeight = "600";
-    const avgDeltaRaw = lateTempAvg - earlyTempAvg;
     tr.innerHTML = `
       <td class="num"></td>
       <td>Trip average</td>
-      <td class="num">${fmtT(earlyTempAvg)}</td>
-      <td class="num">${fmtT(lateTempAvg)}</td>
-      <td class="num ${avgDeltaRaw < 0 ? "cooler-late" : "cooler-early"}">${fmtTDelta(avgDeltaRaw)}</td>
+      <td class="num">${fmtT(tempAvg)}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -683,38 +543,27 @@ function svgIcon(kind, cx, cy, size = 14) {
   function fillRainTable() {
     const tbody = document.querySelector("#rain-table tbody");
     tbody.innerHTML = "";
-    let earlySum = 0, lateSum = 0;
+    let sum = 0;
     stops.forEach((s) => {
       const r = rainByDay.get(s.day);
-      const e = r.early_rain.wet_day_pct;
-      const l = r.late_rain.wet_day_pct;
-      earlySum += e; lateSum += l;
-      const d = (l - e).toFixed(1);
-      const dNum = parseFloat(d);
-      const cls = dNum < -1 ? "drier-late" : (dNum > 1 ? "drier-early" : "");
-      const arrow = dNum < -1 ? "▼" : (dNum > 1 ? "▲" : "—");
+      const v = r.rain.wet_day_pct;
+      sum += v;
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="num">${s.day}</td>
         <td>${shortName(s.label)}</td>
-        <td class="num">${e.toFixed(1)}%</td>
-        <td class="num">${l.toFixed(1)}%</td>
-        <td class="num ${cls}">${arrow} ${d > 0 ? "+" : ""}${d}%</td>
+        <td class="num">${v.toFixed(1)}%</td>
       `;
       tbody.appendChild(tr);
     });
-    const earlyAvg = (earlySum / stops.length).toFixed(1);
-    const lateAvg  = (lateSum  / stops.length).toFixed(1);
+    const avg = (sum / stops.length).toFixed(1);
     const tr = document.createElement("tr");
     tr.style.borderTop = "2px solid var(--line)";
     tr.style.fontWeight = "600";
-    const avgDelta = (lateAvg - earlyAvg).toFixed(1);
     tr.innerHTML = `
       <td class="num"></td>
       <td>Trip average</td>
-      <td class="num">${earlyAvg}%</td>
-      <td class="num">${lateAvg}%</td>
-      <td class="num ${avgDelta < 0 ? "drier-late" : "drier-early"}">${avgDelta > 0 ? "+" : ""}${avgDelta}%</td>
+      <td class="num">${avg}%</td>
     `;
     tbody.appendChild(tr);
   }
@@ -736,7 +585,7 @@ function svgIcon(kind, cx, cy, size = 14) {
     renderVerdict();
     renderStaticTempCaptions();
     renderTempChart();
-    renderTempMap(currentTempMapWhich);
+    renderTempMap();
     fillTempTable();
   }
   applyUnitToButtons();
@@ -752,7 +601,7 @@ function svgIcon(kind, cx, cy, size = 14) {
   });
 
   // ===========================================================
-  // IMMEDIATE TOOLTIP — fires on mousemove over any [data-tip] node
+  // TOOLTIP
   // ===========================================================
   let tipEl = document.getElementById("map-tooltip");
   if (!tipEl) {
@@ -767,7 +616,6 @@ function svgIcon(kind, cx, cy, size = 14) {
     moveTip(e);
   }
   function moveTip(e) {
-    // Position above-right of cursor, with a small offset; flip if too close to edge
     const pad = 14;
     let x = e.clientX + pad;
     let y = e.clientY - pad - tipEl.offsetHeight;

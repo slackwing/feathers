@@ -5,17 +5,11 @@
       "label": "San Diego (Pacific Beach)",
       "lat": 32.7975,
       "lon": -117.237,
-      "early_date": "2026-07-05",
-      "late_date": "2026-07-16",
-      "early_rain": {
+      "date": "2026-07-05",
+      "rain": {
         "wet_day_pct": 0.0,
         "avg_daily_precip_in": 0.001,
         "avg_daily_precip_hr": 0.05
-      },
-      "late_rain": {
-        "wet_day_pct": 0.5,
-        "avg_daily_precip_in": 0.004,
-        "avg_daily_precip_hr": 0.11
       }
     },
     {
@@ -23,17 +17,11 @@
       "label": "San Diego (Pacific Beach)",
       "lat": 32.7975,
       "lon": -117.237,
-      "early_date": "2026-07-06",
-      "late_date": "2026-07-17",
-      "early_rain": {
+      "date": "2026-07-06",
+      "rain": {
         "wet_day_pct": 0.0,
         "avg_daily_precip_in": 0.001,
         "avg_daily_precip_hr": 0.1
-      },
-      "late_rain": {
-        "wet_day_pct": 0.5,
-        "avg_daily_precip_in": 0.004,
-        "avg_daily_precip_hr": 0.13
       }
     },
     {
@@ -41,17 +29,11 @@
       "label": "San Diego (Pacific Beach)",
       "lat": 32.7975,
       "lon": -117.237,
-      "early_date": "2026-07-07",
-      "late_date": "2026-07-18",
-      "early_rain": {
+      "date": "2026-07-07",
+      "rain": {
         "wet_day_pct": 0.0,
         "avg_daily_precip_in": 0.001,
         "avg_daily_precip_hr": 0.09
-      },
-      "late_rain": {
-        "wet_day_pct": 0.5,
-        "avg_daily_precip_in": 0.004,
-        "avg_daily_precip_hr": 0.14
       }
     },
     {
@@ -59,17 +41,11 @@
       "label": "Gila Bend, AZ (Best Western Space Age Lodge)",
       "lat": 32.9478,
       "lon": -112.7166,
-      "early_date": "2026-07-08",
-      "late_date": "2026-07-19",
-      "early_rain": {
+      "date": "2026-07-08",
+      "rain": {
         "wet_day_pct": 3.8,
         "avg_daily_precip_in": 0.018,
         "avg_daily_precip_hr": 0.51
-      },
-      "late_rain": {
-        "wet_day_pct": 3.8,
-        "avg_daily_precip_in": 0.016,
-        "avg_daily_precip_hr": 0.59
       }
     },
     {
@@ -77,17 +53,11 @@
       "label": "Willcox, AZ (Walmart Supercenter)",
       "lat": 32.2526,
       "lon": -109.8323,
-      "early_date": "2026-07-09",
-      "late_date": "2026-07-20",
-      "early_rain": {
+      "date": "2026-07-09",
+      "rain": {
         "wet_day_pct": 9.0,
         "avg_daily_precip_in": 0.032,
         "avg_daily_precip_hr": 1.36
-      },
-      "late_rain": {
-        "wet_day_pct": 14.3,
-        "avg_daily_precip_in": 0.046,
-        "avg_daily_precip_hr": 1.74
       }
     },
     {
@@ -95,17 +65,11 @@
       "label": "Cloudcroft / Lincoln NF",
       "lat": 32.9569,
       "lon": -105.743,
-      "early_date": "2026-07-10",
-      "late_date": "2026-07-21",
-      "early_rain": {
+      "date": "2026-07-10",
+      "rain": {
         "wet_day_pct": 36.7,
         "avg_daily_precip_in": 0.159,
         "avg_daily_precip_hr": 4.08
-      },
-      "late_rain": {
-        "wet_day_pct": 49.0,
-        "avg_daily_precip_in": 0.206,
-        "avg_daily_precip_hr": 4.84
       }
     },
     {
@@ -113,17 +77,11 @@
       "label": "Hyde Park Rd / Santa Fe NF",
       "lat": 35.78,
       "lon": -105.82,
-      "early_date": "2026-07-11",
-      "late_date": "2026-07-22",
-      "early_rain": {
+      "date": "2026-07-11",
+      "rain": {
         "wet_day_pct": 41.9,
         "avg_daily_precip_in": 0.152,
         "avg_daily_precip_hr": 3.94
-      },
-      "late_rain": {
-        "wet_day_pct": 48.1,
-        "avg_daily_precip_in": 0.208,
-        "avg_daily_precip_hr": 5.1
       }
     },
     {
@@ -131,17 +89,11 @@
       "label": "Mancos / San Juan NF",
       "lat": 37.42,
       "lon": -108.2,
-      "early_date": "2026-07-12",
-      "late_date": "2026-07-23",
-      "early_rain": {
+      "date": "2026-07-12",
+      "rain": {
         "wet_day_pct": 17.6,
         "avg_daily_precip_in": 0.056,
         "avg_daily_precip_hr": 2.21
-      },
-      "late_rain": {
-        "wet_day_pct": 24.8,
-        "avg_daily_precip_in": 0.087,
-        "avg_daily_precip_hr": 2.98
       }
     },
     {
@@ -149,17 +101,11 @@
       "label": "Last Dollar Rd / Uncompahgre NF",
       "lat": 37.99,
       "lon": -107.92,
-      "early_date": "2026-07-13",
-      "late_date": "2026-07-24",
-      "early_rain": {
+      "date": "2026-07-13",
+      "rain": {
         "wet_day_pct": 27.1,
         "avg_daily_precip_in": 0.085,
         "avg_daily_precip_hr": 3.03
-      },
-      "late_rain": {
-        "wet_day_pct": 39.0,
-        "avg_daily_precip_in": 0.148,
-        "avg_daily_precip_hr": 4.32
       }
     },
     {
@@ -167,17 +113,11 @@
       "label": "Cement Creek Rd / Gunnison NF",
       "lat": 38.81,
       "lon": -106.85,
-      "early_date": "2026-07-14",
-      "late_date": "2026-07-25",
-      "early_rain": {
+      "date": "2026-07-14",
+      "rain": {
         "wet_day_pct": 16.7,
         "avg_daily_precip_in": 0.047,
         "avg_daily_precip_hr": 2.29
-      },
-      "late_rain": {
-        "wet_day_pct": 26.7,
-        "avg_daily_precip_in": 0.071,
-        "avg_daily_precip_hr": 3.3
       }
     },
     {
@@ -185,17 +125,11 @@
       "label": "Denver (Cherry Creek SP)",
       "lat": 39.65,
       "lon": -104.85,
-      "early_date": "2026-07-15",
-      "late_date": "2026-07-26",
-      "early_rain": {
+      "date": "2026-07-15",
+      "rain": {
         "wet_day_pct": 13.3,
         "avg_daily_precip_in": 0.044,
         "avg_daily_precip_hr": 1.22
-      },
-      "late_rain": {
-        "wet_day_pct": 12.9,
-        "avg_daily_precip_in": 0.05,
-        "avg_daily_precip_hr": 1.84
       }
     },
     {
@@ -203,17 +137,11 @@
       "label": "Ogallala NE (Lake McConaughy)",
       "lat": 41.23,
       "lon": -101.7,
-      "early_date": "2026-07-16",
-      "late_date": "2026-07-27",
-      "early_rain": {
+      "date": "2026-07-16",
+      "rain": {
         "wet_day_pct": 11.4,
         "avg_daily_precip_in": 0.053,
         "avg_daily_precip_hr": 1.58
-      },
-      "late_rain": {
-        "wet_day_pct": 21.9,
-        "avg_daily_precip_in": 0.089,
-        "avg_daily_precip_hr": 2.76
       }
     },
     {
@@ -221,17 +149,11 @@
       "label": "Des Moines IA (Walmart)",
       "lat": 41.6,
       "lon": -93.6,
-      "early_date": "2026-07-17",
-      "late_date": "2026-07-28",
-      "early_rain": {
+      "date": "2026-07-17",
+      "rain": {
         "wet_day_pct": 23.8,
         "avg_daily_precip_in": 0.101,
         "avg_daily_precip_hr": 1.94
-      },
-      "late_rain": {
-        "wet_day_pct": 19.0,
-        "avg_daily_precip_in": 0.101,
-        "avg_daily_precip_hr": 1.98
       }
     },
     {
@@ -239,17 +161,11 @@
       "label": "South Bend IN (Walmart)",
       "lat": 41.68,
       "lon": -86.25,
-      "early_date": "2026-07-18",
-      "late_date": "2026-07-29",
-      "early_rain": {
+      "date": "2026-07-18",
+      "rain": {
         "wet_day_pct": 32.9,
         "avg_daily_precip_in": 0.146,
         "avg_daily_precip_hr": 3.63
-      },
-      "late_rain": {
-        "wet_day_pct": 22.4,
-        "avg_daily_precip_in": 0.117,
-        "avg_daily_precip_hr": 3.16
       }
     },
     {
@@ -257,17 +173,11 @@
       "label": "Allentown PA (Walmart)",
       "lat": 40.608,
       "lon": -75.49,
-      "early_date": "2026-07-19",
-      "late_date": "2026-07-30",
-      "early_rain": {
+      "date": "2026-07-19",
+      "rain": {
         "wet_day_pct": 22.9,
         "avg_daily_precip_in": 0.107,
         "avg_daily_precip_hr": 2.84
-      },
-      "late_rain": {
-        "wet_day_pct": 24.8,
-        "avg_daily_precip_in": 0.128,
-        "avg_daily_precip_hr": 3.48
       }
     },
     {
@@ -275,19 +185,14 @@
       "label": "New York, NY (home)",
       "lat": 40.7128,
       "lon": -74.006,
-      "early_date": "2026-07-20",
-      "late_date": "2026-07-31",
-      "early_rain": {
+      "date": "2026-07-20",
+      "rain": {
         "wet_day_pct": 28.6,
         "avg_daily_precip_in": 0.144,
         "avg_daily_precip_hr": 3.36
-      },
-      "late_rain": {
-        "wet_day_pct": 26.2,
-        "avg_daily_precip_in": 0.118,
-        "avg_daily_precip_hr": 3.53
       }
     }
   ],
+  "start_date": "2026-07-05",
   "source": "Open-Meteo ERA5 archive 1995-2024, \u00b13 day window, wet = >=0.1in"
 }
