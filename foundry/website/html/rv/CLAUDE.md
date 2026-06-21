@@ -62,9 +62,10 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 - **assets/site-unit.js** — site-wide °C/°F toggle, fixed top-right of every
   page, cookie-backed.
 - **assets/auth.js** — site-wide login button + modal. Talks to the
-  rv-server backend (see below) at `/rv/api/{me,login,logout}`. Exposes
-  `window.rvAuthUser`, `window.rvAuthResolved`, fires `rv:auth-resolved`
-  and `rv:auth-change` events. Hides any `.prep-link-wrap` element when
+  hobby-server backend's `rv` project (see below) at
+  `/rv/api/{me,login,logout}`. Exposes `window.rvAuthUser`,
+  `window.rvAuthResolved`, fires `rv:auth-resolved` and
+  `rv:auth-change` events. Hides any `.prep-link-wrap` element when
   logged out.
 - **scripts/compute_everything.py** — single pipeline that reads
   `assets/map-sources.json` + `assets/trip.json`, calls Google Directions
@@ -75,13 +76,21 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 
 ## Sibling backend repo
 
-The auth backend is a separate repo:
-**[`slackwing/rv-server`](https://github.com/slackwing/rv-server)** (locally:
-`~/src/rv-server/`). It's a tiny Go service (3 endpoints) that lives on
-the same VM as manuscript-studio and talks to a separate `rv_trip`
-database on the same Cloud SQL instance. See `rv-server/CLAUDE.md` and
-`rv-server/AGENTS.md` for backend conventions. **When changing the wire
-format on either side, check both repos.**
+The auth backend is a multi-project server in a separate repo:
+**[`slackwing/hobby-server`](https://github.com/slackwing/hobby-server)**
+(locally: `~/src/hobby-server/`). One Go binary hosts multiple
+isolated projects; the **rv** project is one of them. Each project
+has its own DB, URL prefix, and cookie scope. The rv project:
+
+- Database: `rv_trip`
+- URL prefix on the server: `/api/rv`
+- Apache rewrites public `/rv/api/*` → backend `/api/rv/*`
+- Cookie: `rv_session`, `Path=/rv/`
+- Schema: `liquibase/rv/changelog/` in the hobby-server repo
+
+See `hobby-server/CLAUDE.md` and `hobby-server/AGENTS.md` for backend
+conventions. **When changing the wire format on either side, check
+both repos.**
 
 ## Publishing
 

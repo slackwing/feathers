@@ -1,6 +1,6 @@
 // Site-wide auth client.
 //
-// Talks to rv-server (https://github.com/slackwing/rv-server) via
+// Talks to hobby-server's rv project (https://github.com/slackwing/hobby-server) via
 // /rv/api/{me,login,logout}. Wires the global #site-login-btn and
 // #site-login-modal. Other scripts can:
 //

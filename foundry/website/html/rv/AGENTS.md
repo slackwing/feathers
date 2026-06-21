@@ -80,9 +80,10 @@ See `rv/assets/META.md` for the full schema and authoring rules.
 ## Sibling backend repo
 
 This directory is the static frontend. The auth backend it talks to
-(`/rv/api/*`) lives in a separate repo:
-**[`slackwing/rv-server`](https://github.com/slackwing/rv-server)** at
-`~/src/rv-server/`. When the wire format (cookie name, request/response
-shape, endpoint paths) changes on either side, the other side likely
-needs an update. Each repo's own `AGENTS.md` documents its rules; read
-both before touching wire-format code.
+(`/rv/api/*`) is the **rv** project of a multi-project Go server:
+**[`slackwing/hobby-server`](https://github.com/slackwing/hobby-server)**
+at `~/src/hobby-server/`. The rv project's schema lives at
+`liquibase/rv/changelog/` in that repo. When the wire format (cookie
+name, request/response shape, endpoint paths) changes on either side,
+the other side likely needs an update. Each repo's own `AGENTS.md`
+documents its rules; read both before touching wire-format code.
