@@ -42,12 +42,27 @@
 .prep-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 6px;
   border-radius: 6px;
   transition: background 0.12s;
 }
 .prep-item:hover { background: rgba(0,0,0,0.025); }
+.prep-item.sortable-ghost { opacity: 0.4; background: rgba(0,0,0,0.05); }
+.prep-item.sortable-chosen { background: rgba(0,0,0,0.04); }
+.prep-handle {
+  flex: 0 0 auto;
+  width: 16px;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  cursor: grab;
+  user-select: none;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.5;
+}
+.prep-handle:hover { opacity: 1; }
+.prep-handle:active { cursor: grabbing; }
 .prep-item input[type="checkbox"] {
   flex: 0 0 auto;
   margin-top: 3px;
@@ -58,20 +73,6 @@
 }
 .prep-item input[type="checkbox"]:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
-}
-.prep-dep-arrow {
-  flex: 0 0 auto;
-  width: 14px;
-  margin-top: 1px;
-  color: var(--ink-soft);
-  font-size: 0.95rem;
-  line-height: 1;
-  user-select: none;
-  /* The arrow ↳ visually points from above to the right at the text. */
-}
-.prep-item.is-dependent.is-locked .prep-dep-arrow {
-  opacity: 0.5;
 }
 .prep-date {
   display: inline-block;
@@ -87,20 +88,82 @@
   vertical-align: 2px;
   white-space: nowrap;
 }
+.prep-text-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
 .prep-text {
   flex: 1 1 auto;
   line-height: 1.45;
   color: var(--ink);
-}
-.prep-item.is-locked .prep-text,
-.prep-item.is-locked .prep-date {
-  color: var(--ink-soft);
-  opacity: 0.55;
+  min-width: 0;
+  word-wrap: break-word;
 }
 .prep-item.is-done .prep-text {
   text-decoration: line-through;
   color: var(--ink-soft);
 }
+.prep-edit-input {
+  flex: 1 1 auto;
+  font: inherit;
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: white;
+  outline: none;
+  min-width: 0;
+}
+.prep-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.prep-item:hover .prep-actions,
+.prep-item:focus-within .prep-actions { opacity: 1; }
+.prep-action-btn {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1;
+  border-radius: 4px;
+}
+.prep-action-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink); }
+.prep-add {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+.prep-add input[type="text"] {
+  flex: 1 1 auto;
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+}
+.prep-add input[type="text"]:focus { border-color: var(--accent); }
+.prep-add button {
+  flex: 0 0 auto;
+  font: inherit;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+.prep-add button:disabled { opacity: 0.5; cursor: not-allowed; }
 .prep-back {
   display: inline-block;
   margin-bottom: 18px;
@@ -113,6 +176,43 @@
   font-size: 0.85rem;
   color: var(--ink-soft);
   margin-top: 4px;
+}
+.prep-login-hint {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  font-style: italic;
+}
+.prep-login-hint button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-style: italic;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.prep-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.prep-toast.is-shown { opacity: 1; }
+.prep-loading, .prep-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 16px 0;
 }
 </style>
 </head>
@@ -148,25 +248,22 @@
 <div class="prep-page">
   <a class="prep-back" href="index.html">← Back to itinerary</a>
   <h1>Prep checklist</h1>
-  <p class="lede">A flat list of everything to wrap up before (and during) the trip. Progress saves locally to this browser.</p>
-  <!-- Body is hidden until auth.js confirms a session. If not logged in,
-       a friendly "please log in" prompt is shown instead. -->
-  <div id="prep-auth-required" hidden>
-    <p>You need to log in to see the checklist.</p>
-    <button class="site-modal-submit" type="button" id="prep-login-prompt-btn">Log in</button>
-  </div>
-  <div id="prep-content" hidden>
-    <p class="prep-progress" id="prep-progress">Loading…</p>
-    <div id="prep-root"></div>
-  </div>
+  <p class="lede">A flat list of everything to wrap up before (and during) the trip. Add a date with <code>@7/22</code> anywhere in the text.</p>
+  <p class="prep-progress" id="prep-progress">Loading…</p>
+  <p class="prep-login-hint" id="prep-login-hint" hidden>Read-only — <button type="button" id="prep-login-hint-btn">log in</button> to edit.</p>
+  <div id="prep-root"></div>
 </div>
+
+<div class="prep-toast" id="prep-toast" role="status" aria-live="polite"></div>
 
 <footer class="footer">
   <p>🦔 + 🐸 · <a href="index.html">Back to itinerary</a></p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
+<script src="assets/celebrate.js"></script>
 <script src="assets/prep.js"></script>
 </body>
 </html>

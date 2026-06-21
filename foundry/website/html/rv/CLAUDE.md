@@ -57,8 +57,15 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 - **index.html** — main itinerary page. Renders day-by-day cards from
   `assets/trip.json` (via `assets/itinerary.js`), plus the V2 route map
   (via `assets/map-v2.js`, reading `assets/map.json`).
-- **prep.html** — pre-trip checklist with dependency arrows + localStorage.
-  Reads `assets/prep.json`, runs `assets/prep.js`. **Gated by login.**
+- **prep.html** — pre-trip checklist. **Public read** (anyone can view),
+  edit-gated by login (toggle done, drag to reorder, inline edit, delete,
+  add new). Backed by the `prep_item` table in the hobby-server rv
+  database; talks to `/rv/api/prep` (GET public, POST/PATCH/DELETE auth).
+  Runs `assets/prep.js`, uses SortableJS (CDN) for drag-reorder and
+  `assets/celebrate.js` for the on-check emoji shower. Date syntax:
+  `@M/D` anywhere in item text → renders as a styled date pill with
+  auto day-of-week for the current year. `assets/prep.json` is now a
+  frozen seed file (read once by `seed-prep` on the VM).
 - **assets/site-unit.js** — site-wide °C/°F toggle, fixed top-right of every
   page, cookie-backed.
 - **assets/auth.js** — site-wide login button + modal. Talks to the
@@ -82,11 +89,13 @@ The auth backend is a multi-project server in a separate repo:
 isolated projects; the **rv** project is one of them. Each project
 has its own DB, URL prefix, and cookie scope. The rv project:
 
-- Database: `rv_trip`
+- Database: `hobby_server` (single shared DB; per-project DBs are an
+  option for future projects but rv just uses the default)
 - URL prefix on the server: `/api/rv`
 - Apache rewrites public `/rv/api/*` → backend `/api/rv/*`
 - Cookie: `rv_session`, `Path=/rv/`
 - Schema: `liquibase/rv/changelog/` in the hobby-server repo
+- Tables (rv-owned): `user`, `session`, `prep_item`
 
 See `hobby-server/CLAUDE.md` and `hobby-server/AGENTS.md` for backend
 conventions. **When changing the wire format on either side, check

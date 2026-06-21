@@ -1,5 +1,5 @@
 {
-  "_comment": "Prep checklist source. `section` groups items (before/during). `depends_on` references another item's `id` and means: this item is greyed out until the parent is checked. Render order is the array order here.",
+  "_comment": "FROZEN SEED FILE — the live prep checklist lives in hobby-server's prep_item table and is read via /rv/api/prep. This file was used as the initial seed by `seed-prep` and is kept for reproducibility. Do not edit to modify the live list; edit via the UI instead. Safe to delete once the seed is no longer reference material.",
   "sections": [
     { "id": "before",  "title": "Before the trip" },
     { "id": "during",  "title": "During the trip" }
