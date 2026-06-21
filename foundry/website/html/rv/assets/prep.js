@@ -8,7 +8,42 @@
 (async function () {
   const root = document.getElementById("prep-root");
   const progressEl = document.getElementById("prep-progress");
+  const authRequired = document.getElementById("prep-auth-required");
+  const content = document.getElementById("prep-content");
+  const loginPromptBtn = document.getElementById("prep-login-prompt-btn");
   if (!root) return;
+
+  // ---- Gate: only render the checklist when logged in. auth.js sets
+  //      window.rvAuthUser (string|null) and fires "rv:auth-change" on
+  //      login/logout. We wait for at least one resolution.
+  function showAuthRequired() {
+    if (authRequired) authRequired.hidden = false;
+    if (content) content.hidden = true;
+  }
+  function showContent() {
+    if (authRequired) authRequired.hidden = true;
+    if (content) content.hidden = false;
+  }
+  function applyAuthState() {
+    if (window.rvAuthUser) {
+      showContent();
+    } else {
+      showAuthRequired();
+    }
+  }
+  // Wait for auth resolution before first paint.
+  if (window.rvAuthResolved) {
+    applyAuthState();
+  } else {
+    showAuthRequired();
+    window.addEventListener("rv:auth-resolved", applyAuthState, { once: true });
+  }
+  window.addEventListener("rv:auth-change", applyAuthState);
+  if (loginPromptBtn) {
+    loginPromptBtn.addEventListener("click", () => {
+      if (typeof window.rvOpenLoginModal === "function") window.rvOpenLoginModal();
+    });
+  }
 
   const STORAGE_KEY = "rv_prep_checks";
 

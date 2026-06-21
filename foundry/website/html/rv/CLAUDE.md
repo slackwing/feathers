@@ -58,15 +58,30 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
   `assets/trip.json` (via `assets/itinerary.js`), plus the V2 route map
   (via `assets/map-v2.js`, reading `assets/map.json`).
 - **prep.html** — pre-trip checklist with dependency arrows + localStorage.
-  Reads `assets/prep.json`, runs `assets/prep.js`.
+  Reads `assets/prep.json`, runs `assets/prep.js`. **Gated by login.**
 - **assets/site-unit.js** — site-wide °C/°F toggle, fixed top-right of every
   page, cookie-backed.
+- **assets/auth.js** — site-wide login button + modal. Talks to the
+  rv-server backend (see below) at `/rv/api/{me,login,logout}`. Exposes
+  `window.rvAuthUser`, `window.rvAuthResolved`, fires `rv:auth-resolved`
+  and `rv:auth-change` events. Hides any `.prep-link-wrap` element when
+  logged out.
 - **scripts/compute_everything.py** — single pipeline that reads
   `assets/map-sources.json` + `assets/trip.json`, calls Google Directions
   + Open-Meteo (cached in gitignored `.cache/`), writes `assets/map.json`.
   Run when locations/routes change.
 - **assets/META.md** — provenance schema for `trip.json`.
 - **MAP_V2_MECHANICS.md** — data model for the V2 route map.
+
+## Sibling backend repo
+
+The auth backend is a separate repo:
+**[`slackwing/rv-server`](https://github.com/slackwing/rv-server)** (locally:
+`~/src/rv-server/`). It's a tiny Go service (3 endpoints) that lives on
+the same VM as manuscript-studio and talks to a separate `rv_trip`
+database on the same Cloud SQL instance. See `rv-server/CLAUDE.md` and
+`rv-server/AGENTS.md` for backend conventions. **When changing the wire
+format on either side, check both repos.**
 
 ## Publishing
 

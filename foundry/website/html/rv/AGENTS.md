@@ -74,3 +74,15 @@ vetted work is high.
 - "Re-research X" / "look up X again" → permission granted to overwrite even if pinned/author=andrew
 
 See `rv/assets/META.md` for the full schema and authoring rules.
+
+---
+
+## Sibling backend repo
+
+This directory is the static frontend. The auth backend it talks to
+(`/rv/api/*`) lives in a separate repo:
+**[`slackwing/rv-server`](https://github.com/slackwing/rv-server)** at
+`~/src/rv-server/`. When the wire format (cookie name, request/response
+shape, endpoint paths) changes on either side, the other side likely
+needs an update. Each repo's own `AGENTS.md` documents its rules; read
+both before touching wire-format code.

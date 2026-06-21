@@ -118,18 +118,47 @@
 </head>
 <body>
 
-<div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
-  <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
-  <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+<div class="site-controls">
+  <button class="site-login-btn" id="site-login-btn" type="button" aria-label="Log in">Log in</button>
+  <div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
+    <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
+    <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+  </div>
+</div>
+
+<div class="site-modal-overlay" id="site-login-modal" hidden>
+  <div class="site-modal" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
+    <button class="site-modal-close" id="site-login-close" type="button" aria-label="Close">×</button>
+    <h2 id="site-login-title">Log in</h2>
+    <form id="site-login-form">
+      <label class="site-modal-field">
+        <span>Username</span>
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label class="site-modal-field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p class="site-modal-error" id="site-login-error" hidden></p>
+      <button class="site-modal-submit" type="submit">Log in</button>
+    </form>
+  </div>
 </div>
 
 <div class="prep-page">
   <a class="prep-back" href="index.html">← Back to itinerary</a>
   <h1>Prep checklist</h1>
   <p class="lede">A flat list of everything to wrap up before (and during) the trip. Progress saves locally to this browser.</p>
-  <p class="prep-progress" id="prep-progress">Loading…</p>
-
-  <div id="prep-root"></div>
+  <!-- Body is hidden until auth.js confirms a session. If not logged in,
+       a friendly "please log in" prompt is shown instead. -->
+  <div id="prep-auth-required" hidden>
+    <p>You need to log in to see the checklist.</p>
+    <button class="site-modal-submit" type="button" id="prep-login-prompt-btn">Log in</button>
+  </div>
+  <div id="prep-content" hidden>
+    <p class="prep-progress" id="prep-progress">Loading…</p>
+    <div id="prep-root"></div>
+  </div>
 </div>
 
 <footer class="footer">
@@ -137,6 +166,7 @@
 </footer>
 
 <script src="assets/site-unit.js"></script>
+<script src="assets/auth.js"></script>
 <script src="assets/prep.js"></script>
 </body>
 </html>

@@ -177,12 +177,17 @@
   }
 
   // ---- update hero subtitle with derived date range ----
+  // The prep link is wrapped in a `.prep-link-wrap` span that auth.js
+  // toggles based on login state. We preserve that wrapper's hidden
+  // state when re-rendering.
   const subtitle = document.querySelector(".hero-text .subtitle");
   if (subtitle) {
     const lastDay = expanded[expanded.length - 1].endDay;
     const heroStart = shortDate(dateForDay(1));
     const heroEnd   = shortDate(dateForDay(lastDay));
     const startYear = dateForDay(1).getFullYear();
-    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear} · <a href="prep.html" style="color:var(--accent)">prep checklist</a>`;
+    const existingPrep = subtitle.querySelector(".prep-link-wrap");
+    const isHidden = existingPrep ? existingPrep.hasAttribute("hidden") : true;
+    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear}<span class="prep-link-wrap"${isHidden ? " hidden" : ""}> · <a href="prep.html" class="prep-link" style="color:var(--accent)">prep checklist</a></span>`;
   }
 })();
