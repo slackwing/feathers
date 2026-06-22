@@ -52,7 +52,11 @@ a { color: var(--accent); }
   aspect-ratio: 4 / 3;
   background: #ddd;
 }
-.hero-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* object-position biased toward the top so portrait-orientation photos
+   don't get their heads cropped when fit into the 4:3 hero frame.
+   Per-photo overrides can be added via inline style if a particular
+   image needs a different anchor. */
+.hero-photo { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; display: block; }
 
 .hero-text .kicker {
   text-transform: uppercase;
