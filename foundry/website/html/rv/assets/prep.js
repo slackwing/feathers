@@ -134,6 +134,9 @@
     const labelText = dt ? stripDateToken(it.text, dt.match) : it.text;
     const cls = ["prep-item", it.done ? "is-done" : "", canEdit ? "is-editable" : ""].filter(Boolean).join(" ");
     let inner = "";
+    if (canEdit) {
+      inner += `<span class="prep-handle" aria-hidden="true" title="Drag to reorder">✥</span>`;
+    }
     inner += `<input type="checkbox" ${it.done ? "checked" : ""} ${canEdit ? "" : "disabled"} aria-label="Mark done">`;
     inner += `<span class="prep-text-wrap">`;
     inner += `<span class="prep-text">`;
@@ -159,11 +162,10 @@
     if (typeof Sortable === "undefined") return;
     root.querySelectorAll(".prep-list").forEach(ul => {
       sortables.push(new Sortable(ul, {
-        // No explicit handle — the text itself drags. Exclude the
-        // checkbox and action buttons so clicking those doesn't start a
-        // drag. (SortableJS's filter runs against mousedown targets.)
-        filter: "input, button, .prep-action-btn, .prep-edit-input",
-        preventOnFilter: false,
+        // Only the ✥ icon initiates drag. Plain taps on the row scroll
+        // the page (especially important on iPad), and taps on the
+        // checkbox fire as a normal change event — no double-tap needed.
+        handle: ".prep-handle",
         animation: 140,
         ghostClass: "sortable-ghost",
         chosenClass: "sortable-chosen",
