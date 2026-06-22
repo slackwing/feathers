@@ -50,19 +50,9 @@
 .prep-item:hover { background: rgba(0,0,0,0.025); }
 .prep-item.sortable-ghost { opacity: 0.4; background: rgba(0,0,0,0.05); }
 .prep-item.sortable-chosen { background: rgba(0,0,0,0.04); }
-.prep-handle {
-  flex: 0 0 auto;
-  width: 16px;
-  margin-top: 2px;
-  color: var(--ink-soft);
-  cursor: grab;
-  user-select: none;
-  font-size: 1rem;
-  line-height: 1;
-  opacity: 0.5;
-}
-.prep-handle:hover { opacity: 1; }
-.prep-handle:active { cursor: grabbing; }
+/* When editable, the text itself is the drag handle. */
+.prep-item.is-editable .prep-text { cursor: grab; }
+.prep-item.is-editable .prep-text:active { cursor: grabbing; }
 .prep-item input[type="checkbox"] {
   flex: 0 0 auto;
   margin-top: 3px;
