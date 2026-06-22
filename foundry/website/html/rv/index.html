@@ -40,8 +40,26 @@
 
 <header class="hero">
   <div class="hero-photo-wrap">
-    <img src="assets/photos/hero-brunch.jpg" alt="Andrew and Abi at brunch" class="hero-photo">
+    <!-- The src is picked randomly per page load from HERO_PHOTOS below.
+         To add or remove a photo, drop a file in assets/photos/hero/
+         and edit that list. -->
+    <img src="" alt="Andrew and Abi" class="hero-photo" id="hero-photo">
   </div>
+  <script>
+    (function () {
+      var HERO_PHOTOS = [
+        "EDFD8785-7134-4751-B7E2-0E53E3B6B31B.JPG",
+        "IMG_4083.jpg",
+        "IMG_6135.jpg",
+        "IMG_6217.jpg",
+        "IMG_6983.jpg",
+        "IMG_7119.jpg"
+      ];
+      var pick = HERO_PHOTOS[Math.floor(Math.random() * HERO_PHOTOS.length)];
+      var img = document.getElementById("hero-photo");
+      if (img) img.src = "assets/photos/hero/" + pick;
+    })();
+  </script>
   <div class="hero-text">
     <p class="kicker">A trip across America</p>
     <h1>Hedgie <span class="amp">&</span> Frogie's<br>RV Adventure</h1>
@@ -97,5 +115,7 @@
 <script src="assets/auth.js"></script>
 <script src="assets/itinerary.js"></script>
 <script src="assets/map-v2.js"></script>
+<!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
+<script src="assets/emoji-rain.js"></script>
 </body>
 </html>
