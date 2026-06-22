@@ -47,17 +47,25 @@
   </div>
   <script>
     (function () {
+      // Each entry: filename, or {file, pos} for a per-photo
+      // object-position override (overrides the 50% 22% default in
+      // style.css). Use when a photo's faces sit lower/higher than
+      // typical and the default crop loses them or wastes space.
       var HERO_PHOTOS = [
         "EDFD8785-7134-4751-B7E2-0E53E3B6B31B.JPG",
         "IMG_4083.jpg",
         "IMG_6135.jpg",
-        "IMG_6217.jpg",
+        { file: "IMG_6217.jpg", pos: "50% 45%" },
         "IMG_6983.jpg",
         "IMG_7119.jpg"
       ];
-      var pick = HERO_PHOTOS[Math.floor(Math.random() * HERO_PHOTOS.length)];
+      var raw = HERO_PHOTOS[Math.floor(Math.random() * HERO_PHOTOS.length)];
+      var entry = typeof raw === "string" ? { file: raw } : raw;
       var img = document.getElementById("hero-photo");
-      if (img) img.src = "assets/photos/hero/" + pick;
+      if (img) {
+        img.src = "assets/photos/hero/" + entry.file;
+        if (entry.pos) img.style.objectPosition = entry.pos;
+      }
     })();
   </script>
   <div class="hero-text">
