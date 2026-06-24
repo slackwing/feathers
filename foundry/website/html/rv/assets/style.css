@@ -185,21 +185,23 @@ a { color: var(--accent); }
   gap: 6px;
   margin-bottom: 6px;
 }
-.day-card-num {
-  font-family: var(--font-serif);
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-.day-card-sep { color: var(--ink-soft); }
-.day-card-date { font-weight: 500; color: var(--ink-soft); font-size: 0.95rem; }
+/* Day card header: every part — Day N, separator, date, route names —
+   shares the SAME font family + size + weight. Only the muted color
+   differentiates date/separator from the bolder name parts. The drive
+   time below is intentionally different (smaller sans). */
+.day-card-num,
+.day-card-sep,
+.day-card-date,
 .day-card-route {
   font-family: var(--font-serif);
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--ink);
-  flex: 1 1 auto;
 }
+.day-card-num,
+.day-card-date,
+.day-card-route { color: var(--ink); }
+.day-card-sep { color: var(--ink-soft); }
+.day-card-route { flex: 1 1 auto; }
 .day-arrow { color: var(--ink-soft); font-weight: 400; padding: 0 2px; }
 .day-drive {
   margin-left: 10px;
@@ -208,7 +210,9 @@ a { color: var(--accent); }
   font-weight: 500;
   color: var(--accent);
   opacity: 0.7;
+  white-space: nowrap;
 }
+.day-drive-icon { font-size: 0.95rem; opacity: 0.85; margin-left: 2px; }
 .day-card-edit {
   background: none;
   border: none;
@@ -224,9 +228,34 @@ a { color: var(--accent); }
 .day-card-edit:hover { opacity: 1 !important; color: var(--ink); }
 /* Hide pencil unless the user can edit. */
 .stops:not(.can-edit) .day-card-edit { display: none; }
-.day-card-body { color: var(--ink); font-size: 0.95rem; line-height: 1.5; }
-.day-card-body ul { margin: 4px 0; padding-left: 22px; }
-.day-card-body li { padding: 1px 0; }
+/* Bullet body: handwritten "Caveat" — feels notebooky / froggy. Darker
+   green ink to warm it up against the mint background. Caveat is a tall
+   font, so we scale it up vs. the regular sans size to keep visual
+   weight roughly the same. */
+.day-card-body {
+  color: #1f4636;
+  font-family: "Caveat", "Patrick Hand", "Comic Sans MS", cursive;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+.day-card-body ul {
+  margin: 4px 0;
+  padding-left: 22px;
+  list-style: none;
+}
+.day-card-body li {
+  padding: 1px 0;
+  position: relative;
+}
+.day-card-body li::before {
+  content: "•";
+  color: var(--accent);
+  position: absolute;
+  left: -14px;
+  top: -2px;
+  font-size: 1em;
+}
 .day-card-body p { margin: 6px 0; }
 .day-card-body p:first-child { margin-top: 0; }
 .day-card-body p:last-child { margin-bottom: 0; }
@@ -395,7 +424,21 @@ a { color: var(--accent); }
   font-family: var(--font-serif);
   font-size: 1.3rem;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+.rv-map-modal-title-text { flex: 0 1 auto; }
+.rv-map-modal-title-edit {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.rv-map-modal-title-edit:hover { color: var(--ink); }
 .rv-map-modal-source {
   margin: 0 0 12px;
   font-size: 0.78rem;
@@ -415,20 +458,31 @@ a { color: var(--accent); }
 .rv-map-modal-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-top: 14px;
 }
 .rv-map-modal-actions button {
   font: inherit;
-  padding: 7px 12px;
+  font-size: 0.82rem;
+  padding: 4px 10px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 5px;
   background: white;
   color: var(--accent);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.3;
 }
 .rv-map-modal-actions button:hover { background: rgba(47, 138, 110, 0.08); }
+/* "quiet" buttons (deactivate / restore) sit in a neutral gray to
+   de-emphasize relative to the itinerary-changing actions. */
+.rv-map-modal-actions button.quiet {
+  border-color: #c0c8c4;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.rv-map-modal-actions button.quiet:hover { background: rgba(0, 0, 0, 0.04); color: var(--ink); }
+/* "danger" buttons (delete) — red border + red text. */
 .rv-map-modal-actions button.danger {
   border-color: #c5563a;
   color: #c5563a;

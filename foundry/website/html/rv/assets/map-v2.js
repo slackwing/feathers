@@ -471,6 +471,24 @@
     }
   }
 
+  // --------------- Sleep visibility helper (shared with hit-test) ---------------
+  // A deactivated sleep is hidden from the SVG when zoomed-out enough.
+  // Hit-tests + cursor logic must agree with this — otherwise the user
+  // can click invisible dots.
+  function isSleepVisible(l) {
+    if (!l || l.kind !== "sleep") return false;
+    const itinSleepIds = (window.rvLayered && window.rvLayered.merged)
+      ? new Set(window.rvLayered.merged.map(d => d.sleepLocId))
+      : new Set();
+    const eff = (window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l) || l;
+    const overrideActivated = (eff._override && typeof eff._override.activated === "boolean")
+      ? eff._override.activated
+      : null;
+    const activated = overrideActivated !== null ? overrideActivated : itinSleepIds.has(l.id);
+    if (activated) return true;
+    return scale >= fitScale() * 4;
+  }
+
   // --------------- Render ---------------
   function render() {
     svg.setAttribute("viewBox", `0 0 ${viewportW} ${viewportH}`);
@@ -597,7 +615,9 @@
       const isHotel = l.sleep_type === "hotel";
       // Layer DB override if available.
       const eff = (window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l) || l;
-      const isSoftDeleted = !!eff.deleted_at;
+      // Deleted = hidden entirely. Data stays in the DB (deleted_at set)
+      // but the map shows nothing. (Was a red ❌ briefly; user found it ugly.)
+      if (eff.deleted_at) return;
       const inItin = itinSleepIds.has(l.id);
       // Activated logic: explicit override wins; otherwise default true
       // if used in itinerary, false otherwise.
@@ -606,9 +626,10 @@
         : null;
       const activated = overrideActivated !== null ? overrideActivated : inItin;
       // Hide deactivated emoji until zoomed in past the threshold.
+      // (isSleepVisible() exposed below so hit-tests can match.)
       if (!activated && scale < DEACTIVATED_SHOW_AT) return;
-      const emoji = isSoftDeleted ? "❌" : (isHotel ? "🏨" : "🚐");
-      const groupOpacity = isSoftDeleted ? 0.6 : (activated ? 1.0 : 0.45);
+      const emoji = isHotel ? "🏨" : "🚐";
+      const groupOpacity = activated ? 1.0 : 0.45;
       const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
       // Tooltip text differs slightly between RV and hotel.
       let tip;
@@ -655,18 +676,16 @@
     if (window.rvUserLocations) {
       window.rvUserLocations.forEach(u => {
         if (u.lat == null || u.lon == null) return;
+        if (u.deleted_at) return;     // deleted = hidden entirely
         const wp = project(u.lat, u.lon);
         const p = worldToScreen(wp.x, wp.y);
-        const isSoftDeleted = !!u.deleted_at;
         if (u.emoji) {
-          const display = isSoftDeleted ? "❌" : u.emoji;
-          mainObjects += `<g opacity="${isSoftDeleted ? 0.6 : 1.0}"><title>${escapeXml(u.name || u.id)}</title>`;
-          mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">${display}</text>`;
+          mainObjects += `<g><title>${escapeXml(u.name || u.id)}</title>`;
+          mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">${u.emoji}</text>`;
           mainObjects += `</g>`;
           obstacles.push({ x: p.x - 9, y: p.y - 12, w: 18, h: 22 });
         } else {
-          const fill = isSoftDeleted ? "#c5563a" : "#d97b3a";
-          mainObjects += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="${fill}" stroke="white" stroke-width="2" opacity="${isSoftDeleted ? 0.6 : 1.0}"><title>${escapeXml(u.name || u.id)}</title></circle>`;
+          mainObjects += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="#d97b3a" stroke="white" stroke-width="2"><title>${escapeXml(u.name || u.id)}</title></circle>`;
           obstacles.push({ x: p.x - 6, y: p.y - 6, w: 12, h: 12 });
         }
       });
@@ -1037,10 +1056,12 @@
   const ROUTE_HOVER_PX = 18;
   let guideDotEl = null;
   function ensureGuideDot() {
-    if (guideDotEl) return guideDotEl;
+    // render() does `svg.innerHTML = ...` which detaches our circle. Detect
+    // that case (parentNode null OR not in svg anymore) and re-create.
+    if (guideDotEl && guideDotEl.parentNode === svg) return guideDotEl;
     guideDotEl = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     guideDotEl.setAttribute("r", "5");
-    guideDotEl.setAttribute("fill", "#d97b3a");
+    guideDotEl.setAttribute("fill", "#3a7fb3");           // blue per request
     guideDotEl.setAttribute("stroke", "white");
     guideDotEl.setAttribute("stroke-width", "1.5");
     guideDotEl.setAttribute("opacity", "0.85");
@@ -1049,56 +1070,75 @@
     return guideDotEl;
   }
   function hideGuideDot() {
-    if (guideDotEl) guideDotEl.setAttribute("opacity", "0");
+    if (guideDotEl && guideDotEl.parentNode === svg) {
+      guideDotEl.setAttribute("opacity", "0");
+    }
   }
   viewport.addEventListener("pointermove", (e) => {
     // Only show on devices with hover (skip touch panning).
-    if (activePointers.size > 0) { hideGuideDot(); return; }
+    if (activePointers.size > 0) { hideGuideDot(); viewport.style.cursor = ""; return; }
     if (e.pointerType === "touch") return;
     const rect = viewport.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    // If near a location, hide the guide dot — clicking will land on
-    // the location, not on the route.
     const locHit = findLocationHit(sx, sy);
-    if (locHit) { hideGuideDot(); return; }
     const routeHit = findRouteHit(sx, sy);
-    if (!routeHit || routeHit.dist > ROUTE_HOVER_PX) { hideGuideDot(); return; }
+    // Cursor: pointer (one finger) when anything clickable is under us.
+    viewport.style.cursor = (locHit || routeHit) ? "pointer" : "";
+    // Hide the guide dot whenever the cursor is already over a clickable
+    // location — the user is targeting that, not a new-stop-on-the-line.
+    if (locHit || !routeHit) { hideGuideDot(); return; }
     const dot = ensureGuideDot();
     dot.setAttribute("cx", routeHit.screenX.toFixed(1));
     dot.setAttribute("cy", routeHit.screenY.toFixed(1));
     dot.setAttribute("opacity", "0.85");
   });
-  viewport.addEventListener("pointerleave", () => hideGuideDot());
+  viewport.addEventListener("pointerleave", () => {
+    hideGuideDot();
+    viewport.style.cursor = "";
+  });
 
   // Hit-test: find the closest location to (sx, sy) within HIT_RADIUS_PX.
   // Hit radius depends on what's at the location: emoji-bearing dots
   // (sleep spots + user-added emoji stops) are visually larger so they
   // get a wider hit. Plain circle dots (majors/minors) use a tighter hit.
+  // Returns the single closest hit (used for cursor / single-target ops).
   function findLocationHit(sx, sy) {
+    const hits = findLocationHits(sx, sy);
+    return hits.length ? hits[0] : null;
+  }
+
+  // Returns ALL locations within their respective hit radii, sorted by
+  // distance (closest first). When multiple things cluster (e.g., a
+  // sleep emoji next to a route minor at low zoom), we want to show a
+  // disambiguation prompt rather than silently picking the closest.
+  function findLocationHits(sx, sy) {
     const EMOJI_HIT_PX = 22;   // sleeps / emoji user stops
     const DOT_HIT_PX = 14;     // majors + minors + non-emoji user stops
-    let best = null;
-    let bestDist = Infinity;
+    const out = [];
     function consider(p, distPx, locOrSynthetic) {
       const d = Math.hypot(p.x - sx, p.y - sy);
-      if (d <= distPx && d < bestDist) {
-        bestDist = d;
-        best = locOrSynthetic;
-      }
+      if (d <= distPx) out.push({ dist: d, loc: locOrSynthetic });
     }
     // Catalog locations.
     mapData.locations.forEach(l => {
       const w = wpoints.get(l.id);
       if (!w) return;
-      const p = worldToScreen(w.x, w.y);
       const isSleep = l.kind === "sleep";
+      // Skip sleeps that the renderer is hiding (deactivated + zoomed out).
+      if (isSleep && !isSleepVisible(l)) return;
+      // Skip locations whose override soft-deleted them — the renderer
+      // hides them, so the hit-test must too.
+      const eff = window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l;
+      if (eff && eff.deleted_at) return;
+      const p = worldToScreen(w.x, w.y);
       consider(p, isSleep ? EMOJI_HIT_PX : DOT_HIT_PX, l);
     });
     // User-added (kind="new" DB rows). Render position is project(lat,lon).
     if (window.rvUserLocations) {
       window.rvUserLocations.forEach(u => {
         if (u.lat == null || u.lon == null) return;
+        if (u.deleted_at) return;   // hidden = not clickable
         const wp = project(u.lat, u.lon);
         const p = worldToScreen(wp.x, wp.y);
         const hasEmoji = !!u.emoji;
@@ -1116,7 +1156,8 @@
         consider(p, hasEmoji ? EMOJI_HIT_PX : DOT_HIT_PX, synthetic);
       });
     }
-    return best;
+    out.sort((a, b) => a.dist - b.dist);
+    return out.map(h => h.loc);
   }
 
   // Hit-test: is (sx, sy) near the main route polyline (within ROUTE_PX)?
@@ -1157,11 +1198,35 @@
   }
 
   function handleMapClick(sx, sy) {
-    const locHit = findLocationHit(sx, sy);
-    if (locHit) { openLocationModal(locHit); return; }
+    const locHits = findLocationHits(sx, sy);
+    if (locHits.length === 1) { openLocationModal(locHits[0]); return; }
+    if (locHits.length > 1) { openDisambiguationModal(locHits); return; }
     const routeHit = findRouteHit(sx, sy);
     if (routeHit) { openRouteModal(routeHit); return; }
     // background click: nothing
+  }
+
+  // Shown when a click lands within hit range of multiple locations
+  // (common when zoomed out — emojis cluster). Lets the user pick one.
+  function openDisambiguationModal(hits) {
+    let html = `<h2 class="rv-map-modal-title"><span class="rv-map-modal-title-text">Which one?</span></h2>`;
+    html += `<p class="rv-map-modal-source">${hits.length} stops here — pick one to open.</p>`;
+    html += `<div class="rv-map-modal-actions" style="flex-direction:column;align-items:stretch;">`;
+    hits.forEach((loc, i) => {
+      const name = loc.name || loc.id;
+      const kind = loc.kind || "";
+      html += `<button type="button" data-pick="${i}" style="text-align:left;justify-content:flex-start;">${escapeXml(name)} <span style="color:var(--ink-soft);font-weight:400;font-size:0.85em;">· ${escapeXml(kind)}</span></button>`;
+    });
+    html += `</div>`;
+    openModalWith(html);
+    const modal = document.getElementById("rv-map-modal");
+    modal.querySelector(".rv-map-modal-body").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pick]");
+      if (!btn) return;
+      const idx = Number(btn.dataset.pick);
+      const loc = hits[idx];
+      if (loc) openLocationModal(loc);
+    }, { once: true });
   }
 
   // ---- Modal infrastructure ----
@@ -1231,7 +1296,14 @@
     // semantically mean "make this the new sleep" — that's valid.
     const isRouteNode = (mapData.route || []).includes(loc.id);
 
-    let html = `<h2 class="rv-map-modal-title">${escapeXml(eff ? eff.name : loc.name)}</h2>`;
+    // Title gets a pencil-edit affordance to its right (always visible,
+    // not hover-gated, so it stays consistent with the other "this is
+    // editable" icons on the site).
+    let titleHtml = `<span class="rv-map-modal-title-text">${escapeXml(eff ? eff.name : loc.name)}</span>`;
+    if (canEdit) {
+      titleHtml += ` <button type="button" class="rv-map-modal-title-edit" data-act="edit" aria-label="Edit properties" title="Edit properties">✏️</button>`;
+    }
+    let html = `<h2 class="rv-map-modal-title">${titleHtml}</h2>`;
     if (eff && eff._source) {
       html += `<p class="rv-map-modal-source">Source: ${eff._source}${isSoftDeleted ? " · deleted" : ""}</p>`;
     }
@@ -1244,29 +1316,27 @@
       html += `<p class="rv-map-modal-hint"><em>Log in to edit, add stops, or mark days.</em></p>`;
     } else {
       html += `<div class="rv-map-modal-actions">`;
-      html += `<button type="button" data-act="edit">Edit properties</button>`;
-      html += `<button type="button" data-act="toggle-active">${eff && eff.activated === false ? "Activate" : "Deactivate"}</button>`;
+      // Itinerary-changing actions first; soft delete + deactivate sit
+      // together at the end as quieter "modify the dot" actions.
       if (isCurrentSleep) {
-        // Already a sleep on the trip — only one meaningful action:
-        // duplicate the day to "stay an extra night" here.
-        html += `<button type="button" data-act="add-rest-day">Add a rest day here</button>`;
+        // We already sleep here — only meaningful action is staying an
+        // extra night (insert a duplicate day).
+        html += `<button type="button" data-act="add-rest-day">sleep here (add day)</button>`;
       } else if (isRouteNode) {
-        // Route node we drive through but don't sleep at (Omaha, Tucson, ...).
-        // Natural actions: end the day that walks past here AT here
-        // (truncate it), or add a NEW rest day at this point.
-        html += `<button type="button" data-act="end-day-here">End a day here</button>`;
-        html += `<button type="button" data-act="insert-here">Add a rest day here</button>`;
+        // Route node we drive through but don't sleep at. The natural
+        // action is "sleep here instead" — insert a new day.
+        html += `<button type="button" data-act="insert-here">sleep here (add day)</button>`;
       } else {
-        // Non-route, non-sleep POI. Full options: change the surrounding
-        // day's sleep, or insert as a new day.
-        html += `<button type="button" data-act="extend-prev">Extend previous day to here</button>`;
-        html += `<button type="button" data-act="pull-next">Pull next day back to here</button>`;
-        html += `<button type="button" data-act="insert-here">Add stop in between (insert day)</button>`;
+        // Non-route, non-sleep POI: three flavors of "make this our sleep."
+        html += `<button type="button" data-act="extend-prev">extend previous day</button>`;
+        html += `<button type="button" data-act="pull-next">extend next day</button>`;
+        html += `<button type="button" data-act="insert-here">sleep here (add day)</button>`;
       }
+      html += `<button type="button" data-act="toggle-active" class="quiet">${eff && eff.activated === false ? "activate" : "deactivate"}</button>`;
       if (isSoftDeleted) {
-        html += `<button type="button" data-act="restore">Restore</button>`;
+        html += `<button type="button" data-act="restore" class="quiet">restore</button>`;
       } else {
-        html += `<button type="button" data-act="soft-delete" class="danger">Soft delete</button>`;
+        html += `<button type="button" data-act="soft-delete" class="danger">delete</button>`;
       }
       html += `</div>`;
     }
@@ -1395,20 +1465,17 @@
   async function shiftDayEndpoint(loc, which) {
     const merged = window.rvLayered.merged;
     if (!merged.length) return;
-    // Find the day whose sleep we're changing (prev = the day BEFORE this
-    // location along route; "prev"=extend that day so it now ENDS here.
-    // "next" = the day AFTER, change its START... but start is derived
-    // from previous day's sleep, so we change the previous day's sleep).
-    // Simpler model: clicking "extend prev" changes the prev day's sleep.
-    // "pull next back" changes the NEXT day's start... which means
-    // changing the day BEFORE the next day's sleep == prev day's sleep.
-    // Actually: "pull next" = change the next day's sleep to here (so it
-    // ARRIVES here instead of going further). Let's go with that read.
-    const cat = mapData.locations.find(l => l.id === loc.id);
-    const frac = (cat && cat.route_fraction != null) ? cat.route_fraction : null;
+    const frac = fractionFor(loc.id);
     const { prevDay, nextDay } = findDayContext(frac == null ? 0 : frac);
     const target = which === "prev" ? prevDay : nextDay;
     if (!target) { alert("No day to shift."); return; }
+    const oldSleepName = window.rvLayered.nameOf(target.sleepLocId);
+    const newSleepName = loc.name;
+    const label = which === "prev" ? "previous day" : "next day";
+    if (!confirm(
+      `Change Day ${target.dayNum}'s sleep (${label}) from "${oldSleepName}" to "${newSleepName}"?\n\n` +
+      `This will recompute drive times for that day and the following day.`
+    )) return;
     try {
       await fetch("/rv/api/itinerary", {
         method: "POST",
@@ -1463,6 +1530,11 @@
     // is past this point, so its drive walks past here).
     const target = nextDay;
     if (!target) { alert("No day passes through this location."); return; }
+    const oldSleepName = window.rvLayered.nameOf(target.sleepLocId);
+    if (!confirm(
+      `End Day ${target.dayNum} at "${loc.name}" instead of "${oldSleepName}"?\n\n` +
+      `This will recompute drive times for Day ${target.dayNum} and the following day.`
+    )) return;
     try {
       await fetch("/rv/api/itinerary", {
         method: "POST",
@@ -1498,6 +1570,13 @@
     // if next is missing (end of trip).
     const newOrdinal = next ? (prev.ordinal + next.ordinal) / 2 : prev.ordinal + 500;
     const newId = "ins_" + Math.random().toString(36).slice(2, 10);
+    const insertAfter = prev.dayNum;
+    const totalDays = merged.length;
+    if (!confirm(
+      `Insert a new day at "${loc.name}" after Day ${insertAfter}?\n\n` +
+      `All following days (currently ${insertAfter + 1}–${totalDays}) will shift back by one, ` +
+      `pushing the trip-end date one day later.`
+    )) return;
     try {
       await fetch("/rv/api/itinerary", {
         method: "POST",
@@ -1515,7 +1594,7 @@
   }
 
   async function softDeleteLocation(loc) {
-    if (!confirm(`Soft-delete "${loc.name}"? You can restore it later.`)) return;
+    if (!confirm(`Delete "${loc.name}"?\n\nIt will be hidden from the map. You can restore it later by clicking the ❌.`)) return;
     try {
       // Need an override row to soft-delete a catalog location. POST first
       // (idempotent enough), then DELETE.

@@ -343,7 +343,7 @@
       headerRight = escapeHtml(endName);
     } else {
       headerRight = `${escapeHtml(startName)} <span class="day-arrow">→</span> ${escapeHtml(endName)}` +
-                    (driveStr ? ` <span class="day-drive">${escapeHtml(driveStr)}</span>` : "");
+                    (driveStr ? ` <span class="day-drive">${escapeHtml(driveStr)} <span class="day-drive-icon">🚐</span></span>` : "");
     }
     const railLabel = collapsed ? endName : `${startName} → ${endName}`;
     const railDate = shortRailDate(dt);
