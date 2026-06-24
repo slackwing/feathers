@@ -106,57 +106,120 @@ a { color: var(--accent); }
 .trip {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 20px 80px;
+  padding: 0 12px 80px;
   display: grid;
-  gap: 24px;
-  grid-template-columns: 1fr;
+  /* A wee bit of breathing room between the rail and the day cards,
+     now that the chips are gone. */
+  gap: 14px;
+  /* Mobile: thin sticky rail on the left + day cards. The rail width
+     is just wide enough for the line (2px) + the half-circle hump
+     (6px to the right) + a tiny visual margin. */
+  grid-template-columns: 16px 1fr;
 }
 @media (min-width: 860px) {
   .trip { grid-template-columns: 200px 1fr; gap: 40px; padding: 0 32px 120px; }
 }
 
-.timeline { display: none; }
+/* ---- Timeline rail ----
+   Mobile: vertical line + numbered semi-circles (clipped to the line —
+   dots are full circles whose left half is hidden by overflow:hidden
+   on the rail, same happy-accident effect desktop has from its
+   overflow-y:auto scroll container).
+   Desktop (>= 860px): the full labeled rail with scroll if it overflows. */
+.timeline {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding-right: 0;
+  /* Clip anything that pokes left of the rail's left edge — turns the
+     full-circle ::before into a hump-on-the-line look. */
+  overflow: hidden;
+}
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--line);
+}
+.timeline-list li {
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+/* The HUMP on the line — a small full circle whose left half gets
+   clipped by overflow:hidden on .timeline, so it reads as a half-circle
+   bulging right from the line. Same look mobile + desktop. */
+.timeline-list li::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  transform: translateY(-50%);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.timeline-list li.is-active::before {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-50%) scale(1.15);
+}
+/* (Day-number chip removed per Abi — mobile rail is just the line + the
+   half-circle hump on each row.) */
+/* Mobile: hide labels/dates and stretch the rail to fill the viewport
+   so dots are spaced out instead of clumping at the top. */
+.timeline-label, .timeline-date { display: none; }
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 48px);
+}
+.timeline-list li {
+  flex: 1 1 0;
+  padding: 0 0 0 18px;
+}
+.timeline-list li::before {
+  /* Center the numbered dot vertically on its row. */
+  top: 50%;
+  transform: translateY(-50%);
+}
+.timeline-list li.is-active::before {
+  transform: translateY(-50%) scale(1.12);
+}
+
 @media (min-width: 860px) {
+  /* Desktop: surface the labels + dates next to the hump; hide the
+     numbered chip (we have room for words). Rows sized by content
+     instead of stretched. */
   .timeline {
-    display: block;
-    position: sticky;
-    top: 24px;
-    align-self: start;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
     padding-right: 8px;
   }
   .timeline-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-left: 2px solid var(--line);
+    display: block;
+    height: auto;
   }
   .timeline-list li {
-    position: relative;
     padding: 8px 0 8px 18px;
     font-size: 0.85rem;
     color: var(--ink-soft);
-    cursor: pointer;
-    transition: color 0.2s;
+    flex: initial;
   }
+  /* The hump sits at the top of the row instead of being vertically
+     centered, so it lines up with the first line of the label. */
   .timeline-list li::before {
-    content: "";
-    position: absolute;
-    left: -7px; top: 14px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--bg);
-    border: 2px solid var(--line);
-    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    top: 14px;
+    transform: none;
   }
+  .timeline-list li.is-active::before { transform: scale(1.15); }
+  /* Hide the day-number chip on desktop. */
+  .timeline-list li::after { display: none; }
   .timeline-list li.is-drive { font-style: italic; opacity: 0.75; }
   .timeline-list li.is-active { color: var(--ink); font-weight: 600; }
-  .timeline-list li.is-active::before {
-    background: var(--accent);
-    border-color: var(--accent);
-    transform: scale(1.15);
-  }
+  .timeline-label { display: block; }
   .timeline-date {
     display: block;
     font-size: 0.7rem;
@@ -166,7 +229,16 @@ a { color: var(--accent); }
 }
 
 /* ===================== STOPS ===================== */
-.stops { display: flex; flex-direction: column; gap: 18px; }
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  /* Big gap so the chapter-break separator between cards has plenty of
+     breathing room above + below it. */
+}
+
+/* (Separator removed per Abi — we keep the wider gap above for breathing
+   room but no visual line/emoji between cards.) */
 
 /* New compact day cards (Phase A: editable itinerary). One line for the
    header, markdown body below. */
@@ -228,16 +300,13 @@ a { color: var(--accent); }
 .day-card-edit:hover { opacity: 1 !important; color: var(--ink); }
 /* Hide pencil unless the user can edit. */
 .stops:not(.can-edit) .day-card-edit { display: none; }
-/* Bullet body: handwritten "Caveat" — feels notebooky / froggy. Darker
-   green ink to warm it up against the mint background. Caveat is a tall
-   font, so we scale it up vs. the regular sans size to keep visual
-   weight roughly the same. */
+/* Bullet body: regular sans, darker green ink so the text feels warm
+   against the mint card without the handwritten quirk. */
 .day-card-body {
   color: #1f4636;
-  font-family: "Caveat", "Patrick Hand", "Comic Sans MS", cursive;
-  font-size: 1.1rem;
-  line-height: 1.3;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 .day-card-body ul {
   margin: 4px 0;
@@ -253,8 +322,8 @@ a { color: var(--accent); }
   color: var(--accent);
   position: absolute;
   left: -14px;
-  top: -2px;
-  font-size: 1em;
+  top: 0;
+  font-size: 1.1em;
 }
 .day-card-body p { margin: 6px 0; }
 .day-card-body p:first-child { margin-top: 0; }
@@ -281,6 +350,27 @@ a { color: var(--accent); }
   box-sizing: border-box;
 }
 .day-card-editor:focus { box-shadow: 0 0 0 2px rgba(47, 138, 110, 0.18); }
+/* Label input that appears above the markdown textarea in the day-card
+   edit flow. Sets the SLEEP location's day_card_label. */
+.day-card-editor-label-wrap {
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.day-card-editor-label {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 5px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+  box-sizing: border-box;
+}
+.day-card-editor-label:focus { box-shadow: 0 0 0 2px rgba(47, 138, 110, 0.18); }
+.day-card-editor-label::placeholder { color: var(--ink-soft); font-style: italic; }
 
 .stop { scroll-margin-top: 24px; }
 .stop-header { margin-bottom: 12px; }

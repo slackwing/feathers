@@ -100,6 +100,21 @@
     return eff ? eff.name : id;
   }
 
+  // Day-card / timeline display name: the override's day_card_label if
+  // non-blank, else the location's canonical name. The route map keeps
+  // using nameOf() so the dot tooltip and the map labels stay canonical.
+  function dayCardLabelOf(id) {
+    const eff = effectiveLocation(id);
+    if (!eff) return id;
+    if (eff._override && eff._override.day_card_label && eff._override.day_card_label.trim() !== "") {
+      return eff._override.day_card_label;
+    }
+    if (eff.day_card_label && eff.day_card_label.trim() !== "") {
+      return eff.day_card_label;
+    }
+    return eff.name;
+  }
+
   // ============================================================
   // 2. Layer DB itinerary over the static itinerary.
   // ============================================================
@@ -333,8 +348,8 @@
     const dt = dateForDay(d.dayNum);
     const startId = prevD ? prevD.sleepLocId : d.sleepLocId; // Day 1: start == sleep
     const endId = d.sleepLocId;
-    const startName = nameOf(startId);
-    const endName = nameOf(endId);
+    const startName = dayCardLabelOf(startId);
+    const endName = dayCardLabelOf(endId);
     const collapsed = startId === endId;
     const drive = d.driveMin;
     const driveStr = (!collapsed && drive != null && drive > 0) ? fmtDriveMins(drive) : "";
@@ -383,8 +398,10 @@
     if (!list) return;
     list.innerHTML = "";
     const sections = Array.from(target.querySelectorAll(".day-card"));
-    const items = sections.map(section => {
+    const items = sections.map((section, i) => {
       const li = document.createElement("li");
+      // data-num drives the numbered circle on mobile via CSS content:attr().
+      li.dataset.num = String(i + 1);
       li.innerHTML = `<span class="timeline-label">${section.dataset.label || ""}</span>` +
                      (section.dataset.date ? `<span class="timeline-date">${section.dataset.date}</span>` : "");
       li.addEventListener("click", () => section.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -421,47 +438,114 @@
   function startMarkdownEdit(card, day) {
     const body = card.querySelector(".day-card-body");
     if (!body || body.querySelector("textarea")) return;
+
+    // Two editable fields live here:
+    //   1) day_card_label for the day's SLEEP location. Defaults to the
+    //      location's canonical name; if the user changes it, we PATCH
+    //      the override row's day_card_label. (Editing the START name
+    //      requires editing the *previous* day, because the start is
+    //      derived from the prior sleep.)
+    //   2) markdown body — same flow as before.
+    const sleepLoc = effectiveLocation(day.sleepLocId);
+    const canonicalName = sleepLoc ? sleepLoc.name : day.sleepLocId;
+    const initialLabel = dayCardLabelOf(day.sleepLocId);
+
+    body.innerHTML = "";
+    const labelWrap = document.createElement("div");
+    labelWrap.className = "day-card-editor-label-wrap";
+    const labelInput = document.createElement("input");
+    labelInput.type = "text";
+    labelInput.className = "day-card-editor-label";
+    labelInput.value = initialLabel;
+    labelInput.placeholder = canonicalName;
+    labelInput.title = `Display label for "${canonicalName}" in day cards + timeline (leave blank to use canonical name)`;
+    labelWrap.appendChild(labelInput);
+    body.appendChild(labelWrap);
+
     const ta = document.createElement("textarea");
     ta.className = "day-card-editor";
     ta.value = day.markdown || "";
     ta.rows = Math.max(3, ta.value.split("\n").length + 1);
-    body.innerHTML = "";
     body.appendChild(ta);
+
     ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
+
     let finished = false;
     async function save() {
       if (finished) return; finished = true;
+
+      // ---- label save (only if changed AND differs from canonical) ----
+      const newLabelRaw = labelInput.value.trim();
+      const newLabel = newLabelRaw === canonicalName ? "" : newLabelRaw;
+      const oldLabel = (sleepLoc && sleepLoc._override && sleepLoc._override.day_card_label) || "";
+      if (newLabel !== oldLabel) {
+        try {
+          // Try PATCH first (assumes override row exists). We always
+          // include `restore: true` so editing a label on a previously
+          // soft-deleted override row brings it back to active —
+          // otherwise the label saves but effectiveLocation() ignores
+          // it because it sees the deleted_at flag.
+          const patchBody = newLabel === ""
+            ? { clear_day_card_label: true, restore: true }
+            : { day_card_label: newLabel, restore: true };
+          const r = await fetch("/rv/api/locations/" + encodeURIComponent(day.sleepLocId), {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patchBody),
+          });
+          if (!r.ok && r.status === 404) {
+            // Override row doesn't exist yet — create it.
+            await fetch("/rv/api/locations", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: day.sleepLocId,
+                kind: "override",
+                day_card_label: newLabel || null,
+                activated: true,
+              }),
+            });
+          }
+        } catch (err) {
+          alert("Saving the label failed — please refresh.");
+        }
+      }
+
+      // ---- markdown save ----
       const newMd = ta.value;
       const oldMd = day.markdown || "";
-      if (newMd === oldMd) {
-        body.innerHTML = renderMarkdown(newMd) || '<span class="day-card-empty">(no notes)</span>';
-        body.dataset.empty = newMd ? "0" : "1";
+      if (newMd !== oldMd) {
+        day.markdown = newMd;
+        try {
+          const res = await fetch("/rv/api/itinerary", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              day_id: day.dayId,
+              sleep_loc_id: day.sleepLocId,
+              markdown: newMd,
+              ordinal: day.ordinal,
+            }),
+          });
+          if (!res.ok) throw new Error("save failed");
+        } catch (err) {
+          day.markdown = oldMd;
+          alert("Saving notes failed — reverted.");
+        }
+      }
+
+      // Re-render the body. If the label changed, do a full reload so
+      // all day cards + timeline pick up the new value consistently.
+      if (newLabel !== oldLabel) {
+        location.reload();
         return;
       }
-      // Optimistic update.
-      day.markdown = newMd;
-      body.innerHTML = renderMarkdown(newMd) || '<span class="day-card-empty">(no notes)</span>';
-      body.dataset.empty = newMd ? "0" : "1";
-      try {
-        const res = await fetch("/rv/api/itinerary", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            day_id: day.dayId,
-            sleep_loc_id: day.sleepLocId,
-            markdown: newMd,
-            ordinal: day.ordinal,
-          }),
-        });
-        if (!res.ok) throw new Error("save failed");
-      } catch (err) {
-        day.markdown = oldMd;
-        body.innerHTML = renderMarkdown(oldMd) || '<span class="day-card-empty">(no notes)</span>';
-        body.dataset.empty = oldMd ? "0" : "1";
-        alert("Save failed — reverted.");
-      }
+      body.innerHTML = renderMarkdown(day.markdown || "") || '<span class="day-card-empty">(no notes)</span>';
+      body.dataset.empty = day.markdown ? "0" : "1";
     }
     function cancel() {
       if (finished) return; finished = true;
@@ -469,11 +553,23 @@
       body.innerHTML = renderMarkdown(md) || '<span class="day-card-empty">(no notes)</span>';
       body.dataset.empty = md ? "0" : "1";
     }
-    ta.addEventListener("keydown", (e) => {
+    function onKey(e) {
       if (e.key === "Escape") { e.preventDefault(); cancel(); }
       else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); save(); }
-    });
-    ta.addEventListener("blur", save);
+    }
+    labelInput.addEventListener("keydown", onKey);
+    ta.addEventListener("keydown", onKey);
+    // Save when focus leaves both fields. Track with a microtask so
+    // tabbing between the two doesn't trigger a save.
+    function maybeBlurSave() {
+      setTimeout(() => {
+        if (finished) return;
+        if (document.activeElement === labelInput || document.activeElement === ta) return;
+        save();
+      }, 0);
+    }
+    labelInput.addEventListener("blur", maybeBlurSave);
+    ta.addEventListener("blur", maybeBlurSave);
   }
 
   // ============================================================
@@ -496,6 +592,7 @@
   window.rvLayered = {
     effectiveLocation,
     nameOf,
+    dayCardLabelOf,
     merged,
     dayDriveMinutes,
     resolveSleepAnchor,
