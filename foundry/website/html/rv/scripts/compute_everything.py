@@ -268,8 +268,12 @@ def is_mountain_summary(summary):
     return any(k in s for k in mtns)
 
 
-def rv_pad(duration_min, summary):
-    return duration_min * (1.25 if is_mountain_summary(summary) else 1.10)
+# RV padding factors are NOT applied at compute time. We store the raw
+# Google duration + an `is_mountain` flag and let the renderer multiply
+# at display time. Source of truth stays close to the API; the heuristic
+# is reversible and tunable without re-fetching.
+RV_PAD_INTERSTATE = 1.10
+RV_PAD_MOUNTAIN = 1.25
 
 
 # ============================================================
@@ -277,13 +281,20 @@ def rv_pad(duration_min, summary):
 # ============================================================
 
 def build_map(sources, key, force, trip_start_date, trip_total_days):
-    """Build map.json.
+    """Build map.json (v3 architecture).
 
-    Each sleep location gets a `night_temp_f` and `night_date`.
-    Each major location gets a `wet_day_pct` and `predicted_date`.
-    Dates are assigned by route position: a location at X% along the
-    total route minutes (including spurs for off-route) → trip date
-    at X% of (trip_total_days - 1) from start.
+    DATA MODEL:
+      route[]   — hand-crafted highway polyline node ids (majors + minor anchors).
+                  This is the spine; NO auto-injected junctions.
+      segments[] — Google-direct drive segments between adjacent route[] nodes.
+      pois[]    — off-route locations (sleeps, drive-by minors, detour-majors).
+                  Each POI has anchor (= nearest route node id) + spur to the
+                  POI's true coords. Day-walks pay spur cost ONLY on days that
+                  start/end at that POI (or visit it as a detour).
+
+    Each sleep location also gets a `night_temp_f` and `predicted_date`.
+    Each major gets `wet_day_pct` and `predicted_date`. Dates are assigned
+    by route-fraction (cumulative raw minutes to that POI's anchor).
     """
     locations = {loc["id"]: loc for loc in sources["locations"]}
     route_ids = sources["route"]
@@ -296,56 +307,19 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
         if orid not in locations:
             sys.exit(f"FATAL: off_route id {orid!r} not in locations")
 
-    polyline = [(locations[rid]["lat"], locations[rid]["lon"]) for rid in route_ids]
-
-    # Junctions for off-route locations.
-    junctions = []
-    junction_insertions = []  # (seg_idx, t, junction_id)
-    for orid in off_route_ids:
-        loc = locations[orid]
-        q_lat, q_lon, seg_idx, t, dist_mi = nearest_point_on_polyline(
-            loc["lat"], loc["lon"], polyline
-        )
-        is_sleep = loc.get("kind") == "sleep"
-        needs_junction = dist_mi > JUNCTION_THRESHOLD_MI or is_sleep
-        if needs_junction:
-            jid = f"j_{orid}"
-            junctions.append({
-                "id": jid,
-                "lat": round(q_lat, 6),
-                "lon": round(q_lon, 6),
-                "for_location": orid,
-                "off_route_distance_mi": round(dist_mi, 2),
-            })
-            junction_insertions.append((seg_idx, t, jid))
-
-    junction_insertions.sort(key=lambda x: (x[0], x[1]))
-    new_route = []
-    insertion_idx = 0
-    for i, rid in enumerate(route_ids):
-        new_route.append(rid)
-        while insertion_idx < len(junction_insertions) and junction_insertions[insertion_idx][0] == i:
-            new_route.append(junction_insertions[insertion_idx][2])
-            insertion_idx += 1
-
+    # ----- Main-route segments (between adjacent route[] nodes) -----
     def coord_of(node_id):
-        if node_id in locations:
-            return locations[node_id]["lat"], locations[node_id]["lon"]
-        for j in junctions:
-            if j["id"] == node_id:
-                return j["lat"], j["lon"]
-        sys.exit(f"FATAL: no coords for {node_id}")
+        return locations[node_id]["lat"], locations[node_id]["lon"]
 
-    # Compute main-route segments.
     segments = []
     n_hits, n_misses = 0, 0
-    print(f"\n[DIRECTIONS] {len(new_route) - 1} main-route + {len(junctions)} spurs", file=sys.stderr)
-    for i in range(len(new_route) - 1):
-        a, b = new_route[i], new_route[i + 1]
+    print(f"\n[DIRECTIONS] {len(route_ids) - 1} main-route segments", file=sys.stderr)
+    for i in range(len(route_ids) - 1):
+        a, b = route_ids[i], route_ids[i + 1]
         a_lat, a_lon = coord_of(a)
         b_lat, b_lon = coord_of(b)
         if haversine_mi(a_lat, a_lon, b_lat, b_lon) < 0.05:
-            segments.append({"from": a, "to": b, "minutes": 0, "distance_mi": 0, "summary": "(coincident)"})
+            segments.append({"from": a, "to": b, "raw_minutes": 0, "distance_mi": 0, "summary": "(coincident)", "is_mountain": False})
             continue
         res, hit = get_directions(a_lat, a_lon, b_lat, b_lon, key, force)
         if hit:
@@ -354,67 +328,90 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
             n_misses += 1
         if "error" in res:
             print(f"  ERROR {a} -> {b}: {res['error']}", file=sys.stderr)
-            segments.append({"from": a, "to": b, "minutes": None, "error": res["error"]})
+            segments.append({"from": a, "to": b, "raw_minutes": None, "error": res["error"]})
             continue
-        padded = rv_pad(res["duration_min"], res["summary"])
         segments.append({
             "from": a, "to": b,
-            "minutes": round(padded, 1),
             "raw_minutes": round(res["duration_min"], 1),
             "distance_mi": round(res["distance_mi"], 1),
             "summary": res["summary"],
+            "is_mountain": is_mountain_summary(res["summary"]),
         })
 
-    for j in junctions:
-        orid = j["for_location"]
-        loc = locations[orid]
-        if haversine_mi(j["lat"], j["lon"], loc["lat"], loc["lon"]) < 0.05:
-            segments.append({"from": j["id"], "to": orid, "minutes": 0, "distance_mi": 0, "summary": "(coincident)"})
-            continue
-        res, hit = get_directions(j["lat"], j["lon"], loc["lat"], loc["lon"], key, force)
-        if hit:
-            n_hits += 1
-        else:
-            n_misses += 1
-        if "error" in res:
-            print(f"  ERROR spur {j['id']} -> {orid}: {res['error']}", file=sys.stderr)
-            segments.append({"from": j["id"], "to": orid, "minutes": None, "error": res["error"]})
-            continue
-        padded = rv_pad(res["duration_min"], res["summary"])
-        segments.append({
-            "from": j["id"], "to": orid,
-            "minutes": round(padded, 1),
-            "raw_minutes": round(res["duration_min"], 1),
-            "distance_mi": round(res["distance_mi"], 1),
-            "summary": res["summary"],
-        })
-
-    print(f"  cache: {n_hits} hits, {n_misses} new fetches", file=sys.stderr)
-
-    # ----- Compute fractional position along the route for each node -----
-    # Total = sum of main-route segment minutes (NOT including spurs).
+    # ----- Compute cumulative position along the route (raw minutes) -----
     seg_map = {(s["from"], s["to"]): s for s in segments}
-    cumulative_min_at = {}  # node_id -> cumulative minutes from route[0]
+    cumulative_min_at = {}  # node_id -> cumulative raw minutes from route[0]
     cumulative = 0.0
-    cumulative_min_at[new_route[0]] = 0.0
-    for i in range(len(new_route) - 1):
-        a, b = new_route[i], new_route[i + 1]
+    cumulative_min_at[route_ids[0]] = 0.0
+    for i in range(len(route_ids) - 1):
+        a, b = route_ids[i], route_ids[i + 1]
         seg = seg_map.get((a, b))
-        if seg and seg.get("minutes") is not None:
-            cumulative += seg["minutes"]
+        if seg and seg.get("raw_minutes") is not None:
+            cumulative += seg["raw_minutes"]
         cumulative_min_at[b] = cumulative
     total_route_min = cumulative
 
-    # For an off-route location, fraction = its junction's fraction.
-    junction_for = {j["for_location"]: j["id"] for j in junctions}
+    # ----- POIs: anchor (nearest route node) + spur -----
+    # For each off-route location, find the nearest route_ids node (by
+    # great-circle distance), then ask Google for the spur drive time
+    # from that anchor's true coords to the POI's true coords.
+    def nearest_route_node(poi_lat, poi_lon):
+        best_id = None
+        best_d = float("inf")
+        for rid in route_ids:
+            r_lat, r_lon = coord_of(rid)
+            d = haversine_mi(poi_lat, poi_lon, r_lat, r_lon)
+            if d < best_d:
+                best_d = d
+                best_id = rid
+        return best_id, best_d
+
+    pois = []
+    print(f"\n[POIS] {len(off_route_ids)} POI spurs", file=sys.stderr)
+    for orid in off_route_ids:
+        loc = locations[orid]
+        anchor_id, anchor_dist = nearest_route_node(loc["lat"], loc["lon"])
+        a_lat, a_lon = coord_of(anchor_id)
+        spur_entry = {
+            "id": orid,
+            "anchor": anchor_id,
+            "anchor_distance_mi": round(anchor_dist, 2),
+            "kind": loc.get("kind", "sleep"),
+        }
+        if haversine_mi(a_lat, a_lon, loc["lat"], loc["lon"]) < 0.05:
+            spur_entry["spur_raw_minutes"] = 0
+            spur_entry["spur_distance_mi"] = 0
+            spur_entry["spur_summary"] = "(coincident)"
+            spur_entry["spur_is_mountain"] = False
+        else:
+            res, hit = get_directions(a_lat, a_lon, loc["lat"], loc["lon"], key, force)
+            if hit:
+                n_hits += 1
+            else:
+                n_misses += 1
+            if "error" in res:
+                print(f"  ERROR spur {anchor_id} -> {orid}: {res['error']}", file=sys.stderr)
+                spur_entry["spur_raw_minutes"] = None
+                spur_entry["spur_error"] = res["error"]
+            else:
+                spur_entry["spur_raw_minutes"] = round(res["duration_min"], 1)
+                spur_entry["spur_distance_mi"] = round(res["distance_mi"], 1)
+                spur_entry["spur_summary"] = res["summary"]
+                spur_entry["spur_is_mountain"] = is_mountain_summary(res["summary"])
+        pois.append(spur_entry)
+
+    print(f"  cache: {n_hits} hits, {n_misses} new fetches", file=sys.stderr)
+
+    # ----- For weather date assignment, POI fraction = its anchor's fraction. -----
+    poi_anchor = {p["id"]: p["anchor"] for p in pois}
 
     def fraction_for_location(loc_id):
         if loc_id in cumulative_min_at:
             return cumulative_min_at[loc_id] / total_route_min if total_route_min else 0
-        # Off-route: use its junction.
-        if loc_id in junction_for:
-            jid = junction_for[loc_id]
-            return cumulative_min_at[jid] / total_route_min if total_route_min else 0
+        # Off-route: use its anchor's fraction.
+        if loc_id in poi_anchor:
+            anchor = poi_anchor[loc_id]
+            return cumulative_min_at[anchor] / total_route_min if total_route_min else 0
         return None
 
     def date_for_fraction(frac):
@@ -470,14 +467,14 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
 
     return {
         "_comment": "Generated by scripts/compute_everything.py. Do not hand-edit; edit assets/map-sources.json or trip.json and re-run.",
-        "version": 2,
+        "version": 3,
         "trip_start_date": trip_start_date.isoformat(),
         "trip_total_days": trip_total_days,
-        "total_route_minutes": round(total_route_min, 1),
+        "total_route_raw_minutes": round(total_route_min, 1),
         "locations": locations_out,
-        "junctions": junctions,
-        "route": new_route,
+        "route": route_ids,
         "segments": segments,
+        "pois": pois,
     }
 
 

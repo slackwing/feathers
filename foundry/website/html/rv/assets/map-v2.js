@@ -1,21 +1,23 @@
 // ============================================================
-// Route Map V2 — see MAP_V2_MECHANICS.md
+// Route Map V2 (data v3) — see MAP_V2_MECHANICS.md
 //
-// Data model: assets/map.json has
-//   locations[]   (real places: major | minor | sleep)
-//   junctions[]   (invisible nodes ON the main route line, anchors
-//                  for off-route locations)
-//   route[]       (ordered list of location-ids AND junction-ids
-//                  that define the main route polyline)
-//   segments[]    (per edge: { from, to, minutes, summary, ... })
+// Data model: assets/map.json (version 3) has
+//   locations[]   (real places: major | minor | sleep — all coords)
+//   route[]       (ordered route-node ids defining the main polyline;
+//                  hand-crafted highway geometry, no auto junctions)
+//   segments[]    (per main-route edge: { from, to, raw_minutes,
+//                  summary, is_mountain, distance_mi })
+//   pois[]        (off-route locations w/ anchor metadata: each POI
+//                  has anchor=nearest route-node id, anchor_distance_mi,
+//                  spur_raw_minutes, spur_distance_mi, spur_summary,
+//                  spur_is_mountain, kind)
 //
 // Render rules:
-//   - main route line: polyline through route[] (junctions
-//     transparent, no visible kink because they sit on the line)
-//   - spurs: thin line from junction to its off-route location
+//   - main route line: polyline through route[] node coords (clean,
+//     no kinks for sleeps — they're POIs, not in route)
+//   - spurs: thin line from POI anchor to POI true coords
 //   - major dot: large green, bold label
 //   - minor dot: small grey, italic small grey label
-//   - junction: nothing
 //   - sleep: 🚐 emoji at real coords, fixed screen size on zoom
 //   - hour pills: one per major→major leg, sum of main-route
 //     segments between the two majors (NOT spurs)
@@ -78,28 +80,28 @@
   try {
     statesGeo = await (await fetch("assets/us-states.json")).json();
   } catch (_) { /* states layer is optional */ }
+  let itinerary = null;
+  try {
+    itinerary = await (await fetch("assets/itinerary.json")).json();
+  } catch (_) { /* itinerary layer is optional */ }
 
   // --------------- Lookup tables ---------------
   const locationById = new Map(mapData.locations.map(l => [l.id, l]));
-  const junctionById = new Map(mapData.junctions.map(j => [j.id, j]));
+  // v3: pois[] replaces junctions[]. A POI is an off-route location with
+  // an anchor (route node) + spur (anchor -> POI's true coords).
+  const poiById = new Map(mapData.pois.map(p => [p.id, p]));
 
   function coordOf(id) {
     if (locationById.has(id)) {
       const l = locationById.get(id);
       return { lat: l.lat, lon: l.lon };
     }
-    if (junctionById.has(id)) {
-      const j = junctionById.get(id);
-      return { lat: j.lat, lon: j.lon };
-    }
     throw new Error(`Unknown id: ${id}`);
   }
 
   // --------------- Projection: lat/lon → km (equirectangular) ---------------
-  const allPoints = [
-    ...mapData.locations.map(l => [l.lat, l.lon]),
-    ...mapData.junctions.map(j => [j.lat, j.lon]),
-  ];
+  // All POIs and route nodes are in mapData.locations.
+  const allPoints = mapData.locations.map(l => [l.lat, l.lon]);
   const lats = allPoints.map(p => p[0]);
   const lons = allPoints.map(p => p[1]);
   const latMin = Math.min(...lats), latMax = Math.max(...lats);
@@ -116,10 +118,9 @@
   }
 
   // Pre-project all things we'll render.
-  // wpoints: id -> {wx, wy}
+  // wpoints: id -> {wx, wy}. All locations (route + POIs) live here.
   const wpoints = new Map();
   mapData.locations.forEach(l => wpoints.set(l.id, project(l.lat, l.lon)));
-  mapData.junctions.forEach(j => wpoints.set(j.id, project(j.lat, j.lon)));
 
   // Pre-project state polygons to world-km. Each state becomes a list of
   // rings; each ring is a list of [wx, wy] pairs. Drawn as faint stroke
@@ -241,8 +242,11 @@
   function fmtMinutes(min) {
     if (min == null) return "?";
     if (min < 60) return `${Math.round(min)}m`;
-    const h = Math.floor(min / 60);
-    const m = Math.round(min - h * 60);
+    // Round to total minutes first, then split — avoids "5h60m" when
+    // 359.5 rounds to 60 minutes within the hour.
+    const rounded = Math.round(min);
+    const h = Math.floor(rounded / 60);
+    const m = rounded - h * 60;
     return m === 0 ? `${h}h` : `${h}h${m}m`;
   }
 
@@ -274,10 +278,14 @@
         accumStartMajor = id;
         accumMin = 0;
       }
-      // Add the segment cost to the accumulator (segment from route[i] to route[i+1]).
+      // Add the padded segment cost to the accumulator (segment from
+      // route[i] to route[i+1]). Pad at render time from raw_minutes
+      // + is_mountain flag (see padFactor above).
       if (i < mapData.route.length - 1) {
         const seg = segMap.get(`${mapData.route[i]}|${mapData.route[i + 1]}`);
-        if (seg && seg.minutes != null) accumMin += seg.minutes;
+        if (seg && seg.raw_minutes != null) {
+          accumMin += seg.raw_minutes * (seg.is_mountain ? 1.25 : 1.10);
+        }
       }
     }
   }
@@ -293,21 +301,30 @@
   function estTextWidth(s, fontSize) { return s.length * fontSize * 0.58; }
 
   // Candidate offsets for a label of size (w, h) around an anchor (cx, cy)
-  // sitting on a dot of radius dotR. Each candidate is the TOP-LEFT of the
-  // label box. Order = preference: right, upper-right, upper-left, left,
-  // lower-right, lower-left, above, below.
-  function labelCandidates(cx, cy, w, h, dotR, pad = 4) {
-    const gap = dotR + pad;
-    return [
-      { x: cx + gap,            y: cy - h / 2 },                  // right
-      { x: cx + gap * 0.71,     y: cy - h - gap * 0.71 + h / 2 }, // upper-right
-      { x: cx - w - gap * 0.71, y: cy - h - gap * 0.71 + h / 2 }, // upper-left
-      { x: cx - w - gap,        y: cy - h / 2 },                  // left
-      { x: cx + gap * 0.71,     y: cy + gap * 0.71 + h / 2 - h }, // lower-right
-      { x: cx - w - gap * 0.71, y: cy + gap * 0.71 + h / 2 - h }, // lower-left
-      { x: cx - w / 2,          y: cy - h - gap },                // above
-      { x: cx - w / 2,          y: cy + gap },                    // below
-    ].map(p => ({ ...p, w, h }));
+  // sitting on a dot/anchor of radius dotR. Each candidate is the TOP-LEFT
+  // of the label box. We emit 8 directions (right, upper-right, upper-left,
+  // left, lower-right, lower-left, above, below) at every radius in
+  // `radii`, ordered preference-first. For dense maps, pass several radii
+  // so the placer can push further out when the close-in slots are taken.
+  function labelCandidates(cx, cy, w, h, dotR, pad = 4, radii = null) {
+    const baseGap = dotR + pad;
+    const rs = radii || [baseGap];
+    const out = [];
+    for (const gap of rs) {
+      const diag = gap * 0.71;
+      const dirs = [
+        { x: cx + gap,             y: cy - h / 2 },                    // right
+        { x: cx + diag,            y: cy - h - diag + h / 2 },         // upper-right
+        { x: cx - w - diag,        y: cy - h - diag + h / 2 },         // upper-left
+        { x: cx - w - gap,         y: cy - h / 2 },                    // left
+        { x: cx + diag,            y: cy + diag + h / 2 - h },         // lower-right
+        { x: cx - w - diag,        y: cy + diag + h / 2 - h },         // lower-left
+        { x: cx - w / 2,           y: cy - h - gap },                  // above
+        { x: cx - w / 2,           y: cy + gap },                      // below
+      ];
+      for (const d of dirs) out.push({ ...d, w, h });
+    }
+    return out;
   }
   function pickLeastOverlap(candidates, obstacles) {
     let best = null, bestScore = Infinity;
@@ -326,6 +343,134 @@
     return best;
   }
 
+  // --------------- Per-day drive geometry (from itinerary.json) ---------------
+  // For each day in the itinerary where sleep[N] != sleep[N-1], compute the
+  // list of (a, b) world-coord segment endpoints the drive traverses. The
+  // "Day N" label and alternating green/yellow wash hang off that geometry.
+  //
+  // Algorithm:
+  //   1. Resolve each day's sleep id to its position in mapData.route[]
+  //      (for off-route sleeps, this is the junction id which IS in route[];
+  //      we also note the off-route spur for spur-coloring).
+  //   2. For day N with sleep != previous, walk route[] from prev's route
+  //      index to today's route index, emitting one segment per adjacent
+  //      pair. Plus prepend yesterday's spur (junction -> sleep, reversed:
+  //      we wake up at the off-route spot and have to come back to the
+  //      junction first) and append today's spur (junction -> sleep).
+  //
+  // Output: dayDrives[] = [{day, segments: [[wxA,wyA,wxB,wyB], ...],
+  //                          fromSleepId, toSleepId}]
+  const dayDrives = [];
+  if (itinerary && itinerary.days && itinerary.days.length) {
+    // v3: route[] is the clean highway polyline. POIs anchor to a route
+    // node; sleeping off-route costs only the spur (anchor -> POI).
+    const routeIndexOf = new Map();
+    mapData.route.forEach((id, i) => routeIndexOf.set(id, i));
+
+    function resolveSleep(sleepId) {
+      // Returns {routeIdx, sleepId, anchorId (route node), spurMin (pre-padded), poi}.
+      if (routeIndexOf.has(sleepId)) {
+        // On-route node (e.g. new_york, san_diego).
+        return { routeIdx: routeIndexOf.get(sleepId), sleepId, anchorId: sleepId, spurMin: 0, poi: null };
+      }
+      const poi = poiById.get(sleepId);
+      if (poi && routeIndexOf.has(poi.anchor) && poi.spur_raw_minutes != null) {
+        const padded = poi.spur_raw_minutes * (poi.spur_is_mountain ? 1.25 : 1.10);
+        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: padded, poi };
+      }
+      return null;
+    }
+
+    function worldPair(idA, idB) {
+      const a = wpoints.get(idA);
+      const b = wpoints.get(idB);
+      if (!a || !b) return null;
+      return [a.x, a.y, b.x, b.y];
+    }
+
+    // RV padding factors live HERE (display time), not in the data.
+    // map.json stores raw Google Directions duration + an `is_mountain`
+    // flag derived from the route summary; we multiply on read so the
+    // factors stay tunable without re-fetching.
+    const RV_PAD_INTERSTATE = 1.10;
+    const RV_PAD_MOUNTAIN = 1.25;
+    function padFactor(seg) {
+      return seg && seg.is_mountain ? RV_PAD_MOUNTAIN : RV_PAD_INTERSTATE;
+    }
+
+    // Quick lookup: padded main-route segment minutes by (from, to) route ids.
+    const segMinutes = new Map();
+    mapData.segments.forEach(s => {
+      if (s.raw_minutes != null) {
+        segMinutes.set(`${s.from}|${s.to}`, s.raw_minutes * padFactor(s));
+      }
+    });
+    function getMinutes(idA, idB) {
+      const k = `${idA}|${idB}`;
+      if (segMinutes.has(k)) return segMinutes.get(k);
+      const r = `${idB}|${idA}`;
+      if (segMinutes.has(r)) return segMinutes.get(r);
+      return 0;
+    }
+
+    let prev = null;
+    for (const d of itinerary.days) {
+      const today = resolveSleep(d.sleep);
+      if (!today) { prev = today; continue; }
+      if (prev && prev.sleepId === today.sleepId) {
+        // Multi-day stay; no drive on this day.
+        continue;
+      }
+      if (!prev) { prev = today; continue; } // Day 1 has no prior drive.
+      const segs = [];
+      let totalMin = 0;
+      // Spur back from yesterday's POI to its anchor.
+      if (prev.poi) {
+        const p = worldPair(prev.sleepId, prev.anchorId);
+        if (p) {
+          segs.push(p);
+          totalMin += prev.spurMin;
+        }
+      }
+      // Walk route[] from prev anchor → today anchor (forward).
+      if (prev.routeIdx < today.routeIdx) {
+        for (let i = prev.routeIdx; i < today.routeIdx; i++) {
+          const a = mapData.route[i], b = mapData.route[i + 1];
+          const p = worldPair(a, b);
+          if (p) {
+            segs.push(p);
+            totalMin += getMinutes(a, b);
+          }
+        }
+      } else if (prev.routeIdx > today.routeIdx) {
+        for (let i = prev.routeIdx; i > today.routeIdx; i--) {
+          const a = mapData.route[i], b = mapData.route[i - 1];
+          const p = worldPair(a, b);
+          if (p) {
+            segs.push(p);
+            totalMin += getMinutes(a, b);
+          }
+        }
+      }
+      // Today's spur from anchor out to POI.
+      if (today.poi) {
+        const p = worldPair(today.anchorId, today.sleepId);
+        if (p) {
+          segs.push(p);
+          totalMin += today.spurMin;
+        }
+      }
+      dayDrives.push({
+        day: d.day,
+        segments: segs,
+        minutes: totalMin,
+        fromSleepId: prev.sleepId,
+        toSleepId: today.sleepId,
+      });
+      prev = today;
+    }
+  }
+
   // --------------- Render ---------------
   function render() {
     svg.setAttribute("viewBox", `0 0 ${viewportW} ${viewportH}`);
@@ -334,10 +479,11 @@
     // the label placer avoids them.
     const obstacles = [];
     // SVG fragments in z-order: stateOutlines (deepest background),
+    // dayStrokes (wide alternating green/yellow wash per drive day),
     // bgLines (route + spurs), mainObjects (dots, emojis, fixed-position
     // child labels), movableLabels (drawn last so they layer above
     // everything).
-    let stateOutlines = "", bgLines = "", mainObjects = "", movableLabels = "";
+    let stateOutlines = "", dayStrokes = "", bgLines = "", mainObjects = "", movableLabels = "";
 
     // ----- US state outlines (faintest background, optional) -----
     if (statePolygons.length) {
@@ -361,6 +507,37 @@
       }
     }
 
+    // ----- Day-strokes (wide alternating green/yellow under the route) -----
+    // Each labeled drive day gets a wide low-opacity stroke painted as a
+    // path through its segments. The "Day N" text label is DEFERRED to
+    // after the main objects are placed, so its anti-collision pass can
+    // dodge the dots/emojis/labels we're about to draw.
+    //
+    // Days with no drive (multi-day stays) produce no stroke and no
+    // label — by design.
+    const dayLabelsToPlace = []; // {dd, segScreen, color} — placed after mainObjects
+    if (dayDrives.length) {
+      const colorA = "#2f8a6e"; // page --accent (green)
+      const colorB = "#e6c34a"; // warm yellow tuned for mint background
+      const STROKE_W = 22;
+      const STROKE_OPACITY = 0.10;
+
+      dayDrives.forEach((dd, idx) => {
+        const color = (idx % 2 === 0) ? colorA : colorB;
+        const segScreen = dd.segments.map(s => [
+          worldToScreen(s[0], s[1]),
+          worldToScreen(s[2], s[3]),
+        ]);
+        if (!segScreen.length) return;
+        let d = "";
+        segScreen.forEach(([a, b]) => {
+          d += `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)} `;
+        });
+        dayStrokes += `<path d="${d.trim()}" stroke="${color}" stroke-width="${STROKE_W}" stroke-opacity="${STROKE_OPACITY}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+        dayLabelsToPlace.push({ dd, segScreen, color });
+      });
+    }
+
     // ----- Main route line + spurs (background) -----
     {
       const pts = mapData.route.map(id => {
@@ -370,11 +547,22 @@
       const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
       bgLines += `<path d="${d}" stroke="#9bb5a8" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
-    mapData.junctions.forEach(j => {
-      const a = worldToScreen(wpoints.get(j.id).x, wpoints.get(j.id).y);
-      const b = worldToScreen(wpoints.get(j.for_location).x, wpoints.get(j.for_location).y);
-      const targetLoc = locationById.get(j.for_location);
-      const isMajor = targetLoc && targetLoc.kind === "major";
+    // v3: spurs are POI anchor -> POI true coords. Skip:
+    //  - POIs whose anchor is essentially coincident (already on-route)
+    //  - "orphan" POIs: anchor too far away (>ORPHAN_THRESHOLD_MI). These
+    //    render as floating dots with no spur line and no connection to
+    //    the route. They're still in the catalog for future reference but
+    //    not connected to the trip's through-driving path.
+    const ORPHAN_THRESHOLD_MI = 25;
+    mapData.pois.forEach(p => {
+      if (p.anchor_distance_mi != null && p.anchor_distance_mi < 0.1) return;
+      if (p.anchor_distance_mi != null && p.anchor_distance_mi > ORPHAN_THRESHOLD_MI) return;
+      const anchorWP = wpoints.get(p.anchor);
+      const poiWP = wpoints.get(p.id);
+      if (!anchorWP || !poiWP) return;
+      const a = worldToScreen(anchorWP.x, anchorWP.y);
+      const b = worldToScreen(poiWP.x, poiWP.y);
+      const isMajor = p.kind === "major";
       if (isMajor) {
         bgLines += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="#9bb5a8" stroke-width="2"/>`;
       } else {
@@ -382,35 +570,44 @@
       }
     });
 
-    // ----- Hour pills (drawn before labels, register as obstacles) -----
-    majorLegs.forEach(leg => {
-      const a = worldToScreen(wpoints.get(leg.from).x, wpoints.get(leg.from).y);
-      const b = worldToScreen(wpoints.get(leg.to).x, wpoints.get(leg.to).y);
-      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      const dx = b.x - a.x, dy = b.y - a.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const ox = -dy / len * 14, oy = dx / len * 14;
-      const lx = mx + ox, ly = my + oy;
-      const label = fmtMinutes(leg.minutes);
-      const pillW = label.length * 7 + 10;
-      mainObjects += `<g><rect x="${(lx - pillW / 2).toFixed(1)}" y="${(ly - 9).toFixed(1)}" width="${pillW}" height="16" rx="8" fill="white" opacity="0.94" stroke="#c9dfd2" stroke-width="0.7"/><text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" font-size="11" fill="#4a5a52" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="600">${escapeXml(label)}</text></g>`;
-      obstacles.push({ x: lx - pillW / 2, y: ly - 9, w: pillW, h: 16 });
-    });
+    // (Drive-time pills between majors were removed 2026-06-21 — the
+    // per-day stroke labels now carry the time info, e.g. "Day 3 · 4h30m".
+    // majorLegs[] is still computed above for potential future use.)
 
     // ----- Sleep spots: emoji + superscript temp (FIXED position, above-right) -----
+    // RV nights show the inside-RV temp in its gradient color.
+    // Hotel nights show the WOULD-BE inside-RV temp (same calculation),
+    // so the gradient color still communicates "this is what we escaped"
+    // without needing strikethrough — the 🏨 emoji already tells you
+    // you're not sleeping in the RV.
     mapData.locations.forEach(l => {
       if (l.kind !== "sleep") return;
       const p = worldToScreen(wpoints.get(l.id).x, wpoints.get(l.id).y);
       const isHotel = l.sleep_type === "hotel";
       const emoji = isHotel ? "🏨" : "🚐";
-      const insideF = (!isHotel && l.night_temp_f != null) ? outsideToInside(l.night_temp_f) : null;
-      const tip = !isHotel && l.night_temp_f != null && l.predicted_date
-        ? `${l.name} · ${l.predicted_date} · inside ${fmtTemp(insideF)}${window.rvTempUnit} (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit})`
-        : `${l.name}${l.predicted_date ? " · " + l.predicted_date : ""}`;
+      const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
+      // Tooltip text differs slightly between RV and hotel.
+      let tip;
+      if (insideF == null) {
+        tip = `${l.name}${l.predicted_date ? " · " + l.predicted_date : ""}`;
+      } else if (isHotel) {
+        tip = `${l.name} · ${l.predicted_date} · would-be inside ${fmtTemp(insideF)}${window.rvTempUnit} in the RV (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit}) — that's why we're in a hotel`;
+      } else {
+        tip = `${l.name} · ${l.predicted_date} · inside ${fmtTemp(insideF)}${window.rvTempUnit} (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit})`;
+      }
       mainObjects += `<g><title>${escapeXml(tip)}</title>`;
       mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 7).toFixed(1)}" font-size="20" text-anchor="middle" style="user-select:none;">${emoji}</text>`;
       // Emoji is roughly 20px wide centered on p.x, ~24px tall above p.y+7.
       obstacles.push({ x: p.x - 10, y: p.y - 13, w: 20, h: 24 });
+      // Gold medal sits to the LEFT of the emoji for objectively-great sleep
+      // spots (free dispersed + 7000+ ft + verified 24' fit + no cautions
+      // + no reservations + no gate).
+      if (l.medal === "gold") {
+        const mx = p.x - 13;
+        const my = p.y + 7;
+        mainObjects += `<text x="${mx.toFixed(1)}" y="${my.toFixed(1)}" font-size="14" text-anchor="middle" style="user-select:none;">🥇</text>`;
+        obstacles.push({ x: mx - 7, y: my - 12, w: 14, h: 16 });
+      }
       if (insideF != null) {
         // SUPERSCRIPT: above-right of the emoji.
         const tempStr = fmtTemp(insideF);
@@ -445,7 +642,13 @@
     // Compose the label for each major: name + (separately) the droplet + rain pct.
     // To keep collision avoidance simple, treat the major's name + rain block
     // as a SINGLE composite movable block. Width = max(nameW, rainW), stacked.
-    dotMarkers.forEach(m => {
+    //
+    // Placement priority: majors first (most important), then days, then
+    // minors. Earlier placements claim better spots; later ones dodge them.
+    // (Day labels are placed in their own loop below, between major+minor.)
+    const majorsFirst = dotMarkers.filter(m => m.kind === "major");
+    const minorsLast  = dotMarkers.filter(m => m.kind === "minor");
+    [...majorsFirst].forEach(m => {
       const { kind, l, p, dotR } = m;
       const isMajor = kind === "major";
       const nameFS = isMajor ? 13 : 10;
@@ -468,7 +671,11 @@
         ? `${l.name} · ${l.predicted_date} · ${fmtRain(l.wet_day_pct)} rain`
         : l.name;
 
-      const cands = labelCandidates(p.x, p.y, blockW, blockH, dotR, 4);
+      // Multiple radii so the placer can push the label outward when the
+      // close-in slots are taken (same idea as the day-label placement).
+      const baseGap = dotR + 4;
+      const radii = [baseGap, baseGap + 10, baseGap + 22, baseGap + 38, baseGap + 60, baseGap + 90];
+      const cands = labelCandidates(p.x, p.y, blockW, blockH, dotR, 4, radii);
       const chosen = pickLeastOverlap(cands, obstacles) || cands[0];
 
       // Reserve the chosen box.
@@ -496,7 +703,94 @@
       movableLabels += `</g>`;
     });
 
-    svg.innerHTML = stateOutlines + bgLines + mainObjects + movableLabels;
+    // ----- Day-label placement (uses same labelCandidates/pickLeastOverlap as majors) -----
+    // For each drive day, anchor = midpoint of the longest segment in that
+    // day's geometry. Two-line label: "Day N" on top, "Hh Mm" underneath
+    // (narrower box → fits in more places when zoomed in). Multiple radii
+    // so the placer pushes outward when close-in spots are taken.
+    let dayLabels = "";
+    if (dayLabelsToPlace.length) {
+      const FS_TOP = 11;     // "Day N"
+      const FS_BOT = 10;     // "1h45m"
+      const LINE_GAP = 2;
+      // We score against the same `obstacles` array everything else uses,
+      // so day labels avoid majors, minors, sleep emojis, temp labels, etc.
+
+      // Date for Day N = start_date + (N - 1) days, formatted as "Jul 7".
+      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      function dateForDay(n) {
+        if (!itinerary || !itinerary.start_date) return `Day ${n}`;
+        const [y, m, d] = itinerary.start_date.split("-").map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d + (n - 1)));
+        return `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCDate()}`;
+      }
+      for (const { dd, segScreen, color } of dayLabelsToPlace) {
+        const topStr = dateForDay(dd.day);
+        const botStr = dd.minutes > 0 ? fmtMinutes(dd.minutes) : "";
+        const blockW = Math.max(
+          estTextWidth(topStr, FS_TOP),
+          botStr ? estTextWidth(botStr, FS_BOT) : 0
+        ) + 4;
+        const blockH = botStr ? (FS_TOP + LINE_GAP + FS_BOT) : FS_TOP;
+
+        // Anchor at midpoint of longest segment; perpendicular orientation
+        // determines whether "above"/"below" candidates flip sides nicely
+        // (labelCandidates' 8 directions are screen-axis-aligned, which is
+        // fine for our use).
+        const segByLen = [...segScreen]
+          .map(([a, b]) => ({ a, b, len: Math.hypot(b.x - a.x, b.y - a.y) }))
+          .sort((p, q) => q.len - p.len);
+        const best = segByLen[0];
+        if (!best) continue;
+        const cx = (best.a.x + best.b.x) / 2;
+        const cy = (best.a.y + best.b.y) / 2;
+        // Treat the stroke (22 px wide → 11 px radius) as our "dot".
+        const anchorR = 11;
+
+        const baseGap = anchorR + 4;
+        const radii = [baseGap, baseGap + 12, baseGap + 26, baseGap + 44, baseGap + 68, baseGap + 100];
+        const cands = labelCandidates(cx, cy, blockW, blockH, anchorR, 4, radii);
+        const chosen = pickLeastOverlap(cands, obstacles) || cands[0];
+        obstacles.push(chosen);
+
+        // Emit: top line is "Day N" centered at chosen top-left + half-width;
+        // bottom line is "Hh Mm" beneath it.
+        const tx = chosen.x + chosen.w / 2;
+        const topY = chosen.y + FS_TOP;
+        dayLabels += `<text x="${tx.toFixed(1)}" y="${topY.toFixed(1)}" font-size="${FS_TOP}" font-weight="700" fill="${color}" text-anchor="middle" font-family="system-ui, sans-serif" style="paint-order:stroke;stroke:white;stroke-width:3;stroke-linejoin:round;">${escapeXml(topStr)}</text>`;
+        if (botStr) {
+          const botY = topY + LINE_GAP + FS_BOT;
+          dayLabels += `<text x="${tx.toFixed(1)}" y="${botY.toFixed(1)}" font-size="${FS_BOT}" font-weight="600" fill="${color}" text-anchor="middle" font-family="system-ui, sans-serif" style="paint-order:stroke;stroke:white;stroke-width:3;stroke-linejoin:round;">${escapeXml(botStr)}</text>`;
+        }
+      }
+    }
+
+    // ----- Minors placed LAST (lowest priority) -----
+    // Use the exact same loop body as majors, but with minor dot markers.
+    // (Earlier we filtered dotMarkers into majorsFirst + minorsLast and
+    // ran only majors; this is the minors pass.)
+    minorsLast.forEach(m => {
+      const { kind, l, p, dotR } = m;
+      const isMajor = kind === "major"; // always false here
+      const nameFS = 10;
+      const nameStr = l.name;
+      const nameW = estTextWidth(nameStr, nameFS);
+      const blockW = nameW;
+      const blockH = nameFS + 3;
+      const tip = l.name;
+      const baseGap = dotR + 4;
+      const radii = [baseGap, baseGap + 8, baseGap + 18, baseGap + 32, baseGap + 50];
+      const cands = labelCandidates(p.x, p.y, blockW, blockH, dotR, 4, radii);
+      const chosen = pickLeastOverlap(cands, obstacles) || cands[0];
+      obstacles.push(chosen);
+      const nameX = chosen.x;
+      const nameY = chosen.y + nameFS;
+      movableLabels += `<g><title>${escapeXml(tip)}</title>`;
+      movableLabels += `<text x="${nameX.toFixed(1)}" y="${nameY.toFixed(1)}" font-size="${nameFS}" font-weight="400" fill="#7a8a82" font-family="system-ui, sans-serif" style="font-style:italic;paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(nameStr)}</text>`;
+      movableLabels += `</g>`;
+    });
+
+    svg.innerHTML = stateOutlines + dayStrokes + bgLines + mainObjects + movableLabels + dayLabels;
   }
 
   function escapeXml(s) {

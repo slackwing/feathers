@@ -40,12 +40,14 @@
       "lon": -110.9747
     },
     {
-      "id": "willcox_walmart",
+      "id": "willcox_hie",
       "kind": "sleep",
-      "name": "Willcox Walmart",
-      "lat": 32.2526,
-      "lon": -109.8323,
-      "sleep_type": "walmart"
+      "name": "Holiday Inn Express Willcox",
+      "lat": 32.270,
+      "lon": -109.834,
+      "sleep_type": "hotel",
+      "_notes": "Holiday Inn Express & Suites Willcox by IHG. 1251 N Virginia Ave, Willcox AZ 85643. I-10 Exit 340, 80 mi east of Tucson. 100 rooms, outdoor heated pool, fitness center, free hot breakfast, free WiFi, free parking. Pet-friendly ($20/pet, 40 lb max). Replaces willcox_walmart as the Day 4 sleep — Willcox sits at 4200 ft so July nights are ~72°F outside (87°F inside an RV); we splurge for AC. Two consecutive hotel nights with Gila Bend (Day 3) is intentional.",
+      "cautions": []
     },
     {
       "id": "lordsburg",
@@ -55,6 +57,14 @@
       "lon": -108.7087
     },
     {
+      "id": "willcox_az",
+      "kind": "minor",
+      "name": "Willcox AZ",
+      "lat": 32.2528,
+      "lon": -109.8323,
+      "_note": "On I-10 between Tucson and Lordsburg. Anchor for willcox_hie so it doesn't anchor 66mi off Lordsburg."
+    },
+    {
       "id": "las_cruces",
       "kind": "minor",
       "name": "Las Cruces",
@@ -62,12 +72,33 @@
       "lon": -106.7637
     },
     {
+      "id": "deming_hie",
+      "kind": "sleep",
+      "name": "Holiday Inn Express Deming Mimbres Valley",
+      "lat": 32.273,
+      "lon": -107.692,
+      "sleep_type": "hotel",
+      "_notes": "Holiday Inn Express & Suites Deming Mimbres Valley by IHG. 3801 E Cedar St, Deming NM 88030. I-10 Exit 85. Free hot breakfast, free WiFi, free parking, indoor pool + hot tub. Deming sits at ~4335 ft so July night is ~70°F outside / ~85°F inside RV. Catalog as an alternate hotel on the I-10 corridor between Tucson and Las Cruces (~75 mi straight-line to White Sands). Useful if Day-4 plans shift or we want a hotel closer to WS than Willcox.",
+      "cautions": []
+    },
+    {
+      "id": "las_cruces_hampton_i10",
+      "kind": "sleep",
+      "name": "Hampton Inn & Suites Las Cruces I-10",
+      "lat": 32.279,
+      "lon": -106.798,
+      "sleep_type": "hotel",
+      "_notes": "Hampton Inn & Suites Las Cruces I-10 (Hilton brand). Off I-10 ~2 mi from historic Old Mesilla. Free hot breakfast, free WiFi, free parking, indoor pool. Las Cruces sits at ~3900 ft so July night is ~70°F outside / ~85°F inside RV. Catalog as a hotel option closest to White Sands (~17 mi straight-line) AND closest to the Mesilla restaurant scene (La Posta de Mesilla, Hacienda de Mesilla, etc). Useful if we restructure to do WS the day after a Mesilla dinner.",
+      "cautions": []
+    },
+    {
       "id": "white_sands",
       "kind": "major",
       "name": "White Sands NP",
-      "lat": 32.3829,
-      "lon": -106.4836,
-      "_note": "Coords are White Sands NP visitor center on US-70 (was 32.7872, -106.3257 = deep inside dunes, no road)"
+      "lat": 32.3793,
+      "lon": -106.4779,
+      "is_detour": true,
+      "_note": "Coords are the WHITE SANDS NP VISITOR CENTER on US-70 (NOT the dunes interior). Per the through-driving rule: we count only the drive to ARRIVE and PARK at the park; Dunes Drive into the gypsum field is sightseeing territory, NOT drive time. Visitor center is at the park entrance off US-70."
     },
     {
       "id": "alamogordo",
@@ -82,7 +113,54 @@
       "name": "Cloudcroft / Lincoln NF",
       "lat": 32.9569,
       "lon": -105.7430,
-      "sleep_type": "free_dispersed"
+      "sleep_type": "free_dispersed",
+      "medal": "gold"
+    },
+    {
+      "id": "cloudcroft_sleepygrass",
+      "kind": "sleep",
+      "name": "Sleepy Grass Campground (Lincoln NF)",
+      "lat": 32.937,
+      "lon": -105.744,
+      "sleep_type": "paid_campground",
+      "_notes": "USFS established campground 1.4 mi S of Cloudcroft on NM-130. 9000 ft elevation, 30 ft RV max, first-come no reservation, $26-$41/night, open May 15 - early Oct. 15 sites. Pavement to entrance; paved/maintained sites. RV-safe for our 24 ft Sprinter. Geographically EAST of White Sands (not closer if approaching from I-10).",
+      "cautions": []
+    },
+    {
+      "id": "manzano_dispersed",
+      "kind": "sleep",
+      "name": "Manzano Mtns dispersed (Cibola NF FR 542)",
+      "lat": 34.74,
+      "lon": -106.45,
+      "sleep_type": "free_dispersed",
+      "_notes": "Cibola NF Mountainair Ranger District, ~26 mi south of Albuquerque off NM-337/NM-55. ~7200 ft elevation → cool nights (~55°F outside July). Free, no reservation, 14-day stay limit. Big-rig friendly at first pull-offs near the FR 542 entrance per one Dyrt report. Catalog as an alternate for any day where we want a cool free dispersed near ABQ — Day 5 (Cloudcroft → ABQ → Hyde Park) could swap if Hyde Park doesn't work out, or as a Day 4½ rest stop if we add a day.",
+      "cautions": [
+        "Deeper FR 542 sites need 4WD/high-clearance — stay near the entrance. Scout before committing."
+      ]
+    },
+    {
+      "id": "three_rivers_petroglyphs",
+      "kind": "minor",
+      "name": "Three Rivers Petroglyphs",
+      "lat": 33.3478,
+      "lon": -106.0758,
+      "_notes": "BLM site ~28 mi N of Tularosa, 5 mi off US-54. 21,000+ Jornada Mogollon petroglyphs on basalt ridge, 1-mi loop trail. Gravel BLM lot fits 24' RV. Open dawn-dusk, $5/vehicle. July: go early, brutal sun on exposed rock."
+    },
+    {
+      "id": "valley_of_fires",
+      "kind": "minor",
+      "name": "Valley of Fires Rec Area",
+      "lat": 33.6856,
+      "lon": -105.9229,
+      "_notes": "BLM lava field 4 mi W of Carrizozo on US-380. 5,000-yr-old Malpais lava flow, paved 0.75-mi Malpais Nature Trail right off the parking lot. Zero detour from US-380. Large paved lot, easy 24'. Full RV campground on site. Open daily, $5/vehicle. 30-45 min stop."
+    },
+    {
+      "id": "san_antonio_nm",
+      "kind": "minor",
+      "name": "San Antonio NM (Owl Bar / Buckhorn)",
+      "lat": 33.9192,
+      "lon": -106.8694,
+      "_notes": "Tiny village at US-380 + I-25 exit 139. Owl Bar & Cafe (1945, Manhattan Project lore) and Buckhorn Tavern (beat Bobby Flay) — famous green chile cheeseburger rivalry across the street from each other. Both closed Sundays. Mon-Sat ~11-8:30. Dirt/gravel lot fits 24' RV. Zero detour — right at the I-25 on-ramp."
     },
     {
       "id": "albuquerque",
@@ -104,7 +182,63 @@
       "name": "Hyde Park Rd (Santa Fe NF)",
       "lat": 35.7800,
       "lon": -105.8200,
-      "sleep_type": "free_dispersed"
+      "sleep_type": "free_dispersed",
+      "medal": "gold"
+    },
+    {
+      "id": "hopewell_lake_cg",
+      "kind": "sleep",
+      "name": "Hopewell Lake Campground (Carson NF)",
+      "lat": 36.6940,
+      "lon": -106.2400,
+      "sleep_type": "paid_campground",
+      "_notes": "USFS established campground on US-64 between Tres Piedras and Tierra Amarilla. 9500 ft elevation → very cool July nights. Sites fit 18-45 ft. First-come-first-served + some reservable; no gate. Water system out — bring your own. Paved access. Catalog as a paid no-reservation alternate north of Santa Fe en route to Pagosa Springs / Mesa Verde.",
+      "cautions": []
+    },
+    {
+      "id": "tres_piedras_dispersed",
+      "kind": "sleep",
+      "name": "Tres Piedras dispersed (Carson NF FR 64)",
+      "lat": 36.665,
+      "lon": -105.985,
+      "sleep_type": "free_dispersed",
+      "_notes": "Carson NF FR 64/64G/578 just off US-64 west of Tres Piedras. ~8200 ft elevation → cool nights. 4-5 big-rig spots at the start of the road before 'the Y' — past the Y the road narrows. Free, no reservation, no gate. Catalog as a free dispersed alternate north of Santa Fe en route to Pagosa Springs / Mesa Verde.",
+      "cautions": [
+        "Stay at the first 4-5 sites before 'the Y' — road narrows past that and is not safe for a 24' rig."
+      ]
+    },
+    {
+      "id": "east_fork_fr667_dispersed",
+      "kind": "sleep",
+      "name": "East Fork FR 667 dispersed (San Juan NF)",
+      "lat": 37.366,
+      "lon": -106.752,
+      "sleep_type": "free_dispersed",
+      "_notes": "San Juan NF FR 667 off US-160, ~10 mi east of Pagosa Springs. ~7800 ft elevation. First 2.7 mi past the East Fork CG entrance has big-rig sites (38' MH confirmed past first bridge). Washboarded but no clearance issues at first sites; 4WD-only marker further in. Free, no reservation, no gate. Catalog as a free dispersed alternate east of Pagosa Springs.",
+      "cautions": [
+        "Stay within the first 2.7 mi past East Fork CG — deeper road is 4WD-only and not safe for a 24' rig."
+      ]
+    },
+    {
+      "id": "turkey_springs_dispersed",
+      "kind": "sleep",
+      "name": "Turkey Springs / Piedra Rd dispersed (San Juan NF)",
+      "lat": 37.318,
+      "lon": -107.116,
+      "sleep_type": "free_dispersed",
+      "_notes": "San Juan NF FR 629/923 off Piedra Rd, ~20 min north of Pagosa Springs. 7500-8000 ft elevation. Smooth gravel/dirt with flat spaces; 40-ft RV access confirmed in the front portion. Free, no reservation, no gate. Some back-area regrowth closures but main area open as of June 2026. Catalog as a STRONG free dispersed alternate near Pagosa Springs.",
+      "cautions": [],
+      "medal": "gold"
+    },
+    {
+      "id": "transfer_park_cg",
+      "kind": "sleep",
+      "name": "Transfer Park Campground (San Juan NF / Lemon Reservoir)",
+      "lat": 37.460,
+      "lon": -107.654,
+      "sleep_type": "paid_campground",
+      "_notes": "USFS established campground above Lemon Reservoir, ~14 mi NE of Durango via Florida Rd. ~8100 ft elevation. Upper loop has several larger sites, mostly level. First-come-first-served, no reservation, no gate. $22/night. Catalog as a paid no-reservation alternate near Durango.",
+      "cautions": []
     },
     {
       "id": "pagosa_springs",
@@ -121,11 +255,29 @@
       "lon": -107.8801
     },
     {
+      "id": "mancos",
+      "kind": "minor",
+      "name": "Mancos",
+      "lat": 37.3450,
+      "lon": -108.2890,
+      "_note": "Town of Mancos on US-160 between Durango and Mesa Verde NP entrance. Added to route[] so that mancos_nf and madden_peak_dispersed junctions resolve to the correct leg (US-160) instead of the straight-line mesa_verde -> telluride polyline (which crosses mountains and puts the junction in nowhere-land)."
+    },
+    {
+      "id": "cortez",
+      "kind": "minor",
+      "name": "Cortez",
+      "lat": 37.3489,
+      "lon": -108.5859,
+      "_note": "Town of Cortez on US-160 / US-491, the actual driving turn from US-160 north onto CO-145 toward Telluride. Without this in route[], the straight-line mesa_verde -> telluride polyline cuts NE across mountains that don't have a road, which puts off-route junctions in nonsense places."
+    },
+    {
       "id": "mesa_verde",
       "kind": "major",
       "name": "Mesa Verde NP",
-      "lat": 37.2308,
-      "lon": -108.4618
+      "lat": 37.3340,
+      "lon": -108.4840,
+      "is_detour": true,
+      "_note": "Coords are the MESA VERDE NP ENTRANCE GATE off US-160 (NOT Mesa Top Loop or any of the cliff dwellings, which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd — those are hiking/sightseeing territory). Per the through-driving rule: spur counts only the drive to ARRIVE at the park entrance; everything past the gate is human-brain territory."
     },
     {
       "id": "mancos_nf",
@@ -133,7 +285,19 @@
       "name": "Mancos / San Juan NF",
       "lat": 37.4200,
       "lon": -108.2000,
-      "sleep_type": "free_dispersed"
+      "sleep_type": "free_dispersed",
+      "medal": "gold"
+    },
+    {
+      "id": "madden_peak_dispersed",
+      "kind": "sleep",
+      "name": "Madden Peak Rd dispersed (San Juan NF FR 316)",
+      "lat": 37.402,
+      "lon": -108.092,
+      "sleep_type": "free_dispersed",
+      "_notes": "FR 316 off US-160, ~7 mi west of Mancos, ~15 mi to Mesa Verde entrance (~30 min). 20+ dispersed sites, big-rig accessible in the first 1-2 miles before incline. Elevation 7000-9500 ft → cool nights (~50s°F July). Free, no permit, campfires OK, 14-day stay. La Plata Mountain views. Catalog as a CLOSER-TO-MV alternate to mancos_nf for the Day-7 sleep before our Mesa Verde all-day.",
+      "cautions": [],
+      "medal": "gold"
     },
     {
       "id": "telluride",
@@ -148,7 +312,8 @@
       "name": "Last Dollar Rd",
       "lat": 37.9900,
       "lon": -107.9200,
-      "sleep_type": "free_dispersed"
+      "sleep_type": "free_dispersed",
+      "medal": "gold"
     },
     {
       "id": "ridgway",
@@ -161,8 +326,9 @@
       "id": "black_canyon",
       "kind": "major",
       "name": "Black Canyon",
-      "lat": 38.5919,
-      "lon": -107.7090
+      "lat": 38.5466,
+      "lon": -107.6868,
+      "_note": "Coords are the South Rim Visitor Center (the main one). Was (38.5919, -107.7090) — that pulled Google routes onto CO-92 (slow rim road / North Rim approach) when reality is South Rim via CO-347 off US-50. Per through-driving rule: coord should snap to where we'd actually park."
     },
     {
       "id": "crested_butte",
@@ -177,7 +343,8 @@
       "name": "Cement Creek Rd",
       "lat": 38.8100,
       "lon": -106.8500,
-      "sleep_type": "free_dispersed"
+      "sleep_type": "free_dispersed",
+      "medal": "gold"
     },
     {
       "id": "gunnison",
@@ -185,6 +352,419 @@
       "name": "Gunnison",
       "lat": 38.5458,
       "lon": -106.9253
+    },
+    {
+      "id": "marshall_pass_dispersed",
+      "kind": "sleep",
+      "name": "Marshall Pass dispersed (CR 200 / FR 200)",
+      "lat": 38.395,
+      "lon": -106.247,
+      "sleep_type": "free_dispersed",
+      "_notes": "Off US-285 just south of Poncha Springs, ~15 mi to Salida. Elevation 8,825-10,842 ft along the road. Wide graded dirt, light washboard; 30-ft RVs confirmed. Free, no reservation, no gate. ATV traffic + dust on weekends but quiet weeknights. Catalog as a STRONG cool-night option between Gunnison and Denver on US-285 corridor.",
+      "cautions": [],
+      "medal": "gold"
+    },
+    {
+      "id": "fourmile_creek_dispersed",
+      "kind": "sleep",
+      "name": "Fourmile Creek dispersed (Fourmile TMA, CR 376/375)",
+      "lat": 38.74,
+      "lon": -106.16,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM/USFS Fourmile Travel Management Area off US-285 north of Buena Vista. ~8,595 ft. Free, FCFS, no gate. ~15 min to Buena Vista, ~30 min to Salida. Graded dirt, washboarded; 30-38 ft rigs reported fine. Heavy ATV weekends. Catalog as a STRONG free dispersed alternate between Salida and Denver on US-285.",
+      "cautions": [],
+      "medal": "gold"
+    },
+    {
+      "id": "turtle_rock_dispersed",
+      "kind": "sleep",
+      "name": "Turtle Rock (FR 375, Buena Vista)",
+      "lat": 38.7290,
+      "lon": -106.1480,
+      "sleep_type": "free_dispersed",
+      "_notes": "USFS dispersed area off CR 371, near Fourmile TMA. ~8,267 ft. Free, FCFS, vault toilets, no gate. 24-ft Class C confirmed; 38-ft Class A also fits. Road bumpy/potholed but manageable slow. ATV noise possible. Catalog as a STRONG alternate to fourmile_creek_dispersed in the same area.",
+      "cautions": [],
+      "medal": "gold"
+    },
+    {
+      "id": "kenosha_pass_east_dispersed",
+      "kind": "sleep",
+      "name": "Kenosha Pass East dispersed (NFSR 126/811)",
+      "lat": 39.4133,
+      "lon": -105.7570,
+      "sleep_type": "free_dispersed",
+      "_notes": "Pike NF off US-285 at Kenosha Pass. 9,957 ft elevation - very cool July nights. Free, FCFS, no reservation. Designated marked sites only. 27.5-ft RV confirmed. ~1h16m from Denver, ~5 min off US-285. Catalog as a STRONG cool-night option closer to Denver. NOTE: no pets allowed.",
+      "cautions": [
+        "Designated marked sites ONLY — do not freelance. No pets allowed."
+      ]
+    },
+    {
+      "id": "redskin_creek_dispersed",
+      "kind": "sleep",
+      "name": "Redskin Creek / Deer Creek dispersed (Pike NF, Bailey)",
+      "lat": 39.42,
+      "lon": -105.39,
+      "sleep_type": "free_dispersed",
+      "_notes": "Pike NF dispersed north of Bailey CO, off US-285. ~7,500-8,500 ft. Free, FCFS, dirt but well-maintained. RV-friendly per Dyrt. Catalog as a STRONG closer-to-Denver option on US-285 corridor.",
+      "cautions": [],
+      "medal": "gold"
+    },
+    {
+      "id": "monarch_park_cg",
+      "kind": "sleep",
+      "name": "Monarch Park Campground (FR 231, Monarch Pass)",
+      "lat": 38.5050,
+      "lon": -106.3260,
+      "sleep_type": "paid_campground",
+      "_notes": "USFS established campground off US-50 at Monarch Pass. 10,500 ft. 35 sites, fits 45-ft rigs, $24/night. May-July is first-come (Aug/Sep is reservable). No gate. Catalog as a paid no-reservation option near the pass.",
+      "cautions": []
+    },
+    {
+      "id": "tarryall_reservoir",
+      "kind": "sleep",
+      "name": "Tarryall Reservoir SWA / FR 275",
+      "lat": 39.0980,
+      "lon": -105.5260,
+      "sleep_type": "free_dispersed",
+      "_notes": "Park SWA dispersed off US-285 in South Park. ~8,860 ft. Free, no permit, pit toilets at reservoir. Cattle-gate wire entry (open, not locked). 38-ft motorhomes reported in. AWD recommended after rain. Catalog as a South Park alternate.",
+      "cautions": [
+        "Road gets rough/muddy when wet — check forecast before committing."
+      ]
+    },
+    {
+      "id": "buffalo_creek_dispersed",
+      "kind": "sleep",
+      "name": "Buffalo Creek Rec Area dispersed (NFSR 550/552)",
+      "lat": 39.385,
+      "lon": -105.276,
+      "sleep_type": "free_dispersed",
+      "_notes": "Pike NF dispersed south of Bailey. Well-maintained dirt; marked designated sites only (ticket if outside). ~7,500 ft. Free, FCFS. Catalog as a closer-to-Denver option.",
+      "cautions": [
+        "Must use marked designated sites only — not all fit 24'; scout before committing."
+      ]
+    },
+    {
+      "id": "sterling_walmart",
+      "kind": "sleep",
+      "name": "Sterling Walmart CO",
+      "lat": 40.6225,
+      "lon": -103.2433,
+      "sleep_type": "walmart",
+      "_notes": "Walmart Supercenter #924, 1510 W Main St, Sterling CO. I-76 Exit 125. Overnight RV parking allowed (semi/RV traffic confirmed). Large flat lot, 24/7 store = no gate close. ~2h15m from Denver — a short first leg eastbound. Phone (970) 522-0600 to courtesy-call.",
+      "cautions": []
+    },
+    {
+      "id": "brush_memorial_park",
+      "kind": "sleep",
+      "name": "Brush Memorial Park Campground CO",
+      "lat": 40.2603,
+      "lon": -103.6303,
+      "sleep_type": "paid_campground",
+      "_notes": "City campground in Brush CO, ~3 mi N of I-76 Exit 90. FCFS no reservation, no gate, electric + water, drop-box ~$25/night. Catalog as a Brighton/Fort Morgan area option (Walmarts there ban overnight)."
+    },
+    {
+      "id": "sterling_rest_area",
+      "kind": "sleep",
+      "name": "Sterling Rest Area (I-76) CO",
+      "lat": 40.586,
+      "lon": -103.183,
+      "sleep_type": "cheap_public_land",
+      "_notes": "Official CDOT rest area on I-76 westbound side near Sterling. Separate RV section, free dump station, 12-hr posted limit (loosely enforced). FCFS, no gate, free."
+    },
+    {
+      "id": "cabelas_sidney",
+      "kind": "sleep",
+      "name": "Cabela's Sidney NE",
+      "lat": 41.1290,
+      "lon": -102.9799,
+      "sleep_type": "free_dispersed",
+      "_notes": "I-80 Exit 59. Free boondock lot in front of store + paid full-hookup sites $20-$45 behind (FCFS). 24' Class C trivially fits. Paved, well-lit, immediately off I-80. Catalog as a utility split between Denver and Lake McConaughy.",
+      "cautions": []
+    },
+    {
+      "id": "flyingj_big_springs",
+      "kind": "sleep",
+      "name": "Flying J Big Springs NE",
+      "lat": 41.0631,
+      "lon": -102.0708,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 107. Full Pilot/Flying J: RV parking, dump station, showers, restaurant. Overnight allowed, FCFS, 24/7."
+    },
+    {
+      "id": "ogallala_walmart",
+      "kind": "sleep",
+      "name": "Ogallala Walmart NE",
+      "lat": 41.1395,
+      "lon": -101.737,
+      "sleep_type": "walmart",
+      "_notes": "201 Pony Express Ln, ~1 mi N of I-80 Exit 126. Dedicated dirt RV/truck lot west of main lot, signed for trucks/RVs. Truck noise but reliable. Different from Lake McConaughy."
+    },
+    {
+      "id": "north_platte_walmart",
+      "kind": "sleep",
+      "name": "North Platte Walmart NE",
+      "lat": 41.108,
+      "lon": -100.766,
+      "sleep_type": "walmart",
+      "_notes": "1401 S Dewey St, ~1.5 mi S of I-80 Exit 177. Confirmed overnight-OK, back of lot, popular with RVs and semis."
+    },
+    {
+      "id": "cabelas_kearney",
+      "kind": "sleep",
+      "name": "Cabela's Kearney NE",
+      "lat": 40.71,
+      "lon": -99.047,
+      "sleep_type": "free_dispersed",
+      "_notes": "3600 US-30, ~1 mi N of I-80 Exit 272. Officially welcomes overnight RVs, 6 marked long-vehicle spaces. Some railroad noise. FCFS, no gate, free."
+    },
+    {
+      "id": "loves_kearney",
+      "kind": "sleep",
+      "name": "Love's Kearney NE",
+      "lat": 40.709,
+      "lon": -99.0805,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 272. Dedicated truck/RV parking (70 spaces), dump station ($10). Backup if Cabela's full."
+    },
+    {
+      "id": "pilot_grand_island",
+      "kind": "sleep",
+      "name": "Pilot/Bosselman Travel Center Grand Island NE",
+      "lat": 40.8758,
+      "lon": -98.334,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 312 (US-281). Large 24-hr facility, RV parking, dump station, showers, restaurant. FCFS, no gate. Grand Island Walmarts ban overnight."
+    },
+    {
+      "id": "pilot_wood_river",
+      "kind": "sleep",
+      "name": "Pilot Wood River NE",
+      "lat": 40.798,
+      "lon": -98.602,
+      "sleep_type": "cheap_public_land",
+      "_notes": "11775 NE-11, I-80 Exit 300. RV parking, showers, laundry, 24/7. Midpoint between Grand Island and Lincoln."
+    },
+    {
+      "id": "beaver_crossing_park",
+      "kind": "sleep",
+      "name": "Beaver Crossing City Park NE",
+      "lat": 40.777,
+      "lon": -97.287,
+      "sleep_type": "cheap_public_land",
+      "_notes": "3 mi S of I-80 Exit 369. 7 sites with 50A electric + water, FCFS, donation basis (~$10 suggested), 3-night max, no gate. Quiet small-town stop (Lincoln city banned Walmart overnight)."
+    },
+    {
+      "id": "cracker_barrel_lincoln",
+      "kind": "sleep",
+      "name": "Cracker Barrel Lincoln NE",
+      "lat": 40.8783,
+      "lon": -96.681,
+      "sleep_type": "cheap_public_land",
+      "_notes": "6700 N 27th St, I-80 Exit 403. Overnight RV-friendly per recent reports; call manager. FCFS, no gate."
+    },
+    {
+      "id": "cabelas_la_vista",
+      "kind": "sleep",
+      "name": "Cabela's La Vista NE (Omaha area)",
+      "lat": 41.1819,
+      "lon": -96.0668,
+      "sleep_type": "free_dispersed",
+      "_notes": "I-80 Exit 440, Omaha metro. Designated RV/semi lot behind the store on the west side. Well-lit, spacious, limited road noise, potable water, dog area. Call ahead recommended but not required. 24' Class C fits easily. Free. Catalog as a halfway split between Sidney NE and Des Moines IA.",
+      "cautions": []
+    },
+    {
+      "id": "cracker_barrel_council_bluffs",
+      "kind": "sleep",
+      "name": "Cracker Barrel Council Bluffs IA",
+      "lat": 41.2627,
+      "lon": -95.8606,
+      "sleep_type": "cheap_public_land",
+      "_notes": "530 30th Ave, I-29/80 Exit 3. 5-7 marked RV spaces, asphalt, up to 50ft. FCFS, no reservation. Well-lit, low traffic noise. First-night option at NE/IA border."
+    },
+    {
+      "id": "atlantic_walmart",
+      "kind": "sleep",
+      "name": "Atlantic Walmart IA",
+      "lat": 41.403,
+      "lon": -94.992,
+      "sleep_type": "walmart",
+      "_notes": "1905 E 7th St, Atlantic IA. ~10 mi N of I-80 Exit 60. RV-friendly, ample lot. Fills the gap between Council Bluffs and Des Moines."
+    },
+    {
+      "id": "newton_walmart",
+      "kind": "sleep",
+      "name": "Newton Walmart IA",
+      "lat": 41.67,
+      "lon": -93.014,
+      "sleep_type": "walmart",
+      "_notes": "300 Iowa Speedway Dr, Newton IA. ~0.5 mi from I-80 Exit 168. Clean lot, semis + RVs nightly, recent positive Class C reports."
+    },
+    {
+      "id": "grinnell_walmart",
+      "kind": "sleep",
+      "name": "Grinnell Walmart IA",
+      "lat": 41.733,
+      "lon": -92.729,
+      "sleep_type": "walmart",
+      "_notes": "415 Industrial Ave, Grinnell IA. ~1 mi from I-80 Exit 182. Well-lit, quiet, restaurants walkable. Splits the gap between Newton and Iowa City."
+    },
+    {
+      "id": "coralville_walmart",
+      "kind": "sleep",
+      "name": "Coralville Walmart IA",
+      "lat": 41.696,
+      "lon": -91.602,
+      "sleep_type": "walmart",
+      "_notes": "2801 Commerce Dr, Coralville IA. ~1 mi from I-80 Exit 240. Be visible on security cams. Best Iowa City option (Iowa City actual store prohibits)."
+    },
+    {
+      "id": "isle_casino_bettendorf",
+      "kind": "sleep",
+      "name": "Isle Casino Bettendorf IA",
+      "lat": 41.521,
+      "lon": -90.4985,
+      "sleep_type": "cheap_public_land",
+      "_notes": "1777 Isle Pkwy, Bettendorf IA. ~3 mi from I-80 Exit 295B via I-74. Signed RV & Truck lot west of casino, no check-in, multi-night OK, well-lit, security patrols."
+    },
+    {
+      "id": "cracker_barrel_davenport",
+      "kind": "sleep",
+      "name": "Cracker Barrel Davenport IA",
+      "lat": 41.5615,
+      "lon": -90.5757,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 295A, 300 Jason Way Ct. 6 dedicated RV spaces (40 ft long), free, manager-permission norm. Immediately off I-80. Splits a long Des Moines -> South Bend day. Paved, flat, lit. Call ahead day-of.",
+      "cautions": []
+    },
+    {
+      "id": "princeton_walmart",
+      "kind": "sleep",
+      "name": "Princeton Walmart IL",
+      "lat": 41.358,
+      "lon": -89.466,
+      "sleep_type": "walmart",
+      "_notes": "2111 Claude Bailey Pkwy, Princeton IL. ~1 mi from I-80 Exit 56. Generally RV-friendly. (Skip Peru Walmart — explicit no-RV signs.)"
+    },
+    {
+      "id": "morris_walmart",
+      "kind": "sleep",
+      "name": "Morris Walmart IL",
+      "lat": 41.3705,
+      "lon": -88.409,
+      "sleep_type": "walmart",
+      "_notes": "333 E Route 6, Morris IL. ~1 mi from I-80 Exit 112. Reported overnight-friendly right side of lot; park near trucks and stay low-profile."
+    },
+    {
+      "id": "cracker_barrel_joliet",
+      "kind": "sleep",
+      "name": "Cracker Barrel Joliet IL",
+      "lat": 41.4949,
+      "lon": -88.1668,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 127, 1511 Riverboat Center Dr. Six dedicated 44-foot RV/bus spaces on the east side of the lot. Free, FCFS, no gate, no reservation. Manager-permission norm (buy dinner). 2024 reviews confirm overnight tolerated. Splits the Davenport -> South Bend leg in half. Catalog as a Joliet/Chicago-south-bypass utility split.",
+      "cautions": []
+    },
+    {
+      "id": "horseshoe_hammond",
+      "kind": "sleep",
+      "name": "Horseshoe Casino Hammond IN",
+      "lat": 41.696,
+      "lon": -87.506,
+      "sleep_type": "cheap_public_land",
+      "_notes": "777 Casino Center Dr, Hammond IN. ~3 mi from I-80/94 via Cline Ave. Free overnight, well-lit, security. Caveat: only small Class C / Class B fits; 24' is upper end — call (219) 473-7000 ahead.",
+      "cautions": [
+        "24' is upper-end of what fits — call ahead to confirm before committing."
+      ]
+    },
+    {
+      "id": "michigan_city_walmart",
+      "kind": "sleep",
+      "name": "Michigan City Walmart IN",
+      "lat": 41.708,
+      "lon": -86.895,
+      "sleep_type": "walmart",
+      "_notes": "5780 Franklin St, Michigan City IN. ~1 mi from I-94 Exit 34B (I-80/I-90 toll ~3 mi). Listed as overnight-friendly. Right by Indiana Dunes."
+    },
+    {
+      "id": "bryan_walmart",
+      "kind": "sleep",
+      "name": "Bryan Walmart OH",
+      "lat": 41.4665,
+      "lon": -84.5547,
+      "sleep_type": "walmart",
+      "_notes": "1215 S Main St, Bryan OH. ~12 min south of Ohio Turnpike (I-80/90) Exit 13. Large flat lot, low traffic small town, no posted prohibitions in recent reports."
+    },
+    {
+      "id": "sandusky_walmart",
+      "kind": "sleep",
+      "name": "Sandusky Walmart OH",
+      "lat": 41.4083,
+      "lon": -82.6997,
+      "sleep_type": "walmart",
+      "_notes": "5500 Milan Rd, Sandusky OH. ~5 min from Ohio Turnpike Exit 118. Multiple recent reports of RVs staying multiple nights, quiet, garden-side lot, near Cedar Point exit."
+    },
+    {
+      "id": "cracker_barrel_macedonia",
+      "kind": "sleep",
+      "name": "Cracker Barrel Macedonia OH (Cleveland metro)",
+      "lat": 41.3128,
+      "lon": -81.5106,
+      "sleep_type": "cheap_public_land",
+      "_notes": "8160 Macedonia Commons Blvd, Macedonia OH. ~2 min from I-480/SR-8, ~15 min south of I-80/Ohio Turnpike Exit 187. Ample lot, RV-accommodating, positive recent reviews."
+    },
+    {
+      "id": "cracker_barrel_austintown",
+      "kind": "sleep",
+      "name": "Cracker Barrel Austintown OH (Youngstown)",
+      "lat": 41.0972,
+      "lon": -80.7560,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 223, 5600 Interstate Blvd. 9 RV spaces (unusually large for CB), directly off I-80, free, overnight commonly granted. Splits the brutal South Bend -> Allentown leg. Paved, lit, easy in/out. Road noise from I-80.",
+      "cautions": []
+    },
+    {
+      "id": "dubois_walmart",
+      "kind": "sleep",
+      "name": "DuBois Walmart PA",
+      "lat": 41.124,
+      "lon": -78.744,
+      "sleep_type": "walmart",
+      "_notes": "20 Industrial Dr, DuBois PA. ~2 mi / 4 min off I-80 Exit 101. Permission granted when called; staff direct RVs to far end near McDonald's."
+    },
+    {
+      "id": "state_college_walmart",
+      "kind": "sleep",
+      "name": "State College Walmart PA",
+      "lat": 40.8167,
+      "lon": -77.8267,
+      "sleep_type": "walmart",
+      "_notes": "373 Benner Pike, State College PA. ~10 min south of I-80 Exit 161 (Bellefonte). Manager-approved overflow upper lot, used by Class C RVs, quiet, safe."
+    },
+    {
+      "id": "clarion_walmart",
+      "kind": "sleep",
+      "name": "Clarion Walmart PA",
+      "lat": 41.2058,
+      "lon": -79.4203,
+      "sleep_type": "walmart",
+      "_notes": "I-80 Exit 64, 30 Perkins Rd. RV-tolerated per recent RVparky reports; large lot, paved, lit, 0.5 mi off I-80. Right before the heavier PA mountain grades start eastbound. Manager permission expected. Catalog as a western PA alternate.",
+      "cautions": []
+    },
+    {
+      "id": "bailey_co",
+      "kind": "minor",
+      "name": "Bailey CO",
+      "lat": 39.4108,
+      "lon": -105.4838,
+      "_note": "On US-285 between Salida/South Park and Denver. Anchor for redskin_creek_dispersed and other Bailey-area dispersed sites."
+    },
+    {
+      "id": "salida",
+      "kind": "minor",
+      "name": "Salida",
+      "lat": 38.5347,
+      "lon": -105.9989,
+      "_note": "Added to route[] so that the gunnison -> denver polyline follows the actual driving path (US-50 east over Monarch Pass to Salida, then US-285 N to Denver). Without this waypoint, the straight-line polyline cuts NE across mountains with no road, putting off-route junctions in nonsense places."
     },
     {
       "id": "denver",
@@ -200,6 +780,22 @@
       "lat": 39.6500,
       "lon": -104.8500,
       "sleep_type": "paid_campground"
+    },
+    {
+      "id": "sterling_co",
+      "kind": "minor",
+      "name": "Sterling CO",
+      "lat": 40.6256,
+      "lon": -103.2077,
+      "_note": "On I-76 between Denver and the CO/NE border. Added to route[] so the polyline follows the real driving path (I-76 NE from Denver) instead of cutting straight across the plains, which puts I-80 corridor junctions in nowhere-land."
+    },
+    {
+      "id": "julesburg",
+      "kind": "minor",
+      "name": "Julesburg CO",
+      "lat": 40.9883,
+      "lon": -102.2630,
+      "_note": "At the CO/NE border where I-76 meets I-80. Added so the polyline bends NE onto I-80 instead of continuing diagonally to Ogallala — keeps junctions for Sidney NE on the actual I-80 corridor."
     },
     {
       "id": "ogallala",
@@ -247,10 +843,11 @@
     },
     {
       "id": "chicago",
-      "kind": "major",
+      "kind": "minor",
       "name": "Chicago",
       "lat": 41.8781,
-      "lon": -87.6298
+      "lon": -87.6298,
+      "_note": "Demoted to minor 2026-06-23: eastward trip is transit-only past Omaha. Chicago is a landmark on the map but we don't stop or detour through it."
     },
     {
       "id": "south_bend",
@@ -269,17 +866,166 @@
     },
     {
       "id": "cleveland",
-      "kind": "major",
+      "kind": "minor",
       "name": "Cleveland",
       "lat": 41.4993,
-      "lon": -81.6944
+      "lon": -81.6944,
+      "_note": "Demoted to minor 2026-06-23: eastward trip is transit-only past Omaha. Cleveland is a landmark; we bypass via I-80/Akron."
+    },
+    {
+      "id": "clarion_pa",
+      "kind": "minor",
+      "name": "Clarion PA",
+      "lat": 41.2089,
+      "lon": -79.3784,
+      "_note": "Town of Clarion on I-80 in western PA. Added to route[] so the polyline bends NORTH through real I-80 corridor instead of cutting straight from OH to Allentown, which puts off-route I-80 sleeps (clarion_walmart etc.) in nowhere-land."
+    },
+    {
+      "id": "bellefonte_pa",
+      "kind": "minor",
+      "name": "Bellefonte PA",
+      "lat": 40.9134,
+      "lon": -77.7780,
+      "_note": "Town on I-80 in central PA, between Clarion and Stroudsburg. Added so the polyline tracks the actual I-80 corridor through PA mountains."
+    },
+    {
+      "id": "iowa_city_ia",
+      "kind": "minor",
+      "name": "Iowa City IA",
+      "lat": 41.6611,
+      "lon": -91.5302,
+      "_note": "On I-80 mid-IA. Anchor for Coralville, Grinnell, Newton area sleeps so they don't all anchor 50-100mi off des_moines."
+    },
+    {
+      "id": "davenport_ia",
+      "kind": "minor",
+      "name": "Davenport IA",
+      "lat": 41.5236,
+      "lon": -90.5776,
+      "_note": "On I-80 at the Mississippi crossing. Anchor for Davenport CB, Bettendorf casino, and the Quad Cities cluster."
+    },
+    {
+      "id": "joliet_il",
+      "kind": "minor",
+      "name": "Joliet IL",
+      "lat": 41.5253,
+      "lon": -88.0814,
+      "_note": "On I-80 SW of Chicago. Anchor for Joliet CB + I-80-south-of-Chicago corridor."
+    },
+    {
+      "id": "princeton_il",
+      "kind": "minor",
+      "name": "Princeton IL",
+      "lat": 41.3678,
+      "lon": -89.4648,
+      "_note": "On I-80 in central IL. Anchor for Princeton, Morris area sleeps."
+    },
+    {
+      "id": "toledo_oh",
+      "kind": "minor",
+      "name": "Toledo OH",
+      "lat": 41.6528,
+      "lon": -83.5378,
+      "_note": "Anchor minor for I-80/I-90 corridor across northern OH. Added so I-80 sleeps (Bryan, Sandusky, etc.) anchor near their actual locations instead of to a major hundreds of miles away."
+    },
+    {
+      "id": "sandusky_oh",
+      "kind": "minor",
+      "name": "Sandusky OH",
+      "lat": 41.4490,
+      "lon": -82.7080,
+      "_note": "On I-80/I-90 in northern OH. Anchor for Sandusky Walmart and Cedar Point area."
+    },
+    {
+      "id": "akron_oh",
+      "kind": "minor",
+      "name": "Akron OH",
+      "lat": 41.0814,
+      "lon": -81.5190,
+      "_note": "I-80 actually skirts SOUTH of Cleveland via Akron. Anchor minor for the Cleveland metro area I-80 sleeps."
+    },
+    {
+      "id": "youngstown_oh",
+      "kind": "minor",
+      "name": "Youngstown OH",
+      "lat": 41.0998,
+      "lon": -80.6495,
+      "_note": "On I-80 in eastern OH. Anchor for Austintown CB and crossing into PA."
+    },
+    {
+      "id": "clarion_pa",
+      "kind": "minor",
+      "name": "Clarion PA",
+      "lat": 41.2089,
+      "lon": -79.3784,
+      "_note": "On I-80 in western PA. Anchor for Clarion Walmart + DuBois area sleeps."
+    },
+    {
+      "id": "bellefonte_pa",
+      "kind": "minor",
+      "name": "Bellefonte PA",
+      "lat": 40.9134,
+      "lon": -77.7780,
+      "_note": "On I-80 in central PA. Anchor for State College area and central PA mountains."
+    },
+    {
+      "id": "stroudsburg_pa",
+      "kind": "minor",
+      "name": "Stroudsburg PA",
+      "lat": 40.9866,
+      "lon": -75.1949,
+      "_note": "On I-80 near the Delaware Water Gap (NJ border). Anchor for TA Columbia / Pilot Bloomsbury / NJ-side sleeps."
+    },
+    {
+      "id": "parsippany_nj",
+      "kind": "minor",
+      "name": "Parsippany NJ",
+      "lat": 40.8579,
+      "lon": -74.4260,
+      "_note": "On I-80 in NJ mid-state. Anchor between Delaware Water Gap and Hasbrouck Heights."
+    },
+    {
+      "id": "hasbrouck_heights",
+      "kind": "major",
+      "name": "Hasbrouck Heights NJ",
+      "lat": 40.8595,
+      "lon": -74.0834,
+      "_note": "Andrew's sister's place. On I-80 just west of NYC, ~30 min from Manhattan. Used as the final Mom + sister visit stop on the last driving day."
     },
     {
       "id": "allentown",
       "kind": "minor",
       "name": "Allentown",
       "lat": 40.6084,
-      "lon": -75.4902
+      "lon": -75.4902,
+      "_note": "Off-route 2026-06-23: real I-80 east stays NORTH through Stroudsburg-Parsippany-Hasbrouck Heights. Allentown is south on I-78 — a detour, not on the through-driving line."
+    },
+    {
+      "id": "ta_columbia_nj",
+      "kind": "sleep",
+      "name": "TA Travel Center Columbia NJ",
+      "lat": 40.9344,
+      "lon": -75.0961,
+      "sleep_type": "cheap_public_land",
+      "_notes": "I-80 Exit 4A in NJ (just over Delaware River from Stroudsburg PA). 172 spaces, RV-friendly. Right on I-80, 24/7, FCFS. (East Stroudsburg Walmart is now NO due to city ordinance.)"
+    },
+    {
+      "id": "pilot_bloomsbury_nj",
+      "kind": "sleep",
+      "name": "Pilot Bloomsbury NJ",
+      "lat": 40.6747,
+      "lon": -75.0764,
+      "sleep_type": "cheap_public_land",
+      "_notes": "979 NJ-173, Bloomsbury NJ. Directly off I-78 Exit 7, ~25 min south of I-80 via I-287 cross. Truck/RV lot, 24/7, free overnight, showers, CAT scale. Closest reliable free overnight to NYC."
+    },
+    {
+      "id": "cabelas_hamburg_pa",
+      "kind": "sleep",
+      "name": "Cabela's Hamburg PA",
+      "lat": 40.5436,
+      "lon": -75.9783,
+      "sleep_type": "free_dispersed",
+      "_notes": "100 Cabela Dr, Hamburg PA. Off I-78 Exit 29B (south of I-80, viable if rerouting via I-78/I-81). Free overnight in marked RV row, free dump station as of 2025, well-lit."
     },
     {
       "id": "allentown_walmart",
@@ -304,45 +1050,121 @@
     "yuma",
     "gila_bend",
     "tucson",
+    "willcox_az",
     "lordsburg",
     "las_cruces",
-    "white_sands",
     "alamogordo",
     "albuquerque",
     "santa_fe",
     "pagosa_springs",
     "durango",
-    "mesa_verde",
+    "mancos",
+    "cortez",
     "telluride",
     "ridgway",
     "black_canyon",
     "gunnison",
+    "salida",
+    "bailey_co",
     "denver",
+    "sterling_co",
+    "julesburg",
     "ogallala",
     "lincoln",
     "omaha",
     "des_moines",
-    "chicago",
+    "iowa_city_ia",
+    "davenport_ia",
+    "princeton_il",
+    "joliet_il",
     "south_bend",
-    "cleveland",
-    "allentown",
+    "toledo_oh",
+    "sandusky_oh",
+    "youngstown_oh",
+    "clarion_pa",
+    "bellefonte_pa",
+    "stroudsburg_pa",
+    "parsippany_nj",
+    "hasbrouck_heights",
     "new_york"
   ],
 
   "_comment_off_route": "Locations that are NOT in route[] but exist in locations[]. The build script will compute their nearest point on the main route line and emit junctions for those > 5 mi off. (sleep spots are always off-route conceptually; far-off minors like Crested Butte and Gila Bend hotel also live here.)",
   "off_route": [
     "gila_bend_hotel",
-    "willcox_walmart",
+    "willcox_hie",
+    "deming_hie",
+    "las_cruces_hampton_i10",
+    "white_sands",
+    "mesa_verde",
     "cloudcroft",
+    "cloudcroft_sleepygrass",
+    "manzano_dispersed",
+    "three_rivers_petroglyphs",
+    "valley_of_fires",
+    "san_antonio_nm",
     "hyde_park",
+    "hopewell_lake_cg",
+    "tres_piedras_dispersed",
+    "east_fork_fr667_dispersed",
+    "turkey_springs_dispersed",
+    "transfer_park_cg",
     "mancos_nf",
+    "madden_peak_dispersed",
     "last_dollar",
     "crested_butte",
     "cement_creek",
+    "marshall_pass_dispersed",
+    "fourmile_creek_dispersed",
+    "turtle_rock_dispersed",
+    "kenosha_pass_east_dispersed",
+    "redskin_creek_dispersed",
+    "monarch_park_cg",
+    "tarryall_reservoir",
+    "buffalo_creek_dispersed",
     "cherry_creek_sp",
+    "brush_memorial_park",
+    "sterling_walmart",
+    "sterling_rest_area",
+    "cabelas_sidney",
+    "flyingj_big_springs",
+    "ogallala_walmart",
     "lake_mcconaughy",
+    "north_platte_walmart",
+    "cabelas_kearney",
+    "loves_kearney",
+    "pilot_grand_island",
+    "pilot_wood_river",
+    "beaver_crossing_park",
+    "cracker_barrel_lincoln",
+    "cabelas_la_vista",
+    "cracker_barrel_council_bluffs",
+    "atlantic_walmart",
+    "newton_walmart",
+    "grinnell_walmart",
+    "coralville_walmart",
+    "isle_casino_bettendorf",
+    "cracker_barrel_davenport",
+    "chicago",
+    "princeton_walmart",
+    "morris_walmart",
+    "cracker_barrel_joliet",
     "des_moines_walmart",
     "south_bend_walmart",
+    "horseshoe_hammond",
+    "michigan_city_walmart",
+    "bryan_walmart",
+    "sandusky_walmart",
+    "cracker_barrel_macedonia",
+    "cracker_barrel_austintown",
+    "cleveland",
+    "dubois_walmart",
+    "state_college_walmart",
+    "clarion_walmart",
+    "ta_columbia_nj",
+    "pilot_bloomsbury_nj",
+    "cabelas_hamburg_pa",
+    "allentown",
     "allentown_walmart"
   ]
 }

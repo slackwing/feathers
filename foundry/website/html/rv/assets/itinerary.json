@@ -1,0 +1,30 @@
+{
+  "_comment": "Preferred itinerary for the RV trip. References ids defined in assets/map.json — when conditions change, only this file changes; the catalog (map.json) stays put. Eventually this lives in hobby-server's rv DB and gets edited via the UI; for now it's a static file fetched by map-v2.js.",
+  "version": 1,
+  "trip_id": "rv-2026",
+  "trip_name": "Hedgie & Frogie's RV Adventure",
+  "start_date": "2026-07-05",
+
+  "_comment_days": "Each day has a `sleep` (an id from map.json's locations[] or junctions[] — typically a kind:'sleep' or kind:'major' location). The renderer infers the route walked that day by finding the previous day's sleep in map.json's route[], walking forward through route entries (including any spurs needed to reach off-route sleeps), and ending at this day's sleep. Day 1 starts at the trip's origin (the first node of map.json's route[]). Optional fields: `notes` (free-form strings), `must_do` (list of activity names — for future use when activities exist as data).",
+
+  "days": [
+    { "day": 1,  "sleep": "san_diego",                  "notes": ["Fly in 2:27 PM Alaska Airlines", "RV pickup near North Park", "Coronado water refill", "Musita Bistro dinner (opens 5 PM Sun)", "Sunset Cliffs sunset", "Sleep Pacific Beach"] },
+    { "day": 2,  "sleep": "san_diego",                  "notes": ["La Jolla tide pools 7:15 AM (low tide 0.8 ft at 7:52 AM)", "Brunch", "Shopping + Amazon locker", "Maybe brewery + Shout House via train"] },
+    { "day": 3,  "sleep": "gila_bend_hotel",            "notes": ["Solana Beach + Fletcher's Cove cliff walk", "Roberto's Tacos", "PM drive to Gila Bend", "Splurge night at Best Western Space Age Lodge", "Real shower, real AC"] },
+    { "day": 4,  "sleep": "willcox_hie",                "notes": ["Tucson activities: Desert Museum, Signal Hill Petroglyphs, Gates Pass", "Push east on I-10 to Willcox", "Sleep Holiday Inn Express Willcox (real AC — 4200 ft = ~72°F outside / 87°F inside the RV)"] },
+    { "day": 5,  "sleep": "cloudcroft",                 "notes": ["Wake early at Willcox", "White Sands dunes + sledding 9 AM-noon", "Lunch + dump tanks in Alamogordo", "Climb to Cloudcroft pines (~55°F night)"] },
+    { "day": 6,  "sleep": "hyde_park",                  "notes": ["Albuquerque: Breaking Bad self-guided tour AM", "Santa Fe: Meow Wolf afternoon", "Climb NM-475 to Hyde Park for night"] },
+    { "day": 7,  "sleep": "turkey_springs_dispersed",   "notes": ["Wake at Hyde Park, drive Santa Fe → Pagosa Springs (~3.5 hr via US-84 through Chama)", "Pagosa Hot Springs soak before pushing 20 min N up Piedra Rd", "Sleep Turkey Springs / FR 629 dispersed"] },
+    { "day": 8,  "sleep": "mancos_nf",                  "notes": ["Wake at Turkey Springs", "Durango pass-through", "Mesa Verde Mesa Top Loop at golden hour"] },
+    { "day": 9,  "sleep": "last_dollar",                "notes": ["Telluride box canyon + free gondola", "Orvis Hot Springs in Ridgway", "Sleep alpine on Last Dollar Rd (~42°F)"] },
+    { "day": 10, "sleep": "cement_creek",               "notes": ["Black Canyon South Rim", "Crested Butte Elk Ave", "Sleep Cement Creek FR 740"] },
+    { "day": 11, "sleep": "redskin_creek_dispersed",    "notes": ["LOCKED: long day east — US-50 over Monarch Pass to Salida, then US-285 N through South Park to Bailey area", "Sleep Redskin/Deer Creek dispersed (~8000 ft)"] },
+    { "day": 12, "sleep": "cherry_creek_sp",            "notes": ["LOCKED: short descent into Denver (~2 hr)", "Meow Wolf Denver (Convergence Station)", "Dinner with Andrew's friends", "Mid-trip full hookups at Cherry Creek SP"] },
+    { "day": 13, "sleep": "lake_mcconaughy",            "notes": ["Push past Sterling on I-76 NE, across CO/NE border on I-80 (~5 hr) to Lake McConaughy", "Afternoon swim + sunset over the reservoir"] },
+    { "day": 14, "sleep": "cracker_barrel_council_bluffs", "notes": ["Long day: Lake McConaughy -> Council Bluffs IA (~8.5 hr) via I-80", "Lincoln NE Sheldon Museum lunch / dump-tank stop possible", "Sleep Cracker Barrel Council Bluffs (marked RV pads)"] },
+    { "day": 15, "sleep": "princeton_walmart",          "notes": ["Long day: Council Bluffs -> Princeton IL (~8.5 hr) via I-80", "Des Moines pass-through / Iowa City pass-through", "Sleep Princeton Walmart"] },
+    { "day": 16, "sleep": "sandusky_walmart",           "notes": ["Long day: Princeton IL -> Sandusky OH (~9.5 hr) via I-80 / Ohio Turnpike", "Skirt Chicago south, cross Indiana, into Ohio", "Sleep Sandusky Walmart (near Cedar Point exit)"] },
+    { "day": 17, "sleep": "state_college_walmart",      "notes": ["UPDATED 2026-06-23: Sandusky OH -> State College PA (~6 hr) via I-80 east through OH + western PA", "Sleep State College Walmart (manager-approved upper lot)"] },
+    { "day": 18, "sleep": "new_york",                   "notes": ["State College PA -> Stroudsburg -> Hasbrouck Heights NJ via I-80 (~4.5 hr)", "Visit with mom + sister at Hasbrouck Heights (~3 hr)", "Final ~30 min into NYC", "Unpack, order delivery, stationary bed"] }
+  ]
+}
