@@ -586,6 +586,10 @@
     const itinSleepIds = new Set(
       ((window.rvLayered && window.rvLayered.merged) || []).map(d => d.sleepLocId)
     );
+    // Hide deactivated sleeps when zoomed out. Threshold ≈ "Nebraska
+    // wide" (about 4x the fit-whole-route base scale).
+    const fitBase = fitScale();
+    const DEACTIVATED_SHOW_AT = fitBase * 4;
 
     mapData.locations.forEach(l => {
       if (l.kind !== "sleep") return;
@@ -601,6 +605,8 @@
         ? eff._override.activated
         : null;
       const activated = overrideActivated !== null ? overrideActivated : inItin;
+      // Hide deactivated emoji until zoomed in past the threshold.
+      if (!activated && scale < DEACTIVATED_SHOW_AT) return;
       const emoji = isSoftDeleted ? "❌" : (isHotel ? "🏨" : "🚐");
       const groupOpacity = isSoftDeleted ? 0.6 : (activated ? 1.0 : 0.45);
       const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
@@ -1023,37 +1029,100 @@
     handleMapClick(sx, sy);
   });
 
+  // ---- Hover "guide dot" along the route line ----
+  // When the cursor is near the route (within ROUTE_HOVER_PX) and NOT
+  // near a location, show a small orange dot snapping to the nearest
+  // point on the line. The dot is purely visual feedback so the user
+  // knows where a click would create a new location.
+  const ROUTE_HOVER_PX = 18;
+  let guideDotEl = null;
+  function ensureGuideDot() {
+    if (guideDotEl) return guideDotEl;
+    guideDotEl = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    guideDotEl.setAttribute("r", "5");
+    guideDotEl.setAttribute("fill", "#d97b3a");
+    guideDotEl.setAttribute("stroke", "white");
+    guideDotEl.setAttribute("stroke-width", "1.5");
+    guideDotEl.setAttribute("opacity", "0.85");
+    guideDotEl.style.pointerEvents = "none";
+    svg.appendChild(guideDotEl);
+    return guideDotEl;
+  }
+  function hideGuideDot() {
+    if (guideDotEl) guideDotEl.setAttribute("opacity", "0");
+  }
+  viewport.addEventListener("pointermove", (e) => {
+    // Only show on devices with hover (skip touch panning).
+    if (activePointers.size > 0) { hideGuideDot(); return; }
+    if (e.pointerType === "touch") return;
+    const rect = viewport.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    // If near a location, hide the guide dot — clicking will land on
+    // the location, not on the route.
+    const locHit = findLocationHit(sx, sy);
+    if (locHit) { hideGuideDot(); return; }
+    const routeHit = findRouteHit(sx, sy);
+    if (!routeHit || routeHit.dist > ROUTE_HOVER_PX) { hideGuideDot(); return; }
+    const dot = ensureGuideDot();
+    dot.setAttribute("cx", routeHit.screenX.toFixed(1));
+    dot.setAttribute("cy", routeHit.screenY.toFixed(1));
+    dot.setAttribute("opacity", "0.85");
+  });
+  viewport.addEventListener("pointerleave", () => hideGuideDot());
+
   // Hit-test: find the closest location to (sx, sy) within HIT_RADIUS_PX.
+  // Hit radius depends on what's at the location: emoji-bearing dots
+  // (sleep spots + user-added emoji stops) are visually larger so they
+  // get a wider hit. Plain circle dots (majors/minors) use a tighter hit.
   function findLocationHit(sx, sy) {
-    const HIT_PX = 16;
+    const EMOJI_HIT_PX = 22;   // sleeps / emoji user stops
+    const DOT_HIT_PX = 14;     // majors + minors + non-emoji user stops
     let best = null;
-    let bestDist = HIT_PX;
+    let bestDist = Infinity;
+    function consider(p, distPx, locOrSynthetic) {
+      const d = Math.hypot(p.x - sx, p.y - sy);
+      if (d <= distPx && d < bestDist) {
+        bestDist = d;
+        best = locOrSynthetic;
+      }
+    }
+    // Catalog locations.
     mapData.locations.forEach(l => {
       const w = wpoints.get(l.id);
       if (!w) return;
       const p = worldToScreen(w.x, w.y);
-      const d = Math.hypot(p.x - sx, p.y - sy);
-      if (d < bestDist) { bestDist = d; best = l; }
+      const isSleep = l.kind === "sleep";
+      consider(p, isSleep ? EMOJI_HIT_PX : DOT_HIT_PX, l);
     });
-    // Also consider POIs (sleep spots) — their dots are at the POI's
-    // true coords, not the anchor.
-    mapData.pois.forEach(p => {
-      const w = wpoints.get(p.id);
-      if (!w) return;
-      const sp = worldToScreen(w.x, w.y);
-      const d = Math.hypot(sp.x - sx, sp.y - sy);
-      if (d < bestDist) {
-        bestDist = d;
-        best = mapData.locations.find(l => l.id === p.id) || null;
-      }
-    });
+    // User-added (kind="new" DB rows). Render position is project(lat,lon).
+    if (window.rvUserLocations) {
+      window.rvUserLocations.forEach(u => {
+        if (u.lat == null || u.lon == null) return;
+        const wp = project(u.lat, u.lon);
+        const p = worldToScreen(wp.x, wp.y);
+        const hasEmoji = !!u.emoji;
+        // Synthesize a "location"-shaped object for the modal to consume.
+        const synthetic = {
+          id: u.id,
+          kind: "new",
+          name: u.name,
+          lat: u.lat,
+          lon: u.lon,
+          emoji: u.emoji,
+          markdown: u.markdown,
+          _isUserLocation: true,
+        };
+        consider(p, hasEmoji ? EMOJI_HIT_PX : DOT_HIT_PX, synthetic);
+      });
+    }
     return best;
   }
 
   // Hit-test: is (sx, sy) near the main route polyline (within ROUTE_PX)?
   // Returns { onRoute: true, segIdx, t, fraction } or null.
   function findRouteHit(sx, sy) {
-    const ROUTE_PX = 12;
+    const ROUTE_PX = 18;
     const route = mapData.route;
     // Compute cumulative time-fractions along the route so we can map
     // hit to total-route fraction.
@@ -1135,16 +1204,9 @@
     // EXCEPT for backtracks — Day 5 white_sands is east of Day 6 ABQ,
     // so this approximation may misorder. Phase A: use ordinal order
     // as the source of truth for "before/after").
-    // Compute each day's endpoint fraction.
-    const fracs = merged.map(d => {
-      const eff = layered.effectiveLocation(d.sleepLocId);
-      if (!eff) return null;
-      // Catalog POIs have route_fraction in their location entry.
-      const cat = mapData.locations.find(l => l.id === d.sleepLocId);
-      if (cat && cat.route_fraction != null) return cat.route_fraction;
-      if (eff.route_fraction != null) return eff.route_fraction;
-      return null;
-    });
+    // Compute each day's endpoint fraction (works for catalog POIs,
+    // route nodes, and user-added stops).
+    const fracs = merged.map(d => fractionFor(d.sleepLocId));
     // prevDay = last day whose fraction <= routeFraction
     let prevDay = null, nextDay = null;
     for (let i = 0; i < merged.length; i++) {
@@ -1159,9 +1221,15 @@
     const layered = window.rvLayered;
     const eff = layered ? layered.effectiveLocation(loc.id) : loc;
     const merged = layered ? layered.merged : [];
-    const usedInItin = merged.some(d => d.sleepLocId === loc.id);
+    const isCurrentSleep = merged.some(d => d.sleepLocId === loc.id);
     const isSoftDeleted = eff && eff.deleted_at;
     const canEdit = !!window.rvAuthUser;
+
+    // A location is "on the trip's walked path" if it's a route node
+    // (catalog.route includes it) OR if it's a POI used as a sleep this
+    // trip. For non-route, non-sleep POIs, "extend/pull/insert" all
+    // semantically mean "make this the new sleep" — that's valid.
+    const isRouteNode = (mapData.route || []).includes(loc.id);
 
     let html = `<h2 class="rv-map-modal-title">${escapeXml(eff ? eff.name : loc.name)}</h2>`;
     if (eff && eff._source) {
@@ -1178,7 +1246,19 @@
       html += `<div class="rv-map-modal-actions">`;
       html += `<button type="button" data-act="edit">Edit properties</button>`;
       html += `<button type="button" data-act="toggle-active">${eff && eff.activated === false ? "Activate" : "Deactivate"}</button>`;
-      if (!usedInItin) {
+      if (isCurrentSleep) {
+        // Already a sleep on the trip — only one meaningful action:
+        // duplicate the day to "stay an extra night" here.
+        html += `<button type="button" data-act="add-rest-day">Add a rest day here</button>`;
+      } else if (isRouteNode) {
+        // Route node we drive through but don't sleep at (Omaha, Tucson, ...).
+        // Natural actions: end the day that walks past here AT here
+        // (truncate it), or add a NEW rest day at this point.
+        html += `<button type="button" data-act="end-day-here">End a day here</button>`;
+        html += `<button type="button" data-act="insert-here">Add a rest day here</button>`;
+      } else {
+        // Non-route, non-sleep POI. Full options: change the surrounding
+        // day's sleep, or insert as a new day.
         html += `<button type="button" data-act="extend-prev">Extend previous day to here</button>`;
         html += `<button type="button" data-act="pull-next">Pull next day back to here</button>`;
         html += `<button type="button" data-act="insert-here">Add stop in between (insert day)</button>`;
@@ -1201,7 +1281,8 @@
       if (act === "toggle-active") return toggleActivated(loc, eff);
       if (act === "extend-prev") return shiftDayEndpoint(loc, "prev");
       if (act === "pull-next") return shiftDayEndpoint(loc, "next");
-      if (act === "insert-here") return insertDayHere(loc);
+      if (act === "insert-here" || act === "add-rest-day") return insertDayHere(loc);
+      if (act === "end-day-here") return endDayHere(loc);
       if (act === "restore") return restoreLocation(loc);
       if (act === "soft-delete") return softDeleteLocation(loc);
     }, { once: true });
@@ -1344,13 +1425,78 @@
     } catch (err) { alert("Shift failed."); }
   }
 
+  // Compute route-fraction for a location. For catalog POIs the field
+  // is already stored; for route nodes (kind major/minor that ARE in
+  // route[]) we sum segment raw_minutes up to that node.
+  function fractionFor(locId) {
+    const cat = mapData.locations.find(l => l.id === locId);
+    if (cat && cat.route_fraction != null) return cat.route_fraction;
+    // POI?
+    const poi = mapData.pois.find(p => p.id === locId);
+    if (poi) {
+      // The POI's anchor is a route node; use that node's fraction.
+      const anchorFrac = fractionFor(poi.anchor);
+      if (anchorFrac != null) return anchorFrac;
+    }
+    // Route node — compute cumulative from segments.
+    const route = mapData.route;
+    const idx = route.indexOf(locId);
+    if (idx < 0) return null;
+    const totalRaw = mapData.total_route_raw_minutes || 1;
+    let cumul = 0;
+    for (let i = 0; i < idx; i++) {
+      const s = mapData.segments.find(x => x.from === route[i] && x.to === route[i+1]);
+      cumul += (s && s.raw_minutes != null) ? s.raw_minutes : 0;
+    }
+    return cumul / totalRaw;
+  }
+
+  // "End a day here" — find the day whose walked path includes this
+  // location (the day that drives THROUGH it), and change that day's
+  // sleep to here. The trailing days then start from this location.
+  async function endDayHere(loc) {
+    const merged = window.rvLayered.merged;
+    const frac = fractionFor(loc.id);
+    if (frac == null) { alert("Can't determine route position."); return; }
+    const { prevDay, nextDay } = findDayContext(frac);
+    // The day that drives THROUGH this location is nextDay (its sleep
+    // is past this point, so its drive walks past here).
+    const target = nextDay;
+    if (!target) { alert("No day passes through this location."); return; }
+    try {
+      await fetch("/rv/api/itinerary", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          day_id: target.dayId,
+          sleep_loc_id: loc.id,
+          markdown: target.markdown,
+          ordinal: target.ordinal,
+        }),
+      });
+      location.reload();
+    } catch (err) { alert("End-day failed."); }
+  }
+
   async function insertDayHere(loc) {
     const merged = window.rvLayered.merged;
-    const cat = mapData.locations.find(l => l.id === loc.id);
-    const frac = (cat && cat.route_fraction != null) ? cat.route_fraction : null;
+    const frac = fractionFor(loc.id);
     const { prevDay, nextDay } = findDayContext(frac == null ? 0 : frac);
-    if (!prevDay || !nextDay) { alert("Need a previous and next day to insert between."); return; }
-    const newOrdinal = (prevDay.ordinal + nextDay.ordinal) / 2;
+    let prev = prevDay, next = nextDay;
+    // If the clicked location IS already a sleep, "add rest day" means
+    // duplicate that day. Find the matching day by id and insert just
+    // after it (between it and whatever comes next).
+    const matchingDay = merged.find(d => d.sleepLocId === loc.id);
+    if (matchingDay) {
+      prev = matchingDay;
+      const idx = merged.indexOf(matchingDay);
+      next = merged[idx + 1] || null;
+    }
+    if (!prev) { alert("Couldn't determine where to insert."); return; }
+    // Compute ordinal: midpoint between prev and next, or prev + 500
+    // if next is missing (end of trip).
+    const newOrdinal = next ? (prev.ordinal + next.ordinal) / 2 : prev.ordinal + 500;
     const newId = "ins_" + Math.random().toString(36).slice(2, 10);
     try {
       await fetch("/rv/api/itinerary", {
