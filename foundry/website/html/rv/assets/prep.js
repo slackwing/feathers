@@ -23,17 +23,32 @@
   const toastEl = document.getElementById("prep-toast");
   if (!root) return;
 
-  // Two hardcoded sections — schema is generic but the UI only shows
-  // these two. If we ever want user-defined sections, add a section
-  // table + endpoints.
-  const SECTIONS = [
-    { id: "before", title: "Before the trip" },
-    { id: "during", title: "During the trip" },
-  ];
-
   // ---- state ----
+  // Sections live in the DB now (prep_section table). Frontend fetches
+  // them from GET /prep alongside items. The order in `sections` is the
+  // render order (server sorts by sort_order, sort_order).
+  let sections = [];          // [{ id, title, sort_order, ... }]
   let items = [];             // server-truth array (sorted by section, sort_order)
   let canEdit = false;
+
+  // ---- collapse state (localStorage) ----
+  const COLLAPSE_KEY = "rv_prep_collapsed_v1";
+  function loadCollapsed() {
+    try {
+      const raw = localStorage.getItem(COLLAPSE_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (_) { return new Set(); }
+  }
+  function saveCollapsed(set) {
+    try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set])); } catch (_) {}
+  }
+  let collapsedSections = loadCollapsed();
+  function isCollapsed(sectionId) { return collapsedSections.has(sectionId); }
+  function toggleCollapsed(sectionId) {
+    if (collapsedSections.has(sectionId)) collapsedSections.delete(sectionId);
+    else collapsedSections.add(sectionId);
+    saveCollapsed(collapsedSections);
+  }
 
   // ---- toast ----
   let toastTimer = null;
@@ -93,16 +108,49 @@
 
   async function fetchAll() {
     const data = await apiFetch("", { method: "GET" });
+    sections = (data.sections || []).slice();
     items = (data.items || []).slice();
+    // Backwards-compat fallback: if the server didn't return sections
+    // (pre-003 migration), reconstruct from item.section distinct values.
+    if (!sections.length && items.length) {
+      const seen = new Map();
+      let order = 1000;
+      items.forEach(it => {
+        if (!seen.has(it.section)) {
+          seen.set(it.section, order);
+          order += 1000;
+        }
+      });
+      sections = [...seen.entries()].map(([id, sort_order]) => ({
+        id, title: id, sort_order,
+      }));
+    }
   }
 
   // ---- render ----
   function render() {
     let html = "";
-    for (const section of SECTIONS) {
+    sections.forEach((section, idx) => {
       const sectionItems = items.filter(it => it.section === section.id);
-      html += `<div class="prep-section" data-section="${section.id}">`;
-      html += `<h2>${escapeHtml(section.title)}</h2>`;
+      const collapsed = isCollapsed(section.id);
+      const isFirst = idx === 0;
+      const isLast = idx === sections.length - 1;
+      html += `<div class="prep-section${collapsed ? " is-collapsed" : ""}" data-section="${section.id}">`;
+      // Section header row: collapse toggle + title (+ rename/up/down/delete if editing).
+      html += `<div class="prep-section-header">`;
+      html += `<button type="button" class="prep-section-toggle" data-action="toggle-section" aria-label="${collapsed ? "Expand" : "Collapse"}" title="${collapsed ? "Expand" : "Collapse"}">${collapsed ? "▶" : "▼"}</button>`;
+      html += `<h2 class="prep-section-title">${escapeHtml(section.title)}<span class="prep-section-count">${sectionItems.filter(it => it.done).length} / ${sectionItems.length}</span></h2>`;
+      if (canEdit) {
+        html += `<div class="prep-section-actions">`;
+        html += `<button type="button" class="prep-action-btn" data-action="move-section-up" ${isFirst ? "disabled" : ""} aria-label="Move section up" title="Move up">↑</button>`;
+        html += `<button type="button" class="prep-action-btn" data-action="move-section-down" ${isLast ? "disabled" : ""} aria-label="Move section down" title="Move down">↓</button>`;
+        html += `<button type="button" class="prep-action-btn" data-action="rename-section" aria-label="Rename section" title="Rename">✏️</button>`;
+        html += `<button type="button" class="prep-action-btn" data-action="delete-section" aria-label="Delete section" title="Delete section (only if empty)">🗑️</button>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+      // Body (hidden when collapsed).
+      html += `<div class="prep-section-body">`;
       html += `<ul class="prep-list" data-section="${section.id}">`;
       for (const it of sectionItems) {
         html += renderItem(it);
@@ -116,13 +164,21 @@
           </form>`;
       }
       html += `</div>`;
+      html += `</div>`;
+    });
+
+    // "Add section" form at the bottom — auth only.
+    if (canEdit) {
+      html += `
+        <form class="prep-add prep-add-section" data-action="add-section">
+          <input type="text" name="title" placeholder="Add a new section…" required>
+          <button type="submit">Add section</button>
+        </form>`;
     }
     root.innerHTML = html;
 
     // Update progress.
-    const total = items.length;
-    const done = items.filter(it => it.done).length;
-    progressEl.textContent = `${done} / ${total} done`;
+    updateProgress();
 
     if (canEdit) {
       wireSortables();
@@ -263,15 +319,126 @@
   });
 
   root.addEventListener("click", async (e) => {
+    // Section collapse toggle: works regardless of canEdit.
+    const toggleBtn = e.target.closest('[data-action="toggle-section"]');
+    if (toggleBtn) {
+      const sectionEl = toggleBtn.closest(".prep-section");
+      if (sectionEl) {
+        const sid = sectionEl.dataset.section;
+        toggleCollapsed(sid);
+        sectionEl.classList.toggle("is-collapsed");
+        // Flip the arrow + aria label.
+        const collapsed = sectionEl.classList.contains("is-collapsed");
+        toggleBtn.textContent = collapsed ? "▶" : "▼";
+        toggleBtn.setAttribute("aria-label", collapsed ? "Expand" : "Collapse");
+        toggleBtn.setAttribute("title", collapsed ? "Expand" : "Collapse");
+      }
+      return;
+    }
+
     if (!canEdit) return;
+
+    // Section-level action buttons.
+    const sectionBtn = e.target.closest('.prep-section-actions .prep-action-btn');
+    if (sectionBtn) {
+      const sectionEl = sectionBtn.closest(".prep-section");
+      const sid = sectionEl.dataset.section;
+      const action = sectionBtn.dataset.action;
+      if (action === "move-section-up") moveSection(sid, -1);
+      else if (action === "move-section-down") moveSection(sid, +1);
+      else if (action === "rename-section") renameSection(sid);
+      else if (action === "delete-section") deleteSection(sid);
+      return;
+    }
+
+    // Item-level action buttons.
     const btn = e.target.closest(".prep-action-btn");
     if (!btn) return;
     const li = btn.closest(".prep-item");
+    if (!li) return;
     const id = Number(li.dataset.id);
     const action = btn.dataset.action;
     if (action === "edit") startEdit(li, id);
     else if (action === "delete") confirmDelete(li, id);
   });
+
+  // ---- section operations ----
+
+  async function moveSection(sectionId, direction) {
+    const idx = sections.findIndex(s => s.id === sectionId);
+    if (idx < 0) return;
+    const swapIdx = idx + direction;
+    if (swapIdx < 0 || swapIdx >= sections.length) return;
+    // New sort_order = midpoint between neighbors. Simplest: swap with neighbor.
+    const a = sections[idx];
+    const b = sections[swapIdx];
+    const aOldSort = a.sort_order;
+    const bOldSort = b.sort_order;
+    // Optimistic swap.
+    a.sort_order = bOldSort;
+    b.sort_order = aOldSort;
+    sections.sort((x, y) => x.sort_order - y.sort_order || x.id.localeCompare(y.id));
+    render();
+    try {
+      await Promise.all([
+        apiFetch(`/sections/${a.id}`, { method: "PATCH", body: JSON.stringify({ sort_order: a.sort_order }) }),
+        apiFetch(`/sections/${b.id}`, { method: "PATCH", body: JSON.stringify({ sort_order: b.sort_order }) }),
+      ]);
+    } catch (err) {
+      // Revert.
+      a.sort_order = aOldSort;
+      b.sort_order = bOldSort;
+      sections.sort((x, y) => x.sort_order - y.sort_order || x.id.localeCompare(y.id));
+      render();
+      toast("Reorder failed — reverted.");
+    }
+  }
+
+  async function renameSection(sectionId) {
+    const sec = sections.find(s => s.id === sectionId);
+    if (!sec) return;
+    const newTitle = prompt("Rename section:", sec.title);
+    if (!newTitle || newTitle.trim() === "" || newTitle.trim() === sec.title) return;
+    const oldTitle = sec.title;
+    sec.title = newTitle.trim();
+    render();
+    try {
+      await apiFetch(`/sections/${sec.id}`, { method: "PATCH", body: JSON.stringify({ title: sec.title }) });
+    } catch (err) {
+      sec.title = oldTitle;
+      render();
+      toast("Rename failed — reverted.");
+    }
+  }
+
+  async function deleteSection(sectionId) {
+    const sec = sections.find(s => s.id === sectionId);
+    if (!sec) return;
+    const itemCount = items.filter(it => it.section === sectionId).length;
+    if (itemCount > 0) {
+      alert(`Can't delete "${sec.title}" — it has ${itemCount} item(s). Move or delete those first.`);
+      return;
+    }
+    if (!confirm(`Delete section "${sec.title}"?`)) return;
+    const oldSections = sections.slice();
+    sections = sections.filter(s => s.id !== sectionId);
+    render();
+    try {
+      await apiFetch(`/sections/${sectionId}`, { method: "DELETE" });
+    } catch (err) {
+      sections = oldSections;
+      render();
+      toast("Delete failed — reverted.");
+    }
+  }
+
+  function slugifySection(title) {
+    const slug = title.toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40);
+    return slug || `section_${Date.now()}`;
+  }
 
   function startEdit(li, id) {
     const it = findItem(id);
@@ -350,6 +517,36 @@
     if (!e.target.classList.contains("prep-add")) return;
     e.preventDefault();
     if (!canEdit) return;
+
+    // Branch: "Add a new section" form.
+    if (e.target.dataset.action === "add-section") {
+      const input = e.target.querySelector('input[name="title"]');
+      const title = input.value.trim();
+      if (!title) return;
+      const id = slugifySection(title);
+      // Avoid id collisions: if taken, append a number.
+      let finalId = id;
+      let n = 2;
+      while (sections.some(s => s.id === finalId)) {
+        finalId = `${id}_${n++}`;
+      }
+      const lastSort = sections.length ? sections[sections.length - 1].sort_order : 0;
+      const sort_order = lastSort + 1000;
+      try {
+        const created = await apiFetch("/sections", {
+          method: "POST",
+          body: JSON.stringify({ id: finalId, title, sort_order }),
+        });
+        sections.push(created);
+        sections.sort((x, y) => x.sort_order - y.sort_order || x.id.localeCompare(y.id));
+        render();
+      } catch (err) {
+        toast("Add section failed.");
+      }
+      return;
+    }
+
+    // Default: "Add item" form within a section.
     const section = e.target.dataset.section;
     const input = e.target.querySelector('input[name="text"]');
     const text = input.value.trim();
@@ -375,6 +572,13 @@
     const total = items.length;
     const done = items.filter(it => it.done).length;
     progressEl.textContent = `${done} / ${total} done`;
+    // Per-section counts in the header.
+    sections.forEach(section => {
+      const sectionItems = items.filter(it => it.section === section.id);
+      const sDone = sectionItems.filter(it => it.done).length;
+      const countEl = root.querySelector(`.prep-section[data-section="${section.id}"] .prep-section-count`);
+      if (countEl) countEl.textContent = `${sDone} / ${sectionItems.length}`;
+    });
   }
 
   // ---- auth state ----

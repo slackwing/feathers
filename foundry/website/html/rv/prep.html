@@ -26,13 +26,59 @@
 .prep-section {
   margin-bottom: 40px;
 }
-.prep-section h2 {
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  margin: 0 0 12px;
-  color: var(--ink);
+.prep-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   border-bottom: 2px solid var(--line);
   padding-bottom: 6px;
+  margin: 0 0 12px;
+}
+.prep-section-toggle {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.prep-section-toggle:hover { color: var(--ink); }
+.prep-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--ink);
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.prep-section-count {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.prep-section-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.prep-section-header:hover .prep-section-actions,
+.prep-section-header:focus-within .prep-section-actions {
+  opacity: 1;
+}
+.prep-section.is-collapsed .prep-section-body {
+  display: none;
+}
+.prep-add-section {
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--line);
 }
 .prep-list {
   list-style: none;
