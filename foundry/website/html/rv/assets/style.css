@@ -166,7 +166,92 @@ a { color: var(--accent); }
 }
 
 /* ===================== STOPS ===================== */
-.stops { display: flex; flex-direction: column; gap: 28px; }
+.stops { display: flex; flex-direction: column; gap: 18px; }
+
+/* New compact day cards (Phase A: editable itinerary). One line for the
+   header, markdown body below. */
+.day-card {
+  scroll-margin-top: 24px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 20px 16px;
+  position: relative;
+}
+.day-card-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.day-card-num {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.day-card-sep { color: var(--ink-soft); }
+.day-card-date { font-weight: 500; color: var(--ink-soft); font-size: 0.95rem; }
+.day-card-route {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1 1 auto;
+}
+.day-arrow { color: var(--ink-soft); font-weight: 400; padding: 0 2px; }
+.day-drive {
+  margin-left: 10px;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0.7;
+}
+.day-card-edit {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.day-card:hover .day-card-edit { opacity: 0.6; }
+.day-card-edit:hover { opacity: 1 !important; color: var(--ink); }
+/* Hide pencil unless the user can edit. */
+.stops:not(.can-edit) .day-card-edit { display: none; }
+.day-card-body { color: var(--ink); font-size: 0.95rem; line-height: 1.5; }
+.day-card-body ul { margin: 4px 0; padding-left: 22px; }
+.day-card-body li { padding: 1px 0; }
+.day-card-body p { margin: 6px 0; }
+.day-card-body p:first-child { margin-top: 0; }
+.day-card-body p:last-child { margin-bottom: 0; }
+.day-card-body code {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.88em;
+}
+.day-card-body a { color: var(--accent); }
+.day-card-empty { color: var(--ink-soft); font-style: italic; font-size: 0.9rem; }
+.day-card-editor {
+  width: 100%;
+  min-height: 80px;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.day-card-editor:focus { box-shadow: 0 0 0 2px rgba(47, 138, 110, 0.18); }
 
 .stop { scroll-margin-top: 24px; }
 .stop-header { margin-bottom: 12px; }
@@ -268,6 +353,127 @@ a { color: var(--accent); }
   color: var(--ink-soft);
 }
 .footer a { color: var(--accent); }
+
+/* ===================== MAP CLICK MODAL ===================== */
+.rv-map-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 28, 22, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.rv-map-modal-overlay[hidden] { display: none; }
+.rv-map-modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 460px;
+  width: 100%;
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 22px 18px;
+  position: relative;
+}
+.rv-map-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ink-soft);
+  padding: 4px 8px;
+}
+.rv-map-modal-close:hover { color: var(--ink); }
+.rv-map-modal-title {
+  margin: 0 0 4px;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  color: var(--ink);
+}
+.rv-map-modal-source {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rv-map-modal-md {
+  margin: 8px 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.rv-map-modal-md ul { padding-left: 20px; margin: 4px 0; }
+.rv-map-modal-md p { margin: 6px 0; }
+.rv-map-modal-hint { font-size: 0.85rem; color: var(--ink-soft); }
+.rv-map-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rv-map-modal-actions button {
+  font: inherit;
+  padding: 7px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: white;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.rv-map-modal-actions button:hover { background: rgba(47, 138, 110, 0.08); }
+.rv-map-modal-actions button.danger {
+  border-color: #c5563a;
+  color: #c5563a;
+}
+.rv-map-modal-actions button.danger:hover { background: rgba(197, 86, 58, 0.08); }
+.rv-map-modal label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.rv-map-modal label input,
+.rv-map-modal label textarea {
+  display: block;
+  width: 100%;
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+  margin-top: 4px;
+  box-sizing: border-box;
+  outline: none;
+}
+.rv-map-modal label input:focus,
+.rv-map-modal label textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(47, 138, 110, 0.18);
+}
+.rv-emoji-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.rv-emoji-picker button {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.rv-emoji-picker button:hover { background: rgba(47, 138, 110, 0.12); }
 
 /* ===================== ROUTE MAP V2 ===================== */
 .route-map-v2-section {

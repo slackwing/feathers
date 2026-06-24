@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prep checklist — Hedgie & Frogie's RV Adventure</title>
+<title>Checklists! — Hedgie & Frogie's RV Adventure</title>
 <link rel="stylesheet" href="assets/style.css">
 <style>
 .prep-page {
@@ -196,28 +196,47 @@
   display: flex;
   gap: 8px;
 }
-.prep-add input[type="text"] {
-  flex: 1 1 auto;
+/* Shared aesthetic for both "add item" and "add section" forms:
+   32px-tall input + button, 1px deep-frog-green border, matching radii.
+   Per-form overrides below control background and indent. */
+.prep-add input[type="text"],
+.prep-add button {
   font: inherit;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
+  height: 32px;
+  box-sizing: border-box;
+  padding: 4px 12px;
+  border: 1px solid var(--accent);
   border-radius: 6px;
-  background: white;
   color: var(--ink);
+  line-height: 1.2;
   outline: none;
 }
-.prep-add input[type="text"]:focus { border-color: var(--accent); }
+.prep-add input[type="text"] { flex: 1 1 auto; }
+.prep-add input[type="text"]::placeholder { color: var(--ink-soft); }
+.prep-add input[type="text"]:focus { box-shadow: 0 0 0 2px rgba(47, 138, 110, 0.18); }
 .prep-add button {
   flex: 0 0 auto;
-  font: inherit;
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent);
-  color: white;
   cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
 }
 .prep-add button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Per-section "Add item" form: mint background, indented to align with
+   the checkbox-item text column. */
+.prep-add[data-section] {
+  /* item padding-left 6 + handle 14 + gap 8 + checkbox 18 + gap 8 = 54 */
+  padding-left: 54px;
+}
+.prep-add[data-section] input[type="text"],
+.prep-add[data-section] button { background: var(--bg); }
+.prep-add[data-section] button:hover { background: rgba(47, 138, 110, 0.08); }
+
+/* "Add a section" form (bottom of page): white background, no indent,
+   same height/border/button style. */
+.prep-add-section input[type="text"],
+.prep-add-section button { background: white; }
+.prep-add-section button:hover { background: rgba(47, 138, 110, 0.06); }
 .prep-back {
   display: inline-block;
   margin-bottom: 18px;
@@ -301,9 +320,7 @@
 
 <div class="prep-page">
   <a class="prep-back" href="index.html">← Back to itinerary</a>
-  <h1>Prep checklist</h1>
-  <p class="lede">A flat list of everything to wrap up before (and during) the trip. Add a date with <code>@7/22</code> anywhere in the text.</p>
-  <p class="prep-progress" id="prep-progress">Loading…</p>
+  <h1>Checklists!</h1>
   <p class="prep-login-hint" id="prep-login-hint" hidden>Read-only — <button type="button" id="prep-login-hint-btn">log in</button> to edit.</p>
   <div id="prep-root"></div>
 </div>
@@ -315,6 +332,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="assets/sprinkle-bg.js"></script>
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/celebrate.js"></script>

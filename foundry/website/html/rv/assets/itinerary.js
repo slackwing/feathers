@@ -1,193 +1,519 @@
 // ============================================================
-// Itinerary renderer — reads trip.json and renders day cards.
-// Replaces hardcoded HTML day sections. Emits the same structure
-// that script.js (timeline rail) expects: .stop / .drive sections
-// with data-label and data-date attributes.
+// Itinerary renderer (Phase A: editable, override-layered)
+//
+// Reads:
+//   - assets/itinerary.json   — static seed itinerary (canonical baseline)
+//   - assets/map.json         — locations, route, segments, pois
+//   - /rv/api/itinerary       — DB overrides per day_id
+//   - /rv/api/locations       — DB location overrides + new locations
+//
+// Layers DB over static; renders one card per day in the compact format:
+//
+//   Day N · Sunday, Jul 5 — Start → End  (3h00m)
+//   <markdown body>
+//
+// When start == end, collapse to a single name and omit drive time.
+// Logged-in users can click the pencil to edit the markdown body
+// (textarea → blur saves to /rv/api/itinerary).
+//
+// Day-card editing here is itinerary-markdown ONLY; sleep changes and
+// "add new stop" / "extend day" / etc. happen via the map (map-v2.js).
 // ============================================================
 
 (async function () {
-  const tripRes = await fetch("assets/trip.json");
-  const trip = await tripRes.json();
-
   const target = document.getElementById("itinerary");
-  if (!target) {
-    console.error("itinerary.js: no #itinerary target element");
-    return;
-  }
+  if (!target) return;
 
-  const startDate = trip.start_dates.early;
+  // ---- load everything in parallel ----
+  const [staticItin, mapData, dbItin, dbLocs] = await Promise.all([
+    fetch("assets/itinerary.json").then(r => r.json()),
+    fetch("assets/map.json").then(r => r.json()),
+    fetch("/rv/api/itinerary").then(r => r.ok ? r.json() : { days: [] }).catch(() => ({ days: [] })),
+    fetch("/rv/api/locations").then(r => r.ok ? r.json() : { locations: [] }).catch(() => ({ locations: [] })),
+  ]);
 
-  // Expand stops: each entry covers one or more nights at the same coord.
-  // For display, we keep ONE card per stop entry (multi-night collapses).
-  // The starting day-of-stop and date span are derived.
-  // Soft-deleted stops (dropped_at set) are filtered out.
-  const activeStops = trip.stops.filter(s => !s.dropped_at);
-  const expanded = [];
-  let day = 1;
-  for (const stop of activeStops) {
-    expanded.push({
-      stop,
-      startDay: day,
-      endDay: day + stop.nights - 1,
-    });
-    day += stop.nights;
-  }
+  // Expose the merged model on window so map-v2.js can use it.
+  window.rvItinerary = null;
+  window.rvLayered = null;
 
-  // Map drives by from_day for quick lookup. Filter out dropped drives.
-  const drivesByFrom = new Map(
-    trip.drives.filter(d => !d.dropped_at).map(d => [d.from_day, d])
-  );
+  // ============================================================
+  // 1. Layer DB locations over the static catalog.
+  // ============================================================
+  // Result: locById/poiById maps that reflect catalog patched by DB.
+  // Soft-deleted overrides fall through to catalog. Soft-deleted "new"
+  // locations render with a red ❌ but stay clickable to restore.
+  // ============================================================
+  const catalogLocsById = new Map(mapData.locations.map(l => [l.id, l]));
+  const catalogPoisById = new Map(mapData.pois.map(p => [p.id, p]));
 
-  // ---- date helpers ----
-  function dateForDay(dayNum) {
-    // dayNum is 1-indexed; offset 0 = start date
-    const start = new Date(startDate + "T00:00:00");
-    start.setDate(start.getDate() + (dayNum - 1));
-    return start;
-  }
-  function shortDate(d) {
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  }
-  function dateRange(startD, endD) {
-    if (startD.toDateString() === endD.toDateString()) return shortDate(startD);
-    return `${shortDate(startD)}–${endD.getDate()}`;
-  }
+  const dbLocsById = new Map((dbLocs.locations || []).map(l => [l.id, l]));
 
-  // ---- render helpers ----
-  function renderStopCard(entry) {
-    const { stop, startDay, endDay } = entry;
-    const dateStart = dateForDay(startDay);
-    const dateEnd   = dateForDay(endDay);
-    const railRange = dateRange(dateStart, dateEnd);
+  // User-added (kind=="new") locations: surface to window so map-v2 can
+  // render them. Includes soft-deleted ones (map-v2 chooses how to draw
+  // them — typically a small red ❌).
+  window.rvUserLocations = (dbLocs.locations || []).filter(l => l.kind === "new");
 
-    const dayLabel = stop.nights > 1
-      ? `Days ${startDay}–${endDay}`
-      : `Day ${startDay}`;
-
-    // Render facts. Section-header kind → <p class="lead">; everything else
-    // is an <li>. Adjacent <li>s get wrapped in a single <ul class="activities">
-    // so the visual matches the pre-migration look exactly.
-    //
-    // Soft-deleted facts (dropped_at set) are filtered out.
-    // Provenance metadata (author/confidence/pinned) is intentionally NOT
-    // surfaced in the UI per the user's spec.
-    const facts = (stop.facts || []).filter(f => !f.dropped_at);
-    const rendered = renderFacts(facts);
-
-    const isArrival = stop.sleep_type === "home";
-    const sectionClass = isArrival ? "stop arrival" : "stop";
-
-    return `
-    <section class="${sectionClass}" id="day-${startDay}" data-label="${escapeAttr(stop.short_name || stop.label)}" data-date="${railRange}">
-      <div class="stop-header">
-        <p class="stop-eyebrow">${stop.eyebrow ? stop.eyebrow : `${dayLabel} · ${railRange}`}</p>
-        <h2>${stop.heading || stop.short_name || stop.label}</h2>
-      </div>
-      <div class="stop-card">
-        ${rendered}
-      </div>
-    </section>`;
-  }
-
-  // Render an array of facts as a sequence of <ul> blocks and section headers.
-  // Section headers (kind=section_header) break the list and render as
-  // <p class="lead">. Consecutive non-header facts collapse into one <ul>.
-  function renderFacts(facts) {
-    let out = "";
-    let buffer = [];
-    function flush() {
-      if (buffer.length === 0) return;
-      out += `<ul class="activities">\n          ${buffer.map(t => `<li>${t}</li>`).join("\n          ")}\n        </ul>\n`;
-      buffer = [];
+  function effectiveLocation(id) {
+    const cat = catalogLocsById.get(id);
+    const db = dbLocsById.get(id);
+    if (!cat && !db) return null;
+    if (cat && (!db || db.deleted_at)) {
+      // No active override → use the catalog as-is.
+      return { ...cat, _source: "catalog" };
     }
-    for (const f of facts) {
-      if (f.kind === "section_header") {
-        flush();
-        out += `<p class="lead">${f.text}</p>\n`;
-      } else {
-        buffer.push(f.text);
+    if (!cat && db && db.kind === "new") {
+      // Brand-new user location. Promote DB fields to top-level. We
+      // synthesize the shape map-v2 expects.
+      return {
+        id: db.id,
+        kind: "new",
+        name: db.name,
+        lat: db.lat,
+        lon: db.lon,
+        emoji: db.emoji || "",
+        sleep_type: db.sleep_type || null,
+        activated: db.activated,
+        markdown: db.markdown || "",
+        deleted_at: db.deleted_at,
+        route_fraction: db.route_fraction,
+        _source: "user",
+      };
+    }
+    // Catalog + active override → merge (override non-null fields win).
+    return {
+      ...cat,
+      name: db.name != null ? db.name : cat.name,
+      lat: db.lat != null ? db.lat : cat.lat,
+      lon: db.lon != null ? db.lon : cat.lon,
+      sleep_type: db.sleep_type != null ? db.sleep_type : cat.sleep_type,
+      emoji: db.emoji != null ? db.emoji : (cat.emoji || ""),
+      markdown: db.markdown != null ? db.markdown : (cat.markdown || ""),
+      activated: db.activated,
+      _source: "override",
+      _override: db,
+    };
+  }
+
+  // Build a quick lookup of name for any id (catalog or user).
+  function nameOf(id) {
+    const eff = effectiveLocation(id);
+    return eff ? eff.name : id;
+  }
+
+  // ============================================================
+  // 2. Layer DB itinerary over the static itinerary.
+  // ============================================================
+  // Each static day gets a synthetic id `static_N`. DB rows keyed by
+  // `static_N` patch (sleep_loc_id, markdown). DB rows with UUID id are
+  // brand-new inserted days. Final ordered list sorts by `ordinal`
+  // (static day N has ordinal N*1000; inserts get midpoints).
+  // ============================================================
+  const dbByDayId = new Map((dbItin.days || []).map(d => [d.day_id, d]));
+
+  // Merge static + DB. Each row keeps a reference back to its DB row (if
+  // any) so we can write back via PATCH. Markdown defaults: bullet-join
+  // the static notes.
+  const merged = [];
+
+  // Step 1: add all static days. If a DB row exists for static_N, layer
+  // it. If a DB row exists for static_N but the SLEEP was changed or
+  // markdown overridden, those fields win.
+  staticItin.days.forEach((sd, idx) => {
+    const dayId = `static_${sd.day}`;
+    const dbRow = dbByDayId.get(dayId);
+    // Compute defaults from static.
+    const defaultSleep = sd.sleep;
+    const defaultMarkdown = (sd.notes || []).map(n => `- ${n}`).join("\n");
+    const ordinal = dbRow && dbRow.ordinal != null ? dbRow.ordinal : sd.day * 1000;
+    merged.push({
+      dayId,
+      sleepLocId: (dbRow && dbRow.sleep_loc_id) || defaultSleep,
+      markdown: (dbRow && dbRow.markdown != null) ? dbRow.markdown : defaultMarkdown,
+      ordinal,
+      isStatic: true,
+      staticDay: sd.day,
+      _dbRow: dbRow || null,
+    });
+  });
+
+  // Step 2: add all DB-only (inserted) rows.
+  (dbItin.days || []).forEach(dr => {
+    if (dr.day_id.startsWith("static_")) return; // already handled
+    merged.push({
+      dayId: dr.day_id,
+      sleepLocId: dr.sleep_loc_id || null,
+      markdown: dr.markdown || "",
+      ordinal: dr.ordinal,
+      isStatic: false,
+      _dbRow: dr,
+    });
+  });
+
+  // Sort by ordinal; assign live day numbers (1, 2, 3, ...).
+  merged.sort((a, b) => a.ordinal - b.ordinal || a.dayId.localeCompare(b.dayId));
+  merged.forEach((d, i) => { d.dayNum = i + 1; });
+
+  window.rvItinerary = merged;
+
+  // ============================================================
+  // 3. Drive-time recompute (from layered catalog).
+  // ============================================================
+  // Per Phase A spec: client-side recompute on every load. Walks
+  // map.json's route + segments + pois with the same logic the renderer
+  // uses, but always layered.
+  // ============================================================
+  const route = mapData.route;
+  const routeIdx = new Map(route.map((r, i) => [r, i]));
+  const segMap = new Map();
+  mapData.segments.forEach(s => {
+    if (s.raw_minutes != null) {
+      segMap.set(`${s.from}|${s.to}`, s);
+    }
+  });
+  const PAD_INTERSTATE = 1.10;
+  const PAD_MOUNTAIN = 1.25;
+  function paddedSeg(s) {
+    if (!s || s.raw_minutes == null) return 0;
+    return s.raw_minutes * (s.is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE);
+  }
+
+  // POI lookup (catalog + DB-new); resolves to {anchor, spurMinPadded}.
+  function resolveSleepAnchor(sleepId) {
+    if (!sleepId) return null;
+    if (routeIdx.has(sleepId)) {
+      return { anchor: sleepId, spurMin: 0, routeIdx: routeIdx.get(sleepId), kind: "on-route" };
+    }
+    // Catalog POI?
+    const cp = catalogPoisById.get(sleepId);
+    if (cp && cp.spur_raw_minutes != null && routeIdx.has(cp.anchor)) {
+      const padded = cp.spur_raw_minutes * (cp.spur_is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE);
+      return { anchor: cp.anchor, spurMin: padded, routeIdx: routeIdx.get(cp.anchor), kind: "poi" };
+    }
+    // User location with route_fraction? Approximate as the route node
+    // closest to that fraction along the cumulative time.
+    const eff = effectiveLocation(sleepId);
+    if (eff && eff._source === "user" && eff.route_fraction != null) {
+      // Find the route segment that contains this fraction. Compute
+      // cumulative raw minutes along route, then locate the fraction.
+      let cumul = 0;
+      const total = mapData.total_route_raw_minutes || 1;
+      const targetMins = eff.route_fraction * total;
+      for (let i = 0; i < route.length - 1; i++) {
+        const s = segMap.get(`${route[i]}|${route[i+1]}`);
+        const min = s ? s.raw_minutes : 0;
+        if (cumul + min >= targetMins || i === route.length - 2) {
+          // The new stop is between route[i] and route[i+1]. We treat it
+          // as if anchored to route[i] with a spur of (targetMins -
+          // cumul) padded.
+          const spurRaw = Math.max(0, targetMins - cumul);
+          const isMtn = s && s.is_mountain;
+          return {
+            anchor: route[i],
+            spurMin: spurRaw * (isMtn ? PAD_MOUNTAIN : PAD_INTERSTATE),
+            routeIdx: i,
+            kind: "user-on-route",
+          };
+        }
+        cumul += min;
       }
     }
-    flush();
+    return null;
+  }
+
+  function dayDriveMinutes(fromSleepId, toSleepId) {
+    if (!fromSleepId || !toSleepId) return null;
+    if (fromSleepId === toSleepId) return 0;
+    const a = resolveSleepAnchor(fromSleepId);
+    const b = resolveSleepAnchor(toSleepId);
+    if (!a || !b) return null;
+    let total = a.spurMin + b.spurMin;
+    const i = a.routeIdx, j = b.routeIdx;
+    if (i < j) {
+      for (let n = i; n < j; n++) total += paddedSeg(segMap.get(`${route[n]}|${route[n+1]}`));
+    } else if (i > j) {
+      for (let n = i; n > j; n--) total += paddedSeg(segMap.get(`${route[n]}|${route[n-1]}`));
+    }
+    return total;
+  }
+
+  // Annotate each day with its drive minutes (from yesterday's sleep).
+  merged.forEach((d, i) => {
+    if (i === 0) { d.driveMin = null; return; }
+    d.driveMin = dayDriveMinutes(merged[i-1].sleepLocId, d.sleepLocId);
+  });
+
+  // ============================================================
+  // 4. Date helpers.
+  // ============================================================
+  const startDate = staticItin.start_date;
+  function dateForDay(n) {
+    const [y, m, d] = startDate.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d + (n - 1)));
+    return dt;
+  }
+  const WEEKDAY = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function formatHeader(dt) {
+    return `${WEEKDAY[dt.getUTCDay()]}, ${MONTH_SHORT[dt.getUTCMonth()]} ${dt.getUTCDate()}`;
+  }
+  function fmtDriveMins(min) {
+    if (min == null) return "";
+    const r = Math.round(min);
+    if (r < 60) return `${r}m`;
+    const h = Math.floor(r / 60);
+    const m = r - h * 60;
+    return m === 0 ? `${h}h` : `${h}h${m}m`;
+  }
+  function shortRailDate(dt) {
+    return `${MONTH_SHORT[dt.getUTCMonth()]} ${dt.getUTCDate()}`;
+  }
+
+  // ============================================================
+  // 5. Minimal markdown renderer.
+  // ============================================================
+  // Supports: bullet lists (- foo), **bold**, *italic*, `code`,
+  // [text](url), and blank-line paragraph breaks. Escapes HTML first.
+  // ============================================================
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function renderInline(s) {
+    let out = escapeHtml(s);
+    // Bold + italic (bold first so the regex isn't ambiguous).
+    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
     return out;
   }
-
-  function renderDriveCard(drive) {
-    const railRange = shortDate(dateForDay(drive.to_day));
-    return `
-    <section class="drive" data-label="→ ${escapeAttr(drive.to_label)}" data-date="${railRange}">
-      <div class="drive-inner">
-        <span class="drive-icon">🚐</span>
-        <p>${drive.notes_html}<br><span class="meta">~${drive.miles} mi · ~${drive.hours} hr · ${drive.route}</span></p>
-      </div>
-    </section>`;
-  }
-
-  // ---- emit alternating stop/drive structure ----
-  let html = "";
-  for (let i = 0; i < expanded.length; i++) {
-    const entry = expanded[i];
-    html += renderStopCard(entry);
-    // After this stop, if there's a drive that starts on entry.endDay, render it
-    const drive = drivesByFrom.get(entry.endDay);
-    if (drive) {
-      html += renderDriveCard(drive);
+  function renderMarkdown(md) {
+    if (!md || !md.trim()) return "";
+    const lines = md.split("\n");
+    let html = "";
+    let inUl = false;
+    let pending = [];
+    function flushPara() {
+      if (pending.length) {
+        html += `<p>${pending.map(renderInline).join("<br>")}</p>`;
+        pending = [];
+      }
     }
+    function closeList() {
+      if (inUl) { html += "</ul>"; inUl = false; }
+    }
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, "");
+      if (/^\s*-\s+/.test(line)) {
+        flushPara();
+        if (!inUl) { html += "<ul>"; inUl = true; }
+        html += `<li>${renderInline(line.replace(/^\s*-\s+/, ""))}</li>`;
+      } else if (line === "") {
+        closeList();
+        flushPara();
+      } else {
+        closeList();
+        pending.push(line);
+      }
+    }
+    closeList();
+    flushPara();
+    return html;
   }
 
-  target.innerHTML = html;
+  // ============================================================
+  // 6. Render day cards.
+  // ============================================================
+  let canEdit = false;
 
-  // ---- helpers ----
+  function dayCardHTML(d, prevD) {
+    const dt = dateForDay(d.dayNum);
+    const startId = prevD ? prevD.sleepLocId : d.sleepLocId; // Day 1: start == sleep
+    const endId = d.sleepLocId;
+    const startName = nameOf(startId);
+    const endName = nameOf(endId);
+    const collapsed = startId === endId;
+    const drive = d.driveMin;
+    const driveStr = (!collapsed && drive != null && drive > 0) ? fmtDriveMins(drive) : "";
+    let headerRight;
+    if (collapsed) {
+      headerRight = escapeHtml(endName);
+    } else {
+      headerRight = `${escapeHtml(startName)} <span class="day-arrow">→</span> ${escapeHtml(endName)}` +
+                    (driveStr ? ` <span class="day-drive">${escapeHtml(driveStr)}</span>` : "");
+    }
+    const railLabel = collapsed ? endName : `${startName} → ${endName}`;
+    const railDate = shortRailDate(dt);
+    const bodyHtml = renderMarkdown(d.markdown);
+    return `
+      <section class="day-card" id="day-${d.dayNum}" data-day-id="${d.dayId}" data-label="${escapeAttr(railLabel)}" data-date="${escapeAttr(railDate)}">
+        <header class="day-card-header">
+          <span class="day-card-num">Day ${d.dayNum}</span>
+          <span class="day-card-sep">·</span>
+          <span class="day-card-date">${escapeHtml(formatHeader(dt))}</span>
+          <span class="day-card-sep">—</span>
+          <span class="day-card-route">${headerRight}</span>
+          <button type="button" class="day-card-edit" data-action="edit-markdown" aria-label="Edit notes" title="Edit notes">✏️</button>
+        </header>
+        <div class="day-card-body" data-empty="${bodyHtml ? "0" : "1"}">${bodyHtml || '<span class="day-card-empty">(no notes)</span>'}</div>
+      </section>`;
+  }
   function escapeAttr(s) {
     return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  // Build the timeline rail from rendered sections (replaces script.js logic
-  // since we want timeline rail to depend on rendered DOM, which only exists
-  // after this script runs).
-  const sections = Array.from(target.querySelectorAll(".stop, .drive"));
-  const timelineList = document.querySelector(".timeline-list");
-  if (timelineList && sections.length > 0) {
-    timelineList.innerHTML = "";
-    const items = sections.map((section) => {
+  function render() {
+    let html = "";
+    let prev = null;
+    for (const d of merged) {
+      html += dayCardHTML(d, prev);
+      prev = d;
+    }
+    target.innerHTML = html;
+    // (Re)build the timeline rail.
+    buildTimeline();
+  }
+
+  // ---- timeline rail ----
+  function buildTimeline() {
+    const list = document.querySelector(".timeline-list");
+    if (!list) return;
+    list.innerHTML = "";
+    const sections = Array.from(target.querySelectorAll(".day-card"));
+    const items = sections.map(section => {
       const li = document.createElement("li");
-      const label = section.dataset.label || "";
-      const date  = section.dataset.date || "";
-      li.innerHTML = `<span class="timeline-label">${label}</span>${date ? `<span class="timeline-date">${date}</span>` : ""}`;
-      if (section.classList.contains("drive")) li.classList.add("is-drive");
-      li.addEventListener("click", () => {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      timelineList.appendChild(li);
+      li.innerHTML = `<span class="timeline-label">${section.dataset.label || ""}</span>` +
+                     (section.dataset.date ? `<span class="timeline-date">${section.dataset.date}</span>` : "");
+      li.addEventListener("click", () => section.scrollIntoView({ behavior: "smooth", block: "start" }));
+      list.appendChild(li);
       return { section, li };
     });
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const idx = sections.indexOf(entry.target);
+    if (window._rvTimelineObs) try { window._rvTimelineObs.disconnect(); } catch (_) {}
+    window._rvTimelineObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const idx = sections.indexOf(e.target);
         if (idx < 0) return;
         items.forEach((it, i) => it.li.classList.toggle("is-active", i === idx));
       });
-    }, {
-      rootMargin: "-40% 0px -55% 0px",
-      threshold: 0,
-    });
-    sections.forEach((s) => observer.observe(s));
+    }, { rootMargin: "-40% 0px -55% 0px", threshold: 0 });
+    sections.forEach(s => window._rvTimelineObs.observe(s));
   }
 
-  // ---- update hero subtitle with derived date range ----
-  // The prep link is wrapped in a `.prep-link-wrap` span that auth.js
-  // toggles based on login state. We preserve that wrapper's hidden
-  // state when re-rendering.
+  // ============================================================
+  // 7. Edit markdown (click pencil → textarea → save).
+  // ============================================================
+  target.addEventListener("click", (e) => {
+    if (!canEdit) return;
+    const btn = e.target.closest('[data-action="edit-markdown"]');
+    if (!btn) return;
+    const card = btn.closest(".day-card");
+    if (!card) return;
+    const dayId = card.dataset.dayId;
+    const day = merged.find(d => d.dayId === dayId);
+    if (!day) return;
+    startMarkdownEdit(card, day);
+  });
+
+  function startMarkdownEdit(card, day) {
+    const body = card.querySelector(".day-card-body");
+    if (!body || body.querySelector("textarea")) return;
+    const ta = document.createElement("textarea");
+    ta.className = "day-card-editor";
+    ta.value = day.markdown || "";
+    ta.rows = Math.max(3, ta.value.split("\n").length + 1);
+    body.innerHTML = "";
+    body.appendChild(ta);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    let finished = false;
+    async function save() {
+      if (finished) return; finished = true;
+      const newMd = ta.value;
+      const oldMd = day.markdown || "";
+      if (newMd === oldMd) {
+        body.innerHTML = renderMarkdown(newMd) || '<span class="day-card-empty">(no notes)</span>';
+        body.dataset.empty = newMd ? "0" : "1";
+        return;
+      }
+      // Optimistic update.
+      day.markdown = newMd;
+      body.innerHTML = renderMarkdown(newMd) || '<span class="day-card-empty">(no notes)</span>';
+      body.dataset.empty = newMd ? "0" : "1";
+      try {
+        const res = await fetch("/rv/api/itinerary", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            day_id: day.dayId,
+            sleep_loc_id: day.sleepLocId,
+            markdown: newMd,
+            ordinal: day.ordinal,
+          }),
+        });
+        if (!res.ok) throw new Error("save failed");
+      } catch (err) {
+        day.markdown = oldMd;
+        body.innerHTML = renderMarkdown(oldMd) || '<span class="day-card-empty">(no notes)</span>';
+        body.dataset.empty = oldMd ? "0" : "1";
+        alert("Save failed — reverted.");
+      }
+    }
+    function cancel() {
+      if (finished) return; finished = true;
+      const md = day.markdown || "";
+      body.innerHTML = renderMarkdown(md) || '<span class="day-card-empty">(no notes)</span>';
+      body.dataset.empty = md ? "0" : "1";
+    }
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); cancel(); }
+      else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); save(); }
+    });
+    ta.addEventListener("blur", save);
+  }
+
+  // ============================================================
+  // 8. Auth state — toggle pencil visibility.
+  // ============================================================
+  function applyAuthState() {
+    canEdit = !!window.rvAuthUser;
+    target.classList.toggle("can-edit", canEdit);
+  }
+  window.addEventListener("rv:auth-resolved", applyAuthState);
+  window.addEventListener("rv:auth-change", applyAuthState);
+  applyAuthState();
+
+  // ============================================================
+  // 9. First render.
+  // ============================================================
+  render();
+
+  // Expose helpers for map-v2.js to consume.
+  window.rvLayered = {
+    effectiveLocation,
+    nameOf,
+    merged,
+    dayDriveMinutes,
+    resolveSleepAnchor,
+    renderMarkdown,
+  };
+  window.dispatchEvent(new CustomEvent("rv:itinerary-ready"));
+
+  // ============================================================
+  // 10. Update hero subtitle date range.
+  // ============================================================
   const subtitle = document.querySelector(".hero-text .subtitle");
   if (subtitle) {
-    const lastDay = expanded[expanded.length - 1].endDay;
-    const heroStart = shortDate(dateForDay(1));
-    const heroEnd   = shortDate(dateForDay(lastDay));
-    const startYear = dateForDay(1).getFullYear();
-    const existingPrep = subtitle.querySelector(".prep-link-wrap");
-    const isHidden = existingPrep ? existingPrep.hasAttribute("hidden") : true;
-    subtitle.innerHTML = `San Diego → New York City<br>${heroStart} – ${heroEnd}, ${startYear}<span class="prep-link-wrap"${isHidden ? " hidden" : ""}> · <a href="prep.html" class="prep-link" style="color:var(--accent)">prep checklist</a></span>`;
+    const lastDay = merged.length;
+    const startDt = dateForDay(1);
+    const endDt = dateForDay(lastDay);
+    const startStr = `${MONTH_SHORT[startDt.getUTCMonth()]} ${startDt.getUTCDate()}`;
+    const endStr = `${MONTH_SHORT[endDt.getUTCMonth()]} ${endDt.getUTCDate()}`;
+    const yr = startDt.getUTCFullYear();
+    subtitle.innerHTML = `San Diego → New York City<br>${startStr} – ${endStr}, ${yr}<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link" style="color:var(--accent)">checklists!</a></span>`;
   }
 })();

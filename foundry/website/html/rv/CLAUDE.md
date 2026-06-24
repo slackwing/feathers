@@ -72,8 +72,8 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
   hobby-server backend's `rv` project (see below) at
   `/rv/api/{me,login,logout}`. Exposes `window.rvAuthUser`,
   `window.rvAuthResolved`, fires `rv:auth-resolved` and
-  `rv:auth-change` events. Hides any `.prep-link-wrap` element when
-  logged out.
+  `rv:auth-change` events. The checklists link is always visible (read-
+  only for logged-out users); auth state only toggles the login button.
 - **scripts/compute_everything.py** — single pipeline that reads
   `assets/map-sources.json` + `assets/trip.json`, calls Google Directions
   + Open-Meteo (cached in gitignored `.cache/`), writes `assets/map.json`.

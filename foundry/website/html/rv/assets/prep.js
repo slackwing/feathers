@@ -17,7 +17,6 @@
   const API_BASE = "/rv/api/prep";
 
   const root = document.getElementById("prep-root");
-  const progressEl = document.getElementById("prep-progress");
   const loginHint = document.getElementById("prep-login-hint");
   const loginHintBtn = document.getElementById("prep-login-hint-btn");
   const toastEl = document.getElementById("prep-toast");
@@ -110,21 +109,6 @@
     const data = await apiFetch("", { method: "GET" });
     sections = (data.sections || []).slice();
     items = (data.items || []).slice();
-    // Backwards-compat fallback: if the server didn't return sections
-    // (pre-003 migration), reconstruct from item.section distinct values.
-    if (!sections.length && items.length) {
-      const seen = new Map();
-      let order = 1000;
-      items.forEach(it => {
-        if (!seen.has(it.section)) {
-          seen.set(it.section, order);
-          order += 1000;
-        }
-      });
-      sections = [...seen.entries()].map(([id, sort_order]) => ({
-        id, title: id, sort_order,
-      }));
-    }
   }
 
   // ---- render ----
@@ -159,7 +143,7 @@
       if (canEdit) {
         html += `
           <form class="prep-add" data-section="${section.id}">
-            <input type="text" name="text" placeholder="Add to “${escapeHtml(section.title)}” (use @7/22 for a date)" required>
+            <input type="text" name="text" placeholder="add new item (@M/YY for dates)" required>
             <button type="submit">Add</button>
           </form>`;
       }
@@ -569,10 +553,7 @@
   });
 
   function updateProgress() {
-    const total = items.length;
-    const done = items.filter(it => it.done).length;
-    progressEl.textContent = `${done} / ${total} done`;
-    // Per-section counts in the header.
+    // Per-section counts in the header (no combined total — that was removed).
     sections.forEach(section => {
       const sectionItems = items.filter(it => it.section === section.id);
       const sDone = sectionItems.filter(it => it.done).length;
@@ -599,7 +580,7 @@
   try {
     await fetchAll();
   } catch (err) {
-    progressEl.textContent = "Failed to load checklist.";
+    if (root) root.innerHTML = '<p class="prep-empty">Failed to load checklist.</p>';
     return;
   }
   // Render once now; auth might still be resolving but the public read

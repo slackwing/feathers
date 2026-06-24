@@ -580,11 +580,29 @@
     // so the gradient color still communicates "this is what we escaped"
     // without needing strikethrough — the 🏨 emoji already tells you
     // you're not sleeping in the RV.
+    // Build a set of sleep ids that are currently used in the live
+    // itinerary (window.rvLayered.merged). Sleeps NOT in this set render
+    // at half opacity unless their override explicitly says activated.
+    const itinSleepIds = new Set(
+      ((window.rvLayered && window.rvLayered.merged) || []).map(d => d.sleepLocId)
+    );
+
     mapData.locations.forEach(l => {
       if (l.kind !== "sleep") return;
       const p = worldToScreen(wpoints.get(l.id).x, wpoints.get(l.id).y);
       const isHotel = l.sleep_type === "hotel";
-      const emoji = isHotel ? "🏨" : "🚐";
+      // Layer DB override if available.
+      const eff = (window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l) || l;
+      const isSoftDeleted = !!eff.deleted_at;
+      const inItin = itinSleepIds.has(l.id);
+      // Activated logic: explicit override wins; otherwise default true
+      // if used in itinerary, false otherwise.
+      const overrideActivated = (eff._override && typeof eff._override.activated === "boolean")
+        ? eff._override.activated
+        : null;
+      const activated = overrideActivated !== null ? overrideActivated : inItin;
+      const emoji = isSoftDeleted ? "❌" : (isHotel ? "🏨" : "🚐");
+      const groupOpacity = isSoftDeleted ? 0.6 : (activated ? 1.0 : 0.45);
       const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
       // Tooltip text differs slightly between RV and hotel.
       let tip;
@@ -595,7 +613,7 @@
       } else {
         tip = `${l.name} · ${l.predicted_date} · inside ${fmtTemp(insideF)}${window.rvTempUnit} (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit})`;
       }
-      mainObjects += `<g><title>${escapeXml(tip)}</title>`;
+      mainObjects += `<g opacity="${groupOpacity}"><title>${escapeXml(tip)}</title>`;
       mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 7).toFixed(1)}" font-size="20" text-anchor="middle" style="user-select:none;">${emoji}</text>`;
       // Emoji is roughly 20px wide centered on p.x, ~24px tall above p.y+7.
       obstacles.push({ x: p.x - 10, y: p.y - 13, w: 20, h: 24 });
@@ -620,6 +638,33 @@
       }
       mainObjects += `</g>`;
     });
+
+    // ----- User-added locations (kind === "new" in DB only) -----
+    // Render between major and minor in size: 4.5px dot or an emoji.
+    // Soft-deleted ones render as a small red ❌.
+    const userLocs = (window.rvLayered && window.rvLayered.merged) ? [] : [];
+    // We don't have direct access to all DB locations from here cleanly —
+    // rvLayered exposes effectiveLocation by id but not "list all". Use a
+    // global set instead.
+    if (window.rvUserLocations) {
+      window.rvUserLocations.forEach(u => {
+        if (u.lat == null || u.lon == null) return;
+        const wp = project(u.lat, u.lon);
+        const p = worldToScreen(wp.x, wp.y);
+        const isSoftDeleted = !!u.deleted_at;
+        if (u.emoji) {
+          const display = isSoftDeleted ? "❌" : u.emoji;
+          mainObjects += `<g opacity="${isSoftDeleted ? 0.6 : 1.0}"><title>${escapeXml(u.name || u.id)}</title>`;
+          mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">${display}</text>`;
+          mainObjects += `</g>`;
+          obstacles.push({ x: p.x - 9, y: p.y - 12, w: 18, h: 22 });
+        } else {
+          const fill = isSoftDeleted ? "#c5563a" : "#d97b3a";
+          mainObjects += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="${fill}" stroke="white" stroke-width="2" opacity="${isSoftDeleted ? 0.6 : 1.0}"><title>${escapeXml(u.name || u.id)}</title></circle>`;
+          obstacles.push({ x: p.x - 6, y: p.y - 6, w: 12, h: 12 });
+        }
+      });
+    }
 
     // ----- Minor + Major dots (fixed; labels deferred) -----
     // Also: major rain droplet+pct is FIXED position (anchored under the
@@ -940,6 +985,486 @@
 
   // --------------- React to site-wide unit changes ---------------
   window.addEventListener("rv:unit-change", () => render());
+
+  // Re-render when itinerary.js finishes layering its data, so the
+  // sleep-emoji opacity (activated vs not) reflects the live itinerary.
+  window.addEventListener("rv:itinerary-ready", () => render());
+  // Auth state also affects modals (logged-in vs out); a re-render isn't
+  // strictly required, but covers any future affordances.
+  window.addEventListener("rv:auth-change", () => render());
+
+  // ============================================================
+  // Map-click modal (Phase A)
+  //
+  // Click anywhere on the map → categorize what was clicked:
+  //   - a location dot/emoji (catalog or user) → "location" target
+  //   - on/near the route line → "route" target (add new stop here)
+  //   - otherwise (background) → ignored
+  //
+  // Modal renders context-dependent options. Sleep changes / day insertion
+  // happens through this modal (NOT through the day cards). The day cards
+  // are markdown-edit only.
+  // ============================================================
+  let lastDownX = 0, lastDownY = 0, draggedDistance = 0;
+  viewport.addEventListener("pointerdown", (e) => {
+    lastDownX = e.clientX; lastDownY = e.clientY; draggedDistance = 0;
+  });
+  viewport.addEventListener("pointermove", (e) => {
+    if (activePointers.has(e.pointerId)) {
+      const dx = e.clientX - lastDownX, dy = e.clientY - lastDownY;
+      draggedDistance = Math.max(draggedDistance, Math.hypot(dx, dy));
+    }
+  });
+  viewport.addEventListener("click", (e) => {
+    if (draggedDistance > 5) return; // suppress click after drag/pinch
+    const rect = viewport.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    handleMapClick(sx, sy);
+  });
+
+  // Hit-test: find the closest location to (sx, sy) within HIT_RADIUS_PX.
+  function findLocationHit(sx, sy) {
+    const HIT_PX = 16;
+    let best = null;
+    let bestDist = HIT_PX;
+    mapData.locations.forEach(l => {
+      const w = wpoints.get(l.id);
+      if (!w) return;
+      const p = worldToScreen(w.x, w.y);
+      const d = Math.hypot(p.x - sx, p.y - sy);
+      if (d < bestDist) { bestDist = d; best = l; }
+    });
+    // Also consider POIs (sleep spots) — their dots are at the POI's
+    // true coords, not the anchor.
+    mapData.pois.forEach(p => {
+      const w = wpoints.get(p.id);
+      if (!w) return;
+      const sp = worldToScreen(w.x, w.y);
+      const d = Math.hypot(sp.x - sx, sp.y - sy);
+      if (d < bestDist) {
+        bestDist = d;
+        best = mapData.locations.find(l => l.id === p.id) || null;
+      }
+    });
+    return best;
+  }
+
+  // Hit-test: is (sx, sy) near the main route polyline (within ROUTE_PX)?
+  // Returns { onRoute: true, segIdx, t, fraction } or null.
+  function findRouteHit(sx, sy) {
+    const ROUTE_PX = 12;
+    const route = mapData.route;
+    // Compute cumulative time-fractions along the route so we can map
+    // hit to total-route fraction.
+    const totalRaw = mapData.total_route_raw_minutes || 1;
+    let cumul = 0;
+    let best = null;
+    for (let i = 0; i < route.length - 1; i++) {
+      const a = wpoints.get(route[i]);
+      const b = wpoints.get(route[i+1]);
+      if (!a || !b) continue;
+      const sa = worldToScreen(a.x, a.y);
+      const sb = worldToScreen(b.x, b.y);
+      const dx = sb.x - sa.x, dy = sb.y - sa.y;
+      const lenSq = dx*dx + dy*dy;
+      let t = 0;
+      if (lenSq > 0) {
+        t = ((sx - sa.x) * dx + (sy - sa.y) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+      }
+      const px = sa.x + t * dx, py = sa.y + t * dy;
+      const d = Math.hypot(px - sx, py - sy);
+      // The cumulative time at this hit:
+      const segObj = mapData.segments.find(s => s.from === route[i] && s.to === route[i+1]);
+      const segRaw = segObj && segObj.raw_minutes != null ? segObj.raw_minutes : 0;
+      const fracAtHit = (cumul + t * segRaw) / totalRaw;
+      if (d < ROUTE_PX && (!best || d < best.dist)) {
+        best = { dist: d, segIdx: i, t, fraction: fracAtHit, screenX: px, screenY: py };
+      }
+      cumul += segRaw;
+    }
+    return best;
+  }
+
+  function handleMapClick(sx, sy) {
+    const locHit = findLocationHit(sx, sy);
+    if (locHit) { openLocationModal(locHit); return; }
+    const routeHit = findRouteHit(sx, sy);
+    if (routeHit) { openRouteModal(routeHit); return; }
+    // background click: nothing
+  }
+
+  // ---- Modal infrastructure ----
+  function ensureModal() {
+    let modal = document.getElementById("rv-map-modal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "rv-map-modal";
+    modal.className = "rv-map-modal-overlay";
+    modal.hidden = true;
+    modal.innerHTML = `<div class="rv-map-modal" role="dialog" aria-modal="true">
+      <button class="rv-map-modal-close" type="button" aria-label="Close">×</button>
+      <div class="rv-map-modal-body"></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal || e.target.classList.contains("rv-map-modal-close")) {
+        modal.hidden = true;
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.hidden) modal.hidden = true;
+    });
+    return modal;
+  }
+  function openModalWith(html) {
+    const modal = ensureModal();
+    modal.querySelector(".rv-map-modal-body").innerHTML = html;
+    modal.hidden = false;
+  }
+
+  // Find which "itinerary day" walks past this location/route fraction.
+  // Returns { prevDay, nextDay } from window.rvItinerary (if loaded).
+  function findDayContext(routeFraction) {
+    const merged = (window.rvLayered && window.rvLayered.merged) || [];
+    const layered = window.rvLayered;
+    if (!merged.length || !layered) return { prevDay: null, nextDay: null };
+    // For each day, the sleep's route_fraction is its endpoint. Days
+    // sorted by route position (which is the same as itinerary order
+    // EXCEPT for backtracks — Day 5 white_sands is east of Day 6 ABQ,
+    // so this approximation may misorder. Phase A: use ordinal order
+    // as the source of truth for "before/after").
+    // Compute each day's endpoint fraction.
+    const fracs = merged.map(d => {
+      const eff = layered.effectiveLocation(d.sleepLocId);
+      if (!eff) return null;
+      // Catalog POIs have route_fraction in their location entry.
+      const cat = mapData.locations.find(l => l.id === d.sleepLocId);
+      if (cat && cat.route_fraction != null) return cat.route_fraction;
+      if (eff.route_fraction != null) return eff.route_fraction;
+      return null;
+    });
+    // prevDay = last day whose fraction <= routeFraction
+    let prevDay = null, nextDay = null;
+    for (let i = 0; i < merged.length; i++) {
+      if (fracs[i] != null && fracs[i] <= routeFraction) prevDay = merged[i];
+      if (fracs[i] != null && fracs[i] > routeFraction && !nextDay) nextDay = merged[i];
+    }
+    return { prevDay, nextDay };
+  }
+
+  // ---- Location modal ----
+  function openLocationModal(loc) {
+    const layered = window.rvLayered;
+    const eff = layered ? layered.effectiveLocation(loc.id) : loc;
+    const merged = layered ? layered.merged : [];
+    const usedInItin = merged.some(d => d.sleepLocId === loc.id);
+    const isSoftDeleted = eff && eff.deleted_at;
+    const canEdit = !!window.rvAuthUser;
+
+    let html = `<h2 class="rv-map-modal-title">${escapeXml(eff ? eff.name : loc.name)}</h2>`;
+    if (eff && eff._source) {
+      html += `<p class="rv-map-modal-source">Source: ${eff._source}${isSoftDeleted ? " · deleted" : ""}</p>`;
+    }
+    if (eff && eff.markdown) {
+      html += `<div class="rv-map-modal-md">${layered.renderMarkdown(eff.markdown)}</div>`;
+    } else if (eff && eff._notes) {
+      html += `<div class="rv-map-modal-md"><em>${escapeXml(eff._notes)}</em></div>`;
+    }
+    if (!canEdit) {
+      html += `<p class="rv-map-modal-hint"><em>Log in to edit, add stops, or mark days.</em></p>`;
+    } else {
+      html += `<div class="rv-map-modal-actions">`;
+      html += `<button type="button" data-act="edit">Edit properties</button>`;
+      html += `<button type="button" data-act="toggle-active">${eff && eff.activated === false ? "Activate" : "Deactivate"}</button>`;
+      if (!usedInItin) {
+        html += `<button type="button" data-act="extend-prev">Extend previous day to here</button>`;
+        html += `<button type="button" data-act="pull-next">Pull next day back to here</button>`;
+        html += `<button type="button" data-act="insert-here">Add stop in between (insert day)</button>`;
+      }
+      if (isSoftDeleted) {
+        html += `<button type="button" data-act="restore">Restore</button>`;
+      } else {
+        html += `<button type="button" data-act="soft-delete" class="danger">Soft delete</button>`;
+      }
+      html += `</div>`;
+    }
+    openModalWith(html);
+
+    const modal = document.getElementById("rv-map-modal");
+    modal.querySelector(".rv-map-modal-body").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-act]");
+      if (!btn) return;
+      const act = btn.dataset.act;
+      if (act === "edit") return openEditPropertiesModal(loc);
+      if (act === "toggle-active") return toggleActivated(loc, eff);
+      if (act === "extend-prev") return shiftDayEndpoint(loc, "prev");
+      if (act === "pull-next") return shiftDayEndpoint(loc, "next");
+      if (act === "insert-here") return insertDayHere(loc);
+      if (act === "restore") return restoreLocation(loc);
+      if (act === "soft-delete") return softDeleteLocation(loc);
+    }, { once: true });
+  }
+
+  function openEditPropertiesModal(loc) {
+    const layered = window.rvLayered;
+    const eff = layered.effectiveLocation(loc.id);
+    const name = eff && eff.name != null ? eff.name : (loc.name || "");
+    const emoji = (eff && eff.emoji) || "";
+    const md = (eff && eff.markdown) || "";
+    const html = `
+      <h2 class="rv-map-modal-title">Edit ${escapeXml(loc.name)}</h2>
+      <form id="rv-map-edit-form">
+        <label>Name <input type="text" name="name" value="${escapeXml(name)}" required></label>
+        <label>Emoji
+          <span class="rv-emoji-picker" data-input="emoji">
+            <button type="button" data-emoji="">none</button>
+            <button type="button" data-emoji="⭐">⭐</button>
+            <button type="button" data-emoji="❤️">❤️</button>
+            <button type="button" data-emoji="🔍">🔍</button>
+            <button type="button" data-emoji="📍">📍</button>
+            <button type="button" data-emoji="☕">☕</button>
+            <button type="button" data-emoji="🍴">🍴</button>
+            <button type="button" data-emoji="🛍️">🛍️</button>
+          </span>
+          <input type="text" name="emoji" value="${escapeXml(emoji)}" placeholder="or type any emoji">
+        </label>
+        <label>Notes (markdown)
+          <textarea name="markdown" rows="6">${escapeXml(md)}</textarea>
+        </label>
+        <div class="rv-map-modal-actions">
+          <button type="submit">Save</button>
+          <button type="button" data-act="cancel">Cancel</button>
+        </div>
+      </form>`;
+    openModalWith(html);
+    const modal = document.getElementById("rv-map-modal");
+    const form = modal.querySelector("#rv-map-edit-form");
+    // Emoji-picker buttons.
+    form.querySelectorAll(".rv-emoji-picker button").forEach(b => {
+      b.addEventListener("click", () => {
+        form.elements.emoji.value = b.dataset.emoji;
+      });
+    });
+    modal.querySelector('[data-act="cancel"]').addEventListener("click", () => { modal.hidden = true; });
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = {
+        id: loc.id,
+        kind: "override",
+        name: form.elements.name.value.trim(),
+        emoji: form.elements.emoji.value,
+        markdown: form.elements.markdown.value,
+        activated: true,
+      };
+      try {
+        const res = await fetch("/rv/api/locations", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          // Already exists → PATCH instead.
+          if (res.status === 500 || res.status === 409) {
+            const res2 = await fetch("/rv/api/locations/" + encodeURIComponent(loc.id), {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: body.name, emoji: body.emoji, markdown: body.markdown, activated: true }),
+            });
+            if (!res2.ok) throw new Error("save failed");
+          } else {
+            throw new Error("save failed");
+          }
+        }
+        modal.hidden = true;
+        // Reload the page — simplest way to get the layered model rebuilt.
+        location.reload();
+      } catch (err) {
+        alert("Save failed.");
+      }
+    });
+  }
+
+  async function toggleActivated(loc, eff) {
+    const newVal = !(eff && eff.activated !== false);
+    try {
+      // Try PATCH first (in case an override row exists); fall back to POST.
+      const res = await fetch("/rv/api/locations/" + encodeURIComponent(loc.id), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activated: !newVal }), // wait — newVal is the desired new state
+      });
+      if (!res.ok && res.status === 404) {
+        // No override yet → create one.
+        await fetch("/rv/api/locations", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: loc.id, kind: "override", activated: !newVal }),
+        });
+      }
+      location.reload();
+    } catch (err) { alert("Toggle failed."); }
+  }
+
+  async function shiftDayEndpoint(loc, which) {
+    const merged = window.rvLayered.merged;
+    if (!merged.length) return;
+    // Find the day whose sleep we're changing (prev = the day BEFORE this
+    // location along route; "prev"=extend that day so it now ENDS here.
+    // "next" = the day AFTER, change its START... but start is derived
+    // from previous day's sleep, so we change the previous day's sleep).
+    // Simpler model: clicking "extend prev" changes the prev day's sleep.
+    // "pull next back" changes the NEXT day's start... which means
+    // changing the day BEFORE the next day's sleep == prev day's sleep.
+    // Actually: "pull next" = change the next day's sleep to here (so it
+    // ARRIVES here instead of going further). Let's go with that read.
+    const cat = mapData.locations.find(l => l.id === loc.id);
+    const frac = (cat && cat.route_fraction != null) ? cat.route_fraction : null;
+    const { prevDay, nextDay } = findDayContext(frac == null ? 0 : frac);
+    const target = which === "prev" ? prevDay : nextDay;
+    if (!target) { alert("No day to shift."); return; }
+    try {
+      await fetch("/rv/api/itinerary", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          day_id: target.dayId,
+          sleep_loc_id: loc.id,
+          markdown: target.markdown,
+          ordinal: target.ordinal,
+        }),
+      });
+      location.reload();
+    } catch (err) { alert("Shift failed."); }
+  }
+
+  async function insertDayHere(loc) {
+    const merged = window.rvLayered.merged;
+    const cat = mapData.locations.find(l => l.id === loc.id);
+    const frac = (cat && cat.route_fraction != null) ? cat.route_fraction : null;
+    const { prevDay, nextDay } = findDayContext(frac == null ? 0 : frac);
+    if (!prevDay || !nextDay) { alert("Need a previous and next day to insert between."); return; }
+    const newOrdinal = (prevDay.ordinal + nextDay.ordinal) / 2;
+    const newId = "ins_" + Math.random().toString(36).slice(2, 10);
+    try {
+      await fetch("/rv/api/itinerary", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          day_id: newId,
+          sleep_loc_id: loc.id,
+          markdown: "",
+          ordinal: newOrdinal,
+        }),
+      });
+      location.reload();
+    } catch (err) { alert("Insert failed."); }
+  }
+
+  async function softDeleteLocation(loc) {
+    if (!confirm(`Soft-delete "${loc.name}"? You can restore it later.`)) return;
+    try {
+      // Need an override row to soft-delete a catalog location. POST first
+      // (idempotent enough), then DELETE.
+      await fetch("/rv/api/locations", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: loc.id, kind: "override", activated: true }),
+      }).catch(()=>{}); // ignore conflict
+      await fetch("/rv/api/locations/" + encodeURIComponent(loc.id), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      location.reload();
+    } catch (err) { alert("Delete failed."); }
+  }
+  async function restoreLocation(loc) {
+    try {
+      await fetch("/rv/api/locations/" + encodeURIComponent(loc.id), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restore: true }),
+      });
+      location.reload();
+    } catch (err) { alert("Restore failed."); }
+  }
+
+  // ---- Route-line click modal ----
+  function openRouteModal(hit) {
+    const canEdit = !!window.rvAuthUser;
+    if (!canEdit) {
+      openModalWith(`<h2 class="rv-map-modal-title">Add a stop here</h2><p><em>Log in to add stops.</em></p>`);
+      return;
+    }
+    const html = `
+      <h2 class="rv-map-modal-title">Add a new location here</h2>
+      <p class="rv-map-modal-source">On route at ${(hit.fraction * 100).toFixed(1)}% of the trip</p>
+      <form id="rv-route-new-form">
+        <label>Name <input type="text" name="name" required autofocus></label>
+        <label>Emoji
+          <span class="rv-emoji-picker" data-input="emoji">
+            <button type="button" data-emoji="">none</button>
+            <button type="button" data-emoji="⭐">⭐</button>
+            <button type="button" data-emoji="❤️">❤️</button>
+            <button type="button" data-emoji="🔍">🔍</button>
+            <button type="button" data-emoji="📍">📍</button>
+            <button type="button" data-emoji="☕">☕</button>
+            <button type="button" data-emoji="🍴">🍴</button>
+            <button type="button" data-emoji="🛍️">🛍️</button>
+          </span>
+          <input type="text" name="emoji" placeholder="or type any emoji">
+        </label>
+        <label>Notes (markdown)<textarea name="markdown" rows="4"></textarea></label>
+        <div class="rv-map-modal-actions">
+          <button type="submit">Add</button>
+          <button type="button" data-act="cancel">Cancel</button>
+        </div>
+      </form>`;
+    openModalWith(html);
+    const modal = document.getElementById("rv-map-modal");
+    const form = modal.querySelector("#rv-route-new-form");
+    form.querySelectorAll(".rv-emoji-picker button").forEach(b => {
+      b.addEventListener("click", () => { form.elements.emoji.value = b.dataset.emoji; });
+    });
+    modal.querySelector('[data-act="cancel"]').addEventListener("click", () => { modal.hidden = true; });
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      // Estimate lat/lon for the new location: linear interpolation along
+      // the clicked segment in true coords.
+      const route = mapData.route;
+      const a = mapData.locations.find(l => l.id === route[hit.segIdx]);
+      const b = mapData.locations.find(l => l.id === route[hit.segIdx + 1]);
+      const lat = a.lat + (b.lat - a.lat) * hit.t;
+      const lon = a.lon + (b.lon - a.lon) * hit.t;
+      const id = "user_" + Math.random().toString(36).slice(2, 10);
+      try {
+        await fetch("/rv/api/locations", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id, kind: "new",
+            name: form.elements.name.value.trim(),
+            lat, lon,
+            route_fraction: hit.fraction,
+            emoji: form.elements.emoji.value,
+            markdown: form.elements.markdown.value,
+            activated: true,
+          }),
+        });
+        location.reload();
+      } catch (err) { alert("Add failed."); }
+    });
+  }
 
   render();
 })();

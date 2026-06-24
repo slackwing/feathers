@@ -11,9 +11,10 @@
 //   - Call window.rvOpenLoginModal()   to programmatically open the modal
 //
 // Conventions:
-//   - Elements with class "prep-link-wrap" are hidden unless logged in.
 //   - The login button toggles between "Log in" and the username + a
 //     click-to-log-out behavior.
+//   - (The checklists link is always visible — read-only for logged-out
+//     users — so we no longer hide .prep-link-wrap on logout.)
 
 (function () {
   const API_BASE = "/rv/api";  // Apache proxies this to the Go server
@@ -61,16 +62,8 @@
       loginBtn.setAttribute("aria-label", "Log in");
     }
   }
-  function updatePrepLinks() {
-    // Show every .prep-link-wrap iff logged in.
-    document.querySelectorAll(".prep-link-wrap").forEach((el) => {
-      if (window.rvAuthUser) el.hidden = false;
-      else el.hidden = true;
-    });
-  }
   function applyAuthState() {
     updateLoginButton();
-    updatePrepLinks();
   }
 
   async function fetchMe() {
