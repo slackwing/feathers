@@ -1333,6 +1333,13 @@
         html += `<button type="button" data-act="insert-here">sleep here (add day)</button>`;
       }
       html += `<button type="button" data-act="toggle-active" class="quiet">${eff && eff.activated === false ? "activate" : "deactivate"}</button>`;
+      // Show "reset" only when there's an actual override row to clear
+      // (i.e., this is a catalog location that's been edited). Resetting
+      // hard-deletes the override row, falling back to catalog values.
+      const isOverridden = !!(eff && eff._override && eff._source === "override");
+      if (isOverridden) {
+        html += `<button type="button" data-act="reset-override" class="quiet">reset</button>`;
+      }
       if (isSoftDeleted) {
         html += `<button type="button" data-act="restore" class="quiet">restore</button>`;
       } else {
@@ -1355,6 +1362,7 @@
       if (act === "end-day-here") return endDayHere(loc);
       if (act === "restore") return restoreLocation(loc);
       if (act === "soft-delete") return softDeleteLocation(loc);
+      if (act === "reset-override") return resetLocationOverride(loc);
     }, { once: true });
   }
 
@@ -1621,6 +1629,20 @@
       });
       location.reload();
     } catch (err) { alert("Restore failed."); }
+  }
+  // Reset = hard-delete the override row so the catalog values are
+  // canonical again (name, emoji, markdown, day_card_label all return
+  // to whatever the static catalog defines).
+  async function resetLocationOverride(loc) {
+    if (!confirm(`Reset "${loc.name}" to its catalog defaults?\n\nThis removes any name/label/notes overrides you've made.`)) return;
+    try {
+      const r = await fetch("/rv/api/locations/" + encodeURIComponent(loc.id) + "?hard=true", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error("reset failed");
+      location.reload();
+    } catch (err) { alert("Reset failed."); }
   }
 
   // ---- Route-line click modal ----

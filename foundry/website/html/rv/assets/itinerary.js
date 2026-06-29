@@ -138,7 +138,9 @@
     const dbRow = dbByDayId.get(dayId);
     // Compute defaults from static.
     const defaultSleep = sd.sleep;
-    const defaultMarkdown = (sd.notes || []).map(n => `- ${n}`).join("\n");
+    // Static days carry their notes as a single `markdown` string —
+    // same shape as itinerary_override.markdown in the DB.
+    const defaultMarkdown = sd.markdown || "";
     const ordinal = dbRow && dbRow.ordinal != null ? dbRow.ordinal : sd.day * 1000;
     merged.push({
       dayId,
@@ -284,10 +286,18 @@
   }
 
   // ============================================================
-  // 5. Minimal markdown renderer.
+  // 5. Markdown renderer (CommonMark + GFM via marked.js).
   // ============================================================
-  // Supports: bullet lists (- foo), **bold**, *italic*, `code`,
-  // [text](url), and blank-line paragraph breaks. Escapes HTML first.
+  // marked.parse() does full CommonMark + GitHub Flavored Markdown
+  // (autolinks, tables, strikethrough, task lists, etc.). DOMPurify
+  // sanitizes the resulting HTML before we splice it into the DOM —
+  // editor input comes from logged-in admins, but defense-in-depth is
+  // cheap and the bundle is tiny.
+  //
+  // marked options:
+  //   gfm:    true   — GitHub-flavored extras (autolinks, ~~strike~~, tables)
+  //   breaks: true   — single newline → <br> (matches the old behavior
+  //                    we had for free-typed bullet bodies)
   // ============================================================
   function escapeHtml(s) {
     return String(s)
@@ -296,47 +306,121 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   }
-  function renderInline(s) {
-    let out = escapeHtml(s);
-    // Bold + italic (bold first so the regex isn't ambiguous).
-    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
-    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    return out;
+  if (typeof marked !== "undefined") {
+    marked.setOptions({ gfm: true, breaks: true });
+    // Custom inline extensions:
+    //   "TODO:" → calm yellow-highlight + green bold TODO (a note-to-self)
+    //   "TODO!" → red bold TODO (urgent / blocking)
+    // The trailing : or ! is consumed; nothing else changes about the
+    // surrounding text.
+    marked.use({
+      extensions: [
+        {
+          name: "todoTagColon",
+          level: "inline",
+          start(src) {
+            const i = src.indexOf("TODO:");
+            return i === -1 ? undefined : i;
+          },
+          tokenizer(src) {
+            const m = /^TODO:/.exec(src);
+            if (!m) return undefined;
+            return { type: "todoTagColon", raw: m[0] };
+          },
+          renderer() {
+            return '<span class="md-todo md-todo-soft">TODO</span>';
+          },
+        },
+        {
+          name: "todoTagBang",
+          level: "inline",
+          start(src) {
+            const i = src.indexOf("TODO!");
+            return i === -1 ? undefined : i;
+          },
+          tokenizer(src) {
+            const m = /^TODO!/.exec(src);
+            if (!m) return undefined;
+            return { type: "todoTagBang", raw: m[0] };
+          },
+          renderer() {
+            return '<span class="md-todo md-todo-urgent">TODO</span>';
+          },
+        },
+        {
+          // "4h16m++" / "30m++" / "2h++" → a styled drive-time pill in
+          // the same font/color as the day-card header drive label,
+          // plus the 🚐 icon. The trailing "++" is consumed.
+          name: "driveTime",
+          level: "inline",
+          start(src) {
+            const m = /(\d+h(?:\d+m)?|\d+m)\+\+/.exec(src);
+            return m ? m.index : undefined;
+          },
+          tokenizer(src) {
+            const m = /^(\d+h(?:\d+m)?|\d+m)\+\+/.exec(src);
+            if (!m) return undefined;
+            return { type: "driveTime", raw: m[0], time: m[1] };
+          },
+          renderer(tok) {
+            // "++" means: this is a NORMAL CAR drive time (which would
+            // need a bit added to RV-ify). We strip the "++" and render
+            // with the car icon to signal "this is the car-time."
+            return '<span class="md-drive">' + escapeHtml(tok.time)
+                 + ' <span class="md-drive-icon">🚗</span></span>';
+          },
+        },
+        {
+          // {{Extra notes here.}} → a small clickable note icon with a
+          // hover/click popup containing the text. Plaintext only (no
+          // nested markdown). Escaped so `<`, `>`, `&`, quotes are safe.
+          name: "noteChip",
+          level: "inline",
+          start(src) {
+            const i = src.indexOf("{{");
+            return i === -1 ? undefined : i;
+          },
+          tokenizer(src) {
+            const m = /^\{\{([\s\S]+?)\}\}/.exec(src);
+            if (!m) return undefined;
+            return { type: "noteChip", raw: m[0], text: m[1] };
+          },
+          renderer(tok) {
+            const safe = escapeHtml(tok.text);
+            // The popup sits inside the same anchor so CSS hover works.
+            return '<span class="md-note" tabindex="0" data-note="' + safe + '">'
+                 + '<span class="md-note-icon" aria-label="note">📝</span>'
+                 + '<span class="md-note-popup" role="tooltip">' + safe + '</span>'
+                 + '</span>';
+          },
+        },
+      ],
+    });
   }
   function renderMarkdown(md) {
     if (!md || !md.trim()) return "";
-    const lines = md.split("\n");
-    let html = "";
-    let inUl = false;
-    let pending = [];
-    function flushPara() {
-      if (pending.length) {
-        html += `<p>${pending.map(renderInline).join("<br>")}</p>`;
-        pending = [];
+    if (typeof marked === "undefined") {
+      // CDN didn't load; fall back to escaped raw text so the card
+      // still shows the note contents (just unformatted).
+      return `<pre class="day-card-fallback">${escapeHtml(md)}</pre>`;
+    }
+    const raw = marked.parse(md);
+    if (typeof DOMPurify !== "undefined") {
+      return DOMPurify.sanitize(raw, {
+        ADD_ATTR: ["target", "rel"],
+      });
+    }
+    return raw;
+  }
+  // Open external links in a new tab. marked emits plain <a href> tags;
+  // we post-process via a DOMPurify hook so target/rel get added.
+  if (typeof DOMPurify !== "undefined") {
+    DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+      if (node.tagName === "A" && node.hasAttribute("href")) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
       }
-    }
-    function closeList() {
-      if (inUl) { html += "</ul>"; inUl = false; }
-    }
-    for (const raw of lines) {
-      const line = raw.replace(/\s+$/, "");
-      if (/^\s*-\s+/.test(line)) {
-        flushPara();
-        if (!inUl) { html += "<ul>"; inUl = true; }
-        html += `<li>${renderInline(line.replace(/^\s*-\s+/, ""))}</li>`;
-      } else if (line === "") {
-        closeList();
-        flushPara();
-      } else {
-        closeList();
-        pending.push(line);
-      }
-    }
-    closeList();
-    flushPara();
-    return html;
+    });
   }
 
   // ============================================================
@@ -424,6 +508,20 @@
   // 7. Edit markdown (click pencil → textarea → save).
   // ============================================================
   target.addEventListener("click", (e) => {
+    // Note chip toggle (open-for-everyone, even logged-out viewers).
+    // Click an .md-note to pin its popup; click anywhere on the pinned
+    // chip again (or the page elsewhere) to unpin.
+    const note = e.target.closest(".md-note");
+    if (note) {
+      e.stopPropagation();
+      const wasPinned = note.classList.contains("is-pinned");
+      // Unpin every chip in the doc first, then pin this one (unless
+      // we were toggling it off).
+      document.querySelectorAll(".md-note.is-pinned").forEach(n => n.classList.remove("is-pinned"));
+      if (!wasPinned) note.classList.add("is-pinned");
+      return;
+    }
+
     if (!canEdit) return;
     const btn = e.target.closest('[data-action="edit-markdown"]');
     if (!btn) return;
@@ -433,6 +531,11 @@
     const day = merged.find(d => d.dayId === dayId);
     if (!day) return;
     startMarkdownEdit(card, day);
+  });
+  // Click anywhere outside a pinned note chip closes it.
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".md-note")) return;
+    document.querySelectorAll(".md-note.is-pinned").forEach(n => n.classList.remove("is-pinned"));
   });
 
   function startMarkdownEdit(card, day) {

@@ -260,7 +260,7 @@
       "name": "Mancos",
       "lat": 37.3450,
       "lon": -108.2890,
-      "_note": "Town of Mancos on US-160 between Durango and Mesa Verde NP entrance. Added to route[] so that mancos_nf and madden_peak_dispersed junctions resolve to the correct leg (US-160) instead of the straight-line mesa_verde -> telluride polyline (which crosses mountains and puts the junction in nowhere-land)."
+      "_note": "Mancos / Mesa Verde area is reached as a SIDE TRIP from Durango (not on the through-driving route to Telluride). Off-route since 2026-06-29."
     },
     {
       "id": "cortez",
@@ -268,7 +268,18 @@
       "name": "Cortez",
       "lat": 37.3489,
       "lon": -108.5859,
-      "_note": "Town of Cortez on US-160 / US-491, the actual driving turn from US-160 north onto CO-145 toward Telluride. Without this in route[], the straight-line mesa_verde -> telluride polyline cuts NE across mountains that don't have a road, which puts off-route junctions in nonsense places."
+      "_note": "Off-route since 2026-06-29 — Mesa Verde area is a side trip from Durango."
+    },
+    {
+      "id": "bayfield_durango_dispersed",
+      "kind": "sleep",
+      "name": "Bayfield-Durango BLM Dispersed",
+      "lat": 37.230,
+      "lon": -107.660,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed camping ~15 mi east of Durango, off US-160 (right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
+      "cautions": [],
+      "medal": "gold"
     },
     {
       "id": "mesa_verde",
@@ -1058,8 +1069,6 @@
     "santa_fe",
     "pagosa_springs",
     "durango",
-    "mancos",
-    "cortez",
     "telluride",
     "ridgway",
     "black_canyon",
@@ -1109,6 +1118,9 @@
     "east_fork_fr667_dispersed",
     "turkey_springs_dispersed",
     "transfer_park_cg",
+    "mancos",
+    "cortez",
+    "bayfield_durango_dispersed",
     "mancos_nf",
     "madden_peak_dispersed",
     "last_dollar",

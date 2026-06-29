@@ -333,8 +333,216 @@ a { color: var(--accent); }
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.88em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .day-card-body a { color: var(--accent); }
+
+/* Full Markdown / GFM bits surfaced by marked.js */
+.day-card-body h1,
+.day-card-body h2,
+.day-card-body h3,
+.day-card-body h4,
+.day-card-body h5,
+.day-card-body h6 {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  margin: 14px 0 4px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.day-card-body h1 { font-size: 1.25rem; }
+.day-card-body h2 { font-size: 1.15rem; }
+.day-card-body h3 { font-size: 1.05rem; }
+.day-card-body h4,
+.day-card-body h5,
+.day-card-body h6 { font-size: 0.98rem; }
+.day-card-body h1:first-child,
+.day-card-body h2:first-child,
+.day-card-body h3:first-child { margin-top: 0; }
+.day-card-body ol {
+  margin: 4px 0;
+  padding-left: 26px;
+}
+.day-card-body ol li { padding: 1px 0; position: static; }
+.day-card-body ol li::before { content: none; }
+/* Nested lists pull in a touch tighter so they don't bloat the card. */
+.day-card-body ul ul,
+.day-card-body ul ol,
+.day-card-body ol ul,
+.day-card-body ol ol { margin: 2px 0 4px; }
+.day-card-body blockquote {
+  margin: 6px 0;
+  padding: 4px 10px;
+  border-left: 3px solid var(--accent);
+  background: rgba(47, 138, 110, 0.05);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.day-card-body pre {
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 5px;
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin: 6px 0;
+}
+.day-card-body pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+.day-card-body hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 12px 0;
+}
+.day-card-body table {
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 0.9em;
+}
+.day-card-body th,
+.day-card-body td {
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  text-align: left;
+}
+.day-card-body th { background: var(--bg); font-weight: 600; }
+.day-card-body del { color: var(--ink-soft); }
+.day-card-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+  margin: 4px 0;
+}
+/* Task lists (- [ ] / - [x]) */
+.day-card-body input[type="checkbox"] {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+/* Custom inline chips:
+   "TODO:" (md-todo-soft)   — calm: yellow chip + green bold text
+   "TODO!" (md-todo-urgent) — urgent: pink chip + red bold text
+   In both cases the trailing colon/bang is consumed and we render just
+   "TODO" with a tiny right-margin so it doesn't crowd the next word. */
+.day-card-body .md-todo {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.72em;
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;     /* full pill */
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+.day-card-body .md-todo-soft {
+  color: var(--accent);
+  background: #fff3a8;
+}
+.day-card-body .md-todo-urgent {
+  color: #c5563a;
+  background: #fde0d8;
+}
+
+/* "4h16m++" → an inline mini-pill matching the day-card header's
+   .day-drive look. Same font / size / color / icon style. */
+.day-card-body .md-drive {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0.7;
+  white-space: nowrap;
+  margin: 0 2px;
+}
+.day-card-body .md-drive-icon {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  margin-left: 2px;
+}
+
+/* Note chip: a small 📝 icon. Hovering OR tab-focusing it shows the
+   popup immediately (no delay). Clicking pins it so you can drag-select
+   the text — click again (or anywhere outside) to dismiss. The popup
+   absolutely positions just above the icon. */
+.day-card-body .md-note {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  vertical-align: 1px;
+  margin: 0 2px;
+}
+.day-card-body .md-note-icon {
+  font-size: 0.85em;
+  filter: grayscale(0.15);
+  opacity: 0.85;
+}
+.day-card-body .md-note:hover .md-note-icon,
+.day-card-body .md-note:focus .md-note-icon,
+.day-card-body .md-note.is-pinned .md-note-icon {
+  opacity: 1;
+}
+.day-card-body .md-note-popup {
+  /* Hidden by default; revealed on hover/focus/pin. */
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: #1f4636;
+  color: #f0f8f4;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: pre-wrap;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-width: 280px;
+  min-width: 120px;
+  width: max-content;
+}
+.day-card-body .md-note-popup::after {
+  /* Little arrow tail under the popup pointing at the icon. */
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1f4636;
+}
+.day-card-body .md-note:hover .md-note-popup,
+.day-card-body .md-note:focus .md-note-popup,
+.day-card-body .md-note.is-pinned .md-note-popup {
+  visibility: visible;
+  opacity: 1;
+}
+/* Pinned: allow text selection inside the popup. */
+.day-card-body .md-note.is-pinned .md-note-popup {
+  pointer-events: auto;
+  user-select: text;
+}
+
+/* Fallback shown only if the marked CDN failed to load. */
+.day-card-fallback {
+  white-space: pre-wrap;
+  background: var(--bg);
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 0.9em;
+  color: var(--ink-soft);
+}
 .day-card-empty { color: var(--ink-soft); font-style: italic; font-size: 0.9rem; }
 .day-card-editor {
   width: 100%;
