@@ -3,7 +3,7 @@
   "version": 3,
   "trip_start_date": "2026-07-05",
   "trip_total_days": 18,
-  "total_route_raw_minutes": 3530.0,
+  "total_route_raw_minutes": 3532.7,
   "locations": [
     {
       "id": "san_diego",
@@ -292,7 +292,7 @@
       "sleep_type": "paid_campground",
       "_notes": "USFS established campground above Lemon Reservoir, ~14 mi NE of Durango via Florida Rd. ~8100 ft elevation. Upper loop has several larger sites, mostly level. First-come-first-served, no reservation, no gate. $22/night. Catalog as a paid no-reservation alternate near Durango.",
       "cautions": [],
-      "route_fraction": 0.336,
+      "route_fraction": 0.33,
       "predicted_date": "2026-07-11",
       "night_temp_f": 44.8
     },
@@ -336,7 +336,7 @@
       "_notes": "BLM dispersed camping ~15 mi east of Durango, off US-160 (right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
       "cautions": [],
       "medal": "gold",
-      "route_fraction": 0.336,
+      "route_fraction": 0.33,
       "predicted_date": "2026-07-11",
       "night_temp_f": 54.8
     },
@@ -384,7 +384,7 @@
       "name": "Telluride",
       "lat": 37.9375,
       "lon": -107.8123,
-      "route_fraction": 0.371,
+      "route_fraction": 0.372,
       "predicted_date": "2026-07-11",
       "wet_day_pct": 26.7
     },
@@ -396,7 +396,7 @@
       "lon": -107.92,
       "sleep_type": "free_dispersed",
       "medal": "gold",
-      "route_fraction": 0.371,
+      "route_fraction": 0.372,
       "predicted_date": "2026-07-11",
       "night_temp_f": 41.0
     },
@@ -424,7 +424,7 @@
       "name": "Crested Butte",
       "lat": 38.8697,
       "lon": -106.9878,
-      "route_fraction": 0.42,
+      "route_fraction": 0.421,
       "predicted_date": "2026-07-12",
       "wet_day_pct": 11.0
     },
@@ -436,7 +436,7 @@
       "lon": -106.85,
       "sleep_type": "free_dispersed",
       "medal": "gold",
-      "route_fraction": 0.42,
+      "route_fraction": 0.421,
       "predicted_date": "2026-07-12",
       "night_temp_f": 38.8
     },
@@ -458,8 +458,8 @@
       "cautions": [],
       "medal": "gold",
       "route_fraction": 0.441,
-      "predicted_date": "2026-07-12",
-      "night_temp_f": 41.6
+      "predicted_date": "2026-07-13",
+      "night_temp_f": 41.5
     },
     {
       "id": "fourmile_creek_dispersed",
@@ -472,8 +472,8 @@
       "cautions": [],
       "medal": "gold",
       "route_fraction": 0.441,
-      "predicted_date": "2026-07-12",
-      "night_temp_f": 46.4
+      "predicted_date": "2026-07-13",
+      "night_temp_f": 46.3
     },
     {
       "id": "turtle_rock_dispersed",
@@ -486,8 +486,8 @@
       "cautions": [],
       "medal": "gold",
       "route_fraction": 0.441,
-      "predicted_date": "2026-07-12",
-      "night_temp_f": 47.8
+      "predicted_date": "2026-07-13",
+      "night_temp_f": 47.7
     },
     {
       "id": "kenosha_pass_east_dispersed",
@@ -528,7 +528,7 @@
       "_notes": "USFS established campground off US-50 at Monarch Pass. 10,500 ft. 35 sites, fits 45-ft rigs, $24/night. May-July is first-come (Aug/Sep is reservable). No gate. Catalog as a paid no-reservation option near the pass.",
       "cautions": [],
       "route_fraction": 0.441,
-      "predicted_date": "2026-07-12",
+      "predicted_date": "2026-07-13",
       "night_temp_f": 42.0
     },
     {
@@ -1311,6 +1311,7 @@
     "albuquerque",
     "santa_fe",
     "pagosa_springs",
+    "bayfield_durango_dispersed",
     "durango",
     "telluride",
     "ridgway",
@@ -1423,9 +1424,17 @@
     },
     {
       "from": "pagosa_springs",
+      "to": "bayfield_durango_dispersed",
+      "raw_minutes": 51.1,
+      "distance_mi": 45.1,
+      "summary": "US-160 W",
+      "is_mountain": true
+    },
+    {
+      "from": "bayfield_durango_dispersed",
       "to": "durango",
-      "raw_minutes": 70.3,
-      "distance_mi": 60.0,
+      "raw_minutes": 21.9,
+      "distance_mi": 15.8,
       "summary": "US-160 W",
       "is_mountain": true
     },
@@ -1819,12 +1828,12 @@
     },
     {
       "id": "transfer_park_cg",
-      "anchor": "durango",
-      "anchor_distance_mi": 17.8,
+      "anchor": "bayfield_durango_dispersed",
+      "anchor_distance_mi": 15.9,
       "kind": "sleep",
-      "spur_raw_minutes": 55.0,
-      "spur_distance_mi": 27.3,
-      "spur_summary": "Co Rd 240 and Co Rd 243",
+      "spur_raw_minutes": 54.5,
+      "spur_distance_mi": 29.0,
+      "spur_summary": "Co Rd 501",
       "spur_is_mountain": false
     },
     {
@@ -1845,16 +1854,6 @@
       "spur_raw_minutes": 50.7,
       "spur_distance_mi": 45.6,
       "spur_summary": "US-160 W",
-      "spur_is_mountain": true
-    },
-    {
-      "id": "bayfield_durango_dispersed",
-      "anchor": "durango",
-      "anchor_distance_mi": 12.5,
-      "kind": "sleep",
-      "spur_raw_minutes": 21.9,
-      "spur_distance_mi": 15.8,
-      "spur_summary": "US-550 S and US-160 E",
       "spur_is_mountain": true
     },
     {

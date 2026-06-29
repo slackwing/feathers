@@ -359,9 +359,26 @@
   //      junction first) and append today's spur (junction -> sleep).
   //
   // Output: dayDrives[] = [{day, segments: [[wxA,wyA,wxB,wyB], ...],
-  //                          fromSleepId, toSleepId}]
-  const dayDrives = [];
-  if (itinerary && itinerary.days && itinerary.days.length) {
+  //                          fromSleepId, toSleepId, isExcursion, excursionTargetId}]
+  //
+  // Sources, in priority order: rvLayered.merged (post-DB-overlay), then
+  // raw itinerary.json. We recompute per render() so DB edits land
+  // without a page reload.
+  function computeDayDrives() {
+    const dayDrives = [];
+    // Prefer the layered model (includes DB overrides + excursion field).
+    let days = null;
+    if (window.rvLayered && window.rvLayered.merged) {
+      days = window.rvLayered.merged.map((m, i) => ({
+        day: i + 1,
+        sleep: m.sleepLocId,
+        excursion: m.excursion || null,
+      }));
+    } else if (itinerary && itinerary.days && itinerary.days.length) {
+      days = itinerary.days.map(d => ({ day: d.day, sleep: d.sleep, excursion: d.excursion || null }));
+    } else {
+      return dayDrives;
+    }
     // v3: route[] is the clean highway polyline. POIs anchor to a route
     // node; sleeping off-route costs only the spur (anchor -> POI).
     const routeIndexOf = new Map();
@@ -414,11 +431,53 @@
     }
 
     let prev = null;
-    for (const d of itinerary.days) {
+    for (const d of days) {
       const today = resolveSleep(d.sleep);
       if (!today) { prev = today; continue; }
+      // Excursion day: same sleep as yesterday, but a daytime trip to
+      // d.excursion. Draw one stroke from sleep → excursion target (a
+      // route node or POI). Drive time is one-way; label renders as
+      // "Xh Ym ×2" (round trip).
       if (prev && prev.sleepId === today.sleepId) {
-        // Multi-day stay; no drive on this day.
+        if (d.excursion) {
+          const target = resolveSleep(d.excursion);
+          if (target) {
+            const segs = [];
+            let totalMin = 0;
+            // Spur back from sleep POI to its anchor (if needed).
+            if (today.poi) {
+              const p = worldPair(today.sleepId, today.anchorId);
+              if (p) { segs.push(p); totalMin += today.spurMin; }
+            }
+            if (today.routeIdx < target.routeIdx) {
+              for (let i = today.routeIdx; i < target.routeIdx; i++) {
+                const a = mapData.route[i], b = mapData.route[i + 1];
+                const p = worldPair(a, b);
+                if (p) { segs.push(p); totalMin += getMinutes(a, b); }
+              }
+            } else if (today.routeIdx > target.routeIdx) {
+              for (let i = today.routeIdx; i > target.routeIdx; i--) {
+                const a = mapData.route[i], b = mapData.route[i - 1];
+                const p = worldPair(a, b);
+                if (p) { segs.push(p); totalMin += getMinutes(a, b); }
+              }
+            }
+            if (target.poi) {
+              const p = worldPair(target.anchorId, target.sleepId);
+              if (p) { segs.push(p); totalMin += target.spurMin; }
+            }
+            dayDrives.push({
+              day: d.day,
+              segments: segs,
+              minutes: totalMin,
+              fromSleepId: today.sleepId,
+              toSleepId: today.sleepId,
+              isExcursion: true,
+              excursionTargetId: d.excursion,
+            });
+          }
+        }
+        // Multi-day stay with no excursion: no stroke, no label.
         continue;
       }
       if (!prev) { prev = today; continue; } // Day 1 has no prior drive.
@@ -469,6 +528,7 @@
       });
       prev = today;
     }
+    return dayDrives;
   }
 
   // --------------- Sleep visibility helper (shared with hit-test) ---------------
@@ -492,6 +552,10 @@
   // --------------- Render ---------------
   function render() {
     svg.setAttribute("viewBox", `0 0 ${viewportW} ${viewportH}`);
+
+    // Rebuild per-day drive geometry each render so DB edits land
+    // without a page reload (excursion, sleep changes, etc.).
+    const dayDrives = computeDayDrives();
 
     // Obstacles list — every fixed-position element gets a box here so
     // the label placer avoids them.
@@ -540,8 +604,13 @@
       const STROKE_W = 22;
       const STROKE_OPACITY = 0.10;
 
-      dayDrives.forEach((dd, idx) => {
-        const color = (idx % 2 === 0) ? colorA : colorB;
+      // Excursions are always painted in the "A" (green) color. They
+      // are skipped when advancing the alternation counter, so the
+      // surrounding non-excursion days continue their normal A/B
+      // alternation around them.
+      let altIdx = 0;
+      dayDrives.forEach((dd) => {
+        const color = dd.isExcursion ? colorA : ((altIdx++ % 2 === 0) ? colorA : colorB);
         const segScreen = dd.segments.map(s => [
           worldToScreen(s[0], s[1]),
           worldToScreen(s[2], s[3]),
@@ -703,9 +772,12 @@
         dotMarkers.push({ kind: "major", l, p, dotR: 7.5 });
       } else if (l.kind === "minor") {
         const p = worldToScreen(wpoints.get(l.id).x, wpoints.get(l.id).y);
-        mainObjects += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#7a8a82" stroke="white" stroke-width="1.5"/>`;
+        const eff = (window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l) || l;
+        const deactivated = eff && eff.activated === false;
+        const op = deactivated ? 0.35 : 1.0;
+        mainObjects += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#7a8a82" stroke="white" stroke-width="1.5" opacity="${op}"/>`;
         obstacles.push({ x: p.x - 4.5, y: p.y - 4.5, w: 9, h: 9 });
-        dotMarkers.push({ kind: "minor", l, p, dotR: 4.5 });
+        dotMarkers.push({ kind: "minor", l, p, dotR: 4.5, deactivated });
       }
     });
 
@@ -796,7 +868,9 @@
       }
       for (const { dd, segScreen, color } of dayLabelsToPlace) {
         const topStr = dateForDay(dd.day);
-        const botStr = dd.minutes > 0 ? fmtMinutes(dd.minutes) : "";
+        const botStr = dd.minutes > 0
+          ? (fmtMinutes(dd.minutes) + (dd.isExcursion ? " ×2" : ""))
+          : "";
         const blockW = Math.max(
           estTextWidth(topStr, FS_TOP),
           botStr ? estTextWidth(botStr, FS_BOT) : 0
@@ -840,7 +914,7 @@
     // (Earlier we filtered dotMarkers into majorsFirst + minorsLast and
     // ran only majors; this is the minors pass.)
     minorsLast.forEach(m => {
-      const { kind, l, p, dotR } = m;
+      const { kind, l, p, dotR, deactivated } = m;
       const isMajor = kind === "major"; // always false here
       const nameFS = 10;
       const nameStr = l.name;
@@ -855,7 +929,8 @@
       obstacles.push(chosen);
       const nameX = chosen.x;
       const nameY = chosen.y + nameFS;
-      movableLabels += `<g><title>${escapeXml(tip)}</title>`;
+      const op = deactivated ? 0.35 : 1.0;
+      movableLabels += `<g opacity="${op}"><title>${escapeXml(tip)}</title>`;
       movableLabels += `<text x="${nameX.toFixed(1)}" y="${nameY.toFixed(1)}" font-size="${nameFS}" font-weight="400" fill="#7a8a82" font-family="system-ui, sans-serif" style="font-style:italic;paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(nameStr)}</text>`;
       movableLabels += `</g>`;
     });

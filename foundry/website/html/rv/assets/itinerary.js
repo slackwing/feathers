@@ -146,6 +146,7 @@
       dayId,
       sleepLocId: (dbRow && dbRow.sleep_loc_id) || defaultSleep,
       markdown: (dbRow && dbRow.markdown != null) ? dbRow.markdown : defaultMarkdown,
+      excursion: (dbRow && dbRow.excursion != null) ? dbRow.excursion : (sd.excursion || null),
       ordinal,
       isStatic: true,
       staticDay: sd.day,
@@ -160,6 +161,7 @@
       dayId: dr.day_id,
       sleepLocId: dr.sleep_loc_id || null,
       markdown: dr.markdown || "",
+      excursion: dr.excursion || null,
       ordinal: dr.ordinal,
       isStatic: false,
       _dbRow: dr,
@@ -254,9 +256,19 @@
   }
 
   // Annotate each day with its drive minutes (from yesterday's sleep).
+  // Excursion days: drive = sleep→excursion one-way (rendered ×2).
+  // The day's `excursion` is only honored when today's sleep matches
+  // yesterday's (2-night stay with day-trip).
   merged.forEach((d, i) => {
     if (i === 0) { d.driveMin = null; return; }
-    d.driveMin = dayDriveMinutes(merged[i-1].sleepLocId, d.sleepLocId);
+    const prev = merged[i-1];
+    const isExcursionDay = d.excursion && prev.sleepLocId && d.sleepLocId === prev.sleepLocId;
+    if (isExcursionDay) {
+      d.driveMin = dayDriveMinutes(d.sleepLocId, d.excursion);
+      d.isExcursionDay = true;
+    } else {
+      d.driveMin = dayDriveMinutes(prev.sleepLocId, d.sleepLocId);
+    }
   });
 
   // ============================================================
