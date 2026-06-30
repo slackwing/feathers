@@ -160,6 +160,19 @@
   text-decoration: line-through;
   color: var(--ink-soft);
 }
+.prep-text a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.prep-text a:hover { text-decoration-thickness: 2px; }
+.prep-text code {
+  background: rgba(0,0,0,0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
 .prep-edit-input {
   flex: 1 1 auto;
   font: inherit;
@@ -332,6 +345,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/celebrate.js"></script>

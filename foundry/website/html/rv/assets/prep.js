@@ -16,6 +16,17 @@
 (async function () {
   const API_BASE = "/rv/api/prep";
 
+  // Make all rendered <a> open in a new tab. (marked emits plain
+  // <a href>; DOMPurify's hook adds target/rel.)
+  if (typeof DOMPurify !== "undefined") {
+    DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+      if (node.tagName === "A" && node.hasAttribute("href")) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+  }
+
   const root = document.getElementById("prep-root");
   const loginHint = document.getElementById("prep-login-hint");
   const loginHintBtn = document.getElementById("prep-login-hint-btn");
@@ -181,7 +192,8 @@
     inner += `<span class="prep-text-wrap">`;
     inner += `<span class="prep-text">`;
     if (dt) inner += `<span class="prep-date">${escapeHtml(dt.formatted)}</span>`;
-    inner += `${escapeHtml(labelText)}</span>`;
+    inner += renderInlineMarkdown(labelText);
+    inner += `</span>`;
     if (canEdit) {
       inner += `
         <span class="prep-actions">
@@ -191,6 +203,15 @@
     }
     inner += `</span>`;
     return `<li class="${cls}" data-id="${it.id}">${inner}</li>`;
+  }
+
+  // Render a single line of markdown (no <p> wrap, no block-level
+  // parsing). Links open in a new tab. XSS-safe via DOMPurify.
+  function renderInlineMarkdown(src) {
+    if (typeof marked === "undefined") return escapeHtml(src);
+    const raw = marked.parseInline(src, { breaks: false });
+    if (typeof DOMPurify === "undefined") return raw;
+    return DOMPurify.sanitize(raw);
   }
 
   // ---- SortableJS wiring ----
