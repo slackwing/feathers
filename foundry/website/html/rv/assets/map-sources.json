@@ -332,6 +332,17 @@
       "lat": 37.9900,
       "lon": -107.9200,
       "sleep_type": "free_dispersed",
+      "_note": "Deactivated 2026-06-30: road up requires 4wd (RV can't make it). Kept in catalog for reference; itinerary uses Electric Hills Trailhead instead."
+    },
+    {
+      "id": "electric_hills_trailhead",
+      "kind": "sleep",
+      "name": "Electric Hills Trailhead",
+      "lat": 38.4250,
+      "lon": -107.9909,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed at 90 Rd / Electric Hills Trailhead (https://thedyrt.com/camping/colorado/90-rd-dispersed). Gravel switchbacks but accessible to vehicles up to 30 ft per recent reviews. High desert, no facilities. Some road noise possible. Used as a Telluride-area sleep alternative to Last Dollar Rd (which requires 4wd).",
+      "cautions": ["gravel switchbacks", "no facilities", "hot daytime"],
       "medal": "gold"
     },
     {
@@ -1133,6 +1144,7 @@
     "mancos_nf",
     "madden_peak_dispersed",
     "last_dollar",
+    "electric_hills_trailhead",
     "crested_butte",
     "cement_creek",
     "marshall_pass_dispersed",

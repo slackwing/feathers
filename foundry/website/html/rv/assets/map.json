@@ -403,10 +403,28 @@
       "lat": 37.99,
       "lon": -107.92,
       "sleep_type": "free_dispersed",
-      "medal": "gold",
+      "_note": "Deactivated 2026-06-30: road up requires 4wd (RV can't make it). Kept in catalog for reference; itinerary uses Electric Hills Trailhead instead.",
       "route_fraction": 0.372,
       "predicted_date": "2026-07-11",
       "night_temp_f": 41.0
+    },
+    {
+      "id": "electric_hills_trailhead",
+      "kind": "sleep",
+      "name": "Electric Hills Trailhead",
+      "lat": 38.425,
+      "lon": -107.9909,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed at 90 Rd / Electric Hills Trailhead (https://thedyrt.com/camping/colorado/90-rd-dispersed). Gravel switchbacks but accessible to vehicles up to 30 ft per recent reviews. High desert, no facilities. Some road noise possible. Used as a Telluride-area sleep alternative to Last Dollar Rd (which requires 4wd).",
+      "cautions": [
+        "gravel switchbacks",
+        "no facilities",
+        "hot daytime"
+      ],
+      "medal": "gold",
+      "route_fraction": 0.401,
+      "predicted_date": "2026-07-12",
+      "night_temp_f": 56.7
     },
     {
       "id": "ridgway",
@@ -1901,6 +1919,16 @@
       "spur_distance_mi": 8.8,
       "spur_summary": "W Hwy 145 Spur and Last Dollar Rd/T60 Rd",
       "spur_is_mountain": false
+    },
+    {
+      "id": "electric_hills_trailhead",
+      "anchor": "black_canyon",
+      "anchor_distance_mi": 18.47,
+      "kind": "sleep",
+      "spur_raw_minutes": 38.0,
+      "spur_distance_mi": 23.4,
+      "spur_summary": "CO-347, US-50 W and CO-90 W",
+      "spur_is_mountain": true
     },
     {
       "id": "crested_butte",
