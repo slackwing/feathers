@@ -1536,14 +1536,16 @@
   }
 
   async function toggleActivated(loc, eff) {
-    const newVal = !(eff && eff.activated !== false);
+    // Desired NEW activated state = inverse of current. Current is
+    // true unless an override explicitly says false.
+    const desiredActivated = !(eff && eff.activated !== false);
     try {
       // Try PATCH first (in case an override row exists); fall back to POST.
       const res = await fetch("/rv/api/locations/" + encodeURIComponent(loc.id), {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ activated: !newVal }), // wait — newVal is the desired new state
+        body: JSON.stringify({ activated: desiredActivated }),
       });
       if (!res.ok && res.status === 404) {
         // No override yet → create one.
@@ -1551,7 +1553,7 @@
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: loc.id, kind: "override", activated: !newVal }),
+          body: JSON.stringify({ id: loc.id, kind: "override", activated: desiredActivated }),
         });
       }
       location.reload();
