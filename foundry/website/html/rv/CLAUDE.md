@@ -77,7 +77,10 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 - **scripts/compute_everything.py** — single pipeline that reads
   `assets/map-sources.json` + `assets/trip.json`, calls Google Directions
   + Open-Meteo (cached in gitignored `.cache/`), writes `assets/map.json`.
-  Run when locations/routes change.
+  Run when locations/routes change. **Google Directions API key lives at
+  `~/.config/rv-trip/google-maps-key`** (single-line plain text; the
+  script reads it via `KEY_PATH`). Don't pass it as an env var, don't
+  prompt the user for it again — it's already on disk.
 - **assets/META.md** — provenance schema for `trip.json`.
 - **MAP_V2_MECHANICS.md** — data model for the V2 route map.
 

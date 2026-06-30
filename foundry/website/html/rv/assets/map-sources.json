@@ -282,10 +282,10 @@
       "id": "bayfield_durango_dispersed",
       "kind": "sleep",
       "name": "Bayfield-Durango BLM Dispersed",
-      "lat": 37.230,
-      "lon": -107.660,
+      "lat": 37.2310,
+      "lon": -107.4869,
       "sleep_type": "free_dispersed",
-      "_notes": "BLM dispersed camping ~15 mi east of Durango, off US-160 (right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
+      "_notes": "BLM dispersed camping off US-160 between Durango and Bayfield (address 36213 US-160, Bayfield CO 81122 — right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
       "cautions": [],
       "medal": "gold"
     },
