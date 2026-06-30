@@ -260,7 +260,7 @@
       "name": "Mancos",
       "lat": 37.3450,
       "lon": -108.2890,
-      "_note": "Mancos / Mesa Verde area is reached as a SIDE TRIP from Durango (not on the through-driving route to Telluride). Off-route since 2026-06-29."
+      "_note": "On US-160 between Durango and the Mesa Verde NP entrance."
     },
     {
       "id": "cortez",
@@ -268,7 +268,15 @@
       "name": "Cortez",
       "lat": 37.3489,
       "lon": -108.5859,
-      "_note": "Off-route since 2026-06-29 — Mesa Verde area is a side trip from Durango."
+      "_note": "Off-route since 2026-06-30 — through-driving Mancos→Dolores uses CO-184, skipping Cortez. Cortez stays in the catalog as a reference dot but is deactivated."
+    },
+    {
+      "id": "dolores",
+      "kind": "minor",
+      "name": "Dolores",
+      "lat": 37.4722,
+      "lon": -108.4970,
+      "_note": "On CO-145 between Cortez and Telluride."
     },
     {
       "id": "bayfield_durango_dispersed",
@@ -285,10 +293,10 @@
       "id": "mesa_verde",
       "kind": "major",
       "name": "Mesa Verde NP",
-      "lat": 37.3340,
-      "lon": -108.4840,
-      "is_detour": true,
-      "_note": "Coords are the MESA VERDE NP ENTRANCE GATE off US-160 (NOT Mesa Top Loop or any of the cliff dwellings, which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd — those are hiking/sightseeing territory). Per the through-driving rule: spur counts only the drive to ARRIVE at the park entrance; everything past the gate is human-brain territory."
+      "lat": 37.3315,
+      "lon": -108.4869,
+      "anchor_override": "mancos",
+      "_note": "Coords are the MESA VERDE VISITOR & RESEARCH CENTER at the US-160 entrance (NOT Mesa Top Loop or any of the cliff dwellings, which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd — those are hiking/sightseeing territory). Anchored at Mancos because the through-route Mancos→Dolores uses CO-184 and skips Cortez, so Mesa Verde is reached as a south-and-back spur off Mancos along US-160 (not from Dolores by haversine)."
     },
     {
       "id": "mancos_nf",
@@ -1070,6 +1078,8 @@
     "pagosa_springs",
     "bayfield_durango_dispersed",
     "durango",
+    "mancos",
+    "dolores",
     "telluride",
     "ridgway",
     "black_canyon",
@@ -1107,6 +1117,7 @@
     "las_cruces_hampton_i10",
     "white_sands",
     "mesa_verde",
+    "cortez",
     "cloudcroft",
     "cloudcroft_sleepygrass",
     "manzano_dispersed",
@@ -1119,8 +1130,6 @@
     "east_fork_fr667_dispersed",
     "turkey_springs_dispersed",
     "transfer_park_cg",
-    "mancos",
-    "cortez",
     "mancos_nf",
     "madden_peak_dispersed",
     "last_dollar",

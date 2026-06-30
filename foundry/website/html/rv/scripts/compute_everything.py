@@ -370,7 +370,16 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
     print(f"\n[POIS] {len(off_route_ids)} POI spurs", file=sys.stderr)
     for orid in off_route_ids:
         loc = locations[orid]
-        anchor_id, anchor_dist = nearest_route_node(loc["lat"], loc["lon"])
+        # Allow the catalog to PIN the anchor explicitly (e.g. when the
+        # nearest-by-haversine isn't the right "drive from" point).
+        # Distance is still recomputed from the pinned anchor's coords.
+        forced = loc.get("anchor_override")
+        if forced and forced in route_ids:
+            f_lat, f_lon = coord_of(forced)
+            anchor_id = forced
+            anchor_dist = haversine_mi(loc["lat"], loc["lon"], f_lat, f_lon)
+        else:
+            anchor_id, anchor_dist = nearest_route_node(loc["lat"], loc["lon"])
         a_lat, a_lon = coord_of(anchor_id)
         spur_entry = {
             "id": orid,

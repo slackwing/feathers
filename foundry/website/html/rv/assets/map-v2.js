@@ -608,7 +608,13 @@
       // are skipped when advancing the alternation counter, so the
       // surrounding non-excursion days continue their normal A/B
       // alternation around them.
+      //
+      // Z-order rule: EARLIER days render ON TOP of later days. So we
+      // build per-day pieces in chronological order (to keep colors +
+      // labels stable) and then reverse them before concatenating into
+      // the SVG fragment (in SVG, later elements draw on top).
       let altIdx = 0;
+      const dayPieces = []; // SVG path fragments, chronological
       dayDrives.forEach((dd) => {
         const color = dd.isExcursion ? colorA : ((altIdx++ % 2 === 0) ? colorA : colorB);
         const segScreen = dd.segments.map(s => [
@@ -620,9 +626,11 @@
         segScreen.forEach(([a, b]) => {
           d += `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)} `;
         });
-        dayStrokes += `<path d="${d.trim()}" stroke="${color}" stroke-width="${STROKE_W}" stroke-opacity="${STROKE_OPACITY}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+        dayPieces.push(`<path d="${d.trim()}" stroke="${color}" stroke-width="${STROKE_W}" stroke-opacity="${STROKE_OPACITY}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`);
         dayLabelsToPlace.push({ dd, segScreen, color });
       });
+      // Emit latest day first so earlier days paint on top.
+      for (let i = dayPieces.length - 1; i >= 0; i--) dayStrokes += dayPieces[i];
     }
 
     // ----- Main route line + spurs (background) -----
