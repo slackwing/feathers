@@ -373,9 +373,15 @@
         day: i + 1,
         sleep: m.sleepLocId,
         excursion: m.excursion || null,
+        excursion_by_car: !!m.excursionByCar,
       }));
     } else if (itinerary && itinerary.days && itinerary.days.length) {
-      days = itinerary.days.map(d => ({ day: d.day, sleep: d.sleep, excursion: d.excursion || null }));
+      days = itinerary.days.map(d => ({
+        day: d.day,
+        sleep: d.sleep,
+        excursion: d.excursion || null,
+        excursion_by_car: !!d.excursion_by_car,
+      }));
     } else {
       return dayDrives;
     }
@@ -384,7 +390,7 @@
     const routeIndexOf = new Map();
     mapData.route.forEach((id, i) => routeIndexOf.set(id, i));
 
-    function resolveSleep(sleepId) {
+    function resolveSleep(sleepId, pad = true) {
       // Returns {routeIdx, sleepId, anchorId (route node), spurMin (pre-padded), poi}.
       if (routeIndexOf.has(sleepId)) {
         // On-route node (e.g. new_york, san_diego).
@@ -392,8 +398,10 @@
       }
       const poi = poiById.get(sleepId);
       if (poi && routeIndexOf.has(poi.anchor) && poi.spur_raw_minutes != null) {
-        const padded = poi.spur_raw_minutes * (poi.spur_is_mountain ? 1.25 : 1.10);
-        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: padded, poi };
+        const spur = pad
+          ? poi.spur_raw_minutes * (poi.spur_is_mountain ? 1.25 : 1.10)
+          : poi.spur_raw_minutes;
+        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: spur, poi };
       }
       return null;
     }
@@ -415,18 +423,21 @@
       return seg && seg.is_mountain ? RV_PAD_MOUNTAIN : RV_PAD_INTERSTATE;
     }
 
-    // Quick lookup: padded main-route segment minutes by (from, to) route ids.
-    const segMinutes = new Map();
+    // Padded and raw lookups, keyed by (from, to) route ids.
+    const segMinutesPadded = new Map();
+    const segMinutesRaw = new Map();
     mapData.segments.forEach(s => {
       if (s.raw_minutes != null) {
-        segMinutes.set(`${s.from}|${s.to}`, s.raw_minutes * padFactor(s));
+        segMinutesPadded.set(`${s.from}|${s.to}`, s.raw_minutes * padFactor(s));
+        segMinutesRaw.set(`${s.from}|${s.to}`, s.raw_minutes);
       }
     });
-    function getMinutes(idA, idB) {
+    function getMinutes(idA, idB, pad = true) {
+      const m = pad ? segMinutesPadded : segMinutesRaw;
       const k = `${idA}|${idB}`;
-      if (segMinutes.has(k)) return segMinutes.get(k);
+      if (m.has(k)) return m.get(k);
       const r = `${idB}|${idA}`;
-      if (segMinutes.has(r)) return segMinutes.get(r);
+      if (m.has(r)) return m.get(r);
       return 0;
     }
 
@@ -440,26 +451,29 @@
       // "Xh Ym ×2" (round trip).
       if (prev && prev.sleepId === today.sleepId) {
         if (d.excursion) {
-          const target = resolveSleep(d.excursion);
-          if (target) {
+          // Excursion-by-car skips RV padding (regular rental, not RV).
+          const pad = !d.excursion_by_car;
+          const sleepNoPad = resolveSleep(today.sleepId, pad);
+          const target = resolveSleep(d.excursion, pad);
+          if (target && sleepNoPad) {
             const segs = [];
             let totalMin = 0;
             // Spur back from sleep POI to its anchor (if needed).
-            if (today.poi) {
-              const p = worldPair(today.sleepId, today.anchorId);
-              if (p) { segs.push(p); totalMin += today.spurMin; }
+            if (sleepNoPad.poi) {
+              const p = worldPair(sleepNoPad.sleepId, sleepNoPad.anchorId);
+              if (p) { segs.push(p); totalMin += sleepNoPad.spurMin; }
             }
-            if (today.routeIdx < target.routeIdx) {
-              for (let i = today.routeIdx; i < target.routeIdx; i++) {
+            if (sleepNoPad.routeIdx < target.routeIdx) {
+              for (let i = sleepNoPad.routeIdx; i < target.routeIdx; i++) {
                 const a = mapData.route[i], b = mapData.route[i + 1];
                 const p = worldPair(a, b);
-                if (p) { segs.push(p); totalMin += getMinutes(a, b); }
+                if (p) { segs.push(p); totalMin += getMinutes(a, b, pad); }
               }
-            } else if (today.routeIdx > target.routeIdx) {
-              for (let i = today.routeIdx; i > target.routeIdx; i--) {
+            } else if (sleepNoPad.routeIdx > target.routeIdx) {
+              for (let i = sleepNoPad.routeIdx; i > target.routeIdx; i--) {
                 const a = mapData.route[i], b = mapData.route[i - 1];
                 const p = worldPair(a, b);
-                if (p) { segs.push(p); totalMin += getMinutes(a, b); }
+                if (p) { segs.push(p); totalMin += getMinutes(a, b, pad); }
               }
             }
             if (target.poi) {
@@ -473,6 +487,7 @@
               fromSleepId: today.sleepId,
               toSleepId: today.sleepId,
               isExcursion: true,
+              excursionByCar: !!d.excursion_by_car,
               excursionTargetId: d.excursion,
             });
           }
@@ -882,7 +897,7 @@
       for (const { dd, segScreen, color } of dayLabelsToPlace) {
         const topStr = dateForDay(dd.day);
         const botStr = dd.minutes > 0
-          ? (fmtMinutes(dd.minutes) + (dd.isExcursion ? " ×2" : ""))
+          ? (fmtMinutes(dd.minutes) + (dd.isExcursion ? (dd.excursionByCar ? " ×2 🚗" : " ×2") : ""))
           : "";
         const blockW = Math.max(
           estTextWidth(topStr, FS_TOP),

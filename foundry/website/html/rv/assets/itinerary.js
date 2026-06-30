@@ -147,6 +147,7 @@
       sleepLocId: (dbRow && dbRow.sleep_loc_id) || defaultSleep,
       markdown: (dbRow && dbRow.markdown != null) ? dbRow.markdown : defaultMarkdown,
       excursion: (dbRow && dbRow.excursion != null) ? dbRow.excursion : (sd.excursion || null),
+      excursionByCar: (dbRow && dbRow.excursion_by_car != null) ? !!dbRow.excursion_by_car : !!sd.excursion_by_car,
       ordinal,
       isStatic: true,
       staticDay: sd.day,
@@ -162,6 +163,7 @@
       sleepLocId: dr.sleep_loc_id || null,
       markdown: dr.markdown || "",
       excursion: dr.excursion || null,
+      excursionByCar: !!dr.excursion_by_car,
       ordinal: dr.ordinal,
       isStatic: false,
       _dbRow: dr,
@@ -191,13 +193,14 @@
   });
   const PAD_INTERSTATE = 1.10;
   const PAD_MOUNTAIN = 1.25;
-  function paddedSeg(s) {
+  function paddedSeg(s, pad) {
     if (!s || s.raw_minutes == null) return 0;
+    if (!pad) return s.raw_minutes;
     return s.raw_minutes * (s.is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE);
   }
 
   // POI lookup (catalog + DB-new); resolves to {anchor, spurMinPadded}.
-  function resolveSleepAnchor(sleepId) {
+  function resolveSleepAnchor(sleepId, pad = true) {
     if (!sleepId) return null;
     if (routeIdx.has(sleepId)) {
       return { anchor: sleepId, spurMin: 0, routeIdx: routeIdx.get(sleepId), kind: "on-route" };
@@ -205,8 +208,10 @@
     // Catalog POI?
     const cp = catalogPoisById.get(sleepId);
     if (cp && cp.spur_raw_minutes != null && routeIdx.has(cp.anchor)) {
-      const padded = cp.spur_raw_minutes * (cp.spur_is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE);
-      return { anchor: cp.anchor, spurMin: padded, routeIdx: routeIdx.get(cp.anchor), kind: "poi" };
+      const spur = pad
+        ? cp.spur_raw_minutes * (cp.spur_is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE)
+        : cp.spur_raw_minutes;
+      return { anchor: cp.anchor, spurMin: spur, routeIdx: routeIdx.get(cp.anchor), kind: "poi" };
     }
     // User location with route_fraction? Approximate as the route node
     // closest to that fraction along the cumulative time.
@@ -226,9 +231,12 @@
           // cumul) padded.
           const spurRaw = Math.max(0, targetMins - cumul);
           const isMtn = s && s.is_mountain;
+          const spur = pad
+            ? spurRaw * (isMtn ? PAD_MOUNTAIN : PAD_INTERSTATE)
+            : spurRaw;
           return {
             anchor: route[i],
-            spurMin: spurRaw * (isMtn ? PAD_MOUNTAIN : PAD_INTERSTATE),
+            spurMin: spur,
             routeIdx: i,
             kind: "user-on-route",
           };
@@ -239,18 +247,19 @@
     return null;
   }
 
-  function dayDriveMinutes(fromSleepId, toSleepId) {
+  function dayDriveMinutes(fromSleepId, toSleepId, opts = {}) {
+    const pad = opts.pad !== false;
     if (!fromSleepId || !toSleepId) return null;
     if (fromSleepId === toSleepId) return 0;
-    const a = resolveSleepAnchor(fromSleepId);
-    const b = resolveSleepAnchor(toSleepId);
+    const a = resolveSleepAnchor(fromSleepId, pad);
+    const b = resolveSleepAnchor(toSleepId, pad);
     if (!a || !b) return null;
     let total = a.spurMin + b.spurMin;
     const i = a.routeIdx, j = b.routeIdx;
     if (i < j) {
-      for (let n = i; n < j; n++) total += paddedSeg(segMap.get(`${route[n]}|${route[n+1]}`));
+      for (let n = i; n < j; n++) total += paddedSeg(segMap.get(`${route[n]}|${route[n+1]}`), pad);
     } else if (i > j) {
-      for (let n = i; n > j; n--) total += paddedSeg(segMap.get(`${route[n]}|${route[n-1]}`));
+      for (let n = i; n > j; n--) total += paddedSeg(segMap.get(`${route[n]}|${route[n-1]}`), pad);
     }
     return total;
   }
@@ -264,7 +273,9 @@
     const prev = merged[i-1];
     const isExcursionDay = d.excursion && prev.sleepLocId && d.sleepLocId === prev.sleepLocId;
     if (isExcursionDay) {
-      d.driveMin = dayDriveMinutes(d.sleepLocId, d.excursion);
+      // Excursion-by-car days skip the RV padding (we're in a regular
+      // rental car, not the RV).
+      d.driveMin = dayDriveMinutes(d.sleepLocId, d.excursion, { pad: !d.excursionByCar });
       d.isExcursionDay = true;
     } else {
       d.driveMin = dayDriveMinutes(prev.sleepLocId, d.sleepLocId);
