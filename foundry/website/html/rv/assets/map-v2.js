@@ -616,7 +616,12 @@
       let altIdx = 0;
       const dayPieces = []; // SVG path fragments, chronological
       dayDrives.forEach((dd) => {
-        const color = dd.isExcursion ? colorA : ((altIdx++ % 2 === 0) ? colorA : colorB);
+        // Excursions are always painted green, but they DO advance the
+        // alternation counter — otherwise the day after an excursion
+        // takes the slot the excursion would have had, breaking parity
+        // around it.
+        const color = dd.isExcursion ? colorA : ((altIdx % 2 === 0) ? colorA : colorB);
+        altIdx++;
         const segScreen = dd.segments.map(s => [
           worldToScreen(s[0], s[1]),
           worldToScreen(s[2], s[3]),
