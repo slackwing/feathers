@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes — Hedgie & Frogie's RV Adventure</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.notes-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+@media (min-width: 760px) {
+  .notes-page { padding: 56px 32px 100px; }
+}
+.notes-back {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+.notes-back:hover { color: var(--ink); text-decoration: underline; }
+.notes-page h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.notes-page .lede {
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+}
+.notes-edit-btn {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.85rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  margin-left: auto;
+}
+.notes-edit-btn:hover { background: rgba(0,0,0,0.04); color: var(--ink); }
+.notes-loading {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.notes-view {
+  line-height: 1.55;
+  color: var(--ink);
+}
+.notes-view h1, .notes-view h2, .notes-view h3, .notes-view h4 {
+  font-family: var(--font-serif);
+  margin: 28px 0 10px;
+  line-height: 1.25;
+}
+.notes-view h1 { font-size: 1.6rem; }
+.notes-view h2 { font-size: 1.35rem; }
+.notes-view h3 { font-size: 1.15rem; }
+.notes-view h4 { font-size: 1rem; }
+.notes-view p { margin: 10px 0; }
+.notes-view ul, .notes-view ol { padding-left: 22px; margin: 10px 0; }
+.notes-view li { margin: 4px 0; }
+.notes-view code {
+  background: rgba(0,0,0,0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+.notes-view pre {
+  background: rgba(0,0,0,0.05);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.notes-view a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.notes-view blockquote {
+  border-left: 3px solid var(--line);
+  margin: 10px 0;
+  padding: 4px 0 4px 14px;
+  color: var(--ink-soft);
+}
+.notes-view hr {
+  border: none;
+  border-top: 1px dashed var(--line);
+  margin: 24px 0;
+}
+.notes-view .notes-missing-image {
+  display: inline-block;
+  font-size: 0.78rem;
+  background: rgba(0,0,0,0.05);
+  color: var(--ink-soft);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-style: italic;
+}
+.notes-editor {
+  width: 100%;
+  min-height: 70vh;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  background: #fff;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.notes-editor:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.notes-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+.notes-actions button {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.9rem;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.notes-actions button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.notes-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.notes-login-hint {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.notes-login-hint button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+}
+.notes-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.notes-toast.is-shown { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="site-controls">
+  <button class="site-login-btn" id="site-login-btn" type="button" aria-label="Log in">Log in</button>
+  <div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
+    <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
+    <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+  </div>
+</div>
+
+<div class="site-modal-overlay" id="site-login-modal" hidden>
+  <div class="site-modal" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
+    <button class="site-modal-close" id="site-login-close" type="button" aria-label="Close">×</button>
+    <h2 id="site-login-title">Log in</h2>
+    <form id="site-login-form">
+      <label class="site-modal-field">
+        <span>Username</span>
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label class="site-modal-field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p class="site-modal-error" id="site-login-error" hidden></p>
+      <button class="site-modal-submit" type="submit">Log in</button>
+    </form>
+  </div>
+</div>
+
+<div class="notes-page">
+  <a class="notes-back" href="index.html">← Back to itinerary</a>
+  <h1>
+    <span>Notes</span>
+    <button class="notes-edit-btn" id="notes-edit-btn" type="button" hidden>Edit</button>
+  </h1>
+  <p class="notes-login-hint" id="notes-login-hint" hidden>Read-only — <button type="button" id="notes-login-hint-btn">log in</button> to edit.</p>
+  <div id="notes-root" class="notes-loading">Loading…</div>
+</div>
+
+<div class="notes-toast" id="notes-toast" role="status" aria-live="polite"></div>
+
+<footer class="footer">
+  <p>🦔 + 🐸 · <a href="index.html">Back to itinerary</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="assets/site-unit.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/notes.js"></script>
+</body>
+</html>
