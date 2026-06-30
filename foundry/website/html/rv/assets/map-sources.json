@@ -282,10 +282,10 @@
       "id": "bayfield_durango_dispersed",
       "kind": "sleep",
       "name": "Bayfield-Durango BLM Dispersed",
-      "lat": 37.2310,
-      "lon": -107.4869,
+      "lat": 37.2266,
+      "lon": -107.6961,
       "sleep_type": "free_dispersed",
-      "_notes": "BLM dispersed camping off US-160 between Durango and Bayfield (address 36213 US-160, Bayfield CO 81122 — right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
+      "_notes": "BLM dispersed camping off US-160 between Durango and Bayfield (Google places address 36213 US-160, Bayfield CO 81122 at these coords — right turn on Silver Hills Rd, BLM sign). Big-rig OK, free, no reservation. Used as the Mesa Verde basecamp for Days 8-9.",
       "cautions": [],
       "medal": "gold"
     },
@@ -293,10 +293,10 @@
       "id": "mesa_verde",
       "kind": "major",
       "name": "Mesa Verde NP",
-      "lat": 37.3315,
-      "lon": -108.4869,
+      "lat": 37.3363,
+      "lon": -108.4080,
       "anchor_override": "mancos",
-      "_note": "Coords are the MESA VERDE VISITOR & RESEARCH CENTER at the US-160 entrance (NOT Mesa Top Loop or any of the cliff dwellings, which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd — those are hiking/sightseeing territory). Anchored at Mancos because the through-route Mancos→Dolores uses CO-184 and skips Cortez, so Mesa Verde is reached as a south-and-back spur off Mancos along US-160 (not from Dolores by haversine)."
+      "_note": "Coords are the MESA VERDE VISITOR & RESEARCH CENTER, which sits RIGHT ON US-160 at the park entrance (NOT down the entrance road into the park, and NOT the Mesa Top Loop or cliff dwellings which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd — those are hiking/sightseeing territory). Coords match Google's geocode of the VRC. Anchored at Mancos because the through-route Mancos→Dolores uses CO-184 and skips Cortez, so Mesa Verde is reached as a south-and-back spur off Mancos along US-160 (not from Dolores by haversine)."
     },
     {
       "id": "mancos_nf",
