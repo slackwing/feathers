@@ -57,10 +57,6 @@
     const cat = catalogLocsById.get(id);
     const db = dbLocsById.get(id);
     if (!cat && !db) return null;
-    if (cat && (!db || db.deleted_at)) {
-      // No active override → use the catalog as-is.
-      return { ...cat, _source: "catalog" };
-    }
     if (!cat && db && db.kind === "new") {
       // Brand-new user location. Promote DB fields to top-level. We
       // synthesize the shape map-v2 expects.
@@ -79,7 +75,15 @@
         _source: "user",
       };
     }
-    // Catalog + active override → merge (override non-null fields win).
+    if (cat && !db) {
+      // No override row at all → use the catalog as-is.
+      return { ...cat, _source: "catalog" };
+    }
+    // Catalog + override row (may be soft-deleted). Merge (override
+    // non-null fields win). Surface `deleted_at` from the override so
+    // the renderer / hit-test hides the location — soft-delete on a
+    // catalog location means "hide me", not "reset the override"
+    // (reset is the "reset" button = hard delete of the override row).
     return {
       ...cat,
       name: db.name != null ? db.name : cat.name,
@@ -89,6 +93,7 @@
       emoji: db.emoji != null ? db.emoji : (cat.emoji || ""),
       markdown: db.markdown != null ? db.markdown : (cat.markdown || ""),
       activated: db.activated,
+      deleted_at: db.deleted_at,
       _source: "override",
       _override: db,
     };
