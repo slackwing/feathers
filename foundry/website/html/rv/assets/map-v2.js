@@ -762,25 +762,26 @@
         obstacles.push({ x: mx - 7, y: my - 12, w: 14, h: 16 });
       }
       if (insideF != null) {
-        // SUPERSCRIPT: above-right of the emoji. When a forecast is
-        // available, historical renders with a strike-through and the
-        // forecast follows to its right.
-        const histStr = fmtTemp(insideF);
-        const histColor = tempColorInside(insideF);
+        // SUPERSCRIPT: above-right of the emoji.
+        //   No forecast → just the historical temp.
+        //   Forecast present → HIDE historical; show forecast prefixed
+        //     with ↑ / ↓ / = to signal warmer / colder / same vs the
+        //     historical climate normal.
         const tx = p.x + 10;       // right of emoji
         const ty = p.y - 7;        // above emoji baseline
-        const histW = estTextWidth(histStr, 11);
-        const strikeAttr = insideForecastF != null ? ' text-decoration="line-through"' : '';
-        mainObjects += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${histColor}" font-family="system-ui, sans-serif" font-weight="700"${strikeAttr} style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(histStr)}</text>`;
-        obstacles.push({ x: tx - 1, y: ty - 10, w: histW + 2, h: 12 });
+        let displayStr, displayColor;
         if (insideForecastF != null) {
-          const fStr = fmtTemp(insideForecastF);
-          const fColor = tempColorInside(insideForecastF);
-          const fx = tx + histW + 3;
-          mainObjects += `<text x="${fx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${fColor}" font-family="system-ui, sans-serif" font-weight="700" style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(fStr)}</text>`;
-          const fW = estTextWidth(fStr, 11);
-          obstacles.push({ x: fx - 1, y: ty - 10, w: fW + 2, h: 12 });
+          const delta = insideForecastF - insideF;
+          const arrow = delta >= 0.5 ? "↑" : delta <= -0.5 ? "↓" : "=";
+          displayStr = `${arrow}${fmtTemp(insideForecastF)}`;
+          displayColor = tempColorInside(insideForecastF);
+        } else {
+          displayStr = fmtTemp(insideF);
+          displayColor = tempColorInside(insideF);
         }
+        mainObjects += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${displayColor}" font-family="system-ui, sans-serif" font-weight="700" style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(displayStr)}</text>`;
+        const dW = estTextWidth(displayStr, 11);
+        obstacles.push({ x: tx - 1, y: ty - 10, w: dW + 2, h: 12 });
       }
       mainObjects += `</g>`;
     });
