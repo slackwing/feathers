@@ -5,10 +5,12 @@
   "locations": [
     {
       "id": "san_diego",
-      "kind": "major",
+      "kind": "sleep",
       "name": "San Diego",
-      "lat": 32.7157,
-      "lon": -117.1611
+      "lat": 32.7986,
+      "lon": -117.2551,
+      "sleep_type": "free_dispersed",
+      "_note": "Coords are Pacific Beach — we sleep street-parking here Days 1-2. Per the RV owner's guide: 'In San Diego: park anywhere in the Pacific Beach residential area.' Kept id=san_diego so the route-start label reads as San Diego, but the underlying coords + weather lookup are PB (not downtown SD)."
     },
     {
       "id": "yuma",

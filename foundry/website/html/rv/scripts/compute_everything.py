@@ -43,8 +43,16 @@ MAP_OUT = REPO_ROOT / "assets" / "map.json"
 CACHE_DIR = REPO_ROOT / ".cache"
 DIRECTIONS_CACHE = CACHE_DIR / "directions"
 ARCHIVE_CACHE = CACHE_DIR / "openmeteo-archive"
+FORECAST_CACHE = CACHE_DIR / "openmeteo-forecast"
 DIRECTIONS_CACHE.mkdir(parents=True, exist_ok=True)
 ARCHIVE_CACHE.mkdir(parents=True, exist_ok=True)
+FORECAST_CACHE.mkdir(parents=True, exist_ok=True)
+
+# Forecast window — Open-Meteo's forecast endpoint reliably covers ~16
+# days; we use 10 to leave headroom and only overlay forecast on the
+# historical average when we're actually close enough for the forecast
+# to be meaningful.
+FORECAST_WINDOW_DAYS = 10
 
 KEY_PATH = Path.home() / ".config" / "rv-trip" / "google-maps-key"
 JUNCTION_THRESHOLD_MI = 5.0
@@ -211,6 +219,72 @@ def get_openmeteo_archive(lat, lon, force=False):
     cache_put(ARCHIVE_CACHE, ck, data)
     time.sleep(2)
     return data, False
+
+
+# ============================================================
+# Open-Meteo forecast (near-term overlay)
+# ============================================================
+
+def get_openmeteo_forecast(lat, lon, force=False, today=None):
+    """Returns forecast response with daily temperature_2m_min for the
+    next 16 days. Cache key includes today's date so we get fresh data
+    each day. Returns (data, cache_hit) or (None, False) on error."""
+    if today is None:
+        today = date.today()
+    ck = cache_key_dict({
+        "type": "openmeteo_forecast",
+        "coord": [round(lat, 4), round(lon, 4)],
+        "run_date": today.isoformat(),
+        "vars": ["temperature_2m_min"],
+    })
+    if not force:
+        hit = cache_get(FORECAST_CACHE, ck)
+        if hit is not None:
+            return hit, True
+
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        "&daily=temperature_2m_min"
+        "&temperature_unit=fahrenheit"
+        "&forecast_days=16"
+        "&timezone=auto"
+    )
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r:
+                data = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                if attempt == 0:
+                    print(f"  rate-limited (forecast), sleeping 30s once...", file=sys.stderr)
+                    time.sleep(30)
+                    continue
+                print(f"  rate-limited (forecast), giving up", file=sys.stderr)
+                return None, False
+            raise
+        except Exception as e:
+            print(f"  forecast error: {e}", file=sys.stderr)
+            return None, False
+
+    cache_put(FORECAST_CACHE, ck, data)
+    time.sleep(1)
+    return data, False
+
+
+def forecast_low_for_date(forecast, target_date):
+    """Look up the min temp for target_date in the forecast response.
+    Returns None if the date isn't in the response window."""
+    if not forecast:
+        return None
+    times = forecast.get("daily", {}).get("time", [])
+    mins = forecast.get("daily", {}).get("temperature_2m_min", [])
+    key = target_date.isoformat()
+    for t, m in zip(times, mins):
+        if t == key and m is not None:
+            return round(m, 1)
+    return None
 
 
 def climate_normal_low(archive, target_date):
@@ -429,10 +503,19 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
         return trip_start_date + timedelta(days=offset_days)
 
     # ----- Sleep night temps (% position based) -----
+    # For each sleep spot we always compute the historical climate
+    # normal (night_temp_f). If the predicted date is within
+    # FORECAST_WINDOW_DAYS of today, we ALSO fetch the actual forecast
+    # and store it in night_temp_f_forecast so the frontend can render
+    # it alongside (crossing out the historical). Historical stays put.
+    today = date.today()
+    forecast_end = today + timedelta(days=FORECAST_WINDOW_DAYS)
     locations_out = []
     sleep_n_hits, sleep_n_misses = 0, 0
+    fcst_n_hits, fcst_n_misses, fcst_n_skipped = 0, 0, 0
     major_n_hits, major_n_misses = 0, 0
     print(f"\n[WEATHER for sleep spots — by route position]", file=sys.stderr)
+    print(f"  forecast window: {today} → {forecast_end}", file=sys.stderr)
     for loc in sources["locations"]:
         loc_copy = dict(loc)
         frac = fraction_for_location(loc["id"])
@@ -451,7 +534,30 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
                     sleep_n_misses += 1
                 temp = climate_normal_low(archive, d)
                 loc_copy["night_temp_f"] = temp
-                print(f"  sleep  {loc['name']:<40}  frac={frac:.2f}  {d}  {temp}°F  {'(cache)' if hit else '(fetched)'}", file=sys.stderr)
+                # Forecast overlay: only when predicted_date lies inside
+                # the forecast window from "today".
+                fcst_temp = None
+                fcst_tag = ""
+                if today <= d <= forecast_end:
+                    fcst, fhit = get_openmeteo_forecast(loc["lat"], loc["lon"], force, today=today)
+                    if fcst is None:
+                        fcst_n_skipped += 1
+                        fcst_tag = "  [FORECAST FETCH FAILED]"
+                    else:
+                        if fhit:
+                            fcst_n_hits += 1
+                        else:
+                            fcst_n_misses += 1
+                        fcst_temp = forecast_low_for_date(fcst, d)
+                        if fcst_temp is not None:
+                            loc_copy["night_temp_f_forecast"] = fcst_temp
+                            loc_copy["forecast_fetched_at"] = today.isoformat()
+                            fcst_tag = f"  fcst={fcst_temp}°F {'(cache)' if fhit else '(fetched)'}"
+                        else:
+                            fcst_tag = "  [no fcst value for date]"
+                else:
+                    fcst_n_skipped += 1
+                print(f"  sleep  {loc['name']:<40}  frac={frac:.2f}  {d}  hist={temp}°F  {'(cache)' if hit else '(fetched)'}{fcst_tag}", file=sys.stderr)
         elif loc.get("kind") == "major" and frac is not None:
             d = date_for_fraction(frac)
             archive, hit = get_openmeteo_archive(loc["lat"], loc["lon"], force)
@@ -473,6 +579,7 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
 
     print(f"  sleep cache: {sleep_n_hits} hits, {sleep_n_misses} new", file=sys.stderr)
     print(f"  major cache: {major_n_hits} hits, {major_n_misses} new", file=sys.stderr)
+    print(f"  forecast   : {fcst_n_hits} hits, {fcst_n_misses} new, {fcst_n_skipped} skipped", file=sys.stderr)
 
     return {
         "_comment": "Generated by scripts/compute_everything.py. Do not hand-edit; edit assets/map-sources.json or trip.json and re-run.",

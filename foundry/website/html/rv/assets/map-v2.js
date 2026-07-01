@@ -728,6 +728,14 @@
       const emoji = isHotel ? "🏨" : "🚐";
       const groupOpacity = activated ? 1.0 : 0.45;
       const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
+      // Forecast overlay: when the pipeline was within the forecast
+      // window at last run, it wrote night_temp_f_forecast alongside
+      // the historical night_temp_f. We convert to inside temp using
+      // the same rule and render the historical crossed-out + the
+      // forecast next to it.
+      const insideForecastF = l.night_temp_f_forecast != null
+        ? outsideToInside(l.night_temp_f_forecast)
+        : null;
       // Tooltip text differs slightly between RV and hotel.
       let tip;
       if (insideF == null) {
@@ -736,6 +744,9 @@
         tip = `${l.name} · ${l.predicted_date} · would-be inside ${fmtTemp(insideF)}${window.rvTempUnit} in the RV (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit}) — that's why we're in a hotel`;
       } else {
         tip = `${l.name} · ${l.predicted_date} · inside ${fmtTemp(insideF)}${window.rvTempUnit} (outside ${fmtTemp(l.night_temp_f)}${window.rvTempUnit})`;
+      }
+      if (insideForecastF != null) {
+        tip += ` · FORECAST inside ${fmtTemp(insideForecastF)}${window.rvTempUnit} (outside ${fmtTemp(l.night_temp_f_forecast)}${window.rvTempUnit})`;
       }
       mainObjects += `<g opacity="${groupOpacity}"><title>${escapeXml(tip)}</title>`;
       mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 7).toFixed(1)}" font-size="20" text-anchor="middle" style="user-select:none;">${emoji}</text>`;
@@ -751,14 +762,25 @@
         obstacles.push({ x: mx - 7, y: my - 12, w: 14, h: 16 });
       }
       if (insideF != null) {
-        // SUPERSCRIPT: above-right of the emoji.
-        const tempStr = fmtTemp(insideF);
-        const color = tempColorInside(insideF);
+        // SUPERSCRIPT: above-right of the emoji. When a forecast is
+        // available, historical renders with a strike-through and the
+        // forecast follows to its right.
+        const histStr = fmtTemp(insideF);
+        const histColor = tempColorInside(insideF);
         const tx = p.x + 10;       // right of emoji
         const ty = p.y - 7;        // above emoji baseline
-        mainObjects += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${color}" font-family="system-ui, sans-serif" font-weight="700" style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(tempStr)}</text>`;
-        const tw = estTextWidth(tempStr, 11);
-        obstacles.push({ x: tx - 1, y: ty - 10, w: tw + 2, h: 12 });
+        const histW = estTextWidth(histStr, 11);
+        const strikeAttr = insideForecastF != null ? ' text-decoration="line-through"' : '';
+        mainObjects += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${histColor}" font-family="system-ui, sans-serif" font-weight="700"${strikeAttr} style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(histStr)}</text>`;
+        obstacles.push({ x: tx - 1, y: ty - 10, w: histW + 2, h: 12 });
+        if (insideForecastF != null) {
+          const fStr = fmtTemp(insideForecastF);
+          const fColor = tempColorInside(insideForecastF);
+          const fx = tx + histW + 3;
+          mainObjects += `<text x="${fx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="11" fill="${fColor}" font-family="system-ui, sans-serif" font-weight="700" style="paint-order:stroke;stroke:white;stroke-width:2.5;stroke-linejoin:round;">${escapeXml(fStr)}</text>`;
+          const fW = estTextWidth(fStr, 11);
+          obstacles.push({ x: fx - 1, y: ty - 10, w: fW + 2, h: 12 });
+        }
       }
       mainObjects += `</g>`;
     });
