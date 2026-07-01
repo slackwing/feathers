@@ -728,12 +728,24 @@
       const emoji = isHotel ? "🏨" : "🚐";
       const groupOpacity = activated ? 1.0 : 0.45;
       const insideF = l.night_temp_f != null ? outsideToInside(l.night_temp_f) : null;
-      // Forecast overlay: when the pipeline was within the forecast
-      // window at last run, it wrote night_temp_f_forecast alongside
-      // the historical night_temp_f. We convert to inside temp using
-      // the same rule and render the historical crossed-out + the
-      // forecast next to it.
-      const insideForecastF = l.night_temp_f_forecast != null
+      // Forecast overlay: only apply when the ACTUAL itinerary date
+      // for this sleep lies inside the near-term forecast window
+      // (10 days from when the pipeline last ran, per
+      // forecast_fetched_at). Historic behavior overlaid based on the
+      // pipeline's route-fraction estimate, which lied when the trip's
+      // real day-N date differed from that estimate (e.g. Last Dollar
+      // Rd was estimated 07-11 but the itinerary lands on 07-14).
+      const forecastFetchedAt = l.forecast_fetched_at; // ISO date str
+      const itinDateStr = (window.rvLayered && window.rvLayered.itineraryDateForSleep)
+        ? window.rvLayered.itineraryDateForSleep(l.id) : null;
+      let forecastApplies = false;
+      if (l.night_temp_f_forecast != null && forecastFetchedAt && itinDateStr) {
+        const ff = new Date(forecastFetchedAt + "T00:00:00Z");
+        const it = new Date(itinDateStr + "T00:00:00Z");
+        const days = Math.round((it - ff) / (24 * 3600 * 1000));
+        forecastApplies = days >= 0 && days <= 10;
+      }
+      const insideForecastF = (forecastApplies && l.night_temp_f_forecast != null)
         ? outsideToInside(l.night_temp_f_forecast)
         : null;
       // Tooltip text differs slightly between RV and hotel.
@@ -858,7 +870,19 @@
       let rainStr = "";
       if (isMajor && l.wet_day_pct != null) {
         hasRain = true;
-        if (l.wet_day_pct_forecast != null) {
+        // Only overlay the near-term forecast if the major's
+        // predicted_date is truly within the forecast window from
+        // today. (Old cached forecast_fetched_at values would otherwise
+        // leak stale overlays past their useful life.)
+        let majorForecastApplies = false;
+        if (l.wet_day_pct_forecast != null && l.predicted_date) {
+          const now = new Date();
+          const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+          const pd = new Date(l.predicted_date + "T00:00:00Z");
+          const days = Math.round((pd - today) / (24 * 3600 * 1000));
+          majorForecastApplies = days >= 0 && days <= 10;
+        }
+        if (majorForecastApplies) {
           const fPct = l.wet_day_pct_forecast;
           const delta = fPct - l.wet_day_pct;
           const arrow = delta >= 0.5 ? "↑" : delta <= -0.5 ? "↓" : "=";

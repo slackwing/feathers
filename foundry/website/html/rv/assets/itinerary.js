@@ -719,6 +719,19 @@
   // ============================================================
   render();
 
+  // Returns the ISO date (YYYY-MM-DD) of the FIRST day the given sleep
+  // id is used in the live itinerary, or null if not used. Used by
+  // map-v2.js to decide whether to overlay a near-term forecast on a
+  // sleep spot — a spot that's not in our itinerary, or whose real
+  // trip date is beyond the forecast window, shouldn't get one.
+  function itineraryDateForSleep(sleepId) {
+    if (!sleepId) return null;
+    const day = merged.find(d => d.sleepLocId === sleepId);
+    if (!day) return null;
+    const dt = dateForDay(day.dayNum);
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+  }
+
   // Expose helpers for map-v2.js to consume.
   window.rvLayered = {
     effectiveLocation,
@@ -728,6 +741,7 @@
     dayDriveMinutes,
     resolveSleepAnchor,
     renderMarkdown,
+    itineraryDateForSleep,
   };
   window.dispatchEvent(new CustomEvent("rv:itinerary-ready"));
 
