@@ -852,17 +852,32 @@
       let blockH = nameFS + 3;
       let hasRain = false;
       let rainW = 0;
+      // When a forecast is available, hide the historical and show
+      // the forecast prefixed with ↑ / ↓ / = vs historical (matches
+      // the sleep-temp overlay behavior).
+      let rainStr = "";
       if (isMajor && l.wet_day_pct != null) {
         hasRain = true;
-        const rainStr = `${Math.round(l.wet_day_pct)}%`;
+        if (l.wet_day_pct_forecast != null) {
+          const fPct = l.wet_day_pct_forecast;
+          const delta = fPct - l.wet_day_pct;
+          const arrow = delta >= 0.5 ? "↑" : delta <= -0.5 ? "↓" : "=";
+          rainStr = `${arrow}${Math.round(fPct)}%`;
+        } else {
+          rainStr = `${Math.round(l.wet_day_pct)}%`;
+        }
         rainW = 12 + estTextWidth(rainStr, 11); // droplet + gap + text
         blockW = Math.max(blockW, rainW);
         blockH = nameFS + 3 + 14;
       }
 
-      const tip = isMajor && l.predicted_date && l.wet_day_pct != null
-        ? `${l.name} · ${l.predicted_date} · ${fmtRain(l.wet_day_pct)} rain`
-        : l.name;
+      let tip = l.name;
+      if (isMajor && l.predicted_date && l.wet_day_pct != null) {
+        tip = `${l.name} · ${l.predicted_date} · ${fmtRain(l.wet_day_pct)} rain (historical)`;
+        if (l.wet_day_pct_forecast != null) {
+          tip += ` · ${fmtRain(l.wet_day_pct_forecast)} rain (forecast)`;
+        }
+      }
 
       // Multiple radii so the placer can push the label outward when the
       // close-in slots are taken (same idea as the day-label placement).
@@ -886,7 +901,6 @@
 
       if (hasRain) {
         const ry = chosen.y + nameFS + 3 + 11;  // baseline of rain text
-        const rainStr = `${Math.round(l.wet_day_pct)}%`;
         // Droplet shape, 8px tall.
         const dropX = chosen.x + 4, dropY = ry - 3;
         const dropPath = `M ${dropX} ${dropY - 5} C ${dropX + 4} ${dropY - 1} ${dropX + 4} ${dropY + 3} ${dropX} ${dropY + 3} C ${dropX - 4} ${dropY + 3} ${dropX - 4} ${dropY - 1} ${dropX} ${dropY - 5} Z`;
@@ -1489,7 +1503,7 @@
       if (act === "restore") return restoreLocation(loc);
       if (act === "soft-delete") return softDeleteLocation(loc);
       if (act === "reset-override") return resetLocationOverride(loc);
-    }, { once: true });
+    });
   }
 
   function openEditPropertiesModal(loc) {

@@ -54,7 +54,9 @@
       "lon": -110.9747,
       "route_fraction": 0.107,
       "predicted_date": "2026-07-07",
-      "wet_day_pct": 9.5
+      "wet_day_pct": 9.5,
+      "wet_day_pct_forecast": 10,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "willcox_hie",
@@ -133,7 +135,9 @@
       "_note": "Coords are the WHITE SANDS NP VISITOR CENTER on US-70 (NOT the dunes interior). Per the through-driving rule: we count only the drive to ARRIVE and PARK at the park; Dunes Drive into the gypsum field is sightseeing territory, NOT drive time. Visitor center is at the park entrance off US-70.",
       "route_fraction": 0.18,
       "predicted_date": "2026-07-08",
-      "wet_day_pct": 15.2
+      "wet_day_pct": 15.2,
+      "wet_day_pct_forecast": 11,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "alamogordo",
@@ -220,7 +224,9 @@
       "lon": -106.6504,
       "route_fraction": 0.253,
       "predicted_date": "2026-07-09",
-      "wet_day_pct": 8.1
+      "wet_day_pct": 8.1,
+      "wet_day_pct_forecast": 19,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "santa_fe",
@@ -230,7 +236,9 @@
       "lon": -105.9378,
       "route_fraction": 0.271,
       "predicted_date": "2026-07-10",
-      "wet_day_pct": 9.0
+      "wet_day_pct": 9.0,
+      "wet_day_pct_forecast": 22,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "hyde_park",
@@ -390,7 +398,9 @@
       "_note": "Coords are the MESA VERDE VISITOR & RESEARCH CENTER, which sits RIGHT ON US-160 at the park entrance (NOT down the entrance road into the park, and NOT the Mesa Top Loop or cliff dwellings which are 21+ mi DEEPER into the park down Mesa Top Ruins Rd \u2014 those are hiking/sightseeing territory). Coords match Google's geocode of the VRC. Anchored at Mancos because the through-route Mancos\u2192Dolores uses CO-184 and skips Cortez, so Mesa Verde is reached as a south-and-back spur off Mancos along US-160 (not from Dolores by haversine).",
       "route_fraction": 0.346,
       "predicted_date": "2026-07-11",
-      "wet_day_pct": 6.2
+      "wet_day_pct": 6.2,
+      "wet_day_pct_forecast": 15,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "mancos_nf",
@@ -430,7 +440,9 @@
       "lon": -107.8123,
       "route_fraction": 0.374,
       "predicted_date": "2026-07-11",
-      "wet_day_pct": 26.7
+      "wet_day_pct": 26.7,
+      "wet_day_pct_forecast": 32,
+      "forecast_fetched_at": "2026-07-01"
     },
     {
       "id": "last_dollar",

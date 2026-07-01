@@ -226,16 +226,17 @@ def get_openmeteo_archive(lat, lon, force=False):
 # ============================================================
 
 def get_openmeteo_forecast(lat, lon, force=False, today=None):
-    """Returns forecast response with daily temperature_2m_min for the
-    next 16 days. Cache key includes today's date so we get fresh data
-    each day. Returns (data, cache_hit) or (None, False) on error."""
+    """Returns forecast response with daily temperature_2m_min and
+    precipitation_probability_max for the next 16 days. Cache key
+    includes today's date so we get fresh data each day. Returns
+    (data, cache_hit) or (None, False) on error."""
     if today is None:
         today = date.today()
     ck = cache_key_dict({
         "type": "openmeteo_forecast",
         "coord": [round(lat, 4), round(lon, 4)],
         "run_date": today.isoformat(),
-        "vars": ["temperature_2m_min"],
+        "vars": ["temperature_2m_min", "precipitation_probability_max"],
     })
     if not force:
         hit = cache_get(FORECAST_CACHE, ck)
@@ -245,7 +246,7 @@ def get_openmeteo_forecast(lat, lon, force=False, today=None):
     url = (
         "https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
-        "&daily=temperature_2m_min"
+        "&daily=temperature_2m_min,precipitation_probability_max"
         "&temperature_unit=fahrenheit"
         "&forecast_days=16"
         "&timezone=auto"
@@ -284,6 +285,20 @@ def forecast_low_for_date(forecast, target_date):
     for t, m in zip(times, mins):
         if t == key and m is not None:
             return round(m, 1)
+    return None
+
+
+def forecast_rain_pct_for_date(forecast, target_date):
+    """Look up the daily max precipitation probability for target_date.
+    Returns None if the date isn't in the response window."""
+    if not forecast:
+        return None
+    times = forecast.get("daily", {}).get("time", [])
+    probs = forecast.get("daily", {}).get("precipitation_probability_max", [])
+    key = target_date.isoformat()
+    for t, p in zip(times, probs):
+        if t == key and p is not None:
+            return round(p, 1)
     return None
 
 
@@ -574,7 +589,28 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
                 rain = rain_stats(archive, d)
                 wet_pct = rain["wet_day_pct"] if rain else None
                 loc_copy["wet_day_pct"] = wet_pct
-                print(f"  major  {loc['name']:<40}  frac={frac:.2f}  {d}  {wet_pct}%   {'(cache)' if hit else '(fetched)'}", file=sys.stderr)
+                # Forecast overlay for rain: same 10-day window as
+                # sleep temps. Uses the same combined forecast endpoint,
+                # so the cached response is shared across temp + rain.
+                fcst_rain = None
+                fcst_rain_tag = ""
+                if today <= d <= forecast_end:
+                    fcst, fhit = get_openmeteo_forecast(loc["lat"], loc["lon"], force, today=today)
+                    if fcst is None:
+                        fcst_rain_tag = "  [FORECAST FETCH FAILED]"
+                    else:
+                        if fhit:
+                            fcst_n_hits += 1
+                        else:
+                            fcst_n_misses += 1
+                        fcst_rain = forecast_rain_pct_for_date(fcst, d)
+                        if fcst_rain is not None:
+                            loc_copy["wet_day_pct_forecast"] = fcst_rain
+                            loc_copy["forecast_fetched_at"] = today.isoformat()
+                            fcst_rain_tag = f"  fcst={fcst_rain}% {'(cache)' if fhit else '(fetched)'}"
+                        else:
+                            fcst_rain_tag = "  [no fcst value for date]"
+                print(f"  major  {loc['name']:<40}  frac={frac:.2f}  {d}  hist={wet_pct}%  {'(cache)' if hit else '(fetched)'}{fcst_rain_tag}", file=sys.stderr)
         locations_out.append(loc_copy)
 
     print(f"  sleep cache: {sleep_n_hits} hits, {sleep_n_misses} new", file=sys.stderr)
