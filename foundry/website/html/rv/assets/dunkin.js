@@ -153,7 +153,11 @@
   // Layout (in viewBox 400x260):
   //   left margin 34   right margin 44 (for avatars)
   //   top margin 14    bottom margin 30 (for x-axis dates)
-  const M = { top: 14, right: 44, bottom: 30, left: 34 };
+  // Right margin is intentionally wide so the connector lines from the
+  // plot's right edge to each avatar have room to spread — when
+  // multiple guesses cluster (e.g., low 40s to high 40s), the pins
+  // stack tight but the connector lines fan out to their exact y.
+  const M = { top: 14, right: 84, bottom: 30, left: 34 };
   const CHART_W = 400, CHART_H = 260;
   const PLOT_W = CHART_W - M.left - M.right;
   const PLOT_H = CHART_H - M.top - M.bottom;
@@ -422,7 +426,11 @@
     // Simple pass: sort by y ascending; if a later one is closer than
     // 20px, push it down.
     const AV_R = 12;
-    const avX = M.left + PLOT_W + 16;
+    // Push the avatar column to the far right of the SVG so the space
+    // between the plot edge (M.left + PLOT_W) and the avatar circles
+    // is maximized — that's the room the connector lines get to fan
+    // out toward each guess's exact y-value.
+    const avX = CHART_W - AV_R - 4;
     const placed = PARTICIPANTS
       .filter(p => p.guess <= yMax)
       .map(p => ({ p, y: yForCount(p.guess, yMax) }))
