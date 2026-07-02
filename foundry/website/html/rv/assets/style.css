@@ -879,16 +879,9 @@ a { color: var(--accent); }
 .hero-dunkin-btn:disabled { opacity: 0.6; cursor: progress; }
 .hero-dunkin-btn[hidden] { display: none; }
 .hero-dunkin-mark {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-family: "Fredoka", "Baloo 2", "Nunito", system-ui, sans-serif;
-  font-weight: 700;
+  font-size: 1.15rem;
   line-height: 1;
 }
-.hero-dunkin-word { font-size: 0.9rem; }
-.hero-dunkin-word-1 { color: #DA1884; }  /* Dunkin' pink */
-.hero-dunkin-word-2 { color: #FF6720; }  /* Dunkin' orange */
 .hero-dunkin-count {
   display: inline-block;
   min-width: 22px;
