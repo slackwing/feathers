@@ -23,8 +23,8 @@
   // showing the first character of the name; add `src` to a
   // participant to use a photo instead.
   const PARTICIPANTS = [
-    { id: "andrew",  name: "Andrew",  guess: 43, color: "#FF6720" },
-    { id: "abi",     name: "Abi",     guess: 48, color: "#DA1884" },
+    { id: "andrew",  name: "Andrew",  guess: 43, color: "#FF6720", src: "assets/photos/andrew-avatar.jpg" },
+    { id: "abi",     name: "Abi",     guess: 48, color: "#DA1884", src: "assets/photos/abi-avatar.jpg" },
     { id: "hayoung", name: "Hayoung", guess: 30, color: "#4a7fa0" },
     { id: "keunwoo", name: "Keunwoo", guess: 85, color: "#2f8a6e" },
   ];
@@ -132,6 +132,9 @@
   const PLOT_W = CHART_W - M.left - M.right;
   const PLOT_H = CHART_H - M.top - M.bottom;
 
+  // X domain is the trip window (Jul 5 → Jul 22). Pre-trip clicks
+  // still land in the DB but they clamp to the trip start visually —
+  // by design; the chart is about "sightings during the trip."
   function xForDate(ms) {
     const clamped = Math.max(tripStartMs, Math.min(tripEndMs, ms));
     return M.left + PLOT_W * (clamped - tripStartMs) / (tripEndMs - tripStartMs);
@@ -381,11 +384,11 @@
 
       }
 
-      // ----- Latest = 🚐 emoji -----
+      // ----- Latest = 🍩 emoji -----
       const last = pts[pts.length - 1];
       const lx = xForDate(last.t);
       const ly = yForCount(last.c, yMax);
-      out += `<text x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">🚐</text>`;
+      out += `<text x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">🍩</text>`;
     }
 
     // ----- Right-axis avatars at each guess -----

@@ -96,14 +96,10 @@
       <span class="hero-checkin-label">check in current location!</span>
     </button>
     <button type="button" class="hero-dunkin-btn" id="hero-dunkin-btn" hidden title="Log a Dunkin' sighting">
-      <!-- Simple DD wordmark in Dunkin's orange + pink. Inline SVG so
-           there's no external asset to load or trademark to fetch. -->
-      <svg class="hero-dunkin-mark" viewBox="0 0 32 32" aria-hidden="true">
-        <text x="16" y="22" text-anchor="middle" font-family="Impact, sans-serif"
-              font-size="22" font-weight="900" letter-spacing="-4">
-          <tspan fill="#FF6720">D</tspan><tspan fill="#DA1884">D</tspan>
-        </text>
-      </svg>
+      <!-- Drop the official Dunkin' Donuts logo at assets/photos/dunkin-logo.svg
+           to see it here. If the file is missing the fallback text below shows. -->
+      <img class="hero-dunkin-mark" src="assets/photos/dunkin-logo.svg" alt="Dunkin'" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+      <span class="hero-dunkin-fallback" style="display:none;">Dunkin'</span>
       <span class="hero-dunkin-count" id="hero-dunkin-count">0</span>
     </button>
   </div>
@@ -140,7 +136,10 @@
     <article class="fun-tile fun-tile-dunkin">
       <div class="fun-tile-header">
         <h3 class="fun-tile-title">
-          <span class="dunkin-word-d">D</span><span class="dunkin-word-d dunkin-word-d2">D</span>
+          <img class="dunkin-tile-logo" src="assets/photos/dunkin-logo.svg" alt="Dunkin' Donuts" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+          <span class="dunkin-tile-fallback" style="display:none;">
+            <span class="dunkin-word-d">D</span><span class="dunkin-word-d dunkin-word-d2">D</span>
+          </span>
           <span class="dunkin-title-rest">sightings</span>
         </h3>
         <span class="fun-tile-cta dunkin-latest-badge" id="dunkin-latest-badge">–</span>
