@@ -1044,6 +1044,19 @@ a { color: var(--accent); }
   height: 100%;
   display: block;
 }
+/* Avatar popover — hidden by default; the JS toggles .is-open on
+   hover (mouse) or click/tap (touch + keyboard). */
+.dunkin-avatar { cursor: pointer; outline: none; }
+.dunkin-avatar:focus-visible circle:not([fill="none"]) { stroke: var(--ink); stroke-width: 2; }
+.dunkin-avatar .dunkin-avatar-popover {
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+.dunkin-avatar.is-open .dunkin-avatar-popover {
+  opacity: 1;
+  transform: translateX(0);
+}
 /* Blurb sits below the chart on the dunkin tile — no top margin from
    the standard .fun-tile-lede because the chart already breathes. */
 .fun-tile-dunkin .dunkin-blurb {

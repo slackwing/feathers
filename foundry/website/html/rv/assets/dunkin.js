@@ -27,6 +27,7 @@
     { id: "abi",     name: "Abi",     guess: 48, color: "#DA1884", src: "assets/photos/abi-avatar.jpg" },
     { id: "hayoung", name: "Hayoung", guess: 30, color: "#4a7fa0" },
     { id: "keunwoo", name: "Keunwoo", guess: 85, color: "#2f8a6e" },
+    { id: "kimmy",   name: "Kimmy",   guess: 26, color: "#a05fb0" },
   ];
 
   // ----- DOM refs -----
@@ -425,9 +426,12 @@
         placed[i].y = placed[i-1].y + 2 * AV_R + 1;
       }
     }
+    // Avatars are wrapped in a group with class .dunkin-avatar; hover
+    // (desktop) or tap (touch) toggles a name+guess label to the left.
+    // <title> stays as a fallback for native platform tooltips.
     for (const { p, y } of placed) {
       const tip = `${p.name} guessed ${p.guess}`;
-      out += `<g><title>${esc(tip)}</title>`;
+      out += `<g class="dunkin-avatar" data-avatar="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"><title>${esc(tip)}</title>`;
       // Connector line from the guess-line's right end to the avatar.
       const guessY = yForCount(p.guess, yMax);
       out += `<line x1="${(M.left + PLOT_W).toFixed(1)}" y1="${guessY.toFixed(1)}" x2="${(avX - AV_R).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.color}" stroke-opacity="0.45" stroke-width="1"/>`;
@@ -438,16 +442,61 @@
         out += `<image href="${esc(p.src)}" x="${(avX - AV_R).toFixed(1)}" y="${(y - AV_R).toFixed(1)}" width="${(AV_R * 2).toFixed(1)}" height="${(AV_R * 2).toFixed(1)}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>`;
         out += `<circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}" fill="none" stroke="${p.color}" stroke-width="2"/>`;
       } else {
-        // Default: first-letter chip in participant's color. Mouseover
-        // (<title> above) shows the full name.
+        // Default: first-letter chip in participant's color.
         const letter = (p.name || "?").charAt(0).toUpperCase();
         out += `<circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}" fill="${p.color}" stroke="white" stroke-width="1.5"/>`;
-        out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif">${esc(letter)}</text>`;
+        out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif" style="pointer-events:none;">${esc(letter)}</text>`;
       }
+      // Popover label — an SVG text with a background rect. Positioned
+      // to the LEFT of the avatar (over the chart area) so it doesn't
+      // fall off the tile's right edge. Hidden by default; the
+      // .is-open toggle drives visibility via CSS.
+      const label = `${p.name} · ${p.guess}`;
+      const labelW = Math.max(60, label.length * 6.5 + 12);
+      const labelH = 18;
+      const labelX = avX - AV_R - 6 - labelW;   // right edge sits just left of avatar
+      const labelY = y - labelH / 2;
+      out += `<g class="dunkin-avatar-popover" pointer-events="none">`;
+      out += `<rect x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" width="${labelW.toFixed(1)}" height="${labelH}" rx="4" fill="${p.color}"/>`;
+      out += `<text x="${(labelX + labelW / 2).toFixed(1)}" y="${(y + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="white" font-weight="700" font-family="system-ui,sans-serif">${esc(label)}</text>`;
+      out += `</g>`;
       out += `</g>`;
     }
 
     svg.innerHTML = out;
+    wireAvatarInteractions();
+  }
+
+  // Hover (mouse) or tap (touch) toggles a popover on each avatar. On
+  // touch we also close whichever popover was previously open so only
+  // one shows at a time. Runs after each renderChart() because
+  // svg.innerHTML wipes the previous listeners.
+  function wireAvatarInteractions() {
+    const avatars = svg.querySelectorAll(".dunkin-avatar");
+    function closeAll() {
+      avatars.forEach(el => el.classList.remove("is-open"));
+    }
+    avatars.forEach(el => {
+      el.addEventListener("mouseenter", () => el.classList.add("is-open"));
+      el.addEventListener("mouseleave", () => el.classList.remove("is-open"));
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = el.classList.contains("is-open");
+        closeAll();
+        if (!wasOpen) el.classList.add("is-open");
+      });
+      // Keyboard access for the tabindex="0" chip.
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const wasOpen = el.classList.contains("is-open");
+          closeAll();
+          if (!wasOpen) el.classList.add("is-open");
+        }
+      });
+    });
+    // Tap outside → close all.
+    document.addEventListener("click", closeAll, { once: true });
   }
 
   // Re-render every minute so the "today" marker + "X ago" extrapolation
