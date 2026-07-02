@@ -845,9 +845,55 @@ a { color: var(--accent); }
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
+/* The base `display: inline-flex` beats the UA stylesheet's
+   `[hidden] { display: none }`, so we have to re-assert it here to
+   keep the button truly hidden while logged out or before auth
+   resolves. */
+.hero-checkin-btn[hidden] { display: none; }
 .hero-checkin-btn:hover { background: var(--accent); color: #fff; }
 .hero-checkin-btn:disabled { opacity: 0.6; cursor: progress; }
 .hero-checkin-icon { font-size: 1rem; line-height: 1; }
+
+/* Dunkin' sighting button — sits next to the check-in button in the
+   hero. Same "logged-in only" contract. Clicking it POSTs an
+   increment; a compact counter chip renders next to it. */
+.hero-dunkin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  margin-left: 8px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid #FF6720;         /* Dunkin' orange */
+  border-radius: 999px;
+  background: #fff;
+  color: #DA1884;                    /* Dunkin' pink */
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+.hero-dunkin-btn:hover { background: #fff7f0; }
+.hero-dunkin-btn:active { transform: scale(0.97); }
+.hero-dunkin-btn:disabled { opacity: 0.6; cursor: progress; }
+.hero-dunkin-btn[hidden] { display: none; }
+.hero-dunkin-mark {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+}
+.hero-dunkin-count {
+  display: inline-block;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #FF6720;
+  color: #fff;
+  font-size: 0.82rem;
+  text-align: center;
+  line-height: 1.5;
+}
 
 /* Toast used by checkin.js. Bottom-center, fades out. */
 .rv-checkin-toast {
@@ -941,6 +987,46 @@ a { color: var(--accent); }
 .fun-tile-placeholder-inner { text-align: center; }
 .fun-tile-placeholder-emoji { font-size: 1.6rem; margin: 0 0 6px; }
 .fun-tile-placeholder-text { margin: 0; font-style: italic; font-size: 0.9rem; }
+
+/* Dunkin' tile — chart + branded header. */
+.fun-tile-dunkin .fun-tile-title {
+  font-family: Impact, "Franklin Gothic Bold", "Arial Black", sans-serif;
+  letter-spacing: -0.5px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.dunkin-word-d {
+  font-size: 1.5rem;
+  color: #FF6720;
+  font-weight: 900;
+  line-height: 1;
+}
+.dunkin-word-d2 { color: #DA1884; margin-left: -3px; }
+.dunkin-title-rest {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  color: var(--ink);
+  font-weight: 500;
+  margin-left: 3px;
+}
+.dunkin-latest-badge {
+  color: #DA1884;
+  font-weight: 700;
+  cursor: default;
+}
+.dunkin-chart-wrap {
+  margin-top: 8px;
+  width: 100%;
+  aspect-ratio: 400 / 260;
+  min-height: 240px;
+}
+.dunkin-chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 /* ===================== ROUTE MAP V2 ===================== */
 .route-map-v2-section {

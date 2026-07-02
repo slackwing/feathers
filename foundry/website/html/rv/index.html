@@ -95,6 +95,17 @@
       <span class="hero-checkin-icon" aria-hidden="true">📍</span>
       <span class="hero-checkin-label">check in current location!</span>
     </button>
+    <button type="button" class="hero-dunkin-btn" id="hero-dunkin-btn" hidden title="Log a Dunkin' sighting">
+      <!-- Simple DD wordmark in Dunkin's orange + pink. Inline SVG so
+           there's no external asset to load or trademark to fetch. -->
+      <svg class="hero-dunkin-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <text x="16" y="22" text-anchor="middle" font-family="Impact, sans-serif"
+              font-size="22" font-weight="900" letter-spacing="-1">
+          <tspan fill="#FF6720">D</tspan><tspan fill="#DA1884">D</tspan>
+        </text>
+      </svg>
+      <span class="hero-dunkin-count" id="hero-dunkin-count">0</span>
+    </button>
   </div>
 </header>
 
@@ -124,11 +135,21 @@
               title="Road trip playlist on Spotify"></iframe>
     </article>
 
-    <!-- Tile: placeholder — next fun thing coming soon. See FUN_PLAN.md. -->
-    <article class="fun-tile fun-tile-placeholder" aria-label="Coming soon">
-      <div class="fun-tile-placeholder-inner">
-        <p class="fun-tile-placeholder-emoji">✨</p>
-        <p class="fun-tile-placeholder-text">Something fun goes here — TBD.</p>
+    <!-- Tile: Dunkin' Donuts sighting bet — chart of running count
+         vs each person's guess. See assets/dunkin.js. -->
+    <article class="fun-tile fun-tile-dunkin">
+      <div class="fun-tile-header">
+        <h3 class="fun-tile-title">
+          <span class="dunkin-word-d">D</span><span class="dunkin-word-d dunkin-word-d2">D</span>
+          <span class="dunkin-title-rest">sighting bet</span>
+        </h3>
+        <span class="fun-tile-cta dunkin-latest-badge" id="dunkin-latest-badge">–</span>
+      </div>
+      <p class="fun-tile-lede">
+        Four bets. Whose guess wins?
+      </p>
+      <div class="dunkin-chart-wrap">
+        <svg class="dunkin-chart" id="dunkin-chart" viewBox="0 0 400 260" preserveAspectRatio="none" aria-label="Dunkin' sighting count chart"></svg>
       </div>
     </article>
 
@@ -170,6 +191,7 @@
 <script src="assets/itinerary.js"></script>
 <script src="assets/map-v2.js"></script>
 <script src="assets/checkin.js"></script>
+<script src="assets/dunkin.js"></script>
 <!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
 <script src="assets/emoji-rain.js"></script>
 </body>
