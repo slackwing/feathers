@@ -236,49 +236,51 @@
     return Math.max(0, a.c + rate * (targetDays - a.d));
   }
 
-  // Quadratic = "with acceleration" projection.
-  //   Fit count(d) = a·d² + b·d through the log points (least
-  //   squares, zero intercept so d=0 gives count=0).
-  //   Returns null if we don't have ≥2 logs (need at least two to
-  //   distinguish curvature from a straight line).
+  // Power-law = "with acceleration or deceleration" projection.
+  //   Fit count(d) = A · d^k where d = days since trip start.
+  //     k = 1 → straight line (constant rate)
+  //     k > 1 → accelerating (rate rising over time)
+  //     0 < k < 1 → decelerating (rate slowing, still climbing)
+  //   Because A > 0 and d > 0 give A·d^k > 0 monotonically, the
+  //   projection is guaranteed non-decreasing — right shape for a
+  //   running counter that can only go up or stay flat.
   //
-  // The zero-intercept form is what makes this natural for a
-  // running counter: at trip start we've seen zero. It also keeps
-  // the closed-form solve to a 2x2 system.
-  function fitQuadratic() {
-    if (logs.length < 2) return null;
-    // Sample points: (d_i, c_i) for each log, plus (0, 0) at trip
-    // start so the fit is grounded. The trip-start point helps a lot
-    // when logs are sparse.
-    const pts = [{ d: 0, c: 0 }];
+  // Method: linear regression on the log-log points (log(d), log(c))
+  //   log(c) = log(A) + k · log(d)
+  //   → k = slope, log(A) = intercept.
+  // Only points with d > 0 and c > 0 participate (log of 0 is
+  // undefined). Needs ≥2 such points to fit both k and A.
+  function fitPowerLaw() {
+    const pts = [];
     for (const l of logs) {
-      pts.push({ d: daysSinceStart(parseDate(l.created_at).getTime()), c: l.count });
+      const d = daysSinceStart(parseDate(l.created_at).getTime());
+      const c = l.count;
+      if (d > 0 && c > 0) pts.push({ x: Math.log(d), y: Math.log(c) });
     }
-    // Solve min Σ (a·d² + b·d − c)². Normal equations:
-    //   [Σd⁴  Σd³] [a] = [Σd²·c]
-    //   [Σd³  Σd²] [b]   [Σd·c ]
-    let s2 = 0, s3 = 0, s4 = 0, sd2c = 0, sdc = 0;
-    for (const { d, c } of pts) {
-      const d2 = d * d;
-      s2 += d2;
-      s3 += d2 * d;
-      s4 += d2 * d2;
-      sd2c += d2 * c;
-      sdc  += d  * c;
+    if (pts.length < 2) return null;
+    let sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (const { x, y } of pts) {
+      sx += x; sy += y; sxx += x * x; sxy += x * y;
     }
-    const det = s4 * s2 - s3 * s3;
-    if (Math.abs(det) < 1e-9) return null; // degenerate (all logs at same day)
-    const a = (sd2c * s2 - sdc * s3) / det;
-    const b = (s4 * sdc - s3 * sd2c) / det;
-    return { a, b };
+    const n = pts.length;
+    const denom = n * sxx - sx * sx;
+    if (Math.abs(denom) < 1e-9) return null; // degenerate (all logs same day)
+    const k = (n * sxy - sx * sy) / denom;
+    const logA = (sy - k * sx) / n;
+    const A = Math.exp(logA);
+    return { A, k };
   }
 
+  // Kept the old name so callers don't have to change; the shape of
+  // the returned curve is now a power law, not a parabola.
   function quadraticProjection(ms) {
-    const fit = fitQuadratic();
+    const fit = fitPowerLaw();
     if (!fit) return null;
     const d = daysSinceStart(ms);
-    return Math.max(0, fit.a * d * d + fit.b * d);
+    if (d <= 0) return 0;
+    return Math.max(0, fit.A * Math.pow(d, fit.k));
   }
+  function fitQuadratic() { return fitPowerLaw(); }
 
   function renderChart() {
     const yMax = pickYMax();
@@ -363,17 +365,24 @@
 
         // Sample the two projections at ~1-day steps from the latest
         // point through trip end. Store both as (x, yLinear, yQuad)
-        // arrays for easy band drawing.
+        // arrays for easy band drawing. The power-law fit passes
+        // through the origin but usually not exactly through the
+        // latest point, so we ANCHOR its curve at (lastPt.t, lastPt.c)
+        // by adding the offset (lastPt.c - quadAt(lastPt.t)) to every
+        // sample. This keeps the drawn curve visually continuous with
+        // the data line while preserving its shape (slope + curvature).
         const linSamples = [];
         const quadSamples = [];
         const fit = fitQuadratic();
+        const quadAtLast = fit ? quadraticProjection(lastPt.t) : null;
+        const quadOffset = quadAtLast != null ? (lastPt.c - quadAtLast) : 0;
         const stepMs = MS_PER_DAY / 2;
         for (let t = lastPt.t; t <= tripEndMs; t += stepMs) {
           const x = xForDate(t);
           const cLin = linearProjection(t);
           if (cLin != null) linSamples.push({ x, y: yForCount(Math.min(cLin, yMax * 1.1), yMax) });
           if (fit) {
-            const cQuad = quadraticProjection(t);
+            const cQuad = Math.max(lastPt.c, quadraticProjection(t) + quadOffset);
             quadSamples.push({ x, y: yForCount(Math.min(cQuad, yMax * 1.1), yMax) });
           }
         }
@@ -383,7 +392,7 @@
           const cLin = linearProjection(tripEndMs);
           if (cLin != null) linSamples.push({ x, y: yForCount(Math.min(cLin, yMax * 1.1), yMax) });
           if (fit) {
-            const cQuad = quadraticProjection(tripEndMs);
+            const cQuad = Math.max(lastPt.c, quadraticProjection(tripEndMs) + quadOffset);
             quadSamples.push({ x, y: yForCount(Math.min(cQuad, yMax * 1.1), yMax) });
           }
         }
