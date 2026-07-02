@@ -827,10 +827,50 @@ a { color: var(--accent); }
 }
 .rv-emoji-picker button:hover { background: rgba(47, 138, 110, 0.12); }
 
+/* ===================== HERO CHECK-IN BUTTON ===================== */
+/* Only rendered when the user is logged in (see checkin.js). Sits at
+   the bottom of the hero-text block, spaced away from the legend. */
+.hero-checkin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hero-checkin-btn:hover { background: var(--accent); color: #fff; }
+.hero-checkin-btn:disabled { opacity: 0.6; cursor: progress; }
+.hero-checkin-icon { font-size: 1rem; line-height: 1; }
+
+/* Toast used by checkin.js. Bottom-center, fades out. */
+.rv-checkin-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.rv-checkin-toast.is-shown { opacity: 1; }
+
 /* ===================== FUN SECTION ===================== */
-/* Lightweight section of playful tiles between the hero and the map.
-   See FUN_PLAN.md for the roadmap. Each tile is self-contained; add
-   more classes as new tiles land. */
+/* Lightweight tiles between the hero and the map. No outer card /
+   header — the tiles sit directly on the page background. See
+   FUN_PLAN.md for the roadmap. */
 .fun-section {
   max-width: 1100px;
   margin: 0 auto 8px;
@@ -839,35 +879,20 @@ a { color: var(--accent); }
 @media (min-width: 760px) {
   .fun-section { padding: 8px 32px 32px; }
 }
-.fun-inner {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 20px 18px 22px;
-}
-@media (min-width: 760px) {
-  .fun-inner { padding: 26px 28px 30px; }
-}
-.fun-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.3rem, 2.6vw, 1.7rem);
-  margin: 0 0 16px;
-  color: var(--ink);
-}
 .fun-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr;
 }
-@media (min-width: 900px) {
-  /* When we have >1 tile, they lay out side-by-side. Right now there's
-     just one, but grid-template lets future tiles slot in. */
-  .fun-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+@media (min-width: 760px) {
+  /* Two even columns on tablet+ so tiles stay compact — the Spotify
+     iframe was choking on the too-wide layout. */
+  .fun-grid { grid-template-columns: 1fr 1fr; }
 }
 .fun-tile {
-  background: #f4faf6;
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -904,6 +929,17 @@ a { color: var(--accent); }
   display: block;
   width: 100%;
 }
+.fun-tile-placeholder {
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-style: dashed;
+  background: transparent;
+  color: var(--ink-soft);
+}
+.fun-tile-placeholder-inner { text-align: center; }
+.fun-tile-placeholder-emoji { font-size: 1.6rem; margin: 0 0 6px; }
+.fun-tile-placeholder-text { margin: 0; font-style: italic; font-size: 0.9rem; }
 
 /* ===================== ROUTE MAP V2 ===================== */
 .route-map-v2-section {

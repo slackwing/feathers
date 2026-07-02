@@ -88,38 +88,50 @@
         <span class="legend-label">where we sleep</span>
       </div>
     </div>
+    <!-- Check-in button — only rendered for logged-in users. Grabs
+         the browser's current location and drops a pulsing blue dot
+         on the map. See assets/checkin.js. -->
+    <button type="button" class="hero-checkin-btn" id="hero-checkin-btn" hidden>
+      <span class="hero-checkin-icon" aria-hidden="true">📍</span>
+      <span class="hero-checkin-label">check in here</span>
+    </button>
   </div>
 </header>
 
 <!-- Fun stuff section — lightweight, playful tiles for friends. See
-     FUN_PLAN.md for the full roadmap. Today: just the Spotify playlist. -->
+     FUN_PLAN.md for the full roadmap. Today: Spotify playlist +
+     placeholder for the next tile. -->
 <section class="fun-section" aria-label="Fun stuff along the way">
-  <div class="fun-inner">
-    <h2 class="fun-title">🎵 Fun stuff along the way</h2>
-    <div class="fun-grid">
+  <div class="fun-grid">
 
-      <!-- Tile: Spotify playlist -->
-      <article class="fun-tile fun-tile-spotify">
-        <div class="fun-tile-header">
-          <h3 class="fun-tile-title">Road trip playlist</h3>
-          <a class="fun-tile-cta"
-             href="https://open.spotify.com/playlist/7sojJGhCG1KfFl07gep59P"
-             target="_blank" rel="noopener noreferrer">
-            add songs ↗
-          </a>
-        </div>
-        <p class="fun-tile-lede">Anyone with the link can add. What should we listen to?</p>
-        <iframe class="fun-tile-spotify-embed"
-                src="https://open.spotify.com/embed/playlist/7sojJGhCG1KfFl07gep59P?utm_source=generator&theme=0"
-                width="100%" height="352"
-                frameborder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title="Road trip playlist on Spotify"></iframe>
-      </article>
+    <!-- Tile: Spotify playlist -->
+    <article class="fun-tile fun-tile-spotify">
+      <div class="fun-tile-header">
+        <h3 class="fun-tile-title">Road trip playlist</h3>
+        <a class="fun-tile-cta"
+           href="https://open.spotify.com/playlist/7sojJGhCG1KfFl07gep59P"
+           target="_blank" rel="noopener noreferrer">
+          add songs ↗
+        </a>
+      </div>
+      <p class="fun-tile-lede">Anyone with the link can add songs. Throw in a song or two for us! ❤️</p>
+      <iframe class="fun-tile-spotify-embed"
+              src="https://open.spotify.com/embed/playlist/7sojJGhCG1KfFl07gep59P?utm_source=generator&theme=0"
+              width="100%" height="452"
+              frameborder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              title="Road trip playlist on Spotify"></iframe>
+    </article>
 
-      <!-- Future tiles: Dunkin' bet chart, audiobooks, now-playing… see FUN_PLAN.md -->
-    </div>
+    <!-- Tile: placeholder — next fun thing coming soon. See FUN_PLAN.md. -->
+    <article class="fun-tile fun-tile-placeholder" aria-label="Coming soon">
+      <div class="fun-tile-placeholder-inner">
+        <p class="fun-tile-placeholder-emoji">✨</p>
+        <p class="fun-tile-placeholder-text">Something fun goes here — TBD.</p>
+      </div>
+    </article>
+
   </div>
 </section>
 
@@ -157,6 +169,7 @@
 <script src="assets/auth.js"></script>
 <script src="assets/itinerary.js"></script>
 <script src="assets/map-v2.js"></script>
+<script src="assets/checkin.js"></script>
 <!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
 <script src="assets/emoji-rain.js"></script>
 </body>

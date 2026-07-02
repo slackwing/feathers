@@ -1024,7 +1024,44 @@
       movableLabels += `</g>`;
     });
 
-    svg.innerHTML = stateOutlines + dayStrokes + bgLines + mainObjects + movableLabels + dayLabels;
+    // ----- Live check-in pulsing dot -----
+    // window.rvLatestCheckin is populated by assets/checkin.js. It's
+    // the most recent check-in row (lat, lon, note, created_at). If
+    // absent, this renders nothing.
+    let checkinLayer = "";
+    const c = window.rvLatestCheckin;
+    if (c && typeof c.lat === "number" && typeof c.lon === "number") {
+      const wp = project(c.lat, c.lon);
+      const cp = worldToScreen(wp.x, wp.y);
+      const created = c.created_at || "";
+      const tipParts = ["📍 checked in here"];
+      if (created) {
+        // Show a friendly "X ago" without pulling in a date library.
+        const dt = new Date(created);
+        const mins = Math.round((Date.now() - dt.getTime()) / 60000);
+        if (isFinite(mins) && mins >= 0) {
+          if (mins < 1) tipParts.push("just now");
+          else if (mins < 60) tipParts.push(`${mins} min ago`);
+          else if (mins < 60 * 24) tipParts.push(`${Math.round(mins / 60)} h ago`);
+          else tipParts.push(`${Math.round(mins / (60 * 24))} d ago`);
+        }
+      }
+      if (c.note) tipParts.push(String(c.note));
+      const tip = tipParts.join(" · ");
+      // Two concentric circles: an outer pulsing halo (r + opacity
+      // animate) and a solid inner dot. SVG SMIL keeps it dependency-
+      // free; browsers we care about (Safari iOS, Chrome, Firefox) all
+      // still support it well for simple animations like this.
+      checkinLayer += `<g><title>${escapeXml(tip)}</title>`;
+      checkinLayer += `<circle cx="${cp.x.toFixed(1)}" cy="${cp.y.toFixed(1)}" r="6" fill="#2f7fff" fill-opacity="0.45">`;
+      checkinLayer += `<animate attributeName="r" values="6;22;6" dur="2.2s" repeatCount="indefinite"/>`;
+      checkinLayer += `<animate attributeName="fill-opacity" values="0.55;0;0.55" dur="2.2s" repeatCount="indefinite"/>`;
+      checkinLayer += `</circle>`;
+      checkinLayer += `<circle cx="${cp.x.toFixed(1)}" cy="${cp.y.toFixed(1)}" r="5" fill="#2f7fff" stroke="white" stroke-width="1.5"/>`;
+      checkinLayer += `</g>`;
+    }
+
+    svg.innerHTML = stateOutlines + dayStrokes + bgLines + mainObjects + movableLabels + dayLabels + checkinLayer;
   }
 
   function escapeXml(s) {
@@ -1181,6 +1218,8 @@
   // Auth state also affects modals (logged-in vs out); a re-render isn't
   // strictly required, but covers any future affordances.
   window.addEventListener("rv:auth-change", () => render());
+  // Live check-in updates (new dot appears / moves) — see checkin.js.
+  window.addEventListener("rv:checkin-updated", () => render());
 
   // ============================================================
   // Map-click modal (Phase A)
