@@ -15,7 +15,10 @@
   const API_URL = "/rv/api/dunkin";
 
   // ----- Trip constants (kept local — cheap enough to hard-code) -----
-  const TRIP_START = "2026-07-05";
+  // Trip officially starts the minute we land at SAN — Sun 2:27 PM PDT
+  // (Pacific is UTC-7 in July). Seed rows filter out and the counter
+  // resets to 0 at that instant.
+  const TRIP_START = "2026-07-05T21:27:00Z";
   const TRIP_END = "2026-07-22";
 
   // Participants — order controls y-axis avatar stacking priority
@@ -58,6 +61,7 @@
 
   // ----- State -----
   let logs = [];  // [{id, count, note, user_id, created_at}, ...] server-sorted ASC
+  let seedMode = false; // true while the chart shows demo (is_seed) rows
 
   // ----- Helpers -----
   const MS_PER_DAY = 24 * 3600 * 1000;
@@ -89,9 +93,9 @@
       // once the trip actually starts — the seed set drops off and
       // the chart resets to real data starting at 1.
       const realLogs = raw.filter(l => !l.is_seed);
-      const seedActive = realLogs.length === 0;
-      showSampleNote(seedActive);
-      const active = seedActive ? raw.filter(l => l.is_seed) : realLogs;
+      seedMode = realLogs.length === 0;
+      showSampleNote(seedMode);
+      const active = seedMode ? raw.filter(l => l.is_seed) : realLogs;
       // Renumber to 1..N so the line starts at (tripStart, 0) →
       // (firstLog, 1). Server counts are historical bookkeeping;
       // the chart's y-axis is always "sightings in this active set."
@@ -141,7 +145,7 @@
   }
   function updateBadge() {
     if (!badge) return;
-    badge.textContent = `${currentCount()} so far`;
+    badge.textContent = `${currentCount()} so far${seedMode ? "*" : ""}`;
   }
 
   // ----- Chart rendering -----

@@ -1033,6 +1033,11 @@ a { color: var(--accent); }
   font-weight: 700;
   cursor: default;
 }
+/* Sample-mode footnote: paint it in Dunkin' pink so it visually
+   ties to the "12 so far*" badge that carries the same asterisk. */
+#dunkin-sample-note {
+  color: #DA1884;
+}
 .dunkin-chart-wrap {
   margin-top: 8px;
   width: 100%;
