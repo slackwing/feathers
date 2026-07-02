@@ -835,13 +835,16 @@ a { color: var(--accent); }
   align-items: center;
   gap: 6px;
   margin-top: 14px;
-  padding: 8px 16px;
+  /* Match .hero-dunkin-btn so both hero buttons share the same
+     height / pill shape. */
+  padding: 6px 12px 6px 8px;
   border: 1px solid var(--accent);
   border-radius: 999px;
   background: transparent;
   color: var(--accent);
   font: inherit;
   font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
