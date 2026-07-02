@@ -82,14 +82,18 @@
       if (!r.ok) return;
       const data = await r.json();
       const raw = data.logs || [];
-      // Filter out pre-trip logs (test clicks, warm-ups). The trip
-      // hasn't started until TRIP_START, so anything before that is
-      // noise for the chart AND the counter. Renumber the surviving
-      // rows 1..N so the line starts at (tripStart, 0) → (firstLog, 1)
-      // instead of jumping to whatever count the pre-trip clicks left.
-      logs = raw
-        .filter(l => parseDate(l.created_at).getTime() >= tripStartMs)
-        .map((l, i) => ({ ...l, count: i + 1 }));
+      // Show seed rows only until a real (non-seed) row exists. As
+      // soon as the first genuine sighting is logged — presumably
+      // once the trip actually starts — the seed set drops off and
+      // the chart resets to real data starting at 1.
+      const realLogs = raw.filter(l => !l.is_seed);
+      const seedActive = realLogs.length === 0;
+      showSampleNote(seedActive);
+      const active = seedActive ? raw.filter(l => l.is_seed) : realLogs;
+      // Renumber to 1..N so the line starts at (tripStart, 0) →
+      // (firstLog, 1). Server counts are historical bookkeeping;
+      // the chart's y-axis is always "sightings in this active set."
+      logs = active.map((l, i) => ({ ...l, count: i + 1 }));
       updateBadge();
       updateHeaderCount();
       renderChart();
@@ -98,6 +102,13 @@
     }
   }
   loadLogs();
+
+  // Show/hide the "Showing sample chart" note based on whether the
+  // chart is currently displaying seed rows.
+  function showSampleNote(active) {
+    const el = document.getElementById("dunkin-sample-note");
+    if (el) el.hidden = !active;
+  }
 
   // ----- Header button click: increment -----
   if (btn) {
