@@ -379,6 +379,26 @@
       "medal": "gold"
     },
     {
+      "id": "stage_stop_meadows_dispersed",
+      "kind": "sleep",
+      "name": "Stage Stop Meadows Dispersed",
+      "lat": 38.8455,
+      "lon": -106.4833,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed near Buena Vista, CO (Dyrt: https://thedyrt.com/camping/colorado/stage-stop-meadows-dispersed). Beautiful meadow with mountain views, lots of space, drive-in access — no known vehicle-size restrictions in reviews. Used as Day 11 sleep after Black Canyon + Crested Butte.",
+      "medal": "gold"
+    },
+    {
+      "id": "cr_306_dispersed",
+      "kind": "sleep",
+      "name": "CR 306 Dispersed",
+      "lat": 38.8125,
+      "lon": -106.2851,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed on CR 306 near Buena Vista, CO (Dyrt: https://thedyrt.com/camping/colorado/cr-306-dispersed). Multiple pullouts of varying quality — some suit big rigs, others tight/steep (reviewer wouldn't pull large trailers into these sites). Highway noise during the day, calms after dark. Sites fill fast on weekends. Alternative option if we want to push further east on Day 11.",
+      "cautions": ["some sites tight/steep for big rigs", "highway noise during day", "fills on weekends"]
+    },
+    {
       "id": "gunnison",
       "kind": "minor",
       "name": "Gunnison",
@@ -1149,6 +1169,8 @@
     "electric_hills_trailhead",
     "crested_butte",
     "cement_creek",
+    "stage_stop_meadows_dispersed",
+    "cr_306_dispersed",
     "marshall_pass_dispersed",
     "fourmile_creek_dispersed",
     "turtle_rock_dispersed",

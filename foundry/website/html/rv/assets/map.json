@@ -517,6 +517,36 @@
       "night_temp_f": 38.8
     },
     {
+      "id": "stage_stop_meadows_dispersed",
+      "kind": "sleep",
+      "name": "Stage Stop Meadows Dispersed",
+      "lat": 38.8455,
+      "lon": -106.4833,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed near Buena Vista, CO (Dyrt: https://thedyrt.com/camping/colorado/stage-stop-meadows-dispersed). Beautiful meadow with mountain views, lots of space, drive-in access \u2014 no known vehicle-size restrictions in reviews. Used as Day 11 sleep after Black Canyon + Crested Butte.",
+      "medal": "gold",
+      "route_fraction": 0.422,
+      "predicted_date": "2026-07-12",
+      "night_temp_f": 42.2
+    },
+    {
+      "id": "cr_306_dispersed",
+      "kind": "sleep",
+      "name": "CR 306 Dispersed",
+      "lat": 38.8125,
+      "lon": -106.2851,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed on CR 306 near Buena Vista, CO (Dyrt: https://thedyrt.com/camping/colorado/cr-306-dispersed). Multiple pullouts of varying quality \u2014 some suit big rigs, others tight/steep (reviewer wouldn't pull large trailers into these sites). Highway noise during the day, calms after dark. Sites fill fast on weekends. Alternative option if we want to push further east on Day 11.",
+      "cautions": [
+        "some sites tight/steep for big rigs",
+        "highway noise during day",
+        "fills on weekends"
+      ],
+      "route_fraction": 0.443,
+      "predicted_date": "2026-07-13",
+      "night_temp_f": 44.0
+    },
+    {
       "id": "gunnison",
       "kind": "minor",
       "name": "Gunnison",
@@ -1999,6 +2029,26 @@
       "spur_distance_mi": 23.0,
       "spur_summary": "CO-135 N",
       "spur_is_mountain": true
+    },
+    {
+      "id": "stage_stop_meadows_dispersed",
+      "anchor": "gunnison",
+      "anchor_distance_mi": 31.57,
+      "kind": "sleep",
+      "spur_raw_minutes": 56.6,
+      "spur_distance_mi": 40.0,
+      "spur_summary": "CO-135 N and Co Rd 742",
+      "spur_is_mountain": true
+    },
+    {
+      "id": "cr_306_dispersed",
+      "anchor": "salida",
+      "anchor_distance_mi": 24.63,
+      "kind": "sleep",
+      "spur_raw_minutes": 42.5,
+      "spur_distance_mi": 33.6,
+      "spur_summary": "US Hwy 285 N and Co Rd 306/Forest Service Rd 209",
+      "spur_is_mountain": false
     },
     {
       "id": "marshall_pass_dispersed",
