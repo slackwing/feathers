@@ -6,6 +6,9 @@
 <title>🐸🦔 Hedgie & Frogie's RV Adventure</title>
 <meta name="description" content="Andrew and Abi's cross-country RV trip itinerary, San Diego to NYC, July 2026.">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -96,10 +99,9 @@
       <span class="hero-checkin-label">check in current location!</span>
     </button>
     <button type="button" class="hero-dunkin-btn" id="hero-dunkin-btn" hidden title="Log a Dunkin' sighting">
-      <!-- Drop the official Dunkin' Donuts logo at assets/photos/dunkin-logo.svg
-           to see it here. If the file is missing the fallback text below shows. -->
-      <img class="hero-dunkin-mark" src="assets/photos/dunkin-logo.svg" alt="Dunkin'" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-      <span class="hero-dunkin-fallback" style="display:none;">Dunkin'</span>
+      <span class="hero-dunkin-mark">
+        <span class="hero-dunkin-word hero-dunkin-word-1">DUNKIN</span><span class="hero-dunkin-word hero-dunkin-word-2">DONUTS</span>
+      </span>
       <span class="hero-dunkin-count" id="hero-dunkin-count">0</span>
     </button>
   </div>
@@ -136,9 +138,8 @@
     <article class="fun-tile fun-tile-dunkin">
       <div class="fun-tile-header">
         <h3 class="fun-tile-title">
-          <img class="dunkin-tile-logo" src="assets/photos/dunkin-logo.svg" alt="Dunkin' Donuts" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-          <span class="dunkin-tile-fallback" style="display:none;">
-            <span class="dunkin-word-d">D</span><span class="dunkin-word-d dunkin-word-d2">D</span>
+          <span class="dunkin-tile-wordmark">
+            <span class="dunkin-tile-word dunkin-tile-word-1">DUNKIN</span><span class="dunkin-tile-word dunkin-tile-word-2">DONUTS</span>
           </span>
           <span class="dunkin-title-rest">sightings</span>
         </h3>
