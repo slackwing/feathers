@@ -34,7 +34,18 @@ can defer the ones with real backend work.
 - **Decision for now:** just the playlist widget. Revisit if we
   actually want live-track presence.
 
-### 3. Dunkin' bet chart (deferred)
+### 3. Dunkin' bet chart (built 2026-07-02)
+
+Bets: Andrew 43, Abi 48, Hayoung 30, Keunwoo 85. Header button
+(DD wordmark + count chip) increments the running total via
+POST /rv/api/dunkin with an empty body — server auto-increments.
+Chart in the right fun tile: line segments between logged points,
+🚐 emoji on the latest, dotted extrapolation to trip end.
+Andrew + Abi use avatar photos; Hayoung + Keunwoo use letter chips
+until real photos land.
+
+**Original design notes below (kept for future reference):**
+
 
 - **Wager:** three people (Andrew, Abi, +1 friend? +2?) each guessed
   a total Dunkin' count for the whole trip. Along the way we log the
