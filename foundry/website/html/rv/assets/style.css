@@ -953,9 +953,12 @@ a { color: var(--accent); }
 }
 .fun-tile-title {
   font-family: var(--font-serif);
-  font-size: 1.15rem;
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 700;
   margin: 0;
-  color: var(--ink);
+  color: var(--accent);
+  letter-spacing: 0.2px;
 }
 .fun-tile-cta {
   font-size: 1.05rem;
@@ -988,27 +991,34 @@ a { color: var(--accent); }
 .fun-tile-placeholder-emoji { font-size: 1.6rem; margin: 0 0 6px; }
 .fun-tile-placeholder-text { margin: 0; font-style: italic; font-size: 0.9rem; }
 
-/* Dunkin' tile — chart + branded header. */
+/* Dunkin' tile — chart + branded header. Inherits the standard
+   .fun-tile-title look; individual DD letters override the font
+   below so only the wordmark stays branded. */
 .fun-tile-dunkin .fun-tile-title {
-  font-family: Impact, "Franklin Gothic Bold", "Arial Black", sans-serif;
-  letter-spacing: -0.5px;
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
 }
 .dunkin-word-d {
+  font-family: Impact, "Franklin Gothic Bold", "Arial Black", sans-serif;
+  font-style: normal;
   font-size: 1.5rem;
   color: #FF6720;
   font-weight: 900;
   line-height: 1;
+  letter-spacing: -0.5px;
 }
 .dunkin-word-d2 { color: #DA1884; margin-left: -8px; }
 .dunkin-title-rest {
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  letter-spacing: 0;
-  color: var(--ink);
-  font-weight: 500;
+  /* Inherit the fun-tile-title serif+italic+accent-green look so the
+     "sightings" span reads consistently with other tile titles like
+     "Give us some tunes!" — only the leading DD stays branded. */
+  font-family: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: inherit;
   margin-left: 3px;
 }
 .dunkin-latest-badge {
