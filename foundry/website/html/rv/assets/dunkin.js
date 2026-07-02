@@ -81,7 +81,15 @@
       const r = await fetch(API_URL, { credentials: "include" });
       if (!r.ok) return;
       const data = await r.json();
-      logs = data.logs || [];
+      const raw = data.logs || [];
+      // Filter out pre-trip logs (test clicks, warm-ups). The trip
+      // hasn't started until TRIP_START, so anything before that is
+      // noise for the chart AND the counter. Renumber the surviving
+      // rows 1..N so the line starts at (tripStart, 0) → (firstLog, 1)
+      // instead of jumping to whatever count the pre-trip clicks left.
+      logs = raw
+        .filter(l => parseDate(l.created_at).getTime() >= tripStartMs)
+        .map((l, i) => ({ ...l, count: i + 1 }));
       updateBadge();
       updateHeaderCount();
       renderChart();
