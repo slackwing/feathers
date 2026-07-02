@@ -26,12 +26,13 @@
   // showing the first character of the name; add `src` to a
   // participant to use a photo instead.
   const PARTICIPANTS = [
-    { id: "andrew",  name: "Andrew",  guess: 43, color: "#FF6720", src: "assets/photos/andrew-avatar.jpg" },
-    { id: "abi",     name: "Abi",     guess: 56, color: "#DA1884", src: "assets/photos/abi-avatar.jpg" },
-    { id: "hayoung", name: "Hayoung", guess: 30, color: "#4a7fa0" },
-    { id: "keunwoo", name: "Keunwoo", guess: 85, color: "#2f8a6e" },
-    { id: "kimmy",   name: "Kimmy",   guess: 26, color: "#a05fb0" },
-    { id: "tina",    name: "Tina",    guess: 47, color: "#e6a12b" },
+    { id: "andrew",   name: "Andrew",    guess: 43, color: "#FF6720", src: "assets/photos/andrew-avatar.jpg" },
+    { id: "abi",      name: "Abi",       guess: 56, color: "#DA1884", src: "assets/photos/abi-avatar.jpg" },
+    { id: "hayoung",  name: "Hayoung",   guess: 30, color: "#4a7fa0" },
+    { id: "keunwoo",  name: "Keunwoo",   guess: 85, color: "#2f8a6e" },
+    { id: "kimmy",    name: "Kimmy",     guess: 26, color: "#a05fb0" },
+    { id: "tina",     name: "Tina",      guess: 47, color: "#e6a12b" },
+    { id: "zongling", name: "Zong Ling", guess: 40, color: "#5b8bc9" },
   ];
 
   // ----- DOM refs -----
