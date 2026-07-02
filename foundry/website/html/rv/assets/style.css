@@ -936,7 +936,7 @@ a { color: var(--accent); }
   .fun-grid { grid-template-columns: 1fr 1fr; }
 }
 .fun-tile {
-  background: var(--card);
+  background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px 16px 16px;
@@ -1002,7 +1002,7 @@ a { color: var(--accent); }
   font-weight: 900;
   line-height: 1;
 }
-.dunkin-word-d2 { color: #DA1884; margin-left: -3px; }
+.dunkin-word-d2 { color: #DA1884; margin-left: -8px; }
 .dunkin-title-rest {
   font-family: var(--font-serif);
   font-size: 1.05rem;

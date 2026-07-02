@@ -130,28 +130,97 @@
   function pickYMax() {
     const maxGuess = Math.max(...PARTICIPANTS.map(p => p.guess));
     const maxLog = currentCount();
-    // Extrapolation could exceed maxGuess — include it in the bound.
-    const extrap = extrapolationValue();
-    return Math.max(maxGuess, maxLog, extrap || 0, 20) + 5;
+    // Extrapolations could exceed maxGuess — include them in the bound.
+    const lin = linearProjection(tripEndMs);
+    const quad = quadraticProjection(tripEndMs);
+    return Math.max(maxGuess, maxLog, lin || 0, quad || 0, 20) + 5;
   }
 
   function yForCount(count, yMax) {
     return M.top + PLOT_H * (1 - count / yMax);
   }
 
-  function extrapolationValue() {
-    // Linear extrapolation from the latest log to trip end using
-    // avg-per-day-so-far × days-remaining, added to current count.
+  // ----- Projection math -----
+  //
+  // Both projections treat the count as a function of *days since
+  // trip start* so the units are intuitive. We anchor at the most
+  // recent log so the curve visually continues from the data — a
+  // straight line for the linear projection, a parabola for the
+  // quadratic. The area between them fills as an "uncertainty cone."
+
+  // Days-since-trip-start for a timestamp. Clamped ≥ 0 so pre-trip
+  // logs don't yield negative "day 0."
+  function daysSinceStart(ms) {
+    return Math.max(0, (ms - tripStartMs) / MS_PER_DAY);
+  }
+
+  // Latest logged (day, count) — the anchor for both projections.
+  function anchorPoint() {
     if (!logs.length) return null;
-    const first = parseDate(logs[0].created_at).getTime();
-    const last  = parseDate(logs[logs.length - 1].created_at).getTime();
-    // If all logs occurred before trip start, anchor at trip start.
-    const anchor = Math.max(first, tripStartMs);
-    const now = last;
-    const daysSoFar = Math.max(1, (now - anchor) / MS_PER_DAY);
-    const perDay = currentCount() / daysSoFar;
-    const daysRemaining = Math.max(0, (tripEndMs - now) / MS_PER_DAY);
-    return currentCount() + perDay * daysRemaining;
+    const last = logs[logs.length - 1];
+    return {
+      t: parseDate(last.created_at).getTime(),
+      d: daysSinceStart(parseDate(last.created_at).getTime()),
+      c: last.count,
+    };
+  }
+
+  // Linear = "constant rate" projection.
+  //   rate = current_count / days_elapsed_at_last_log
+  //   count(t) = current_count + rate * (days_from_last_log)
+  // Returns the projected count at the given target timestamp, or
+  // null if we don't have any data yet.
+  function linearProjection(ms) {
+    if (!logs.length) return null;
+    const a = anchorPoint();
+    if (a.d <= 0) return a.c; // pre-trip log — nothing to extrapolate from
+    const rate = a.c / a.d;
+    const targetDays = daysSinceStart(ms);
+    return Math.max(0, a.c + rate * (targetDays - a.d));
+  }
+
+  // Quadratic = "with acceleration" projection.
+  //   Fit count(d) = a·d² + b·d through the log points (least
+  //   squares, zero intercept so d=0 gives count=0).
+  //   Returns null if we don't have ≥2 logs (need at least two to
+  //   distinguish curvature from a straight line).
+  //
+  // The zero-intercept form is what makes this natural for a
+  // running counter: at trip start we've seen zero. It also keeps
+  // the closed-form solve to a 2x2 system.
+  function fitQuadratic() {
+    if (logs.length < 2) return null;
+    // Sample points: (d_i, c_i) for each log, plus (0, 0) at trip
+    // start so the fit is grounded. The trip-start point helps a lot
+    // when logs are sparse.
+    const pts = [{ d: 0, c: 0 }];
+    for (const l of logs) {
+      pts.push({ d: daysSinceStart(parseDate(l.created_at).getTime()), c: l.count });
+    }
+    // Solve min Σ (a·d² + b·d − c)². Normal equations:
+    //   [Σd⁴  Σd³] [a] = [Σd²·c]
+    //   [Σd³  Σd²] [b]   [Σd·c ]
+    let s2 = 0, s3 = 0, s4 = 0, sd2c = 0, sdc = 0;
+    for (const { d, c } of pts) {
+      const d2 = d * d;
+      s2 += d2;
+      s3 += d2 * d;
+      s4 += d2 * d2;
+      sd2c += d2 * c;
+      sdc  += d  * c;
+    }
+    const det = s4 * s2 - s3 * s3;
+    if (Math.abs(det) < 1e-9) return null; // degenerate (all logs at same day)
+    const a = (sd2c * s2 - sdc * s3) / det;
+    const b = (s4 * sdc - s3 * sd2c) / det;
+    return { a, b };
+  }
+
+  function quadraticProjection(ms) {
+    const fit = fitQuadratic();
+    if (!fit) return null;
+    const d = daysSinceStart(ms);
+    return Math.max(0, fit.a * d * d + fit.b * d);
   }
 
   function renderChart() {
@@ -217,18 +286,86 @@
       }).join(" ");
       out += `<path d="${pathD}" fill="none" stroke="#FF6720" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
 
-      // ----- Dotted extrapolation from latest point → trip end -----
-      const extrap = extrapolationValue();
-      if (extrap != null && logs.length >= 1) {
+      // ----- Extrapolation: linear + quadratic + uncertainty band -----
+      //
+      // Both curves start at the LATEST logged point and run to trip
+      // end. The linear line is the "constant rate" projection; the
+      // quadratic is fit through all logs so acceleration / deceleration
+      // shows as curvature. The area between them fills as an
+      // "uncertainty cone" — the wider the band, the less confident
+      // we should be about the trip-end total.
+      //
+      // Gated:
+      //   0 logs  → no extrapolation (nothing to project from)
+      //   1 log   → linear only (quadratic fit needs ≥2 real points)
+      //   ≥2 logs → linear + quadratic + shaded band between them
+      if (logs.length >= 1) {
         const lastPt = pts[pts.length - 1];
         const x0 = xForDate(lastPt.t);
         const y0 = yForCount(lastPt.c, yMax);
+
+        // Sample the two projections at ~1-day steps from the latest
+        // point through trip end. Store both as (x, yLinear, yQuad)
+        // arrays for easy band drawing.
+        const linSamples = [];
+        const quadSamples = [];
+        const fit = fitQuadratic();
+        const stepMs = MS_PER_DAY / 2;
+        for (let t = lastPt.t; t <= tripEndMs; t += stepMs) {
+          const x = xForDate(t);
+          const cLin = linearProjection(t);
+          if (cLin != null) linSamples.push({ x, y: yForCount(Math.min(cLin, yMax * 1.1), yMax) });
+          if (fit) {
+            const cQuad = quadraticProjection(t);
+            quadSamples.push({ x, y: yForCount(Math.min(cQuad, yMax * 1.1), yMax) });
+          }
+        }
+        // Always include the trip-end sample exactly.
+        {
+          const x = xForDate(tripEndMs);
+          const cLin = linearProjection(tripEndMs);
+          if (cLin != null) linSamples.push({ x, y: yForCount(Math.min(cLin, yMax * 1.1), yMax) });
+          if (fit) {
+            const cQuad = quadraticProjection(tripEndMs);
+            quadSamples.push({ x, y: yForCount(Math.min(cQuad, yMax * 1.1), yMax) });
+          }
+        }
+
+        // Shaded uncertainty band between the two curves. Only if we
+        // have both. Path = linear forward, then quadratic reverse.
+        if (fit && linSamples.length && quadSamples.length) {
+          const fwd = linSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          const rev = quadSamples.slice().reverse().map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          const bandD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ${fwd} ${rev} Z`;
+          out += `<path d="${bandD}" fill="#FF6720" fill-opacity="0.13" stroke="none"/>`;
+        }
+
+        // Linear line — dotted.
+        if (linSamples.length) {
+          const linD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ` +
+                       linSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          out += `<path d="${linD}" fill="none" stroke="#FF6720" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="4,4"/>`;
+        }
+
+        // Quadratic curve — dashed, slightly heavier so the "with
+        // acceleration" story reads.
+        if (fit && quadSamples.length) {
+          const quadD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ` +
+                       quadSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          out += `<path d="${quadD}" fill="none" stroke="#DA1884" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="2,3"/>`;
+        }
+
+        // End-of-trip label. Show both projected values if we have
+        // both curves; else just the linear.
+        const lin = linearProjection(tripEndMs);
+        const quad = quadraticProjection(tripEndMs);
         const x1 = xForDate(tripEndMs);
-        const y1 = yForCount(Math.min(extrap, yMax * 1.1), yMax);
-        out += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#FF6720" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="4,4"/>`;
-        // Small label at the extrapolation end: "→ ~N"
-        const label = `~${Math.round(extrap)}`;
-        out += `<text x="${(x1 - 3).toFixed(1)}" y="${(y1 - 4).toFixed(1)}" font-size="10" text-anchor="end" fill="#FF6720" font-weight="700" font-family="system-ui,sans-serif">${label}</text>`;
+        if (lin != null) {
+          let label = `~${Math.round(lin)}`;
+          if (quad != null) label = `${Math.round(Math.min(lin, quad))}–${Math.round(Math.max(lin, quad))}`;
+          const yEnd = yForCount(Math.min(lin, yMax * 1.1), yMax);
+          out += `<text x="${(x1 - 3).toFixed(1)}" y="${(yEnd - 4).toFixed(1)}" font-size="10" text-anchor="end" fill="#FF6720" font-weight="700" font-family="system-ui,sans-serif">${label}</text>`;
+        }
       }
 
       // ----- Latest = 🚐 emoji -----
