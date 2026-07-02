@@ -18,14 +18,15 @@
   const TRIP_START = "2026-07-05";
   const TRIP_END = "2026-07-22";
 
-  // Participants — order controls y-axis avatar stacking priority when
-  // labels collide. Avatars: real photos for Andrew + Abi, letter
-  // circles for Hayoung + Keunwoo until we have photos.
+  // Participants — order controls y-axis avatar stacking priority
+  // when guesses collide. Default avatar is a colored letter chip
+  // showing the first character of the name; add `src` to a
+  // participant to use a photo instead.
   const PARTICIPANTS = [
-    { id: "andrew",  name: "Andrew",  guess: 43, kind: "photo", src: "assets/photos/andrew-avatar.jpg", color: "#FF6720" },
-    { id: "abi",     name: "Abi",    guess: 48, kind: "photo", src: "assets/photos/abi-avatar.jpg",     color: "#DA1884" },
-    { id: "hayoung", name: "Hayoung", guess: 30, kind: "initial", initial: "H",                          color: "#4a7fa0" },
-    { id: "keunwoo", name: "Keunwoo", guess: 85, kind: "initial", initial: "K",                          color: "#2f8a6e" },
+    { id: "andrew",  name: "Andrew",  guess: 43, color: "#FF6720" },
+    { id: "abi",     name: "Abi",     guess: 48, color: "#DA1884" },
+    { id: "hayoung", name: "Hayoung", guess: 30, color: "#4a7fa0" },
+    { id: "keunwoo", name: "Keunwoo", guess: 85, color: "#2f8a6e" },
   ];
 
   // ----- DOM refs -----
@@ -33,7 +34,16 @@
   const btnCount = document.getElementById("hero-dunkin-count");
   const badge = document.getElementById("dunkin-latest-badge");
   const svg = document.getElementById("dunkin-chart");
+  const betCountEl = document.getElementById("dunkin-bet-count");
   if (!svg) return;
+
+  // Fill in the "N bets" word — spelled out for small counts so the
+  // blurb reads like prose. Falls back to the digit above 12.
+  const NUM_WORDS = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve"];
+  function betCountWord(n) {
+    return NUM_WORDS[n] != null ? NUM_WORDS[n] : String(n);
+  }
+  if (betCountEl) betCountEl.textContent = betCountWord(PARTICIPANTS.length);
 
   // ----- Auth-driven button visibility -----
   function applyAuthUI() {
@@ -127,13 +137,27 @@
     return M.left + PLOT_W * (clamped - tripStartMs) / (tripEndMs - tripStartMs);
   }
 
+  // Round a raw value up to the next gridline. Grid step follows the
+  // same rule renderChart uses so the axis top always lands on a
+  // labeled tick — i.e. one tick above the highest guess.
+  function chooseGridStep(rawMax) {
+    if (rawMax > 80) return 20;
+    if (rawMax > 40) return 10;
+    return 5;
+  }
   function pickYMax() {
     const maxGuess = Math.max(...PARTICIPANTS.map(p => p.guess));
     const maxLog = currentCount();
-    // Extrapolations could exceed maxGuess — include them in the bound.
+    // Extrapolations could exceed maxGuess — include them in the bound
+    // when picking the step, so we don't clip the projected curve.
     const lin = linearProjection(tripEndMs);
     const quad = quadraticProjection(tripEndMs);
-    return Math.max(maxGuess, maxLog, lin || 0, quad || 0, 20) + 5;
+    const raw = Math.max(maxGuess, maxLog, lin || 0, quad || 0, 20);
+    const step = chooseGridStep(raw);
+    // One tick above the highest data point. If maxGuess is exactly on
+    // a step boundary, still bump by one full step so the guess dashed
+    // line has breathing room above it.
+    return Math.ceil((raw + 1) / step) * step;
   }
 
   function yForCount(count, yMax) {
@@ -229,7 +253,7 @@
     let out = "";
 
     // ----- Y-axis gridlines every ~20 units (light) -----
-    const gridStep = yMax > 80 ? 20 : (yMax > 40 ? 10 : 5);
+    const gridStep = chooseGridStep(yMax);
     for (let v = 0; v <= yMax; v += gridStep) {
       const y = yForCount(v, yMax);
       out += `<line x1="${M.left}" y1="${y.toFixed(1)}" x2="${M.left + PLOT_W}" y2="${y.toFixed(1)}" stroke="#eef1ef" stroke-width="1"/>`;
@@ -355,17 +379,6 @@
           out += `<path d="${quadD}" fill="none" stroke="#DA1884" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="2,3"/>`;
         }
 
-        // End-of-trip label. Show both projected values if we have
-        // both curves; else just the linear.
-        const lin = linearProjection(tripEndMs);
-        const quad = quadraticProjection(tripEndMs);
-        const x1 = xForDate(tripEndMs);
-        if (lin != null) {
-          let label = `~${Math.round(lin)}`;
-          if (quad != null) label = `${Math.round(Math.min(lin, quad))}–${Math.round(Math.max(lin, quad))}`;
-          const yEnd = yForCount(Math.min(lin, yMax * 1.1), yMax);
-          out += `<text x="${(x1 - 3).toFixed(1)}" y="${(yEnd - 4).toFixed(1)}" font-size="10" text-anchor="end" fill="#FF6720" font-weight="700" font-family="system-ui,sans-serif">${label}</text>`;
-        }
       }
 
       // ----- Latest = 🚐 emoji -----
@@ -396,16 +409,18 @@
       // Connector line from the guess-line's right end to the avatar.
       const guessY = yForCount(p.guess, yMax);
       out += `<line x1="${(M.left + PLOT_W).toFixed(1)}" y1="${guessY.toFixed(1)}" x2="${(avX - AV_R).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.color}" stroke-opacity="0.45" stroke-width="1"/>`;
-      if (p.kind === "photo") {
-        // Circular photo via clip-path.
+      if (p.src) {
+        // Circular photo via clip-path (opt-in via participant.src).
         const clipId = `dunkin-clip-${p.id}`;
         out += `<defs><clipPath id="${clipId}"><circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}"/></clipPath></defs>`;
         out += `<image href="${esc(p.src)}" x="${(avX - AV_R).toFixed(1)}" y="${(y - AV_R).toFixed(1)}" width="${(AV_R * 2).toFixed(1)}" height="${(AV_R * 2).toFixed(1)}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>`;
         out += `<circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}" fill="none" stroke="${p.color}" stroke-width="2"/>`;
       } else {
-        // Colored letter chip.
+        // Default: first-letter chip in participant's color. Mouseover
+        // (<title> above) shows the full name.
+        const letter = (p.name || "?").charAt(0).toUpperCase();
         out += `<circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}" fill="${p.color}" stroke="white" stroke-width="1.5"/>`;
-        out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif">${p.initial}</text>`;
+        out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif">${esc(letter)}</text>`;
       }
       out += `</g>`;
     }

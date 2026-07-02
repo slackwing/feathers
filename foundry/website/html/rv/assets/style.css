@@ -1027,6 +1027,14 @@ a { color: var(--accent); }
   height: 100%;
   display: block;
 }
+/* Blurb sits below the chart on the dunkin tile — no top margin from
+   the standard .fun-tile-lede because the chart already breathes. */
+.fun-tile-dunkin .dunkin-blurb {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.fun-tile-dunkin .dunkin-blurb strong { color: var(--ink); }
 
 /* ===================== ROUTE MAP V2 ===================== */
 .route-map-v2-section {
