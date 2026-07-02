@@ -197,7 +197,11 @@
   }
 
   // Initial view: on mobile, zoom into the first leg (SD → Tucson → White
-  // Sands) vertically centered. On desktop, fit the whole route.
+  // Sands) vertically centered. On desktop, fit the WHOLE MAIN ROUTE
+  // (San Diego → New York City), not the full world bbox. The world
+  // bbox includes far off-route locations (Cloudcroft, Cabela's, etc.)
+  // that were pulling the initial zoom-out so wide that the route
+  // endpoints hung off the canvas.
   let scale, offsetX, offsetY;
   function setInitialView() {
     if (isMobile()) {
@@ -209,6 +213,15 @@
         return;
       }
     }
+    // Desktop: frame the route[] nodes so SD → NYC are guaranteed visible.
+    const routeFramed = frameNodes(mapData.route || []);
+    if (routeFramed) {
+      scale = routeFramed.scale;
+      offsetX = routeFramed.offsetX;
+      offsetY = routeFramed.offsetY;
+      return;
+    }
+    // Fallback (shouldn't happen if map.json has a route[]).
     scale = fitScale();
     offsetX = (viewportW - worldW * scale) / 2 - worldXMin * scale;
     offsetY = (viewportH - worldH * scale) / 2 - worldYMin * scale;
