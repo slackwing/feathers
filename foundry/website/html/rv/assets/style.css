@@ -946,6 +946,10 @@ a { color: var(--accent); }
   flex-direction: column;
   min-width: 0;
 }
+/* The base `display: flex` overrides the UA stylesheet's
+   `[hidden] { display: none }`, so tiles that use the `hidden`
+   attribute for auth-gating need this re-assertion. */
+.fun-tile[hidden] { display: none; }
 .fun-tile-header {
   display: flex;
   align-items: baseline;
