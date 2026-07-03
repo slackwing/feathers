@@ -46,9 +46,12 @@
   // ----- Init canvas backing store to match display size at DPR. The
   // logical coordinate space stays fixed at W×H so points are portable
   // between devices; we scale the render context to map logical → CSS
-  // pixels × DPR. -----
+  // pixels × DPR. Returns true if the canvas has laid out (width>0),
+  // false if it hasn't yet — the caller should retry once layout
+  // completes. -----
   function resizeBacking() {
     const rect = canvas.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return false;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
@@ -58,6 +61,7 @@
     ctx.scale((rect.width * dpr) / W, (rect.height * dpr) / H);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    return true;
   }
 
   // ----- Paint a single stroke onto the current context. Works for
@@ -179,6 +183,9 @@
       const strokes = data.strokes || [];
       for (const s of strokes) {
         if (s.created_at_ms > sinceMs) sinceMs = s.created_at_ms;
+        // Keep the full history so device rotations / late layout
+        // can repaint from cache. Idempotent on repeat ids.
+        strokeHistory.set(s.id, s);
         if (localAcked.has(s.id)) {
           localAcked.delete(s.id); // GC
           continue;
@@ -192,6 +199,22 @@
     } catch (_) { /* silent — retry next tick */ }
   }
 
+  // Cache of every stroke ever painted, keyed by id. Lets us repaint
+  // the full history when the canvas resizes (device rotation, iPad
+  // late-layout, etc.) without re-fetching from the server.
+  const strokeHistory = new Map();
+
+  function repaintAll() {
+    if (!resizeBacking()) return;
+    ctx.clearRect(0, 0, W, H);
+    const sorted = Array.from(strokeHistory.values())
+      .sort((a, b) => (a.created_at_ms || 0) - (b.created_at_ms || 0));
+    for (const s of sorted) {
+      const payload = typeof s.stroke === "string" ? JSON.parse(s.stroke) : s.stroke;
+      paintStroke(payload);
+    }
+  }
+
   // ----- Initial load: fetch canvas metadata + full stroke history
   // and paint. Sets sinceMs to the timestamp of the last painted
   // stroke so the polling loop only fetches new work. -----
@@ -203,19 +226,37 @@
         const meta = await cRes.json();
         W = meta.width || W;
         H = meta.height || H;
-        // Set aspect-ratio dynamically so it matches server config.
+        // Set aspect-ratio dynamically so it matches server config
+        // (browsers that don't know aspect-ratio will ignore it and
+        // fall back to the padding-top: 37.5% hack in CSS).
         canvas.parentElement.style.aspectRatio = `${W} / ${H}`;
       }
-      resizeBacking();
       const sRes = await fetch(STROKES_URL + "?since=0", { credentials: "include" });
       if (sRes.ok) {
         const data = await sRes.json();
         const strokes = data.strokes || [];
         for (const s of strokes) {
           if (s.created_at_ms > sinceMs) sinceMs = s.created_at_ms;
-          const payload = typeof s.stroke === "string" ? JSON.parse(s.stroke) : s.stroke;
-          paintStroke(payload);
+          strokeHistory.set(s.id, s);
         }
+      }
+      // Try to paint. If layout hasn't settled (iPad Safari sometimes
+      // fires our script before the wrap has real dimensions), a
+      // ResizeObserver picks up the first non-zero size and paints.
+      if (!resizeBacking()) {
+        const ro = new ResizeObserver((entries) => {
+          for (const e of entries) {
+            const cr = e.contentRect;
+            if (cr.width >= 1 && cr.height >= 1) {
+              ro.disconnect();
+              repaintAll();
+              break;
+            }
+          }
+        });
+        ro.observe(canvas.parentElement);
+      } else {
+        repaintAll();
       }
       setStatus("live");
     } catch (_) {
@@ -256,21 +297,18 @@
     if (currentStroke) endStroke(e);
   });
 
-  // ----- Resize handling: on window resize, re-fit the backing store.
-  // We DON'T repaint from history here to avoid a network round trip;
-  // instead, we save the current image, resize, and blit it back at
-  // the new resolution. Slight quality hit on aggressive resizes but
-  // free of races. -----
+  // ----- Resize handling: on window resize (or iPad rotation) repaint
+  // the whole board from the in-memory history. That's crisper than
+  // blitting a bitmap snapshot and it's free since we already have
+  // every stroke cached. -----
   let resizeTO = null;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTO);
-    resizeTO = setTimeout(() => {
-      const snapshot = canvas.toDataURL();
-      resizeBacking();
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, W, H);
-      img.src = snapshot;
-    }, 150);
+    resizeTO = setTimeout(repaintAll, 150);
+  });
+  window.addEventListener("orientationchange", () => {
+    clearTimeout(resizeTO);
+    resizeTO = setTimeout(repaintAll, 200);
   });
 
   // ----- Kick off -----

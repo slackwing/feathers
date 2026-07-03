@@ -1145,16 +1145,27 @@ a { color: var(--accent); }
 /* The wrap is the "sheet of paper" — sharp corners, subtle drop
    shadow so it looks like a page sitting on top of the mint site
    background. The ruled/margin/hole detail is all painted inside
-   .draw-paper below. */
+   .draw-paper below.
+
+   iOS Safari < 15.4 doesn't support `aspect-ratio`, which collapsed
+   the whole tile on Abi's iPad. The padding-top hack (300/800 = 37.5%
+   of the width) gives us the same shape everywhere; modern browsers
+   still honor `aspect-ratio` on top for cleaner box math. */
 .draw-canvas-wrap {
   position: relative;
   width: 100%;
+  padding-top: 37.5%;                  /* 300 / 800 aspect */
   border: 1px solid #d0d0d0;
   background: #fdfdf7;
-  aspect-ratio: 800 / 300;
   box-shadow:
     0 2px 4px rgba(0,0,0,0.08),
     0 6px 16px rgba(0,0,0,0.10);
+}
+@supports (aspect-ratio: 1) {
+  .draw-canvas-wrap {
+    padding-top: 0;
+    aspect-ratio: 800 / 300;
+  }
 }
 /* Ruled paper background sits BEHIND the canvas so the ink lands on
    top of the rules. Red vertical margin at ~9.5% in, horizontal blue
