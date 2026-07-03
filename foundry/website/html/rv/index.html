@@ -193,10 +193,11 @@
         <button type="button" class="draw-tool-btn" id="draw-eraser" data-tool="eraser" aria-pressed="false" title="Eraser">🧽</button>
       </div>
       <div class="draw-canvas-wrap">
-        <!-- The paper background (rules + red margin + holes) is
-             drawn in CSS below the canvas so it's always visible,
-             even before/underneath the ink. -->
-        <div class="draw-paper" aria-hidden="true"></div>
+        <!-- Blue rules are painted directly on the wrap via CSS. The
+             red margin line + three hole punches are injected by
+             draw.js as plain DOM elements (below) so old iPad Safari
+             doesn't have to lean on pseudo-elements + gradient calc()
+             + inset: 0 quirks. -->
         <canvas id="draw-canvas" class="draw-canvas"></canvas>
       </div>
     </article>

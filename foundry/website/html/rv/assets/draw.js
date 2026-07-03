@@ -37,15 +37,21 @@
   // event listeners land until we've confirmed we're logged in.
   function bootstrap() {
 
-  // Inject the middle hole punch into the paper background. CSS's
-  // pseudo-elements only give us two slots (::before, ::after), so
-  // the middle hole is a real element added here to keep the
-  // markup file clean.
-  const paperEl = document.querySelector(".fun-tile-draw .draw-paper");
-  if (paperEl && !paperEl.querySelector(".draw-paper-middle-hole")) {
-    const midHole = document.createElement("span");
-    midHole.className = "draw-paper-middle-hole";
-    paperEl.appendChild(midHole);
+  // Inject the red margin line + three hole punches into the wrap
+  // as real DOM elements. Chosen over CSS pseudo-elements because
+  // old iPad Safari has intermittent issues with `inset: 0` +
+  // `::before/::after` on nested absolute containers; plain <div>s
+  // are the safest thing you can hand it.
+  const wrapEl = document.querySelector(".fun-tile-draw .draw-canvas-wrap");
+  if (wrapEl && !wrapEl.querySelector(".draw-margin-line")) {
+    const ml = document.createElement("div");
+    ml.className = "draw-margin-line";
+    wrapEl.insertBefore(ml, wrapEl.firstChild);
+    for (const pos of ["top", "middle", "bottom"]) {
+      const h = document.createElement("div");
+      h.className = "draw-hole draw-hole-" + pos;
+      wrapEl.insertBefore(h, wrapEl.firstChild);
+    }
   }
   const statusEl = document.getElementById("draw-status");
   const colorInput = document.getElementById("draw-color");
