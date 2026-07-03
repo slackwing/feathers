@@ -1414,6 +1414,11 @@
   }
 
   function handleMapClick(sx, sy) {
+    // Only logged-in users can open map modals. Anonymous visitors
+    // still see the map and pan/zoom it, but clicks are inert — no
+    // "Add a stop here" menus and no location edit affordances.
+    const canEdit = !!window.rvAuthUser;
+    if (!canEdit) return;
     const locHits = findLocationHits(sx, sy);
     if (locHits.length === 1) { openLocationModal(locHits[0]); return; }
     if (locHits.length > 1) { openDisambiguationModal(locHits); return; }
