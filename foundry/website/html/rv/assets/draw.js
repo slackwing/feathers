@@ -12,30 +12,8 @@
   const POLL_INTERVAL_MS = 3000;
 
   const canvas = document.getElementById("draw-canvas");
-  const tileEl = document.getElementById("fun-tile-draw");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-
-  // Temporary auth gate — hide the whole tile until we're logged in.
-  // Prevents anon visitors from seeing the currently-broken-on-Safari
-  // widget while we iterate on a fix.
-  let initialized = false;
-  function applyGate() {
-    const loggedIn = !!window.rvAuthUser;
-    if (tileEl) tileEl.hidden = !loggedIn;
-    if (loggedIn && !initialized) {
-      initialized = true;
-      bootstrap();
-    }
-  }
-  window.addEventListener("rv:auth-resolved", applyGate);
-  window.addEventListener("rv:auth-change", applyGate);
-  // In case auth already resolved by the time this script runs.
-  applyGate();
-
-  // Everything below runs inside bootstrap() so no DOM queries or
-  // event listeners land until we've confirmed we're logged in.
-  function bootstrap() {
 
   // Inject the red margin line + three hole punches into the wrap
   // as real DOM elements. Chosen over CSS pseudo-elements because
@@ -62,7 +40,7 @@
   let W = 800, H = 300;              // logical canvas coordinate space (matches DB)
   let tool = "pen";                   // "pen" | "eraser"
   let color = colorInput.value;
-  let radius = 6;
+  let radius = 1;
   let currentStroke = null;           // { tool, color, radius, points: [[x,y]...] }
   let sinceMs = 0;                    // cursor for polling
   let localAcked = new Set();         // stroke ids we already own — avoid double-paint on poll
@@ -343,6 +321,4 @@
   initialLoad().then(() => {
     setInterval(pollStrokes, POLL_INTERVAL_MS);
   });
-
-  } // end bootstrap()
 })();
