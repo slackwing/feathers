@@ -15,10 +15,11 @@
   const API_URL = "/rv/api/dunkin";
 
   // ----- Trip constants (kept local — cheap enough to hard-code) -----
-  // Trip officially starts the minute we land at SAN — Sun 2:27 PM PDT
-  // (Pacific is UTC-7 in July). Seed rows filter out and the counter
-  // resets to 0 at that instant.
-  const TRIP_START = "2026-07-05T21:27:00Z";
+  // Trip officially starts when we leave for JFK — Sun 8 AM ET
+  // (Eastern is UTC-4 in July). Bets lock and the counter resets to
+  // 0 at that instant; seed rows filter out and any real clicks
+  // logged after that timestamp become the live chart.
+  const TRIP_START = "2026-07-05T12:00:00Z";
   const TRIP_END = "2026-07-22";
 
   // Participants — order controls y-axis avatar stacking priority
