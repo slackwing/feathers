@@ -25,15 +25,14 @@
   // when guesses collide. Default avatar is a colored letter chip
   // showing the first character of the name; add `src` to a
   // participant to use a photo instead.
-  const PARTICIPANTS = [
-    { id: "andrew",   name: "Andrew",    guess: 43, color: "#FF6720", src: "assets/photos/andrew-avatar.jpg" },
-    { id: "abi",      name: "Abi",       guess: 56, color: "#DA1884", src: "assets/photos/abi-avatar.jpg" },
-    { id: "hayoung",  name: "Hayoung",   guess: 30, color: "#4a7fa0" },
-    { id: "keunwoo",  name: "Keunwoo",   guess: 85, color: "#2f8a6e" },
-    { id: "kimmy",    name: "Kimmy",     guess: 26, color: "#a05fb0" },
-    { id: "tina",     name: "Tina",      guess: 47, color: "#e6a12b" },
-    { id: "zongling", name: "Zong Ling", guess: 40, color: "#5b8bc9" },
-  ];
+  // Participants come from the DB (see /rv/api/dunkin/participants +
+  // admin.html). Photos are keyed by id here since they're static
+  // assets, not user data.
+  const PARTICIPANT_PHOTOS = {
+    andrew: "assets/photos/andrew-avatar.jpg",
+    abi:    "assets/photos/abi-avatar.jpg",
+  };
+  let PARTICIPANTS = [];
 
   // ----- DOM refs -----
   const btn = document.getElementById("hero-dunkin-btn");
@@ -44,12 +43,15 @@
   if (!svg) return;
 
   // Fill in the "N bets" word — spelled out for small counts so the
-  // blurb reads like prose. Falls back to the digit above 12.
+  // blurb reads like prose. Falls back to the digit above 12. Runs
+  // after loadParticipants() populates the array.
   const NUM_WORDS = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve"];
   function betCountWord(n) {
     return NUM_WORDS[n] != null ? NUM_WORDS[n] : String(n);
   }
-  if (betCountEl) betCountEl.textContent = betCountWord(PARTICIPANTS.length);
+  function updateBetCount() {
+    if (betCountEl) betCountEl.textContent = betCountWord(PARTICIPANTS.length);
+  }
 
   // ----- Auth-driven button visibility -----
   function applyAuthUI() {
@@ -83,8 +85,20 @@
   }
 
   // ----- Data fetch -----
+  async function loadParticipants() {
+    try {
+      const r = await fetch(API_URL + "/participants", { credentials: "include" });
+      if (!r.ok) return;
+      const data = await r.json();
+      PARTICIPANTS = (data.participants || []).map(p => ({
+        ...p,
+        src: PARTICIPANT_PHOTOS[p.id] || null,
+      }));
+    } catch (_) { /* keep whatever we had */ }
+  }
   async function loadLogs() {
     try {
+      await loadParticipants();
       const r = await fetch(API_URL, { credentials: "include" });
       if (!r.ok) return;
       const data = await r.json();
@@ -101,6 +115,7 @@
       // (firstLog, 1). Server counts are historical bookkeeping;
       // the chart's y-axis is always "sightings in this active set."
       logs = active.map((l, i) => ({ ...l, count: i + 1 }));
+      updateBetCount();
       updateBadge();
       updateHeaderCount();
       renderChart();
