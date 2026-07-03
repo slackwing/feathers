@@ -182,7 +182,7 @@
   // multiple guesses cluster (e.g., low 40s to high 40s), the pins
   // stack tight but the connector lines fan out to their exact y.
   const M = { top: 14, right: 84, bottom: 30, left: 34 };
-  const CHART_W = 400, CHART_H = 260;
+  const CHART_W = 400, CHART_H = 312;
   const PLOT_W = CHART_W - M.left - M.right;
   const PLOT_H = CHART_H - M.top - M.bottom;
 
