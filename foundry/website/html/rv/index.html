@@ -153,8 +153,12 @@
     </article>
 
     <!-- Tile: shared free-draw canvas. Public read + public write
-         with a per-IP rate limit on the server. See assets/draw.js. -->
-    <article class="fun-tile fun-tile-draw">
+         with a per-IP rate limit on the server. See assets/draw.js.
+
+         Temporarily gated to logged-in users only while we chase a
+         rendering bug on iPad Safari. Draw.js flips `hidden` off when
+         window.rvAuthUser resolves truthy. -->
+    <article class="fun-tile fun-tile-draw" id="fun-tile-draw" hidden>
       <div class="fun-tile-header">
         <h3 class="fun-tile-title">Doodleboard</h3>
         <span class="fun-tile-cta draw-status" id="draw-status">–</span>

@@ -12,8 +12,30 @@
   const POLL_INTERVAL_MS = 3000;
 
   const canvas = document.getElementById("draw-canvas");
+  const tileEl = document.getElementById("fun-tile-draw");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+
+  // Temporary auth gate — hide the whole tile until we're logged in.
+  // Prevents anon visitors from seeing the currently-broken-on-Safari
+  // widget while we iterate on a fix.
+  let initialized = false;
+  function applyGate() {
+    const loggedIn = !!window.rvAuthUser;
+    if (tileEl) tileEl.hidden = !loggedIn;
+    if (loggedIn && !initialized) {
+      initialized = true;
+      bootstrap();
+    }
+  }
+  window.addEventListener("rv:auth-resolved", applyGate);
+  window.addEventListener("rv:auth-change", applyGate);
+  // In case auth already resolved by the time this script runs.
+  applyGate();
+
+  // Everything below runs inside bootstrap() so no DOM queries or
+  // event listeners land until we've confirmed we're logged in.
+  function bootstrap() {
 
   // Inject the middle hole punch into the paper background. CSS's
   // pseudo-elements only give us two slots (::before, ::after), so
@@ -315,4 +337,6 @@
   initialLoad().then(() => {
     setInterval(pollStrokes, POLL_INTERVAL_MS);
   });
+
+  } // end bootstrap()
 })();
