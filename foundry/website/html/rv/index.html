@@ -74,7 +74,7 @@
   <div class="hero-text">
     <p class="kicker">A trip across America</p>
     <h1>Hedgie <span class="amp">&</span> Frogie's<br>RV Adventure</h1>
-    <p class="subtitle">San Diego → New York City<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link" style="color:var(--accent)">checklists!</a> · <a href="notes.html" class="prep-link" style="color:var(--accent)">notes</a></span></p>
+    <p class="subtitle">San Diego → New York City<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link" style="color:var(--accent)">checklists!</a> · <a href="notes.html" class="prep-link" style="color:var(--accent)">notes</a> · <a href="admin.html" class="prep-link" style="color:var(--accent)">admin</a></span></p>
     <div class="legend">
       <div class="legend-item">
         <img src="assets/photos/abi-avatar.jpg" alt="Abi" class="avatar">
@@ -152,6 +152,40 @@
       </p>
     </article>
 
+    <!-- Tile: shared free-draw canvas. Public read + public write
+         with a per-IP rate limit on the server. See assets/draw.js. -->
+    <article class="fun-tile fun-tile-draw">
+      <div class="fun-tile-header">
+        <h3 class="fun-tile-title">Doodle with us</h3>
+        <span class="fun-tile-cta draw-status" id="draw-status">–</span>
+      </div>
+      <p class="fun-tile-lede">Anyone can draw. Every stroke lives forever (until we redeploy).</p>
+      <div class="draw-toolbar">
+        <label class="draw-tool-swatch">
+          <input type="color" id="draw-color" value="#2f8a6e">
+          <span class="draw-tool-label">Color</span>
+        </label>
+        <div class="draw-radii" role="radiogroup" aria-label="Brush size">
+          <button type="button" class="draw-radius" data-radius="2" title="Fine">
+            <span class="draw-dot" style="width:4px;height:4px;"></span>
+          </button>
+          <button type="button" class="draw-radius is-active" data-radius="6" title="Small">
+            <span class="draw-dot" style="width:8px;height:8px;"></span>
+          </button>
+          <button type="button" class="draw-radius" data-radius="12" title="Medium">
+            <span class="draw-dot" style="width:16px;height:16px;"></span>
+          </button>
+          <button type="button" class="draw-radius" data-radius="22" title="Big">
+            <span class="draw-dot" style="width:26px;height:26px;"></span>
+          </button>
+        </div>
+        <button type="button" class="draw-tool-btn" id="draw-eraser" data-tool="eraser" aria-pressed="false" title="Eraser">🧽</button>
+      </div>
+      <div class="draw-canvas-wrap">
+        <canvas id="draw-canvas" class="draw-canvas"></canvas>
+      </div>
+    </article>
+
   </div>
 </section>
 
@@ -191,6 +225,7 @@
 <script src="assets/map-v2.js"></script>
 <script src="assets/checkin.js"></script>
 <script src="assets/dunkin.js"></script>
+<script src="assets/draw.js"></script>
 <!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
 <script src="assets/emoji-rain.js"></script>
 </body>
