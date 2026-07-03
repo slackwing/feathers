@@ -14,6 +14,17 @@
   const canvas = document.getElementById("draw-canvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+
+  // Inject the middle hole punch into the paper background. CSS's
+  // pseudo-elements only give us two slots (::before, ::after), so
+  // the middle hole is a real element added here to keep the
+  // markup file clean.
+  const paperEl = document.querySelector(".fun-tile-draw .draw-paper");
+  if (paperEl && !paperEl.querySelector(".draw-paper-middle-hole")) {
+    const midHole = document.createElement("span");
+    midHole.className = "draw-paper-middle-hole";
+    paperEl.appendChild(midHole);
+  }
   const statusEl = document.getElementById("draw-status");
   const colorInput = document.getElementById("draw-color");
   const eraserBtn = document.getElementById("draw-eraser");

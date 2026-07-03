@@ -156,32 +156,43 @@
          with a per-IP rate limit on the server. See assets/draw.js. -->
     <article class="fun-tile fun-tile-draw">
       <div class="fun-tile-header">
-        <h3 class="fun-tile-title">Doodle with us</h3>
+        <h3 class="fun-tile-title">Doodleboard</h3>
         <span class="fun-tile-cta draw-status" id="draw-status">–</span>
       </div>
-      <p class="fun-tile-lede">Anyone can draw. Every stroke lives forever (until we redeploy).</p>
       <div class="draw-toolbar">
         <label class="draw-tool-swatch">
           <input type="color" id="draw-color" value="#2f8a6e">
-          <span class="draw-tool-label">Color</span>
         </label>
         <div class="draw-radii" role="radiogroup" aria-label="Brush size">
-          <button type="button" class="draw-radius" data-radius="2" title="Fine">
-            <span class="draw-dot" style="width:4px;height:4px;"></span>
+          <button type="button" class="draw-radius" data-radius="1" title="Ultra fine">
+            <span class="draw-dot" style="width:3px;height:3px;"></span>
           </button>
-          <button type="button" class="draw-radius is-active" data-radius="6" title="Small">
+          <button type="button" class="draw-radius" data-radius="2" title="Fine">
+            <span class="draw-dot" style="width:5px;height:5px;"></span>
+          </button>
+          <button type="button" class="draw-radius is-active" data-radius="4" title="Small">
             <span class="draw-dot" style="width:8px;height:8px;"></span>
           </button>
-          <button type="button" class="draw-radius" data-radius="12" title="Medium">
+          <button type="button" class="draw-radius" data-radius="7" title="Medium">
+            <span class="draw-dot" style="width:12px;height:12px;"></span>
+          </button>
+          <button type="button" class="draw-radius" data-radius="10" title="Large">
             <span class="draw-dot" style="width:16px;height:16px;"></span>
           </button>
-          <button type="button" class="draw-radius" data-radius="22" title="Big">
-            <span class="draw-dot" style="width:26px;height:26px;"></span>
+          <button type="button" class="draw-radius" data-radius="14" title="Big">
+            <span class="draw-dot" style="width:20px;height:20px;"></span>
+          </button>
+          <button type="button" class="draw-radius" data-radius="18" title="Biggest">
+            <span class="draw-dot" style="width:24px;height:24px;"></span>
           </button>
         </div>
         <button type="button" class="draw-tool-btn" id="draw-eraser" data-tool="eraser" aria-pressed="false" title="Eraser">🧽</button>
       </div>
       <div class="draw-canvas-wrap">
+        <!-- The paper background (rules + red margin + holes) is
+             drawn in CSS below the canvas so it's always visible,
+             even before/underneath the ink. -->
+        <div class="draw-paper" aria-hidden="true"></div>
         <canvas id="draw-canvas" class="draw-canvas"></canvas>
       </div>
     </article>
