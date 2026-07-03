@@ -107,8 +107,16 @@
       // soon as the first genuine sighting is logged — presumably
       // once the trip actually starts — the seed set drops off and
       // the chart resets to real data starting at 1.
-      const realLogs = raw.filter(l => !l.is_seed);
-      seedMode = realLogs.length === 0;
+      // Two conditions gate "real mode": at least one non-seed row
+      // AND we've passed TRIP_START (Sun 2:27 PM PDT = 21:27 UTC).
+      // The trip-start check means any stray pre-trip taps sitting
+      // in the DB don't accidentally take down the sample chart —
+      // seed rows keep showing until the trip actually begins.
+      const nowMs = Date.now();
+      const tripStarted = nowMs >= tripStartMs;
+      const realLogs = raw.filter(l => !l.is_seed &&
+        parseDate(l.created_at).getTime() >= tripStartMs);
+      seedMode = !tripStarted || realLogs.length === 0;
       showSampleNote(seedMode);
       const active = seedMode ? raw.filter(l => l.is_seed) : realLogs;
       // Renumber to 1..N so the line starts at (tripStart, 0) →
