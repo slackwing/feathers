@@ -194,22 +194,35 @@
     return M.left + PLOT_W * (clamped - tripStartMs) / (tripEndMs - tripStartMs);
   }
 
-  // Round a raw value up to the next gridline. Grid step follows the
-  // same rule renderChart uses so the axis top always lands on a
-  // labeled tick — i.e. one tick above the highest guess.
+  // Round a raw value up to the next gridline. Aims for ~6 labels
+  // regardless of range using a standard 1-2-5 tick sequence — the
+  // same logic Matplotlib / D3 use, so tick spacing stays visually
+  // even whether we're at 30 sightings or 3000.
   function chooseGridStep(rawMax) {
-    if (rawMax > 80) return 20;
-    if (rawMax > 40) return 10;
-    return 5;
+    const targetTicks = 6;
+    const rough = Math.max(1, rawMax) / targetTicks;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+    const norm = rough / magnitude;
+    let mult;
+    if (norm < 1.5) mult = 1;
+    else if (norm < 3.5) mult = 2;
+    else if (norm < 7.5) mult = 5;
+    else mult = 10;
+    return mult * magnitude;
   }
   function pickYMax() {
     const maxGuess = Math.max(...PARTICIPANTS.map(p => p.guess));
     const maxLog = currentCount();
-    // Extrapolations could exceed maxGuess — include them in the bound
-    // when picking the step, so we don't clip the projected curve.
-    const lin = linearProjection(tripEndMs);
-    const quad = quadraticProjection(tripEndMs);
-    const raw = Math.max(maxGuess, maxLog, lin || 0, quad || 0, 20);
+    // Extrapolations count toward the ceiling but are capped at 2×
+    // the highest guess. Early data can produce runaway projections
+    // (3 clicks in 30 minutes → thousands over the trip) and letting
+    // that drive the axis makes every guess line squash to the bottom.
+    // Capping means the projection line may clip near the top when
+    // wild, which is fine — the label at the end tells the real story.
+    const projCap = maxGuess * 2;
+    const lin = Math.min(linearProjection(tripEndMs) || 0, projCap);
+    const quad = Math.min(quadraticProjection(tripEndMs) || 0, projCap);
+    const raw = Math.max(maxGuess, maxLog, lin, quad, 20);
     const step = chooseGridStep(raw);
     // One tick above the highest data point. If maxGuess is exactly on
     // a step boundary, still bump by one full step so the guess dashed
@@ -246,15 +259,23 @@
     };
   }
 
+  // We only project once we have MIN_LOGS_FOR_PROJECTION points. With
+  // fewer than that, early clicks (esp. clumped ones on day 1) produce
+  // wild rates that make the projection lines meaningless — a single
+  // click 30 minutes into a 17-day trip extrapolates to thousands.
+  // Better to show no lines until there's enough spread to say
+  // anything useful.
+  const MIN_LOGS_FOR_PROJECTION = 5;
+
   // Linear = "constant rate" projection.
   //   rate = current_count / days_elapsed_at_last_log
   //   count(t) = current_count + rate * (days_from_last_log)
   // Returns the projected count at the given target timestamp, or
-  // null if we don't have any data yet.
+  // null if we don't have enough data to draw a meaningful line.
   function linearProjection(ms) {
-    if (!logs.length) return null;
+    if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const a = anchorPoint();
-    if (a.d <= 0) return a.c; // pre-trip log — nothing to extrapolate from
+    if (a.d <= 0) return a.c;
     const rate = a.c / a.d;
     const targetDays = daysSinceStart(ms);
     return Math.max(0, a.c + rate * (targetDays - a.d));
@@ -274,9 +295,18 @@
   //   → k = slope, log(A) = intercept.
   // Only points with d > 0 and c > 0 participate (log of 0 is
   // undefined). Needs ≥2 such points to fit both k and A.
+  //
+  // Windowing: uses the most recent RECENT_WINDOW logs so a burst
+  // late in the trip actually shows up as acceleration instead of
+  // being averaged into the whole-trip trend.
+  const RECENT_WINDOW = 5;
   function fitPowerLaw() {
+    if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
+    const src = logs.length > RECENT_WINDOW
+      ? logs.slice(-RECENT_WINDOW)
+      : logs;
     const pts = [];
-    for (const l of logs) {
+    for (const l of src) {
       const d = daysSinceStart(parseDate(l.created_at).getTime());
       const c = l.count;
       if (d > 0 && c > 0) pts.push({ x: Math.log(d), y: Math.log(c) });
@@ -288,7 +318,7 @@
     }
     const n = pts.length;
     const denom = n * sxx - sx * sx;
-    if (Math.abs(denom) < 1e-9) return null; // degenerate (all logs same day)
+    if (Math.abs(denom) < 1e-9) return null;
     const k = (n * sxy - sx * sy) / denom;
     const logA = (sy - k * sx) / n;
     const A = Math.exp(logA);
