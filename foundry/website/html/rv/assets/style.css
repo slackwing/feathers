@@ -1045,8 +1045,8 @@ a { color: var(--accent); }
 .dunkin-chart-wrap {
   margin-top: 8px;
   width: 100%;
-  aspect-ratio: 400 / 312;
-  min-height: 288px;
+  aspect-ratio: 400 / 468;
+  min-height: 432px;
 }
 .dunkin-chart {
   width: 100%;
