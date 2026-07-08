@@ -485,33 +485,56 @@
     }
 
     // ----- Right-axis avatars at each guess -----
-    // Dedupe avatars that overlap by nudging them apart vertically.
-    // Simple pass: sort by y ascending; if a later one is closer than
-    // 20px, push it down.
+    // Avatars are DISTRIBUTED evenly across the vertical plot area
+    // rather than parked at each true guess-y and then shoved down on
+    // collision. That lets low guesses use the top space that would
+    // otherwise be wasted, and connector lines can slope up OR down
+    // to reach each guess's real y instead of always sloping down.
     const AV_R = 12;
     // Push the avatar column to the far right of the SVG so the space
     // between the plot edge (M.left + PLOT_W) and the avatar circles
     // is maximized — that's the room the connector lines get to fan
     // out toward each guess's exact y-value.
     const avX = CHART_W - AV_R - 4;
-    const placed = PARTICIPANTS
+    // Sort by guess DESCENDING so the highest guess sits at the top
+    // of the column (matches the y-axis where higher numbers are up).
+    const sorted = PARTICIPANTS
       .filter(p => p.guess <= yMax)
-      .map(p => ({ p, y: yForCount(p.guess, yMax) }))
-      .sort((a, b) => a.y - b.y);
-    for (let i = 1; i < placed.length; i++) {
-      if (placed[i].y - placed[i-1].y < 2 * AV_R + 1) {
-        placed[i].y = placed[i-1].y + 2 * AV_R + 1;
+      .slice()
+      .sort((a, b) => b.guess - a.guess);
+    // Evenly distribute across the plot area. If there's more room
+    // than the avatars need (natural spacing would exceed the ideal),
+    // fall back to just parking each avatar at its true guess-y
+    // (nothing to gain from artificial distribution).
+    const plotTop = M.top;
+    const plotBottom = M.top + PLOT_H;
+    const idealPitch = 2 * AV_R + 4;
+    const availableH = plotBottom - plotTop - 2 * AV_R;
+    const needed = (sorted.length - 1) * idealPitch;
+    const distribute = sorted.length > 1 && needed > 0 && needed <= availableH * 2;
+    const placed = sorted.map((p, i) => {
+      const trueY = yForCount(p.guess, yMax);
+      let y;
+      if (!distribute || sorted.length === 1) {
+        y = trueY;
+      } else {
+        // Even spread from top to bottom of the plot area.
+        const pitch = availableH / (sorted.length - 1);
+        y = plotTop + AV_R + i * pitch;
       }
-    }
+      return { p, y, trueY };
+    });
     // Avatars are wrapped in a group with class .dunkin-avatar; hover
     // (desktop) or tap (touch) toggles a name+guess label to the left.
     // <title> stays as a fallback for native platform tooltips.
-    for (const { p, y } of placed) {
+    for (const { p, y, trueY } of placed) {
       const tip = `${p.name} guessed ${p.guess}`;
       out += `<g class="dunkin-avatar" data-avatar="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"><title>${esc(tip)}</title>`;
-      // Connector line from the guess-line's right end to the avatar.
-      const guessY = yForCount(p.guess, yMax);
-      out += `<line x1="${(M.left + PLOT_W).toFixed(1)}" y1="${guessY.toFixed(1)}" x2="${(avX - AV_R).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.color}" stroke-opacity="0.45" stroke-width="1"/>`;
+      // Connector line from the guess-line's right end at the TRUE
+      // guess y to the avatar's placed y. Slopes up or down depending
+      // on whether the participant's guess is higher or lower than
+      // their position in the evenly-distributed column.
+      out += `<line x1="${(M.left + PLOT_W).toFixed(1)}" y1="${trueY.toFixed(1)}" x2="${(avX - AV_R).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.color}" stroke-opacity="0.45" stroke-width="1"/>`;
       if (p.src) {
         // Circular photo via clip-path (opt-in via participant.src).
         const clipId = `dunkin-clip-${p.id}`;
