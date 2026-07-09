@@ -1075,6 +1075,132 @@ a { color: var(--accent); }
 }
 .fun-tile-dunkin .dunkin-blurb strong { color: var(--ink); }
 
+/* Achievements tile — full width across the fun-grid. Grid of cards,
+   each a little "trophy card" for a goofy RV-life milestone. Locked
+   ones look grayed out; unlocked ones bloom into full color with a
+   trophy badge. */
+.fun-tile-achievements {
+  grid-column: 1 / -1;
+}
+.ach-progress {
+  color: var(--accent);
+  font-weight: 700;
+  cursor: default;
+}
+.ach-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+@media (min-width: 560px) {
+  .ach-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .ach-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.ach-loading {
+  color: var(--ink-soft);
+  font-style: italic;
+  grid-column: 1 / -1;
+  margin: 8px 0;
+}
+.ach-card {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.ach-card.is-unlocked {
+  background: var(--bg-warm);
+  border-color: var(--accent-warm);
+  box-shadow: 0 1px 4px rgba(217, 123, 58, 0.15);
+}
+.ach-card.is-locked {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+.ach-emoji {
+  font-size: 1.9rem;
+  line-height: 1;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+.ach-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.ach-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+.ach-desc {
+  font-size: 0.83rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.ach-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-warm);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* Mark-as-Achieved button — hidden unless the grid has .can-edit
+   (logged-in) AND the card is being hovered/focused. On touch, tap
+   anywhere on the card also reveals it via :focus-within. */
+.ach-mark-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s, transform 0.15s;
+  font-family: inherit;
+}
+.ach-mark-btn-undo {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: var(--line);
+}
+.ach-grid:not(.can-edit) .ach-mark-btn { display: none; }
+.ach-grid.can-edit .ach-card:hover .ach-mark-btn,
+.ach-grid.can-edit .ach-card:focus-within .ach-mark-btn,
+.ach-grid.can-edit .ach-card:active .ach-mark-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* On touch devices the browser sometimes doesn't emit :hover, so
+   also reveal on tap by making the button visible if the card was
+   just touched. .ach-mark-btn:focus does the trick — the button
+   receives focus after the tap. */
+.ach-grid.can-edit .ach-mark-btn:focus { opacity: 1; transform: translateY(0); }
+/* Cards need a bit of extra bottom padding so the absolute-positioned
+   button doesn't sit on top of the last line of description text. */
+.ach-grid.can-edit .ach-card { padding-bottom: 32px; }
+
 /* Draw tile — full width across the fun-grid (spans both columns
    on tablet+ desktop). */
 .fun-tile-draw {

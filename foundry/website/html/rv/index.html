@@ -153,6 +153,21 @@
       <p class="fun-tile-lede dunkin-blurb"><em>Okay you crazy people wanted exact rules: We are counting every logo sighting but only once per site, e.g. highway sign counts, highway sign for the same location doesn't count, seeing the building doesn't count if we counted the highway sign. Closest wins; <em>not</em> price is right rules. "And no AI or Googling!"</em></p>
     </article>
 
+    <!-- Tile: RV life achievements — full-width grid of goofy
+         milestones. Reads the "rv life achievements" section from
+         /rv/api/prep (same rows as prep.html). See assets/achievements.js.
+         Logged-in users get a "Mark as Achieved!" affordance per card. -->
+    <article class="fun-tile fun-tile-achievements" id="fun-tile-achievements">
+      <div class="fun-tile-header">
+        <h3 class="fun-tile-title">RV Life Achievements</h3>
+        <span class="fun-tile-cta ach-progress" id="ach-progress">–</span>
+      </div>
+      <p class="fun-tile-lede">Courtesy of Kat &amp; Nick!</p>
+      <div class="ach-grid" id="ach-grid">
+        <p class="ach-loading">Loading…</p>
+      </div>
+    </article>
+
     <!-- Tile: shared free-draw canvas. Public read + public write
          with a per-IP rate limit on the server. See assets/draw.js.
          Hidden for now — flip off `hidden` to re-enable. -->
@@ -239,6 +254,7 @@
 <script src="assets/map-v2.js"></script>
 <script src="assets/checkin.js"></script>
 <script src="assets/dunkin.js"></script>
+<script src="assets/achievements.js"></script>
 <script src="assets/draw.js?v=20260702f"></script>
 <!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
 <script src="assets/emoji-rain.js"></script>
