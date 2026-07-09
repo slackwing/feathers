@@ -1087,6 +1087,10 @@ a { color: var(--accent); }
   font-weight: 700;
   cursor: default;
 }
+.ach-courtesy {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
 .ach-grid {
   display: grid;
   grid-template-columns: 1fr;
