@@ -142,8 +142,12 @@
   }
 
   // ----- Header button click: increment -----
+  // Confirm before posting — a stray thumb tap on the donut button
+  // otherwise silently commits a real sighting to the DB.
   if (btn) {
     btn.addEventListener("click", async () => {
+      const next = currentCount() + 1;
+      if (!window.confirm(`Log a Dunkin' sighting? Count will go to ${next}.`)) return;
       btn.disabled = true;
       try {
         const r = await fetch(API_URL, {
