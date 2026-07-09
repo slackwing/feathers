@@ -1088,8 +1088,12 @@ a { color: var(--accent); }
   cursor: default;
 }
 .ach-courtesy {
+  font-family: var(--font-serif);
   font-size: 1.05rem;
-  color: var(--ink);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ink-soft);
+  letter-spacing: 0.1px;
 }
 .ach-grid {
   display: grid;
