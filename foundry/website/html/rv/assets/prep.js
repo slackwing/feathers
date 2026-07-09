@@ -122,10 +122,20 @@
     items = (data.items || []).slice();
   }
 
+  // Sections that are DB-real but rendered elsewhere on the site
+  // (e.g., the RV Life Achievements section is now shown as the
+  // front-page widget). Hidden from the checklist page so friends
+  // don't see it twice, but the data stays in the DB so the widget
+  // keeps working. Reverse by removing the id from this set.
+  const HIDDEN_SECTIONS = new Set([
+    "rv_life_achievements_courtesy_of_kat_nic",
+  ]);
+
   // ---- render ----
   function render() {
     let html = "";
     sections.forEach((section, idx) => {
+      if (HIDDEN_SECTIONS.has(section.id)) return;
       const sectionItems = items.filter(it => it.section === section.id);
       const collapsed = isCollapsed(section.id);
       const isFirst = idx === 0;
