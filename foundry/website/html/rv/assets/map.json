@@ -15,9 +15,7 @@
       "_note": "Coords are Pacific Beach \u2014 we sleep street-parking here Days 1-2. Per the RV owner's guide: 'In San Diego: park anywhere in the Pacific Beach residential area.' Kept id=san_diego so the route-start label reads as San Diego, but the underlying coords + weather lookup are PB (not downtown SD).",
       "route_fraction": 0.0,
       "predicted_date": "2026-07-05",
-      "night_temp_f": 62.8,
-      "night_temp_f_forecast": 66.5,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 62.8
     },
     {
       "id": "yuma",
@@ -42,9 +40,7 @@
       "sleep_type": "hotel",
       "route_fraction": 0.076,
       "predicted_date": "2026-07-06",
-      "night_temp_f": 81.9,
-      "night_temp_f_forecast": 81.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 81.9
     },
     {
       "id": "tucson",
@@ -54,9 +50,7 @@
       "lon": -110.9747,
       "route_fraction": 0.107,
       "predicted_date": "2026-07-07",
-      "wet_day_pct": 9.5,
-      "wet_day_pct_forecast": 4,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct": 9.5
     },
     {
       "id": "willcox_hie",
@@ -69,9 +63,7 @@
       "cautions": [],
       "route_fraction": 0.128,
       "predicted_date": "2026-07-07",
-      "night_temp_f": 71.6,
-      "night_temp_f_forecast": 72.3,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 71.6
     },
     {
       "id": "lordsburg",
@@ -106,9 +98,7 @@
       "cautions": [],
       "route_fraction": 0.18,
       "predicted_date": "2026-07-08",
-      "night_temp_f": 71.6,
-      "night_temp_f_forecast": 77.8,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 71.6
     },
     {
       "id": "las_cruces_hampton_i10",
@@ -121,9 +111,7 @@
       "cautions": [],
       "route_fraction": 0.18,
       "predicted_date": "2026-07-08",
-      "night_temp_f": 71.6,
-      "night_temp_f_forecast": 80.3,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 71.6
     },
     {
       "id": "white_sands",
@@ -135,9 +123,7 @@
       "_note": "Coords are the WHITE SANDS NP VISITOR CENTER on US-70 (NOT the dunes interior). Per the through-driving rule: we count only the drive to ARRIVE and PARK at the park; Dunes Drive into the gypsum field is sightseeing territory, NOT drive time. Visitor center is at the park entrance off US-70.",
       "route_fraction": 0.18,
       "predicted_date": "2026-07-08",
-      "wet_day_pct": 15.2,
-      "wet_day_pct_forecast": 12,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct": 15.2
     },
     {
       "id": "alamogordo",
@@ -156,9 +142,7 @@
       "medal": "gold",
       "route_fraction": 0.199,
       "predicted_date": "2026-07-08",
-      "night_temp_f": 53.6,
-      "night_temp_f_forecast": 55.6,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 53.6
     },
     {
       "id": "cloudcroft_sleepygrass",
@@ -171,9 +155,7 @@
       "cautions": [],
       "route_fraction": 0.199,
       "predicted_date": "2026-07-08",
-      "night_temp_f": 53.3,
-      "night_temp_f_forecast": 54.9,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 53.3
     },
     {
       "id": "manzano_dispersed",
@@ -188,9 +170,7 @@
       ],
       "route_fraction": 0.253,
       "predicted_date": "2026-07-09",
-      "night_temp_f": 59.6,
-      "night_temp_f_forecast": 64.3,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f": 59.6
     },
     {
       "id": "three_rivers_petroglyphs",
@@ -224,9 +204,7 @@
       "lon": -106.6504,
       "route_fraction": 0.253,
       "predicted_date": "2026-07-09",
-      "wet_day_pct": 8.1,
-      "wet_day_pct_forecast": 12,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct": 8.1
     },
     {
       "id": "santa_fe",
@@ -237,8 +215,8 @@
       "route_fraction": 0.271,
       "predicted_date": "2026-07-10",
       "wet_day_pct": 9.0,
-      "wet_day_pct_forecast": 10,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "hyde_park",
@@ -251,8 +229,8 @@
       "route_fraction": 0.271,
       "predicted_date": "2026-07-10",
       "night_temp_f": 51.0,
-      "night_temp_f_forecast": 57.6,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 54.4,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "hopewell_lake_cg",
@@ -266,8 +244,8 @@
       "route_fraction": 0.317,
       "predicted_date": "2026-07-10",
       "night_temp_f": 49.2,
-      "night_temp_f_forecast": 49.9,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 49.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "tres_piedras_dispersed",
@@ -283,8 +261,8 @@
       "route_fraction": 0.271,
       "predicted_date": "2026-07-10",
       "night_temp_f": 52.4,
-      "night_temp_f_forecast": 55.2,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 53.4,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "east_fork_fr667_dispersed",
@@ -300,8 +278,8 @@
       "route_fraction": 0.317,
       "predicted_date": "2026-07-10",
       "night_temp_f": 45.7,
-      "night_temp_f_forecast": 52.1,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 53.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "turkey_springs_dispersed",
@@ -316,8 +294,8 @@
       "route_fraction": 0.317,
       "predicted_date": "2026-07-10",
       "night_temp_f": 49.2,
-      "night_temp_f_forecast": 54.8,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 52.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "transfer_park_cg",
@@ -331,8 +309,8 @@
       "route_fraction": 0.332,
       "predicted_date": "2026-07-11",
       "night_temp_f": 44.8,
-      "night_temp_f_forecast": 53.8,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 53.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "pagosa_springs",
@@ -385,8 +363,8 @@
       "route_fraction": 0.332,
       "predicted_date": "2026-07-11",
       "night_temp_f": 54.6,
-      "night_temp_f_forecast": 57.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 64.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "mesa_verde",
@@ -399,8 +377,8 @@
       "route_fraction": 0.346,
       "predicted_date": "2026-07-11",
       "wet_day_pct": 6.2,
-      "wet_day_pct_forecast": 9,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 1,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "mancos_nf",
@@ -413,8 +391,8 @@
       "route_fraction": 0.346,
       "predicted_date": "2026-07-11",
       "night_temp_f": 51.5,
-      "night_temp_f_forecast": 59.0,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 63.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "madden_peak_dispersed",
@@ -429,8 +407,8 @@
       "route_fraction": 0.346,
       "predicted_date": "2026-07-11",
       "night_temp_f": 43.7,
-      "night_temp_f_forecast": 51.5,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 48.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "telluride",
@@ -441,8 +419,8 @@
       "route_fraction": 0.374,
       "predicted_date": "2026-07-11",
       "wet_day_pct": 26.7,
-      "wet_day_pct_forecast": 20,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "last_dollar",
@@ -455,8 +433,8 @@
       "route_fraction": 0.374,
       "predicted_date": "2026-07-11",
       "night_temp_f": 41.0,
-      "night_temp_f_forecast": 51.1,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 56.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "electric_hills_trailhead",
@@ -475,8 +453,8 @@
       "route_fraction": 0.402,
       "predicted_date": "2026-07-12",
       "night_temp_f": 56.7,
-      "night_temp_f_forecast": 65.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 68.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "ridgway",
@@ -495,8 +473,8 @@
       "route_fraction": 0.402,
       "predicted_date": "2026-07-12",
       "wet_day_pct": 7.6,
-      "wet_day_pct_forecast": 9,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "crested_butte",
@@ -507,8 +485,8 @@
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
       "wet_day_pct": 11.0,
-      "wet_day_pct_forecast": 19,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 15,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cement_creek",
@@ -521,8 +499,8 @@
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
       "night_temp_f": 38.8,
-      "night_temp_f_forecast": 48.3,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 49.1,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "stage_stop_meadows_dispersed",
@@ -536,8 +514,8 @@
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
       "night_temp_f": 42.2,
-      "night_temp_f_forecast": 50.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 50.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cr_306_dispersed",
@@ -555,8 +533,8 @@
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
       "night_temp_f": 44.0,
-      "night_temp_f_forecast": 54.1,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 46.2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "gunnison",
@@ -578,8 +556,8 @@
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
       "night_temp_f": 41.5,
-      "night_temp_f_forecast": 48.1,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 42.9,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "fourmile_creek_dispersed",
@@ -594,8 +572,8 @@
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
       "night_temp_f": 46.3,
-      "night_temp_f_forecast": 56.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 51.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "turtle_rock_dispersed",
@@ -610,8 +588,8 @@
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
       "night_temp_f": 47.7,
-      "night_temp_f_forecast": 57.8,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 53.2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "kenosha_pass_east_dispersed",
@@ -627,8 +605,8 @@
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
       "night_temp_f": 41.4,
-      "night_temp_f_forecast": 53.5,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 47.9,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "redskin_creek_dispersed",
@@ -643,8 +621,8 @@
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
       "night_temp_f": 52.8,
-      "night_temp_f_forecast": 61.3,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 58.4,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "monarch_park_cg",
@@ -658,8 +636,8 @@
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
       "night_temp_f": 42.0,
-      "night_temp_f_forecast": 49.4,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 42.6,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "tarryall_reservoir",
@@ -675,8 +653,8 @@
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
       "night_temp_f": 47.0,
-      "night_temp_f_forecast": 52.5,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 49.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "buffalo_creek_dispersed",
@@ -692,8 +670,8 @@
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
       "night_temp_f": 54.6,
-      "night_temp_f_forecast": 62.7,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 59.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "sterling_walmart",
@@ -706,7 +684,9 @@
       "cautions": [],
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 65.5
+      "night_temp_f": 65.5,
+      "night_temp_f_forecast": 70.4,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "brush_memorial_park",
@@ -718,7 +698,9 @@
       "_notes": "City campground in Brush CO, ~3 mi N of I-76 Exit 90. FCFS no reservation, no gate, electric + water, drop-box ~$25/night. Catalog as a Brighton/Fort Morgan area option (Walmarts there ban overnight).",
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 64.9
+      "night_temp_f": 64.9,
+      "night_temp_f_forecast": 69.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "sterling_rest_area",
@@ -730,7 +712,9 @@
       "_notes": "Official CDOT rest area on I-76 westbound side near Sterling. Separate RV section, free dump station, 12-hr posted limit (loosely enforced). FCFS, no gate, free.",
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 65.3
+      "night_temp_f": 65.3,
+      "night_temp_f_forecast": 69.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cabelas_sidney",
@@ -743,7 +727,9 @@
       "cautions": [],
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 64.9
+      "night_temp_f": 64.9,
+      "night_temp_f_forecast": 68.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "flyingj_big_springs",
@@ -755,7 +741,9 @@
       "_notes": "I-80 Exit 107. Full Pilot/Flying J: RV parking, dump station, showers, restaurant. Overnight allowed, FCFS, 24/7.",
       "route_fraction": 0.535,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 66.4
+      "night_temp_f": 66.4,
+      "night_temp_f_forecast": 68.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "ogallala_walmart",
@@ -767,7 +755,9 @@
       "_notes": "201 Pony Express Ln, ~1 mi N of I-80 Exit 126. Dedicated dirt RV/truck lot west of main lot, signed for trucks/RVs. Truck noise but reliable. Different from Lake McConaughy.",
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 66.2
+      "night_temp_f": 66.2,
+      "night_temp_f_forecast": 67.6,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "north_platte_walmart",
@@ -779,7 +769,9 @@
       "_notes": "1401 S Dewey St, ~1.5 mi S of I-80 Exit 177. Confirmed overnight-OK, back of lot, popular with RVs and semis.",
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 67.0
+      "night_temp_f": 67.0,
+      "night_temp_f_forecast": 65.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cabelas_kearney",
@@ -791,7 +783,9 @@
       "_notes": "3600 US-30, ~1 mi N of I-80 Exit 272. Officially welcomes overnight RVs, 6 marked long-vehicle spaces. Some railroad noise. FCFS, no gate, free.",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 68.0
+      "night_temp_f": 68.0,
+      "night_temp_f_forecast": 62.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "loves_kearney",
@@ -803,7 +797,9 @@
       "_notes": "I-80 Exit 272. Dedicated truck/RV parking (70 spaces), dump station ($10). Backup if Cabela's full.",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 68.0
+      "night_temp_f": 68.0,
+      "night_temp_f_forecast": 62.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "pilot_grand_island",
@@ -815,7 +811,9 @@
       "_notes": "I-80 Exit 312 (US-281). Large 24-hr facility, RV parking, dump station, showers, restaurant. FCFS, no gate. Grand Island Walmarts ban overnight.",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 68.5
+      "night_temp_f": 68.5,
+      "night_temp_f_forecast": 62.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "pilot_wood_river",
@@ -827,7 +825,9 @@
       "_notes": "11775 NE-11, I-80 Exit 300. RV parking, showers, laundry, 24/7. Midpoint between Grand Island and Lincoln.",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 68.4
+      "night_temp_f": 68.4,
+      "night_temp_f_forecast": 62.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "beaver_crossing_park",
@@ -839,7 +839,9 @@
       "_notes": "3 mi S of I-80 Exit 369. 7 sites with 50A electric + water, FCFS, donation basis (~$10 suggested), 3-night max, no gate. Quiet small-town stop (Lincoln city banned Walmart overnight).",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 69.3
+      "night_temp_f": 69.3,
+      "night_temp_f_forecast": 63.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cracker_barrel_lincoln",
@@ -851,7 +853,9 @@
       "_notes": "6700 N 27th St, I-80 Exit 403. Overnight RV-friendly per recent reports; call manager. FCFS, no gate.",
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "night_temp_f": 69.9
+      "night_temp_f": 69.9,
+      "night_temp_f_forecast": 65.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cabelas_la_vista",
@@ -864,7 +868,9 @@
       "cautions": [],
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 69.7
+      "night_temp_f": 69.7,
+      "night_temp_f_forecast": 69.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cracker_barrel_council_bluffs",
@@ -876,7 +882,9 @@
       "_notes": "530 30th Ave, I-29/80 Exit 3. 5-7 marked RV spaces, asphalt, up to 50ft. FCFS, no reservation. Well-lit, low traffic noise. First-night option at NE/IA border.",
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 69.3
+      "night_temp_f": 69.3,
+      "night_temp_f_forecast": 69.1,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "atlantic_walmart",
@@ -888,7 +896,9 @@
       "_notes": "1905 E 7th St, Atlantic IA. ~10 mi N of I-80 Exit 60. RV-friendly, ample lot. Fills the gap between Council Bluffs and Des Moines.",
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 67.8
+      "night_temp_f": 67.8,
+      "night_temp_f_forecast": 68.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "newton_walmart",
@@ -900,7 +910,9 @@
       "_notes": "300 Iowa Speedway Dr, Newton IA. ~0.5 mi from I-80 Exit 168. Clean lot, semis + RVs nightly, recent positive Class C reports.",
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 67.0
+      "night_temp_f": 67.0,
+      "night_temp_f_forecast": 70.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "grinnell_walmart",
@@ -912,7 +924,9 @@
       "_notes": "415 Industrial Ave, Grinnell IA. ~1 mi from I-80 Exit 182. Well-lit, quiet, restaurants walkable. Splits the gap between Newton and Iowa City.",
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 66.7
+      "night_temp_f": 66.7,
+      "night_temp_f_forecast": 69.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "coralville_walmart",
@@ -924,7 +938,9 @@
       "_notes": "2801 Commerce Dr, Coralville IA. ~1 mi from I-80 Exit 240. Be visible on security cams. Best Iowa City option (Iowa City actual store prohibits).",
       "route_fraction": 0.694,
       "predicted_date": "2026-07-17",
-      "night_temp_f": 68.1
+      "night_temp_f": 68.1,
+      "night_temp_f_forecast": 69.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "isle_casino_bettendorf",
@@ -936,7 +952,9 @@
       "_notes": "1777 Isle Pkwy, Bettendorf IA. ~3 mi from I-80 Exit 295B via I-74. Signed RV & Truck lot west of casino, no check-in, multi-night OK, well-lit, security patrols.",
       "route_fraction": 0.711,
       "predicted_date": "2026-07-17",
-      "night_temp_f": 69.5
+      "night_temp_f": 69.5,
+      "night_temp_f_forecast": 71.5,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cracker_barrel_davenport",
@@ -949,7 +967,9 @@
       "cautions": [],
       "route_fraction": 0.711,
       "predicted_date": "2026-07-17",
-      "night_temp_f": 68.4
+      "night_temp_f": 68.4,
+      "night_temp_f_forecast": 72.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "princeton_walmart",
@@ -961,7 +981,9 @@
       "_notes": "2111 Claude Bailey Pkwy, Princeton IL. ~1 mi from I-80 Exit 56. Generally RV-friendly. (Skip Peru Walmart \u2014 explicit no-RV signs.)",
       "route_fraction": 0.731,
       "predicted_date": "2026-07-17",
-      "night_temp_f": 67.3
+      "night_temp_f": 67.3,
+      "night_temp_f_forecast": 70.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "morris_walmart",
@@ -973,7 +995,9 @@
       "_notes": "333 E Route 6, Morris IL. ~1 mi from I-80 Exit 112. Reported overnight-friendly right side of lot; park near trucks and stay low-profile.",
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
-      "night_temp_f": 67.9
+      "night_temp_f": 67.9,
+      "night_temp_f_forecast": 63.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cracker_barrel_joliet",
@@ -986,7 +1010,9 @@
       "cautions": [],
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
-      "night_temp_f": 67.9
+      "night_temp_f": 67.9,
+      "night_temp_f_forecast": 66.9,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "horseshoe_hammond",
@@ -1001,7 +1027,9 @@
       ],
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
-      "night_temp_f": 70.7
+      "night_temp_f": 70.7,
+      "night_temp_f_forecast": 69.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "michigan_city_walmart",
@@ -1013,7 +1041,9 @@
       "_notes": "5780 Franklin St, Michigan City IN. ~1 mi from I-94 Exit 34B (I-80/I-90 toll ~3 mi). Listed as overnight-friendly. Right by Indiana Dunes.",
       "route_fraction": 0.783,
       "predicted_date": "2026-07-18",
-      "night_temp_f": 70.1
+      "night_temp_f": 70.1,
+      "night_temp_f_forecast": 70.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "bryan_walmart",
@@ -1025,7 +1055,9 @@
       "_notes": "1215 S Main St, Bryan OH. ~12 min south of Ohio Turnpike (I-80/90) Exit 13. Large flat lot, low traffic small town, no posted prohibitions in recent reports.",
       "route_fraction": 0.825,
       "predicted_date": "2026-07-19",
-      "night_temp_f": 66.1
+      "night_temp_f": 66.1,
+      "night_temp_f_forecast": 58.8,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "sandusky_walmart",
@@ -1049,7 +1081,9 @@
       "_notes": "8160 Macedonia Commons Blvd, Macedonia OH. ~2 min from I-480/SR-8, ~15 min south of I-80/Ohio Turnpike Exit 187. Ample lot, RV-accommodating, positive recent reviews.",
       "route_fraction": 0.877,
       "predicted_date": "2026-07-20",
-      "night_temp_f": 65.2
+      "night_temp_f": 65.2,
+      "night_temp_f_forecast": 56.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cracker_barrel_austintown",
@@ -1062,7 +1096,9 @@
       "cautions": [],
       "route_fraction": 0.877,
       "predicted_date": "2026-07-20",
-      "night_temp_f": 64.2
+      "night_temp_f": 64.2,
+      "night_temp_f_forecast": 55.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "dubois_walmart",
@@ -1074,7 +1110,9 @@
       "_notes": "20 Industrial Dr, DuBois PA. ~2 mi / 4 min off I-80 Exit 101. Permission granted when called; staff direct RVs to far end near McDonald's.",
       "route_fraction": 0.9,
       "predicted_date": "2026-07-20",
-      "night_temp_f": 62.2
+      "night_temp_f": 62.2,
+      "night_temp_f_forecast": 51.7,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "state_college_walmart",
@@ -1099,7 +1137,9 @@
       "cautions": [],
       "route_fraction": 0.9,
       "predicted_date": "2026-07-20",
-      "night_temp_f": 62.4
+      "night_temp_f": 62.4,
+      "night_temp_f_forecast": 52.2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "bailey_co",
@@ -1126,8 +1166,8 @@
       "route_fraction": 0.488,
       "predicted_date": "2026-07-13",
       "wet_day_pct": 9.5,
-      "wet_day_pct_forecast": 29,
-      "forecast_fetched_at": "2026-07-03"
+      "wet_day_pct_forecast": 2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cherry_creek_sp",
@@ -1139,8 +1179,8 @@
       "route_fraction": 0.488,
       "predicted_date": "2026-07-13",
       "night_temp_f": 60.9,
-      "night_temp_f_forecast": 76.2,
-      "forecast_fetched_at": "2026-07-03"
+      "night_temp_f_forecast": 71.9,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "sterling_co",
@@ -1174,7 +1214,9 @@
       "sleep_type": "cheap_public_land",
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
-      "night_temp_f": 67.0
+      "night_temp_f": 67.0,
+      "night_temp_f_forecast": 68.0,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "lincoln",
@@ -1184,7 +1226,9 @@
       "lon": -96.7026,
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
-      "wet_day_pct": 17.1
+      "wet_day_pct": 17.1,
+      "wet_day_pct_forecast": 2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "omaha",
@@ -1194,7 +1238,9 @@
       "lon": -95.9345,
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
-      "wet_day_pct": 21.0
+      "wet_day_pct": 21.0,
+      "wet_day_pct_forecast": 2,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "des_moines",
@@ -1212,7 +1258,9 @@
       "sleep_type": "walmart",
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
-      "night_temp_f": 68.0
+      "night_temp_f": 68.0,
+      "night_temp_f_forecast": 70.1,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "chicago",
@@ -1238,7 +1286,9 @@
       "sleep_type": "walmart",
       "route_fraction": 0.783,
       "predicted_date": "2026-07-18",
-      "night_temp_f": 66.9
+      "night_temp_f": 66.9,
+      "night_temp_f_forecast": 70.3,
+      "forecast_fetched_at": "2026-07-10"
     },
     {
       "id": "cleveland",
