@@ -974,6 +974,14 @@ a { color: var(--accent); }
   white-space: nowrap;
 }
 .fun-tile-cta:hover { text-decoration: underline; }
+.cta-fixed-note {
+  color: #d9534f;
+  font-size: 0.65em;
+  font-weight: 700;
+  margin-left: 3px;
+  vertical-align: super;
+  letter-spacing: 0.02em;
+}
 .fun-tile-lede {
   color: var(--ink-soft);
   font-size: 0.9rem;
