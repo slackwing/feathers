@@ -464,11 +464,31 @@
           out += `<path d="${bandD}" fill="#FF6720" fill-opacity="0.13" stroke="none"/>`;
         }
 
-        // Linear line — dotted.
+        // Linear line — dotted. Wrapped in an interactive group so
+        // hovering (or tapping) reveals a pill with the fit equation.
+        // Model: y = c0 + rate·(d - d0), where (d0, c0) is the anchor
+        // point (latest logged sighting) and rate = c0 / d0.
         if (linSamples.length) {
           const linD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ` +
                        linSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          const anchor = anchorPoint();
+          const rate = anchor && anchor.d > 0 ? (anchor.c / anchor.d) : 0;
+          const linLabel = `Linear extrapolation: y = ${rate.toFixed(2)} · d`;
+          const linLW = Math.max(60, linLabel.length * 6.2 + 12);
+          const linLH = 18;
+          // Park the linear label just below the anchor point so it
+          // doesn't collide with the power-law label above.
+          const linLX = Math.max(M.left + 4, x0 - linLW / 2);
+          const linLY = Math.min(M.top + PLOT_H - linLH - 2, y0 + 8);
+          out += `<g class="dunkin-fit-curve dunkin-fit-linear" tabindex="0" role="button" aria-label="${esc(linLabel)}">`;
           out += `<path d="${linD}" fill="none" stroke="#FF6720" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="4,4"/>`;
+          out += `<path d="${linD}" fill="none" stroke="transparent" stroke-width="14" style="cursor:help;"/>`;
+          out += `<g class="dunkin-fit-label" pointer-events="none">`;
+          out += `<rect x="${linLX.toFixed(1)}" y="${linLY.toFixed(1)}" width="${linLW.toFixed(1)}" height="${linLH}" rx="4" fill="#FF6720"/>`;
+          out += `<text x="${(linLX + linLW / 2).toFixed(1)}" y="${(linLY + linLH / 2 + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="white" font-weight="700" font-family="system-ui,sans-serif">${esc(linLabel)}</text>`;
+          out += `</g>`;
+          out += `<title>${esc(linLabel)}</title>`;
+          out += `</g>`;
         }
 
         // Quadratic curve — dashed, slightly heavier so the "with
@@ -483,7 +503,7 @@
           // Formula string: y = A · d^k (d in days since trip start).
           const A = (fit.A).toFixed(2);
           const k = (fit.k).toFixed(2);
-          const label = `Second-order trend: y = ${A} · d^${k}`;
+          const label = `Power-law fit: y = ${A} · d^${k}`;
           // Place the label near the START of the curve so it doesn't
           // fall off the right edge; nudged slightly above the anchor.
           const labelW = Math.max(60, label.length * 6.2 + 12);
@@ -630,22 +650,32 @@
     document.addEventListener("click", closeAll, { once: true });
   }
 
-  // Same pattern for the pink power-law fit curve — hover shows a
-  // formula pill (CSS handles that); tap toggles it for touch users.
+  // Same pattern for each fit curve (linear + power-law) — hover
+  // shows a formula pill (CSS handles that); tap toggles it for
+  // touch users. Only one open at a time.
   function wireFitCurveInteractions() {
-    const el = svg.querySelector(".dunkin-fit-curve");
-    if (!el) return;
-    el.addEventListener("click", (e) => {
-      e.stopPropagation();
-      el.classList.toggle("is-open");
+    const curves = svg.querySelectorAll(".dunkin-fit-curve");
+    if (!curves.length) return;
+    function closeAll() {
+      curves.forEach(c => c.classList.remove("is-open"));
+    }
+    curves.forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = el.classList.contains("is-open");
+        closeAll();
+        if (!wasOpen) el.classList.add("is-open");
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const wasOpen = el.classList.contains("is-open");
+          closeAll();
+          if (!wasOpen) el.classList.add("is-open");
+        }
+      });
     });
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        el.classList.toggle("is-open");
-      }
-    });
-    document.addEventListener("click", () => el.classList.remove("is-open"), { once: true });
+    document.addEventListener("click", closeAll, { once: true });
   }
 
   // Re-render every minute so the "today" marker + "X ago" extrapolation
