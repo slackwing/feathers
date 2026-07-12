@@ -314,7 +314,11 @@
   //     but never falls. This keeps the curve honest — a decreasing
   //     rate is meaningful data, we just don't let it produce
   //     impossible negative sightings.
-  const RECENT_WINDOW = 5;
+  // Bigger window = smoother fit = less dramatic curvature. A window
+  // of 5 lets any 3-click cluster dominate accel; 12 forces the fit
+  // to average over enough logs that only a *sustained* rate change
+  // pushes the curve upward.
+  const RECENT_WINDOW = 12;
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
@@ -357,7 +361,7 @@
   // duration it took to develop. Bounded to a sane range so numerical
   // edge cases don't produce a τ of 0 or infinity.
   const TAPER_TAU_MIN = 1.0;
-  const TAPER_TAU_MAX = 5.0;
+  const TAPER_TAU_MAX = 8.0;
   function taperTau() {
     if (logs.length < 2) return TAPER_TAU_MIN;
     const src = logs.length > RECENT_WINDOW ? logs.slice(-RECENT_WINDOW) : logs;
