@@ -655,7 +655,7 @@
           // are pre-wrapped (SVG doesn't wrap text natively) — each
           // string becomes one tspan.
           const essayLines = [
-            `Rolling rate + tapering accel:`,
+            `Forecast accounting for recent acceleration of sightings:`,
             `  rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
             ``,
             `Claude here, instructed by Andrew to explain this:`,
