@@ -545,27 +545,88 @@
           // rate itself is changing).
           const rate = (fit.rate).toFixed(2);
           const accel = (fit.accel).toFixed(2);
-          const d0 = (fit.d0).toFixed(2);
-          const c0 = (fit.c0).toFixed(0);
-          const label = `Rolling rate + accel: rate=${rate}/day, accel=${accel}/day²`;
-          // Place the label near the START of the curve so it doesn't
-          // fall off the right edge; nudged slightly above the anchor.
-          const labelW = Math.max(60, label.length * 6.2 + 12);
-          const labelH = 18;
-          const labelX = Math.max(M.left + 4, x0 - labelW / 2);
-          const labelY = Math.max(M.top + 2, y0 - labelH - 8);
-          out += `<g class="dunkin-fit-curve" tabindex="0" role="button" aria-label="${esc(label)}">`;
+          const shortLabel = `Rolling rate + accel: rate=${rate}/day, accel=${accel}/day²`;
+
+          // Long-form essay explaining why the graph model changed
+          // over the trip's lifetime. Rendered as a hover-only tooltip
+          // that fades in when the curve is hovered/tapped. The lines
+          // are pre-wrapped (SVG doesn't wrap text natively) — each
+          // string becomes one tspan.
+          const essayLines = [
+            `Rolling rate + accel:`,
+            `  rate = ${rate}/day, accel = ${accel}/day²`,
+            ``,
+            ``,
+            `Hey, this is Claude. Andrew asked me to explain the`,
+            `change in this graph.`,
+            ``,
+            `At first we fit a quadratic — count(d) = a·d² + b·d — and`,
+            `it worked, but the least-squares fit could pick a negative`,
+            `a, which sent the curve *downward*. That's impossible: you`,
+            `can't un-see a Dunkin. A running counter only goes up.`,
+            ``,
+            `To fix that we switched to a power-law, count(d) = A · d^k`,
+            `with A > 0 and k > 0. Monotonic by construction, always`,
+            `non-decreasing. But it has a subtler problem: only one`,
+            `shape parameter (k). A power law bends the same way over`,
+            `the entire trip — it can't capture "rate is flat across`,
+            `the Southwest, then surges once we hit the East Coast."`,
+            `It also gets pinned near the origin, so a burst of clicks`,
+            `on day 1 makes the whole curve look nearly linear.`,
+            ``,
+            `The current model is a rolling rate + acceleration fit`,
+            `on the last few logs:`,
+            ``,
+            `   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²`,
+            ``,
+            `anchored at the latest logged sighting (d₀, c₀). Two orders`,
+            `of information: a rate (sightings/day right now) and an`,
+            `acceleration (how fast that rate is itself changing). If`,
+            `we cross into Dunkin' country and the sighting rate jumps,`,
+            `accel goes positive and the curve bends upward. If we're`,
+            `in a lull, accel goes negative and the curve bends toward`,
+            `flat — but never below flat: if accel would drive rate`,
+            `below zero we integrate up to that point and hold count`,
+            `steady. Monotonic, but with the shape flexibility to`,
+            `actually track a shifting trend.`,
+          ];
+          const lineH = 13;
+          const padX = 12, padY = 10;
+          // Approximate width using the widest line. Monospace-ish
+          // estimate: 6.2 CSS units per char at font-size 11 works
+          // reasonably at the chart's 400-unit viewBox width.
+          const maxLineW = Math.max(...essayLines.map(s => s.length)) * 6.2;
+          const essayW = Math.min(CHART_W - 8, maxLineW + padX * 2);
+          const essayH = essayLines.length * lineH + padY * 2;
+          // Anchor the essay above and slightly right of the curve
+          // start, but keep it inside the chart bounds.
+          let essayX = x0 - essayW / 2;
+          essayX = Math.max(4, Math.min(essayX, CHART_W - essayW - 4));
+          let essayY = y0 - essayH - 10;
+          if (essayY < 4) essayY = Math.min(y0 + 12, CHART_H - essayH - 4);
+
+          out += `<g class="dunkin-fit-curve" tabindex="0" role="button" aria-label="${esc(shortLabel)}">`;
           // Visible dashed pink curve.
           out += `<path d="${quadD}" fill="none" stroke="#DA1884" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="2,3"/>`;
           // Invisible fat hitbox so hover/tap targets are generous.
           out += `<path d="${quadD}" fill="none" stroke="transparent" stroke-width="14" style="cursor:help;"/>`;
-          // Hover-reveal label (hidden by default; CSS drives opacity).
+          // Hover-reveal essay (hidden by default; CSS drives opacity).
           out += `<g class="dunkin-fit-label" pointer-events="none">`;
-          out += `<rect x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" width="${labelW.toFixed(1)}" height="${labelH}" rx="4" fill="#DA1884"/>`;
-          out += `<text x="${(labelX + labelW / 2).toFixed(1)}" y="${(labelY + labelH / 2 + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="white" font-weight="700" font-family="system-ui,sans-serif">${esc(label)}</text>`;
+          out += `<rect x="${essayX.toFixed(1)}" y="${essayY.toFixed(1)}" width="${essayW.toFixed(1)}" height="${essayH.toFixed(1)}" rx="6" fill="#DA1884"/>`;
+          // Text lines as tspans, each dy = lineH.
+          const textX = essayX + padX;
+          const textY0 = essayY + padY + 10;
+          out += `<text x="${textX.toFixed(1)}" y="${textY0.toFixed(1)}" font-size="11" fill="white" font-family="system-ui,sans-serif">`;
+          essayLines.forEach((line, i) => {
+            const bold = i === 0;
+            const weight = bold ? " font-weight=\"800\"" : "";
+            out += `<tspan x="${textX.toFixed(1)}" dy="${i === 0 ? 0 : lineH}"${weight}>${esc(line || " ")}</tspan>`;
+          });
+          out += `</text>`;
           out += `</g>`;
-          // Native title as a fallback tooltip.
-          out += `<title>${esc(label)}</title>`;
+          // Native title as a fallback tooltip — short form only, since
+          // native tooltips don't render wrapped text nicely.
+          out += `<title>${esc(shortLabel)}</title>`;
           out += `</g>`;
         }
 
