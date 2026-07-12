@@ -656,13 +656,13 @@
           // string becomes one tspan.
           const essayLines = [
             `Forecast accounting for recent acceleration of sightings:`,
-            `  rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
+            `  instantaneous rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
             ``,
             `Claude here, instructed by Andrew to explain this:`,
-            `We fit two numbers on the last ${RECENT_WINDOW} logs — a`,
-            `RATE (sightings/day now) and an ACCEL (how fast the`,
-            `rate itself changes). Anchored at the latest log`,
-            `(d₀, c₀):`,
+            `We fit two numbers on the last ${RECENT_WINDOW} logs — an`,
+            `INSTANTANEOUS RATE (local slope at the anchor, not the`,
+            `trip average) and an ACCEL (how fast the rate itself`,
+            `changes). Anchored at the latest log (d₀, c₀):`,
             `   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²`,
             `Two orders means the curve bends: cross into Dunkin'`,
             `country → accel positive → curve bends UP; hit a lull`,
