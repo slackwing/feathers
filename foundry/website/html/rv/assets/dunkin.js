@@ -315,10 +315,10 @@
   //     rate is meaningful data, we just don't let it produce
   //     impossible negative sightings.
   // Bigger window = smoother fit = less dramatic curvature. A window
-  // of 5 lets any 3-click cluster dominate accel; 12 forces the fit
-  // to average over enough logs that only a *sustained* rate change
-  // pushes the curve upward.
-  const RECENT_WINDOW = 12;
+  // of 5 let any 3-click cluster dominate accel; 12 was too smooth
+  // to react. 8 is the middle ground — a real trend moves the curve
+  // but a single cluster doesn't send it shooting upward.
+  const RECENT_WINDOW = 8;
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
@@ -356,18 +356,20 @@
     return { rate, accel, d0, c0 };
   }
 
-  // Time constant for accel-taper (in days). Set to the span of the
-  // recent-window logs so a burst dies out over roughly the same
-  // duration it took to develop. Bounded to a sane range so numerical
-  // edge cases don't produce a τ of 0 or infinity.
-  const TAPER_TAU_MIN = 1.0;
-  const TAPER_TAU_MAX = 8.0;
+  // Time constant for accel-taper (in days). Set to a multiple of
+  // the recent-window timespan so a burst sustains long enough to
+  // draw a *visible* curve before flattening. Bounded to a sane
+  // range so numerical edge cases don't produce τ of 0 or infinity.
+  const TAPER_TAU_MIN = 2.0;
+  const TAPER_TAU_MAX = 14.0;
+  const TAPER_MULT = 2.5;
   function taperTau() {
     if (logs.length < 2) return TAPER_TAU_MIN;
     const src = logs.length > RECENT_WINDOW ? logs.slice(-RECENT_WINDOW) : logs;
     const first = daysSinceStart(parseDate(src[0].created_at).getTime());
     const last  = daysSinceStart(parseDate(src[src.length - 1].created_at).getTime());
-    return Math.max(TAPER_TAU_MIN, Math.min(TAPER_TAU_MAX, last - first || TAPER_TAU_MIN));
+    const span = (last - first) * TAPER_MULT || TAPER_TAU_MIN;
+    return Math.max(TAPER_TAU_MIN, Math.min(TAPER_TAU_MAX, span));
   }
 
   // Project via the fitted rolling rate + accel WITH A DECAYING
