@@ -472,11 +472,37 @@
         }
 
         // Quadratic curve — dashed, slightly heavier so the "with
-        // acceleration" story reads.
+        // acceleration" story reads. Wrapped in a group with an
+        // invisible fat-stroke hit path so hovering anywhere near the
+        // curve reveals the fit formula (count = A · d^k, with actual
+        // A and k floats). Hover state toggles .is-open on the group
+        // and CSS drives the reveal of the .dunkin-fit-label element.
         if (fit && quadSamples.length) {
           const quadD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ` +
                        quadSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          // Formula string: y = A · d^k (d in days since trip start).
+          const A = (fit.A).toFixed(2);
+          const k = (fit.k).toFixed(2);
+          const label = `Second-order trend: y = ${A} · d^${k}`;
+          // Place the label near the START of the curve so it doesn't
+          // fall off the right edge; nudged slightly above the anchor.
+          const labelW = Math.max(60, label.length * 6.2 + 12);
+          const labelH = 18;
+          const labelX = Math.max(M.left + 4, x0 - labelW / 2);
+          const labelY = Math.max(M.top + 2, y0 - labelH - 8);
+          out += `<g class="dunkin-fit-curve" tabindex="0" role="button" aria-label="${esc(label)}">`;
+          // Visible dashed pink curve.
           out += `<path d="${quadD}" fill="none" stroke="#DA1884" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="2,3"/>`;
+          // Invisible fat hitbox so hover/tap targets are generous.
+          out += `<path d="${quadD}" fill="none" stroke="transparent" stroke-width="14" style="cursor:help;"/>`;
+          // Hover-reveal label (hidden by default; CSS drives opacity).
+          out += `<g class="dunkin-fit-label" pointer-events="none">`;
+          out += `<rect x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" width="${labelW.toFixed(1)}" height="${labelH}" rx="4" fill="#DA1884"/>`;
+          out += `<text x="${(labelX + labelW / 2).toFixed(1)}" y="${(labelY + labelH / 2 + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="white" font-weight="700" font-family="system-ui,sans-serif">${esc(label)}</text>`;
+          out += `</g>`;
+          // Native title as a fallback tooltip.
+          out += `<title>${esc(label)}</title>`;
+          out += `</g>`;
         }
 
       }
@@ -569,6 +595,7 @@
 
     svg.innerHTML = out;
     wireAvatarInteractions();
+    wireFitCurveInteractions();
   }
 
   // Hover (mouse) or tap (touch) toggles a popover on each avatar. On
@@ -601,6 +628,24 @@
     });
     // Tap outside → close all.
     document.addEventListener("click", closeAll, { once: true });
+  }
+
+  // Same pattern for the pink power-law fit curve — hover shows a
+  // formula pill (CSS handles that); tap toggles it for touch users.
+  function wireFitCurveInteractions() {
+    const el = svg.querySelector(".dunkin-fit-curve");
+    if (!el) return;
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      el.classList.toggle("is-open");
+    });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        el.classList.toggle("is-open");
+      }
+    });
+    document.addEventListener("click", () => el.classList.remove("is-open"), { once: true });
   }
 
   // Re-render every minute so the "today" marker + "X ago" extrapolation

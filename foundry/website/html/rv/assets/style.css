@@ -1074,6 +1074,23 @@ a { color: var(--accent); }
   opacity: 1;
   transform: translateX(0);
 }
+/* Power-law fit curve — the pink dashed line. Hovering (or focusing)
+   anywhere near it reveals a pill above the anchor point showing the
+   fitted formula y = A · d^k with real floats. Uses the same
+   opacity + slide-in pattern as the avatar popovers for consistency. */
+.dunkin-fit-curve { cursor: help; outline: none; }
+.dunkin-fit-curve .dunkin-fit-label {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+.dunkin-fit-curve:hover .dunkin-fit-label,
+.dunkin-fit-curve:focus .dunkin-fit-label,
+.dunkin-fit-curve:focus-within .dunkin-fit-label,
+.dunkin-fit-curve.is-open .dunkin-fit-label {
+  opacity: 1;
+  transform: translateY(0);
+}
 /* Blurb sits below the chart on the dunkin tile — no top margin from
    the standard .fun-tile-lede because the chart already breathes. */
 .fun-tile-dunkin .dunkin-blurb {
