@@ -545,14 +545,26 @@
           }
         }
 
-        // Shaded uncertainty band between the two curves. Rendered
+        // Shaded uncertainty band spanning the full cone of
+        // possibility: from the flat "no more Dunkin" floor at y0
+        // up to whichever projection curve sits highest. Rendered
         // NOW (before the emoji) since it's decorative fill; the
         // interactive curves themselves are held back until after
         // the 🍩 so hover works over the donut.
-        if (fit && linSamples.length && quadSamples.length) {
-          const fwd = linSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-          const rev = quadSamples.slice().reverse().map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-          const bandD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ${fwd} ${rev} Z`;
+        if (linSamples.length || quadSamples.length) {
+          // Top curve = pointwise MAX of quad and linear (in y-space,
+          // that's the MIN y since y grows downward).
+          const topSamples = [];
+          const n = Math.max(linSamples.length, quadSamples.length);
+          for (let i = 0; i < n; i++) {
+            const l = linSamples[i], q = quadSamples[i];
+            if (l && q) topSamples.push({ x: l.x, y: Math.min(l.y, q.y) });
+            else if (l) topSamples.push(l);
+            else if (q) topSamples.push(q);
+          }
+          const flatXEnd = xForDate(tripEndMs);
+          const fwd = topSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+          const bandD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ${fwd} L ${flatXEnd.toFixed(1)} ${y0.toFixed(1)} Z`;
           out += `<path d="${bandD}" fill="#FF6720" fill-opacity="0.13" stroke="none"/>`;
         }
 
