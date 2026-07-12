@@ -285,60 +285,99 @@
     return Math.max(0, a.c + rate * (targetDays - a.d));
   }
 
-  // Power-law = "with acceleration or deceleration" projection.
-  //   Fit count(d) = A · d^k where d = days since trip start.
-  //     k = 1 → straight line (constant rate)
-  //     k > 1 → accelerating (rate rising over time)
-  //     0 < k < 1 → decelerating (rate slowing, still climbing)
-  //   Because A > 0 and d > 0 give A·d^k > 0 monotonically, the
-  //   projection is guaranteed non-decreasing — right shape for a
-  //   running counter that can only go up or stay flat.
+  // Rolling rate + acceleration projection — the "two orders" model.
   //
-  // Method: linear regression on the log-log points (log(d), log(c))
-  //   log(c) = log(A) + k · log(d)
-  //   → k = slope, log(A) = intercept.
-  // Only points with d > 0 and c > 0 participate (log of 0 is
-  // undefined). Needs ≥2 such points to fit both k and A.
+  // We measure two things from the recent window of logs:
+  //   rate  = 1st-order rate (sightings per day) at the anchor time
+  //   accel = 2nd-order rate (change in rate per day) at the anchor
   //
-  // Windowing: uses the most recent RECENT_WINDOW logs so a burst
-  // late in the trip actually shows up as acceleration instead of
-  // being averaged into the whole-trip trend.
+  // and then project forward with the physics-style formula
+  //
+  //   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²
+  //
+  // anchored at the latest log (d₀, c₀). This produces a real CURVE
+  // that bends up when the sighting rate is increasing (e.g. we've
+  // crossed into east-coast Dunkin' territory) and bends toward flat
+  // when the rate is falling.
+  //
+  // Estimating rate + accel from a small window:
+  //   Fit count(d) ≈ c₀ + rate·(d − d₀) + ½·accel·(d − d₀)² to the
+  //   last RECENT_WINDOW logs via ordinary least squares on the
+  //   shifted variable u = d − d₀. Two parameters (rate, accel) with
+  //   the intercept pinned to c₀ so the curve passes through the
+  //   latest log.
+  //
+  // Monotonicity guards:
+  //   - If accel < 0, we clip accel to 0 once the projected rate
+  //     would go negative. In practice we track rate(d) = rate +
+  //     accel·(d − d₀) and floor it at 0; count(d) then stops rising
+  //     but never falls. This keeps the curve honest — a decreasing
+  //     rate is meaningful data, we just don't let it produce
+  //     impossible negative sightings.
   const RECENT_WINDOW = 5;
-  function fitPowerLaw() {
+  function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
       ? logs.slice(-RECENT_WINDOW)
       : logs;
+    // Anchor at the latest log.
+    const anchor = src[src.length - 1];
+    const d0 = daysSinceStart(parseDate(anchor.created_at).getTime());
+    const c0 = anchor.count;
+    // Build points relative to the anchor: u = d − d₀, y = c − c₀.
+    // Fit y = rate·u + ½·accel·u² via least squares (no intercept
+    // — the anchor point contributes u=0, y=0 for free).
     const pts = [];
     for (const l of src) {
       const d = daysSinceStart(parseDate(l.created_at).getTime());
-      const c = l.count;
-      if (d > 0 && c > 0) pts.push({ x: Math.log(d), y: Math.log(c) });
+      pts.push({ u: d - d0, y: l.count - c0 });
     }
-    if (pts.length < 2) return null;
-    let sx = 0, sy = 0, sxx = 0, sxy = 0;
-    for (const { x, y } of pts) {
-      sx += x; sy += y; sxx += x * x; sxy += x * y;
+    // 2×2 normal equations for [rate, ½·accel]:
+    //   [Σu²  Σu³ ] [rate  ] = [Σu·y ]
+    //   [Σu³  Σu⁴ ] [½accel]   [Σu²·y]
+    let s2 = 0, s3 = 0, s4 = 0, suy = 0, su2y = 0;
+    for (const { u, y } of pts) {
+      const u2 = u * u;
+      s2 += u2;
+      s3 += u2 * u;
+      s4 += u2 * u2;
+      suy += u * y;
+      su2y += u2 * y;
     }
-    const n = pts.length;
-    const denom = n * sxx - sx * sx;
-    if (Math.abs(denom) < 1e-9) return null;
-    const k = (n * sxy - sx * sy) / denom;
-    const logA = (sy - k * sx) / n;
-    const A = Math.exp(logA);
-    return { A, k };
+    const det = s2 * s4 - s3 * s3;
+    if (Math.abs(det) < 1e-9) return null; // window too tight in time
+    const rate = (s4 * suy - s3 * su2y) / det;
+    const halfAccel = (s2 * su2y - s3 * suy) / det;
+    const accel = 2 * halfAccel;
+    return { rate, accel, d0, c0 };
   }
 
-  // Kept the old name so callers don't have to change; the shape of
-  // the returned curve is now a power law, not a parabola.
+  // Project via the fitted rolling rate + accel. Non-decreasing by
+  // construction: rate(d) is clipped at 0 so the integrated count
+  // stops rising once the local rate would go negative.
   function quadraticProjection(ms) {
-    const fit = fitPowerLaw();
+    const fit = fitRollingRate();
     if (!fit) return null;
+    const { rate, accel, d0, c0 } = fit;
     const d = daysSinceStart(ms);
-    if (d <= 0) return 0;
-    return Math.max(0, fit.A * Math.pow(d, fit.k));
+    const u = d - d0;
+    if (u <= 0) return c0;
+    // If accel keeps rate ≥ 0 over the whole interval, the closed
+    // form is straightforward.
+    if (accel >= 0 || rate + accel * u >= 0) {
+      return Math.max(c0, c0 + rate * u + 0.5 * accel * u * u);
+    }
+    // Decelerating fast enough that rate crosses zero inside the
+    // projection window. Integrate up to the zero-crossing at
+    // u* = −rate / accel, then hold count flat afterward.
+    const uStar = -rate / accel;
+    if (uStar <= 0) return c0; // already at 0 rate at the anchor
+    const cAtStop = c0 + rate * uStar + 0.5 * accel * uStar * uStar;
+    return Math.max(c0, cAtStop);
   }
-  function fitQuadratic() { return fitPowerLaw(); }
+  // Kept for callers that still reference the old names.
+  function fitQuadratic() { return fitRollingRate(); }
+  function fitPowerLaw() { return fitRollingRate(); }
 
   function renderChart() {
     const yMax = pickYMax();
@@ -500,10 +539,15 @@
         if (fit && quadSamples.length) {
           const quadD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} ` +
                        quadSamples.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-          // Formula string: y = A · d^k (d in days since trip start).
-          const A = (fit.A).toFixed(2);
-          const k = (fit.k).toFixed(2);
-          const label = `Power-law fit: y = ${A} · d^${k}`;
+          // Model: count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²
+          // fit on the last few logs. rate = current 1st-order rate
+          // (sightings/day), accel = 2nd-order rate (how fast the
+          // rate itself is changing).
+          const rate = (fit.rate).toFixed(2);
+          const accel = (fit.accel).toFixed(2);
+          const d0 = (fit.d0).toFixed(2);
+          const c0 = (fit.c0).toFixed(0);
+          const label = `Rolling rate + accel: rate=${rate}/day, accel=${accel}/day²`;
           // Place the label near the START of the curve so it doesn't
           // fall off the right edge; nudged slightly above the anchor.
           const labelW = Math.max(60, label.length * 6.2 + 12);
