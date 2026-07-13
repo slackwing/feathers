@@ -346,24 +346,20 @@
     const src = logs.length > RECENT_WINDOW
       ? logs.slice(-RECENT_WINDOW)
       : logs;
-    // Anchor at NOW (or the last log if we're pre-trip / no now). This
-    // way the forecast keeps evolving between clicks — the longer we
-    // go without a sighting, the more the fit's implied rate drops.
+    // Anchor at the LAST LOG (not now). Earlier we anchored at now,
+    // but re-anchoring every render is what caused the projection
+    // to collapse: the same cluster of logs, viewed from a "now"
+    // that keeps sliding forward, produces a lower and lower fitted
+    // rate because the cluster's u-distance grows. Anchoring at
+    // last-log freezes the fit's frame of reference; the phantom
+    // (placed at u_now = now - last_log > 0) is what carries the
+    // "time has passed without a sighting" signal into the fit.
     const lastLog = src[src.length - 1];
     const lastT = parseDate(lastLog.created_at).getTime();
     const nowMs = Date.now();
-    const useNow = nowMs >= tripStartMs && nowMs > lastT;
-    const t0 = useNow ? Math.min(nowMs, tripEndMs) : lastT;
-    const d0 = daysSinceStart(t0);
+    const havePhantom = nowMs >= tripStartMs && nowMs > lastT;
+    const d0 = daysSinceStart(lastT);
     const c0 = lastLog.count;
-    // Build points relative to the anchor: u = d − d₀, y = c − c₀.
-    // Fit y = rate·u + ½·accel·u² via least squares.
-    // Real logs contribute their (u, y). If the anchor is at NOW we
-    // also inject a PHANTOM POINT at (u=0, y=0) — "we're here now with
-    // the current count." Real logs then live at u < 0 (in the past).
-    // The phantom encodes the info that no sighting has happened
-    // between the last log and now, which pulls the fit toward a
-    // lower instantaneous rate as time passes without a click.
     // Each real log gets an exponential-decay weight based on how far
     // back in time it sits: w = exp(−|u|/FIT_TAU). Recent logs count
     // fully, older ones fade smoothly. This replaces the hard window
@@ -375,11 +371,16 @@
       const u = d - d0;
       pts.push({ u, y: l.count - c0, w: Math.exp(-Math.abs(u) / FIT_TAU) });
     }
-    // Phantom is weighted at PHANTOM_W (< 1) so it nudges the fit
-    // instead of yanking it. Without this, once we've gone a few days
-    // without a click the phantom dominates and slams accel sharply
-    // negative — a 200/trip forecast collapses to 50 overnight.
-    if (useNow) pts.push({ u: 0, y: 0, w: PHANTOM_W });
+    // Phantom "no-sighting-yet" observation at u_now = now - last_log,
+    // y = 0 (count hasn't changed since last log). As time passes, u_now
+    // grows and its (u, 0) increasingly pulls the fit toward flat. It's
+    // weighted at PHANTOM_W < 1 so it nudges the fit instead of yanking
+    // it — long gaps still influence the forecast, but gradually, not
+    // in one step.
+    if (havePhantom) {
+      const uNow = daysSinceStart(Math.min(nowMs, tripEndMs)) - d0;
+      pts.push({ u: uNow, y: 0, w: PHANTOM_W });
+    }
     // Weighted 2×2 normal equations for [rate, ½·accel]:
     //   [Σw·u²  Σw·u³ ] [rate  ] = [Σw·u·y ]
     //   [Σw·u³  Σw·u⁴ ] [½accel]   [Σw·u²·y]
@@ -714,16 +715,20 @@
             `Claude here, instructed by Andrew to explain this. We`,
             `fit two numbers on the last ${RECENT_WINDOW} logs plus a phantom`,
             `"no-sighting-yet" point at NOW, each weighted by an`,
-            `exponential decay w = exp(−|u|/${FIT_TAU}) where u is days`,
-            `back from now — so recent logs dominate but an old`,
+            `exponential decay w = exp(−|u|/${FIT_TAU}) where u is days from`,
+            `the last log — so recent logs dominate but an old`,
             `cluster's influence fades smoothly over days instead of`,
             `vanishing the instant a newer log arrives. The phantom`,
             `gets an extra ${PHANTOM_W}× factor so long gaps nudge rather`,
             `than yank the fit. Fit outputs: an INSTANTANEOUS RATE`,
             `(local slope at the anchor, not the trip average) and`,
             `an ACCEL (how fast the rate itself changes). Anchored`,
-            `at NOW (d₀, c₀), count(d) = c₀ + rate·(d − d₀) +`,
-            `½·accel·(d − d₀)². Two orders means the curve bends —`,
+            `at the LAST LOG (d₀, c₀) — earlier we anchored at NOW,`,
+            `but re-anchoring every render caused the projection to`,
+            `collapse fast (same cluster, sliding "now", shrinking`,
+            `fitted rate). Frozen anchor + phantom-at-u_now is the`,
+            `right split: count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)².`,
+            `Two orders means the curve bends —`,
             `cross into Dunkin' country and accel goes positive;`,
             `hit a lull and accel goes negative and the curve`,
             `flattens. A burst can't compound forever so accel TAPERS`,
