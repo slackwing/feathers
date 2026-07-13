@@ -336,11 +336,11 @@
   // cluster's influence on the forecast diminishes gradually rather
   // than vanishing the instant a newer log arrives. Bigger τ = longer
   // memory = slower response to regime change.
-  const FIT_TAU = 1.5;
+  const FIT_TAU = 1.0;
   // Weight of the phantom "now" observation relative to a full-weight
   // real log. < 1 so long stretches without a sighting don't yank
   // accel wildly negative — the phantom nudges, real logs still lead.
-  const PHANTOM_W = 0.1;
+  const PHANTOM_W = 0.5;
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
@@ -407,7 +407,7 @@
   // range so numerical edge cases don't produce τ of 0 or infinity.
   const TAPER_TAU_MIN = 2.0;
   const TAPER_TAU_MAX = 14.0;
-  const TAPER_MULT = 6.0;
+  const TAPER_MULT = 4.0;
   function taperTau() {
     if (logs.length < 2) return TAPER_TAU_MIN;
     const src = logs.length > RECENT_WINDOW ? logs.slice(-RECENT_WINDOW) : logs;
