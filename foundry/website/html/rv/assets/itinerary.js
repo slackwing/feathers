@@ -757,6 +757,6 @@
     const startStr = `${MONTH_SHORT[startDt.getUTCMonth()]} ${startDt.getUTCDate()}`;
     const endStr = `${MONTH_SHORT[endDt.getUTCMonth()]} ${endDt.getUTCDate()}`;
     const yr = startDt.getUTCFullYear();
-    subtitle.innerHTML = `San Diego → New York City<br>${startStr} – ${endStr}, ${yr}<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link" style="color:var(--accent)">checklists!</a> · <a href="notes.html" class="prep-link" style="color:var(--accent)">notes</a> · <a href="admin.html" class="prep-link" style="color:var(--accent)">admin</a></span>`;
+    subtitle.innerHTML = `San Diego → New York City<br>${startStr} – ${endStr}, ${yr}<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link" style="color:var(--accent)">checklists!</a> · <a href="notes.html" class="prep-link" style="color:var(--accent)">notes</a> · <a href="website.html" class="prep-link" style="color:var(--accent)">website</a> · <a href="admin.html" class="prep-link" style="color:var(--accent)">admin</a></span>`;
   }
 })();
