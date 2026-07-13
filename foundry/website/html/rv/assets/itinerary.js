@@ -70,6 +70,7 @@
         sleep_type: db.sleep_type || null,
         activated: db.activated,
         markdown: db.markdown || "",
+        day_card_label: db.day_card_label || "",
         deleted_at: db.deleted_at,
         route_fraction: db.route_fraction,
         _source: "user",
