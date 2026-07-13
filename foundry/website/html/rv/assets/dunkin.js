@@ -340,7 +340,7 @@
   // Weight of the phantom "now" observation relative to a full-weight
   // real log. < 1 so long stretches without a sighting don't yank
   // accel wildly negative — the phantom nudges, real logs still lead.
-  const PHANTOM_W = 0.5;
+  const PHANTOM_W = 0.05;
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
