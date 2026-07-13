@@ -188,6 +188,15 @@
       "medal": "gold"
     },
     {
+      "id": "blm_road_62",
+      "kind": "sleep",
+      "name": "BLM Road 62 Dispersed (Santa Fe NF)",
+      "lat": 35.68909,
+      "lon": -106.09388,
+      "sleep_type": "free_dispersed",
+      "_notes": "BLM dispersed just off Santa Fe NF, ~7 min west of downtown Santa Fe (https://thedyrt.com/camping/new-mexico/sante-fe-national-forest-blm-road-62). Cattle-guard entrance then immediate left. Sites spread out — open lot near entrance, more secluded pullouts further in. Fits all rig sizes, many flat sites. Pit toilets near entrance. Cell service 3-4 bars AT&T. Daytime shooting / landfill noise reported; quiet at night. Actually slept here on the second night in Santa Fe area (2026-07)."
+    },
+    {
       "id": "hopewell_lake_cg",
       "kind": "sleep",
       "name": "Hopewell Lake Campground (Carson NF)",
@@ -1158,6 +1167,7 @@
     "valley_of_fires",
     "san_antonio_nm",
     "hyde_park",
+    "blm_road_62",
     "hopewell_lake_cg",
     "tres_piedras_dispersed",
     "east_fork_fr667_dispersed",
