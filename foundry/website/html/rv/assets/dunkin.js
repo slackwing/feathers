@@ -329,6 +329,10 @@
   // to react. 8 is the middle ground — a real trend moves the curve
   // but a single cluster doesn't send it shooting upward.
   const RECENT_WINDOW = 8;
+  // Weight of the phantom "now" observation relative to a real log.
+  // < 1 so long stretches without a sighting don't yank accel wildly
+  // negative — the phantom nudges, real logs still lead.
+  const PHANTOM_W = 0.3;
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
     const src = logs.length > RECENT_WINDOW
@@ -355,20 +359,24 @@
     const pts = [];
     for (const l of src) {
       const d = daysSinceStart(parseDate(l.created_at).getTime());
-      pts.push({ u: d - d0, y: l.count - c0 });
+      pts.push({ u: d - d0, y: l.count - c0, w: 1 });
     }
-    if (useNow) pts.push({ u: 0, y: 0 }); // phantom "now" observation
-    // 2×2 normal equations for [rate, ½·accel]:
-    //   [Σu²  Σu³ ] [rate  ] = [Σu·y ]
-    //   [Σu³  Σu⁴ ] [½accel]   [Σu²·y]
+    // Phantom is weighted at PHANTOM_W (< 1) so it nudges the fit
+    // instead of yanking it. Without this, once we've gone a few days
+    // without a click the phantom dominates and slams accel sharply
+    // negative — a 200/trip forecast collapses to 50 overnight.
+    if (useNow) pts.push({ u: 0, y: 0, w: PHANTOM_W });
+    // Weighted 2×2 normal equations for [rate, ½·accel]:
+    //   [Σw·u²  Σw·u³ ] [rate  ] = [Σw·u·y ]
+    //   [Σw·u³  Σw·u⁴ ] [½accel]   [Σw·u²·y]
     let s2 = 0, s3 = 0, s4 = 0, suy = 0, su2y = 0;
-    for (const { u, y } of pts) {
+    for (const { u, y, w } of pts) {
       const u2 = u * u;
-      s2 += u2;
-      s3 += u2 * u;
-      s4 += u2 * u2;
-      suy += u * y;
-      su2y += u2 * y;
+      s2 += w * u2;
+      s3 += w * u2 * u;
+      s4 += w * u2 * u2;
+      suy += w * u * y;
+      su2y += w * u2 * y;
     }
     const det = s2 * s4 - s3 * s3;
     if (Math.abs(det) < 1e-9) return null; // window too tight in time
@@ -689,44 +697,33 @@
             `Forecast accounting for recent acceleration of sightings:`,
             `  instantaneous rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
             ``,
-            `Claude here, instructed by Andrew to explain this:`,
-            `We fit two numbers on the last ${RECENT_WINDOW} logs plus a`,
-            `phantom "no-sighting-yet" point at NOW — an`,
+            `Claude here, instructed by Andrew to explain this. We`,
+            `fit two numbers on the last ${RECENT_WINDOW} logs plus a phantom`,
+            `"no-sighting-yet" point at NOW (weighted ${PHANTOM_W}× a real`,
+            `log so long gaps nudge rather than yank the fit): an`,
             `INSTANTANEOUS RATE (local slope at the anchor, not the`,
             `trip average) and an ACCEL (how fast the rate itself`,
-            `changes). Anchored at NOW (d₀, c₀):`,
-            `   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²`,
-            `Two orders means the curve bends: cross into Dunkin'`,
-            `country → accel positive → curve bends UP; hit a lull`,
-            `→ accel negative → curve flattens.`,
-            ``,
-            `A burst can't compound forever, so accel TAPERS with`,
-            `exponential decay of time constant τ:`,
+            `changes). Anchored at NOW (d₀, c₀), count(d) = c₀ +`,
+            `rate·(d − d₀) + ½·accel·(d − d₀)². Two orders means the`,
+            `curve bends — cross into Dunkin' country and accel goes`,
+            `positive; hit a lull and accel goes negative and the`,
+            `curve flattens. A burst can't compound forever so accel`,
+            `TAPERS with exponential decay of time constant τ:`,
             `   accel(u) = accel · exp(−u/τ)`,
             `   rate(u)  = rate + accel·τ·(1 − exp(−u/τ))`,
             `   count(u) = c₀ + rate·u + accel·τ·(u − τ·(1 − exp(−u/τ)))`,
             `where u = d − d₀. As u grows, accel dies off and the`,
-            `curve settles into linear growth at rate + accel·τ.`,
-            `τ = timespan of the fit window, clamped ${TAPER_TAU_MIN}–${TAPER_TAU_MAX}d.`,
-            ``,
-            `The phantom-point trick: rate + accel would otherwise`,
-            `freeze between clicks (fit only changes when a new log`,
-            `arrives). Injecting a synthetic (u=0, y=0) observation`,
-            `at NOW says "we're here, count hasn't budged." The`,
-            `longer you go without a sighting, the more that`,
-            `phantom pulls the fit toward flat — accel goes`,
-            `negative, instantaneous rate drops. Log a new sighting`,
-            `and the phantom resets to the new NOW.`,
-            ``,
-            `Monotonic guard: if accel drives the local rate below`,
-            `zero, we hold count flat at the crossing. No un-`,
-            `seeing donuts.`,
-            ``,
-            `Window = ${RECENT_WINDOW}: smaller windows let a click`,
-            `cluster dominate accel and shoot the curve upward.`,
-            `Averaging over more logs smooths it; only a sustained`,
-            `shift moves the curve. Trade-off: slower to respond`,
-            `to a real regime change.`,
+            `curve settles into linear growth at rate + accel·τ. τ =`,
+            `timespan of the fit window × ${TAPER_MULT}, clamped ${TAPER_TAU_MIN}–${TAPER_TAU_MAX}d.`,
+            `The phantom-point trick makes the forecast keep evolving`,
+            `between clicks — the longer you go without a sighting,`,
+            `the more it pulls the fit toward flat; log a new one and`,
+            `the phantom resets to the new NOW. Monotonic guard: if`,
+            `accel drives the local rate below zero, we hold count`,
+            `flat at the crossing — no un-seeing donuts. Window ${RECENT_WINDOW}`,
+            `is the middle ground; smaller lets a click cluster shoot`,
+            `the curve upward, larger is slower to respond to a real`,
+            `regime change.`,
           ];
           const lineH = 13;
           const padX = 12, padY = 10;
