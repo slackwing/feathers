@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website — Hedgie & Frogie's RV Adventure</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.ws-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+@media (min-width: 760px) {
+  .ws-page { padding: 56px 32px 100px; }
+}
+.ws-back {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+.ws-back:hover { color: var(--ink); text-decoration: underline; }
+.ws-page h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  margin: 0 0 6px;
+}
+.ws-page .lede {
+  color: var(--ink-soft);
+  margin: 0 0 28px;
+  font-style: italic;
+}
+.ws-page h2 {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  margin: 40px 0 8px;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 4px;
+}
+.ws-page h3 {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  margin: 22px 0 6px;
+}
+.ws-page p { margin: 8px 0 12px; }
+.ws-page ul { padding-left: 22px; margin: 6px 0 14px; }
+.ws-page li { margin: 3px 0; }
+.ws-page code {
+  background: rgba(0,0,0,0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.88em;
+}
+.ws-page pre {
+  background: rgba(0,0,0,0.05);
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 8px 0 14px;
+}
+.ws-page a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.ws-page table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0 14px;
+  font-size: 0.9rem;
+}
+.ws-page th, .ws-page td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.ws-page th { font-family: var(--font-serif); font-weight: 600; color: var(--ink-soft); }
+.ws-page td code { font-size: 0.82rem; }
+.ws-diagram {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 14px 0 20px;
+  background: #fdfaf3;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ws-fig {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: -12px 0 24px;
+  font-style: italic;
+}
+.ws-formula {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86rem;
+  background: rgba(0,0,0,0.04);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 6px 0 12px;
+  overflow-x: auto;
+}
+.ws-inline-key { color: #DA1884; font-weight: 600; }
+.ws-note {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--line);
+  padding-left: 12px;
+  margin: 8px 0 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="site-controls">
+  <button class="site-login-btn" id="site-login-btn" type="button" aria-label="Log in">Log in</button>
+  <div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
+    <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
+    <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
+  </div>
+</div>
+
+<div class="site-modal-overlay" id="site-login-modal" hidden>
+  <div class="site-modal" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
+    <button class="site-modal-close" id="site-login-close" type="button" aria-label="Close">×</button>
+    <h2 id="site-login-title">Log in</h2>
+    <form id="site-login-form">
+      <label class="site-modal-field">
+        <span>Username</span>
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label class="site-modal-field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p class="site-modal-error" id="site-login-error" hidden></p>
+      <button class="site-modal-submit" type="submit">Log in</button>
+    </form>
+  </div>
+</div>
+
+<div class="ws-page">
+  <a class="ws-back" href="index.html">← Back to itinerary</a>
+  <h1>The Website</h1>
+  <p class="lede">How this site is put together. Everything you might want to know, nothing you don't.</p>
+
+  <h2>Architecture</h2>
+
+  <svg class="ws-diagram" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System architecture diagram">
+    <defs>
+      <marker id="ws-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#4a5a52"/>
+      </marker>
+      <marker id="ws-arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#FF6720"/>
+      </marker>
+      <marker id="ws-arrow-pink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#DA1884"/>
+      </marker>
+    </defs>
+
+    <style>
+      .ws-box { fill: #fff; stroke: #4a5a52; stroke-width: 1.5; }
+      .ws-box-cloud { fill: #eaf3ee; stroke: #7ba58b; }
+      .ws-box-vm    { fill: #fff6ea; stroke: #d69a58; stroke-dasharray: 5,3; }
+      .ws-box-user  { fill: #f5efe5; stroke: #a68a5c; }
+      .ws-lbl    { font-family: 'Inter', system-ui, sans-serif; font-size: 12px; fill: #2a2a2a; }
+      .ws-lbl-b  { font-weight: 700; }
+      .ws-lbl-sm { font-size: 10px; fill: #6b7a70; }
+      .ws-lbl-title { font-family: 'Fraunces', 'Playfair Display', serif; font-weight: 600; font-size: 13px; fill: #2a2a2a; }
+      .ws-arrow-line { stroke: #4a5a52; stroke-width: 1.5; fill: none; }
+      .ws-arrow-orange { stroke: #FF6720; stroke-width: 1.75; fill: none; }
+      .ws-arrow-pink { stroke: #DA1884; stroke-width: 1.75; fill: none; stroke-dasharray: 4,3; }
+    </style>
+
+    <!-- Region: developer / user side -->
+    <rect x="16" y="16" width="200" height="180" rx="10" class="ws-box ws-box-user"/>
+    <text x="116" y="38" text-anchor="middle" class="ws-lbl ws-lbl-title">Developer laptop</text>
+    <text x="116" y="60" text-anchor="middle" class="ws-lbl">Claude Code + shell</text>
+    <text x="116" y="80" text-anchor="middle" class="ws-lbl-sm">~/src/feathers/…/html/rv/</text>
+    <text x="116" y="105" text-anchor="middle" class="ws-lbl-sm">ws_prod → rsync -avz --delete</text>
+    <text x="116" y="122" text-anchor="middle" class="ws-lbl-sm">git commit → GitHub</text>
+    <text x="116" y="150" text-anchor="middle" class="ws-lbl">🐸 + 🦔 phones / laptop</text>
+    <text x="116" y="170" text-anchor="middle" class="ws-lbl-sm">Safari, Chrome — browser</text>
+
+    <!-- Region: GCP -->
+    <rect x="260" y="16" width="620" height="530" rx="14" class="ws-box ws-box-cloud" fill-opacity="0.35"/>
+    <text x="270" y="36" class="ws-lbl-title">GCP · us-east1-c · project andrew-cheong</text>
+
+    <!-- Region: the VM -->
+    <rect x="278" y="52" width="580" height="240" rx="10" class="ws-box ws-box-vm"/>
+    <text x="288" y="72" class="ws-lbl-title">GCE VM · e2-standard-2 · 35.243.192.242</text>
+
+    <!-- Apache -->
+    <rect x="296" y="90" width="180" height="80" rx="8" class="ws-box"/>
+    <text x="386" y="110" text-anchor="middle" class="ws-lbl-b ws-lbl">Apache 2.4 (host)</text>
+    <text x="386" y="127" text-anchor="middle" class="ws-lbl-sm">:443 TLS · :80 → :443 redirect</text>
+    <text x="386" y="143" text-anchor="middle" class="ws-lbl-sm">static: /var/www/html</text>
+    <text x="386" y="158" text-anchor="middle" class="ws-lbl-sm">ProxyPass /rv/api → :5002</text>
+
+    <!-- hobby-server -->
+    <rect x="500" y="90" width="180" height="80" rx="8" class="ws-box"/>
+    <text x="590" y="110" text-anchor="middle" class="ws-lbl-b ws-lbl">hobby-server (Go)</text>
+    <text x="590" y="127" text-anchor="middle" class="ws-lbl-sm">Docker · network=host · :5002</text>
+    <text x="590" y="143" text-anchor="middle" class="ws-lbl-sm">multi-project: /api/rv/*</text>
+    <text x="590" y="158" text-anchor="middle" class="ws-lbl-sm">cookie: rv_session · Path=/rv/</text>
+
+    <!-- other containers -->
+    <rect x="704" y="90" width="140" height="80" rx="8" class="ws-box" stroke-dasharray="3,3"/>
+    <text x="774" y="110" text-anchor="middle" class="ws-lbl">Other Docker</text>
+    <text x="774" y="127" text-anchor="middle" class="ws-lbl-sm">manuscript-studio</text>
+    <text x="774" y="143" text-anchor="middle" class="ws-lbl-sm">sxiva-dashboard-api</text>
+    <text x="774" y="158" text-anchor="middle" class="ws-lbl-sm">sxiva-timescaledb</text>
+
+    <!-- static assets -->
+    <rect x="296" y="192" width="384" height="82" rx="8" class="ws-box"/>
+    <text x="488" y="212" text-anchor="middle" class="ws-lbl-b ws-lbl">/var/www/html/rv/  (static, deployed via rsync)</text>
+    <text x="488" y="230" text-anchor="middle" class="ws-lbl-sm">index.html · prep.html · notes.html · website.html · admin.html</text>
+    <text x="488" y="247" text-anchor="middle" class="ws-lbl-sm">assets/*.js · style.css · trip.json · map.json · map-sources.json</text>
+    <text x="488" y="263" text-anchor="middle" class="ws-lbl-sm">photos/*</text>
+
+    <!-- ops agent -->
+    <rect x="704" y="192" width="140" height="82" rx="8" class="ws-box" stroke-dasharray="3,3"/>
+    <text x="774" y="215" text-anchor="middle" class="ws-lbl">Ops Agent</text>
+    <text x="774" y="232" text-anchor="middle" class="ws-lbl-sm">logs → Cloud Logging</text>
+    <text x="774" y="248" text-anchor="middle" class="ws-lbl-sm">metrics → Cloud Monitoring</text>
+
+    <!-- Cloud SQL -->
+    <rect x="316" y="322" width="300" height="90" rx="10" class="ws-box"/>
+    <text x="466" y="344" text-anchor="middle" class="ws-lbl-b ws-lbl-title">Cloud SQL · Postgres 16</text>
+    <text x="466" y="363" text-anchor="middle" class="ws-lbl-sm">private VPC · reachable only from the VM</text>
+    <text x="466" y="380" text-anchor="middle" class="ws-lbl-sm">database: hobby_server · user: hobby_server</text>
+    <text x="466" y="396" text-anchor="middle" class="ws-lbl-sm">schema managed by Liquibase (rv/ project)</text>
+
+    <!-- external APIs -->
+    <rect x="642" y="322" width="216" height="90" rx="10" class="ws-box"/>
+    <text x="750" y="344" text-anchor="middle" class="ws-lbl-b ws-lbl">External APIs</text>
+    <text x="750" y="363" text-anchor="middle" class="ws-lbl-sm">Google Maps Directions</text>
+    <text x="750" y="380" text-anchor="middle" class="ws-lbl-sm">Open-Meteo (forecast + archive)</text>
+    <text x="750" y="396" text-anchor="middle" class="ws-lbl-sm">called by compute_everything.py</text>
+
+    <!-- key tables -->
+    <rect x="316" y="430" width="542" height="100" rx="10" class="ws-box"/>
+    <text x="587" y="450" text-anchor="middle" class="ws-lbl-b ws-lbl">rv/ tables in hobby_server:</text>
+    <text x="587" y="470" text-anchor="middle" class="ws-lbl-sm">user · session · prep_item · prep_section · itinerary_override · location_user</text>
+    <text x="587" y="488" text-anchor="middle" class="ws-lbl-sm">note · checkin · dunkin_log · dunkin_participant · draw_canvas · draw_stroke</text>
+    <text x="587" y="512" text-anchor="middle" class="ws-lbl-sm">all timestamps TIMESTAMPTZ · soft-delete via deleted_at where relevant</text>
+
+    <!-- Arrows: laptop → GCP -->
+    <path d="M216 100 Q 240 100 296 130" class="ws-arrow-orange" marker-end="url(#ws-arrow-orange)"/>
+    <text x="230" y="93" class="ws-lbl-sm" fill="#FF6720">ws_prod (rsync)</text>
+
+    <path d="M216 170 Q 260 170 296 220" class="ws-arrow-pink" marker-end="url(#ws-arrow-pink)"/>
+    <text x="220" y="200" class="ws-lbl-sm" fill="#DA1884">https requests</text>
+
+    <!-- Arrows: apache → hobby -->
+    <path d="M476 130 L 500 130" class="ws-arrow-line" marker-end="url(#ws-arrow)"/>
+    <text x="480" y="122" class="ws-lbl-sm">/rv/api/*</text>
+
+    <!-- apache serves static -->
+    <path d="M386 170 L 386 192" class="ws-arrow-line" marker-end="url(#ws-arrow)"/>
+
+    <!-- hobby → cloud sql -->
+    <path d="M590 170 L 590 322" class="ws-arrow-line" marker-end="url(#ws-arrow)"/>
+    <text x="596" y="270" class="ws-lbl-sm">pg over private VPC · sslmode</text>
+
+    <!-- compute_everything → external APIs (dashed) -->
+    <path d="M488 274 Q 620 300 745 322" class="ws-arrow-line" stroke-dasharray="3,3" marker-end="url(#ws-arrow)"/>
+    <text x="600" y="298" class="ws-lbl-sm">compute_everything.py (locally)</text>
+  </svg>
+  <p class="ws-fig">Fig 1. Full stack. Solid = live request path; orange = deploy; pink = user request; dashed = out-of-band build.</p>
+
+  <h2>Deploy</h2>
+  <p>Static files ship via one shell alias defined on the developer laptop:</p>
+  <pre>ws_prod   →   website_sync . . master
+          →   rsync -avz --delete  ./  acheong87@35.243.192.242:/var/www/html/</pre>
+  <ul>
+    <li>Requires <code>master</code> branch and a <code>html/</code> cwd.</li>
+    <li>Protects <code>.staging/</code>, <code>shared/assets/</code>, and <code>**/wordpress/</code> from <code>--delete</code>.</li>
+    <li>Exit 23 with <code>Permission denied</code> on <code>.well-known/ssl-manager/*</code> is expected — those are owned by the ACME/SSL manager on the VM. Site content still uploads.</li>
+    <li>No CI. Deploys are manual and diffable (<code>git log</code>) after the fact.</li>
+  </ul>
+  <p>The Go backend (<code>hobby-server</code>) deploys separately via <code>install.sh</code> in its own repo. It rebuilds a Docker image, runs Liquibase against Cloud SQL to apply any new schema changes, then restarts the container.</p>
+
+  <h2>Backend: hobby-server</h2>
+  <p>One Go binary hosts multiple isolated projects. The <code>rv</code> project is one of them. Each project gets its own URL prefix, cookie scope, and (optionally) DB — all share this one <code>hobby_server</code> database for now.</p>
+
+  <table>
+    <thead><tr><th>Route</th><th>Auth</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /rv/api/me</code></td><td>—</td><td>Current session's user, or 401.</td></tr>
+      <tr><td><code>POST /rv/api/login</code></td><td>—</td><td>Bcrypt check; sets <code>rv_session</code> cookie (30-day sliding TTL).</td></tr>
+      <tr><td><code>POST /rv/api/logout</code></td><td>cookie</td><td>Deletes session row.</td></tr>
+      <tr><td><code>GET /rv/api/prep</code></td><td>—</td><td>Checklist items, all sections, sorted.</td></tr>
+      <tr><td><code>POST/PATCH/DELETE /rv/api/prep</code></td><td>cookie</td><td>CRUD one item.</td></tr>
+      <tr><td><code>GET /rv/api/itinerary</code></td><td>—</td><td>DB overrides for day cards.</td></tr>
+      <tr><td><code>POST/PATCH/DELETE /rv/api/itinerary/{id}</code></td><td>cookie</td><td>Insert / update / delete a day. IDs are <code>static_N</code> for catalog days or a random slug for inserted days.</td></tr>
+      <tr><td><code>GET /rv/api/locations</code></td><td>—</td><td>User-added and overridden locations.</td></tr>
+      <tr><td><code>POST/PATCH/DELETE /rv/api/locations/{id}</code></td><td>cookie</td><td>Add new / override catalog / soft-delete. Hard-delete via <code>?hard=true</code>.</td></tr>
+      <tr><td><code>GET/PATCH /rv/api/notes/main</code></td><td>—/cookie</td><td>Single-row markdown blob.</td></tr>
+      <tr><td><code>GET/POST /rv/api/dunkin</code></td><td>—/cookie</td><td>Read log stream / increment counter.</td></tr>
+      <tr><td><code>GET/POST/PATCH/DELETE /rv/api/dunkin/participants</code></td><td>—/cookie</td><td>Bet participants + guesses.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Apache proxies <code>/rv/api/*</code> to <code>http://127.0.0.1:5002/api/rv/*</code>. The path is rewritten by <code>ProxyPass</code> in <code>andrewcheong.conf</code>. The container runs with <code>network=host</code> so the listener is directly on the VM.</p>
+
+  <h2>Database schema (rv/)</h2>
+
+  <h3>Auth</h3>
+  <table>
+    <thead><tr><th>Table</th><th>Columns</th></tr></thead>
+    <tbody>
+      <tr><td><code>user</code></td><td>username (PK), password_hash (bcrypt), created_at</td></tr>
+      <tr><td><code>session</code></td><td>id (PK, 64-char random), username (FK CASCADE), created_at, expires_at, last_activity_at. 30-day sliding TTL — each request bumps <code>last_activity_at</code> and pushes <code>expires_at</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Checklist</h3>
+  <table>
+    <thead><tr><th>Table</th><th>Columns</th></tr></thead>
+    <tbody>
+      <tr><td><code>prep_section</code></td><td>id (PK, slug), title, sort_order</td></tr>
+      <tr><td><code>prep_item</code></td><td>id (BIGSERIAL), section (FK-ish text), text, date_label (rendered as a styled pill), done, sort_order (double — items reorder without renumbering neighbors, à la Jira)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Itinerary + locations (2-layer)</h3>
+  <p>The itinerary lives in two places:</p>
+  <ul>
+    <li><code>assets/itinerary.json</code> — the static "planned" itinerary. Immutable at read time.</li>
+    <li><code>itinerary_override</code> in the DB — per-day overrides. Loaded and layered on top at render.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>day_id</code> (PK)</td><td><code>static_N</code> patches static day N; a random slug is an inserted day.</td></tr>
+      <tr><td><code>sleep_loc_id</code></td><td>Which location the day sleeps at. Overrides the static file if non-null.</td></tr>
+      <tr><td><code>markdown</code></td><td>The day-card body.</td></tr>
+      <tr><td><code>ordinal</code></td><td>double — determines live day-number ordering. Static day N defaults to N·1000; inserts sit between (e.g. 5500).</td></tr>
+      <tr><td><code>excursion</code>, <code>excursion_by_car</code></td><td>Marks a same-sleep detour (e.g. Mesa Verde from Bayfield).</td></tr>
+    </tbody>
+  </table>
+  <p><code>location_user</code> holds two flavors keyed by the same primary key:</p>
+  <ul>
+    <li><code>kind='override'</code> — patches a row in the static catalog (<code>map-sources.json</code> → <code>map.json</code>). Any non-null column wins over the catalog. Soft-delete via <code>deleted_at</code> hides the location without losing the override — useful for "don't show this one, but remember I edited it."</li>
+    <li><code>kind='new'</code> — brand-new user-added location. Same columns; catalog has nothing to fall back to.</li>
+  </ul>
+
+  <h3>Other</h3>
+  <table>
+    <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>note</code></td><td>A single-row markdown blob keyed <code>main</code>. Rendered by <code>notes.js</code> with <code>marked</code> + <code>DOMPurify</code>.</td></tr>
+      <tr><td><code>checkin</code></td><td>Geo pings (lat, lon, accuracy, optional note, user_id). Not surfaced anywhere yet — future timeline / breadcrumb feature.</td></tr>
+      <tr><td><code>dunkin_log</code></td><td>Every "I saw a Dunkin'" tap. Server just appends; the chart computes running count client-side.</td></tr>
+      <tr><td><code>dunkin_participant</code></td><td>Bettors: id, name, guess (int), color hex, sort_order.</td></tr>
+      <tr><td><code>draw_canvas</code>, <code>draw_stroke</code></td><td>Shared doodle canvas. Strokes stored as JSONB; client_ip logged for light abuse control.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Route map (SVG)</h2>
+  <p>The map on the itinerary page is a hand-drawn SVG spline that traces the trip in one continuous stroke. It reads from three JSON files:</p>
+  <ul>
+    <li><code>map-sources.json</code> — <span class="ws-inline-key">source of truth</span> for locations (majors + sleeps + POIs) and the route sequence.</li>
+    <li><code>map.json</code> — computed output: same locations + Google Directions distances/times between them + Open-Meteo weather for the day each sleep spot is expected. Regenerated by <code>scripts/compute_everything.py</code>. Both APIs are cached on disk in <code>.cache/</code> (gitignored).</li>
+    <li><code>trip.json</code> — the day-level content model (facts, activities, sleep IDs). See <code>assets/META.md</code> for the provenance schema.</li>
+  </ul>
+
+  <h3>Rendering</h3>
+  <p><code>map-v2.js</code> reads <code>map.json</code>, computes each location's normalized "route fraction" (0.0 at San Diego → 1.0 at NYC), places it along the spline, and draws:</p>
+  <ul>
+    <li>Majors — city labels at their point on the route.</li>
+    <li>Sleeps — 🚐 emojis with a color-graded temperature dot (historical + forecast, °C/°F toggle top-right).</li>
+    <li>POIs (Points Of Interest) — small emoji dots off the route, hoverable for a name pop.</li>
+    <li>An animated "here we are now" marker as the trip progresses.</li>
+  </ul>
+
+  <h3>Editing (auth)</h3>
+  <p>Signed-in users can click a location to override its name, coords, sleep-type, or emoji — those edits go into <code>location_user</code> as <code>kind='override'</code> rows. New locations added via the map get <code>kind='new'</code> rows. Everyone else sees the layered result.</p>
+
+  <h2>Admin</h2>
+  <p><code>admin.html</code> is the auth-gated dashboard. Public visitors see the login modal.</p>
+  <p>Currently hosts:</p>
+  <ul>
+    <li>🍩 <b>Dunkin' bet participants</b> — add/remove bettors, edit their guess and dot color. Backed by the <code>dunkin_participant</code> table via <code>/rv/api/dunkin/participants</code>. New rows land at <code>sort_order = (max + 10)</code>.</li>
+  </ul>
+  <p>Editing on the main site (day cards, locations, prep items, notes) is not on <code>admin.html</code> — it's inline on each page, gated by the same <code>rv_session</code> cookie.</p>
+
+  <h2>Auth</h2>
+  <p>Everything is one cookie: <code>rv_session</code>, <code>Path=/rv/</code>, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>. The Go server checks it on every write; reads are public unless noted. Bcrypt on the password hash, cost 12. There's no OAuth, no email flow, no 2FA — users are created by INSERT.</p>
+
+  <h2>Dunkin' Donuts forecast</h2>
+  <p>Four bettors guessed how many Dunkins we'd see across the trip. The chart plots each real sighting as a line segment, marks the current point with 🍩, and forecasts the trip-end count with three curves — <span class="ws-inline-key" style="color:#FF6720;">linear</span>, <span class="ws-inline-key" style="color:#DA1884;">rolling rate + tapering accel</span>, and a flat "if we see none more" reference line. Shaded band spans the pessimistic and optimistic curves.</p>
+
+  <h3>The formula</h3>
+  <p>All fitting happens in the browser off <code>dunkin_log</code> rows. Model:</p>
+  <div class="ws-formula">count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²</div>
+  <p>Anchored at the <b>last logged sighting</b> (d₀, c₀). Anchoring at NOW made the projection collapse as "now" slid forward. Instead we freeze the anchor and let a <b>phantom point</b> at u_now = now − d₀, y = 0 encode "still no new sighting" — pulls the fit toward flat as time passes.</p>
+  <p>Least-squares fit on the last 20 logs, each log weighted <code>exp(−|u|/FIT_TAU)</code> so recent points dominate and older ones fade smoothly. The phantom carries a small fixed weight so a long gap nudges rather than yanks the fit. Then accel tapers with an exponential decay of its own so a burst doesn't compound forever:</p>
+  <div class="ws-formula">
+    accel(u) = accel · exp(−u/τ)<br>
+    rate(u)  = rate + accel·τ·(1 − exp(−u/τ))<br>
+    count(u) = c₀ + rate·u + accel·τ·(u − τ·(1 − exp(−u/τ)))
+  </div>
+  <p>A monotonic guard clips <code>count</code> at the moment the local rate would cross zero — no un-seeing donuts.</p>
+
+  <h3>Constants</h3>
+  <table>
+    <thead><tr><th>Knob</th><th>Value</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>RECENT_WINDOW</code></td><td>20</td><td>Max real logs in the fit. Time-weighting does most of the shaping; this is a soft cap.</td></tr>
+      <tr><td><code>FIT_TAU</code></td><td>1.0 d</td><td>Sensitivity knob. Smaller = a recent cluster dominates; larger = slower to react.</td></tr>
+      <tr><td><code>PHANTOM_W</code></td><td>0.05</td><td>Weight of the "no sighting yet" phantom relative to a real log at the anchor.</td></tr>
+      <tr><td><code>TAPER_MULT</code>, <code>TAPER_TAU_MIN/MAX</code></td><td>4.0 × window span, clamped 2–14 d</td><td>Half-life of the accel taper. Determines how long a burst keeps bending the curve up.</td></tr>
+      <tr><td><code>MIN_LOGS_FOR_PROJECTION</code></td><td>5</td><td>No forecast lines until we have enough data to say something meaningful.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Hover the pink curve on the itinerary page for the full essay.</h3>
+
+  <h2>What I still want to do</h2>
+  <ul>
+    <li>Surface <code>checkin</code> pings as a breadcrumb layer on the route map.</li>
+    <li>Migrate <code>itinerary.json</code> fully into DB rows so "delete day" doesn't need a static-file edit.</li>
+    <li>Photo galleries per day card.</li>
+  </ul>
+
+  <p class="ws-note">Live source: <a href="https://github.com/slackwing/feathers">github.com/slackwing/feathers</a> (this site) and <a href="https://github.com/slackwing/hobby-server">github.com/slackwing/hobby-server</a> (the backend).</p>
+</div>
+
+<footer class="footer">
+  <p>🦔 + 🐸 · <a href="index.html">Back to itinerary</a> · <a href="notes.html">Notes</a> · <a href="admin.html">Admin</a></p>
+</footer>
+
+<script src="assets/site-unit.js"></script>
+<script src="assets/auth.js"></script>
+</body>
+</html>
