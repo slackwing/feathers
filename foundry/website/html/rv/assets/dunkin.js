@@ -252,13 +252,23 @@
     return Math.max(0, (ms - tripStartMs) / MS_PER_DAY);
   }
 
-  // Latest logged (day, count) — the anchor for both projections.
+  // Anchor for both projections. Placed at (NOW, current_count) once
+  // the trip has started so the forecast — and the donut emoji — move
+  // forward every render, treating "we've now gone X hours without a
+  // sighting" as real information. Pre-trip we fall back to the last
+  // logged point since there's no meaningful "now" in the trip window.
   function anchorPoint() {
     if (!logs.length) return null;
     const last = logs[logs.length - 1];
+    const lastT = parseDate(last.created_at).getTime();
+    const nowMs = Date.now();
+    // Use NOW as the anchor if we're inside the trip window AND now is
+    // after the latest log. Otherwise the last log stays authoritative.
+    const useNow = nowMs >= tripStartMs && nowMs >= lastT;
+    const t = useNow ? Math.min(nowMs, tripEndMs) : lastT;
     return {
-      t: parseDate(last.created_at).getTime(),
-      d: daysSinceStart(parseDate(last.created_at).getTime()),
+      t,
+      d: daysSinceStart(t),
       c: last.count,
     };
   }
@@ -324,18 +334,30 @@
     const src = logs.length > RECENT_WINDOW
       ? logs.slice(-RECENT_WINDOW)
       : logs;
-    // Anchor at the latest log.
-    const anchor = src[src.length - 1];
-    const d0 = daysSinceStart(parseDate(anchor.created_at).getTime());
-    const c0 = anchor.count;
+    // Anchor at NOW (or the last log if we're pre-trip / no now). This
+    // way the forecast keeps evolving between clicks — the longer we
+    // go without a sighting, the more the fit's implied rate drops.
+    const lastLog = src[src.length - 1];
+    const lastT = parseDate(lastLog.created_at).getTime();
+    const nowMs = Date.now();
+    const useNow = nowMs >= tripStartMs && nowMs > lastT;
+    const t0 = useNow ? Math.min(nowMs, tripEndMs) : lastT;
+    const d0 = daysSinceStart(t0);
+    const c0 = lastLog.count;
     // Build points relative to the anchor: u = d − d₀, y = c − c₀.
-    // Fit y = rate·u + ½·accel·u² via least squares (no intercept
-    // — the anchor point contributes u=0, y=0 for free).
+    // Fit y = rate·u + ½·accel·u² via least squares.
+    // Real logs contribute their (u, y). If the anchor is at NOW we
+    // also inject a PHANTOM POINT at (u=0, y=0) — "we're here now with
+    // the current count." Real logs then live at u < 0 (in the past).
+    // The phantom encodes the info that no sighting has happened
+    // between the last log and now, which pulls the fit toward a
+    // lower instantaneous rate as time passes without a click.
     const pts = [];
     for (const l of src) {
       const d = daysSinceStart(parseDate(l.created_at).getTime());
       pts.push({ u: d - d0, y: l.count - c0 });
     }
+    if (useNow) pts.push({ u: 0, y: 0 }); // phantom "now" observation
     // 2×2 normal equations for [rate, ½·accel]:
     //   [Σu²  Σu³ ] [rate  ] = [Σu·y ]
     //   [Σu³  Σu⁴ ] [½accel]   [Σu²·y]
@@ -482,6 +504,15 @@
       }
       for (const l of logs) {
         pts.push({ t: parseDate(l.created_at).getTime(), c: l.count });
+      }
+      // Extend the data line horizontally to NOW at the current count.
+      // The donut sits at (now, current_count), so the line should
+      // reach it — otherwise the flat "no sightings since last log"
+      // gap between the last click and the donut is invisible.
+      const nowT = Date.now();
+      const lastLogT = pts[pts.length - 1].t;
+      if (nowT > lastLogT && nowT >= tripStartMs && nowT <= tripEndMs) {
+        pts.push({ t: nowT, c: pts[pts.length - 1].c });
       }
       const pathD = pts.map((p, i) => {
         const x = xForDate(p.t);
@@ -659,10 +690,11 @@
             `  instantaneous rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
             ``,
             `Claude here, instructed by Andrew to explain this:`,
-            `We fit two numbers on the last ${RECENT_WINDOW} logs — an`,
+            `We fit two numbers on the last ${RECENT_WINDOW} logs plus a`,
+            `phantom "no-sighting-yet" point at NOW — an`,
             `INSTANTANEOUS RATE (local slope at the anchor, not the`,
             `trip average) and an ACCEL (how fast the rate itself`,
-            `changes). Anchored at the latest log (d₀, c₀):`,
+            `changes). Anchored at NOW (d₀, c₀):`,
             `   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²`,
             `Two orders means the curve bends: cross into Dunkin'`,
             `country → accel positive → curve bends UP; hit a lull`,
@@ -676,6 +708,15 @@
             `where u = d − d₀. As u grows, accel dies off and the`,
             `curve settles into linear growth at rate + accel·τ.`,
             `τ = timespan of the fit window, clamped ${TAPER_TAU_MIN}–${TAPER_TAU_MAX}d.`,
+            ``,
+            `The phantom-point trick: rate + accel would otherwise`,
+            `freeze between clicks (fit only changes when a new log`,
+            `arrives). Injecting a synthetic (u=0, y=0) observation`,
+            `at NOW says "we're here, count hasn't budged." The`,
+            `longer you go without a sighting, the more that`,
+            `phantom pulls the fit toward flat — accel goes`,
+            `negative, instantaneous rate drops. Log a new sighting`,
+            `and the phantom resets to the new NOW.`,
             ``,
             `Monotonic guard: if accel drives the local rate below`,
             `zero, we hold count flat at the crossing. No un-`,
