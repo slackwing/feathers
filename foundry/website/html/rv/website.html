@@ -395,7 +395,7 @@
   <p>Everything is one cookie: <code>rv_session</code>, <code>Path=/rv/</code>, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>. The Go server checks it on every write; reads are public unless noted. Bcrypt on the password hash, cost 12. There's no OAuth, no email flow, no 2FA — users are created by INSERT.</p>
 
   <h2>Dunkin' Donuts forecast</h2>
-  <p>Four bettors guessed how many Dunkins we'd see across the trip. The chart plots each real sighting as a line segment, marks the current point with 🍩, and forecasts the trip-end count with three curves — <span class="ws-inline-key" style="color:#FF6720;">linear</span>, <span class="ws-inline-key" style="color:#DA1884;">rolling rate + tapering accel</span>, and a flat "if we see none more" reference line. Shaded band spans the pessimistic and optimistic curves.</p>
+  <p><span id="ws-bettor-count">Some</span> bettors guessed how many Dunkins we'd see across the trip. The chart plots each real sighting as a line segment, marks the current point with 🍩, and forecasts the trip-end count with three curves — <span class="ws-inline-key" style="color:#FF6720;">linear</span>, <span class="ws-inline-key" style="color:#DA1884;">rolling rate + tapering accel</span>, and a flat "if we see none more" reference line. Shaded band spans the pessimistic and optimistic curves.</p>
 
   <h3>The formula</h3>
   <p>All fitting happens in the browser off <code>dunkin_log</code> rows. Model:</p>
@@ -439,5 +439,19 @@
 
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
+<script>
+  // Fill in the live bettor count in the Dunkin' section.
+  (function () {
+    const el = document.getElementById("ws-bettor-count");
+    if (!el) return;
+    fetch("/rv/api/dunkin/participants", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const n = (data && data.participants && data.participants.length) || 0;
+        if (n > 0) el.textContent = String(n);
+      })
+      .catch(() => { /* leave "Some" as fallback */ });
+  })();
+</script>
 </body>
 </html>
