@@ -89,6 +89,7 @@
   }
 
   async function save(newMarkdown) {
+    let status = "?";
     try {
       const r = await fetch(API_URL, {
         method: "PUT",
@@ -96,7 +97,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ markdown: newMarkdown }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      status = r.status;
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`HTTP ${r.status} ${body.slice(0, 200)}`);
+      }
       const data = await r.json();
       serverMarkdown = data.markdown || "";
       editing = false;
@@ -104,7 +109,8 @@
       renderView();
       toast("Saved.");
     } catch (err) {
-      toast("Save failed.");
+      console.error("notes save failed:", err);
+      toast(`Save failed (${status}). ${status === 401 ? "Try logging in again." : ""}`);
     }
   }
 
