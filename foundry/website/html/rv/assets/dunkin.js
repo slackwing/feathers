@@ -336,7 +336,7 @@
   // cluster's influence on the forecast diminishes gradually rather
   // than vanishing the instant a newer log arrives. Bigger τ = longer
   // memory = slower response to regime change.
-  const FIT_TAU = 1.0;
+  const FIT_TAU = 5.0;
   // Weight of the phantom "now" observation relative to a full-weight
   // real log. < 1 so long stretches without a sighting don't yank
   // accel wildly negative — the phantom nudges, real logs still lead.
