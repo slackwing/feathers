@@ -438,9 +438,7 @@
       "medal": "gold",
       "route_fraction": 0.402,
       "predicted_date": "2026-07-12",
-      "night_temp_f": 56.7,
-      "night_temp_f_forecast": 68.4,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 56.7
     },
     {
       "id": "ridgway",
@@ -458,9 +456,7 @@
       "_note": "Coords are the South Rim Visitor Center (the main one). Was (38.5919, -107.7090) \u2014 that pulled Google routes onto CO-92 (slow rim road / North Rim approach) when reality is South Rim via CO-347 off US-50. Per through-driving rule: coord should snap to where we'd actually park.",
       "route_fraction": 0.402,
       "predicted_date": "2026-07-12",
-      "wet_day_pct": 7.6,
-      "wet_day_pct_forecast": 3,
-      "forecast_fetched_at": "2026-07-12"
+      "wet_day_pct": 7.6
     },
     {
       "id": "crested_butte",
@@ -470,9 +466,7 @@
       "lon": -106.9878,
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
-      "wet_day_pct": 11.0,
-      "wet_day_pct_forecast": 2,
-      "forecast_fetched_at": "2026-07-12"
+      "wet_day_pct": 11.0
     },
     {
       "id": "cement_creek",
@@ -484,9 +478,7 @@
       "medal": "gold",
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
-      "night_temp_f": 38.8,
-      "night_temp_f_forecast": 50.9,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 38.8
     },
     {
       "id": "stage_stop_meadows_dispersed",
@@ -499,9 +491,7 @@
       "medal": "gold",
       "route_fraction": 0.422,
       "predicted_date": "2026-07-12",
-      "night_temp_f": 42.2,
-      "night_temp_f_forecast": 46.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 42.2
     },
     {
       "id": "cr_306_dispersed",
@@ -518,9 +508,7 @@
       ],
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 44.0,
-      "night_temp_f_forecast": 53.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 44.0
     },
     {
       "id": "gunnison",
@@ -541,9 +529,7 @@
       "medal": "gold",
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 41.5,
-      "night_temp_f_forecast": 49.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 41.5
     },
     {
       "id": "fourmile_creek_dispersed",
@@ -557,9 +543,7 @@
       "medal": "gold",
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 46.3,
-      "night_temp_f_forecast": 54.0,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 46.3
     },
     {
       "id": "turtle_rock_dispersed",
@@ -573,9 +557,7 @@
       "medal": "gold",
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 47.7,
-      "night_temp_f_forecast": 56.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 47.7
     },
     {
       "id": "kenosha_pass_east_dispersed",
@@ -590,9 +572,7 @@
       ],
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 41.4,
-      "night_temp_f_forecast": 48.9,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 41.4
     },
     {
       "id": "redskin_creek_dispersed",
@@ -606,9 +586,7 @@
       "medal": "gold",
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 52.8,
-      "night_temp_f_forecast": 60.4,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 52.8
     },
     {
       "id": "monarch_park_cg",
@@ -621,9 +599,7 @@
       "cautions": [],
       "route_fraction": 0.443,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 42.0,
-      "night_temp_f_forecast": 47.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 42.0
     },
     {
       "id": "tarryall_reservoir",
@@ -638,9 +614,7 @@
       ],
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 47.0,
-      "night_temp_f_forecast": 51.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 47.0
     },
     {
       "id": "buffalo_creek_dispersed",
@@ -655,9 +629,7 @@
       ],
       "route_fraction": 0.472,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 54.6,
-      "night_temp_f_forecast": 62.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 54.6
     },
     {
       "id": "sterling_walmart",
@@ -671,8 +643,8 @@
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
       "night_temp_f": 65.5,
-      "night_temp_f_forecast": 65.6,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 64.1,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "brush_memorial_park",
@@ -685,8 +657,8 @@
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
       "night_temp_f": 64.9,
-      "night_temp_f_forecast": 65.0,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 62.9,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "sterling_rest_area",
@@ -699,8 +671,8 @@
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
       "night_temp_f": 65.3,
-      "night_temp_f_forecast": 65.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 63.3,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cabelas_sidney",
@@ -714,8 +686,8 @@
       "route_fraction": 0.52,
       "predicted_date": "2026-07-14",
       "night_temp_f": 64.9,
-      "night_temp_f_forecast": 65.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 63.9,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "flyingj_big_springs",
@@ -728,8 +700,8 @@
       "route_fraction": 0.535,
       "predicted_date": "2026-07-14",
       "night_temp_f": 66.4,
-      "night_temp_f_forecast": 66.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 64.8,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "ogallala_walmart",
@@ -742,8 +714,8 @@
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
       "night_temp_f": 66.2,
-      "night_temp_f_forecast": 65.6,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 63.7,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "north_platte_walmart",
@@ -756,8 +728,8 @@
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
       "night_temp_f": 67.0,
-      "night_temp_f_forecast": 66.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 64.6,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cabelas_kearney",
@@ -770,8 +742,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 68.0,
-      "night_temp_f_forecast": 64.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 62.8,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "loves_kearney",
@@ -784,8 +756,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 68.0,
-      "night_temp_f_forecast": 64.6,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 63.1,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "pilot_grand_island",
@@ -798,8 +770,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 68.5,
-      "night_temp_f_forecast": 65.0,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 64.2,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "pilot_wood_river",
@@ -812,8 +784,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 68.4,
-      "night_temp_f_forecast": 64.9,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 63.7,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "beaver_crossing_park",
@@ -826,8 +798,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 69.3,
-      "night_temp_f_forecast": 64.6,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 66.5,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_lincoln",
@@ -840,8 +812,8 @@
       "route_fraction": 0.612,
       "predicted_date": "2026-07-15",
       "night_temp_f": 69.9,
-      "night_temp_f_forecast": 65.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 66.4,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cabelas_la_vista",
@@ -855,8 +827,8 @@
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
       "night_temp_f": 69.7,
-      "night_temp_f_forecast": 68.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 69.4,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_council_bluffs",
@@ -869,8 +841,8 @@
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
       "night_temp_f": 69.3,
-      "night_temp_f_forecast": 68.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 72.0,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "atlantic_walmart",
@@ -883,8 +855,8 @@
       "route_fraction": 0.628,
       "predicted_date": "2026-07-16",
       "night_temp_f": 67.8,
-      "night_temp_f_forecast": 69.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.5,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "newton_walmart",
@@ -897,8 +869,8 @@
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
       "night_temp_f": 67.0,
-      "night_temp_f_forecast": 70.9,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.8,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "grinnell_walmart",
@@ -911,8 +883,8 @@
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
       "night_temp_f": 66.7,
-      "night_temp_f_forecast": 71.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 72.3,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "coralville_walmart",
@@ -925,8 +897,8 @@
       "route_fraction": 0.694,
       "predicted_date": "2026-07-17",
       "night_temp_f": 68.1,
-      "night_temp_f_forecast": 71.4,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.6,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "isle_casino_bettendorf",
@@ -939,8 +911,8 @@
       "route_fraction": 0.711,
       "predicted_date": "2026-07-17",
       "night_temp_f": 69.5,
-      "night_temp_f_forecast": 72.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 72.4,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_davenport",
@@ -954,8 +926,8 @@
       "route_fraction": 0.711,
       "predicted_date": "2026-07-17",
       "night_temp_f": 68.4,
-      "night_temp_f_forecast": 73.2,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 72.5,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "princeton_walmart",
@@ -968,8 +940,8 @@
       "route_fraction": 0.731,
       "predicted_date": "2026-07-17",
       "night_temp_f": 67.3,
-      "night_temp_f_forecast": 70.9,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 72.1,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "morris_walmart",
@@ -982,8 +954,8 @@
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
       "night_temp_f": 67.9,
-      "night_temp_f_forecast": 73.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.5,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_joliet",
@@ -997,8 +969,8 @@
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
       "night_temp_f": 67.9,
-      "night_temp_f_forecast": 74.0,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.6,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "horseshoe_hammond",
@@ -1014,8 +986,8 @@
       "route_fraction": 0.753,
       "predicted_date": "2026-07-18",
       "night_temp_f": 70.7,
-      "night_temp_f_forecast": 76.8,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 73.4,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "michigan_city_walmart",
@@ -1028,8 +1000,8 @@
       "route_fraction": 0.783,
       "predicted_date": "2026-07-18",
       "night_temp_f": 70.1,
-      "night_temp_f_forecast": 73.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 73.2,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "bryan_walmart",
@@ -1042,8 +1014,8 @@
       "route_fraction": 0.825,
       "predicted_date": "2026-07-19",
       "night_temp_f": 66.1,
-      "night_temp_f_forecast": 75.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 69.2,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "sandusky_walmart",
@@ -1056,8 +1028,8 @@
       "route_fraction": 0.843,
       "predicted_date": "2026-07-19",
       "night_temp_f": 69.7,
-      "night_temp_f_forecast": 75.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.9,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_macedonia",
@@ -1070,8 +1042,8 @@
       "route_fraction": 0.877,
       "predicted_date": "2026-07-20",
       "night_temp_f": 65.2,
-      "night_temp_f_forecast": 71.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 67.4,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cracker_barrel_austintown",
@@ -1085,8 +1057,8 @@
       "route_fraction": 0.877,
       "predicted_date": "2026-07-20",
       "night_temp_f": 64.2,
-      "night_temp_f_forecast": 71.0,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 65.5,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "dubois_walmart",
@@ -1099,8 +1071,8 @@
       "route_fraction": 0.9,
       "predicted_date": "2026-07-20",
       "night_temp_f": 62.2,
-      "night_temp_f_forecast": 61.4,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 66.9,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "state_college_walmart",
@@ -1113,8 +1085,8 @@
       "route_fraction": 0.927,
       "predicted_date": "2026-07-21",
       "night_temp_f": 63.3,
-      "night_temp_f_forecast": 66.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 56.6,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "clarion_walmart",
@@ -1128,8 +1100,8 @@
       "route_fraction": 0.9,
       "predicted_date": "2026-07-20",
       "night_temp_f": 62.4,
-      "night_temp_f_forecast": 62.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 66.8,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "bailey_co",
@@ -1155,9 +1127,7 @@
       "lon": -104.9903,
       "route_fraction": 0.488,
       "predicted_date": "2026-07-13",
-      "wet_day_pct": 9.5,
-      "wet_day_pct_forecast": 2,
-      "forecast_fetched_at": "2026-07-12"
+      "wet_day_pct": 9.5
     },
     {
       "id": "cherry_creek_sp",
@@ -1168,9 +1138,7 @@
       "sleep_type": "paid_campground",
       "route_fraction": 0.488,
       "predicted_date": "2026-07-13",
-      "night_temp_f": 60.9,
-      "night_temp_f_forecast": 66.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f": 60.9
     },
     {
       "id": "sterling_co",
@@ -1205,8 +1173,8 @@
       "route_fraction": 0.544,
       "predicted_date": "2026-07-14",
       "night_temp_f": 67.0,
-      "night_temp_f_forecast": 67.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 65.7,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "lincoln",
@@ -1218,7 +1186,7 @@
       "predicted_date": "2026-07-15",
       "wet_day_pct": 17.1,
       "wet_day_pct_forecast": 0,
-      "forecast_fetched_at": "2026-07-12"
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "omaha",
@@ -1230,7 +1198,7 @@
       "predicted_date": "2026-07-16",
       "wet_day_pct": 21.0,
       "wet_day_pct_forecast": 2,
-      "forecast_fetched_at": "2026-07-12"
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "des_moines",
@@ -1249,8 +1217,8 @@
       "route_fraction": 0.663,
       "predicted_date": "2026-07-16",
       "night_temp_f": 68.0,
-      "night_temp_f_forecast": 71.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 73.0,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "chicago",
@@ -1277,8 +1245,8 @@
       "route_fraction": 0.783,
       "predicted_date": "2026-07-18",
       "night_temp_f": 66.9,
-      "night_temp_f_forecast": 70.5,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 71.9,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cleveland",
@@ -1410,8 +1378,8 @@
       "route_fraction": 0.989,
       "predicted_date": "2026-07-22",
       "wet_day_pct": 27.1,
-      "wet_day_pct_forecast": 26,
-      "forecast_fetched_at": "2026-07-12"
+      "wet_day_pct_forecast": 36,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "allentown",
@@ -1432,8 +1400,8 @@
       "route_fraction": 0.967,
       "predicted_date": "2026-07-21",
       "night_temp_f": 66.3,
-      "night_temp_f_forecast": 70.3,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 58.1,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "pilot_bloomsbury_nj",
@@ -1446,8 +1414,8 @@
       "route_fraction": 0.967,
       "predicted_date": "2026-07-21",
       "night_temp_f": 66.0,
-      "night_temp_f_forecast": 69.7,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 60.0,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "cabelas_hamburg_pa",
@@ -1460,8 +1428,8 @@
       "route_fraction": 0.967,
       "predicted_date": "2026-07-21",
       "night_temp_f": 66.8,
-      "night_temp_f_forecast": 70.1,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 61.1,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "allentown_walmart",
@@ -1473,8 +1441,8 @@
       "route_fraction": 0.967,
       "predicted_date": "2026-07-21",
       "night_temp_f": 66.3,
-      "night_temp_f_forecast": 72.4,
-      "forecast_fetched_at": "2026-07-12"
+      "night_temp_f_forecast": 65.0,
+      "forecast_fetched_at": "2026-07-14"
     },
     {
       "id": "new_york",
@@ -1485,8 +1453,8 @@
       "route_fraction": 1.0,
       "predicted_date": "2026-07-22",
       "wet_day_pct": 28.6,
-      "wet_day_pct_forecast": 24,
-      "forecast_fetched_at": "2026-07-12"
+      "wet_day_pct_forecast": 38,
+      "forecast_fetched_at": "2026-07-14"
     }
   ],
   "route": [

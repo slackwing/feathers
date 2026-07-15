@@ -403,22 +403,58 @@
     const routeIndexOf = new Map();
     mapData.route.forEach((id, i) => routeIndexOf.set(id, i));
 
+    // RV padding factors for the pre-itinerary fallback resolver only.
+    // The REAL source of truth for anchor/spur/minutes is itinerary.js
+    // (rvLayered.resolveSleepAnchor / dayDriveMinutes) — this file only
+    // owns geometry. Keep values in sync with itinerary.js.
+    const RV_PAD_INTERSTATE = 1.10;
+    const RV_PAD_MOUNTAIN = 1.25;
+
+    // ---- Unified resolver (delegates to itinerary.js) ----
+    // Returns {routeIdx, sleepId, anchorId, spurMin, offRoute} or null.
+    // Anchor + spur resolution is owned by rvLayered.resolveSleepAnchor
+    // so the day cards and the map strokes can never disagree (this
+    // duplication diverged once and produced real bugs — see git log).
+    // The local fallback below only runs for the brief pre-itinerary
+    // first render, and only handles catalog data.
     function resolveSleep(sleepId, pad = true) {
-      // Returns {routeIdx, sleepId, anchorId (route node), spurMin (pre-padded), poi}.
+      const L = window.rvLayered;
+      if (L && L.resolveSleepAnchor) {
+        const r = L.resolveSleepAnchor(sleepId, pad);
+        if (!r) return null;
+        return {
+          routeIdx: r.routeIdx,
+          sleepId,
+          anchorId: r.anchor,
+          spurMin: r.spurMin,
+          offRoute: r.anchor !== sleepId,
+        };
+      }
       if (routeIndexOf.has(sleepId)) {
-        // On-route node (e.g. new_york, san_diego).
-        return { routeIdx: routeIndexOf.get(sleepId), sleepId, anchorId: sleepId, spurMin: 0, poi: null };
+        return { routeIdx: routeIndexOf.get(sleepId), sleepId, anchorId: sleepId, spurMin: 0, offRoute: false };
       }
       const poi = poiById.get(sleepId);
       if (poi && routeIndexOf.has(poi.anchor) && poi.spur_raw_minutes != null) {
         const spur = pad
-          ? poi.spur_raw_minutes * (poi.spur_is_mountain ? 1.25 : 1.10)
+          ? poi.spur_raw_minutes * (poi.spur_is_mountain ? RV_PAD_MOUNTAIN : RV_PAD_INTERSTATE)
           : poi.spur_raw_minutes;
-        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: spur, poi };
+        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: spur, offRoute: true };
       }
       return null;
     }
 
+    // World coords for any id: catalog via wpoints, user locs via lat/lon.
+    function sleepWorldPoint(id) {
+      const w = wpoints.get(id);
+      if (w) return w;
+      const u = (window.rvUserLocations || []).find(x => x.id === id);
+      if (u && u.lat != null && u.lon != null) return project(u.lat, u.lon);
+      return null;
+    }
+    function spurSeg(fromId, toId) {
+      const a = sleepWorldPoint(fromId), b = sleepWorldPoint(toId);
+      return (a && b) ? [a.x, a.y, b.x, b.y] : null;
+    }
     function worldPair(idA, idB) {
       const a = wpoints.get(idA);
       const b = wpoints.get(idB);
@@ -426,17 +462,10 @@
       return [a.x, a.y, b.x, b.y];
     }
 
-    // RV padding factors live HERE (display time), not in the data.
-    // map.json stores raw Google Directions duration + an `is_mountain`
-    // flag derived from the route summary; we multiply on read so the
-    // factors stay tunable without re-fetching.
-    const RV_PAD_INTERSTATE = 1.10;
-    const RV_PAD_MOUNTAIN = 1.25;
+    // Fallback minutes for the pre-itinerary render (rvLayered absent).
     function padFactor(seg) {
       return seg && seg.is_mountain ? RV_PAD_MOUNTAIN : RV_PAD_INTERSTATE;
     }
-
-    // Padded and raw lookups, keyed by (from, to) route ids.
     const segMinutesPadded = new Map();
     const segMinutesRaw = new Map();
     mapData.segments.forEach(s => {
@@ -447,11 +476,39 @@
     });
     function getMinutes(idA, idB, pad = true) {
       const m = pad ? segMinutesPadded : segMinutesRaw;
-      const k = `${idA}|${idB}`;
-      if (m.has(k)) return m.get(k);
-      const r = `${idB}|${idA}`;
-      if (m.has(r)) return m.get(r);
-      return 0;
+      return m.get(`${idA}|${idB}`) ?? m.get(`${idB}|${idA}`) ?? 0;
+    }
+
+    // Total drive time between two sleeps. Prefers the itinerary.js
+    // engine; local fallback walks segments with the same rules.
+    function minutesBetween(fromId, toId, pad = true) {
+      const L = window.rvLayered;
+      if (L && L.dayDriveMinutes) {
+        const m = L.dayDriveMinutes(fromId, toId, { pad });
+        if (m != null) return m;
+      }
+      const a = resolveSleep(fromId, pad);
+      const b = resolveSleep(toId, pad);
+      if (!a || !b) return 0;
+      let total = a.spurMin + b.spurMin;
+      const lo = Math.min(a.routeIdx, b.routeIdx), hi = Math.max(a.routeIdx, b.routeIdx);
+      for (let i = lo; i < hi; i++) total += getMinutes(mapData.route[i], mapData.route[i + 1], pad);
+      return total;
+    }
+
+    // Geometry: push route polyline pieces from routeIdx i → j into segs.
+    function walkGeometry(segs, i, j) {
+      if (i < j) {
+        for (let n = i; n < j; n++) {
+          const p = worldPair(mapData.route[n], mapData.route[n + 1]);
+          if (p) segs.push(p);
+        }
+      } else if (i > j) {
+        for (let n = i; n > j; n--) {
+          const p = worldPair(mapData.route[n], mapData.route[n - 1]);
+          if (p) segs.push(p);
+        }
+      }
     }
 
     let prev = null;
@@ -459,44 +516,29 @@
       const today = resolveSleep(d.sleep);
       if (!today) { prev = today; continue; }
       // Excursion day: same sleep as yesterday, but a daytime trip to
-      // d.excursion. Draw one stroke from sleep → excursion target (a
-      // route node or POI). Drive time is one-way; label renders as
-      // "Xh Ym ×2" (round trip).
+      // d.excursion. One stroke sleep → excursion target; drive time is
+      // one-way; label renders as "Xh Ym ×2" (round trip).
       if (prev && prev.sleepId === today.sleepId) {
         if (d.excursion) {
           // Excursion-by-car skips RV padding (regular rental, not RV).
           const pad = !d.excursion_by_car;
-          const sleepNoPad = resolveSleep(today.sleepId, pad);
+          const sleepR = resolveSleep(today.sleepId, pad);
           const target = resolveSleep(d.excursion, pad);
-          if (target && sleepNoPad) {
+          if (target && sleepR) {
             const segs = [];
-            let totalMin = 0;
-            // Spur back from sleep POI to its anchor (if needed).
-            if (sleepNoPad.poi) {
-              const p = worldPair(sleepNoPad.sleepId, sleepNoPad.anchorId);
-              if (p) { segs.push(p); totalMin += sleepNoPad.spurMin; }
+            if (sleepR.offRoute) {
+              const p = spurSeg(sleepR.sleepId, sleepR.anchorId);
+              if (p) segs.push(p);
             }
-            if (sleepNoPad.routeIdx < target.routeIdx) {
-              for (let i = sleepNoPad.routeIdx; i < target.routeIdx; i++) {
-                const a = mapData.route[i], b = mapData.route[i + 1];
-                const p = worldPair(a, b);
-                if (p) { segs.push(p); totalMin += getMinutes(a, b, pad); }
-              }
-            } else if (sleepNoPad.routeIdx > target.routeIdx) {
-              for (let i = sleepNoPad.routeIdx; i > target.routeIdx; i--) {
-                const a = mapData.route[i], b = mapData.route[i - 1];
-                const p = worldPair(a, b);
-                if (p) { segs.push(p); totalMin += getMinutes(a, b, pad); }
-              }
-            }
-            if (target.poi) {
-              const p = worldPair(target.anchorId, target.sleepId);
-              if (p) { segs.push(p); totalMin += target.spurMin; }
+            walkGeometry(segs, sleepR.routeIdx, target.routeIdx);
+            if (target.offRoute) {
+              const p = spurSeg(target.anchorId, target.sleepId);
+              if (p) segs.push(p);
             }
             dayDrives.push({
               day: d.day,
               segments: segs,
-              minutes: totalMin,
+              minutes: minutesBetween(today.sleepId, d.excursion, pad),
               fromSleepId: today.sleepId,
               toSleepId: today.sleepId,
               isExcursion: true,
@@ -510,47 +552,21 @@
       }
       if (!prev) { prev = today; continue; } // Day 1 has no prior drive.
       const segs = [];
-      let totalMin = 0;
-      // Spur back from yesterday's POI to its anchor.
-      if (prev.poi) {
-        const p = worldPair(prev.sleepId, prev.anchorId);
-        if (p) {
-          segs.push(p);
-          totalMin += prev.spurMin;
-        }
+      // Spur back from yesterday's off-route sleep to its anchor.
+      if (prev.offRoute) {
+        const p = spurSeg(prev.sleepId, prev.anchorId);
+        if (p) segs.push(p);
       }
-      // Walk route[] from prev anchor → today anchor (forward).
-      if (prev.routeIdx < today.routeIdx) {
-        for (let i = prev.routeIdx; i < today.routeIdx; i++) {
-          const a = mapData.route[i], b = mapData.route[i + 1];
-          const p = worldPair(a, b);
-          if (p) {
-            segs.push(p);
-            totalMin += getMinutes(a, b);
-          }
-        }
-      } else if (prev.routeIdx > today.routeIdx) {
-        for (let i = prev.routeIdx; i > today.routeIdx; i--) {
-          const a = mapData.route[i], b = mapData.route[i - 1];
-          const p = worldPair(a, b);
-          if (p) {
-            segs.push(p);
-            totalMin += getMinutes(a, b);
-          }
-        }
-      }
-      // Today's spur from anchor out to POI.
-      if (today.poi) {
-        const p = worldPair(today.anchorId, today.sleepId);
-        if (p) {
-          segs.push(p);
-          totalMin += today.spurMin;
-        }
+      walkGeometry(segs, prev.routeIdx, today.routeIdx);
+      // Today's spur from anchor out to the off-route sleep.
+      if (today.offRoute) {
+        const p = spurSeg(today.anchorId, today.sleepId);
+        if (p) segs.push(p);
       }
       dayDrives.push({
         day: d.day,
         segments: segs,
-        minutes: totalMin,
+        minutes: minutesBetween(prev.sleepId, today.sleepId),
         fromSleepId: prev.sleepId,
         toSleepId: today.sleepId,
       });
@@ -1475,7 +1491,15 @@
   }
   function openModalWith(html) {
     const modal = ensureModal();
-    modal.querySelector(".rv-map-modal-body").innerHTML = html;
+    // Replace the body NODE (not just its innerHTML) so click listeners
+    // attached by previous opens are dropped. Re-using the element made
+    // listeners stack across opens: open location A, then B, click
+    // "deactivate" → A's stale handler fired too, silently PATCHing A
+    // and racing two page reloads.
+    const oldBody = modal.querySelector(".rv-map-modal-body");
+    const newBody = oldBody.cloneNode(false);
+    newBody.innerHTML = html;
+    oldBody.replaceWith(newBody);
     modal.hidden = false;
   }
 
@@ -1729,6 +1753,10 @@
   function fractionFor(locId) {
     const cat = mapData.locations.find(l => l.id === locId);
     if (cat && cat.route_fraction != null) return cat.route_fraction;
+    // User-added (kind="new") locations live in the DB, not map.json.
+    // Their route_fraction is stored on the DB row.
+    const userLoc = (window.rvUserLocations || []).find(u => u.id === locId);
+    if (userLoc && userLoc.route_fraction != null) return userLoc.route_fraction;
     // POI?
     const poi = mapData.pois.find(p => p.id === locId);
     if (poi) {

@@ -168,53 +168,6 @@
       </div>
     </article>
 
-    <!-- Tile: shared free-draw canvas. Public read + public write
-         with a per-IP rate limit on the server. See assets/draw.js.
-         Hidden for now — flip off `hidden` to re-enable. -->
-    <article class="fun-tile fun-tile-draw" id="fun-tile-draw" hidden>
-      <div class="fun-tile-header">
-        <h3 class="fun-tile-title">Doodleboard</h3>
-        <span class="fun-tile-cta draw-status" id="draw-status">–</span>
-      </div>
-      <div class="draw-toolbar">
-        <label class="draw-tool-swatch">
-          <input type="color" id="draw-color" value="#2f8a6e">
-        </label>
-        <div class="draw-radii" role="radiogroup" aria-label="Brush size">
-          <button type="button" class="draw-radius is-active" data-radius="1" title="Ultra fine">
-            <span class="draw-dot" style="width:3px;height:3px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="2" title="Fine">
-            <span class="draw-dot" style="width:5px;height:5px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="4" title="Small">
-            <span class="draw-dot" style="width:8px;height:8px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="7" title="Medium">
-            <span class="draw-dot" style="width:12px;height:12px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="10" title="Large">
-            <span class="draw-dot" style="width:16px;height:16px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="14" title="Big">
-            <span class="draw-dot" style="width:20px;height:20px;"></span>
-          </button>
-          <button type="button" class="draw-radius" data-radius="18" title="Biggest">
-            <span class="draw-dot" style="width:24px;height:24px;"></span>
-          </button>
-        </div>
-        <button type="button" class="draw-tool-btn" id="draw-eraser" data-tool="eraser" aria-pressed="false" title="Eraser">🧽</button>
-      </div>
-      <div class="draw-canvas-wrap">
-        <!-- Blue rules are painted directly on the wrap via CSS. The
-             red margin line + three hole punches are injected by
-             draw.js as plain DOM elements (below) so old iPad Safari
-             doesn't have to lean on pseudo-elements + gradient calc()
-             + inset: 0 quirks. -->
-        <canvas id="draw-canvas" class="draw-canvas"></canvas>
-      </div>
-    </article>
-
   </div>
 </section>
 
@@ -246,8 +199,8 @@
   <p>🦔 + 🐸<span class="prep-link-wrap"> · <a href="prep.html" class="prep-link">Checklists!</a> · <a href="notes.html" class="prep-link">Notes</a> · <a href="website.html" class="prep-link">Website</a> · <a href="admin.html" class="prep-link">Admin</a></span></p>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="assets/vendor/marked.min.js"></script>
+<script src="assets/vendor/purify.min.js"></script>
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/itinerary.js"></script>
@@ -255,7 +208,6 @@
 <script src="assets/checkin.js"></script>
 <script src="assets/dunkin.js"></script>
 <script src="assets/achievements.js"></script>
-<script src="assets/draw.js?v=20260702f"></script>
 <!-- TEMPORARY: emoji rain for fun. Remove this line to turn it off. -->
 <script src="assets/emoji-rain.js"></script>
 </body>

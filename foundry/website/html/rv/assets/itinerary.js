@@ -219,38 +219,50 @@
         : cp.spur_raw_minutes;
       return { anchor: cp.anchor, spurMin: spur, routeIdx: routeIdx.get(cp.anchor), kind: "poi" };
     }
-    // User location with route_fraction? Approximate as the route node
-    // closest to that fraction along the cumulative time.
+    // User location? Anchor to the GEOGRAPHICALLY nearest route node.
+    // (Previously we interpolated by route_fraction, but a node just
+    // before the fraction can be far from the user's real coords —
+    // Black Canyon Dispersed fraction-anchored to Ridgway 24 mi south
+    // instead of Black Canyon 3 mi away. Geo-nearest matches what the
+    // map draws, so day-card minutes and map strokes agree.)
+    // Spur estimate: great-circle miles × 1.3 road-winding ÷ 45 mph.
     const eff = effectiveLocation(sleepId);
-    if (eff && eff._source === "user" && eff.route_fraction != null) {
-      // Find the route segment that contains this fraction. Compute
-      // cumulative raw minutes along route, then locate the fraction.
-      let cumul = 0;
-      const total = mapData.total_route_raw_minutes || 1;
-      const targetMins = eff.route_fraction * total;
-      for (let i = 0; i < route.length - 1; i++) {
-        const s = segMap.get(`${route[i]}|${route[i+1]}`);
-        const min = s ? s.raw_minutes : 0;
-        if (cumul + min >= targetMins || i === route.length - 2) {
-          // The new stop is between route[i] and route[i+1]. We treat it
-          // as if anchored to route[i] with a spur of (targetMins -
-          // cumul) padded.
-          const spurRaw = Math.max(0, targetMins - cumul);
-          const isMtn = s && s.is_mountain;
-          const spur = pad
-            ? spurRaw * (isMtn ? PAD_MOUNTAIN : PAD_INTERSTATE)
-            : spurRaw;
-          return {
-            anchor: route[i],
-            spurMin: spur,
-            routeIdx: i,
-            kind: "user-on-route",
-          };
-        }
-        cumul += min;
+    if (eff && eff._source === "user" && eff.lat != null && eff.lon != null) {
+      let bestIdx = -1, bestMi = Infinity;
+      for (let i = 0; i < route.length; i++) {
+        const node = catalogLocsById.get(route[i]);
+        if (!node) continue;
+        const d = haversineMi(eff.lat, eff.lon, node.lat, node.lon);
+        if (d < bestMi) { bestMi = d; bestIdx = i; }
+      }
+      if (bestIdx >= 0) {
+        const spurRaw = (bestMi * 1.3 / 45) * 60;
+        const spur = pad ? spurRaw * PAD_INTERSTATE : spurRaw;
+        return {
+          anchor: route[bestIdx],
+          spurMin: spur,
+          routeIdx: bestIdx,
+          kind: "user-geo",
+        };
       }
     }
     return null;
+  }
+
+  function haversineMi(la1, lo1, la2, lo2) {
+    const R = 3958.8;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(la2 - la1), dLon = toRad(lo2 - lo1);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(la1)) * Math.cos(toRad(la2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  // Segment lookup with reversed-key fallback. map.json stores every
+  // segment forward-only (A|B where A precedes B in route[]), so a
+  // backward walk MUST try the reversed key or it silently sums 0.
+  function segFor(a, b) {
+    return segMap.get(`${a}|${b}`) || segMap.get(`${b}|${a}`);
   }
 
   function dayDriveMinutes(fromSleepId, toSleepId, opts = {}) {
@@ -263,9 +275,9 @@
     let total = a.spurMin + b.spurMin;
     const i = a.routeIdx, j = b.routeIdx;
     if (i < j) {
-      for (let n = i; n < j; n++) total += paddedSeg(segMap.get(`${route[n]}|${route[n+1]}`), pad);
+      for (let n = i; n < j; n++) total += paddedSeg(segFor(route[n], route[n+1]), pad);
     } else if (i > j) {
-      for (let n = i; n > j; n--) total += paddedSeg(segMap.get(`${route[n]}|${route[n-1]}`), pad);
+      for (let n = i; n > j; n--) total += paddedSeg(segFor(route[n], route[n-1]), pad);
     }
     return total;
   }

@@ -159,7 +159,13 @@ def get_directions(orig_lat, orig_lon, dest_lat, dest_lon, key, force=False):
 
     if raw.get("status") != "OK":
         result = {"error": raw.get("status"), "error_message": raw.get("error_message", "")}
-        cache_put(DIRECTIONS_CACHE, ck, result)
+        # Only cache DETERMINISTIC failures (the route genuinely doesn't
+        # exist). Transient statuses (OVER_QUERY_LIMIT, UNKNOWN_ERROR,
+        # REQUEST_DENIED, ...) must NOT be cached — one bad run used to
+        # poison the cache and every later run returned the error as a
+        # "hit" until --force re-fetched everything.
+        if raw.get("status") in ("ZERO_RESULTS", "NOT_FOUND"):
+            cache_put(DIRECTIONS_CACHE, ck, result)
         return result, False
 
     leg = raw["routes"][0]["legs"][0]
@@ -525,6 +531,16 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
     # it alongside (crossing out the historical). Historical stays put.
     today = date.today()
     forecast_end = today + timedelta(days=FORECAST_WINDOW_DAYS)
+    # Prior run's weather values, keyed by location id. When a fetch is
+    # rate-limited we fall back to these instead of nulling out data
+    # that was perfectly good yesterday.
+    prior_weather = {}
+    if MAP_OUT.exists():
+        try:
+            for pl in json.loads(MAP_OUT.read_text()).get("locations", []):
+                prior_weather[pl["id"]] = pl
+        except (json.JSONDecodeError, KeyError):
+            pass
     locations_out = []
     sleep_n_hits, sleep_n_misses = 0, 0
     fcst_n_hits, fcst_n_misses, fcst_n_skipped = 0, 0, 0
@@ -540,8 +556,11 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
             loc_copy["route_fraction"] = round(frac, 3)
             loc_copy["predicted_date"] = d.isoformat()
             if archive is None:
-                loc_copy["night_temp_f"] = None
-                print(f"  sleep  {loc['name']:<40}  frac={frac:.2f}  {d}  RATE-LIMITED", file=sys.stderr)
+                # Rate-limited: keep the previous run's value rather
+                # than nulling out good data.
+                prior = prior_weather.get(loc["id"], {})
+                loc_copy["night_temp_f"] = prior.get("night_temp_f")
+                print(f"  sleep  {loc['name']:<40}  frac={frac:.2f}  {d}  RATE-LIMITED (kept prior {loc_copy['night_temp_f']})", file=sys.stderr)
             else:
                 if hit:
                     sleep_n_hits += 1
@@ -579,8 +598,9 @@ def build_map(sources, key, force, trip_start_date, trip_total_days):
             loc_copy["route_fraction"] = round(frac, 3)
             loc_copy["predicted_date"] = d.isoformat()
             if archive is None:
-                loc_copy["wet_day_pct"] = None
-                print(f"  major  {loc['name']:<40}  frac={frac:.2f}  {d}  RATE-LIMITED", file=sys.stderr)
+                prior = prior_weather.get(loc["id"], {})
+                loc_copy["wet_day_pct"] = prior.get("wet_day_pct")
+                print(f"  major  {loc['name']:<40}  frac={frac:.2f}  {d}  RATE-LIMITED (kept prior {loc_copy['wet_day_pct']})", file=sys.stderr)
             else:
                 if hit:
                     major_n_hits += 1
@@ -649,7 +669,26 @@ def main():
     print(f"Trip: {start} + {total_days} days", file=sys.stderr)
 
     map_out = build_map(sources, key, args.force, start, total_days)
-    MAP_OUT.write_text(json.dumps(map_out, indent=2))
+
+    # Refuse to publish a map with errored drive times. An errored
+    # segment silently skews every downstream route_fraction, predicted
+    # date, and weather assignment — better to keep yesterday's good
+    # map.json and make the failure loud.
+    bad_segs = [f"{s['from']}->{s['to']}: {s['error']}"
+                for s in map_out["segments"] if s.get("error")]
+    bad_spurs = [f"spur {p['anchor']}->{p['id']}: {p['spur_error']}"
+                 for p in map_out["pois"] if p.get("spur_error")]
+    if bad_segs or bad_spurs:
+        for msg in bad_segs + bad_spurs:
+            print(f"FATAL: {msg}", file=sys.stderr)
+        print(f"\nNOT writing {MAP_OUT} — fix the errors above and re-run.", file=sys.stderr)
+        sys.exit(1)
+
+    # Atomic write: temp file in the same dir + rename, so an interrupt
+    # can't leave a truncated map.json for the next deploy to publish.
+    tmp = MAP_OUT.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(map_out, indent=2))
+    os.replace(tmp, MAP_OUT)
     print(f"\nWrote {MAP_OUT}", file=sys.stderr)
 
 
