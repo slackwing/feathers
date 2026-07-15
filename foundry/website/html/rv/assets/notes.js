@@ -24,6 +24,7 @@
   }
 
   let serverMarkdown = "";
+  let loaded = false;  // guards auth re-renders from clobbering load errors
   let editing = false;
   let canEdit = false;
 
@@ -44,8 +45,10 @@
       /^([A-Z][A-Z0-9_]*\.(?:jpe?g|heic|png|gif))\s*$/gim,
       (_m, name) => `<span class="notes-missing-image">image missing: ${name}</span>`,
     );
+    // Fail CLOSED: no sanitizer → escaped text, never raw marked output.
+    if (typeof DOMPurify === "undefined") return escapeHtml(src);
     const raw = marked.parse(preprocessed, { breaks: true });
-    return (typeof DOMPurify !== "undefined") ? DOMPurify.sanitize(raw) : raw;
+    return DOMPurify.sanitize(raw);
   }
 
   function escapeHtml(s) {
@@ -120,6 +123,7 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       serverMarkdown = data.markdown || "";
+      loaded = true;
     } catch (err) {
       root.innerHTML = `<p class="notes-loading">Couldn't load notes (${escapeHtml(String(err.message || err))}).</p>`;
       return;
@@ -158,13 +162,15 @@
   }
 
   // Re-evaluate auth-driven UI when auth state lands or changes.
+  // Guard on `loaded`: if the initial fetch failed, a later auth event
+  // must not replace the error message with an empty "No notes yet."
   window.addEventListener("rv:auth-resolved", () => {
     applyAuthUI();
-    if (!editing) renderView();
+    if (!editing && loaded) renderView();
   });
   window.addEventListener("rv:auth-change", () => {
     applyAuthUI();
-    if (!editing) renderView();
+    if (!editing && loaded) renderView();
   });
 
   load();

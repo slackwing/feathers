@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ws_prod)",
+      "Bash(curl -s https://andrewcheong.com/rv/api/*)",
+      "Bash(curl -s \"https://andrewcheong.com/rv/api/*)",
+      "Bash(python3 scripts/compute_everything.py *)",
+      "Bash(python3 scripts/audit_provenance.py *)",
+      "Bash(journalctl *)"
+    ]
+  }
+}

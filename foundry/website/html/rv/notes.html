@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Notes — Hedgie & Frogie's RV Adventure</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=20260715a">
 <style>
 .notes-page {
   max-width: 760px;
@@ -175,32 +175,8 @@
 </head>
 <body>
 
-<div class="site-controls">
-  <button class="site-login-btn" id="site-login-btn" type="button" aria-label="Log in">Log in</button>
-  <div class="site-unit-toggle" id="site-unit-toggle" role="tablist" aria-label="Temperature unit (site-wide)">
-    <button type="button" data-unit="C" role="tab" aria-selected="true">°C</button>
-    <button type="button" data-unit="F" role="tab" aria-selected="false">°F</button>
-  </div>
 </div>
 
-<div class="site-modal-overlay" id="site-login-modal" hidden>
-  <div class="site-modal" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
-    <button class="site-modal-close" id="site-login-close" type="button" aria-label="Close">×</button>
-    <h2 id="site-login-title">Log in</h2>
-    <form id="site-login-form">
-      <label class="site-modal-field">
-        <span>Username</span>
-        <input type="text" name="username" autocomplete="username" required>
-      </label>
-      <label class="site-modal-field">
-        <span>Password</span>
-        <input type="password" name="password" autocomplete="current-password" required>
-      </label>
-      <p class="site-modal-error" id="site-login-error" hidden></p>
-      <button class="site-modal-submit" type="submit">Log in</button>
-    </form>
-  </div>
-</div>
 
 <div class="notes-page">
   <a class="notes-back" href="index.html">← Back to itinerary</a>
@@ -214,12 +190,11 @@
 
 <div class="notes-toast" id="notes-toast" role="status" aria-live="polite"></div>
 
-<footer class="footer">
-  <p>🦔 + 🐸 · <a href="index.html">Back to itinerary</a> · <a href="website.html">Website</a> · <a href="admin.html">Admin</a></p>
-</footer>
+<footer class="footer"></footer>
 
 <script src="assets/vendor/marked.min.js"></script>
 <script src="assets/vendor/purify.min.js"></script>
+<script src="assets/site-chrome.js"></script>
 <script src="assets/site-unit.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/notes.js"></script>

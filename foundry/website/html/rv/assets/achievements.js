@@ -37,6 +37,7 @@
   const DEFAULT_EMOJI = "🎯";
 
   let items = [];
+  let loaded = false;  // guards auth re-renders from clobbering load errors
   let canEdit = false;
 
   function esc(s) {
@@ -57,8 +58,8 @@
     canEdit = !!window.rvAuthUser;
     gridEl.classList.toggle("can-edit", canEdit);
   }
-  window.addEventListener("rv:auth-resolved", () => { applyAuthUI(); render(); });
-  window.addEventListener("rv:auth-change", () => { applyAuthUI(); render(); });
+  window.addEventListener("rv:auth-resolved", () => { applyAuthUI(); if (loaded) render(); });
+  window.addEventListener("rv:auth-change", () => { applyAuthUI(); if (loaded) render(); });
   applyAuthUI();
 
   // ----- Data fetch -----
@@ -71,6 +72,7 @@
       items = rows
         .filter(x => x.section === SECTION_ID || x.section_id === SECTION_ID)
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      loaded = true;
       render();
     } catch (err) {
       gridEl.innerHTML = `<p class="ach-loading">Couldn't load achievements.</p>`;
@@ -151,7 +153,7 @@
       // Revert on failure.
       it.done = !newDone;
       render();
-      window.alert("Couldn't save. Try again?");
+      window.alert(`Couldn't save (${err.message}). Try again?`);
     }
   }
 

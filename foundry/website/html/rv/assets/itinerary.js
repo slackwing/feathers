@@ -445,13 +445,14 @@
       // still shows the note contents (just unformatted).
       return `<pre class="day-card-fallback">${escapeHtml(md)}</pre>`;
     }
-    const raw = marked.parse(md);
-    if (typeof DOMPurify !== "undefined") {
-      return DOMPurify.sanitize(raw, {
-        ADD_ATTR: ["target", "rel"],
-      });
+    // Fail CLOSED: no sanitizer → escaped text, never raw marked output.
+    if (typeof DOMPurify === "undefined") {
+      return `<pre class="day-card-fallback">${escapeHtml(md)}</pre>`;
     }
-    return raw;
+    const raw = marked.parse(md);
+    return DOMPurify.sanitize(raw, {
+      ADD_ATTR: ["target", "rel"],
+    });
   }
   // Open external links in a new tab. marked emits plain <a href> tags;
   // we post-process via a DOMPurify hook so target/rel get added.
@@ -641,7 +642,7 @@
           });
           if (!r.ok && r.status === 404) {
             // Override row doesn't exist yet — create it.
-            await fetch("/rv/api/locations", {
+            const r2 = await fetch("/rv/api/locations", {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -652,9 +653,17 @@
                 activated: true,
               }),
             });
+            if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+          } else if (!r.ok) {
+            // Any other failure must NOT fall through — the code below
+            // reloads the page on label change, silently discarding the
+            // edit if we don't stop here.
+            throw new Error(`HTTP ${r.status}`);
           }
         } catch (err) {
-          alert("Saving the label failed — please refresh.");
+          alert(`Saving the label failed (${err.message}) — not saved.`);
+          finished = false;
+          return;
         }
       }
 
@@ -675,10 +684,10 @@
               ordinal: day.ordinal,
             }),
           });
-          if (!res.ok) throw new Error("save failed");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } catch (err) {
           day.markdown = oldMd;
-          alert("Saving notes failed — reverted.");
+          alert(`Saving notes failed (${err.message}) — reverted.`);
         }
       }
 

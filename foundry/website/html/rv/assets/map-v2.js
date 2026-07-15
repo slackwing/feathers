@@ -1150,6 +1150,10 @@
     }
 
     if (activePointers.size === 1) {
+      // On touch, one finger belongs to the PAGE (touch-action: pan-y
+      // lets the browser scroll past the map); the map only pans with
+      // two fingers. Mouse/pen single-pointer drag still pans.
+      if (e.pointerType === "touch") return;
       const dx = curr.x - prev.x;
       const dy = curr.y - prev.y;
       offsetX += dx;
@@ -1194,6 +1198,9 @@
   // Touch double-tap: detect via two pointerdowns within 300ms in the same spot.
   viewport.addEventListener("pointerdown", (e) => {
     if (e.pointerType !== "touch") return;
+    // A second finger landing near the first is a pinch starting, not a
+    // double-tap — don't zoom mid-pinch.
+    if (activePointers.size > 1) { lastTapTime = 0; return; }
     const now = Date.now();
     if (now - lastTapTime < 300 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 30) {
       zoomInAt(e.clientX, e.clientY);

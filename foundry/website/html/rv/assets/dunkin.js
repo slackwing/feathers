@@ -20,7 +20,10 @@
   // 0 at that instant; seed rows filter out and any real clicks
   // logged after that timestamp become the live chart.
   const TRIP_START = "2026-07-05T12:00:00Z";
-  const TRIP_END = "2026-07-22";
+  // End of day July 22 EASTERN (UTC-4). The old bare "2026-07-22"
+  // parsed as midnight UTC = 8 PM ET on July 21, so the chart's x-axis
+  // and every projection ended almost a day before the trip does.
+  const TRIP_END = "2026-07-23T04:00:00Z";
 
   // Participants — order controls y-axis avatar stacking priority
   // when guesses collide. Default avatar is a colored letter chip
@@ -78,7 +81,11 @@
 
   function fmtShortDate(dt) {
     const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return `${M[dt.getUTCMonth()]} ${dt.getUTCDate()}`;
+    // Label in EASTERN (UTC-4 in July, like every other hard-coded ET
+    // assumption in this file) so the trip-end tick reads "Jul 22",
+    // not the UTC-rollover "Jul 23".
+    const et = new Date(dt.getTime() - 4 * 3600 * 1000);
+    return `${M[et.getUTCMonth()]} ${et.getUTCDate()}`;
   }
 
   function esc(s) {
@@ -159,7 +166,9 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         await loadLogs();
       } catch (err) {
-        // Silent; user can retry.
+        // Loud failure — a swallowed error here means the user walks
+        // away believing the sighting counted when it didn't.
+        alert(`Dunkin' log failed (${err.message}). Not counted — try again.`);
       } finally {
         btn.disabled = false;
       }

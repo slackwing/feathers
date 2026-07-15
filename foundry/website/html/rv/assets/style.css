@@ -175,6 +175,9 @@ a { color: var(--accent); }
   display: flex;
   flex-direction: column;
   height: calc(100vh - 48px);
+  /* dvh tracks iOS Safari's collapsing toolbar; vh above is the
+     fallback for older browsers. */
+  height: calc(100dvh - 48px);
 }
 .timeline-list li {
   flex: 1 1 0;
@@ -195,6 +198,7 @@ a { color: var(--accent); }
      instead of stretched. */
   .timeline {
     max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     overflow-y: auto;
     padding-right: 8px;
   }
@@ -1405,6 +1409,13 @@ a { color: var(--accent); }
   touch-action: none;
   contain: strict;
 }
+/* On touch devices the full-width 460px map was a scroll trap: a
+   one-finger swipe panned the map instead of the page. pan-y hands
+   vertical swipes back to the browser; map-v2.js pans the map only
+   with two fingers on touch (one-finger pan still works with a mouse). */
+@media (pointer: coarse) {
+  .route-map-v2-viewport { touch-action: pan-y; }
+}
 .route-map-v2-viewport:active { cursor: grabbing; }
 .route-map-v2-svg {
   position: absolute;
@@ -1414,4 +1425,21 @@ a { color: var(--accent); }
   display: block;
   user-select: none;
   overflow: hidden;
+}
+
+/* ===================== iOS FORM-ZOOM GUARD ===================== */
+/* iOS Safari zooms the whole page when focusing any text control whose
+   font-size is under 16px — and doesn't zoom back out. Force 16px on
+   touch devices; desktop keeps the designed sizes. !important because
+   this must beat page-specific inline <style> blocks (notes editor,
+   prep inputs, login modal). */
+@media (pointer: coarse) {
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  input[type="email"],
+  input[type="number"],
+  textarea {
+    font-size: 16px !important;
+  }
 }

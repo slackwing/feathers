@@ -13,6 +13,7 @@
   if (!root) return;
 
   let participants = [];
+  let loaded = false;  // guards auth re-renders from clobbering load errors
   let canEdit = false;
 
   function toast(msg) {
@@ -96,6 +97,7 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       participants = data.participants || [];
+      loaded = true;
       applyAuthUI();
       render();
     } catch (err) {
@@ -133,7 +135,7 @@
       if (idx !== -1) participants[idx] = updated;
       toast("Saved.");
     } catch (err) {
-      toast("Save failed.");
+      toast(`Save failed (${err.message}).`);
     }
   }
 
@@ -151,7 +153,7 @@
       render();
       toast("Deleted.");
     } catch (err) {
-      toast("Delete failed.");
+      toast(`Delete failed (${err.message}).`);
     }
   }
 
@@ -214,7 +216,7 @@
         render();
         toast(`Added ${created.name}.`);
       } catch (err) {
-        toast("Add failed.");
+        toast(`Add failed (${err.message}).`);
       }
     });
   }
@@ -227,8 +229,8 @@
     });
   }
 
-  window.addEventListener("rv:auth-resolved", () => { applyAuthUI(); render(); });
-  window.addEventListener("rv:auth-change", () => { applyAuthUI(); render(); });
+  window.addEventListener("rv:auth-resolved", () => { applyAuthUI(); if (loaded) render(); });
+  window.addEventListener("rv:auth-change", () => { applyAuthUI(); if (loaded) render(); });
 
   load();
 })();

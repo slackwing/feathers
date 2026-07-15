@@ -40,6 +40,7 @@
   let sections = [];          // [{ id, title, sort_order, ... }]
   let items = [];             // server-truth array (sorted by section, sort_order)
   let canEdit = false;
+  let loaded = false;         // guards auth re-renders from clobbering load errors
 
   // ---- collapse state (localStorage) ----
   const COLLAPSE_KEY = "rv_prep_collapsed_v1";
@@ -120,6 +121,7 @@
     const data = await apiFetch("", { method: "GET" });
     sections = (data.sections || []).slice();
     items = (data.items || []).slice();
+    loaded = true;
   }
 
   // Sections that are DB-real but rendered elsewhere on the site
@@ -219,8 +221,11 @@
   // parsing). Links open in a new tab. XSS-safe via DOMPurify.
   function renderInlineMarkdown(src) {
     if (typeof marked === "undefined") return escapeHtml(src);
+    // Fail CLOSED: if the sanitizer didn't load, render escaped text —
+    // never raw marked output (user-authored HTML would reach every
+    // public visitor unsanitized).
+    if (typeof DOMPurify === "undefined") return escapeHtml(src);
     const raw = marked.parseInline(src, { breaks: false });
-    if (typeof DOMPurify === "undefined") return raw;
     return DOMPurify.sanitize(raw);
   }
 
@@ -329,7 +334,7 @@
       e.target.checked = oldDone;
       li.classList.toggle("is-done", oldDone);
       updateProgress();
-      toast("Save failed — reverted.");
+      toast(`Save failed (${err.message}) — reverted.`);
     }
   });
 
@@ -443,7 +448,7 @@
     } catch (err) {
       sections = oldSections;
       render();
-      toast("Delete failed — reverted.");
+      toast(`Delete failed (${err.message}) — reverted.`);
     }
   }
 
@@ -490,7 +495,7 @@
       } catch (err) {
         it.text = oldText;
         rerender();
-        toast("Save failed — reverted.");
+        toast(`Save failed (${err.message}) — reverted.`);
       }
     }
     function cancel() {
@@ -524,7 +529,7 @@
     } catch (err) {
       items = oldItems;
       render();
-      toast("Delete failed — reverted.");
+      toast(`Delete failed (${err.message}) — reverted.`);
     }
   }
 
@@ -579,7 +584,7 @@
       resortItems();
       render();
     } catch (err) {
-      toast("Add failed.");
+      toast(`Add failed (${err.message}).`);
     }
   });
 
@@ -597,7 +602,7 @@
   function applyAuthState() {
     canEdit = !!window.rvAuthUser;
     if (loginHint) loginHint.hidden = canEdit;
-    render();
+    if (loaded) render();
   }
   if (loginHintBtn) {
     loginHintBtn.addEventListener("click", () => {
