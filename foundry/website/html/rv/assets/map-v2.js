@@ -80,10 +80,6 @@
   try {
     statesGeo = await (await fetch("assets/us-states.json")).json();
   } catch (_) { /* states layer is optional */ }
-  let itinerary = null;
-  try {
-    itinerary = await (await fetch("assets/itinerary.json")).json();
-  } catch (_) { /* itinerary layer is optional */ }
 
   // --------------- Lookup tables ---------------
   const locationById = new Map(mapData.locations.map(l => [l.id, l]));
@@ -356,7 +352,7 @@
     return best;
   }
 
-  // --------------- Per-day drive geometry (from itinerary.json) ---------------
+  // --------------- Per-day drive geometry (from the DB itinerary) ---------------
   // For each day in the itinerary where sleep[N] != sleep[N-1], compute the
   // list of (a, b) world-coord segment endpoints the drive traverses. The
   // "Day N" label and alternating green/yellow wash hang off that geometry.
@@ -374,30 +370,18 @@
   // Output: dayDrives[] = [{day, segments: [[wxA,wyA,wxB,wyB], ...],
   //                          fromSleepId, toSleepId, isExcursion, excursionTargetId}]
   //
-  // Sources, in priority order: rvLayered.merged (post-DB-overlay), then
-  // raw itinerary.json. We recompute per render() so DB edits land
-  // without a page reload.
+  // Source: rvLayered.merged (itinerary.js's full-DB model). Before
+  // rv:itinerary-ready fires there is nothing to draw — the pre-ready
+  // first render just paints no day strokes; the ready event re-renders.
   function computeDayDrives() {
     const dayDrives = [];
-    // Prefer the layered model (includes DB overrides + excursion field).
-    let days = null;
-    if (window.rvLayered && window.rvLayered.merged) {
-      days = window.rvLayered.merged.map((m, i) => ({
-        day: i + 1,
-        sleep: m.sleepLocId,
-        excursion: m.excursion || null,
-        excursion_by_car: !!m.excursionByCar,
-      }));
-    } else if (itinerary && itinerary.days && itinerary.days.length) {
-      days = itinerary.days.map(d => ({
-        day: d.day,
-        sleep: d.sleep,
-        excursion: d.excursion || null,
-        excursion_by_car: !!d.excursion_by_car,
-      }));
-    } else {
-      return dayDrives;
-    }
+    if (!(window.rvLayered && window.rvLayered.merged)) return dayDrives;
+    const days = window.rvLayered.merged.map((m, i) => ({
+      day: i + 1,
+      sleep: m.sleepLocId,
+      excursion: m.excursion || null,
+      excursion_by_car: !!m.excursionByCar,
+    }));
     // v3: route[] is the clean highway polyline. POIs anchor to a route
     // node; sleeping off-route costs only the spur (anchor -> POI).
     const routeIndexOf = new Map();
@@ -979,8 +963,8 @@
       // Date for Day N = start_date + (N - 1) days, formatted as "Jul 7".
       const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       function dateForDay(n) {
-        if (!itinerary || !itinerary.start_date) return `Day ${n}`;
-        const [y, m, d] = itinerary.start_date.split("-").map(Number);
+        if (!mapData.trip_start_date) return `Day ${n}`;
+        const [y, m, d] = mapData.trip_start_date.split("-").map(Number);
         const dt = new Date(Date.UTC(y, m - 1, d + (n - 1)));
         return `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCDate()}`;
       }

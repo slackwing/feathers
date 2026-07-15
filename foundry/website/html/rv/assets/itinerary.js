@@ -1,13 +1,13 @@
 // ============================================================
-// Itinerary renderer (Phase A: editable, override-layered)
+// Itinerary renderer (full-DB)
 //
 // Reads:
-//   - assets/itinerary.json   — static seed itinerary (canonical baseline)
 //   - assets/map.json         — locations, route, segments, pois
-//   - /rv/api/itinerary       — DB overrides per day_id
+//   - /rv/api/itinerary       — days (THE source of truth; one row per day)
 //   - /rv/api/locations       — DB location overrides + new locations
 //
-// Layers DB over static; renders one card per day in the compact format:
+// The static-file-plus-DB-overlay era is over (2026-07-15): every day
+// lives in the itinerary_override table. Renders one card per day:
 //
 //   Day N · Sunday, Jul 5 — Start → End  (3h00m)
 //   <markdown body>
@@ -25,12 +25,19 @@
   if (!target) return;
 
   // ---- load everything in parallel ----
-  const [staticItin, mapData, dbItin, dbLocs] = await Promise.all([
-    fetch("assets/itinerary.json").then(r => r.json()),
+  // The itinerary fetch is NOT error-swallowed: with no static fallback,
+  // an empty days array would render an empty trip. Fail loudly instead.
+  const [mapData, dbItin, dbLocs] = await Promise.all([
     fetch("assets/map.json").then(r => r.json()),
-    fetch("/rv/api/itinerary").then(r => r.ok ? r.json() : { days: [] }).catch(() => ({ days: [] })),
+    fetch("/rv/api/itinerary").then(r => {
+      if (!r.ok) throw new Error(`itinerary API: HTTP ${r.status}`);
+      return r.json();
+    }),
     fetch("/rv/api/locations").then(r => r.ok ? r.json() : { locations: [] }).catch(() => ({ locations: [] })),
-  ]);
+  ]).catch(err => {
+    target.innerHTML = `<p class="day-card-empty">Couldn't load the itinerary (${String(err.message || err)}). Try refreshing.</p>`;
+    throw err;
+  });
 
   // Expose the merged model on window so map-v2.js can use it.
   window.rvItinerary = null;
@@ -122,59 +129,21 @@
   }
 
   // ============================================================
-  // 2. Layer DB itinerary over the static itinerary.
+  // 2. Days come straight from the DB — every row IS a day.
   // ============================================================
-  // Each static day gets a synthetic id `static_N`. DB rows keyed by
-  // `static_N` patch (sleep_loc_id, markdown). DB rows with UUID id are
-  // brand-new inserted days. Final ordered list sorts by `ordinal`
-  // (static day N has ordinal N*1000; inserts get midpoints).
+  // day_id is an opaque key ("static_N" ids are historical relics from
+  // the overlay era; inserted days get "ins_*" ids). Order is by
+  // `ordinal` only; live day numbers are assigned by position.
   // ============================================================
-  const dbByDayId = new Map((dbItin.days || []).map(d => [d.day_id, d]));
-
-  // Merge static + DB. Each row keeps a reference back to its DB row (if
-  // any) so we can write back via PATCH. Markdown defaults: bullet-join
-  // the static notes.
-  const merged = [];
-
-  // Step 1: add all static days. If a DB row exists for static_N, layer
-  // it. If a DB row exists for static_N but the SLEEP was changed or
-  // markdown overridden, those fields win.
-  staticItin.days.forEach((sd, idx) => {
-    const dayId = `static_${sd.day}`;
-    const dbRow = dbByDayId.get(dayId);
-    // Compute defaults from static.
-    const defaultSleep = sd.sleep;
-    // Static days carry their notes as a single `markdown` string —
-    // same shape as itinerary_override.markdown in the DB.
-    const defaultMarkdown = sd.markdown || "";
-    const ordinal = dbRow && dbRow.ordinal != null ? dbRow.ordinal : sd.day * 1000;
-    merged.push({
-      dayId,
-      sleepLocId: (dbRow && dbRow.sleep_loc_id) || defaultSleep,
-      markdown: (dbRow && dbRow.markdown != null) ? dbRow.markdown : defaultMarkdown,
-      excursion: (dbRow && dbRow.excursion != null) ? dbRow.excursion : (sd.excursion || null),
-      excursionByCar: (dbRow && dbRow.excursion_by_car != null) ? !!dbRow.excursion_by_car : !!sd.excursion_by_car,
-      ordinal,
-      isStatic: true,
-      staticDay: sd.day,
-      _dbRow: dbRow || null,
-    });
-  });
-
-  // Step 2: add all DB-only (inserted) rows.
-  (dbItin.days || []).forEach(dr => {
-    if (dr.day_id.startsWith("static_")) return; // already handled
-    merged.push({
-      dayId: dr.day_id,
-      sleepLocId: dr.sleep_loc_id || null,
-      markdown: dr.markdown || "",
-      excursion: dr.excursion || null,
-      excursionByCar: !!dr.excursion_by_car,
-      ordinal: dr.ordinal,
-      isStatic: false,
-      _dbRow: dr,
-    });
-  });
+  const merged = (dbItin.days || []).map(dr => ({
+    dayId: dr.day_id,
+    sleepLocId: dr.sleep_loc_id || null,
+    markdown: dr.markdown || "",
+    excursion: dr.excursion || null,
+    excursionByCar: !!dr.excursion_by_car,
+    ordinal: dr.ordinal,
+    _dbRow: dr,
+  }));
 
   // Sort by ordinal; assign live day numbers (1, 2, 3, ...).
   merged.sort((a, b) => a.ordinal - b.ordinal || a.dayId.localeCompare(b.dayId));
@@ -303,7 +272,9 @@
   // ============================================================
   // 4. Date helpers.
   // ============================================================
-  const startDate = staticItin.start_date;
+  // Trip start date comes from map.json (written by the pipeline from
+  // trip.json's start_dates) — the last thing itinerary.json supplied.
+  const startDate = mapData.trip_start_date;
   function dateForDay(n) {
     const [y, m, d] = startDate.split("-").map(Number);
     const dt = new Date(Date.UTC(y, m - 1, d + (n - 1)));

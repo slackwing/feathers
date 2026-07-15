@@ -52,11 +52,18 @@ Andrew and his partner Abi are planning an RV trip across the United States, dri
 - **Cross-platform smoothness is critical.** The site must work well on iOS (Abi's iPhone + iPad), Android (Andrew's phone), and desktop (Andrew's laptop). Favor well-established, cross-compatible web technologies and design patterns over anything experimental or device-specific.
 - **Helper pages** are okay alongside the main itinerary page — e.g., RV maintenance notes.
 
-## Current state (as of 2026-06-21)
+## Current state (as of 2026-07-15)
 
 - **index.html** — main itinerary page. Renders day-by-day cards from
-  `assets/trip.json` (via `assets/itinerary.js`), plus the V2 route map
-  (via `assets/map-v2.js`, reading `assets/map.json`).
+  `/rv/api/itinerary` — the DB is the ONLY source of itinerary days
+  (the static-file-plus-overlay era ended 2026-07-15; `assets/
+  itinerary.json` is gone) — via `assets/itinerary.js`, plus the V2
+  route map (via `assets/map-v2.js`, reading `assets/map.json`).
+  `assets/trip.json` still feeds `scripts/compute_everything.py`
+  (trip start date + total days) but is NOT read by the renderer.
+- **assets/site-chrome.js** — injects the login modal, site controls,
+  and footer nav on every page (single source; loads before
+  site-unit.js / auth.js).
 - **prep.html** — pre-trip checklist. **Public read** (anyone can view),
   edit-gated by login (toggle done, drag to reorder, inline edit, delete,
   add new). Backed by the `prep_item` table in the hobby-server rv

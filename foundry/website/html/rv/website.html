@@ -308,7 +308,7 @@
   <h3>Itinerary + locations (2-layer)</h3>
   <p>The itinerary lives in two places:</p>
   <ul>
-    <li><code>assets/itinerary.json</code> — the static "planned" itinerary. Immutable at read time.</li>
+    <li><code>/rv/api/itinerary</code> — the itinerary, one DB row per day (fully DB-backed since 2026-07-15).</li>
     <li><code>itinerary_override</code> in the DB — per-day overrides. Loaded and layered on top at render.</li>
   </ul>
   <table>
@@ -402,7 +402,7 @@
   <h2>What I still want to do</h2>
   <ul>
     <li>Surface <code>checkin</code> pings as a breadcrumb layer on the route map.</li>
-    <li>Migrate <code>itinerary.json</code> fully into DB rows so "delete day" doesn't need a static-file edit.</li>
+    <li><s>Migrate <code>itinerary.json</code> fully into DB rows so "delete day" doesn't need a static-file edit.</s> Done 2026-07-15.</li>
     <li>Photo galleries per day card.</li>
   </ul>
 
