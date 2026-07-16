@@ -680,6 +680,10 @@
               day_id: day.dayId,
               sleep_loc_id: day.sleepLocId,
               markdown: newMd,
+              // The upsert OVERWRITES every column — omitting these
+              // would silently wipe the day's excursion (Mesa Verde).
+              excursion: day.excursion || null,
+              excursion_by_car: !!day.excursionByCar,
               ordinal: day.ordinal,
             }),
           });

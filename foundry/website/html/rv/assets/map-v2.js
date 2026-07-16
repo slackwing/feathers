@@ -1577,9 +1577,13 @@
       // Itinerary-changing actions first; soft delete + deactivate sit
       // together at the end as quieter "modify the dot" actions.
       if (isCurrentSleep) {
-        // We already sleep here — only meaningful action is staying an
-        // extra night (insert a duplicate day).
+        // We already sleep here. Offer staying an extra night, and the
+        // inverse: removing a day that sleeps here (its notes merge
+        // into the following day and the trip shortens by one day).
         html += `<button type="button" data-act="add-rest-day">sleep here (add day)</button>`;
+        merged.filter(d => d.sleepLocId === loc.id).forEach(d => {
+          html += `<button type="button" data-act="remove-day" data-day-id="${escapeXml(d.dayId)}" class="danger">remove day ${d.dayNum} (merge)</button>`;
+        });
       } else {
         // Anything else — route node OR off-route POI — gets all three
         // flavors of "make this our sleep." (Route nodes used to offer
@@ -1616,6 +1620,7 @@
       if (act === "extend-prev") return shiftDayEndpoint(loc, "prev");
       if (act === "pull-next") return shiftDayEndpoint(loc, "next");
       if (act === "insert-here" || act === "add-rest-day") return insertDayHere(loc);
+      if (act === "remove-day") return removeDay(btn.dataset.dayId);
       if (act === "end-day-here") return endDayHere(loc);
       if (act === "restore") return restoreLocation(loc);
       if (act === "soft-delete") return softDeleteLocation(loc);
@@ -1752,6 +1757,10 @@
           day_id: target.dayId,
           sleep_loc_id: loc.id,
           markdown: target.markdown,
+          // The upsert OVERWRITES every column — omitting these would
+          // silently wipe the day's excursion.
+          excursion: target.excursion || null,
+          excursion_by_car: !!target.excursionByCar,
           ordinal: target.ordinal,
         }),
       });
@@ -1789,6 +1798,61 @@
     return cumul / totalRaw;
   }
 
+  // Remove an itinerary day entirely — the two days around it merge:
+  // the previous day's sleep stays, the next day's drive now starts
+  // from it, and the trip gets one day shorter. The removed day's
+  // notes are appended to the FOLLOWING day (it inherits the drive),
+  // or to the previous day when removing the last day.
+  async function removeDay(dayId) {
+    const merged = window.rvLayered.merged;
+    const idx = merged.findIndex(d => d.dayId === dayId);
+    if (idx < 0) { alert("Day not found."); return; }
+    const day = merged[idx];
+    const heir = merged[idx + 1] || merged[idx - 1] || null;
+    const sleepName = window.rvLayered.nameOf(day.sleepLocId);
+    const heirDesc = heir
+      ? `Its notes will be merged into Day ${heir.dayNum}.`
+      : `Its notes will be LOST (no other day to merge into).`;
+    if (!confirm(
+      `Remove Day ${day.dayNum} (sleeps at "${sleepName}")?\n\n` +
+      `The surrounding days merge and the trip gets one day shorter. ${heirDesc}`
+    )) return;
+    try {
+      // 1. Merge notes into the heir day (removed day comes first
+      //    chronologically when the heir is the following day).
+      const removedMd = (day.markdown || "").trim();
+      if (heir && removedMd) {
+        const heirMd = (heir.markdown || "").trim();
+        const mergedMd = heir === merged[idx + 1]
+          ? `${removedMd}\n\n---\n\n${heirMd}`
+          : `${heirMd}\n\n---\n\n${removedMd}`;
+        const r1 = await fetch("/rv/api/itinerary", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            day_id: heir.dayId,
+            sleep_loc_id: heir.sleepLocId,
+            markdown: mergedMd,
+            excursion: heir.excursion || null,
+            excursion_by_car: !!heir.excursionByCar,
+            ordinal: heir.ordinal,
+          }),
+        });
+        if (!r1.ok) throw new Error(`merge notes: HTTP ${r1.status}`);
+      }
+      // 2. Delete the day row.
+      const r2 = await fetch("/rv/api/itinerary/" + encodeURIComponent(dayId), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!r2.ok) throw new Error(`delete day: HTTP ${r2.status}`);
+      location.reload();
+    } catch (err) {
+      alert(`Removing the day failed (${err.message}). Check the itinerary before retrying — the notes merge may have already saved.`);
+    }
+  }
+
   // "End a day here" — find the day whose walked path includes this
   // location (the day that drives THROUGH it), and change that day's
   // sleep to here. The trailing days then start from this location.
@@ -1815,6 +1879,10 @@
           day_id: target.dayId,
           sleep_loc_id: loc.id,
           markdown: target.markdown,
+          // The upsert OVERWRITES every column — omitting these would
+          // silently wipe the day's excursion.
+          excursion: target.excursion || null,
+          excursion_by_car: !!target.excursionByCar,
           ordinal: target.ordinal,
         }),
       });
