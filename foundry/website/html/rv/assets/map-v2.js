@@ -834,13 +834,23 @@
     // We don't have direct access to all DB locations from here cleanly —
     // rvLayered exposes effectiveLocation by id but not "list all". Use a
     // global set instead.
+    // User locations that are a SLEEP in the live itinerary render with
+    // the 🚐 like catalog sleeps (unless the user picked a custom emoji).
+    const itinSleepSet = (window.rvLayered && window.rvLayered.merged)
+      ? new Set(window.rvLayered.merged.map(d => d.sleepLocId))
+      : new Set();
     if (window.rvUserLocations) {
       window.rvUserLocations.forEach(u => {
         if (u.lat == null || u.lon == null) return;
         if (u.deleted_at) return;     // deleted = hidden entirely
         const wp = project(u.lat, u.lon);
         const p = worldToScreen(wp.x, wp.y);
-        if (u.emoji) {
+        if (!u.emoji && itinSleepSet.has(u.id)) {
+          mainObjects += `<g><title>${escapeXml(u.name || u.id)}</title>`;
+          mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 7).toFixed(1)}" font-size="20" text-anchor="middle" style="user-select:none;">🚐</text>`;
+          mainObjects += `</g>`;
+          obstacles.push({ x: p.x - 10, y: p.y - 13, w: 20, h: 24 });
+        } else if (u.emoji) {
           mainObjects += `<g><title>${escapeXml(u.name || u.id)}</title>`;
           mainObjects += `<text x="${p.x.toFixed(1)}" y="${(p.y + 6).toFixed(1)}" font-size="18" text-anchor="middle" style="user-select:none;">${u.emoji}</text>`;
           mainObjects += `</g>`;
@@ -1380,7 +1390,11 @@
         if (u.deleted_at) return;   // hidden = not clickable
         const wp = project(u.lat, u.lon);
         const p = worldToScreen(wp.x, wp.y);
-        const hasEmoji = !!u.emoji;
+        // Emoji-sized hit if it renders as an emoji: custom emoji OR the
+        // 🚐 that itinerary-sleep user locations get (see render()).
+        const isItinSleep = !!(window.rvLayered && window.rvLayered.merged &&
+          window.rvLayered.merged.some(d => d.sleepLocId === u.id));
+        const hasEmoji = !!u.emoji || isItinSleep;
         // Synthesize a "location"-shaped object for the modal to consume.
         const synthetic = {
           id: u.id,
