@@ -174,11 +174,16 @@
     return s.raw_minutes * (s.is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE);
   }
 
-  // POI lookup (catalog + DB-new); resolves to {anchor, spurMinPadded}.
+  // POI lookup (catalog + DB-new); resolves to
+  //   {anchor, spurMin, routeIdx, segT, kind}
+  // where (routeIdx, segT) is a POSITION along the route: node index
+  // plus fractional progress (0–1) along the segment routeIdx→routeIdx+1.
+  // Catalog anchors sit exactly on nodes (segT 0); user locations
+  // project onto the polyline, so segT can be mid-segment.
   function resolveSleepAnchor(sleepId, pad = true) {
     if (!sleepId) return null;
     if (routeIdx.has(sleepId)) {
-      return { anchor: sleepId, spurMin: 0, routeIdx: routeIdx.get(sleepId), kind: "on-route" };
+      return { anchor: sleepId, spurMin: 0, routeIdx: routeIdx.get(sleepId), segT: 0, kind: "on-route" };
     }
     // Catalog POI?
     const cp = catalogPoisById.get(sleepId);
@@ -186,31 +191,42 @@
       const spur = pad
         ? cp.spur_raw_minutes * (cp.spur_is_mountain ? PAD_MOUNTAIN : PAD_INTERSTATE)
         : cp.spur_raw_minutes;
-      return { anchor: cp.anchor, spurMin: spur, routeIdx: routeIdx.get(cp.anchor), kind: "poi" };
+      return { anchor: cp.anchor, spurMin: spur, routeIdx: routeIdx.get(cp.anchor), segT: 0, kind: "poi" };
     }
-    // User location? Anchor to the GEOGRAPHICALLY nearest route node.
-    // (Previously we interpolated by route_fraction, but a node just
-    // before the fraction can be far from the user's real coords —
-    // Black Canyon Dispersed fraction-anchored to Ridgway 24 mi south
-    // instead of Black Canyon 3 mi away. Geo-nearest matches what the
-    // map draws, so day-card minutes and map strokes agree.)
-    // Spur estimate: great-circle miles × 1.3 road-winding ÷ 45 mph.
+    // User location? Project onto the route POLYLINE — nearest point on
+    // any segment, not nearest node. Node-anchoring made the day stroke
+    // overshoot past the sleep and double back whenever the nearest
+    // node lay beyond it (CR 305 Dispersed). Spur estimate from the
+    // projected point: great-circle miles × 1.3 road-winding ÷ 45 mph.
     const eff = effectiveLocation(sleepId);
     if (eff && eff._source === "user" && eff.lat != null && eff.lon != null) {
-      let bestIdx = -1, bestMi = Infinity;
-      for (let i = 0; i < route.length; i++) {
-        const node = catalogLocsById.get(route[i]);
-        if (!node) continue;
-        const d = haversineMi(eff.lat, eff.lon, node.lat, node.lon);
-        if (d < bestMi) { bestMi = d; bestIdx = i; }
+      let best = null; // {i, t, mi}
+      for (let i = 0; i < route.length - 1; i++) {
+        const a = catalogLocsById.get(route[i]);
+        const b = catalogLocsById.get(route[i + 1]);
+        if (!a || !b) continue;
+        // Planar approximation (lon scaled by cos of mid-latitude) is
+        // plenty accurate at individual-segment scale.
+        const kx = Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
+        const ax = a.lon * kx, ay = a.lat;
+        const bx = b.lon * kx, by = b.lat;
+        const px = eff.lon * kx, py = eff.lat;
+        const dx = bx - ax, dy = by - ay;
+        const lenSq = dx * dx + dy * dy;
+        let t = lenSq > 0 ? ((px - ax) * dx + (py - ay) * dy) / lenSq : 0;
+        t = Math.max(0, Math.min(1, t));
+        const qLat = a.lat + (b.lat - a.lat) * t;
+        const qLon = a.lon + (b.lon - a.lon) * t;
+        const mi = haversineMi(eff.lat, eff.lon, qLat, qLon);
+        if (!best || mi < best.mi) best = { i, t, mi };
       }
-      if (bestIdx >= 0) {
-        const spurRaw = (bestMi * 1.3 / 45) * 60;
-        const spur = pad ? spurRaw * PAD_INTERSTATE : spurRaw;
+      if (best) {
+        const spurRaw = (best.mi * 1.3 / 45) * 60;
         return {
-          anchor: route[bestIdx],
-          spurMin: spur,
-          routeIdx: bestIdx,
+          anchor: route[best.i],
+          spurMin: pad ? spurRaw * PAD_INTERSTATE : spurRaw,
+          routeIdx: best.i,
+          segT: best.t,
           kind: "user-geo",
         };
       }
@@ -234,6 +250,25 @@
     return segMap.get(`${a}|${b}`) || segMap.get(`${b}|${a}`);
   }
 
+  // Cumulative drive minutes at each route node (padded and raw), so
+  // point-to-point time is a subtraction — including fractional
+  // mid-segment positions from resolveSleepAnchor's segT.
+  const cumulPadded = [0], cumulRaw = [0];
+  for (let i = 0; i < route.length - 1; i++) {
+    const s = segFor(route[i], route[i + 1]);
+    cumulPadded.push(cumulPadded[i] + paddedSeg(s, true));
+    cumulRaw.push(cumulRaw[i] + paddedSeg(s, false));
+  }
+  function cumulAt(pos, pad) {
+    const arr = pad ? cumulPadded : cumulRaw;
+    let v = arr[pos.routeIdx];
+    const t = pos.segT || 0;
+    if (t > 0 && pos.routeIdx < route.length - 1) {
+      v += t * (arr[pos.routeIdx + 1] - arr[pos.routeIdx]);
+    }
+    return v;
+  }
+
   function dayDriveMinutes(fromSleepId, toSleepId, opts = {}) {
     const pad = opts.pad !== false;
     if (!fromSleepId || !toSleepId) return null;
@@ -241,14 +276,7 @@
     const a = resolveSleepAnchor(fromSleepId, pad);
     const b = resolveSleepAnchor(toSleepId, pad);
     if (!a || !b) return null;
-    let total = a.spurMin + b.spurMin;
-    const i = a.routeIdx, j = b.routeIdx;
-    if (i < j) {
-      for (let n = i; n < j; n++) total += paddedSeg(segFor(route[n], route[n+1]), pad);
-    } else if (i > j) {
-      for (let n = i; n > j; n--) total += paddedSeg(segFor(route[n], route[n-1]), pad);
-    }
-    return total;
+    return a.spurMin + b.spurMin + Math.abs(cumulAt(a, pad) - cumulAt(b, pad));
   }
 
   // Annotate each day with its drive minutes (from yesterday's sleep).

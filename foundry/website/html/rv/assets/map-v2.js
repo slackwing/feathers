@@ -408,6 +408,7 @@
         if (!r) return null;
         return {
           routeIdx: r.routeIdx,
+          segT: r.segT || 0,
           sleepId,
           anchorId: r.anchor,
           spurMin: r.spurMin,
@@ -415,14 +416,14 @@
         };
       }
       if (routeIndexOf.has(sleepId)) {
-        return { routeIdx: routeIndexOf.get(sleepId), sleepId, anchorId: sleepId, spurMin: 0, offRoute: false };
+        return { routeIdx: routeIndexOf.get(sleepId), segT: 0, sleepId, anchorId: sleepId, spurMin: 0, offRoute: false };
       }
       const poi = poiById.get(sleepId);
       if (poi && routeIndexOf.has(poi.anchor) && poi.spur_raw_minutes != null) {
         const spur = pad
           ? poi.spur_raw_minutes * (poi.spur_is_mountain ? RV_PAD_MOUNTAIN : RV_PAD_INTERSTATE)
           : poi.spur_raw_minutes;
-        return { routeIdx: routeIndexOf.get(poi.anchor), sleepId, anchorId: poi.anchor, spurMin: spur, offRoute: true };
+        return { routeIdx: routeIndexOf.get(poi.anchor), segT: 0, sleepId, anchorId: poi.anchor, spurMin: spur, offRoute: true };
       }
       return null;
     }
@@ -435,15 +436,23 @@
       if (u && u.lat != null && u.lon != null) return project(u.lat, u.lon);
       return null;
     }
-    function spurSeg(fromId, toId) {
-      const a = sleepWorldPoint(fromId), b = sleepWorldPoint(toId);
-      return (a && b) ? [a.x, a.y, b.x, b.y] : null;
+    // World point for a route POSITION {routeIdx, segT} — a node, or a
+    // point partway along the segment routeIdx→routeIdx+1.
+    function routePoint(pos) {
+      const a = wpoints.get(mapData.route[pos.routeIdx]);
+      if (!a) return null;
+      const t = pos.segT || 0;
+      if (!t) return a;
+      const b = wpoints.get(mapData.route[pos.routeIdx + 1]);
+      if (!b) return a;
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
     }
-    function worldPair(idA, idB) {
-      const a = wpoints.get(idA);
-      const b = wpoints.get(idB);
-      if (!a || !b) return null;
-      return [a.x, a.y, b.x, b.y];
+    // Spur line between a resolved sleep's route-attach point and the
+    // sleep itself (drawn attach→sleep; strokes aren't directional).
+    function spurSeg(resolved) {
+      const a = routePoint(resolved);
+      const b = sleepWorldPoint(resolved.sleepId);
+      return (a && b) ? [a.x, a.y, b.x, b.y] : null;
     }
 
     // Fallback minutes for the pre-itinerary render (rvLayered absent).
@@ -480,18 +489,25 @@
       return total;
     }
 
-    // Geometry: push route polyline pieces from routeIdx i → j into segs.
-    function walkGeometry(segs, i, j) {
-      if (i < j) {
-        for (let n = i; n < j; n++) {
-          const p = worldPair(mapData.route[n], mapData.route[n + 1]);
-          if (p) segs.push(p);
-        }
-      } else if (i > j) {
-        for (let n = i; n > j; n--) {
-          const p = worldPair(mapData.route[n], mapData.route[n - 1]);
-          if (p) segs.push(p);
-        }
+    // Geometry: push route polyline pieces between two route POSITIONS
+    // (each {routeIdx, segT}) into segs. Handles fractional endpoints so
+    // a day can start/end mid-segment (user sleeps projected onto the
+    // polyline) without overshooting to the next node and doubling back.
+    function walkGeometry(segs, A, B) {
+      const aPos = A.routeIdx + (A.segT || 0);
+      const bPos = B.routeIdx + (B.segT || 0);
+      if (aPos === bPos) return;
+      const from = aPos < bPos ? A : B;
+      const to   = aPos < bPos ? B : A;
+      let p = routePoint(from);
+      if (!p) return;
+      for (let n = from.routeIdx + 1; n <= to.routeIdx; n++) {
+        const q = wpoints.get(mapData.route[n]);
+        if (q) { segs.push([p.x, p.y, q.x, q.y]); p = q; }
+      }
+      if (to.segT) {
+        const end = routePoint(to);
+        if (end) segs.push([p.x, p.y, end.x, end.y]);
       }
     }
 
@@ -511,12 +527,12 @@
           if (target && sleepR) {
             const segs = [];
             if (sleepR.offRoute) {
-              const p = spurSeg(sleepR.sleepId, sleepR.anchorId);
+              const p = spurSeg(sleepR);
               if (p) segs.push(p);
             }
-            walkGeometry(segs, sleepR.routeIdx, target.routeIdx);
+            walkGeometry(segs, sleepR, target);
             if (target.offRoute) {
-              const p = spurSeg(target.anchorId, target.sleepId);
+              const p = spurSeg(target);
               if (p) segs.push(p);
             }
             dayDrives.push({
@@ -536,15 +552,15 @@
       }
       if (!prev) { prev = today; continue; } // Day 1 has no prior drive.
       const segs = [];
-      // Spur back from yesterday's off-route sleep to its anchor.
+      // Spur back from yesterday's off-route sleep to its attach point.
       if (prev.offRoute) {
-        const p = spurSeg(prev.sleepId, prev.anchorId);
+        const p = spurSeg(prev);
         if (p) segs.push(p);
       }
-      walkGeometry(segs, prev.routeIdx, today.routeIdx);
-      // Today's spur from anchor out to the off-route sleep.
+      walkGeometry(segs, prev, today);
+      // Today's spur from its attach point out to the off-route sleep.
       if (today.offRoute) {
-        const p = spurSeg(today.anchorId, today.sleepId);
+        const p = spurSeg(today);
         if (p) segs.push(p);
       }
       dayDrives.push({
