@@ -579,17 +579,25 @@
   // A deactivated sleep is hidden from the SVG when zoomed-out enough.
   // Hit-tests + cursor logic must agree with this — otherwise the user
   // can click invisible dots.
-  function isSleepVisible(l) {
-    if (!l || l.kind !== "sleep") return false;
-    const itinSleepIds = (window.rvLayered && window.rvLayered.merged)
-      ? new Set(window.rvLayered.merged.map(d => d.sleepLocId))
-      : new Set();
+  // The ITINERARY decides whether a sleep is active: bright van iff some
+  // day currently sleeps there. Override.activated used to outrank this,
+  // but label saves and edits incidentally write activated=true, so
+  // swapped-away sleeps (Electric Hills, Cherry Creek, ...) stayed
+  // bright forever. Explicit activated=false still force-dims.
+  function isSleepActivated(l) {
     const eff = (window.rvLayered ? window.rvLayered.effectiveLocation(l.id) : l) || l;
     const overrideActivated = (eff._override && typeof eff._override.activated === "boolean")
       ? eff._override.activated
       : null;
-    const activated = overrideActivated !== null ? overrideActivated : itinSleepIds.has(l.id);
-    if (activated) return true;
+    if (overrideActivated === false) return false;
+    const itinSleepIds = (window.rvLayered && window.rvLayered.merged)
+      ? new Set(window.rvLayered.merged.map(d => d.sleepLocId))
+      : new Set();
+    return itinSleepIds.has(l.id);
+  }
+  function isSleepVisible(l) {
+    if (!l || l.kind !== "sleep") return false;
+    if (isSleepActivated(l)) return true;
     return scale >= fitScale() * 4;
   }
 
@@ -724,12 +732,6 @@
     // so the gradient color still communicates "this is what we escaped"
     // without needing strikethrough — the 🏨 emoji already tells you
     // you're not sleeping in the RV.
-    // Build a set of sleep ids that are currently used in the live
-    // itinerary (window.rvLayered.merged). Sleeps NOT in this set render
-    // at half opacity unless their override explicitly says activated.
-    const itinSleepIds = new Set(
-      ((window.rvLayered && window.rvLayered.merged) || []).map(d => d.sleepLocId)
-    );
     // Hide deactivated sleeps when zoomed out. Threshold ≈ "Nebraska
     // wide" (about 4x the fit-whole-route base scale).
     const fitBase = fitScale();
@@ -744,13 +746,9 @@
       // Deleted = hidden entirely. Data stays in the DB (deleted_at set)
       // but the map shows nothing. (Was a red ❌ briefly; user found it ugly.)
       if (eff.deleted_at) return;
-      const inItin = itinSleepIds.has(l.id);
-      // Activated logic: explicit override wins; otherwise default true
-      // if used in itinerary, false otherwise.
-      const overrideActivated = (eff._override && typeof eff._override.activated === "boolean")
-        ? eff._override.activated
-        : null;
-      const activated = overrideActivated !== null ? overrideActivated : inItin;
+      // Bright van iff the itinerary currently sleeps here (see
+      // isSleepActivated — stale activated=true overrides don't count).
+      const activated = isSleepActivated(l);
       // Hide deactivated emoji until zoomed in past the threshold.
       // (isSleepVisible() exposed below so hit-tests can match.)
       if (!activated && scale < DEACTIVATED_SHOW_AT) return;
