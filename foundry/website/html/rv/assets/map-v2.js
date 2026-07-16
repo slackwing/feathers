@@ -1556,12 +1556,6 @@
     const isSoftDeleted = eff && eff.deleted_at;
     const canEdit = !!window.rvAuthUser;
 
-    // A location is "on the trip's walked path" if it's a route node
-    // (catalog.route includes it) OR if it's a POI used as a sleep this
-    // trip. For non-route, non-sleep POIs, "extend/pull/insert" all
-    // semantically mean "make this the new sleep" — that's valid.
-    const isRouteNode = (mapData.route || []).includes(loc.id);
-
     // Title gets a pencil-edit affordance to its right (always visible,
     // not hover-gated, so it stays consistent with the other "this is
     // editable" icons on the site).
@@ -1588,12 +1582,11 @@
         // We already sleep here — only meaningful action is staying an
         // extra night (insert a duplicate day).
         html += `<button type="button" data-act="add-rest-day">sleep here (add day)</button>`;
-      } else if (isRouteNode) {
-        // Route node we drive through but don't sleep at. The natural
-        // action is "sleep here instead" — insert a new day.
-        html += `<button type="button" data-act="insert-here">sleep here (add day)</button>`;
       } else {
-        // Non-route, non-sleep POI: three flavors of "make this our sleep."
+        // Anything else — route node OR off-route POI — gets all three
+        // flavors of "make this our sleep." (Route nodes used to offer
+        // only insert-a-day, so swapping an existing day's sleep to a
+        // city like Denver wasn't possible without adding a day.)
         html += `<button type="button" data-act="extend-prev">extend previous day</button>`;
         html += `<button type="button" data-act="pull-next">extend next day</button>`;
         html += `<button type="button" data-act="insert-here">sleep here (add day)</button>`;
