@@ -304,126 +304,66 @@
     return Math.max(0, a.c + rate * (targetDays - a.d));
   }
 
-  // Rolling rate + acceleration projection — the "two orders" model.
+  // Rolling rate + acceleration — the "two kernels" model.
   //
-  // We measure two things from the recent window of logs:
-  //   rate  = 1st-order rate (sightings per day) at the anchor time
-  //   accel = 2nd-order rate (change in rate per day) at the anchor
+  // The old approach (weighted quadratic least squares through the last
+  // log) structurally could NOT see a same-day burst: points from the
+  // last few hours sit at u ≈ 0 where the u² term has no leverage, so
+  // three donuts in an afternoon left accel unmoved. And every attempt
+  // to tune its τ traded one failure for another (τ=1 collapsed after
+  // multi-day gaps; τ=5 was numb to bursts).
   //
-  // and then project forward with the physics-style formula
+  // Instead we now estimate the sighting RATE directly with causal
+  // exponential-kernel intensity estimates (standard point-process
+  // tooling), evaluated at NOW:
   //
-  //   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²
+  //   rate(τ) = Σᵢ exp(−(now − tᵢ)/τ) / τ      over logs tᵢ ≤ now
   //
-  // anchored at the latest log (d₀, c₀). This produces a real CURVE
-  // that bends up when the sighting rate is increasing (e.g. we've
-  // crossed into east-coast Dunkin' territory) and bends toward flat
-  // when the rate is falling.
+  // computed at two timescales:
+  //   fast (τ_f): "how hot are the last several hours?"
+  //   slow (τ_s): "what's the multi-day trend?"
   //
-  // Estimating rate + accel from a small window:
-  //   Fit count(d) ≈ c₀ + rate·(d − d₀) + ½·accel·(d − d₀)² to the
-  //   last RECENT_WINDOW logs via ordinary least squares on the
-  //   shifted variable u = d − d₀. Two parameters (rate, accel) with
-  //   the intercept pinned to c₀ so the curve passes through the
-  //   latest log.
+  // Then:
+  //   rate  = rate(τ_s)                        — the trend carries the curve
+  //   accel = (rate(τ_f) − rate(τ_s)) / (τ_s − τ_f)
+  //           — a burst hotter than trend bends it up; a lull (fast
+  //             kernel decaying with no events) bends it down.
   //
-  // Monotonicity guards:
-  //   - If accel < 0, we clip accel to 0 once the projected rate
-  //     would go negative. In practice we track rate(d) = rate +
-  //     accel·(d − d₀) and floor it at 0; count(d) then stops rising
-  //     but never falls. This keeps the curve honest — a decreasing
-  //     rate is meaningful data, we just don't let it produce
-  //     impossible negative sightings.
-  // Bigger window = smoother fit = less dramatic curvature. A window
-  // of 5 let any 3-click cluster dominate accel; 12 was too smooth
-  // to react. 8 is the middle ground — a real trend moves the curve
-  // but a single cluster doesn't send it shooting upward.
-  const RECENT_WINDOW = 20;
-  // Exponential half-life (in days) for weighting logs in the fit.
-  // Each log at u days before now contributes exp(−|u|/FIT_TAU) to
-  // the least-squares sums. Recent logs dominate but older ones fade
-  // smoothly instead of falling off the window edge — so an old
-  // cluster's influence on the forecast diminishes gradually rather
-  // than vanishing the instant a newer log arrives. Bigger τ = longer
-  // memory = slower response to regime change.
-  const FIT_TAU = 5.0;
-  // Weight of the phantom "now" observation relative to a full-weight
-  // real log. < 1 so long stretches without a sighting don't yank
-  // accel wildly negative — the phantom nudges, real logs still lead.
-  const PHANTOM_W = 0.05;
+  // No phantom point needed: the kernels decay on their own as time
+  // passes without sightings, so "we've gone all day without one" is
+  // felt automatically.
+  const RATE_TAU_FAST = 0.75;  // days — burst kernel
+  const RATE_TAU_SLOW = 3.0;   // days — trend kernel
+  function kernelRate(tau, nowDays) {
+    let s = 0;
+    for (const l of logs) {
+      const lag = nowDays - daysSinceStart(parseDate(l.created_at).getTime());
+      if (lag < 0) continue;
+      s += Math.exp(-lag / tau);
+    }
+    return s / tau;
+  }
   function fitRollingRate() {
     if (logs.length < MIN_LOGS_FOR_PROJECTION) return null;
-    const src = logs.length > RECENT_WINDOW
-      ? logs.slice(-RECENT_WINDOW)
-      : logs;
-    // Anchor at the LAST LOG (not now). Earlier we anchored at now,
-    // but re-anchoring every render is what caused the projection
-    // to collapse: the same cluster of logs, viewed from a "now"
-    // that keeps sliding forward, produces a lower and lower fitted
-    // rate because the cluster's u-distance grows. Anchoring at
-    // last-log freezes the fit's frame of reference; the phantom
-    // (placed at u_now = now - last_log > 0) is what carries the
-    // "time has passed without a sighting" signal into the fit.
-    const lastLog = src[src.length - 1];
-    const lastT = parseDate(lastLog.created_at).getTime();
-    const nowMs = Date.now();
-    const havePhantom = nowMs >= tripStartMs && nowMs > lastT;
-    const d0 = daysSinceStart(lastT);
+    const lastLog = logs[logs.length - 1];
+    const d0 = daysSinceStart(parseDate(lastLog.created_at).getTime());
     const c0 = lastLog.count;
-    // Each real log gets an exponential-decay weight based on how far
-    // back in time it sits: w = exp(−|u|/FIT_TAU). Recent logs count
-    // fully, older ones fade smoothly. This replaces the hard window
-    // cutoff — an old cluster's influence diminishes over days
-    // instead of vanishing the instant a newer log arrives.
-    const pts = [];
-    for (const l of src) {
-      const d = daysSinceStart(parseDate(l.created_at).getTime());
-      const u = d - d0;
-      pts.push({ u, y: l.count - c0, w: Math.exp(-Math.abs(u) / FIT_TAU) });
-    }
-    // Phantom "no-sighting-yet" observation at u_now = now - last_log,
-    // y = 0 (count hasn't changed since last log). As time passes, u_now
-    // grows and its (u, 0) increasingly pulls the fit toward flat. It's
-    // weighted at PHANTOM_W < 1 so it nudges the fit instead of yanking
-    // it — long gaps still influence the forecast, but gradually, not
-    // in one step.
-    if (havePhantom) {
-      const uNow = daysSinceStart(Math.min(nowMs, tripEndMs)) - d0;
-      pts.push({ u: uNow, y: 0, w: PHANTOM_W });
-    }
-    // Weighted 2×2 normal equations for [rate, ½·accel]:
-    //   [Σw·u²  Σw·u³ ] [rate  ] = [Σw·u·y ]
-    //   [Σw·u³  Σw·u⁴ ] [½accel]   [Σw·u²·y]
-    let s2 = 0, s3 = 0, s4 = 0, suy = 0, su2y = 0;
-    for (const { u, y, w } of pts) {
-      const u2 = u * u;
-      s2 += w * u2;
-      s3 += w * u2 * u;
-      s4 += w * u2 * u2;
-      suy += w * u * y;
-      su2y += w * u2 * y;
-    }
-    const det = s2 * s4 - s3 * s3;
-    if (Math.abs(det) < 1e-9) return null; // window too tight in time
-    const rate = (s4 * suy - s3 * su2y) / det;
-    const halfAccel = (s2 * su2y - s3 * suy) / det;
-    const accel = 2 * halfAccel;
+    // Rates are evaluated at NOW (clamped into the trip window) — the
+    // curve still ANCHORS at the last log, but its slope/curvature
+    // reflect current conditions, including hours-long silences.
+    const nowDays = Math.max(d0, daysSinceStart(Math.min(Date.now(), tripEndMs)));
+    const rFast = kernelRate(RATE_TAU_FAST, nowDays);
+    const rSlow = kernelRate(RATE_TAU_SLOW, nowDays);
+    const rate = rSlow;
+    const accel = (rFast - rSlow) / (RATE_TAU_SLOW - RATE_TAU_FAST);
     return { rate, accel, d0, c0 };
   }
 
-  // Time constant for accel-taper (in days). Set to a multiple of
-  // the recent-window timespan so a burst sustains long enough to
-  // draw a *visible* curve before flattening. Bounded to a sane
-  // range so numerical edge cases don't produce τ of 0 or infinity.
-  const TAPER_TAU_MIN = 2.0;
-  const TAPER_TAU_MAX = 14.0;
-  const TAPER_MULT = 4.0;
+  // Time constant for accel-taper (in days). A burst's influence dies
+  // out over roughly the trend-kernel window — it shouldn't compound
+  // for the rest of the trip.
   function taperTau() {
-    if (logs.length < 2) return TAPER_TAU_MIN;
-    const src = logs.length > RECENT_WINDOW ? logs.slice(-RECENT_WINDOW) : logs;
-    const first = daysSinceStart(parseDate(src[0].created_at).getTime());
-    const last  = daysSinceStart(parseDate(src[src.length - 1].created_at).getTime());
-    const span = (last - first) * TAPER_MULT || TAPER_TAU_MIN;
-    return Math.max(TAPER_TAU_MIN, Math.min(TAPER_TAU_MAX, span));
+    return RATE_TAU_SLOW;
   }
 
   // Project via the fitted rolling rate + accel WITH A DECAYING
@@ -710,7 +650,7 @@
           const rate = (fit.rate).toFixed(2);
           const accel = (fit.accel).toFixed(2);
           const tau = taperTau().toFixed(2);
-          const shortLabel = `Rolling rate + tapering accel: rate=${rate}/day, accel=${accel}/day², τ=${tau}d`;
+          const shortLabel = `Trend rate + burst accel: rate=${rate}/day, accel=${accel}/day², τ=${tau}d`;
 
           // Long-form essay explaining why the graph model changed
           // over the trip's lifetime. Rendered as a hover-only tooltip
@@ -719,33 +659,31 @@
           // string becomes one tspan.
           const essayLines = [
             `Forecast accounting for recent acceleration of sightings:`,
-            `  instantaneous rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
+            `  trend rate = ${rate}/day, accel = ${accel}/day², τ = ${tau}d`,
             ``,
-            `Claude here, instructed by Andrew to explain this. We fit`,
-            `two numbers on the last ${RECENT_WINDOW} logs — each weighted by`,
-            `exp(−|u|/${FIT_TAU}) so recent logs dominate and old ones fade`,
-            `smoothly — plus a phantom "no-sighting-yet" point at NOW`,
-            `with a small fixed weight of ${PHANTOM_W} so long gaps between`,
-            `clicks nudge the fit toward flat rather than yank it.`,
-            `Outputs: an INSTANTANEOUS RATE (local slope) and an ACCEL`,
-            `(how fast rate changes). Anchored at the LAST LOG (d₀, c₀)`,
-            `— anchoring at NOW made the projection collapse fast as`,
-            `"now" slid forward. Frozen anchor + phantom-at-u_now is`,
-            `the right split:`,
-            `   count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²`,
-            `Two orders means the curve bends — Dunkin' country pushes`,
-            `accel positive, a lull pushes it negative. A burst can't`,
-            `compound forever so accel TAPERS with time constant τ:`,
+            `Claude here, instructed by Andrew to explain this. Earlier`,
+            `versions fit a weighted quadratic through the last log, but`,
+            `no tuning could make that see a same-day BURST: points from`,
+            `the last few hours sit at u ≈ 0 where the u² term has no`,
+            `leverage, so three donuts in an afternoon left the curve`,
+            `unmoved. Now we measure the sighting rate directly with two`,
+            `causal exponential kernels evaluated at NOW:`,
+            `   rate(τ) = Σ exp(−(now − tᵢ)/τ) / τ`,
+            `a FAST one (τ=${RATE_TAU_FAST}d — how hot are the last few hours?)`,
+            `and a SLOW one (τ=${RATE_TAU_SLOW}d — the multi-day trend). Then:`,
+            `   rate  = slow kernel (the trend carries the curve)`,
+            `   accel = (fast − slow) / (τslow − τfast)`,
+            `A burst hotter than trend bends the curve UP; hours of`,
+            `silence decay the fast kernel and bend it down — no phantom`,
+            `point needed, time passing is felt automatically. The curve`,
+            `anchors at the LAST LOG (d₀, c₀) and a burst can't compound`,
+            `forever, so accel TAPERS with time constant τ = ${RATE_TAU_SLOW}d:`,
             `   accel(u) = accel · exp(−u/τ)`,
-            `   rate(u)  = rate + accel·τ·(1 − exp(−u/τ))`,
             `   count(u) = c₀ + rate·u + accel·τ·(u − τ·(1 − exp(−u/τ)))`,
-            `As u grows, accel dies off and the curve settles into`,
-            `linear growth at rate + accel·τ. τ = fit-window timespan ×`,
-            `${TAPER_MULT}, clamped ${TAPER_TAU_MIN}–${TAPER_TAU_MAX}d. Monotonic guard: if accel drives`,
-            `the local rate below zero, we hold count flat at the`,
-            `crossing — no un-seeing donuts. FIT_TAU=${FIT_TAU}d is the`,
-            `sensitivity knob; smaller lets a recent burst shoot the`,
-            `curve up, larger is slower to respond to a real regime change.`,
+            `As u grows the curve settles into linear growth at rate +`,
+            `accel·τ. Monotonic guard: if accel drives the local rate`,
+            `below zero, we hold count flat at the crossing — no`,
+            `un-seeing donuts.`,
           ];
           const lineH = 13;
           const padX = 12, padY = 10;

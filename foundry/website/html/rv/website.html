@@ -374,13 +374,16 @@
   <p><span id="ws-bettor-count">Some</span> bettors guessed how many Dunkins we'd see across the trip. The chart plots each real sighting as a line segment, marks the current point with 🍩, and forecasts the trip-end count with three curves — <span class="ws-inline-key" style="color:#FF6720;">linear</span>, <span class="ws-inline-key" style="color:#DA1884;">rolling rate + tapering accel</span>, and a flat "if we see none more" reference line. Shaded band spans the pessimistic and optimistic curves.</p>
 
   <h3>The formula</h3>
-  <p>All fitting happens in the browser off <code>dunkin_log</code> rows. Model:</p>
-  <div class="ws-formula">count(d) = c₀ + rate·(d − d₀) + ½·accel·(d − d₀)²</div>
-  <p>Anchored at the <b>last logged sighting</b> (d₀, c₀). Anchoring at NOW made the projection collapse as "now" slid forward. Instead we freeze the anchor and let a <b>phantom point</b> at u_now = now − d₀, y = 0 encode "still no new sighting" — pulls the fit toward flat as time passes.</p>
-  <p>Least-squares fit on the last 20 logs, each log weighted <code>exp(−|u|/FIT_TAU)</code> so recent points dominate and older ones fade smoothly. The phantom carries a small fixed weight so a long gap nudges rather than yanks the fit. Then accel tapers with an exponential decay of its own so a burst doesn't compound forever:</p>
+  <p>All fitting happens in the browser off <code>dunkin_log</code> rows. Earlier versions fit a weighted quadratic through the last log, but no tuning could make that see a same-day <b>burst</b> — points from the last few hours sit at u ≈ 0 where the u² term has no leverage. The sighting rate is now measured directly with two causal exponential-kernel intensity estimates evaluated at NOW:</p>
+  <div class="ws-formula">rate(τ) = Σᵢ exp(−(now − tᵢ)/τ) / τ</div>
+  <p>A <b>fast kernel</b> (how hot are the last few hours?) and a <b>slow kernel</b> (the multi-day trend). The trend carries the curve; the difference is the acceleration:</p>
+  <div class="ws-formula">
+    rate&nbsp;&nbsp;= rate(τ_slow)<br>
+    accel = (rate(τ_fast) − rate(τ_slow)) / (τ_slow − τ_fast)
+  </div>
+  <p>A burst hotter than trend bends the curve up; hours of silence decay the fast kernel and bend it down — time passing is felt automatically, no phantom point needed. The curve anchors at the last logged sighting (d₀, c₀), and accel tapers so a burst doesn't compound forever:</p>
   <div class="ws-formula">
     accel(u) = accel · exp(−u/τ)<br>
-    rate(u)  = rate + accel·τ·(1 − exp(−u/τ))<br>
     count(u) = c₀ + rate·u + accel·τ·(u − τ·(1 − exp(−u/τ)))
   </div>
   <p>A monotonic guard clips <code>count</code> at the moment the local rate would cross zero — no un-seeing donuts.</p>
@@ -389,10 +392,8 @@
   <table>
     <thead><tr><th>Knob</th><th>Value</th><th>Effect</th></tr></thead>
     <tbody>
-      <tr><td><code>RECENT_WINDOW</code></td><td>20</td><td>Max real logs in the fit. Time-weighting does most of the shaping; this is a soft cap.</td></tr>
-      <tr><td><code>FIT_TAU</code></td><td>1.0 d</td><td>Sensitivity knob. Smaller = a recent cluster dominates; larger = slower to react.</td></tr>
-      <tr><td><code>PHANTOM_W</code></td><td>0.05</td><td>Weight of the "no sighting yet" phantom relative to a real log at the anchor.</td></tr>
-      <tr><td><code>TAPER_MULT</code>, <code>TAPER_TAU_MIN/MAX</code></td><td>4.0 × window span, clamped 2–14 d</td><td>Half-life of the accel taper. Determines how long a burst keeps bending the curve up.</td></tr>
+      <tr><td><code>RATE_TAU_FAST</code></td><td>0.75 d</td><td>Burst kernel. Smaller = the last few hours dominate harder.</td></tr>
+      <tr><td><code>RATE_TAU_SLOW</code></td><td>3.0 d</td><td>Trend kernel — the curve's baseline slope. Also the accel taper's time constant.</td></tr>
       <tr><td><code>MIN_LOGS_FOR_PROJECTION</code></td><td>5</td><td>No forecast lines until we have enough data to say something meaningful.</td></tr>
     </tbody>
   </table>
