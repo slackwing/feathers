@@ -38,6 +38,14 @@
   };
   let PARTICIPANTS = [];
 
+  // The trip is over — final count 89. Kimmy (92) and Joy (86) both
+  // landed exactly 3 away: a tie! Their avatars get crowns + a dance
+  // once now ≥ TRIP_END (and the chart isn't in seed/demo mode).
+  const WINNER_IDS = ["kimmy", "joy"];
+  function tripOver() {
+    return !seedMode && Date.now() >= tripEndMs;
+  }
+
   // ----- DOM refs -----
   const btn = document.getElementById("hero-dunkin-btn");
   const btnCount = document.getElementById("hero-dunkin-count");
@@ -183,6 +191,10 @@
   }
   function updateBadge() {
     if (!badge) return;
+    if (tripOver()) {
+      badge.textContent = `${currentCount()} — FINAL! 🏁`;
+      return;
+    }
     badge.textContent = `${currentCount()} so far${seedMode ? "*" : ""}`;
   }
 
@@ -510,8 +522,11 @@
       // curvesSvg is built up inside the if-block below but appended
       // to `out` AFTER the 🍩 emoji, so declare it up here to keep it
       // in scope.
+      // Once the trip is over there's nothing left to forecast — the
+      // final count is the final count — so all extrapolation curves
+      // (and the uncertainty band) stop rendering.
       let curvesSvg = "";
-      if (logs.length >= 1) {
+      if (logs.length >= 1 && !tripOver()) {
         const lastPt = pts[pts.length - 1];
         const x0 = xForDate(lastPt.t);
         const y0 = yForCount(lastPt.c, yMax);
@@ -785,13 +800,20 @@
     // (desktop) or tap (touch) toggles a name+guess label to the left.
     // <title> stays as a fallback for native platform tooltips.
     for (const { p, y, trueY } of placed) {
-      const tip = `${p.name} guessed ${p.guess}`;
+      const isWinner = tripOver() && WINNER_IDS.includes(p.id);
+      const tip = isWinner
+        ? `🏆 ${p.name} guessed ${p.guess} — WINNER!`
+        : `${p.name} guessed ${p.guess}`;
       out += `<g class="dunkin-avatar" data-avatar="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"><title>${esc(tip)}</title>`;
       // Connector line from the guess-line's right end at the TRUE
       // guess y to the avatar's placed y. Slopes up or down depending
       // on whether the participant's guess is higher or lower than
       // their position in the evenly-distributed column.
       out += `<line x1="${(M.left + PLOT_W).toFixed(1)}" y1="${trueY.toFixed(1)}" x2="${(avX - AV_R).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.color}" stroke-opacity="0.45" stroke-width="1"/>`;
+      // Winners' avatar + crown live in a chip group that CSS animates
+      // (see .dunkin-winner in style.css) — the connector line stays
+      // outside the chip so it doesn't wobble.
+      out += `<g class="dunkin-avatar-chip${isWinner ? " dunkin-winner" : ""}">`;
       if (p.src) {
         // Circular photo via clip-path (opt-in via participant.src).
         const clipId = `dunkin-clip-${p.id}`;
@@ -804,11 +826,16 @@
         out += `<circle cx="${avX}" cy="${y.toFixed(1)}" r="${AV_R}" fill="${p.color}" stroke="white" stroke-width="1.5"/>`;
         out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif" style="pointer-events:none;">${esc(letter)}</text>`;
       }
+      if (isWinner) {
+        // Crown perched above the avatar — dances with the chip.
+        out += `<text x="${avX}" y="${(y - AV_R - 2).toFixed(1)}" font-size="13" text-anchor="middle" style="pointer-events:none;user-select:none;">👑</text>`;
+      }
+      out += `</g>`;
       // Popover label — an SVG text with a background rect. Positioned
       // to the LEFT of the avatar (over the chart area) so it doesn't
       // fall off the tile's right edge. Hidden by default; the
       // .is-open toggle drives visibility via CSS.
-      const label = `${p.name} · ${p.guess}`;
+      const label = isWinner ? `🏆 ${p.name} · ${p.guess} — WINNER!` : `${p.name} · ${p.guess}`;
       const labelW = Math.max(60, label.length * 6.5 + 12);
       const labelH = 18;
       const labelX = avX - AV_R - 6 - labelW;   // right edge sits just left of avatar

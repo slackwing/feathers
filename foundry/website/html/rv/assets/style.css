@@ -1095,6 +1095,42 @@ a { color: var(--accent); }
   opacity: 1;
   transform: translateY(0);
 }
+/* Trip's over — winners banner + dancing crowned avatars for the
+   champs (Kimmy & Joy, both exactly 3 off the final count of 89). */
+.dunkin-winner-banner {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: center;
+  background: linear-gradient(135deg, #DA1884, #FF6720);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.dunkin-winner-banner .dunkin-winner-detail {
+  font-weight: 600;
+  font-size: 0.8rem;
+  opacity: 0.95;
+}
+/* The chip (avatar circle + crown) dances in place. transform-box:
+   fill-box makes the transform-origin the chip's own bounding box —
+   without it, SVG transforms rotate around the viewBox origin. */
+.dunkin-avatar-chip.dunkin-winner {
+  transform-box: fill-box;
+  transform-origin: 50% 60%;
+  animation: dunkin-winner-dance 0.8s ease-in-out infinite;
+}
+@keyframes dunkin-winner-dance {
+  0%, 100% { transform: rotate(-10deg) translateY(0); }
+  25%      { transform: rotate(0deg)   translateY(-3px); }
+  50%      { transform: rotate(10deg)  translateY(0); }
+  75%      { transform: rotate(0deg)   translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dunkin-avatar-chip.dunkin-winner { animation: none; }
+}
+
 /* Blurb sits below the chart on the dunkin tile — no top margin from
    the standard .fun-tile-lede because the chart already breathes. */
 .fun-tile-dunkin .dunkin-blurb {
