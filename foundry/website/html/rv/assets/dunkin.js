@@ -827,8 +827,9 @@
         out += `<text x="${avX}" y="${(y + 4).toFixed(1)}" font-size="12" text-anchor="middle" fill="white" font-weight="800" font-family="system-ui,sans-serif" style="pointer-events:none;">${esc(letter)}</text>`;
       }
       if (isWinner) {
-        // Crown perched above the avatar — dances with the chip.
-        out += `<text x="${avX}" y="${(y - AV_R - 2).toFixed(1)}" font-size="13" text-anchor="middle" style="pointer-events:none;user-select:none;">👑</text>`;
+        // Crown perched on the avatar — baseline dips a few units into
+        // the circle so it sits ON the head, not floating above it.
+        out += `<text x="${avX}" y="${(y - AV_R + 4).toFixed(1)}" font-size="13" text-anchor="middle" style="pointer-events:none;user-select:none;">👑</text>`;
       }
       out += `</g>`;
       // Popover label — an SVG text with a background rect. Positioned
