@@ -281,6 +281,52 @@ else
 fi
 
 # ==========================================
+# Test 11: Backfill missed days with chained preserve
+# ==========================================
+echo ""
+echo "Test 11: Backfill missed days with chained preserve"
+setup_test_dir
+
+# Last file is Wednesday Dec 3; then we open Saturday Dec 6 (Thu+Fri skipped)
+cat > "$TEST_DIR/20251203W.sxiva" << 'EOF'
+Wednesday, December 3rd, 2025
+
+=== Notes
+
+Carry me forward
+EOF
+
+$SXIVA -d 20251206 > /dev/null 2>&1
+
+if [[ -f "$TEST_DIR/20251204R.sxiva" ]] && \
+   [[ -f "$TEST_DIR/20251205F.sxiva" ]] && \
+   grep -q "Carry me forward" "$TEST_DIR/20251204R.sxiva" && \
+   grep -q "Carry me forward" "$TEST_DIR/20251205F.sxiva" && \
+   grep -q "Carry me forward" "$TEST_DIR/20251206S.sxiva"; then
+    pass "Missed days backfilled and notes chained through to target day"
+else
+    fail "Backfill of missed days did not carry notes forward"
+    ls "$TEST_DIR"
+fi
+
+# ==========================================
+# Test 12: Backfill skipped when no earlier file exists
+# ==========================================
+echo ""
+echo "Test 12: Backfill skipped when no earlier file exists"
+setup_test_dir
+
+$SXIVA -d 20251206 > /dev/null 2>&1
+
+FILE_COUNT=$(ls "$TEST_DIR" | wc -l)
+if [[ -f "$TEST_DIR/20251206S.sxiva" ]] && [[ $FILE_COUNT -eq 1 ]]; then
+    pass "No backfill when there is no earlier file"
+else
+    fail "Unexpected files created when no earlier file exists"
+    ls "$TEST_DIR"
+fi
+
+# ==========================================
 # Summary
 # ==========================================
 echo ""

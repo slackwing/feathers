@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added (2026-07-23)
+
+#### Automatic Backfill of Missed Days
+- `sxiva` (and `-d`/`-y`/`-t`) now creates a file for every missed day between the last existing file and the target date, in sequence
+- Each backfilled day preserves the notes section from the previous day, so notes always chain forward across skipped days
+- No more manually creating skipped days and running `--preserve` by hand
+- No backfill occurs when no earlier dated file exists (e.g., fresh data directory)
+- Tests: `tests/test_cli.sh` Tests 11-12
+
 ### Added (2025-11-28)
 
 #### End Marker Feature

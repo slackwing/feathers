@@ -372,6 +372,59 @@ def _preserve_notes_section(data_path, target_file, preserve_date_str, target_da
         pass
 
 
+def _day_letter(date):
+    """Return the day-of-week mnemonic letter for a date.
+
+    Mnemonics: U M T W R F S (Sunday to Saturday).
+    """
+    day_mnemonics = ['U', 'M', 'T', 'W', 'R', 'F', 'S']
+    return day_mnemonics[date.isoweekday() % 7]  # isoweekday: 1=Mon..7=Sun -> 7%7=0 (Sun=U)
+
+
+def _backfill_missing_days(data_path, target_date):
+    """Create files for any missed days between the last existing file and target_date.
+
+    Each backfilled day preserves notes from the previous day, so notes chain
+    forward across skipped days instead of being lost.
+
+    Args:
+        data_path: Path to SXIVA_DATA directory
+        target_date: datetime of the file about to be opened/created
+    """
+    import re
+    from datetime import timedelta
+
+    target_day = datetime(target_date.year, target_date.month, target_date.day)
+
+    # Find the most recent dated file before the target date
+    latest = None
+    for entry in data_path.iterdir():
+        match = re.match(r'^(\d{8})', entry.name)
+        if not match:
+            continue
+        try:
+            entry_date = datetime.strptime(match.group(1), '%Y%m%d')
+        except ValueError:
+            continue
+        if entry_date < target_day and (latest is None or entry_date > latest):
+            latest = entry_date
+
+    if latest is None:
+        # No earlier file exists - nothing to backfill from
+        return
+
+    day = latest + timedelta(days=1)
+    while day < target_day:
+        formatted = day.strftime('%Y%m%d')
+        if not list(data_path.glob(f'{formatted}*')):
+            file_path = data_path / f'{formatted}{_day_letter(day)}.sxiva'
+            click.echo(f"Creating (missed day): {file_path}")
+            file_path.touch()
+            previous = (day - timedelta(days=1)).strftime('%Y%m%d')
+            _preserve_notes_section(data_path, file_path, previous, day)
+        day += timedelta(days=1)
+
+
 def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False, tomorrow=False):
     """Open or create today's SXIVA file.
 
@@ -406,13 +459,10 @@ def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False, 
         target_date = datetime.now()
 
     formatted_date = target_date.strftime('%Y%m%d')
+    day_letter = _day_letter(target_date)
 
-    # Day of week mnemonic: U M T W R F S (Sunday to Saturday)
-    # weekday() returns 0=Monday, 6=Sunday
-    # isoweekday() returns 1=Monday, 7=Sunday
-    day_mnemonics = ['U', 'M', 'T', 'W', 'R', 'F', 'S']
-    iso_day = target_date.isoweekday()  # 1=Mon, 7=Sun
-    day_letter = day_mnemonics[iso_day % 7]  # Convert: 7->0 (Sun=U), 1->1 (Mon=M), etc.
+    # Fill in any skipped days so notes chain forward day-by-day
+    _backfill_missing_days(data_path, target_date)
 
     # Check for existing file starting with target date
     matching_files = list(data_path.glob(f'{formatted_date}*'))
