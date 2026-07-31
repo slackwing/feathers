@@ -54,8 +54,12 @@
   }
 
   // ----- Auth wiring -----
+  // Trip-over lockdown (2026-07-30): achievements are what they are —
+  // no more marking/unmarking from this page. (The rows still live in
+  // the prep DB and remain editable from the checklists page.)
+  const LOCKED = true;
   function applyAuthUI() {
-    canEdit = !!window.rvAuthUser;
+    canEdit = !LOCKED && !!window.rvAuthUser;
     gridEl.classList.toggle("can-edit", canEdit);
   }
   window.addEventListener("rv:auth-resolved", () => { applyAuthUI(); if (loaded) render(); });

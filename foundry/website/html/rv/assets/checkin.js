@@ -6,12 +6,16 @@
 
 (function () {
   const API_URL = "/rv/api/checkins";
+  // Trip-over lockdown (2026-07-30): no more check-ins. The backend
+  // rejects the POST too; hiding the button here just keeps the UI
+  // honest. Past check-ins still load and render on the map.
+  const LOCKED = true;
   const btn = document.getElementById("hero-checkin-btn");
 
   // ----- Auth-driven button visibility -----
   function applyAuthUI() {
     if (!btn) return;
-    btn.hidden = !window.rvAuthUser;
+    btn.hidden = LOCKED || !window.rvAuthUser;
   }
   window.addEventListener("rv:auth-resolved", applyAuthUI);
   window.addEventListener("rv:auth-change", applyAuthUI);

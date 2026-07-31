@@ -13,6 +13,10 @@
 
 (function () {
   const API_URL = "/rv/api/dunkin";
+  // Trip-over lockdown (2026-07-30): no more sighting logs — the
+  // final count is the final count. The backend rejects the POST
+  // too; hiding the button keeps the UI honest.
+  const LOCKED = true;
 
   // ----- Trip constants (kept local — cheap enough to hard-code) -----
   // Trip officially starts when we leave for JFK — Sun 8 AM ET
@@ -68,7 +72,7 @@
   // ----- Auth-driven button visibility -----
   function applyAuthUI() {
     if (!btn) return;
-    btn.hidden = !window.rvAuthUser;
+    btn.hidden = LOCKED || !window.rvAuthUser;
   }
   window.addEventListener("rv:auth-resolved", applyAuthUI);
   window.addEventListener("rv:auth-change", applyAuthUI);

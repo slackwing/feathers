@@ -5,6 +5,10 @@
 
 (async function () {
   const API_URL = "/rv/api/dunkin/participants";
+  // Trip-over lockdown (2026-07-30): bets are frozen — the backend
+  // rejects participant writes too. The page stays as a read-only
+  // roster of who bet what.
+  const LOCKED = true;
   const root = document.getElementById("admin-dunkin-root");
   const addForm = document.getElementById("admin-add-form");
   const loginHint = document.getElementById("admin-login-hint");
@@ -106,7 +110,13 @@
   }
 
   function applyAuthUI() {
-    canEdit = !!window.rvAuthUser;
+    canEdit = !LOCKED && !!window.rvAuthUser;
+    if (LOCKED) {
+      // No "log in to edit" tease when editing is off for everyone.
+      loginHint.hidden = true;
+      addForm.hidden = true;
+      return;
+    }
     if (canEdit) {
       loginHint.hidden = true;
       addForm.hidden = false;
