@@ -120,7 +120,9 @@ class SxivaDataExtractor:
         # Extract category lines
         for child in summary_node.children:
             if child.type == 'summary_line':
-                text = content[child.start_byte:child.end_byte].strip()
+                # start_byte/end_byte are byte offsets — slice bytes, not str,
+                # or multibyte chars (✓) earlier in the file skew every slice
+                text = content.encode('utf-8')[child.start_byte:child.end_byte].decode('utf-8').strip()
                 # Parse line like: [bkc] - 00:40
                 match = re.match(r'\[([^\]]+)\]\s*-\s*(\d{2}):(\d{2})', text)
                 if match:
@@ -176,7 +178,7 @@ class SxivaDataExtractor:
             if line_node.type != 'attributes_line':
                 continue
 
-            line = content[line_node.start_byte:line_node.end_byte].strip()
+            line = content.encode('utf-8')[line_node.start_byte:line_node.end_byte].decode('utf-8').strip()
             cat_match = re.match(r'\[([^\]]+)\]\s*(.*)', line)
             if not cat_match:
                 continue
