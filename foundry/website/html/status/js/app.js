@@ -1110,13 +1110,13 @@ function attachTagTooltip(tag, cat) {
         tooltip.style.visibility = 'hidden';
         tooltip.classList.add('visible');
 
-        // Position above the chip, centered, clamped to the viewport
+        // Position below the chip, centered, clamped to the viewport
         const rect = tag.getBoundingClientRect();
         const tipRect = tooltip.getBoundingClientRect();
         let left = rect.left + rect.width / 2 - tipRect.width / 2;
         left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
-        let top = rect.top - tipRect.height - 8;
-        if (top < 8) top = rect.bottom + 8;
+        let top = rect.bottom + 8;
+        if (top + tipRect.height > window.innerHeight - 8) top = rect.top - tipRect.height - 8;
         tooltip.style.left = `${left + window.scrollX}px`;
         tooltip.style.top = `${top + window.scrollY}px`;
         tooltip.style.visibility = '';
