@@ -163,12 +163,34 @@ canvas {
     border-radius: 4px;
     font-size: 0.85rem;
     font-family: 'Courier New', monospace;
+    cursor: pointer;
+    user-select: none;
 }
 
 .category-tag.matched {
     background: #dbeafe;
     color: #1e40af;
     border: 1px solid #93c5fd;
+}
+
+/* Instant custom tooltip for category chips */
+.tag-tooltip {
+    position: absolute;
+    display: none;
+    background: #1f2937;
+    color: #f3f4f6;
+    padding: 0.45rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-width: 280px;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.tag-tooltip.visible {
+    display: block;
 }
 
 footer {

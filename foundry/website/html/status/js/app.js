@@ -1,7 +1,54 @@
 // Configuration
 const API_BASE_URL = '/status/api';
-const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro'];
+const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt'];
 const WORK_CATEGORIES = ['sp'];
+
+// Tag descriptions shown in the category chip tooltips (kept lowercase)
+const TAG_INFO = {
+    abi: 'things for abi, e.g. halloween decoration',
+    act: 'activism: learning how best to help',
+    art: 'painting, etc.',
+    err: 'errands',
+    fam: 'family',
+    fin: 'finances',
+    fit: 'workout',
+    fun: 'fun, e.g. super metroid rom-hacking',
+    help: 'helping friends move, etc.',
+    jnl: 'journalling',
+    rel: 'relationships (friends, neighbors, etc.)',
+    rv: '2026 rv trip across america',
+    sys: 'daily tracking system and organization, e.g. sxiva',
+    agi: 'abi goh illustrations (website)',
+    arch: 'arch linux: customization, maintenance, optimization. daily workflows: [wf]',
+    bkc: 'book club (reading and meetings)',
+    cs: 'computer science',
+    ean: 'enemies and neighbors (history of israel & palestine)',
+    fesh: 'fesh (workout app)',
+    ff: 'flash fiction (course)',
+    fw: 'fiction writing (course)',
+    gtr: 'guitar (non-band)',
+    hg: 'haunting ghosts (practice and shows)',
+    hu: 'humanitarian (studies, volunteering)',
+    ky: 'kathy yuan (websites)',
+    life: 'life (reflection, realignment)',
+    math: 'math, e.g. finding kaprekar constants in other bases',
+    mus: 'music (general)',
+    phy: 'physics',
+    prg: 'programming',
+    read: 'non-book club reading',
+    rk: 'ronnie kichurchak (reviewing and editing his book)',
+    vip: 'voices of israel and palestine (personal project showcasing peace efforts of both sides)',
+    wapp: 'renamed [fesh] (workout app)',
+    wf: 'daily workflows: optimization and development, e.g. sxiva',
+    wr: 'writing (mainly "the wildfire" from 12/4/25, separated to [wdfr])',
+    wre: 'writing/editing',
+    wrf: 'writing/feedback',
+    wri: 'writing/ideation',
+    wrj: 'writing/journalling',
+    wro: 'writing/organization',
+    wrs: 'writing system: renamed manuscript studio [ms]',
+    ws: 'personal website'
+};
 const CHART_DAYS_LIMIT = 31; // Request 31 days to ensure we have 30 after excluding today
 const ROLLING_WINDOW_DAYS = 7;
 const DECAY_LAMBDA = 0.5; // Calibrated so day 6 has 5% weight
@@ -1040,6 +1087,46 @@ function updateStats(data) {
     document.getElementById('latestOther').textContent = otherHours;
 }
 
+// Custom tooltip for category chips — one shared element, shown instantly on
+// hover (native title has a built-in delay)
+let tagTooltipEl = null;
+
+function getTagTooltip() {
+    if (!tagTooltipEl) {
+        tagTooltipEl = document.createElement('div');
+        tagTooltipEl.className = 'tag-tooltip';
+        document.body.appendChild(tagTooltipEl);
+    }
+    return tagTooltipEl;
+}
+
+function attachTagTooltip(tag, cat) {
+    const info = TAG_INFO[cat];
+    if (!info) return;
+
+    tag.addEventListener('mouseenter', () => {
+        const tooltip = getTagTooltip();
+        tooltip.textContent = info;
+        tooltip.style.visibility = 'hidden';
+        tooltip.classList.add('visible');
+
+        // Position above the chip, centered, clamped to the viewport
+        const rect = tag.getBoundingClientRect();
+        const tipRect = tooltip.getBoundingClientRect();
+        let left = rect.left + rect.width / 2 - tipRect.width / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+        let top = rect.top - tipRect.height - 8;
+        if (top < 8) top = rect.bottom + 8;
+        tooltip.style.left = `${left + window.scrollX}px`;
+        tooltip.style.top = `${top + window.scrollY}px`;
+        tooltip.style.visibility = '';
+    });
+
+    tag.addEventListener('mouseleave', () => {
+        getTagTooltip().classList.remove('visible');
+    });
+}
+
 // Update category lists
 function updateCategories(data) {
     const hobbyContainer = document.getElementById('hobbyCategories');
@@ -1053,6 +1140,7 @@ function updateCategories(data) {
         const tag = document.createElement('span');
         tag.className = 'category-tag matched';
         tag.textContent = cat;
+        attachTagTooltip(tag, cat);
         hobbyContainer.appendChild(tag);
     });
 
@@ -1061,6 +1149,7 @@ function updateCategories(data) {
         const tag = document.createElement('span');
         tag.className = 'category-tag';
         tag.textContent = cat;
+        attachTagTooltip(tag, cat);
         otherContainer.appendChild(tag);
     });
 }
