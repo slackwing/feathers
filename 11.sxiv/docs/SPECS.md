@@ -780,23 +780,30 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
 8. **[xmx]** (extended metric): non-negative integer
    - Any value ≥ 0 (e.g., `[xmx] 0`, `[xmx] 1`, `[xmx] 5`)
 
-9. **[wea]** (weather/external factors): float between -2 and 2 inclusive
+9. **[drc]** (dopamine resistance counter): exactly three non-negative numbers (halves allowed)
+   - Format: `[drc] <triggers> <resisted> <indulged>`
+   - Triggers: number of dopamine triggers encountered
+   - Resisted: number of times resisted (half points allowed)
+   - Indulged: number of times indulged (half points allowed)
+   - Examples: `[drc] 4.0 5.0 6.0`, `[drc] 4 5.5 6.0`, `[drc] 0 0 0`
+
+10. **[wea]** (weather/external factors): float between -2 and 2 inclusive
    - Range: -2.0 to 2.0 (e.g., `[wea] -1.5`, `[wea] 0`, `[wea] 1.2`)
    - Represents external environmental impact on the day
 
-10. **[meet]** (meeting time): time duration in various formats
+11. **[meet]** (meeting time): time duration in various formats
    - Format: `0` (bare zero), `Xm` (minutes), `Xh` (hours), `XhYm` (hours and minutes), or `H:MM` (colon-separated)
    - Examples: `[meet] 0`, `[meet] 75m`, `[meet] 1h20m`, `[meet] 2:05`, `[meet] 7m`, `[meet] 1h`, `[meet] 2h`
    - Represents total meeting time for the day
    - Value must be non-negative
    - Special case: `0` without a unit is interpreted as 0 minutes (same as `0m` or `0h`)
 
-11. **[abi]** (ability): floating point with 1 decimal place
+12. **[abi]** (ability): floating point with 1 decimal place
    - Can be negative, zero, or positive
    - Examples: `[abi] -1.5`, `[abi] 0.0`, `[abi] 2.3`
    - Value can be null (left blank)
 
-12. **[save]** (savings): dollar amount as string
+13. **[save]** (savings): dollar amount as string
    - Format: `$XXXX` or `-$XXXX` (no decimals, negatives allowed)
    - Examples: `[save] $4500`, `[save] $0`, `[save] -$1500`, `[save] $12000`
    - Value can be null (left blank)
@@ -804,7 +811,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
 **Processing Rules:**
 
 - **Default Template**: If `{attributes}` section is missing, calculator automatically adds the default template shown above
-- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, wea, meet
+- **Category Order**: Categories must appear in the order: sleep, dist, soc, out, exe, dep, alc, xmx, drc, wea, meet
 - **Missing Categories**: If a category is missing from an existing `{attributes}` section, calculator adds it in the correct position
 - **Validation**: Numbers outside the valid range for each category type generate an ERROR
 - **Optional Values**: Any category can be left blank (no value) - this is valid and means "not filled out"
@@ -822,6 +829,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [dep]
     [alc]
     [xmx]
+    [drc]
     [wea]
     [meet]
 ```
@@ -837,6 +845,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [dep] -0.5 1 1.5 -2 = 0.0 ✓
     [alc] 0 ✓
     [xmx] 3 ✓
+    [drc] 4 2.5 1.5 ✓
     [wea] 1.5 ✓
     [meet] 1h20m ✓
 ```
@@ -852,6 +861,7 @@ The `{attributes}` section tracks daily self-assessment metrics and dependencies
     [dep] 0.5 1 = 0.8 ✓
     [alc]
     [xmx] 1 ✓
+    [drc]
     [wea] -0.5 ✓
     [meet]
 ```

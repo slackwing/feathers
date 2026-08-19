@@ -41,6 +41,9 @@ Sync daily data from a .sxiva file.
   "exe": null,
   "alc": null,
   "xmx": 1,
+  "drc_triggers": 4.0,
+  "drc_resisted": 2.5,
+  "drc_indulged": 1.5,
   "wea": 0.0
 }
 ```

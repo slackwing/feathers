@@ -13,5 +13,6 @@
     <include file="004-drop-daily-stats.xml"/>
     <include file="005-change-exe-to-decimal.xml"/>
     <include file="006-add-abi-save-columns.xml"/>
+    <include file="007-add-drc-columns.xml"/>
 
 </databaseChangeLog>

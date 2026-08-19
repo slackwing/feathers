@@ -75,6 +75,9 @@ def sync_daily():
         "exe": null,
         "alc": null,
         "xmx": 1,
+        "drc_triggers": 4.0,
+        "drc_resisted": 2.5,
+        "drc_indulged": 1.5,
         "wea": 0.0
     }
     """
@@ -106,6 +109,7 @@ def sync_daily():
                 dep_min, dep_max, dep_avg,
                 dist, soc, out, exe, alc, xmx, wea, meet,
                 abi, save,
+                drc_triggers, drc_resisted, drc_indulged,
                 created_at, updated_at
             ) VALUES (
                 %(date)s, %(day_of_week)s, %(category_minutes)s,
@@ -113,6 +117,7 @@ def sync_daily():
                 %(dep_min)s, %(dep_max)s, %(dep_avg)s,
                 %(dist)s, %(soc)s, %(out)s, %(exe)s, %(alc)s, %(xmx)s, %(wea)s, %(meet)s,
                 %(abi)s, %(save)s,
+                %(drc_triggers)s, %(drc_resisted)s, %(drc_indulged)s,
                 NOW(), NOW()
             )
             ON CONFLICT (date) DO UPDATE SET
@@ -133,6 +138,9 @@ def sync_daily():
                 meet = EXCLUDED.meet,
                 abi = EXCLUDED.abi,
                 save = EXCLUDED.save,
+                drc_triggers = EXCLUDED.drc_triggers,
+                drc_resisted = EXCLUDED.drc_resisted,
+                drc_indulged = EXCLUDED.drc_indulged,
                 updated_at = NOW()
         """, {
             'date': data['date'],
@@ -152,7 +160,10 @@ def sync_daily():
             'wea': data.get('wea'),
             'meet': data.get('meet'),
             'abi': data.get('abi'),
-            'save': data.get('save')
+            'save': data.get('save'),
+            'drc_triggers': data.get('drc_triggers'),
+            'drc_resisted': data.get('drc_resisted'),
+            'drc_indulged': data.get('drc_indulged')
         })
 
         # Update sync metadata with current timestamp
@@ -582,6 +593,65 @@ def sleep_score():
                 'date': row[0].isoformat(),
                 'sleep_raw': float(row[1]) if row[1] is not None else None,
                 'sleep_7day_avg': float(row[2]) if row[2] is not None else None
+            }
+            for row in reversed(rows)  # Reverse to get chronological order
+        ]
+
+        return jsonify({
+            'data': data
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/drc', methods=['GET'])
+def drc():
+    """
+    Get daily dopamine resistance counter values (triggers, resisted, indulged).
+
+    Query parameters:
+    - limit: Number of recent days to return (default: 60)
+
+    Returns JSON with the three raw daily figures per date
+
+    Note: This endpoint is public (no auth required) for read-only access
+    """
+    try:
+        limit = int(request.args.get('limit', 60))
+    except ValueError:
+        return jsonify({'error': 'Invalid numeric parameter'}), 400
+
+    if limit < 1:
+        return jsonify({'error': 'limit must be a positive integer'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT
+                date,
+                drc_triggers,
+                drc_resisted,
+                drc_indulged
+            FROM daily_summary
+            ORDER BY date DESC
+            LIMIT %(limit)s
+        """, {
+            'limit': limit
+        })
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        # Format response (keep null as null so frontend can skip missing data)
+        data = [
+            {
+                'date': row[0].isoformat(),
+                'drc_triggers': float(row[1]) if row[1] is not None else None,
+                'drc_resisted': float(row[2]) if row[2] is not None else None,
+                'drc_indulged': float(row[3]) if row[3] is not None else None
             }
             for row in reversed(rows)  # Reverse to get chronological order
         ]

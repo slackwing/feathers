@@ -44,6 +44,9 @@ class SxivaDataExtractor:
         - exe: int | None
         - alc: float | None
         - xmx: int | None
+        - drc_triggers: float | None
+        - drc_resisted: float | None
+        - drc_indulged: float | None
         - wea: float | None
         - meet: int | None
         - abi: float | None
@@ -160,6 +163,9 @@ class SxivaDataExtractor:
             'exe': None,
             'alc': None,
             'xmx': None,
+            'drc_triggers': None,
+            'drc_resisted': None,
+            'drc_indulged': None,
             'wea': None,
             'meet': None,
             'abi': None,
@@ -209,6 +215,14 @@ class SxivaDataExtractor:
                 m = re.match(rf'({NUM})', rest)
                 if m:
                     attributes[name] = float(m.group(1))
+
+            elif name == 'drc':
+                # [drc] triggers resisted indulged ✓
+                m = re.match(rf'({NUM})\s+({NUM})\s+({NUM})', rest)
+                if m:
+                    attributes['drc_triggers'] = float(m.group(1))
+                    attributes['drc_resisted'] = float(m.group(2))
+                    attributes['drc_indulged'] = float(m.group(3))
 
             elif name == 'meet':
                 m = re.match(r'([^\s✓]+)', rest)

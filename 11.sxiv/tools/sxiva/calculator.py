@@ -1708,6 +1708,7 @@ class PointCalculator:
             "    [dep]",
             "    [alc]",
             "    [xmx]",
+            "    [drc]",
             "    [wea]",
             "    [meet]",
             "    [abi]",
@@ -1827,6 +1828,17 @@ class PointCalculator:
 
                 return f"    [xmx] {value} ✓", None
 
+            elif category == "drc":
+                # Dopamine resistance counter: triggers, resisted, indulged
+                # Three non-negative numbers (halves allowed), e.g. "4 2.5 1.5"
+                if len(values_parts) != 3:
+                    return line, "[drc] must have exactly three values (triggers, resisted, indulged)"
+                values = [float(v) for v in values_parts]
+                if any(v < 0 for v in values):
+                    return line, "[drc] values must be non-negative"
+
+                return f"    [drc] {' '.join(values_parts)} ✓", None
+
             elif category == "wea":
                 # Float between -2 and 2 inclusive
                 if len(values_parts) != 1:
@@ -1905,7 +1917,7 @@ class PointCalculator:
                    num_lines_consumed: How many lines from start_idx were consumed
                    errors: List of error messages
         """
-        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "wea", "meet", "abi", "save"]
+        EXPECTED_CATEGORIES = ["sleep", "dist", "soc", "out", "exe", "dep", "alc", "xmx", "drc", "wea", "meet", "abi", "save"]
 
         if start_idx == -1:
             # No attributes section - generate template

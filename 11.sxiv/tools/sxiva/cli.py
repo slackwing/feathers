@@ -959,6 +959,15 @@ def repeat_entry(file_path):
         sys.exit(1)
 
 
+@cli.command()
+@click.option('--local', 'sync_local', is_flag=True, help='Sync to local database (localhost:5000) instead of remote')
+def upload(sync_local):
+    """Sync all .sxiva files modified since the last sync to the dashboard."""
+    data_path = _get_data_path()
+    api_url = 'http://localhost:5000' if sync_local else None
+    sync_now(data_path, api_url=api_url)
+
+
 def main():
     """Entry point for the CLI."""
     cli()

@@ -239,6 +239,36 @@ def test_rolling_sum_lambda_parameter(api_headers):
         assert data_02['data'][0]['hobby_raw'] == data_05['data'][0]['hobby_raw']
 
 
+def test_drc_endpoint(api_headers):
+    """DRC endpoint returns daily triggers/resisted/indulged series"""
+    response = requests.get(
+        f'{API_BASE_URL}/api/drc',
+        params={'limit': 30}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert 'data' in data
+    assert len(data['data']) <= 30
+
+    dates = [row['date'] for row in data['data']]
+    assert dates == sorted(dates), "Dates should be in chronological order"
+
+    for row in data['data']:
+        for key in ('drc_triggers', 'drc_resisted', 'drc_indulged'):
+            assert key in row
+            # Null when not filled out; non-negative number otherwise
+            assert row[key] is None or (isinstance(row[key], (int, float)) and row[key] >= 0)
+
+
+def test_drc_invalid_limit(api_headers):
+    """DRC endpoint rejects invalid limit values"""
+    response = requests.get(f'{API_BASE_URL}/api/drc', params={'limit': 'abc'})
+    assert response.status_code == 400
+
+    response = requests.get(f'{API_BASE_URL}/api/drc', params={'limit': 0})
+    assert response.status_code == 400
+
+
 if __name__ == '__main__':
     # Allow running directly for quick testing
     print(f"Testing API at: {API_BASE_URL}")
