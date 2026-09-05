@@ -242,14 +242,20 @@
   .gate input:focus { outline: 1px solid var(--nen); border-color: var(--nen); }
   .gate .btn { width: 100%; margin-top: 1.5rem; }
   .gate .msg { margin-top: .9rem; font-size: .85rem; min-height: 1.3rem; color: var(--blood-hot); }
-  #logout {
+  .topbar {
     position: fixed; top: .9rem; right: .9rem; z-index: 5;
+    display: flex; gap: .5rem;
+  }
+  .topbar a, .topbar button {
+    display: inline-block;
     background: none; border: 1px solid rgba(232,220,195,.25);
     color: var(--paper-dim); font-family: inherit;
     font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
-    padding: .35rem .7rem; cursor: pointer;
+    padding: .35rem .7rem; cursor: pointer; text-decoration: none;
   }
-  #logout:hover { color: var(--paper); border-color: var(--paper-dim); }
+  .topbar a:hover, .topbar button:hover { color: var(--paper); border-color: var(--paper-dim); }
+  #roster-link { color: var(--nen); border-color: rgba(88,224,92,.4); }
+  #roster-link:hover { color: var(--nen); border-color: var(--nen); }
   [hidden] { display: none !important; }
 
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -279,7 +285,10 @@
   </div>
 </section>
 
-<button id="logout" hidden>Log out</button>
+<div class="topbar">
+  <a id="roster-link" href="/hxh/roster.html" hidden>Roster</a>
+  <button id="logout" hidden>Log out</button>
+</div>
 <main hidden>
   <header class="hero">
     <div class="assoc">Hunter Association · Official Summons</div>
@@ -395,17 +404,23 @@ function toast(msg) {
 // ---- gate: shared auth (hobby-server admin project) ----
 const AUTH = "/admin/api";
 
-function reveal(authed) {
+function reveal(authed, roles = []) {
   document.getElementById("gate").hidden = authed;
   document.getElementById("logout").hidden = !authed;
   document.querySelector("main").hidden = !authed;
   document.querySelector("footer").hidden = !authed;
+  const isAdmin = roles.some(r => r.website === "hxh" && r.role === "admin");
+  document.getElementById("roster-link").hidden = !(authed && isAdmin);
 }
 
 async function authBoot() {
-  let authed = false;
-  try { authed = (await fetch(AUTH + "/me")).ok; } catch {}
-  reveal(authed);
+  try {
+    const res = await fetch(AUTH + "/me");
+    if (!res.ok) { reveal(false); return; }
+    reveal(true, (await res.json()).roles);
+  } catch {
+    reveal(false);
+  }
 }
 
 document.getElementById("login-form").addEventListener("submit", async e => {
@@ -424,7 +439,7 @@ document.getElementById("login-form").addEventListener("submit", async e => {
     msg.textContent = res.status === 401 ? "The committee does not recognize you." : "Something went wrong.";
     return;
   }
-  reveal(true);
+  reveal(true, (await res.json()).roles);
 });
 
 document.getElementById("logout").addEventListener("click", async () => {

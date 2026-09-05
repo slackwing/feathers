@@ -31,11 +31,24 @@ SSO cookie `hobby_session` (Path=/), per-website roles
 (`hxh` roles: `admin`, `guest`). Frontend calls `/admin/api/*`.
 See `../admin/CLAUDE.md`.
 
-The hxh-specific hobby-server project still exists but its auth floor
-(`/hxh/api/*`, `hxh` DB `user`/`session` tables) is UNUSED — the `hxh`
-database is reserved for future party data tables (`guest` prefs,
-`character_claim`, ... changeset 002+ once open questions settle).
-Role checks for those endpoints should go through the shared system.
+The hxh hobby-server project serves DATA endpoints at `/hxh/api/*`
+(no auth floor of its own — role checks go through the shared
+system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
+
+## Roster (character database, 2026-09-05)
+
+- **roster.html** — admin-only view (role `admin` on `hxh`) reached
+  via the ROSTER button next to Log out on index. Renders
+  `GET /hxh/api/roster`: per character an image strip, Nen-type chips
+  (double types supported), weapon slugs, arc chips, description.
+- Data: `hxh_characters` (slug PK; nen_types/weapons/arcs are
+  comma-separated slug strings; images JSONB array of Fandom-wiki
+  URLs, hotlinked) + `hxh_arcs` (7 anime arcs, seeded by Liquibase).
+- Curation loop: edit `roster.json` (kept in this dir, master copy of
+  the data) and push with
+  `PUT /hxh/api/roster/characters?replace=1` (admin session).
+  Characters were compiled from hunterxhunter.fandom.com; expect
+  iterative correction rounds with Andrew.
 
 ## Open questions (ask Andrew before building)
 

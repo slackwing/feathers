@@ -1,0 +1,974 @@
+[
+  {
+    "slug": "gon",
+    "name": "Gon Freecss",
+    "description": "A cheerful, athletic boy from Whale Island who takes the Hunter Exam to find his father Ging, a legendary Hunter who left when Gon was an infant. His honesty and stubborn determination win over friends and rivals alike. He is an Enhancer, channeling his aura into raw physical power through his signature technique Jajanken.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [
+      "fishing-rod"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "zoldyck-family",
+      "heavens-arena",
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c8/Gon_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/eb/2011_EP30_OP_Card_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1d/2011_EP49_OP_Card_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4b/2011_EP131_ED_Card_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c4/2011_EP148_OP_Card_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2a/2011_EP146_Gon_crying.png"
+    ],
+    "sort_order": 10
+  },
+  {
+    "slug": "killua",
+    "name": "Killua Zoldyck",
+    "description": "The third son of the infamous Zoldyck assassin family, trained from birth to kill but longing for an ordinary childhood. He runs away from home, takes the Hunter Exam, and becomes Gon's closest friend. A Transmuter, he changes his aura into electricity, drawing on a lifetime of resistance to torture and shock.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "yo-yos",
+      "skateboard"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "zoldyck-family",
+      "heavens-arena",
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1d/Killua_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/37/2011_EP31_OP_Card_Killua.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/16/2011_EP124_OP_Card_Killua.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/14/2011_EP142_ED_Card_Killua.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/95/2011_EP49_ED_Card_Killua.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d0/2011_EP119_Killua_Godspeed.png"
+    ],
+    "sort_order": 20
+  },
+  {
+    "slug": "kurapika",
+    "name": "Kurapika",
+    "description": "The last survivor of the Kurta Clan, whose people were massacred by the Phantom Troupe for their scarlet eyes. He becomes a Hunter to recover his clan's stolen eyes and take revenge on the Troupe. A Conjurer who materializes chains on his right hand, he becomes a Specialist when his eyes turn scarlet, letting him use all Nen categories at full strength.",
+    "nen_types": [
+      "conjuration",
+      "specialization"
+    ],
+    "weapons": [
+      "chains",
+      "wooden-swords"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "zoldyck-family",
+      "yorknew-city",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d9/Kurapika_HCE_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/7b/2011_EP47_OP_Card_Kurapika.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/db/HxH2011_Kurapika_Yorknew_City_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0d/2011_EP53_Kurapika_Scarlet_Eyes.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b0/2011_EP53_Kurapika_Scarlet_Eyes_close-up.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a7/HxH2011_EP55_Kurapika_Conjures_Chains.png"
+    ],
+    "sort_order": 30
+  },
+  {
+    "slug": "leorio",
+    "name": "Leorio Paradinight",
+    "description": "A brash, money-obsessed exam rookie whose greed turns out to mask a generous heart: he wants a Hunter license to fund medical school and treat the poor for free. Loud and quick to quarrel but fiercely loyal, he becomes one of Gon's first and truest friends. He is an Emitter, though his Nen is revealed only late in the series.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [
+      "briefcase",
+      "knife"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "zoldyck-family",
+      "yorknew-city",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/23/Leorio_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/73/HxH2011_EP145_Leorio_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/55/2011_EP60_Leorio_determined.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a8/2011_EP145_Leorio_announcing_that_he_will_save_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/75/42_-_Leorio.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/27/2011_EP146_Gon_Leorio_in_a_cab.png"
+    ],
+    "sort_order": 40
+  },
+  {
+    "slug": "hisoka",
+    "name": "Hisoka Morow",
+    "description": "A flamboyant, magician-themed fighter who lives for battles against strong opponents, sparing promising 'unripe fruit' like Gon so they can grow into worthy prey. Utterly unpredictable, he switches between ally and enemy as his amusement dictates. A Transmuter, he gives his aura the properties of both rubber and gum with his ability Bungee Gum.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "playing-cards"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "heavens-arena",
+      "yorknew-city",
+      "greed-island",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/77/Hisoka_2011_Design_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1f/-Hisoka-Portrait-.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/06/2011_EP35_ED_Card_Hisoka.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a8/2011_EP36_ED_Card_Hisoka.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/5b/Hisoka_GI_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/9f/2011_EP58_Hisoka_ready_to_fight_Chrollo.png"
+    ],
+    "sort_order": 50
+  },
+  {
+    "slug": "illumi",
+    "name": "Illumi Zoldyck",
+    "description": "The eldest son of the Zoldyck assassin family and Killua's coldly controlling older brother, who first appears at the Hunter Exam disguised under the alias Gittarackur. Emotionless and single-minded, he believes Killua's only purpose is to be an assassin. A Manipulator, he controls people with his signature Nen-imbued needles.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [
+      "needles"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "yorknew-city",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/6a/Illumi_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/02/-Illumi-Zoldyck-Portrait-.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/72/Illumi_Zoldyck_HCE_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d3/2011_EP15_Illumi_after_removing_needles.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fe/21_-_Illumi_portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4e/Ep._53_%282011%29_-_Illumi_kills_Dons.png"
+    ],
+    "sort_order": 60
+  },
+  {
+    "slug": "hanzo",
+    "name": "Hanzo",
+    "description": "A shinobi from Jappon who takes the Hunter Exam to find the lost Hermit's Scroll of his ninja clan. Talkative and boastful but a genuinely elite martial artist, he passes the exam and becomes a professional Hunter. His speed and hand-to-hand skill make him one of the strongest rookies of his exam year.",
+    "nen_types": [
+      "conjuration"
+    ],
+    "weapons": [
+      "katana"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/cb/Hanzo_2011.PNG",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/55/Hanzo_2011_Design_IMG1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e9/Hanzo_SC_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4d/Hanzo_-_144.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8d/Gon_kicks_Hanzo_in_the_face.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e6/Hanzo_%26_Biscuit_outside_the_hospital_-_Episode_145.png"
+    ],
+    "sort_order": 70
+  },
+  {
+    "slug": "tonpa",
+    "name": "Tonpa",
+    "description": "A pudgy perennial Hunter Exam applicant infamous as the 'Rookie Crusher' for sabotaging promising first-timers, most notoriously by offering them laxative-spiked juice. He has failed the exam dozens of times, having decided that crushing newcomers is more satisfying than passing. Despite his schemes, he is quickly seen through by Gon's group.",
+    "nen_types": [],
+    "weapons": [
+      "laxative-juice"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "greed-island"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/21/Tonpa_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/50/Tonpa_2011.PNG",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/9f/Tonpa_HE_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/65/HxH2011_EP3_Tonpa_introduces_himself.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2f/HxH2011_EP15_Tonpa_tricks_Leorio.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ab/HxH2011_EP12_Leorio_and_Tonpa_in_the_waiting_room.png"
+    ],
+    "sort_order": 80
+  },
+  {
+    "slug": "wing",
+    "name": "Wing",
+    "description": "Wing is an Assistant Master of Shingen-ryu kung fu, Zushi's teacher, and a former student of Biscuit Krueger. At Heavens Arena he becomes Gon and Killua's first true Nen teacher, initiating them into the discipline and overseeing their early training. Mild-mannered and scholarly, he takes his responsibility as a teacher very seriously.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [],
+    "arcs": [
+      "heavens-arena",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/ed/Wing_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/69/Wing_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1a/Wing_HxH_2011.PNG",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4a/Wing_Teaching_Nen.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1a/2011_EP27_OP_Card_Wing.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/35/Wing_Nen_2.png"
+    ],
+    "sort_order": 90
+  },
+  {
+    "slug": "zushi",
+    "name": "Zushi",
+    "description": "Zushi is a young Heavens Arena fighter and a practitioner of Shingen-ryu kung fu under his teacher Wing; before Gon and Killua, he was Wing's only student. He befriends the two at the Arena, and his surprising resilience from early Nen training first alerts Killua that there is a deeper power to learn. Earnest and disciplined, he steadily climbs the Arena's floors.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [],
+    "arcs": [
+      "heavens-arena"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/33/Zushi_character.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8b/Zushi_HA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c0/Zushi_2011_Design_IMG1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/7c/HxH2011_EP27_Zushi_close-up.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4a/Zushi2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/83/Zushi_ren.png"
+    ],
+    "sort_order": 100
+  },
+  {
+    "slug": "chrollo",
+    "name": "Chrollo Lucilfer",
+    "description": "Chrollo Lucilfer is the founder, leader, and member #0 of the Phantom Troupe, and the main antagonist of the Yorknew City arc. Calm, cultured, and charismatic, he hails from Meteor City and values the Troupe's survival above his own life. As a Specialist, his Skill Hunter ability lets him steal other people's Nen abilities and store them in a conjured book called Bandit's Secret.",
+    "nen_types": [
+      "specialization"
+    ],
+    "weapons": [
+      "skill-book",
+      "benz-knife"
+    ],
+    "arcs": [
+      "yorknew-city",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/64/Chrollo_Lucilfer_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0c/2011_EP52_Chrollo_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/67/Chrollo_EP52_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b1/Chrollo_2011_Design_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/49/2011_EP52_Chrollo_faces_Silva_and_Zeno.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/66/2011_EP41_ED_Card_Chrollo.png"
+    ],
+    "sort_order": 110
+  },
+  {
+    "slug": "nobunaga",
+    "name": "Nobunaga Hazama",
+    "description": "Nobunaga Hazama is member #1 of the Phantom Troupe, ranked ninth in physical strength among the group. A samurai-styled swordsman and close friend of Uvogin, he is emotional and hot-blooded compared to his colleagues, and takes a liking to Gon during the Yorknew City arc. He is an Enhancer whose iaido draw-cut strikes anything entering the radius of his En.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [
+      "katana"
+    ],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/46/HxH2011_EP50_Nobunaga_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/ee/2011_EP50_OP_Card_Nobunaga.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/74/HxH2011_EP50_Gon_arm_wrestling_Nobunaga.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/05/HxH2011_EP54_Nobunaga_confronts_Hisoka.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/7e/HxH2011_EP49_Machi_and_Nobunaga.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/26/HxH2011_EP57_Nobunaga_tries_to_befriend_Gon_and_Killua.png"
+    ],
+    "sort_order": 120
+  },
+  {
+    "slug": "feitan",
+    "name": "Feitan Portor",
+    "description": "Feitan Portor is member #2 of the Phantom Troupe, ranked fifth in physical strength among the group. Small and sadistic, he serves as the Troupe's interrogator and speaks in broken, terse sentences, often carrying an umbrella that conceals a hidden blade. He is a Transmuter whose aura grows more dangerous the more pain he suffers.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "umbrella-sword"
+    ],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/ee/Feitan_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/86/HxH2011_EP50_Feitan_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/30/HxH2011_EP43_Feitan_at_the_auction.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/02/HxH2011_EP45_Feitan_reading_after_torturing_Owl.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ab/Feitan_EP43_2011_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/31/HxH2011_EP97_Feitan_vs_Zazan_Rising_Sun_IMG.png"
+    ],
+    "sort_order": 130
+  },
+  {
+    "slug": "machi",
+    "name": "Machi Komacine",
+    "description": "Machi Komacine is member #3 of the Phantom Troupe, ranked sixth in physical strength among the group. Cool-headed and terse, she is known for her remarkably reliable intuition and her loyalty to the Troupe's leader. A Transmuter, she turns her aura into Nen threads strong enough to stitch severed limbs back together, a skill Hisoka pays her for at Heavens Arena.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "nen-threads"
+    ],
+    "arcs": [
+      "heavens-arena",
+      "yorknew-city",
+      "greed-island"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e6/HxH2011_EP32_Machi_HA_Appearance.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/44/2011_EP32_ED_Card_Machi.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8e/HxH2011_EP49_Machi_Tracksuit.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1f/HxH2011_EP51_Machi_Nen_Threads.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/54/HxH2011_EP49_Machi_at_a_public_space.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8a/HxH2011_EP55_Machi_gets_Chrollo%27s_attention.png"
+    ],
+    "sort_order": 140
+  },
+  {
+    "slug": "shizuku",
+    "name": "Shizuku Murasaki",
+    "description": "Shizuku Murasaki is member #8 of the Phantom Troupe, ranked twelfth in physical strength among the group. Bespectacled and notoriously absent-minded, she often forgets people and events entirely, yet remains a dependable and loyal member. As a Conjurer, she summons a living vacuum cleaner nicknamed Blinky that can suck up limitless amounts of non-living things.",
+    "nen_types": [
+      "conjuration"
+    ],
+    "weapons": [
+      "vacuum-cleaner"
+    ],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/9e/HxH2011_EP53_Shizuku_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c6/HxH2011_EP44_Shizuku_preparing_to_remove_the_poison.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/09/2011_EP97_Shizuku_prepares_to_fight_the_ants.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/31/HxH2011_EP43_Blinky_IMG2.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/66/2011_EP61_Shizuku_and_Kortopi_playing_chess.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/9b/HxH2011_EP56_Shizuku%27s_Gyo.png"
+    ],
+    "sort_order": 150
+  },
+  {
+    "slug": "franklin",
+    "name": "Franklin Bordeau",
+    "description": "Franklin Bordeau is member #7 of the Phantom Troupe, ranked fourth in physical strength among the group. A hulking, stitched figure resembling Frankenstein's monster, he is nonetheless one of the Troupe's most level-headed and pragmatic voices. As an Emitter, his Double Machine Gun ability fires barrages of aura bullets from his fingertips, which he cut off to boost its power.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [],
+    "arcs": [
+      "yorknew-city",
+      "greed-island"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/62/HxH2011_EP58_Franklin_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1f/Franklin_EP43_2011_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b5/Franklin_2011_Design_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/29/HxH2011_EP58_Franklin_explaining_the_worst_case_scenario.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8a/2011_EP61_Franklin_and_Bonolenov_at_the_hideout.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/da/Nobunaga_clashing_with_Franklin_2011.png"
+    ],
+    "sort_order": 160
+  },
+  {
+    "slug": "phinks",
+    "name": "Phinks Magcub",
+    "description": "Phinks Magcub is member #5 of the Phantom Troupe, ranked second in physical strength among the group. Recognizable by his Egyptian-styled outfits and tracksuit, he is short-tempered and blunt but fiercely loyal, often paired with Feitan. He is an Enhancer whose Ripper Cyclotron multiplies the power of his punch with every wind-up rotation of his arm.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/88/HxH2011_EP41_Phinks_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/47/Phinks_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d7/HxH2011_EP41_Phinks_IMG.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a7/Phinks_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/9c/Phinks_Chimera_Ant_Arc_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e1/Killua_trying_to_escape_Phinks_2011.png"
+    ],
+    "sort_order": 170
+  },
+  {
+    "slug": "shalnark",
+    "name": "Shalnark",
+    "description": "Shalnark is member #6 of the Phantom Troupe and also a licensed Hunter, ranked tenth in physical strength among the group. Cheerful and tech-savvy, he acts as the Troupe's researcher and planner, digging up intelligence with his phone and Hunter website access. A Manipulator, his Black Voice ability lets him control anyone he tags with his antennas via phone commands, and he can plant one in himself for a devastating autopilot mode.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [
+      "mobile-phone",
+      "nen-antennas"
+    ],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c3/HxH2011_EP53_Shalnark_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0e/HxH2011_EP53_Shalnark_IMG.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1d/Shalnark_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/3c/Shalnark_fullbody_HXH_2011_EP52.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/dd/HxH2011_EP53_Shalnark_using_Black_Voice.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/da/HxH2011_EP61_Shalnark_planning_to_play_GI.png"
+    ],
+    "sort_order": 180
+  },
+  {
+    "slug": "uvogin",
+    "name": "Uvogin",
+    "description": "Uvogin was member #11 of the Phantom Troupe and physically the strongest in the group. A hulking Enhancer, he fought with raw hand-to-hand destruction, boasting that no ordinary attack could pierce his hardened body. He plays a central role in the Troupe's rampage through Yorknew City, where his clash with Kurapika becomes a turning point of the arc.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [],
+    "arcs": [
+      "yorknew-city"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/bb/Other_ubo.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/60/HxH2011_EP41_Uvogin_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a1/Uvogin_Full.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1e/HxH2011_EP41_Uvogin_at_the_Troupe_meeting.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fb/Uvogin_EP43_2011_1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/51/2011_EP43_OP_Card_Uvogin.png"
+    ],
+    "sort_order": 190
+  },
+  {
+    "slug": "pakunoda",
+    "name": "Pakunoda",
+    "description": "Pakunoda was member #9 of the Phantom Troupe and its interrogator. Her Specialist ability let her read the memories of anyone she touched or questioned, and with her Memory Bomb she could conjure a revolver to fire those memories into others. Deeply loyal to leader Chrollo Lucilfer, she becomes pivotal during the Troupe's confrontation with Gon, Killua, and Kurapika in Yorknew City.",
+    "nen_types": [
+      "specialization"
+    ],
+    "weapons": [
+      "memory-bomb-revolver"
+    ],
+    "arcs": [
+      "yorknew-city"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/23/Other_pak.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/da/Pakunoda_YC_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/50/Pakunoda_2011_Full_Body_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/06/49_-_Gon_confronted_by_Pakunoda.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/26/HxH2011_EP45_Pakunoda_at_the_hideout.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/cf/HxH2011_EP49_Pakunoda_questions_Gon_and_Killua.png"
+    ],
+    "sort_order": 200
+  },
+  {
+    "slug": "biscuit",
+    "name": "Biscuit Krueger",
+    "description": "Biscuit Krueger is a Double-Star Stone Hunter hired by Battera to clear the video game Greed Island, where she takes Gon and Killua on as her students. Despite her small, doll-like appearance she is a vastly experienced Nen master who is far stronger than she looks. Known as 'Bisky', she drills the boys mercilessly and shapes them into true Nen fighters.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "cookie-chan"
+    ],
+    "arcs": [
+      "greed-island",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/6f/Other_bisuke.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/ce/Biscuit_Krueger_GI_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/cd/Biscuit_Krueger_CA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/54/Biscuit_Krueger_GI_Appearance.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/f5/Biscuit_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/80/2011_EP73_Biscuit_True_Form_full_appearance.png"
+    ],
+    "sort_order": 210
+  },
+  {
+    "slug": "razor",
+    "name": "Razor",
+    "description": "A Game Master of Greed Island and one of its most powerful inhabitants, a former convict who helped Ging Freecss create the game. He administers the island's sports-themed challenges and confronts Gon's team in a lethal game of dodgeball. A supremely powerful Emitter, he launches Nen-charged balls with devastating force and fields emitted 'Devils' as his teammates.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [
+      "dodgeball",
+      "nen-devils"
+    ],
+    "arcs": [
+      "greed-island"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e6/Razor_GI_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/27/RazorFullbody.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/84/Razor_G.I_Design_%282011_Anime%29.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a0/69_-_Razor.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/83/Razor_strength.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/88/HxH2011_EP65_Razor_holding_the_Eliminate_card.png"
+    ],
+    "sort_order": 220
+  },
+  {
+    "slug": "genthru",
+    "name": "Genthru",
+    "description": "A ruthless Greed Island player known as the Bomber, who murders fellow players to steal their cards and clear the game for its grand prize. Publicly he poses as a trustworthy ally while secretly working with two accomplices. His conjured explosives, Little Flower and Countdown, make him the chief antagonist of Gon's time on the island and the opponent Gon trains specifically to defeat.",
+    "nen_types": [
+      "conjuration"
+    ],
+    "weapons": [
+      "nen-bombs"
+    ],
+    "arcs": [
+      "greed-island"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0f/Genthru_Portrait_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/82/Genthru_GI_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4f/Genthru_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/ca/Genthru_G.I_Design_%282011_Anime%29.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2e/65_-_Genthru.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/53/Bomber_revealed.png"
+    ],
+    "sort_order": 230
+  },
+  {
+    "slug": "kite",
+    "name": "Kite",
+    "description": "Kite is a Hunter and the prized student of Ging Freecss; a chance childhood encounter with him is what set Gon on the path to becoming a Hunter. A consummate professional specializing in biological surveys, he conjures a random weapon with his ability Crazy Slots. He reunites with Gon and Killua at the start of the Chimera Ant arc, and his fate drives much of that story.",
+    "nen_types": [
+      "conjuration"
+    ],
+    "weapons": [
+      "tachi",
+      "crazy-slots-scythe",
+      "rifle"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1d/Kite_CA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/93/Kite_mainpic.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/5b/Kite_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/3c/76_-_Kite_meets_young_Gon.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fe/76_-_Kite_reveals_himself.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/00/Gon_and_Killua_talking_with_Kite.png"
+    ],
+    "sort_order": 240
+  },
+  {
+    "slug": "netero",
+    "name": "Isaac Netero",
+    "description": "Isaac Netero was the 12th Chairman of the Hunter Association and Head of the Exam Commission for the 287th Hunter Exam. In his youth he was extolled as the world's most powerful Nen user, and even in old age he retained dreadful strength beneath a playful, eccentric demeanor. He personally tests Gon and Killua during the Hunter Exam and later leads the Association's most dangerous operation against the Chimera Ants.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [
+      "hundred-type-guanyin-bodhisattva",
+      "poor-mans-rose",
+      "rubber-ball"
+    ],
+    "arcs": [
+      "hunter-exam",
+      "greed-island",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8d/Netero_character.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/88/Isaac_Netero_HE_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e4/NeteroFullbody.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fe/Isaac_Netero_2011_Design_IMG1.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fc/HxH2011_EP6_Netero_appears_during_the_second_phase.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/54/2011_EP122_OP_Card_Netero.png"
+    ],
+    "sort_order": 250
+  },
+  {
+    "slug": "morel",
+    "name": "Morel Mackernasey",
+    "description": "Morel Mackernasey is a Single-Star Sea Hunter and a core member of the Chimera Ant Extermination Team, as well as the master of Knuckle Bine and Shoot McMahon. A burly veteran with a wry sense of humor, he fights with a giant smoking pipe, shaping its smoke into constructs and clones with remarkable tactical versatility. He mentors the younger Hunters while anchoring the assault on the Ant-occupied kingdom.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [
+      "smoke-pipe",
+      "smoke-soldiers"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c2/102_-_Morel_delays_the_selection.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2d/2011_EP110_OP_Card_Morel_and_Knuckle.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a3/120_-_Morel%27s_Deep_Purple.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/45/107_-_Morel_concentrating_Carbon_dioxide.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/f1/113_-_Shaiapouf_confronted_by_Morel.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/76/2011_EP148_Knov_and_Morel.png"
+    ],
+    "sort_order": 260
+  },
+  {
+    "slug": "knov",
+    "name": "Knov",
+    "description": "A veteran Hunter and an elite member of the extermination team sent into NGL to combat the Chimera Ants. A dapper, bespectacled man, he works alongside Morel Mackernasey and is the mentor of Palm Siberia. His Nen ability, Hide and Seek, opens portals into a four-dimensional mansion of his own making, making him the team's key infiltrator and logistics man.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [
+      "nen-portals"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/49/KnovFullbody.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ab/Knov_anime.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/32/2011_EP94_Knov_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a6/109_-_Knov_portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/ff/Knov148.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/96/106_-_Knov.png"
+    ],
+    "sort_order": 270
+  },
+  {
+    "slug": "knuckle",
+    "name": "Knuckle Bine",
+    "description": "Knuckle Bine is a Beast Hunter and one of Morel Mackernasey's two apprentices. A hot-blooded brawler with a pompadour and a delinquent's exterior, he is in truth deeply softhearted, prone to tears over strays and fallen comrades alike. He tests Gon and Killua as a gatekeeper to the extermination mission and later fights on the front line of the palace invasion.",
+    "nen_types": [
+      "conjuration"
+    ],
+    "weapons": [
+      "potclean"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/18/2011_EP121_OP_Card_Knuckle.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c1/100_-_Knuckle_waits.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/79/103_-_Knuckle_cries.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/38/117_-_Knuckle%27s_Rage.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b5/2011_EP88_Gon_vs_Knuckle.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/6e/87_-_Knuckle_vs._Killua_and_Gon.png"
+    ],
+    "sort_order": 280
+  },
+  {
+    "slug": "shoot",
+    "name": "Shoot McMahon",
+    "description": "Shoot McMahon is an Unidentified Beast Hunter, Knuckle Bine's partner, and a disciple of Morel Mackernasey. Quiet and self-effacing, he struggles with timidity and a fear of battle that he resolves to overcome during the Chimera Ant crisis. He fights using three floating disembodied hands and a levitating cage, and serves alongside Knuckle in testing Gon and Killua and in the palace invasion.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [
+      "cage-hands",
+      "hotel-rafflesia"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/17/2011_EP90_Shoot_McMahon_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8f/Shoot_McMahon_CA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/92/Shoot_Mcmahon-2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/ea/Shoot_Chimera_Ant_Arc_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e1/90_-_Shoot.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e9/113_-_Shoot_smiling_at_Youpi.png"
+    ],
+    "sort_order": 290
+  },
+  {
+    "slug": "palm",
+    "name": "Palm Siberia",
+    "description": "A probationary Hunter and the apprentice of Sea Hunter Morel Mackernasey. Intense and emotionally volatile yet deeply devoted, she is introduced when Gon and Killua must win her approval to join the Chimera Ant mission. Her clairvoyant Nen makes her one of the team's most valuable scouts, and she undergoes one of the arc's most striking transformations.",
+    "nen_types": [
+      "enhancement"
+    ],
+    "weapons": [
+      "knives"
+    ],
+    "arcs": [
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/72/Palm_anime.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d7/Palm_Episode_86.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/60/Palm_Fullbody_view.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/be/Palm_with_make_up.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fc/Chimera_Ant_Palm.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/9/94/106_-_Palm_blushes.png"
+    ],
+    "sort_order": 300
+  },
+  {
+    "slug": "meruem",
+    "name": "Meruem",
+    "description": "Meruem is the most powerful offspring of the Chimera Ant Queen, born as the King of the Chimera Ants, and the main antagonist of the Chimera Ant arc. Endowed with overwhelming strength and intellect from birth, he initially views humanity with contempt as mere livestock. His encounters with the blind Gungi prodigy Komugi gradually complicate his understanding of human worth.",
+    "nen_types": [
+      "specialization"
+    ],
+    "weapons": [
+      "tail",
+      "gungi-board"
+    ],
+    "arcs": [
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/aa/104_-_Meruem.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d3/109_-_Meruem.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fb/126_-_Meruem.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/74/128_-_Reborn_Meruem.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/54/133_-_Meruem.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d0/104_-_Meruem_on_his_throne.png"
+    ],
+    "sort_order": 310
+  },
+  {
+    "slug": "neferpitou",
+    "name": "Neferpitou",
+    "description": "Neferpitou, nicknamed Pitou, is a cat-humanoid Chimera Ant and the firstborn of the King's three Royal Guards. Playful in demeanor but utterly ruthless, they possess immense aura and a talent for Nen that alarms even veteran Hunters. Their fierce loyalty to the King drives everything they do, from defending the palace to healing at his command.",
+    "nen_types": [
+      "specialization"
+    ],
+    "weapons": [
+      "doctor-blythe",
+      "terpsichora",
+      "claws"
+    ],
+    "arcs": [
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/20/109_-_Neferpitou_portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/60/2011_EP127_OP_Card_Neferpitou.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/19/2011_EP131_OP_Card_Neferpitou.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/66/125_-_Neferpitou.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fc/2011_EP85_Neferpitou_glare_and_dark_aura.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a3/130_-_Pitou_apologizes.png"
+    ],
+    "sort_order": 320
+  },
+  {
+    "slug": "shaiapouf",
+    "name": "Shaiapouf",
+    "description": "Shaiapouf, nicknamed Pouf, is a butterfly-humanoid Chimera Ant and one of the King's three Royal Guards. Eloquent, artistic, and outwardly composed, he idolizes the King as a perfect ruler and grows increasingly unstable when reality threatens that ideal. He schemes behind the scenes to keep the King on what he considers the proper path.",
+    "nen_types": [
+      "manipulation"
+    ],
+    "weapons": [
+      "scale-powder",
+      "wings"
+    ],
+    "arcs": [
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a2/109_-_Shaiapouf_portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/8c/2011-Shaiapouf-Settei-Design-Color.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/fe/2011_EP128_OP_Card_Shaiapouf.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0a/120_-_Shaiapouf.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/c/c4/102_-_Shaiapouf_praises_the_King.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/05/113_-_Shaiapouf_dances.png"
+    ],
+    "sort_order": 330
+  },
+  {
+    "slug": "menthuthuyoupi",
+    "name": "Menthuthuyoupi",
+    "description": "Menthuthuyoupi, nicknamed Youpi, is a Chimera Ant and the youngest of the King's three Royal Guards. Born from a magical beast rather than a human, he is the least humanlike of the three, a straightforward fighter of colossal strength who can freely reshape his own body. During the palace invasion he squares off against multiple Hunters at once and evolves mid-battle.",
+    "nen_types": [
+      "transmutation"
+    ],
+    "weapons": [
+      "metamorphic-limbs"
+    ],
+    "arcs": [
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/79/109_-_Menthuthuyoupi_portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/6b/Menthuthuyoupi_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e8/Menthuthuyoupi_Anime.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d7/Menthuthuyoupi_CA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/69/103_-_Menthuthuyoupi.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/e/e8/2011_EP121_ED_Card_Menthuthuyoupi.png"
+    ],
+    "sort_order": 340
+  },
+  {
+    "slug": "komugi",
+    "name": "Komugi",
+    "description": "Komugi is the blind World Gungi Champion, a frail young woman who has devoted her entire life to the board game Gungi and has never lost a match. Brought to the palace to entertain the Chimera Ant King, her guileless nature and unbeatable play form an unlikely bond with him that becomes the emotional heart of the arc. She wields extraordinary unconscious talent despite having no combat ability whatsoever.",
+    "nen_types": [],
+    "weapons": [
+      "gungi-board"
+    ],
+    "arcs": [
+      "chimera-ant"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/f1/Komugi_CA_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/7e/103_-_Komugi_close-up.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/45/2011_EP102_Komugi_appears.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/17/110_-_Komugi.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4a/104_-_Komugi_and_Shaiapouf.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2f/112_-_Meruem_and_Komugi.png"
+    ],
+    "sort_order": 350
+  },
+  {
+    "slug": "zeno",
+    "name": "Zeno Zoldyck",
+    "description": "Killua's grandfather and a legendary assassin of the Zoldyck Family, regarded as one of the deadliest killers alive. Despite his profession he is affable and pragmatic, treating killing strictly as business rather than pleasure. He clashes with Chrollo Lucilfer in Yorknew City and later joins the assault on the Chimera Ant palace, where his draconic aura techniques like Dragon Head and Dragon Dive are on full display.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [],
+    "arcs": [
+      "yorknew-city",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/88/Zeno_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/4f/Zeno_Zoldyck_YC_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b3/Zeno_2011_Design_IMG2.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b1/Zeno_Zoldyck_HxH_2011.PNG",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/de/Zeno_Ep_111.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/d/d9/111_-_Zeno.png"
+    ],
+    "sort_order": 360
+  },
+  {
+    "slug": "silva",
+    "name": "Silva Zoldyck",
+    "description": "The current head of the Zoldyck Family of assassins and Killua's father. A towering figure with immense physical strength and vast reserves of aura, he has survived direct encounters with the Phantom Troupe. Though a cold professional, he shows a measured, calculating regard for his children and expects Killua to one day inherit the family business.",
+    "nen_types": [
+      "emission"
+    ],
+    "weapons": [],
+    "arcs": [
+      "zoldyck-family",
+      "yorknew-city",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ab/Silva_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/b0/Silva_Zoldyck_YC_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/0a/HxH2011_EP117_Silva_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/39/Silva_Zoldyck_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/1/1d/Silva_EP52_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/6/61/Silva_-_138.png"
+    ],
+    "sort_order": 370
+  },
+  {
+    "slug": "alluka",
+    "name": "Alluka Zoldyck",
+    "description": "One of Killua's younger siblings, kept isolated by the Zoldyck Family because of Nanika, the mysterious being dwelling within Alluka. Nanika's wish-granting power can accomplish nearly anything, but it operates under strict and dangerous rules of escalating requests. Killua, who loves Alluka dearly, seeks that power's help during the Chairman Election arc, defying the rest of the family to do so.",
+    "nen_types": [
+      "specialization"
+    ],
+    "weapons": [],
+    "arcs": [
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/72/Alluka_Zoldyck_HCE_Portrait.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/07/147_-_Alluka_face.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/04/Alluka_-_138.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/b/be/Alluka_laughing.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/22/Alluka_hugging_Killua.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/f7/Alluka_in_her_room_-_Episode_138.png"
+    ],
+    "sort_order": 380
+  },
+  {
+    "slug": "canary",
+    "name": "Canary",
+    "description": "An apprentice butler of the Zoldyck Family who guards the approach to the estate on Kukuroo Mountain. She first appears repelling intruders with her staff when Gon comes to bring Killua home, turning away even armed bounty hunters with ease. Beneath her dutiful exterior she is fiercely loyal to Killua and genuinely cares for him, later assisting him during the election arc.",
+    "nen_types": [],
+    "weapons": [
+      "bo-staff"
+    ],
+    "arcs": [
+      "zoldyck-family",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/f/f3/2011_canary.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ad/Canary_2011_Design.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/ad/2011-episode_23.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/8/80/Canary_-_140.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/7/79/Canary_-_142.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/57/Canary_in_car.png"
+    ],
+    "sort_order": 390
+  },
+  {
+    "slug": "ging",
+    "name": "Ging Freecss",
+    "description": "Ging Freecss is the father of Gon Freecss, a Double-Star Ruins Hunter regarded as one of the greatest Hunters alive, and one of the creators of the game Greed Island. He left Gon on Whale Island to pursue his work, and finding him is Gon's whole motivation for becoming a Hunter. Elusive and eccentric, he appears mostly through recordings and flashbacks until stepping into the open during the 13th Chairman Election.",
+    "nen_types": [],
+    "weapons": [],
+    "arcs": [
+      "yorknew-city",
+      "greed-island",
+      "chimera-ant",
+      "chairman-election"
+    ],
+    "images": [
+      "https://static.wikia.nocookie.net/hunterxhunter/images/4/40/Ging_character.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/3/3d/GingAv.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/5/59/Ging_Design_2011.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/a/a3/Ging_Freecss.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/0/00/137_-_Ging_full_body_appearance.png",
+      "https://static.wikia.nocookie.net/hunterxhunter/images/2/2f/Ging_-_137.png"
+    ],
+    "sort_order": 400
+  }
+]
