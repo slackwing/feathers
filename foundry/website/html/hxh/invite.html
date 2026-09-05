@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hunter × Halloween — Summons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0a08;
+    --ink-2: #14120e;
+    --paper: #e8dcc3;
+    --paper-dim: #a99c80;
+    --blood: #c8102e;
+    --blood-hot: #ff2444;
+    --nen: #58e05c;
+    --pumpkin: #ff7518;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Special Elite", "Courier New", monospace;
+    line-height: 1.6;
+    min-height: 100svh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.25rem;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(200,16,46,.14), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 110%, rgba(88,224,92,.08), transparent 60%);
+  }
+  .summons {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 26rem;
+    text-align: center;
+    animation: rise .8s both;
+  }
+  .assoc {
+    letter-spacing: .35em; text-transform: uppercase;
+    font-size: .68rem; color: var(--paper-dim);
+  }
+  h1 {
+    font-family: "Alfa Slab One", serif;
+    font-size: clamp(1.8rem, 7vw, 2.6rem);
+    margin: .8rem 0 1.6rem;
+    text-shadow: 0 4px 0 rgba(0,0,0,.55), 0 0 40px rgba(200,16,46,.35);
+  }
+  h1 .x { color: var(--blood-hot); text-shadow: 0 0 24px rgba(255,36,68,.8); }
+  .notice {
+    border: 1px solid rgba(232,220,195,.25);
+    background: linear-gradient(180deg, rgba(232,220,195,.05), rgba(232,220,195,.02));
+    padding: 1.6rem 1.5rem;
+    position: relative;
+    text-align: left;
+  }
+  .notice::before {
+    content: "✕";
+    position: absolute; top: -0.85rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--blood-hot);
+    padding: 0 .6rem; font-size: 1.1rem;
+  }
+  label {
+    display: block; font-size: .68rem; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--paper-dim);
+    margin: 1.1rem 0 .3rem;
+  }
+  input {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid rgba(232,220,195,.3);
+    color: var(--paper);
+    font-family: inherit; font-size: 1rem;
+    padding: .6rem .7rem;
+  }
+  input:focus { outline: 1px solid var(--nen); border-color: var(--nen); }
+  input[readonly] { color: var(--paper-dim); background: var(--ink-2); }
+  button {
+    font-family: inherit;
+    font-size: .95rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink); background: var(--blood);
+    border: none; padding: .8rem;
+    width: 100%; margin-top: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #6d0918, 0 0 40px rgba(200,16,46,.35);
+    transition: transform .12s, box-shadow .12s, background .12s;
+  }
+  button:hover { background: var(--blood-hot); transform: translateY(-2px); box-shadow: 0 6px 0 #6d0918; }
+  button:active { transform: translateY(2px); box-shadow: 0 2px 0 #6d0918; }
+  .msg { margin-top: .9rem; font-size: .85rem; min-height: 1.3rem; }
+  .err { color: var(--blood-hot); }
+  .ok { color: var(--nen); }
+  a { color: var(--nen); }
+  .hidden { display: none !important; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="summons">
+  <div class="assoc">Hunter Association · Official Summons</div>
+  <h1>You Are<br>Chosen <span class="x">×</span></h1>
+
+  <div class="notice">
+    <form id="form" class="hidden">
+      <p>The committee has cleared you for the Halloween Phase.
+      Set your passphrase, applicant.</p>
+      <label for="u">Applicant</label>
+      <input id="u" name="username" autocomplete="username" readonly>
+      <label for="p">Passphrase</label>
+      <input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <button type="submit">Accept summons</button>
+      <div class="msg err" id="msg"></div>
+    </form>
+
+    <div id="done" class="hidden">
+      <p class="ok">Welcome, <span id="dn"></span>. Your license is in order.</p>
+      <p style="margin-top:1rem"><a href="/hxh/">Enter the exam site →</a></p>
+    </div>
+
+    <p id="invalid" class="err hidden">
+      This summons is void or expired. Reach out to the hosts for a fresh one.
+    </p>
+  </div>
+</div>
+
+<script>
+const API = "/admin/api";
+const $ = id => document.getElementById(id);
+const code = new URLSearchParams(location.search).get("code") || "";
+
+async function boot() {
+  if (!code) { $("invalid").classList.remove("hidden"); return; }
+  const res = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
+  if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
+  const info = await res.json();
+  $("u").value = info.username;
+  $("form").classList.remove("hidden");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("msg").textContent = "";
+  const res = await fetch(`${API}/set-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, password: $("p").value }),
+  });
+  if (!res.ok) {
+    $("msg").textContent = res.status === 404 ? "This summons is void or expired." : await res.text();
+    return;
+  }
+  const me = await res.json();
+  $("form").classList.add("hidden");
+  $("dn").textContent = me.display_name;
+  $("done").classList.remove("hidden");
+});
+
+boot();
+</script>
+</body>
+</html>

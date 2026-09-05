@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+
+  <!-- login -->
+  <section id="login" class="card narrow hidden">
+    <h1 class="mono">▪ admin</h1>
+    <form id="login-form">
+      <label for="lu">User</label>
+      <input id="lu" name="username" autocomplete="username" required>
+      <label for="lp">Password</label>
+      <input id="lp" name="password" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Log in</button>
+      <div class="msg err" id="login-msg"></div>
+    </form>
+  </section>
+
+  <!-- forbidden -->
+  <section id="forbidden" class="card narrow hidden">
+    <h1 class="mono">▪ admin</h1>
+    <p style="margin-top:1rem">Not authorized.</p>
+    <button class="primary" id="forbidden-logout">Log out</button>
+  </section>
+
+  <!-- console -->
+  <section id="console" class="hidden">
+    <header class="top">
+      <h1>admin</h1>
+      <span class="who"><b id="who"></b> <button class="quiet" id="logout">Log out</button></span>
+    </header>
+
+    <h2>Users</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>User</th><th>Display name</th><th>Roles</th><th>Links</th></tr>
+      </thead>
+      <tbody id="users"></tbody>
+    </table>
+
+    <h2>New user</h2>
+    <div class="card">
+      <form id="create-form" class="inline">
+        <input id="cu" placeholder="username" autocomplete="off" required>
+        <input id="cd" placeholder="display name" autocomplete="off" required>
+        <button type="submit">Create</button>
+      </form>
+      <div class="msg err" id="create-msg"></div>
+    </div>
+
+    <div id="linkout" class="linkout hidden">
+      <span id="link-url" class="mono"></span>
+      <span class="exp" id="link-exp"></span>
+      <button class="quiet" id="link-copy" style="margin-top:.5rem">Copy</button>
+    </div>
+    <div class="msg" id="console-msg"></div>
+  </section>
+
+</main>
+
+<script>
+const API = "/admin/api";
+let websites = [];   // [{website, roles:[...]}]
+let me = null;
+
+const $ = id => document.getElementById(id);
+const show = id => {
+  ["login", "forbidden", "console"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+};
+
+async function api(path, opts = {}) {
+  if (opts.body) opts.headers = { "Content-Type": "application/json", ...opts.headers };
+  const res = await fetch(API + path, opts);
+  if (!res.ok) throw Object.assign(new Error(await res.text()), { status: res.status });
+  return res.status === 204 ? null : res.json();
+}
+
+const isAdmin = m => m.roles.some(r => r.website === "admin" && r.role === "admin");
+
+async function boot() {
+  try {
+    me = await api("/me");
+  } catch {
+    show("login");
+    return;
+  }
+  if (!isAdmin(me)) { show("forbidden"); return; }
+  $("who").textContent = me.display_name;
+  show("console");
+  await refresh();
+}
+
+async function refresh() {
+  websites = await api("/websites");
+  renderUsers(await api("/users"));
+}
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function renderUsers(users) {
+  const tbody = $("users");
+  tbody.innerHTML = "";
+  for (const u of users) {
+    const tr = document.createElement("tr");
+
+    const roleChips = u.roles.map(r =>
+      `<span class="chip"><span class="site">${esc(r.website)}/</span>${esc(r.role)}<span class="x" data-act="rmrole" data-w="${esc(r.website)}" data-r="${esc(r.role)}">✕</span></span>`
+    ).join("");
+
+    const siteOpts = websites.filter(w => w.roles.length)
+      .map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
+    const inviteOpts = websites.map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
+
+    tr.innerHTML = `
+      <td><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "password unset"}"></span></td>
+      <td class="mono">${esc(u.username)}</td>
+      <td>
+        <span data-act="dname">${esc(u.display_name)}</span>
+        <button class="quiet" data-act="edit" title="edit display name">✎</button>
+      </td>
+      <td>
+        ${roleChips}
+        <span class="inline">
+          <select data-act="role-site">${siteOpts}</select>
+          <select data-act="role-role"></select>
+          <button class="quiet" data-act="addrole">Add</button>
+        </span>
+      </td>
+      <td>
+        <span class="inline">
+          <button class="quiet" data-act="reset">Reset</button>
+          <select data-act="invite-site">${inviteOpts}</select>
+          <button class="quiet" data-act="invite">Invite</button>
+        </span>
+      </td>`;
+
+    const siteSel = tr.querySelector('[data-act="role-site"]');
+    const roleSel = tr.querySelector('[data-act="role-role"]');
+    const fillRoles = () => {
+      const w = websites.find(x => x.website === siteSel.value);
+      roleSel.innerHTML = (w ? w.roles : []).map(r => `<option>${esc(r)}</option>`).join("");
+    };
+    siteSel.addEventListener("change", fillRoles);
+    fillRoles();
+
+    tr.addEventListener("click", async e => {
+      const act = e.target.dataset.act;
+      try {
+        if (act === "rmrole") {
+          await api("/roles", { method: "DELETE", body: JSON.stringify({ username: u.username, website: e.target.dataset.w, role: e.target.dataset.r }) });
+          await refresh();
+        } else if (act === "addrole") {
+          await api("/roles", { method: "POST", body: JSON.stringify({ username: u.username, website: siteSel.value, role: roleSel.value }) });
+          await refresh();
+        } else if (act === "edit") {
+          const name = prompt("Display name", u.display_name);
+          if (name && name !== u.display_name) {
+            await api(`/users/${encodeURIComponent(u.username)}`, { method: "PATCH", body: JSON.stringify({ display_name: name }) });
+            await refresh();
+          }
+        } else if (act === "reset") {
+          showLink(await api("/links", { method: "POST", body: JSON.stringify({ username: u.username, type: "reset" }) }));
+        } else if (act === "invite") {
+          const site = tr.querySelector('[data-act="invite-site"]').value;
+          showLink(await api("/links", { method: "POST", body: JSON.stringify({ username: u.username, type: "invite", website: site }) }));
+        }
+      } catch (err) {
+        flash(err.message || "error", true);
+      }
+    });
+
+    tbody.appendChild(tr);
+  }
+}
+
+function showLink({ url, expires_at }) {
+  $("link-url").textContent = url;
+  $("link-exp").textContent = "expires " + new Date(expires_at).toLocaleString();
+  $("linkout").classList.remove("hidden");
+}
+
+let flashTimer;
+function flash(text, isErr) {
+  const m = $("console-msg");
+  m.textContent = text;
+  m.className = "msg " + (isErr ? "err" : "ok");
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { m.textContent = ""; }, 4000);
+}
+
+$("link-copy").addEventListener("click", async () => {
+  await navigator.clipboard.writeText($("link-url").textContent);
+  flash("copied", false);
+});
+
+$("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("login-msg").textContent = "";
+  try {
+    me = await api("/login", { method: "POST", body: JSON.stringify({ username: $("lu").value.trim(), password: $("lp").value }) });
+  } catch (err) {
+    $("login-msg").textContent = err.status === 401 ? "Invalid credentials." : (err.message || "error");
+    return;
+  }
+  boot();
+});
+
+$("create-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("create-msg").textContent = "";
+  try {
+    await api("/users", { method: "POST", body: JSON.stringify({ username: $("cu").value.trim(), display_name: $("cd").value.trim() }) });
+    $("cu").value = ""; $("cd").value = "";
+    await refresh();
+  } catch (err) {
+    $("create-msg").textContent = err.message || "error";
+  }
+});
+
+const doLogout = async () => { await api("/logout", { method: "POST" }); show("login"); };
+$("logout").addEventListener("click", doLogout);
+$("forbidden-logout").addEventListener("click", doLogout);
+
+boot();
+</script>
+</body>
+</html>

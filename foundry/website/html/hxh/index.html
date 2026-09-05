@@ -215,6 +215,43 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* ---------- gate (logged-out view) ---------- */
+  .gate {
+    position: relative; z-index: 1;
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 1.25rem;
+  }
+  .gate .logotype { font-size: clamp(2rem, 7vw, 3.6rem); }
+  .gate .notice { text-align: left; width: 100%; max-width: 26rem; }
+  .gate label {
+    display: block; font-size: .68rem; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--paper-dim);
+    margin: 1.1rem 0 .3rem;
+  }
+  .gate input {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid rgba(232,220,195,.3);
+    color: var(--paper);
+    font-family: inherit; font-size: 1rem;
+    padding: .6rem .7rem;
+  }
+  .gate input:focus { outline: 1px solid var(--nen); border-color: var(--nen); }
+  .gate .btn { width: 100%; margin-top: 1.5rem; }
+  .gate .msg { margin-top: .9rem; font-size: .85rem; min-height: 1.3rem; color: var(--blood-hot); }
+  #logout {
+    position: fixed; top: .9rem; right: .9rem; z-index: 5;
+    background: none; border: 1px solid rgba(232,220,195,.25);
+    color: var(--paper-dim); font-family: inherit;
+    font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+    padding: .35rem .7rem; cursor: pointer;
+  }
+  #logout:hover { color: var(--paper); border-color: var(--paper-dim); }
+  [hidden] { display: none !important; }
+
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes bob { 0%,100% { transform: translate(-50%,0); } 50% { transform: translate(-50%,8px); } }
   @keyframes xpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
@@ -225,7 +262,25 @@
 </style>
 </head>
 <body>
-<main>
+<section class="gate" id="gate" hidden>
+  <div class="assoc">Hunter Association · Restricted Site</div>
+  <h1 class="logotype">HUNTER<span class="x">×</span><span class="hallow">HALLOWEEN</span></h1>
+  <div class="notice">
+    <p>This phase site is open to summoned applicants only.
+    No summons? Reach out to the hosts.</p>
+    <form id="login-form">
+      <label for="lu">Applicant</label>
+      <input id="lu" name="username" autocomplete="username" required>
+      <label for="lp">Passphrase</label>
+      <input id="lp" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Log in</button>
+      <div class="msg" id="login-msg"></div>
+    </form>
+  </div>
+</section>
+
+<button id="logout" hidden>Log out</button>
+<main hidden>
   <header class="hero">
     <div class="assoc">Hunter Association · Official Summons</div>
     <h1 class="logotype">HUNTER<span class="x">×</span><span class="hallow">HALLOWEEN</span></h1>
@@ -336,6 +391,48 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
+
+// ---- gate: shared auth (hobby-server admin project) ----
+const AUTH = "/admin/api";
+
+function reveal(authed) {
+  document.getElementById("gate").hidden = authed;
+  document.getElementById("logout").hidden = !authed;
+  document.querySelector("main").hidden = !authed;
+  document.querySelector("footer").hidden = !authed;
+}
+
+async function authBoot() {
+  let authed = false;
+  try { authed = (await fetch(AUTH + "/me")).ok; } catch {}
+  reveal(authed);
+}
+
+document.getElementById("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = document.getElementById("login-msg");
+  msg.textContent = "";
+  const res = await fetch(AUTH + "/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: document.getElementById("lu").value.trim(),
+      password: document.getElementById("lp").value,
+    }),
+  });
+  if (!res.ok) {
+    msg.textContent = res.status === 401 ? "The committee does not recognize you." : "Something went wrong.";
+    return;
+  }
+  reveal(true);
+});
+
+document.getElementById("logout").addEventListener("click", async () => {
+  await fetch(AUTH + "/logout", { method: "POST" });
+  reveal(false);
+});
+
+authBoot();
 </script>
 </body>
 </html>

@@ -1,0 +1,118 @@
+/* admin console — shared styles for index.html and reset.html */
+:root {
+  --bg: #0e1113;
+  --panel: #15191c;
+  --panel-2: #1b2024;
+  --line: #262c31;
+  --text: #d6dae0;
+  --dim: #7c858e;
+  --accent: #4fd1c5;
+  --accent-dim: rgba(79, 209, 197, .15);
+  --warn: #f6ad55;
+  --danger: #fc8181;
+  --ok: #68d391;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100svh;
+}
+code, .mono, input, select, button, td, th {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+main { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+header.top {
+  display: flex; align-items: baseline; gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem; margin-bottom: 2rem;
+}
+header.top h1 {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.15rem; letter-spacing: .06em;
+}
+header.top h1::before { content: "▪ "; color: var(--accent); }
+header.top .who { margin-left: auto; color: var(--dim); font-size: .85rem; }
+header.top .who b { color: var(--text); font-weight: 600; }
+
+h2 {
+  font-size: .78rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--dim); margin: 2.2rem 0 .8rem;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+}
+.card.narrow { max-width: 24rem; margin: 14vh auto 0; }
+
+label { display: block; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: .9rem 0 .3rem; }
+input, select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: .55rem .7rem;
+  font-size: .95rem;
+}
+input:focus, select:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+input[readonly] { color: var(--dim); background: var(--panel-2); }
+
+button {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: .5rem 1rem;
+  font-size: .85rem;
+  letter-spacing: .06em;
+  cursor: pointer;
+}
+button:hover { background: var(--accent); color: var(--bg); }
+button.quiet { border-color: var(--line); color: var(--dim); background: transparent; padding: .25rem .6rem; font-size: .78rem; }
+button.quiet:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+button.primary { display: block; width: 100%; margin-top: 1.4rem; padding: .7rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th {
+  text-align: left; font-weight: 400; font-size: .7rem;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--dim);
+  border-bottom: 1px solid var(--line); padding: .5rem .6rem;
+}
+td { border-bottom: 1px solid var(--line); padding: .6rem; vertical-align: top; }
+tr:hover td { background: var(--panel); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: var(--panel-2); border: 1px solid var(--line);
+  padding: .1rem .5rem; margin: .1rem .25rem .1rem 0;
+  font-size: .75rem; white-space: nowrap;
+}
+.chip .site { color: var(--dim); }
+.chip .x { cursor: pointer; color: var(--dim); }
+.chip .x:hover { color: var(--danger); }
+
+.inline { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.inline input, .inline select { width: auto; min-width: 8rem; }
+
+.linkout {
+  margin-top: 1rem; padding: .9rem 1rem;
+  background: var(--panel-2); border: 1px dashed var(--accent);
+  font-size: .82rem; word-break: break-all;
+}
+.linkout .exp { color: var(--dim); display: block; margin-top: .4rem; font-size: .75rem; }
+
+.msg { margin-top: 1rem; font-size: .85rem; min-height: 1.3rem; }
+.msg.err { color: var(--danger); }
+.msg.ok { color: var(--ok); }
+
+.dot { display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; }
+.dot.set { background: var(--ok); }
+.dot.unset { background: var(--warn); }
+
+.hidden { display: none !important; }
+a { color: var(--accent); }

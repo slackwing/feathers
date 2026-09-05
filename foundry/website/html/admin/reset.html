@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>reset password</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <section class="card narrow">
+    <h1 class="mono">▪ reset password</h1>
+
+    <form id="form" class="hidden">
+      <label for="u">User</label>
+      <input id="u" name="username" autocomplete="username" readonly>
+      <label for="p">New password</label>
+      <input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="primary" type="submit">Set password</button>
+      <div class="msg err" id="msg"></div>
+    </form>
+
+    <div id="done" class="hidden">
+      <p class="msg ok" style="margin-top:1rem">Password set. You're logged in, <span id="dn"></span>.</p>
+      <p style="margin-top:1rem" id="sites"></p>
+    </div>
+
+    <p id="invalid" class="msg err hidden" style="margin-top:1rem">
+      This link is invalid or has expired. Ask for a fresh one.
+    </p>
+  </section>
+</main>
+
+<script>
+const API = "/admin/api";
+const $ = id => document.getElementById(id);
+const code = new URLSearchParams(location.search).get("code") || "";
+
+// Landing pages per website, for the post-set pointers.
+const SITE_HOME = { admin: "/admin/", hxh: "/hxh/", rv: "/rv/" };
+
+async function boot() {
+  if (!code) { $("invalid").classList.remove("hidden"); return; }
+  const res = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
+  if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
+  const info = await res.json();
+  $("u").value = info.username;
+  $("form").classList.remove("hidden");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("msg").textContent = "";
+  const res = await fetch(`${API}/set-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, password: $("p").value }),
+  });
+  if (!res.ok) {
+    $("msg").textContent = res.status === 404 ? "This link is invalid or has expired." : await res.text();
+    return;
+  }
+  const me = await res.json();
+  $("form").classList.add("hidden");
+  $("dn").textContent = me.display_name;
+  const links = me.roles
+    .map(r => r.website)
+    .filter((w, i, a) => a.indexOf(w) === i && SITE_HOME[w])
+    .map(w => `<a href="${SITE_HOME[w]}">${location.host}/${w}/</a>`);
+  $("sites").innerHTML = links.length ? links.join("<br>") : "";
+  $("done").classList.remove("hidden");
+});
+
+boot();
+</script>
+</body>
+</html>
