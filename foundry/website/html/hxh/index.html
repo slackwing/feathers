@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hunter × Halloween</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0a08;
+    --ink-2: #14120e;
+    --paper: #e8dcc3;
+    --paper-dim: #a99c80;
+    --blood: #c8102e;
+    --blood-hot: #ff2444;
+    --nen: #58e05c;
+    --pumpkin: #ff7518;
+    --enhancer: #ff5a36;
+    --transmuter: #37d0ff;
+    --conjurer: #c09bff;
+    --emitter: #ffd166;
+    --manipulator: #ff7ad9;
+    --specialist: #58e05c;
+    --none: #8a8a8a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Special Elite", "Courier New", monospace;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  /* paper-grain atmosphere */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(200,16,46,.14), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 110%, rgba(88,224,92,.08), transparent 60%),
+      repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.012) 2px 3px);
+  }
+  main { position: relative; z-index: 1; }
+
+  /* ---------- hero: the summons ---------- */
+  .hero {
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 3rem 1.25rem 4rem;
+    position: relative;
+  }
+  .assoc {
+    letter-spacing: .35em; text-transform: uppercase;
+    font-size: .72rem; color: var(--paper-dim);
+    animation: rise .8s .1s both;
+  }
+  .logotype {
+    font-family: "Alfa Slab One", serif;
+    font-size: clamp(2.6rem, 9vw, 6.5rem);
+    line-height: .95;
+    margin: 1.2rem 0 .4rem;
+    text-shadow: 0 6px 0 rgba(0,0,0,.55), 0 0 60px rgba(200,16,46,.35);
+    animation: rise .8s .25s both;
+  }
+  .logotype .x {
+    display: inline-block;
+    color: var(--blood-hot);
+    transform: rotate(0deg);
+    text-shadow: 0 0 24px rgba(255,36,68,.8);
+    animation: xpulse 2.6s 1.2s ease-in-out infinite;
+  }
+  .logotype .hallow { color: var(--pumpkin); text-shadow: 0 6px 0 rgba(0,0,0,.55), 0 0 60px rgba(255,117,24,.3); }
+  .kana {
+    font-size: .95rem; letter-spacing: .5em; color: var(--paper-dim);
+    animation: rise .8s .4s both;
+  }
+  .notice {
+    max-width: 34rem; margin-top: 2.4rem;
+    border: 1px solid rgba(232,220,195,.25);
+    background: linear-gradient(180deg, rgba(232,220,195,.05), rgba(232,220,195,.02));
+    padding: 1.6rem 1.5rem 1.4rem;
+    position: relative;
+    animation: rise .8s .55s both;
+  }
+  .notice::before {
+    content: "✕";
+    position: absolute; top: -0.85rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--blood-hot);
+    padding: 0 .6rem; font-size: 1.1rem;
+  }
+  .notice p { margin-bottom: .9rem; }
+  .notice p:last-child { margin-bottom: 0; }
+  .notice .tbd {
+    color: var(--nen);
+    border-bottom: 1px dashed rgba(88,224,92,.5);
+    cursor: help;
+  }
+  .cta {
+    margin-top: 2.2rem;
+    animation: rise .8s .7s both;
+  }
+  .btn {
+    font-family: "Special Elite", monospace;
+    font-size: 1rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink); background: var(--blood);
+    border: none; padding: .95rem 2.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #6d0918, 0 0 40px rgba(200,16,46,.35);
+    transition: transform .12s, box-shadow .12s, background .12s;
+  }
+  .btn:hover { background: var(--blood-hot); transform: translateY(-2px); box-shadow: 0 6px 0 #6d0918, 0 0 60px rgba(255,36,68,.45); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #6d0918; }
+  .scrollhint {
+    position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+    color: var(--paper-dim); font-size: 1.2rem;
+    animation: bob 1.8s ease-in-out infinite;
+  }
+
+  /* ---------- sections ---------- */
+  section { padding: 4.5rem 1.25rem; max-width: 72rem; margin: 0 auto; }
+  .sec-head {
+    font-family: "Alfa Slab One", serif;
+    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+    margin-bottom: .5rem;
+  }
+  .sec-head .x { color: var(--blood-hot); }
+  .sec-sub { color: var(--paper-dim); max-width: 40rem; margin-bottom: 2.2rem; }
+
+  /* ---------- roster ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
+    margin-bottom: 1.6rem; font-size: .78rem; letter-spacing: .06em;
+    color: var(--paper-dim);
+  }
+  .legend span::before {
+    content: "◆"; margin-right: .35rem;
+  }
+  .roster {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .9rem;
+  }
+  .card {
+    --hue: var(--none);
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--hue) 10%, var(--ink-2)), var(--ink-2) 55%);
+    padding: 1.1rem .9rem .95rem;
+    display: flex; flex-direction: column; gap: .3rem;
+    min-height: 9.5rem;
+    cursor: pointer;
+    opacity: 0; transform: translateY(14px);
+    transition: transform .18s, box-shadow .18s, border-color .18s;
+  }
+  .card.dealt { animation: rise .55s both; }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--hue);
+    box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--hue) 55%, transparent);
+  }
+  .card .glyph { font-size: 1.7rem; line-height: 1; filter: grayscale(.15); }
+  .card .name {
+    font-family: "Alfa Slab One", serif;
+    font-size: 1.02rem; letter-spacing: .02em; margin-top: .2rem;
+  }
+  .card .nen {
+    margin-top: auto;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--hue);
+  }
+  .card .claim {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(11,10,8,.88);
+    font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--nen);
+    opacity: 0; transition: opacity .15s;
+  }
+  .card:hover .claim, .card:focus-visible .claim { opacity: 1; }
+
+  /* ---------- register ---------- */
+  .register-box {
+    border: 1px dashed rgba(232,220,195,.3);
+    padding: 2rem 1.5rem; text-align: center; max-width: 34rem;
+  }
+  .register-box .stamp {
+    display: inline-block;
+    font-family: "Alfa Slab One", serif;
+    color: var(--blood-hot); border: 3px solid var(--blood-hot);
+    padding: .2rem .9rem; transform: rotate(-4deg);
+    letter-spacing: .08em; margin-bottom: 1.1rem;
+    text-shadow: 0 0 18px rgba(255,36,68,.5);
+  }
+
+  footer {
+    text-align: center; padding: 2.5rem 1rem 3rem;
+    color: var(--paper-dim); font-size: .75rem; letter-spacing: .2em;
+  }
+  footer .x { color: var(--blood-hot); }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 1.6rem; transform: translateX(-50%) translateY(140%);
+    background: var(--paper); color: var(--ink);
+    padding: .8rem 1.4rem; font-size: .85rem; letter-spacing: .05em;
+    box-shadow: 0 8px 30px rgba(0,0,0,.6);
+    transition: transform .28s cubic-bezier(.2,.9,.3,1.2);
+    z-index: 10; max-width: min(90vw, 26rem); text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bob { 0%,100% { transform: translate(-50%,0); } 50% { transform: translate(-50%,8px); } }
+  @keyframes xpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .card { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="assoc">Hunter Association · Official Summons</div>
+    <h1 class="logotype">HUNTER<span class="x">×</span><span class="hallow">HALLOWEEN</span></h1>
+    <div class="kana">ハンター×ハロウィン</div>
+    <div class="notice">
+      <p>By order of Chairman Netero, you are hereby summoned to the
+      <strong>289th Hunter Exam — Halloween Phase</strong>.</p>
+      <p>Phase site: <span class="tbd" title="ask the host">[LOCATION TBD]</span><br>
+      Commences: <span class="tbd" title="ask the host">[DATE TBD]</span>, nightfall</p>
+      <p>Applicants must arrive in the guise of a licensed Hunter, a Spider,
+      a Chimera Ant, or any registered persona below. Failure to commit to
+      the bit may result in disqualification.</p>
+    </div>
+    <div class="cta">
+      <button class="btn" onclick="document.getElementById('roster').scrollIntoView()">Choose your persona</button>
+    </div>
+    <div class="scrollhint">▼</div>
+  </header>
+
+  <section id="roster">
+    <h2 class="sec-head">The Roster <span class="x">×</span></h2>
+    <p class="sec-sub">Claim the character you'll dress as. One glance at the aura
+    color tells you their Nen type — pick whoever matches your own.</p>
+    <div class="legend">
+      <span style="color:var(--enhancer)">Enhancer</span>
+      <span style="color:var(--transmuter)">Transmuter</span>
+      <span style="color:var(--conjurer)">Conjurer</span>
+      <span style="color:var(--emitter)">Emitter</span>
+      <span style="color:var(--manipulator)">Manipulator</span>
+      <span style="color:var(--specialist)">Specialist</span>
+    </div>
+    <div class="roster" id="cards"></div>
+  </section>
+
+  <section id="register">
+    <h2 class="sec-head">Registration <span class="x">×</span></h2>
+    <div class="register-box">
+      <div class="stamp">OPENS SOON</div>
+      <p>Applicant intake is being prepared by the exam committee.
+      Check back shortly to lock in your character — claims will be
+      first come, first served.</p>
+    </div>
+  </section>
+</main>
+
+<footer>HUNTER <span class="x">×</span> HALLOWEEN — an unofficial fan party. No affiliation with the Hunter Association (or Shueisha).</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const CHARACTERS = [
+  { name: "Gon",        nen: "Enhancer",    glyph: "🎣" },
+  { name: "Killua",     nen: "Transmuter",  glyph: "⚡" },
+  { name: "Kurapika",   nen: "Conjurer",    glyph: "⛓️" },
+  { name: "Leorio",     nen: "Emitter",     glyph: "💼" },
+  { name: "Hisoka",     nen: "Transmuter",  glyph: "🃏" },
+  { name: "Chrollo",    nen: "Specialist",  glyph: "📖" },
+  { name: "Illumi",     nen: "Manipulator", glyph: "📍" },
+  { name: "Feitan",     nen: "Transmuter",  glyph: "☂️" },
+  { name: "Machi",      nen: "Transmuter",  glyph: "🪡" },
+  { name: "Shizuku",    nen: "Conjurer",    glyph: "🧹" },
+  { name: "Biscuit",    nen: "Transmuter",  glyph: "💎" },
+  { name: "Netero",     nen: "Enhancer",    glyph: "🙏" },
+  { name: "Kite",       nen: "Conjurer",    glyph: "🌀" },
+  { name: "Meruem",     nen: "Specialist",  glyph: "♟️" },
+  { name: "Neferpitou", nen: "Specialist",  glyph: "🐈" },
+  { name: "Komugi",     nen: "Non-user",    glyph: "🀄" },
+];
+const HUES = {
+  "Enhancer": "var(--enhancer)", "Transmuter": "var(--transmuter)",
+  "Conjurer": "var(--conjurer)", "Emitter": "var(--emitter)",
+  "Manipulator": "var(--manipulator)", "Specialist": "var(--specialist)",
+  "Non-user": "var(--none)",
+};
+
+const grid = document.getElementById("cards");
+CHARACTERS.forEach((c, i) => {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.tabIndex = 0;
+  el.style.setProperty("--hue", HUES[c.nen]);
+  el.innerHTML = `
+    <div class="glyph">${c.glyph}</div>
+    <div class="name">${c.name}</div>
+    <div class="nen">${c.nen}</div>
+    <div class="claim">Claim ✕</div>`;
+  el.addEventListener("click", () => toast(`${c.name} is a fine choice — registration opens soon.`));
+  el.addEventListener("keydown", e => { if (e.key === "Enter") el.click(); });
+  grid.appendChild(el);
+});
+
+// deal the cards in as they scroll into view
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const cards = [...grid.children];
+    e.target.style.animationDelay = (cards.indexOf(e.target) % 8) * 60 + "ms";
+    e.target.classList.add("dealt");
+    io.unobserve(e.target);
+  });
+}, { threshold: 0.15 });
+[...grid.children].forEach(c => io.observe(c));
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+</script>
+</body>
+</html>
