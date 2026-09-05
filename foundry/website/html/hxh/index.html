@@ -121,38 +121,39 @@
     animation: bob 1.8s ease-in-out infinite;
   }
 
-  /* ---------- sections ---------- */
-  section { padding: 4.5rem 1.25rem; max-width: 72rem; margin: 0 auto; }
+  /* ---------- sections (centered) ---------- */
+  section { padding: 4.5rem 1.25rem; max-width: 72rem; margin: 0 auto; text-align: center; }
   .sec-head {
     font-family: "Alfa Slab One", serif;
     font-size: clamp(1.6rem, 4.5vw, 2.6rem);
     margin-bottom: .5rem;
   }
   .sec-head .x { color: var(--blood-hot); }
-  .sec-sub { color: var(--paper-dim); max-width: 40rem; margin-bottom: 2.2rem; }
+  .sec-sub { color: var(--paper-dim); max-width: 40rem; margin: 0 auto 2.2rem; }
 
   /* ---------- roster ---------- */
   .legend {
-    display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.1rem;
     margin-bottom: 1.6rem; font-size: .78rem; letter-spacing: .06em;
     color: var(--paper-dim);
   }
   .legend span::before {
     content: "◆"; margin-right: .35rem;
   }
+  /* Centered wrap: an incomplete bottom row centers its cards. */
   .roster {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    display: flex; flex-wrap: wrap; justify-content: center;
     gap: .9rem;
   }
   .card {
     --hue: var(--none);
     position: relative;
+    flex: 0 0 168px;
     border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent);
     background:
       linear-gradient(160deg, color-mix(in srgb, var(--hue) 10%, var(--ink-2)), var(--ink-2) 55%);
     padding: 1.1rem .9rem .95rem;
-    display: flex; flex-direction: column; gap: .3rem;
+    display: flex; flex-direction: column; align-items: center; gap: .3rem;
     min-height: 9.5rem;
     cursor: pointer;
     opacity: 0; transform: translateY(14px);
@@ -188,6 +189,7 @@
   .register-box {
     border: 1px dashed rgba(232,220,195,.3);
     padding: 2rem 1.5rem; text-align: center; max-width: 34rem;
+    margin: 0 auto;
   }
   .register-box .stamp {
     display: inline-block;
