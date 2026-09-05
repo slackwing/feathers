@@ -115,6 +115,7 @@
     color: var(--paper-dim);
   }
   .chip.nen { color: var(--ink); border: none; font-weight: bold; }
+  .chip.weapon { color: var(--pumpkin); border-color: rgba(255,117,24,.5); }
   .chip.arc { border-style: dashed; }
   .empty { color: var(--paper-dim); font-size: .78rem; }
 
@@ -191,7 +192,7 @@ function render(arcs, characters) {
     el.className = "char";
 
     const nen = c.nen_types.map(n => `<span class="chip nen" style="background:${NEN_COLORS[n] || "var(--paper-dim)"}">${esc(n)}</span>`).join("");
-    const weapons = c.weapons.map(w => `<span class="chip">${esc(w)}</span>`).join("");
+    const weapons = c.weapons.map(w => `<span class="chip weapon">${esc(w)}</span>`).join("");
     const arcChips = c.arcs.map(a => `<span class="chip arc" title="${esc(a)}">${esc(arcName[a] || a)}</span>`).join("");
     const strip = c.images.length
       ? `<div class="strip">${c.images.map(u =>
