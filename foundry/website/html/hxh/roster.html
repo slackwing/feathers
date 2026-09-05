@@ -43,41 +43,57 @@
   main { position: relative; z-index: 1; max-width: 62rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
 
   header.top {
-    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    text-align: center;
     border-bottom: 1px solid rgba(232,220,195,.2);
-    padding-bottom: 1rem; margin-bottom: .8rem;
+    padding-bottom: 1.2rem; margin-bottom: .8rem;
   }
   header.top h1 {
     font-family: "Alfa Slab One", serif;
-    font-size: 1.5rem; letter-spacing: .02em;
+    font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: .02em;
+    text-shadow: 0 4px 0 rgba(0,0,0,.55), 0 0 40px rgba(200,16,46,.3);
   }
   header.top h1 .x { color: var(--blood-hot); }
-  header.top nav { margin-left: auto; display: flex; gap: .5rem; }
+  header.top nav {
+    position: fixed; top: .9rem; right: .9rem; z-index: 5;
+    display: flex; gap: .5rem;
+  }
   header.top a, header.top button {
-    background: none; border: 1px solid rgba(232,220,195,.25);
-    color: var(--paper-dim); font-family: inherit;
+    background: var(--ink);
+    border: 1px solid rgba(232,220,195,.25);
+    color: var(--paper-dim); font-family: "Special Elite", monospace;
     font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
     padding: .35rem .7rem; cursor: pointer; text-decoration: none;
   }
   header.top a:hover, header.top button:hover { color: var(--paper); border-color: var(--paper-dim); }
-  .meta { color: var(--paper-dim); font-size: .8rem; margin-bottom: 2rem; }
+  .meta { text-align: center; color: var(--paper-dim); font-size: .8rem; margin-bottom: 2.4rem; }
 
   .char {
     border: 1px solid rgba(232,220,195,.18);
-    background: linear-gradient(160deg, rgba(232,220,195,.03), transparent 60%);
-    margin-bottom: 1.6rem;
-    padding: 1.2rem 1.3rem 1.3rem;
+    background: linear-gradient(180deg, rgba(232,220,195,.03), transparent 60%);
+    margin-bottom: 1.8rem;
+    padding: 1.6rem 1.3rem 1.5rem;
+    text-align: center;
   }
   .char h2 {
     font-family: "Alfa Slab One", serif;
-    font-size: 1.25rem; letter-spacing: .02em;
-    display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
+    font-size: 1.45rem; letter-spacing: .02em;
   }
-  .char h2 .slug { font-family: "Special Elite", monospace; font-size: .72rem; color: var(--paper-dim); letter-spacing: .1em; }
+  .char h2 .slug {
+    display: block;
+    font-family: "Special Elite", monospace; font-size: .7rem;
+    color: var(--paper-dim); letter-spacing: .25em; font-weight: normal;
+    margin-top: .15rem;
+  }
+  .desc {
+    font-size: .9rem; max-width: 42rem;
+    margin: .8rem auto 0;
+  }
+  /* Centered wrap: an incomplete bottom row centers its tiles. */
   .strip {
-    display: flex; gap: .5rem; overflow-x: auto;
-    margin: .9rem 0;
-    padding-bottom: .3rem;
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .5rem;
+    margin: 1.1rem auto .3rem;
+    max-width: 48rem;
   }
   .strip a {
     flex: 0 0 auto; display: block;
@@ -90,18 +106,16 @@
     filter: saturate(.92);
   }
   .strip a:hover { border-color: var(--nen); }
-  .rows { display: grid; grid-template-columns: 6.5rem 1fr; gap: .35rem .8rem; font-size: .85rem; margin-bottom: .8rem; }
-  .rows dt { color: var(--paper-dim); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; padding-top: .2rem; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem .35rem; margin-top: .8rem; }
   .chip {
     display: inline-block;
     border: 1px solid rgba(232,220,195,.25);
-    padding: .05rem .5rem; margin: .1rem .3rem .1rem 0;
+    padding: .05rem .5rem;
     font-size: .75rem; letter-spacing: .05em;
     color: var(--paper-dim);
   }
   .chip.nen { color: var(--ink); border: none; font-weight: bold; }
   .chip.arc { border-style: dashed; }
-  .desc { font-size: .9rem; max-width: 56rem; }
   .empty { color: var(--paper-dim); font-size: .78rem; }
 
   #status { padding: 4rem 1rem; text-align: center; color: var(--paper-dim); }
@@ -115,7 +129,7 @@
 
   <div id="view" class="hidden">
     <header class="top">
-      <h1>Roster <span class="x">×</span></h1>
+      <h1>The Roster <span class="x">×</span></h1>
       <nav>
         <a href="/hxh/">Site</a>
         <button id="logout">Log out</button>
@@ -176,15 +190,9 @@ function render(arcs, characters) {
     const el = document.createElement("section");
     el.className = "char";
 
-    const nen = c.nen_types.length
-      ? c.nen_types.map(n => `<span class="chip nen" style="background:${NEN_COLORS[n] || "var(--paper-dim)"}">${esc(n)}</span>`).join("")
-      : `<span class="empty">unknown</span>`;
-    const weapons = c.weapons.length
-      ? c.weapons.map(w => `<span class="chip">${esc(w)}</span>`).join("")
-      : `<span class="empty">none recorded</span>`;
-    const arcChips = c.arcs.length
-      ? c.arcs.map(a => `<span class="chip arc" title="${esc(a)}">${esc(arcName[a] || a)}</span>`).join("")
-      : `<span class="empty">none recorded</span>`;
+    const nen = c.nen_types.map(n => `<span class="chip nen" style="background:${NEN_COLORS[n] || "var(--paper-dim)"}">${esc(n)}</span>`).join("");
+    const weapons = c.weapons.map(w => `<span class="chip">${esc(w)}</span>`).join("");
+    const arcChips = c.arcs.map(a => `<span class="chip arc" title="${esc(a)}">${esc(arcName[a] || a)}</span>`).join("");
     const strip = c.images.length
       ? `<div class="strip">${c.images.map(u =>
           `<a href="${esc(u)}" target="_blank" rel="noreferrer"><img src="${esc(u)}" loading="lazy" alt="${esc(c.name)}"></a>`).join("")}</div>`
@@ -192,13 +200,9 @@ function render(arcs, characters) {
 
     el.innerHTML = `
       <h2>${esc(c.name)} <span class="slug">${esc(c.slug)}</span></h2>
+      <p class="desc">${esc(c.description)}</p>
       ${strip}
-      <dl class="rows">
-        <dt>Nen</dt><dd>${nen}</dd>
-        <dt>Weapons</dt><dd>${weapons}</dd>
-        <dt>Arcs</dt><dd>${arcChips}</dd>
-      </dl>
-      <p class="desc">${esc(c.description)}</p>`;
+      <div class="chips">${nen}${weapons}${arcChips}</div>`;
     box.appendChild(el);
   }
 }
