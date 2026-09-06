@@ -1,6 +1,6 @@
 // Configuration
 const API_BASE_URL = '/status/api';
-const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'hw', 'su', 'cbc'];
+const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'su'];
 const WORK_CATEGORIES = ['sp'];
 
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
@@ -32,11 +32,13 @@ const TAG_INFO = {
     ky: 'kathy yuan (websites)',
     life: 'life (reflection, realignment)',
     math: 'math, e.g. finding kaprekar constants in other bases',
+    ms: 'manuscript studio (renamed from [wrs])',
     mus: 'music (general)',
     phy: 'physics',
     prg: 'programming',
     read: 'non-book club reading',
     rk: 'ronnie kichurchak (reviewing and editing his book)',
+    su: 'startup',
     vip: 'voices of israel and palestine (personal project showcasing peace efforts of both sides)',
     wapp: 'renamed [fesh] (workout app)',
     wf: 'daily workflows: optimization and development, e.g. sxiva',
