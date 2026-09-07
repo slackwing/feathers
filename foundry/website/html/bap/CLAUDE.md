@@ -16,9 +16,12 @@ the shatter later.
   @DitzyFlama, credited in the footer). Each is an 800×900 frame; the
   1600-wide files hold the down/open frame at x offset −800
   (`.layer.down`). Table, cup, shards are inline SVG in the same marker
-  style. The table edge sits right under the cat's chin (baby cat barely
-  reaching over it); a `clip-path` on `#cat` hides the sprites'
-  low-slung slam paws/beans, which were drawn for bongo.cat's tall
-  instruments. Scene space is 1800×1000, scaled to the viewport.
+  style. The cat sits at the head of a very long table: the far edge
+  (which it baps) runs right under its chin, and the front rim sweeps
+  from the right corner down-left off screen. A `clip-path` on `#cat`
+  hides the sprites' low-slung slam paws/beans, which were drawn for
+  bongo.cat's tall instruments. The cup rides a track parallel to the
+  far edge and tips off where the track crosses the rim. Scene space is
+  1800×1000, scaled to the viewport. No table legs for now (per Andrew).
 - Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`.
   Sounds are WebAudio-synthesized; no audio assets.

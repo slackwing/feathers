@@ -124,16 +124,13 @@
   <div id="scene">
     <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
-        <!-- isometric tabletop: far edge right under the chin (the cat baps
-             this line); right + near edges complete the parallelogram surface -->
+        <!-- a very long table seen from its end: the cat sits at the head.
+             Far edge (bapped) runs under the chin; from its right corner the
+             front rim sweeps down-left off screen, the way the cat faces. -->
         <path id="tabletop" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
-          S 1060 324, 1124 335"/>
-        <path stroke-width="13" d="M 1124 335 C 1160 402, 1200 480, 1234 548"/>
-        <path stroke-width="13" d="M 1234 548 C 900 484, 500 404, -40 293"/>
-        <!-- legs from the near edge -->
-        <path stroke-width="13" d="M 1226 560 C 1222 700, 1216 860, 1210 1020"/>
-        <path stroke-width="13" d="M 170 342 C 166 470, 162 650, 160 800"/>
+          S 940 298, 1000 310"/>
+        <path stroke-width="13" d="M 1000 310 C 690 470, 340 668, -60 880"/>
       </g>
       <g id="cupG"></g>
       <g id="fxG"></g>
@@ -144,7 +141,7 @@
       <div class="layer" id="pawL"></div>
       <div class="layer" id="pawR"></div>
     </div>
-    <button id="newcup" class="doodle-btn hidden" style="left:1330px; top:560px;">new cup</button>
+    <button id="newcup" class="doodle-btn hidden" style="left:1150px; top:520px;">new cup</button>
   </div>
 
   <div id="brand"><div class="t">bap</div><div id="count"></div></div>
@@ -180,10 +177,10 @@ addEventListener("resize", fit); fit();
 /* ================= table geometry =================
    The tabletop path above approximates the line y(x) below; the cup
    rides that line. t is the cup's fractional position (0 home, 1 edge). */
-// The cup rides a track across the isometric surface at constant depth
-// (far edge y + 115). It tips off where that track meets the right edge.
-const TAB = { x0: 790, x1: 1150, slope: 0.20, yAt: x => 319 + 0.20 * (x - 470) };
-const EDGE_X = 1180;          // center of gravity past this -> tip off
+// The cup rides a track parallel to the far edge, 60px onto the surface.
+// It tips off where that track crosses the front rim (x ~ 919).
+const TAB = { x0: 740, x1: 905, slope: 0.20, yAt: x => 264 + 0.20 * (x - 470) };
+const EDGE_X = 915;           // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
 const SLOPE_DEG = Math.atan(TAB.slope) * 180 / Math.PI;
 
@@ -473,7 +470,7 @@ async function enter(me) {
     fxG.innerHTML = ""; $("newcup").classList.add("hidden");
     if (st.broken) {
       cup.mode = "broken";
-      drawWreck(1300, FLOOR_Y, false);
+      drawWreck(1030, FLOOR_Y, false);
       $("newcup").classList.remove("hidden");
     } else {
       cup.mode = "table";
@@ -502,7 +499,7 @@ const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
   if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1300, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1030, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
   if (TEST) renderCup();
 }
 applyTest();
