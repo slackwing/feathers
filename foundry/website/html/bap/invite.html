@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>bap · invite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #0b0b0b; --soft: #9a9a9a; --red: #e0533d; --blue-deep: #1c6fae; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #fff; color: var(--ink);
+    font-family: "Gochi Hand", cursive;
+    min-height: 100svh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.25rem;
+  }
+  .box {
+    width: min(340px, 90vw);
+    border: 3px solid var(--ink);
+    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+    padding: 36px 34px 30px;
+    text-align: center;
+    transform: rotate(-.6deg);
+  }
+  .t { font-size: 64px; line-height: 1; }
+  .sub { color: var(--soft); font-size: 20px; margin-top: 6px; }
+  input {
+    display: block; width: 100%;
+    font-family: inherit; font-size: 24px; color: var(--ink);
+    border: none; border-bottom: 3px solid var(--ink);
+    border-radius: 0 0 120px 8px / 0 0 10px 6px;
+    outline: none; background: transparent;
+    margin-top: 26px; padding: 2px 4px; text-align: center;
+  }
+  input[readonly] { color: var(--soft); border-bottom-style: dotted; }
+  button {
+    font-family: inherit; font-size: 28px; color: var(--ink);
+    background: #fff; cursor: pointer; padding: 4px 30px 0;
+    margin-top: 30px;
+    border: 3px solid var(--ink);
+    border-radius: 18px 225px 18px 255px / 225px 18px 255px 18px;
+  }
+  button:hover { transform: scale(1.05) rotate(1.5deg); }
+  .msg { font-size: 20px; min-height: 1.4em; margin-top: 12px; }
+  .err { color: var(--red); }
+  a { color: var(--blue-deep); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="t">bap</div>
+  <div class="sub">you get a cup</div>
+
+  <form id="form" class="hidden">
+    <input id="u" name="username" autocomplete="username" readonly>
+    <input id="p" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="password" required>
+    <button type="submit">ok</button>
+    <div class="msg err" id="msg"></div>
+  </form>
+
+  <div id="done" class="hidden">
+    <div class="msg">hi <span id="dn"></span>.</div>
+    <div class="msg"><a href="/bap/">go bap →</a></div>
+  </div>
+
+  <p id="invalid" class="msg err hidden">this invite is void or expired.</p>
+</div>
+
+<script>
+const API = "/admin/api";
+const $ = id => document.getElementById(id);
+const code = new URLSearchParams(location.search).get("code") || "";
+
+async function boot() {
+  if (!code) { $("invalid").classList.remove("hidden"); return; }
+  const res = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
+  if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
+  const info = await res.json();
+  $("u").value = info.username;
+  $("form").classList.remove("hidden");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("msg").textContent = "";
+  const res = await fetch(`${API}/set-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, password: $("p").value }),
+  });
+  if (!res.ok) {
+    $("msg").textContent = res.status === 404 ? "this invite is void or expired." : await res.text();
+    return;
+  }
+  const me = await res.json();
+  $("form").classList.add("hidden");
+  $("dn").textContent = me.display_name;
+  $("done").classList.remove("hidden");
+});
+
+boot();
+</script>
+</body>
+</html>

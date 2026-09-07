@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>bap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0b0b;
+    --soft: #9a9a9a;
+    --blue: #4aa8e0;
+    --blue-deep: #1c6fae;
+    --red: #e0533d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #fff;
+    color: var(--ink);
+    font-family: "Gochi Hand", cursive;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+  }
+  #stage { position: fixed; inset: 0; cursor: pointer; }
+
+  /* ---- scene (1800x1000 design space, scaled by JS) ---- */
+  #scene {
+    position: absolute; left: 0; top: 0;
+    width: 1800px; height: 1000px;
+    transform-origin: 0 0;
+  }
+  #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 2; pointer-events: none; }
+  #cat { position: absolute; left: 0; top: 40px; width: 800px; height: 900px; pointer-events: none; z-index: 1; }
+  #cat .layer {
+    position: absolute; inset: 0;
+    background-repeat: no-repeat;
+    background-size: 1600px 900px;
+    background-position: 0 0;
+  }
+  #cat #head { background-image: url(img/cat.png); background-size: 800px 900px; }
+  #cat #mouth { background-image: url(img/mouth.png); }
+  #cat #pawL { background-image: url(img/paw-left.png); }
+  #cat #pawR { background-image: url(img/paw-right.png); }
+  #cat .layer.down { background-position-x: -800px; }
+
+  /* ---- HUD ---- */
+  #brand {
+    position: fixed; top: 22px; right: 34px;
+    text-align: right; line-height: 1; pointer-events: none;
+  }
+  #brand .t { font-size: 58px; }
+  #count { font-size: 26px; color: var(--soft); min-height: 1em; margin-top: 4px; }
+  #who {
+    position: fixed; bottom: 14px; right: 20px;
+    font-size: 17px; color: var(--soft);
+  }
+  #who a { color: var(--soft); text-decoration: underline; cursor: pointer; }
+  #credit {
+    position: fixed; bottom: 14px; left: 20px;
+    font-size: 13px; color: #c9c9c9;
+  }
+  #credit a { color: #c9c9c9; }
+
+  /* ---- doodle button ---- */
+  .doodle-btn {
+    position: absolute;
+    font-family: inherit; font-size: 30px; color: var(--ink);
+    background: #fff; cursor: pointer; padding: 6px 22px 2px;
+    border: 3px solid var(--ink);
+    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+    transform: rotate(-2deg);
+    transition: transform .1s;
+  }
+  .doodle-btn:hover { transform: rotate(-2deg) scale(1.06); }
+  .doodle-btn:active { transform: rotate(-2deg) scale(.95); }
+
+  /* ---- login ---- */
+  #login {
+    position: fixed; inset: 0; z-index: 10;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login .box {
+    width: min(320px, 86vw);
+    border: 3px solid var(--ink);
+    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+    padding: 34px 34px 28px;
+    text-align: center;
+    transform: rotate(-.6deg);
+  }
+  #login .t { font-size: 64px; line-height: 1; }
+  #login input {
+    display: block; width: 100%;
+    font-family: inherit; font-size: 24px; color: var(--ink);
+    border: none; border-bottom: 3px solid var(--ink);
+    border-radius: 0 0 120px 8px / 0 0 10px 6px;
+    outline: none; background: transparent;
+    margin-top: 26px; padding: 2px 4px; text-align: center;
+  }
+  #login input::placeholder { color: #cfcfcf; }
+  #login button {
+    font-family: inherit; font-size: 28px; color: var(--ink);
+    background: #fff; cursor: pointer; padding: 4px 30px 0;
+    margin-top: 30px;
+    border: 3px solid var(--ink);
+    border-radius: 18px 225px 18px 255px / 225px 18px 255px 18px;
+  }
+  #login button:hover { transform: scale(1.05) rotate(1.5deg); }
+  #login .msg { color: var(--red); font-size: 20px; min-height: 1.4em; margin-top: 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="scene">
+    <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
+      <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
+        <!-- the cat's shoulders, behind the table edge (like the original meme) -->
+        <path stroke-width="13" d="M 328 196 C 262 296, 236 430, 233 582"/>
+        <path stroke-width="13" d="M 614 232 C 678 318, 704 500, 710 676"/>
+        <!-- tabletop edge: one marker line, higher on the left (classic bap perspective) -->
+        <path id="tabletop" stroke-width="15" d="M -40 530
+          C 220 572, 460 636, 700 682
+          S 1060 756, 1124 766"/>
+        <!-- right table leg -->
+        <path stroke-width="13" d="M 1100 778 C 1096 858, 1086 948, 1074 1020"/>
+      </g>
+      <g id="cupG"></g>
+      <g id="fxG"></g>
+    </svg>
+    <div id="cat">
+      <div class="layer" id="head"></div>
+      <div class="layer" id="mouth"></div>
+      <div class="layer" id="pawL"></div>
+      <div class="layer" id="pawR"></div>
+    </div>
+    <button id="newcup" class="doodle-btn hidden" style="left:1180px; top:520px;">new cup</button>
+  </div>
+
+  <div id="brand"><div class="t">bap</div><div id="count"></div></div>
+  <div id="who" class="hidden"><span id="whoname"></span> · <a id="out">out</a></div>
+  <div id="credit">cat by <a href="https://twitter.com/StrayRogue" target="_blank" rel="noopener">@StrayRogue</a> via <a href="https://bongo.cat" target="_blank" rel="noopener">bongo.cat</a></div>
+</div>
+
+<div id="login" class="hidden">
+  <form class="box" id="loginForm">
+    <div class="t">bap</div>
+    <input id="lu" autocomplete="username" placeholder="name" required>
+    <input id="lp" type="password" autocomplete="current-password" placeholder="password" required>
+    <button type="submit">in</button>
+    <div class="msg" id="lmsg"></div>
+  </form>
+</div>
+
+<script>
+"use strict";
+const AUTH = "/admin/api";
+const API = "/bap/api";
+const $ = id => document.getElementById(id);
+
+/* ================= scene scaling ================= */
+const SW = 1800, SH = 1000;
+function fit() {
+  const s = Math.min(innerWidth / 1500, innerHeight / SH);
+  $("scene").style.transform =
+    `translate(0px, ${Math.max(0, (innerHeight - SH * s) / 2)}px) scale(${s})`;
+}
+addEventListener("resize", fit); fit();
+
+/* ================= table geometry =================
+   The tabletop path above approximates the line y(x) below; the cup
+   rides that line. t is the cup's fractional position (0 home, 1 edge). */
+const TAB = { x0: 790, x1: 1090, slope: 0.20, yAt: x => 616 + 0.20 * (x - 375) };
+const EDGE_X = 1102;          // center of gravity past this -> tip off
+const FLOOR_Y = 958;          // where a falling cup meets its end
+const SLOPE_DEG = Math.atan(TAB.slope) * 180 / Math.PI;
+
+/* ================= cup drawing ================= */
+const NS = "http://www.w3.org/2000/svg";
+function el(name, attrs, parent) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function drawCup(g) {
+  g.innerHTML = "";
+  const body = el("path", {
+    d: `M -48 -148 C -46 -96, -40 -40, -33 -4
+        Q -32 2, -24 3 L 24 3 Q 32 2, 33 -4
+        C 40 -40, 46 -96, 48 -148
+        C 20 -156, -20 -156, -48 -148 Z`,
+    fill: "#79c4ef", "fill-opacity": ".5",
+    stroke: "var(--blue-deep)", "stroke-width": "6.5",
+    "stroke-linejoin": "round",
+  }, g);
+  el("ellipse", { cx: 0, cy: -148, rx: 47, ry: 11,
+    fill: "#c8e8fa", "fill-opacity": ".55",
+    stroke: "var(--blue-deep)", "stroke-width": "5.5" }, g);
+  // faceted lower half, scalloped tops (like the diner tumbler)
+  const fac = el("g", { stroke: "var(--blue-deep)", "stroke-opacity": ".45",
+    "stroke-width": "3.5", "stroke-linecap": "round" }, g);
+  el("path", { d: "M -20 -86 C -19 -56, -17 -26, -15 -6" }, fac);
+  el("path", { d: "M 20 -86 C 19 -56, 17 -26, 15 -6" }, fac);
+  el("path", { d: "M -38 -84 Q -29 -98 -20 -86 Q -10 -100 0 -88 Q 10 -100 20 -86 Q 29 -98 38 -84" }, fac);
+  // marker highlight
+  el("path", { d: "M -34 -132 C -33 -108, -30 -70, -26 -40", stroke: "#fff",
+    "stroke-opacity": ".85", "stroke-width": "7", "stroke-linecap": "round" }, g);
+  return g;
+}
+const cupG = $("cupG");
+drawCup(cupG);
+
+/* ================= state ================= */
+const cup = {
+  t: 0,           // 0..1 along table
+  lift: 0, vLift: 0,      // hop above the table
+  wob: 0, vWob: 0,        // wobble around resting tilt
+  mode: "table",          // table | falling | broken
+  fx: 0, fy: 0, fvx: 0, fvy: 0, frot: 0, fvr: 0, // falling body
+};
+let baps = 0, shatters = 0, dirty = false, user = null;
+
+function cupXY() {
+  const x = TAB.x0 + cup.t * (TAB.x1 - TAB.x0);
+  return { x, y: TAB.yAt(x) - 4 };
+}
+function renderCup() {
+  if (cup.mode === "broken") { cupG.setAttribute("visibility", "hidden"); return; }
+  cupG.setAttribute("visibility", "visible");
+  let x, y, rot;
+  if (cup.mode === "falling") { x = cup.fx; y = cup.fy; rot = cup.frot; }
+  else { const p = cupXY(); x = p.x; y = p.y - cup.lift; rot = SLOPE_DEG + cup.wob; }
+  cupG.setAttribute("transform", `translate(${x} ${y}) rotate(${rot})`);
+}
+renderCup();
+
+/* ================= physics loop ================= */
+let last = performance.now();
+function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (cup.mode === "table") {
+    if (cup.lift > 0 || cup.vLift !== 0) {
+      cup.vLift -= 2600 * dt;
+      cup.lift += cup.vLift * dt;
+      if (cup.lift <= 0) {
+        if (cup.vLift < -120) sndRattle(Math.min(1, -cup.vLift / 500));
+        cup.lift = 0; cup.vLift = 0;
+      }
+    }
+    // wobble spring
+    cup.vWob += (-70 * cup.wob - 6 * cup.vWob) * dt;
+    cup.wob += cup.vWob * dt;
+    // tip off the edge
+    if (cupXY().x > EDGE_X && cup.lift === 0) startFall();
+  } else if (cup.mode === "falling") {
+    cup.fvy += 2600 * dt;
+    cup.fx += cup.fvx * dt; cup.fy += cup.fvy * dt;
+    cup.frot += cup.fvr * dt;
+    if (cup.fy >= FLOOR_Y) shatter();
+  }
+  renderCup();
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function startFall() {
+  const p = cupXY();
+  cup.mode = "falling";
+  cup.fx = p.x; cup.fy = p.y;
+  cup.fvx = 90 + Math.random() * 70; cup.fvy = -60;
+  cup.frot = SLOPE_DEG; cup.fvr = 160 + Math.random() * 120;
+}
+
+/* ================= shatter ================= */
+const fxG = $("fxG");
+function shatter() {
+  cup.mode = "broken";
+  shatters += 1; dirty = true; save();
+  sndCrash();
+  drawWreck(cup.fx, FLOOR_Y, true);
+  $("newcup").classList.remove("hidden");
+}
+function drawWreck(cx, cy, animate) {
+  fxG.innerHTML = "";
+  el("ellipse", { cx, cy: cy + 8, rx: 74, ry: 11, fill: "#7cc4ee", "fill-opacity": ".35" }, fxG);
+  const shards = [
+    "M 0 0 L 26 -34 L 38 -4 Z", "M 0 0 L -30 -26 L -12 -40 L -4 -6 Z",
+    "M 0 0 L 18 -20 L 30 -22 L 12 -2 Z", "M 0 0 L -22 -14 L -34 -2 Z",
+    "M 0 0 L 8 -26 L -6 -24 Z", "M 0 0 L 40 -12 L 46 -2 Z", "M 0 0 L -44 -8 L -50 0 Z",
+  ];
+  shards.forEach((d, i) => {
+    const dx = (i - 3) * 22 + (Math.random() - 0.5) * 16;
+    const rot = (Math.random() - 0.5) * 70;
+    const s = el("path", { d, fill: "#79c4ef", "fill-opacity": ".5",
+      stroke: "var(--blue-deep)", "stroke-width": "4", "stroke-linejoin": "round",
+      transform: `translate(${cx + dx} ${cy}) rotate(${rot})` }, fxG);
+    if (animate) s.animate(
+      [{ transform: `translate(${cx}px ${cy - 30}px) rotate(0deg)` },
+       { transform: `translate(${cx + dx}px ${cy}px) rotate(${rot}deg)` }],
+      { duration: 240 + i * 30, easing: "cubic-bezier(.2,.7,.4,1)" });
+  });
+  if (animate) for (let i = 0; i < 7; i++) {
+    const a = -Math.PI * (0.15 + 0.7 * Math.random());
+    const v = 220 + Math.random() * 240, r = 3 + Math.random() * 4.5;
+    const d = el("circle", { cx, cy: cy - 8, r, fill: "var(--blue)" }, fxG);
+    const vx = Math.cos(a) * v * (Math.random() < 0.5 ? 1 : -1), vy = Math.sin(a) * v;
+    d.animate([
+      { transform: "translate(0px,0px)", opacity: 1 },
+      { transform: `translate(${vx * 0.35}px, ${vy * 0.35 + 145}px)`, opacity: 0 },
+    ], { duration: 460, easing: "cubic-bezier(.3,.3,.6,1)", fill: "forwards" });
+  }
+}
+
+$("newcup").addEventListener("click", e => {
+  e.stopPropagation();
+  fxG.innerHTML = "";
+  $("newcup").classList.add("hidden");
+  cup.mode = "table"; cup.t = 0; cup.lift = 0; cup.vLift = 0; cup.wob = 0; cup.vWob = 0;
+  renderCup();
+  dirty = true; save();
+});
+
+/* ================= bap! ================= */
+const pawEls = [$("pawL"), $("pawR")];
+let pawTurn = 0, mouthTimer = 0;
+const tableSvg = $("tableAndCup"), headEl = $("head");
+
+function bap() {
+  const I = 0.15 + 0.85 * Math.pow(Math.random(), 1.6); // mostly gentle, sometimes THWACK
+  baps += 1; dirty = true;
+  $("count").textContent = baps;
+  sndThump(I);
+
+  // paws
+  const both = I > 0.8;
+  const paws = both ? pawEls : [pawEls[pawTurn ^= 1]];
+  paws.forEach(p => { p.classList.add("down"); });
+  setTimeout(() => paws.forEach(p => p.classList.remove("down")), 90 + I * 60);
+  if (I > 0.7) {
+    $("mouth").classList.add("down");
+    clearTimeout(mouthTimer);
+    mouthTimer = setTimeout(() => $("mouth").classList.remove("down"), 300);
+  }
+  headEl.animate(
+    [{ transform: "translateY(0)" }, { transform: `translateY(${2 + 4 * I}px)` }, { transform: "translateY(0)" }],
+    { duration: 130, easing: "ease-out" });
+
+  // table shake
+  const A = 1.5 + 11 * I;
+  tableSvg.animate([
+    { transform: "translate(0,0) rotate(0deg)" },
+    { transform: `translate(${-A * 0.4}px, ${A}px) rotate(${-0.12 * I}deg)` },
+    { transform: `translate(${A * 0.3}px, ${-A * 0.6}px)` },
+    { transform: `translate(${-A * 0.15}px, ${A * 0.35}px)` },
+    { transform: "translate(0,0) rotate(0deg)" },
+  ], { duration: 230 + I * 120, easing: "ease-out" });
+
+  // cup response
+  if (cup.mode === "table") {
+    cup.vLift = Math.max(cup.vLift, 60 + 520 * I * (0.6 + 0.4 * Math.random()));
+    cup.vWob += (Math.random() < 0.5 ? -1 : 1) * (30 + 260 * I);
+    if (I > 0.32) {
+      const dx = Math.pow(I, 1.7) * (26 + 44 * Math.random());
+      cup.t = cup.t + dx / (TAB.x1 - TAB.x0);
+    }
+    save();
+  }
+}
+
+$("stage").addEventListener("pointerdown", e => {
+  if (e.target.closest("#who") || e.target.closest("#credit") || e.target.closest(".doodle-btn")) return;
+  bap();
+});
+addEventListener("keydown", e => {
+  if (e.code === "Space" && !$("login").offsetParent) { e.preventDefault(); bap(); }
+});
+
+/* ================= sound (synthesized) ================= */
+let ac = null;
+function ctx() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); return ac; }
+function sndThump(I) {
+  try {
+    const a = ctx(), t = a.currentTime, g = a.createGain();
+    g.gain.setValueAtTime(0.25 * I * I + 0.04, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    const o = a.createOscillator();
+    o.frequency.setValueAtTime(90 + 40 * I, t);
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.14);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + 0.17);
+  } catch (_) {}
+}
+function noiseBurst(dur, freq, q, gain) {
+  const a = ctx(), t = a.currentTime;
+  const n = a.createBufferSource(), buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+  n.buffer = buf;
+  const f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = q;
+  const g = a.createGain(); g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  n.connect(f).connect(g).connect(a.destination);
+  n.start(t);
+}
+function sndRattle(I) { try { noiseBurst(0.06, 2600, 8, 0.10 * I); } catch (_) {} }
+function sndCrash() {
+  try {
+    noiseBurst(0.5, 3200, 1.2, 0.30);
+    setTimeout(() => noiseBurst(0.25, 4200, 6, 0.12), 70);
+    setTimeout(() => noiseBurst(0.18, 5200, 8, 0.07), 160);
+  } catch (_) {}
+}
+
+/* ================= persistence ================= */
+let saveTimer = 0;
+function stateBody() {
+  return JSON.stringify({
+    cup_x: Math.min(1, Math.max(0, cup.t)),
+    baps, broken: cup.mode === "broken", shatters,
+  });
+}
+function save() {
+  if (!user) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    dirty = false;
+    const res = await fetch(`${API}/state`, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: stateBody(),
+    }).catch(() => null);
+    if (res && res.status === 401) showLogin();
+  }, 700);
+}
+addEventListener("pagehide", () => {
+  if (user && dirty) {
+    clearTimeout(saveTimer);
+    fetch(`${API}/state`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: stateBody(), keepalive: true,
+    }).catch(() => {});
+  }
+});
+
+/* ================= auth ================= */
+function showLogin() {
+  user = null;
+  $("who").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("lu").focus();
+}
+async function enter(me) {
+  user = me;
+  $("login").classList.add("hidden");
+  $("whoname").textContent = me.username;
+  $("who").classList.remove("hidden");
+  const res = await fetch(`${API}/state`).catch(() => null);
+  if (res && res.ok) {
+    const st = await res.json();
+    baps = st.baps || 0; shatters = st.shatters || 0;
+    $("count").textContent = baps || "";
+    fxG.innerHTML = ""; $("newcup").classList.add("hidden");
+    if (st.broken) {
+      cup.mode = "broken";
+      drawWreck(1170, FLOOR_Y, false);
+      $("newcup").classList.remove("hidden");
+    } else {
+      cup.mode = "table";
+      cup.t = Math.min(1, Math.max(0, st.cup_x || 0));
+    }
+    renderCup();
+  }
+}
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("lmsg").textContent = "";
+  const res = await fetch(`${AUTH}/login`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: $("lu").value.trim(), password: $("lp").value }),
+  }).catch(() => null);
+  if (!res || !res.ok) { $("lmsg").textContent = "nope."; return; }
+  enter(await res.json());
+});
+$("out").addEventListener("click", async () => {
+  await fetch(`${AUTH}/logout`, { method: "POST" }).catch(() => {});
+  showLogin();
+});
+
+(async function boot() {
+  const res = await fetch(`${AUTH}/me`).catch(() => null);
+  if (res && res.ok) await enter(await res.json());
+  else showLogin();
+  // visual test hooks (harmless in prod)
+  const t = new URLSearchParams(location.search).get("test");
+  if (t === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
+  if (t === "mid") { cup.t = 0.75; }
+  if (t === "broken") { cup.mode = "broken"; drawWreck(1170, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (t) renderCup();
+})();
+</script>
+</body>
+</html>
