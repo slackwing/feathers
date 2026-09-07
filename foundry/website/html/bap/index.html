@@ -126,11 +126,22 @@
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
         <!-- a very long table seen from its end: the cat sits at the head.
              Far edge (bapped) runs under the chin; from its right corner the
-             front rim sweeps down-left off screen, the way the cat faces. -->
-        <path id="tabletop" stroke-width="15" d="M -40 102
+             front rim sweeps down-left off screen, the way the cat faces.
+             Light-wood surface, slab thickness under the rim, square legs. -->
+        <path fill="#f5e3c0" stroke="none" d="M -40 102
+          C 220 154, 460 202, 700 250 S 940 298, 1000 310
+          C 690 470, 340 668, -60 880 Z"/>
+        <path fill="#e6c795" stroke-width="8" d="M 920 379 L 920 1020 L 952 1020 L 952 362 Z"/>
+        <path fill="#e6c795" stroke-width="8" d="M 240 745 L 240 1020 L 276 1020 L 276 726 Z"/>
+        <path fill="#e0bf8c" stroke="none" d="M 1000 310
+          C 690 470, 340 668, -60 880 L -60 904
+          C 340 692, 690 494, 1000 334 Z"/>
+        <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
           S 940 298, 1000 310"/>
-        <path stroke-width="13" d="M 1000 310 C 690 470, 340 668, -60 880"/>
+        <path fill="none" stroke-width="13" d="M 1000 310 C 690 470, 340 668, -60 880"/>
+        <path fill="none" stroke-width="10" d="M 1000 334 C 690 494, 340 692, -60 904"/>
+        <path stroke-width="10" d="M 1000 312 L 1000 332"/>
       </g>
       <g id="cupG"></g>
       <g id="fxG"></g>
@@ -177,11 +188,16 @@ addEventListener("resize", fit); fit();
 /* ================= table geometry =================
    The tabletop path above approximates the line y(x) below; the cup
    rides that line. t is the cup's fractional position (0 home, 1 edge). */
-// The cup rides a track parallel to the far edge, 60px onto the surface.
-// It tips off where that track crosses the front rim (x ~ 919).
-const TAB = { x0: 740, x1: 905, slope: 0.20, yAt: x => 264 + 0.20 * (x - 470) };
-const EDGE_X = 915;           // center of gravity past this -> tip off
+// The cup starts in the cat's line of sight (down-left of the face) and
+// rides a track parallel to the far edge until the track crosses the
+// front rim at x ~ 545, vertically under the cat's right paw.
+const TAB = { x0: 350, x1: 535, slope: 0.20, yAt: x => 540 + 0.20 * (x - 470) };
+const EDGE_X = 545;           // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
+// Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
+// and true g would be 9800 px/s². 8200 keeps it snappy but playable.
+const GRAV = 8200;
+const CATCH = 22;             // lift below this while descending -> a bap can catch it
 const SLOPE_DEG = Math.atan(TAB.slope) * 180 / Math.PI;
 
 /* ================= cup drawing ================= */
@@ -250,10 +266,10 @@ function tick(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (cup.mode === "table") {
     if (cup.lift > 0 || cup.vLift !== 0) {
-      cup.vLift -= 2600 * dt;
+      cup.vLift -= GRAV * dt;
       cup.lift += cup.vLift * dt;
       if (cup.lift <= 0) {
-        if (cup.vLift < -120) sndRattle(Math.min(1, -cup.vLift / 500));
+        if (cup.vLift < -180) sndRattle(Math.min(1, -cup.vLift / 1400));
         cup.lift = 0; cup.vLift = 0;
       }
     }
@@ -263,7 +279,7 @@ function tick(now) {
     // tip off the edge
     if (cupXY().x > EDGE_X && cup.lift === 0) startFall();
   } else if (cup.mode === "falling") {
-    cup.fvy += 2600 * dt;
+    cup.fvy += GRAV * dt;
     cup.fx += cup.fvx * dt; cup.fy += cup.fvy * dt;
     cup.frot += cup.fvr * dt;
     if (cup.fy >= FLOOR_Y) shatter();
@@ -277,8 +293,8 @@ function startFall() {
   const p = cupXY();
   cup.mode = "falling";
   cup.fx = p.x; cup.fy = p.y;
-  cup.fvx = 90 + Math.random() * 70; cup.fvy = -60;
-  cup.frot = 0; cup.fvr = 160 + Math.random() * 120;
+  cup.fvx = 70 + Math.random() * 90; cup.fvy = -40;
+  cup.frot = 0; cup.fvr = 170 + Math.random() * 160;
 }
 
 /* ================= shatter ================= */
@@ -365,15 +381,27 @@ function bap() {
     { transform: "translate(0,0) rotate(0deg)" },
   ], { duration: 230 + I * 120, easing: "ease-out" });
 
-  // cup response
+  // cup response — the table can only push a cup it's touching
   if (cup.mode === "table") {
-    cup.vLift = Math.max(cup.vLift, 60 + 520 * I * (0.6 + 0.4 * Math.random()));
-    cup.vWob += (Math.random() < 0.5 ? -1 : 1) * (30 + 260 * I);
-    if (I > 0.32) {
-      const dx = Math.pow(I, 1.7) * (26 + 44 * Math.random());
+    if (cup.lift === 0) {
+      cup.vLift = 120 + 820 * I * (0.6 + 0.4 * Math.random());
+      cup.vWob += (Math.random() < 0.5 ? -1 : 1) * (30 + 260 * I);
+      if (I > 0.32) {
+        const dx = Math.pow(I, 1.7) * (26 + 44 * Math.random());
+        cup.t = cup.t + dx / (TAB.x1 - TAB.x0);
+      }
+      save();
+    } else if (cup.lift < CATCH && cup.vLift < 0) {
+      // resonant catch: the rising table meets the falling cup and the
+      // energies superimpose — bigger, more chaotic bounce
+      cup.vLift = Math.min(1500, -cup.vLift * 1.15 + 250 + 900 * I);
+      cup.vWob += (Math.random() < 0.5 ? -1 : 1) * (120 + 420 * I);
+      const dx = Math.pow(I, 1.4) * (10 + 60 * Math.random()) * (Math.random() < 0.25 ? -0.4 : 1);
       cup.t = cup.t + dx / (TAB.x1 - TAB.x0);
+      sndRattle(0.6);
+      save();
     }
-    save();
+    // otherwise the cup is midair — the bap can't reach it
   }
 }
 
@@ -470,7 +498,7 @@ async function enter(me) {
     fxG.innerHTML = ""; $("newcup").classList.add("hidden");
     if (st.broken) {
       cup.mode = "broken";
-      drawWreck(1030, FLOOR_Y, false);
+      drawWreck(650, FLOOR_Y, false);
       $("newcup").classList.remove("hidden");
     } else {
       cup.mode = "table";
@@ -499,7 +527,7 @@ const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
   if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1030, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(650, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
   if (TEST) renderCup();
 }
 applyTest();
