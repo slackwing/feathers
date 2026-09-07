@@ -15,7 +15,10 @@ the shatter later.
 - Art: `img/*.png` are the original bongo.cat sprites (@StrayRogue /
   @DitzyFlama, credited in the footer). Each is an 800×900 frame; the
   1600-wide files hold the down/open frame at x offset −800
-  (`.layer.down`). Table, shoulders, cup, shards are inline SVG in the
-  same marker style. Scene space is 1800×1000, scaled to the viewport.
+  (`.layer.down`). Table, cup, shards are inline SVG in the same marker
+  style. The table edge sits right under the cat's chin (baby cat barely
+  reaching over it); a `clip-path` on `#cat` hides the sprites'
+  low-slung slam paws/beans, which were drawn for bongo.cat's tall
+  instruments. Scene space is 1800×1000, scaled to the viewport.
 - Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`.
   Sounds are WebAudio-synthesized; no audio assets.
