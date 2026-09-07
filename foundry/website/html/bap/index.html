@@ -39,7 +39,7 @@
      slam paws + resting beans (drawn for bongo.cat's tall instruments) so
      only the head peeks over the edge and arms flick over it */
   #cat { position: absolute; left: 0; top: 40px; width: 800px; height: 900px; pointer-events: none; z-index: 2;
-         clip-path: polygon(0 0, 100% 0, 100% 311px, 0 151px); }
+         clip-path: polygon(0 0, 100% 0, 100% 230px, 0 70px); }
   #cat .layer {
     position: absolute; inset: 0;
     background-repeat: no-repeat;
@@ -124,12 +124,16 @@
   <div id="scene">
     <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
-        <!-- tabletop edge: right under the chin — baby cat barely reaches over it -->
-        <path id="tabletop" stroke-width="15" d="M -40 183
-          C 220 233, 460 287, 700 333
-          S 1060 407, 1124 416"/>
-        <!-- right table leg -->
-        <path stroke-width="13" d="M 1100 428 C 1096 620, 1086 850, 1074 1020"/>
+        <!-- isometric tabletop: far edge right under the chin (the cat baps
+             this line); right + near edges complete the parallelogram surface -->
+        <path id="tabletop" stroke-width="15" d="M -40 102
+          C 220 154, 460 202, 700 250
+          S 1060 324, 1124 335"/>
+        <path stroke-width="13" d="M 1124 335 C 1160 402, 1200 480, 1234 548"/>
+        <path stroke-width="13" d="M 1234 548 C 900 484, 500 404, -40 293"/>
+        <!-- legs from the near edge -->
+        <path stroke-width="13" d="M 1226 560 C 1222 700, 1216 860, 1210 1020"/>
+        <path stroke-width="13" d="M 170 342 C 166 470, 162 650, 160 800"/>
       </g>
       <g id="cupG"></g>
       <g id="fxG"></g>
@@ -140,7 +144,7 @@
       <div class="layer" id="pawL"></div>
       <div class="layer" id="pawR"></div>
     </div>
-    <button id="newcup" class="doodle-btn hidden" style="left:1180px; top:520px;">new cup</button>
+    <button id="newcup" class="doodle-btn hidden" style="left:1330px; top:560px;">new cup</button>
   </div>
 
   <div id="brand"><div class="t">bap</div><div id="count"></div></div>
@@ -176,8 +180,10 @@ addEventListener("resize", fit); fit();
 /* ================= table geometry =================
    The tabletop path above approximates the line y(x) below; the cup
    rides that line. t is the cup's fractional position (0 home, 1 edge). */
-const TAB = { x0: 790, x1: 1090, slope: 0.20, yAt: x => 285 + 0.20 * (x - 470) };
-const EDGE_X = 1102;          // center of gravity past this -> tip off
+// The cup rides a track across the isometric surface at constant depth
+// (far edge y + 115). It tips off where that track meets the right edge.
+const TAB = { x0: 790, x1: 1150, slope: 0.20, yAt: x => 319 + 0.20 * (x - 470) };
+const EDGE_X = 1180;          // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
 const SLOPE_DEG = Math.atan(TAB.slope) * 180 / Math.PI;
 
@@ -236,7 +242,7 @@ function renderCup() {
   cupG.setAttribute("visibility", "visible");
   let x, y, rot;
   if (cup.mode === "falling") { x = cup.fx; y = cup.fy; rot = cup.frot; }
-  else { const p = cupXY(); x = p.x; y = p.y - cup.lift; rot = SLOPE_DEG + cup.wob; }
+  else { const p = cupXY(); x = p.x; y = p.y - cup.lift; rot = cup.wob; }
   cupG.setAttribute("transform", `translate(${x} ${y}) rotate(${rot})`);
 }
 renderCup();
@@ -275,7 +281,7 @@ function startFall() {
   cup.mode = "falling";
   cup.fx = p.x; cup.fy = p.y;
   cup.fvx = 90 + Math.random() * 70; cup.fvy = -60;
-  cup.frot = SLOPE_DEG; cup.fvr = 160 + Math.random() * 120;
+  cup.frot = 0; cup.fvr = 160 + Math.random() * 120;
 }
 
 /* ================= shatter ================= */
@@ -467,7 +473,7 @@ async function enter(me) {
     fxG.innerHTML = ""; $("newcup").classList.add("hidden");
     if (st.broken) {
       cup.mode = "broken";
-      drawWreck(1170, FLOOR_Y, false);
+      drawWreck(1300, FLOOR_Y, false);
       $("newcup").classList.remove("hidden");
     } else {
       cup.mode = "table";
@@ -496,7 +502,7 @@ const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
   if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1170, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1300, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
   if (TEST) renderCup();
 }
 applyTest();
