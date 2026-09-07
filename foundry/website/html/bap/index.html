@@ -34,8 +34,9 @@
     width: 1800px; height: 1000px;
     transform-origin: 0 0;
   }
-  #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 2; pointer-events: none; }
-  #cat { position: absolute; left: 0; top: 40px; width: 800px; height: 900px; pointer-events: none; z-index: 1; }
+  #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
+  /* cat sits ABOVE the table line so resting/slamming paws break it, like the meme */
+  #cat { position: absolute; left: 0; top: 40px; width: 800px; height: 900px; pointer-events: none; z-index: 2; }
   #cat .layer {
     position: absolute; inset: 0;
     background-repeat: no-repeat;
@@ -121,8 +122,8 @@
     <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
         <!-- the cat's baby dome of a body, behind the table edge (like the original meme) -->
-        <path stroke-width="13" d="M 330 190 C 208 242, 140 408, 138 572"/>
-        <path stroke-width="13" d="M 612 228 C 726 296, 772 486, 772 696"/>
+        <path stroke-width="13" d="M 330 190 C 240 232, 206 410, 205 584"/>
+        <path stroke-width="13" d="M 612 228 C 698 282, 713 490, 712 684"/>
         <!-- tabletop edge: one marker line, higher on the left (classic bap perspective) -->
         <path id="tabletop" stroke-width="15" d="M -40 530
           C 220 572, 460 636, 700 682
@@ -490,16 +491,21 @@ $("out").addEventListener("click", async () => {
   showLogin();
 });
 
+// visual test hooks (harmless in prod; synchronous so screenshots are deterministic)
+const TEST = new URLSearchParams(location.search).get("test");
+function applyTest() {
+  if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
+  if (TEST === "mid") { cup.t = 0.75; }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1170, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (TEST) renderCup();
+}
+applyTest();
+
 (async function boot() {
   const res = await fetch(`${AUTH}/me`).catch(() => null);
   if (res && res.ok) await enter(await res.json());
   else showLogin();
-  // visual test hooks (harmless in prod)
-  const t = new URLSearchParams(location.search).get("test");
-  if (t === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
-  if (t === "mid") { cup.t = 0.75; }
-  if (t === "broken") { cup.mode = "broken"; drawWreck(1170, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
-  if (t) renderCup();
+  applyTest(); // re-assert over server state
 })();
 </script>
 </body>
