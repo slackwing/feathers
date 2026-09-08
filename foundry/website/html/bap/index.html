@@ -34,6 +34,7 @@
     position: absolute; left: 0; top: 0;
     width: 1800px; height: 1560px;
     transform-origin: 0 0;
+    visibility: hidden; /* revealed once state (and cup color) is settled */
   }
   #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
   /* the cup + shards render above the cat: they're nearer the viewer */
@@ -608,15 +609,17 @@ addEventListener("pagehide", () => {
 });
 
 /* ================= auth ================= */
+function reveal() { $("scene").style.visibility = "visible"; }
 function showLogin() {
   user = null;
+  reveal();
   $("login").classList.remove("hidden");
   $("lu").focus();
 }
 async function enter(me) {
   user = me;
   $("login").classList.add("hidden");
-  if (TEST) return; // test hooks own the scene; don't clear/redraw over them
+  if (TEST) { reveal(); return; } // test hooks own the scene; don't clear/redraw over them
   const res = await fetch(`${API}/state`).catch(() => null);
   if (res && res.ok) {
     const st = await res.json();
@@ -639,6 +642,7 @@ async function enter(me) {
     }
     renderCup();
   }
+  reveal();
 }
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
