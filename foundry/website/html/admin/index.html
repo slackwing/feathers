@@ -43,7 +43,7 @@
     <h2>Users</h2>
     <table>
       <thead>
-        <tr><th></th><th>User</th><th>Display name</th><th>Roles</th><th>Links</th></tr>
+        <tr><th></th><th>User</th><th>Display name</th><th>Roles</th><th>Links</th><th></th></tr>
       </thead>
       <tbody id="users"></tbody>
     </table>
@@ -144,7 +144,8 @@ function renderUsers(users) {
           <select data-act="invite-site">${inviteOpts}</select>
           <button class="quiet" data-act="invite">Invite</button>
         </span>
-      </td>`;
+      </td>
+      <td>${u.username === me.username ? "" : `<button class="quiet" data-act="del" title="delete user">Delete</button>`}</td>`;
 
     const siteSel = tr.querySelector('[data-act="role-site"]');
     const roleSel = tr.querySelector('[data-act="role-role"]');
@@ -168,6 +169,11 @@ function renderUsers(users) {
           const name = prompt("Display name", u.display_name);
           if (name && name !== u.display_name) {
             await api(`/users/${encodeURIComponent(u.username)}`, { method: "PATCH", body: JSON.stringify({ display_name: name }) });
+            await refresh();
+          }
+        } else if (act === "del") {
+          if (confirm(`Delete ${u.username}? Roles, sessions, and pending links go with it.`)) {
+            await api(`/users/${encodeURIComponent(u.username)}`, { method: "DELETE" });
             await refresh();
           }
         } else if (act === "reset") {

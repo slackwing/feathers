@@ -4,7 +4,7 @@ Subdirectory of the source-controlled website, published to
 `andrewcheong.com/admin`. Console for the **shared cross-website auth
 system** (one account works on every site; per-website roles).
 
-- **index.html** — the console. Login → users table (create/edit users,
+- **index.html** — the console. Login → users table (create/edit/delete users,
   grant/revoke per-website roles, generate invite + reset links).
   Access requires role `admin` on website `admin`.
 - **reset.html** — set-password page reached from reset links
