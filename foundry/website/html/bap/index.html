@@ -95,27 +95,27 @@
   <div id="scene">
     <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
-        <!-- a long birch table seen from the side: far edge (bapped) runs
-             under the chin; the front rim is nearly level, with a thick
-             slab, a visible right end face, and square 3D legs below. -->
+        <!-- a long birch table receding toward the viewer: far edge (bapped)
+             runs under the chin; the front rim plunges steeply down-left off
+             the bottom of the screen. Thick slab, right end face, 3D legs. -->
         <path fill="#f8f0e0" stroke="none" d="M -40 102
           C 220 154, 460 202, 700 250 S 940 298, 1000 310
-          C 700 316, 300 330, -60 342 Z"/>
+          C 850 528, 700 760, 560 1023 L -40 1023 Z"/>
         <!-- legs: front face + right side face, tucked under the slab -->
-        <path fill="#dcc69e" stroke-width="8" d="M 960 366 L 978 356 L 978 1020 L 960 1020 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 920 368 L 920 1020 L 960 1020 L 960 366 Z"/>
-        <path fill="#dcc69e" stroke-width="8" d="M 120 393 L 138 383 L 138 1020 L 120 1020 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 80 394 L 80 1020 L 120 1020 L 120 393 Z"/>
+        <path fill="#dcc69e" stroke-width="8" d="M 920 494 L 938 484 L 938 1020 L 920 1020 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 880 559 L 880 1020 L 920 1020 L 920 495 Z"/>
+        <path fill="#dcc69e" stroke-width="8" d="M 700 851 L 718 841 L 718 1020 L 700 1020 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 660 916 L 660 1020 L 700 1020 L 700 852 Z"/>
         <!-- slab thickness + right end face -->
         <path fill="#dfcda6" stroke-width="8" d="M 1000 310 L 1018 300 L 1018 355 L 1000 365 Z"/>
         <path fill="#e9dabb" stroke="none" d="M 1000 310
-          C 700 316, 300 330, -60 342 L -60 397
-          C 300 385, 700 371, 1000 365 Z"/>
+          C 850 528, 700 760, 560 1023 L 594 1023
+          C 715 815, 860 588, 1000 365 Z"/>
         <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
           S 940 298, 1000 310"/>
-        <path fill="none" stroke-width="13" d="M 1000 310 C 700 316, 300 330, -60 342"/>
-        <path fill="none" stroke-width="10" d="M 1000 365 C 700 371, 300 385, -60 397"/>
+        <path fill="none" stroke-width="13" d="M 1000 310 C 850 528, 700 760, 560 1023"/>
+        <path fill="none" stroke-width="10" d="M 1000 365 C 860 588, 715 815, 594 1023"/>
         <path stroke-width="10" d="M 1000 312 L 1000 363"/>
       </g>
     </svg>
@@ -162,9 +162,9 @@ addEventListener("resize", fit); fit();
    rides that line. t is the cup's fractional position (0 home, 1 edge). */
 // The cup starts in the cat's line of sight (down-left of the face) and
 // rides a track parallel to the far edge until the track crosses the
-// front rim at x ~ 545, vertically under the cat's right paw.
-const TAB = { x0: 350, x1: 535, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
-const EDGE_X = 545;           // center of gravity past this -> tip off
+// steep front rim near the corner (x ~ 942).
+const TAB = { x0: 350, x1: 930, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
+const EDGE_X = 940;           // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
 // and true g would be 9800 px/s². 8200 keeps it snappy but playable.
@@ -478,7 +478,7 @@ const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
   if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(650, FLOOR_Y, false); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(1000, FLOOR_Y, false); }
   if (TEST) renderCup();
 }
 applyTest();
