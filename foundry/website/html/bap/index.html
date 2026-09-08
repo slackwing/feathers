@@ -191,6 +191,20 @@ function el(name, attrs, parent) {
   if (parent) parent.appendChild(e);
   return e;
 }
+// Each page load rolls a cup color (uniform). Color is NOT persisted —
+// a refresh recolors the cup wherever it stands. The break effect
+// follows the color: blue=glass, pink=hearts, green=guitar picks.
+// ?cup=blue|green|pink forces it (for testing).
+const CUP_KINDS = ["blue", "green", "pink"];
+const qcup = new URLSearchParams(location.search).get("cup");
+const CUP_KIND = CUP_KINDS.includes(qcup) ? qcup
+  : CUP_KINDS[Math.floor(Math.random() * 3)];
+const CUP_STYLE = {
+  blue:  { body: "#79c4ef", stroke: "#1c6fae", rim: "#c8e8fa" },
+  green: { body: "#57a06b", stroke: "#1d5c38", rim: "#a9d8bb" },
+  pink:  { body: "#f7a8c4", stroke: "#c2517e", rim: "#fbd3e2" },
+}[CUP_KIND];
+
 function drawCup(outer) {
   outer.innerHTML = "";
   const g = el("g", { transform: "scale(1.0)" }, outer);
@@ -199,15 +213,15 @@ function drawCup(outer) {
         Q -32 2, -24 3 L 24 3 Q 32 2, 33 -4
         C 40 -40, 46 -96, 48 -148
         C 20 -156, -20 -156, -48 -148 Z`,
-    fill: "#79c4ef", "fill-opacity": ".5",
-    stroke: "var(--blue-deep)", "stroke-width": "6.5",
+    fill: CUP_STYLE.body, "fill-opacity": ".5",
+    stroke: CUP_STYLE.stroke, "stroke-width": "6.5",
     "stroke-linejoin": "round",
   }, g);
   el("ellipse", { cx: 0, cy: -148, rx: 47, ry: 11,
-    fill: "#c8e8fa", "fill-opacity": ".55",
-    stroke: "var(--blue-deep)", "stroke-width": "5.5" }, g);
+    fill: CUP_STYLE.rim, "fill-opacity": ".55",
+    stroke: CUP_STYLE.stroke, "stroke-width": "5.5" }, g);
   // faceted lower half, scalloped tops (like the diner tumbler)
-  const fac = el("g", { stroke: "var(--blue-deep)", "stroke-opacity": ".45",
+  const fac = el("g", { stroke: CUP_STYLE.stroke, "stroke-opacity": ".45",
     "stroke-width": "3.5", "stroke-linecap": "round" }, g);
   el("path", { d: "M -20 -86 C -19 -56, -17 -26, -15 -6" }, fac);
   el("path", { d: "M 20 -86 C 19 -56, 17 -26, 15 -6" }, fac);
@@ -286,12 +300,29 @@ const fxG = $("fxG");
 function shatter() {
   cup.mode = "broken";
   shatters += 1; dirty = true; save();
-  if (Math.random() < 0.25) {
-    sndSparkle();
-    burstHearts(cup.fx, FLOOR_Y, true);
-  } else {
-    sndCrash();
-    drawWreck(cup.fx, FLOOR_Y, true);
+  if (CUP_KIND === "pink") { sndSparkle(); burstHearts(cup.fx, FLOOR_Y, true); }
+  else if (CUP_KIND === "green") { sndStrum(); burstPicks(cup.fx, FLOOR_Y, true); }
+  else { sndCrash(); drawWreck(cup.fx, FLOOR_Y, true); }
+}
+// the green cup breaks into oversized pearly guitar picks from Tokyo
+// (the gold design is too small to draw — the sheen carries it)
+const PICK = "M -20 -14 C -20 -26, 20 -26, 20 -14 C 20 2, 8 18, 0 24 C -8 18, -20 2, -20 -14 Z";
+function burstPicks(cx, cy, animate) {
+  fxG.innerHTML = "";
+  for (let i = 0; i < 12; i++) {
+    const p = floorDisc(160);
+    const x1 = cx + p.dx, y1 = cy - 10 + p.dy;
+    const rot = (Math.random() - 0.5) * 160;
+    const sc = 0.85 + Math.random() * 0.5;
+    const g = el("g", { transform: `translate(${x1} ${y1}) rotate(${rot}) scale(${sc})` }, fxG);
+    el("path", { d: PICK, fill: "#1f6b45", stroke: "#123f2a",
+      "stroke-width": "3.5", "stroke-linejoin": "round" }, g);
+    el("path", { d: "M -12 -16 C -11 -20, -2 -22, 5 -20", stroke: "#a8e6c4",
+      "stroke-width": "4", "stroke-linecap": "round", fill: "none", "stroke-opacity": ".85" }, g);
+    el("path", { d: "M 10 -6 C 12 0, 10 8, 6 13", stroke: "#7fd3a8",
+      "stroke-width": "2.5", "stroke-linecap": "round", fill: "none", "stroke-opacity": ".4" }, g);
+    if (animate) tweenT(g, { x: cx, y: cy - 30, r: 0, s: sc },
+      { x: x1, y: y1, r: rot, s: sc }, 240 + Math.abs(p.dx) * 0.8 + i * 14);
   }
 }
 const HEART = "M 0 5 C -1 2, -4 0, -7 0 C -11 0, -13 3, -13 6 C -13 11, -7 15, 0 20 C 7 15, 13 11, 13 6 C 13 3, 11 0, 7 0 C 4 0, 1 2, 0 5 Z";
@@ -493,6 +524,22 @@ function noiseBurst(dur, freq, q, gain) {
   n.start(t);
 }
 function sndRattle(I) { try { noiseBurst(0.06, 2600, 8, 0.10 * I); } catch (_) {} }
+function sndStrum() {
+  try {
+    const a = ctx(), t = a.currentTime;
+    noiseBurst(0.08, 4000, 5, 0.12); // pick clatter
+    [196, 247, 330, 392].forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = "triangle"; o.frequency.value = f;
+      const t0 = t + 0.03 + i * 0.045;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.14, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+      o.connect(g).connect(a.destination);
+      o.start(t0); o.stop(t0 + 0.55);
+    });
+  } catch (_) {}
+}
 function sndSparkle() {
   try {
     const a = ctx(), t = a.currentTime;
@@ -521,6 +568,7 @@ function stateBody() {
   return JSON.stringify({
     cup_x: Math.min(1, Math.max(0, cup.t)),
     baps, broken: cup.mode === "broken", shatters,
+    burst: { blue: "glass", green: "picks", pink: "hearts" }[CUP_KIND],
   });
 }
 function save() {
@@ -590,6 +638,7 @@ function applyTest() {
   if (TEST === "mid") { cup.t = 0.75; }
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
   if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y, false); }
+  if (TEST === "picks") { cup.mode = "broken"; burstPicks(780, FLOOR_Y, false); }
   if (TEST) renderCup();
 }
 applyTest();
