@@ -98,16 +98,16 @@
         <!-- a long birch table receding toward the viewer: far edge (bapped)
              runs under the chin; the front rim plunges down-left all the way
              to the left screen edge. Thick slab; one 3D leg near the corner. -->
-        <path fill="#f8f0e0" stroke="none" d="M -40 102
+        <path fill="#c99f6e" stroke="none" d="M -40 102
           C 220 154, 460 202, 700 250 S 940 298, 1000 310
           C 700 620, 370 950, -40 1356 Z"/>
         <!-- leg, inset a little down the edge from the corner: front face +
              thinner right side face; all three lines vertical from the
              table's underside down to a flat foot -->
-        <path fill="#dcc69e" stroke-width="8" d="M 914 451 L 932 433 L 932 1232 L 914 1250 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 870 496 L 914 451 L 914 1250 L 870 1250 Z"/>
+        <path fill="#8a6437" stroke-width="8" d="M 914 451 L 932 433 L 932 1232 L 914 1250 Z"/>
+        <path fill="#b78e58" stroke-width="8" d="M 870 496 L 914 451 L 914 1250 L 870 1250 Z"/>
         <!-- slab thickness -->
-        <path fill="#e9dabb" stroke="none" d="M 1000 310
+        <path fill="#a87e4c" stroke="none" d="M 1000 310
           C 700 620, 370 950, -40 1356 L -40 1411
           C 375 1000, 705 670, 1000 365 Z"/>
         <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
@@ -313,7 +313,7 @@ function burstPicks(cx, cy, animate) {
     const p = floorDisc(160);
     const x1 = cx + p.dx, y1 = cy - 10 + p.dy;
     const rot = (Math.random() - 0.5) * 160;
-    const sc = 0.85 + Math.random() * 0.5;
+    const sc = 1.05; // the picks are identical — unlike shards or hearts
     const g = el("g", { transform: `translate(${x1} ${y1}) rotate(${rot}) scale(${sc})` }, fxG);
     el("path", { d: PICK, fill: "#175437", stroke: "#0e3322",
       "stroke-width": "3.5", "stroke-linejoin": "round" }, g);
