@@ -288,13 +288,42 @@ function shatter() {
   shatters += 1; dirty = true; save();
   if (Math.random() < 0.25) {
     sndSparkle();
-    burstHearts(cup.fx, FLOOR_Y);
+    burstHearts(cup.fx, FLOOR_Y, true);
   } else {
     sndCrash();
     drawWreck(cup.fx, FLOOR_Y, true);
   }
 }
 const HEART = "M 0 5 C -1 2, -4 0, -7 0 C -11 0, -13 3, -13 6 C -13 11, -7 15, 0 20 C 7 15, 13 11, 13 6 C 13 3, 11 0, 7 0 C 4 0, 1 2, 0 5 Z";
+// Animate the SVG transform ATTRIBUTE directly (rAF), like the cup does.
+// CSS/WAAPI transforms on SVG children have different origin/parsing
+// semantics than the attribute, which made effects "jump" when they ended.
+function setT(elm, x, y, r, s) {
+  elm.setAttribute("transform", `translate(${x} ${y}) rotate(${r}) scale(${s})`);
+}
+function tweenT(elm, from, to, dur) {
+  const t0 = performance.now();
+  (function fr(now) {
+    const u = Math.min(1, (now - t0) / dur);
+    const v = 1 - Math.pow(1 - u, 3); // easeOutCubic
+    setT(elm,
+      from.x + (to.x - from.x) * v, from.y + (to.y - from.y) * v,
+      from.r + (to.r - from.r) * v, from.s + (to.s - from.s) * v);
+    if (u < 1) requestAnimationFrame(fr);
+  })(t0);
+}
+// quadratic-bezier flight (for hearts hopping out of the impact)
+function flyT(elm, p0, pc, p1, rot, s0, s1, dur) {
+  const t0 = performance.now();
+  (function fr(now) {
+    const u = Math.min(1, (now - t0) / dur), w = 1 - u;
+    setT(elm,
+      w * w * p0.x + 2 * w * u * pc.x + u * u * p1.x,
+      w * w * p0.y + 2 * w * u * pc.y + u * u * p1.y,
+      rot * u, s0 + (s1 - s0) * u);
+    if (u < 1) requestAnimationFrame(fr);
+  })(t0);
+}
 // sample a point in the perspective floor disc (same projection as shards)
 function floorDisc(R) {
   const th = Math.random() * Math.PI * 2;
@@ -304,7 +333,7 @@ function floorDisc(R) {
     dy: 0.196 * rr * Math.cos(th) + 0.355 * rr * Math.sin(th),
   };
 }
-function burstHearts(cx, cy) {
+function burstHearts(cx, cy, animate) {
   fxG.innerHTML = "";
   const pinks = ["#f78fb0", "#fba7c0", "#ef7aa2", "#f95f96"];
   for (let i = 0; i < 30; i++) {
@@ -315,13 +344,12 @@ function burstHearts(cx, cy) {
     const h = el("path", { d: HEART, fill: pinks[i % pinks.length],
       stroke: "#e06a92", "stroke-width": "3", "stroke-linejoin": "round",
       transform: `translate(${x1} ${y1}) rotate(${rot}) scale(${sc})` }, fxG);
-    h.style.transformOrigin = "0 0";
-    // hop out of the impact point in a little arc, then rest
-    h.animate([
-      { transform: `translate(${cx}px ${cy - 40}px) rotate(0deg) scale(${sc * 0.5})` },
-      { transform: `translate(${(cx + x1) / 2}px ${Math.min(cy, y1) - 90 - Math.random() * 90}px) rotate(${rot / 2}deg) scale(${sc})`, offset: 0.55 },
-      { transform: `translate(${x1}px ${y1}px) rotate(${rot}deg) scale(${sc})` },
-    ], { duration: 550 + Math.random() * 450, easing: "cubic-bezier(.3,.5,.6,1)" });
+    // hop out of the impact point in a little arc, then rest exactly there
+    if (animate) flyT(h,
+      { x: cx, y: cy - 40 },
+      { x: (cx + x1) / 2, y: Math.min(cy, y1) - 120 - Math.random() * 90 },
+      { x: x1, y: y1 },
+      rot, sc * 0.5, sc, 550 + Math.random() * 450);
   }
 }
 function drawWreck(cx, cy, animate) {
@@ -350,21 +378,23 @@ function drawWreck(cx, cy, animate) {
     const s = el("path", { d, fill: "#79c4ef", "fill-opacity": ".5",
       stroke: "var(--blue-deep)", "stroke-width": "4", "stroke-linejoin": "round",
       transform: `translate(${cx + dx} ${cy + dy}) rotate(${rot}) scale(${sc})` }, fxG);
-    s.style.transformOrigin = "0 0"; // CSS anims must rotate about the local origin, like the attribute
-    if (animate) s.animate(
-      [{ transform: `translate(${cx}px ${cy - 30}px) rotate(0deg) scale(${sc})` },
-       { transform: `translate(${cx + dx}px ${cy + dy}px) rotate(${rot}deg) scale(${sc})` }],
-      { duration: 220 + Math.abs(dx) * 0.9 + i * 12, easing: "cubic-bezier(.2,.7,.4,1)" });
+    if (animate) tweenT(s, { x: cx, y: cy - 30, r: 0, s: sc },
+      { x: cx + dx, y: cy + dy, r: rot, s: sc },
+      220 + Math.abs(dx) * 0.9 + i * 12);
   }
   if (animate) for (let i = 0; i < 7; i++) {
     const a = -Math.PI * (0.15 + 0.7 * Math.random());
     const v = 220 + Math.random() * 240, r = 3 + Math.random() * 4.5;
-    const d = el("circle", { cx, cy: cy - 8, r, fill: "var(--blue)" }, fxG);
+    const d = el("circle", { cx: 0, cy: 0, r, fill: "var(--blue)" }, fxG);
     const vx = Math.cos(a) * v * (Math.random() < 0.5 ? 1 : -1), vy = Math.sin(a) * v;
-    d.animate([
-      { transform: "translate(0px,0px)", opacity: 1 },
-      { transform: `translate(${vx * 0.35}px, ${vy * 0.35 + 145}px)`, opacity: 0 },
-    ], { duration: 460, easing: "cubic-bezier(.3,.3,.6,1)", fill: "forwards" });
+    const t0 = performance.now();
+    (function fr(now) {
+      const u = Math.min(1, (now - t0) / 460);
+      d.setAttribute("transform",
+        `translate(${cx + vx * 0.35 * u} ${cy - 8 + (vy * 0.35 + 145) * u * u})`);
+      d.setAttribute("opacity", String(1 - u));
+      if (u < 1) requestAnimationFrame(fr); else d.remove();
+    })(t0);
   }
 }
 
@@ -523,6 +553,7 @@ function showLogin() {
 async function enter(me) {
   user = me;
   $("login").classList.add("hidden");
+  if (TEST) return; // test hooks own the scene; don't clear/redraw over them
   const res = await fetch(`${API}/state`).catch(() => null);
   if (res && res.ok) {
     const st = await res.json();
@@ -558,7 +589,7 @@ function applyTest() {
   }
   if (TEST === "mid") { cup.t = 0.75; }
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
-  if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y); }
+  if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y, false); }
   if (TEST) renderCup();
 }
 applyTest();
@@ -567,7 +598,6 @@ applyTest();
   const res = await fetch(`${AUTH}/me`).catch(() => null);
   if (res && res.ok) await enter(await res.json());
   else showLogin();
-  applyTest(); // re-assert over server state
 })();
 </script>
 </body>
