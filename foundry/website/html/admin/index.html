@@ -121,7 +121,13 @@ function renderUsers(users) {
 
     const siteOpts = websites.filter(w => w.roles.length)
       .map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
-    const inviteOpts = websites.map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
+    const userSites = new Set(u.roles.map(r => r.website));
+    const inviteOpts = websites.filter(w => userSites.has(w.website))
+      .map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
+    const inviteCtl = inviteOpts
+      ? `<select data-act="invite-site">${inviteOpts}</select>
+          <button class="quiet" data-act="invite">Invite</button>`
+      : "";
 
     tr.innerHTML = `
       <td><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "password unset"}"></span></td>
@@ -141,8 +147,7 @@ function renderUsers(users) {
       <td>
         <span class="inline">
           <button class="quiet" data-act="reset">Reset</button>
-          <select data-act="invite-site">${inviteOpts}</select>
-          <button class="quiet" data-act="invite">Invite</button>
+          ${inviteCtl}
         </span>
       </td>
       <td>${u.username === me.username ? "" : `<button class="quiet" data-act="del" title="delete user">Delete</button>`}</td>`;
