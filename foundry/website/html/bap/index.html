@@ -175,7 +175,7 @@ addEventListener("resize", fit); fit();
 // parallel to the far edge until the track crosses the front rim.
 const TAB = { x0: 440, x1: 640, slope: 0.20, yAt: x => 624 + 0.20 * (x - 470) };
 const EDGE_X = 650;           // center of gravity past this -> tip off
-const FLOOR_Y = 1290;         // floor level, just below the leg feet
+const FLOOR_Y = 1400;         // floor in FRONT of the table (below the leg feet)
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
 // and true g would be 9800 px/s². 8200 keeps it snappy but playable.
 const GRAV = 8200;
@@ -276,7 +276,7 @@ function startFall() {
   const p = cupXY();
   cup.mode = "falling";
   cup.fx = p.x; cup.fy = p.y;
-  cup.fvx = 70 + Math.random() * 90; cup.fvy = -40;
+  cup.fvx = 140 + Math.random() * 160; cup.fvy = -40;
   cup.frot = 0; cup.fvr = 170 + Math.random() * 160;
 }
 
@@ -290,23 +290,28 @@ function shatter() {
 }
 function drawWreck(cx, cy, animate) {
   fxG.innerHTML = "";
-  el("ellipse", { cx, cy: cy + 8, rx: 74, ry: 11, fill: "#7cc4ee", "fill-opacity": ".35" }, fxG);
-  const shards = [
+  el("ellipse", { cx, cy: cy + 8, rx: 95, ry: 12, fill: "#7cc4ee", "fill-opacity": ".35" }, fxG);
+  const shapes = [
     "M 0 0 L 26 -34 L 38 -4 Z", "M 0 0 L -30 -26 L -12 -40 L -4 -6 Z",
     "M 0 0 L 18 -20 L 30 -22 L 12 -2 Z", "M 0 0 L -22 -14 L -34 -2 Z",
     "M 0 0 L 8 -26 L -6 -24 Z", "M 0 0 L 40 -12 L 46 -2 Z", "M 0 0 L -44 -8 L -50 0 Z",
   ];
-  shards.forEach((d, i) => {
-    const dx = (i - 3) * 22 + (Math.random() - 0.5) * 16;
-    const rot = (Math.random() - 0.5) * 70;
+  const N = 13;
+  for (let i = 0; i < N; i++) {
+    const d = shapes[i % shapes.length];
+    const far = i % 4 === 3 ? 2.2 + Math.random() * 1.3 : 1; // some fly way out
+    const dx = ((i - (N - 1) / 2) * 26 + (Math.random() - 0.5) * 34) * far;
+    const dy = -Math.random() * 10;
+    const rot = (Math.random() - 0.5) * 110;
+    const sc = 0.65 + Math.random() * 0.75;
     const s = el("path", { d, fill: "#79c4ef", "fill-opacity": ".5",
       stroke: "var(--blue-deep)", "stroke-width": "4", "stroke-linejoin": "round",
-      transform: `translate(${cx + dx} ${cy}) rotate(${rot})` }, fxG);
+      transform: `translate(${cx + dx} ${cy + dy}) rotate(${rot}) scale(${sc})` }, fxG);
     if (animate) s.animate(
-      [{ transform: `translate(${cx}px ${cy - 30}px) rotate(0deg)` },
-       { transform: `translate(${cx + dx}px ${cy}px) rotate(${rot}deg)` }],
-      { duration: 240 + i * 30, easing: "cubic-bezier(.2,.7,.4,1)" });
-  });
+      [{ transform: `translate(${cx}px ${cy - 30}px) rotate(0deg) scale(${sc})` },
+       { transform: `translate(${cx + dx}px ${cy + dy}px) rotate(${rot}deg) scale(${sc})` }],
+      { duration: 220 + Math.abs(dx) * 0.9 + i * 12, easing: "cubic-bezier(.2,.7,.4,1)" });
+  }
   if (animate) for (let i = 0; i < 7; i++) {
     const a = -Math.PI * (0.15 + 0.7 * Math.random());
     const v = 220 + Math.random() * 240, r = 3 + Math.random() * 4.5;
@@ -494,7 +499,7 @@ function applyTest() {
     $("slamL").classList.remove("hidden"); $("slamR").classList.remove("hidden");
   }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(700, FLOOR_Y, false); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
   if (TEST) renderCup();
 }
 applyTest();
