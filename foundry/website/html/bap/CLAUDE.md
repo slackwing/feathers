@@ -20,12 +20,16 @@ the shatter later.
   (which it baps) runs right under its chin, and the front rim sweeps
   from the right corner down-left off screen. A `clip-path` on `#cat`
   hides the sprites' low-slung slam paws/beans, which were drawn for
-  bongo.cat's tall instruments. Surface is filled light wood with a slab
-  thickness under the rim and two square vertical legs. The cup starts
-  in the cat's line of sight, rides a track parallel to the far edge,
-  and tips off the rim at x~545 (under the cat's right paw). Physics:
-  near-real gravity (1px ~ 1mm), baps only move a grounded cup, but a
-  bap can resonantly catch a cup that's just about to land. Scene space
-  is 1800×1000, scaled to the viewport.
+  bongo.cat's tall instruments. The table is a side view in light birch:
+  near-level front rim, thick slab with a visible right end face, two
+  square 3D legs (front + side face). The cup starts in the cat's line
+  of sight, rides a track parallel to the far edge, and tips off the rim
+  at x~545 (under the cat's right paw). Physics: near-real gravity
+  (1px ~ 1mm), baps only move a grounded cup, but a bap can resonantly
+  catch a cup that's just about to land. Scene space is 1800×1000,
+  scaled to the viewport.
+- NO UI chrome (per Andrew: private site) — no title, counter, credit,
+  or logout; just cat/table/cup plus the login overlay when logged out.
+  A broken cup resets to home on refresh (shatters still counts).
 - Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`.
   Sounds are WebAudio-synthesized; no audio assets.

@@ -35,6 +35,8 @@
     transform-origin: 0 0;
   }
   #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
+  /* the cup + shards render above the cat: they're nearer the viewer */
+  #cupfx { position: absolute; inset: 0; overflow: visible; z-index: 3; pointer-events: none; }
   /* cat sits ABOVE the table line; the clip hides the sprite's low-slung
      slam paws + resting beans (drawn for bongo.cat's tall instruments) so
      only the head peeks over the edge and arms flick over it */
@@ -51,37 +53,6 @@
   #cat #pawL { background-image: url(img/paw-left.png); }
   #cat #pawR { background-image: url(img/paw-right.png); }
   #cat .layer.down { background-position-x: -800px; }
-
-  /* ---- HUD ---- */
-  #brand {
-    position: fixed; top: 22px; right: 34px;
-    text-align: right; line-height: 1; pointer-events: none;
-  }
-  #brand .t { font-size: 58px; }
-  #count { font-size: 26px; color: var(--soft); min-height: 1em; margin-top: 4px; }
-  #who {
-    position: fixed; bottom: 14px; right: 20px;
-    font-size: 17px; color: var(--soft);
-  }
-  #who a { color: var(--soft); text-decoration: underline; cursor: pointer; }
-  #credit {
-    position: fixed; bottom: 14px; left: 20px;
-    font-size: 13px; color: #c9c9c9;
-  }
-  #credit a { color: #c9c9c9; }
-
-  /* ---- doodle button ---- */
-  .doodle-btn {
-    position: absolute;
-    font-family: inherit; font-size: 30px; color: var(--ink);
-    background: #fff; cursor: pointer; padding: 6px 22px 2px;
-    border: 3px solid var(--ink);
-    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
-    transform: rotate(-2deg);
-    transition: transform .1s;
-  }
-  .doodle-btn:hover { transform: rotate(-2deg) scale(1.06); }
-  .doodle-btn:active { transform: rotate(-2deg) scale(.95); }
 
   /* ---- login ---- */
   #login {
@@ -124,25 +95,31 @@
   <div id="scene">
     <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
-        <!-- a very long table seen from its end: the cat sits at the head.
-             Far edge (bapped) runs under the chin; from its right corner the
-             front rim sweeps down-left off screen, the way the cat faces.
-             Light-wood surface, slab thickness under the rim, square legs. -->
-        <path fill="#f5e3c0" stroke="none" d="M -40 102
+        <!-- a long birch table seen from the side: far edge (bapped) runs
+             under the chin; the front rim is nearly level, with a thick
+             slab, a visible right end face, and square 3D legs below. -->
+        <path fill="#f8f0e0" stroke="none" d="M -40 102
           C 220 154, 460 202, 700 250 S 940 298, 1000 310
-          C 690 470, 340 668, -60 880 Z"/>
-        <path fill="#e6c795" stroke-width="8" d="M 920 379 L 920 1020 L 952 1020 L 952 362 Z"/>
-        <path fill="#e6c795" stroke-width="8" d="M 240 745 L 240 1020 L 276 1020 L 276 726 Z"/>
-        <path fill="#e0bf8c" stroke="none" d="M 1000 310
-          C 690 470, 340 668, -60 880 L -60 904
-          C 340 692, 690 494, 1000 334 Z"/>
+          C 700 316, 300 330, -60 342 Z"/>
+        <!-- legs: front face + right side face, tucked under the slab -->
+        <path fill="#dcc69e" stroke-width="8" d="M 960 366 L 978 356 L 978 1020 L 960 1020 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 920 368 L 920 1020 L 960 1020 L 960 366 Z"/>
+        <path fill="#dcc69e" stroke-width="8" d="M 120 393 L 138 383 L 138 1020 L 120 1020 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 80 394 L 80 1020 L 120 1020 L 120 393 Z"/>
+        <!-- slab thickness + right end face -->
+        <path fill="#dfcda6" stroke-width="8" d="M 1000 310 L 1018 300 L 1018 355 L 1000 365 Z"/>
+        <path fill="#e9dabb" stroke="none" d="M 1000 310
+          C 700 316, 300 330, -60 342 L -60 397
+          C 300 385, 700 371, 1000 365 Z"/>
         <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
           S 940 298, 1000 310"/>
-        <path fill="none" stroke-width="13" d="M 1000 310 C 690 470, 340 668, -60 880"/>
-        <path fill="none" stroke-width="10" d="M 1000 334 C 690 494, 340 692, -60 904"/>
-        <path stroke-width="10" d="M 1000 312 L 1000 332"/>
+        <path fill="none" stroke-width="13" d="M 1000 310 C 700 316, 300 330, -60 342"/>
+        <path fill="none" stroke-width="10" d="M 1000 365 C 700 371, 300 385, -60 397"/>
+        <path stroke-width="10" d="M 1000 312 L 1000 363"/>
       </g>
+    </svg>
+    <svg id="cupfx" viewBox="0 0 1800 1000" fill="none">
       <g id="cupG"></g>
       <g id="fxG"></g>
     </svg>
@@ -152,12 +129,7 @@
       <div class="layer" id="pawL"></div>
       <div class="layer" id="pawR"></div>
     </div>
-    <button id="newcup" class="doodle-btn hidden" style="left:1150px; top:520px;">new cup</button>
   </div>
-
-  <div id="brand"><div class="t">bap</div><div id="count"></div></div>
-  <div id="who" class="hidden"><span id="whoname"></span> · <a id="out">out</a></div>
-  <div id="credit">cat by <a href="https://twitter.com/StrayRogue" target="_blank" rel="noopener">@StrayRogue</a> via <a href="https://bongo.cat" target="_blank" rel="noopener">bongo.cat</a></div>
 </div>
 
 <div id="login" class="hidden">
@@ -191,7 +163,7 @@ addEventListener("resize", fit); fit();
 // The cup starts in the cat's line of sight (down-left of the face) and
 // rides a track parallel to the far edge until the track crosses the
 // front rim at x ~ 545, vertically under the cat's right paw.
-const TAB = { x0: 350, x1: 535, slope: 0.20, yAt: x => 540 + 0.20 * (x - 470) };
+const TAB = { x0: 350, x1: 535, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
 const EDGE_X = 545;           // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
@@ -208,8 +180,10 @@ function el(name, attrs, parent) {
   if (parent) parent.appendChild(e);
   return e;
 }
-function drawCup(g) {
-  g.innerHTML = "";
+function drawCup(outer) {
+  outer.innerHTML = "";
+  // slightly under-scaled so the cup doesn't hide the cat's face
+  const g = el("g", { transform: "scale(0.8)" }, outer);
   const body = el("path", {
     d: `M -48 -148 C -46 -96, -40 -40, -33 -4
         Q -32 2, -24 3 L 24 3 Q 32 2, 33 -4
@@ -304,7 +278,6 @@ function shatter() {
   shatters += 1; dirty = true; save();
   sndCrash();
   drawWreck(cup.fx, FLOOR_Y, true);
-  $("newcup").classList.remove("hidden");
 }
 function drawWreck(cx, cy, animate) {
   fxG.innerHTML = "";
@@ -337,24 +310,14 @@ function drawWreck(cx, cy, animate) {
   }
 }
 
-$("newcup").addEventListener("click", e => {
-  e.stopPropagation();
-  fxG.innerHTML = "";
-  $("newcup").classList.add("hidden");
-  cup.mode = "table"; cup.t = 0; cup.lift = 0; cup.vLift = 0; cup.wob = 0; cup.vWob = 0;
-  renderCup();
-  dirty = true; save();
-});
-
 /* ================= bap! ================= */
 const pawEls = [$("pawL"), $("pawR")];
 let pawTurn = 0, mouthTimer = 0;
-const tableSvg = $("tableAndCup"), headEl = $("head");
+const tableSvg = $("tableAndCup"), cupSvg = $("cupfx"), headEl = $("head");
 
 function bap() {
   const I = 0.15 + 0.85 * Math.pow(Math.random(), 1.6); // mostly gentle, sometimes THWACK
   baps += 1; dirty = true;
-  $("count").textContent = baps;
   sndThump(I);
 
   // paws
@@ -371,9 +334,9 @@ function bap() {
     [{ transform: "translateY(0)" }, { transform: `translateY(${2 + 4 * I}px)` }, { transform: "translateY(0)" }],
     { duration: 130, easing: "ease-out" });
 
-  // table shake
+  // table shake (cup layer shakes with it)
   const A = 1.5 + 11 * I;
-  tableSvg.animate([
+  for (const el of [tableSvg, cupSvg]) el.animate([
     { transform: "translate(0,0) rotate(0deg)" },
     { transform: `translate(${-A * 0.4}px, ${A}px) rotate(${-0.12 * I}deg)` },
     { transform: `translate(${A * 0.3}px, ${-A * 0.6}px)` },
@@ -405,10 +368,7 @@ function bap() {
   }
 }
 
-$("stage").addEventListener("pointerdown", e => {
-  if (e.target.closest("#who") || e.target.closest("#credit") || e.target.closest(".doodle-btn")) return;
-  bap();
-});
+$("stage").addEventListener("pointerdown", () => bap());
 addEventListener("keydown", e => {
   if (e.code === "Space" && !$("login").offsetParent) { e.preventDefault(); bap(); }
 });
@@ -481,27 +441,23 @@ addEventListener("pagehide", () => {
 /* ================= auth ================= */
 function showLogin() {
   user = null;
-  $("who").classList.add("hidden");
   $("login").classList.remove("hidden");
   $("lu").focus();
 }
 async function enter(me) {
   user = me;
   $("login").classList.add("hidden");
-  $("whoname").textContent = me.username;
-  $("who").classList.remove("hidden");
   const res = await fetch(`${API}/state`).catch(() => null);
   if (res && res.ok) {
     const st = await res.json();
     baps = st.baps || 0; shatters = st.shatters || 0;
-    $("count").textContent = baps || "";
-    fxG.innerHTML = ""; $("newcup").classList.add("hidden");
+    fxG.innerHTML = "";
+    cup.mode = "table";
     if (st.broken) {
-      cup.mode = "broken";
-      drawWreck(650, FLOOR_Y, false);
-      $("newcup").classList.remove("hidden");
+      // a broken cup resets on refresh: fresh cup at home
+      cup.t = 0;
+      dirty = true; save();
     } else {
-      cup.mode = "table";
       cup.t = Math.min(1, Math.max(0, st.cup_x || 0));
     }
     renderCup();
@@ -517,17 +473,12 @@ $("loginForm").addEventListener("submit", async e => {
   if (!res || !res.ok) { $("lmsg").textContent = "nope."; return; }
   enter(await res.json());
 });
-$("out").addEventListener("click", async () => {
-  await fetch(`${AUTH}/logout`, { method: "POST" }).catch(() => {});
-  showLogin();
-});
-
 // visual test hooks (harmless in prod; synchronous so screenshots are deterministic)
 const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
   if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
   if (TEST === "mid") { cup.t = 0.75; }
-  if (TEST === "broken") { cup.mode = "broken"; drawWreck(650, FLOOR_Y, false); $("newcup").classList.remove("hidden"); }
+  if (TEST === "broken") { cup.mode = "broken"; drawWreck(650, FLOOR_Y, false); }
   if (TEST) renderCup();
 }
 applyTest();
