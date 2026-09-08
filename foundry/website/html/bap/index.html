@@ -286,8 +286,38 @@ const fxG = $("fxG");
 function shatter() {
   cup.mode = "broken";
   shatters += 1; dirty = true; save();
-  sndCrash();
-  drawWreck(cup.fx, FLOOR_Y, true);
+  if (Math.random() < 0.25) {
+    sndSparkle();
+    burstHearts(cup.fx, FLOOR_Y);
+  } else {
+    sndCrash();
+    drawWreck(cup.fx, FLOOR_Y, true);
+  }
+}
+const HEART = "M 0 5 C -1 2, -4 0, -7 0 C -11 0, -13 3, -13 6 C -13 11, -7 15, 0 20 C 7 15, 13 11, 13 6 C 13 3, 11 0, 7 0 C 4 0, 1 2, 0 5 Z";
+function burstHearts(cx, cy) {
+  fxG.innerHTML = "";
+  for (let i = 0; i < 14; i++) {
+    const a = Math.PI * (0.1 + 0.8 * Math.random());       // upward fan
+    const v = 120 + Math.random() * 260;
+    const dx = Math.cos(a) * v * (Math.random() < 0.5 ? 1 : -1);
+    const dy = -Math.sin(a) * v - 80;
+    const sc = 0.5 + Math.random() * 0.7;
+    const rot = (Math.random() - 0.5) * 80;
+    const h = el("path", { d: HEART, fill: "#f78fb0", stroke: "#e06a92",
+      "stroke-width": "3", "stroke-linejoin": "round",
+      transform: `translate(${cx} ${cy - 20}) scale(${sc})` }, fxG);
+    h.animate([
+      { transform: `translate(${cx}px ${cy - 20}px) rotate(0deg) scale(${sc})`, opacity: 1 },
+      { transform: `translate(${cx + dx}px ${cy - 20 + dy}px) rotate(${rot}deg) scale(${sc})`, opacity: 0 },
+    ], { duration: 750 + Math.random() * 400, easing: "cubic-bezier(.2,.6,.5,1)", fill: "forwards" });
+  }
+  // a few little hearts stay behind where the cup used to be
+  for (let i = 0; i < 3; i++) {
+    el("path", { d: HEART, fill: "#f78fb0", stroke: "#e06a92",
+      "stroke-width": "3", "stroke-linejoin": "round",
+      transform: `translate(${cx - 45 + i * 42} ${cy - 8 + (i % 2) * 8}) rotate(${-14 + i * 13}) scale(${0.5 + (i % 2) * 0.2})` }, fxG);
+  }
 }
 function drawWreck(cx, cy, animate) {
   fxG.innerHTML = "";
@@ -420,6 +450,20 @@ function noiseBurst(dur, freq, q, gain) {
   n.start(t);
 }
 function sndRattle(I) { try { noiseBurst(0.06, 2600, 8, 0.10 * I); } catch (_) {} }
+function sndSparkle() {
+  try {
+    const a = ctx(), t = a.currentTime;
+    [880, 1175, 1568, 2093].forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.07);
+      g.gain.exponentialRampToValueAtTime(0.11, t + i * 0.07 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.35);
+      o.connect(g).connect(a.destination);
+      o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.4);
+    });
+  } catch (_) {}
+}
 function sndCrash() {
   try {
     noiseBurst(0.5, 3200, 1.2, 0.30);
@@ -501,6 +545,7 @@ function applyTest() {
   }
   if (TEST === "mid") { cup.t = 0.75; }
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
+  if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y); }
   if (TEST) renderCup();
 }
 applyTest();
