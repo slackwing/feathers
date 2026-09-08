@@ -31,7 +31,7 @@
   /* ---- scene (1800x1000 design space, scaled by JS) ---- */
   #scene {
     position: absolute; left: 0; top: 0;
-    width: 1800px; height: 1000px;
+    width: 1800px; height: 1800px;
     transform-origin: 0 0;
   }
   #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
@@ -93,32 +93,32 @@
 <body>
 <div id="stage">
   <div id="scene">
-    <svg id="tableAndCup" viewBox="0 0 1800 1000" fill="none">
+    <svg id="tableAndCup" viewBox="0 0 1800 1800" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
         <!-- a long birch table receding toward the viewer: far edge (bapped)
-             runs under the chin; the front rim plunges steeply down-left off
-             the bottom of the screen. Thick slab, right end face, 3D legs. -->
+             runs under the chin; the front rim plunges down-left all the way
+             to the left screen edge. Thick slab; one 3D leg near the corner. -->
         <path fill="#f8f0e0" stroke="none" d="M -40 102
           C 220 154, 460 202, 700 250 S 940 298, 1000 310
-          C 830 530, 650 780, 468 1023 L -40 1023 Z"/>
-        <!-- corner leg: front + right side face; its three lines run straight
-             down from the table's bottom edge (it disappears underneath),
-             and its right edge continues the corner vertical -->
-        <path fill="#dcc69e" stroke-width="8" d="M 962 416 L 1000 365 L 1000 1020 L 962 1020 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 922 469 L 962 416 L 962 1020 L 922 1020 Z"/>
+          C 650 790, 300 1250, -40 1704 Z"/>
+        <!-- leg, inset a little down the edge from the corner: front face +
+             thinner right side face; all three lines vertical from the
+             table's underside down to a flat foot -->
+        <path fill="#dcc69e" stroke-width="8" d="M 914 480 L 932 456 L 932 1536 L 914 1560 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 870 539 L 914 480 L 914 1560 L 870 1560 Z"/>
         <!-- slab thickness -->
         <path fill="#e9dabb" stroke="none" d="M 1000 310
-          C 830 530, 650 780, 468 1023 L 509 1023
-          C 675 800, 845 570, 1000 365 Z"/>
+          C 650 790, 300 1250, -40 1704 L -40 1759
+          C 310 1300, 660 830, 1000 365 Z"/>
         <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
           S 940 298, 1000 310"/>
-        <path fill="none" stroke-width="13" d="M 1000 310 C 830 530, 650 780, 468 1023"/>
-        <path fill="none" stroke-width="10" d="M 1000 365 C 845 570, 675 800, 509 1023"/>
+        <path fill="none" stroke-width="13" d="M 1000 310 C 650 790, 300 1250, -40 1704"/>
+        <path fill="none" stroke-width="10" d="M 1000 365 C 660 830, 310 1300, -40 1759"/>
         <path stroke-width="10" d="M 1000 312 L 1000 363"/>
       </g>
     </svg>
-    <svg id="cupfx" viewBox="0 0 1800 1000" fill="none">
+    <svg id="cupfx" viewBox="0 0 1800 1800" fill="none">
       <g id="cupG"></g>
       <g id="fxG"></g>
     </svg>
@@ -148,7 +148,7 @@ const API = "/bap/api";
 const $ = id => document.getElementById(id);
 
 /* ================= scene scaling ================= */
-const SW = 1800, SH = 1000;
+const SW = 1800, SH = 1800;
 function fit() {
   const s = Math.min(innerWidth / 1500, innerHeight / SH);
   $("scene").style.transform =
@@ -164,7 +164,7 @@ addEventListener("resize", fit); fit();
 // steep front rim near the corner (x ~ 942).
 const TAB = { x0: 670, x1: 920, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
 const EDGE_X = 930;           // center of gravity past this -> tip off
-const FLOOR_Y = 958;          // where a falling cup meets its end
+const FLOOR_Y = 1600;         // floor level, just below the leg feet
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
 // and true g would be 9800 px/s². 8200 keeps it snappy but playable.
 const GRAV = 8200;
