@@ -31,7 +31,7 @@
   /* ---- scene (1800x1000 design space, scaled by JS) ---- */
   #scene {
     position: absolute; left: 0; top: 0;
-    width: 1800px; height: 1460px;
+    width: 1800px; height: 1560px;
     transform-origin: 0 0;
   }
   #tableAndCup { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
@@ -93,7 +93,7 @@
 <body>
 <div id="stage">
   <div id="scene">
-    <svg id="tableAndCup" viewBox="0 0 1800 1460" fill="none">
+    <svg id="tableAndCup" viewBox="0 0 1800 1560" fill="none">
       <g id="tableG" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
         <!-- a long birch table receding toward the viewer: far edge (bapped)
              runs under the chin; the front rim plunges down-left all the way
@@ -118,7 +118,7 @@
         <path stroke-width="10" d="M 1000 312 L 1000 363"/>
       </g>
     </svg>
-    <svg id="cupfx" viewBox="0 0 1800 1460" fill="none">
+    <svg id="cupfx" viewBox="0 0 1800 1560" fill="none">
       <!-- slam paws: shown while the sprite's arms are down, sitting over
            the table edge right where the clipped arms end -->
       <g id="slamL" class="hidden" transform="translate(372 190) rotate(11)">
@@ -158,7 +158,7 @@ const API = "/bap/api";
 const $ = id => document.getElementById(id);
 
 /* ================= scene scaling ================= */
-const SW = 1800, SH = 1460;
+const SW = 1800, SH = 1560;
 const TOP_MARGIN = 28; // constant screen-px breathing room above the cat
 function fit() {
   const s = Math.min(innerWidth / 1500, (innerHeight - TOP_MARGIN * 2) / SH);
@@ -175,7 +175,8 @@ addEventListener("resize", fit); fit();
 // parallel to the far edge until the track crosses the front rim.
 const TAB = { x0: 440, x1: 640, slope: 0.20, yAt: x => 624 + 0.20 * (x - 470) };
 const EDGE_X = 650;           // center of gravity past this -> tip off
-const FLOOR_Y = 1400;         // floor in FRONT of the table (below the leg feet)
+const FLOOR_Y = 1440;         // floor in FRONT of the table — below even the
+                              // rim's left-edge exit (y~1356), pixelwise
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
 // and true g would be 9800 px/s². 8200 keeps it snappy but playable.
 const GRAV = 8200;
@@ -290,7 +291,7 @@ function shatter() {
 }
 function drawWreck(cx, cy, animate) {
   fxG.innerHTML = "";
-  el("ellipse", { cx, cy: cy + 8, rx: 95, ry: 12, fill: "#7cc4ee", "fill-opacity": ".35" }, fxG);
+  el("ellipse", { cx, cy: cy + 8, rx: 95, ry: 18, fill: "#7cc4ee", "fill-opacity": ".35" }, fxG);
   const shapes = [
     "M 0 0 L 26 -34 L 38 -4 Z", "M 0 0 L -30 -26 L -12 -40 L -4 -6 Z",
     "M 0 0 L 18 -20 L 30 -22 L 12 -2 Z", "M 0 0 L -22 -14 L -34 -2 Z",
@@ -301,7 +302,7 @@ function drawWreck(cx, cy, animate) {
     const d = shapes[i % shapes.length];
     const far = i % 4 === 3 ? 2.2 + Math.random() * 1.3 : 1; // some fly way out
     const dx = ((i - (N - 1) / 2) * 26 + (Math.random() - 0.5) * 34) * far;
-    const dy = -Math.random() * 10;
+    const dy = (Math.random() - 0.5) * 100 * (far > 1 ? 1.3 : 1); // radial, not just sideways
     const rot = (Math.random() - 0.5) * 110;
     const sc = 0.65 + Math.random() * 0.75;
     const s = el("path", { d, fill: "#79c4ef", "fill-opacity": ".5",
