@@ -62,11 +62,6 @@
     <div class="msg err" id="msg"></div>
   </form>
 
-  <div id="done" class="hidden">
-    <div class="msg">hi <span id="dn"></span>.</div>
-    <div class="msg"><a href="/bap/">go bap →</a></div>
-  </div>
-
   <p id="invalid" class="msg err hidden">this invite is void or expired.</p>
 </div>
 
@@ -96,10 +91,7 @@ $("form").addEventListener("submit", async e => {
     $("msg").textContent = res.status === 404 ? "this invite is void or expired." : await res.text();
     return;
   }
-  const me = await res.json();
-  $("form").classList.add("hidden");
-  $("dn").textContent = me.display_name;
-  $("done").classList.remove("hidden");
+  location.href = "/bap/"; // set-password logs you in — straight to the cat
 });
 
 boot();
