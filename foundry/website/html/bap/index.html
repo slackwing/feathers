@@ -22,11 +22,12 @@
     background: #fff;
     color: var(--ink);
     font-family: "Gochi Hand", cursive;
-    overflow: hidden;
     -webkit-user-select: none; user-select: none;
     touch-action: manipulation;
   }
-  #stage { position: fixed; inset: 0; cursor: pointer; }
+  /* clip on the stage, NOT the body — body overflow:hidden kills
+     mobile pull-to-refresh */
+  #stage { position: fixed; inset: 0; cursor: pointer; overflow: hidden; }
 
   /* ---- scene (1800x1000 design space, scaled by JS) ---- */
   #scene {
@@ -196,14 +197,15 @@ function el(name, attrs, parent) {
 // follows the color: blue=glass, pink=hearts, green=guitar picks.
 // ?cup=blue|green|pink forces it (for testing).
 const CUP_KINDS = ["blue", "green", "pink"];
-const qcup = new URLSearchParams(location.search).get("cup");
-const CUP_KIND = CUP_KINDS.includes(qcup) ? qcup
-  : CUP_KINDS[Math.floor(Math.random() * 3)];
-const CUP_STYLE = {
+const CUP_STYLES = {
   blue:  { body: "#79c4ef", stroke: "#1c6fae", rim: "#c8e8fa" },
   green: { body: "#57a06b", stroke: "#1d5c38", rim: "#a9d8bb" },
   pink:  { body: "#f7a8c4", stroke: "#c2517e", rim: "#fbd3e2" },
-}[CUP_KIND];
+};
+const qcup = new URLSearchParams(location.search).get("cup");
+let CUP_KIND = CUP_KINDS.includes(qcup) ? qcup
+  : CUP_KINDS[Math.floor(Math.random() * 3)];
+let CUP_STYLE = CUP_STYLES[CUP_KIND];
 
 function drawCup(outer) {
   outer.innerHTML = "";
@@ -233,6 +235,7 @@ function drawCup(outer) {
 }
 const cupG = $("cupG");
 drawCup(cupG);
+function setCupKind(k) { CUP_KIND = k; CUP_STYLE = CUP_STYLES[k]; drawCup(cupG); }
 
 /* ================= state ================= */
 const cup = {
@@ -580,6 +583,7 @@ function stateBody() {
     cup_x: Math.min(1, Math.max(0, cup.t)),
     baps, broken: cup.mode === "broken", shatters,
     burst: { blue: "glass", green: "picks", pink: "hearts" }[CUP_KIND],
+    color: CUP_KIND,
   });
 }
 function save() {
@@ -617,6 +621,13 @@ async function enter(me) {
   if (res && res.ok) {
     const st = await res.json();
     baps = st.baps || 0; shatters = st.shatters || 0;
+    // re-roll the cup color excluding the server-remembered last one,
+    // and save the pick so the NEXT load excludes it in turn
+    if (!CUP_KINDS.includes(qcup)) {
+      const opts = CUP_KINDS.filter(k => k !== st.color);
+      setCupKind(opts[Math.floor(Math.random() * opts.length)]);
+      dirty = true; save();
+    }
     fxG.innerHTML = "";
     cup.mode = "table";
     if (st.broken) {
