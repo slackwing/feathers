@@ -119,6 +119,24 @@
       </g>
     </svg>
     <svg id="cupfx" viewBox="0 0 1800 1460" fill="none">
+      <!-- slam paws: shown while the sprite's arms are down, sitting over
+           the table edge right where the clipped arms end -->
+      <g id="slamL" class="hidden" transform="translate(372 190) rotate(11)">
+        <path d="M -42 8 Q -44 -30 -14 -34 Q 0 -36 14 -34 Q 44 -30 42 8 Q 30 26 0 28 Q -30 26 -42 8 Z"
+              fill="#fff" stroke="var(--ink)" stroke-width="13" stroke-linejoin="round"/>
+        <ellipse cx="0" cy="4" rx="12" ry="9" fill="#f49cae"/>
+        <circle cx="-19" cy="-13" r="4.5" fill="#f49cae"/>
+        <circle cx="0" cy="-17" r="4.5" fill="#f49cae"/>
+        <circle cx="19" cy="-13" r="4.5" fill="#f49cae"/>
+      </g>
+      <g id="slamR" class="hidden" transform="translate(548 225) rotate(11)">
+        <path d="M -42 8 Q -44 -30 -14 -34 Q 0 -36 14 -34 Q 44 -30 42 8 Q 30 26 0 28 Q -30 26 -42 8 Z"
+              fill="#fff" stroke="var(--ink)" stroke-width="13" stroke-linejoin="round"/>
+        <ellipse cx="0" cy="4" rx="12" ry="9" fill="#f49cae"/>
+        <circle cx="-19" cy="-13" r="4.5" fill="#f49cae"/>
+        <circle cx="0" cy="-17" r="4.5" fill="#f49cae"/>
+        <circle cx="19" cy="-13" r="4.5" fill="#f49cae"/>
+      </g>
       <g id="cupG"></g>
       <g id="fxG"></g>
     </svg>
@@ -163,7 +181,7 @@ addEventListener("resize", fit); fit();
 // The cup starts lined up under the cat's LEFT paw, deep on the table
 // (~420px in from the far edge — 4x the old inset), and rides a track
 // parallel to the far edge until the track crosses the front rim.
-const TAB = { x0: 330, x1: 640, slope: 0.20, yAt: x => 624 + 0.20 * (x - 470) };
+const TAB = { x0: 440, x1: 640, slope: 0.20, yAt: x => 624 + 0.20 * (x - 470) };
 const EDGE_X = 650;           // center of gravity past this -> tip off
 const FLOOR_Y = 1290;         // floor level, just below the leg feet
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
@@ -182,8 +200,7 @@ function el(name, attrs, parent) {
 }
 function drawCup(outer) {
   outer.innerHTML = "";
-  // slightly under-scaled so the cup doesn't hide the cat's face
-  const g = el("g", { transform: "scale(0.8)" }, outer);
+  const g = el("g", { transform: "scale(1.0)" }, outer);
   const body = el("path", {
     d: `M -48 -148 C -46 -96, -40 -40, -33 -4
         Q -32 2, -24 3 L 24 3 Q 32 2, 33 -4
@@ -320,11 +337,15 @@ function bap() {
   baps += 1; dirty = true;
   sndThump(I);
 
-  // paws
+  // paws — sprite frame down + drawn slam paw over the table edge
+  // (paw-right.png slams on the screen-left side and vice versa)
+  const slamFor = p => $(p.id === "pawR" ? "slamL" : "slamR");
   const both = I > 0.8;
   const paws = both ? pawEls : [pawEls[pawTurn ^= 1]];
-  paws.forEach(p => { p.classList.add("down"); });
-  setTimeout(() => paws.forEach(p => p.classList.remove("down")), 90 + I * 60);
+  paws.forEach(p => { p.classList.add("down"); slamFor(p).classList.remove("hidden"); });
+  setTimeout(() => paws.forEach(p => {
+    p.classList.remove("down"); slamFor(p).classList.add("hidden");
+  }), 90 + I * 60);
   if (I > 0.7) {
     $("mouth").classList.add("down");
     clearTimeout(mouthTimer);
@@ -476,7 +497,10 @@ $("loginForm").addEventListener("submit", async e => {
 // visual test hooks (harmless in prod; synchronous so screenshots are deterministic)
 const TEST = new URLSearchParams(location.search).get("test");
 function applyTest() {
-  if (TEST === "down") { $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down"); }
+  if (TEST === "down") {
+    $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down");
+    $("slamL").classList.remove("hidden"); $("slamR").classList.remove("hidden");
+  }
   if (TEST === "mid") { cup.t = 0.75; }
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(700, FLOOR_Y, false); }
   if (TEST) renderCup();
