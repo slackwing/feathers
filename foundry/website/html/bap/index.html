@@ -100,22 +100,21 @@
              the bottom of the screen. Thick slab, right end face, 3D legs. -->
         <path fill="#f8f0e0" stroke="none" d="M -40 102
           C 220 154, 460 202, 700 250 S 940 298, 1000 310
-          C 850 528, 700 760, 560 1023 L -40 1023 Z"/>
-        <!-- legs: front face + right side face, tucked under the slab -->
-        <path fill="#dcc69e" stroke-width="8" d="M 920 494 L 938 484 L 938 1020 L 920 1020 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 880 559 L 880 1020 L 920 1020 L 920 495 Z"/>
-        <path fill="#dcc69e" stroke-width="8" d="M 700 851 L 718 841 L 718 1020 L 700 1020 Z"/>
-        <path fill="#efe3c8" stroke-width="8" d="M 660 916 L 660 1020 L 700 1020 L 700 852 Z"/>
-        <!-- slab thickness + right end face -->
-        <path fill="#dfcda6" stroke-width="8" d="M 1000 310 L 1018 300 L 1018 355 L 1000 365 Z"/>
+          C 830 530, 650 780, 468 1023 L -40 1023 Z"/>
+        <!-- corner leg: front + right side face; its three lines run straight
+             down from the table's bottom edge (it disappears underneath),
+             and its right edge continues the corner vertical -->
+        <path fill="#dcc69e" stroke-width="8" d="M 962 416 L 1000 365 L 1000 1020 L 962 1020 Z"/>
+        <path fill="#efe3c8" stroke-width="8" d="M 922 469 L 962 416 L 962 1020 L 922 1020 Z"/>
+        <!-- slab thickness -->
         <path fill="#e9dabb" stroke="none" d="M 1000 310
-          C 850 528, 700 760, 560 1023 L 594 1023
-          C 715 815, 860 588, 1000 365 Z"/>
+          C 830 530, 650 780, 468 1023 L 509 1023
+          C 675 800, 845 570, 1000 365 Z"/>
         <path id="tabletop" fill="none" stroke-width="15" d="M -40 102
           C 220 154, 460 202, 700 250
           S 940 298, 1000 310"/>
-        <path fill="none" stroke-width="13" d="M 1000 310 C 850 528, 700 760, 560 1023"/>
-        <path fill="none" stroke-width="10" d="M 1000 365 C 860 588, 715 815, 594 1023"/>
+        <path fill="none" stroke-width="13" d="M 1000 310 C 830 530, 650 780, 468 1023"/>
+        <path fill="none" stroke-width="10" d="M 1000 365 C 845 570, 675 800, 509 1023"/>
         <path stroke-width="10" d="M 1000 312 L 1000 363"/>
       </g>
     </svg>
@@ -163,8 +162,8 @@ addEventListener("resize", fit); fit();
 // The cup starts in the cat's line of sight (down-left of the face) and
 // rides a track parallel to the far edge until the track crosses the
 // steep front rim near the corner (x ~ 942).
-const TAB = { x0: 350, x1: 930, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
-const EDGE_X = 940;           // center of gravity past this -> tip off
+const TAB = { x0: 670, x1: 920, slope: 0.20, yAt: x => 309 + 0.20 * (x - 470) };
+const EDGE_X = 930;           // center of gravity past this -> tip off
 const FLOOR_Y = 958;          // where a falling cup meets its end
 // Real-ish gravity: the cup is ~150px for a ~15cm tumbler, so 1px ~ 1mm
 // and true g would be 9800 px/s². 8200 keeps it snappy but playable.
