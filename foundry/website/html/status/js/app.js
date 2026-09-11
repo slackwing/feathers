@@ -1,6 +1,6 @@
 // Configuration
 const API_BASE_URL = '/status/api';
-const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'su', 'art', 'cbc'];
+const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'wdfr', 'ms', 'su', 'art', 'cbc'];
 const WORK_CATEGORIES = ['sp'];
 
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
@@ -14,6 +14,7 @@ const TAG_INFO = {
     fit: 'workout',
     fun: 'fun, e.g. super metroid rom-hacking',
     help: 'helping friends move, etc.',
+    hw: 'halloween',
     jnl: 'journalling',
     rel: 'relationships (friends, neighbors, etc.)',
     rv: '2026 rv trip across america',
@@ -21,6 +22,7 @@ const TAG_INFO = {
     agi: 'abi goh illustrations (website)',
     arch: 'arch linux: customization, maintenance, optimization. daily workflows: [wf]',
     bkc: 'book club (reading and meetings)',
+    cbc: 'cat bap cup',
     cs: 'computer science',
     ean: 'enemies and neighbors (history of israel & palestine)',
     fesh: 'fesh (workout app)',
@@ -36,11 +38,13 @@ const TAG_INFO = {
     mus: 'music (general)',
     phy: 'physics',
     prg: 'programming',
+    qt: 'quantum theory',
     read: 'non-book club reading',
     rk: 'ronnie kichurchak (reviewing and editing his book)',
     su: 'startup',
     vip: 'voices of israel and palestine (personal project showcasing peace efforts of both sides)',
     wapp: 'renamed [fesh] (workout app)',
+    wdfr: 'the wildfire (novel)',
     wf: 'daily workflows: optimization and development, e.g. sxiva',
     wr: 'writing (mainly "the wildfire" from 12/4/25, separated to [wdfr])',
     wre: 'writing/editing',
@@ -48,7 +52,9 @@ const TAG_INFO = {
     wri: 'writing/ideation',
     wrj: 'writing/journalling',
     wro: 'writing/organization',
+    wrr: 'writing (review)',
     wrs: 'writing system: renamed manuscript studio [ms]',
+    wrt: 'writing (technique)',
     ws: 'personal website'
 };
 const CHART_DAYS_LIMIT = 31; // Request 31 days to ensure we have 30 after excluding today
