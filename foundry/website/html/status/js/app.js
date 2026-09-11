@@ -8,6 +8,7 @@ const TAG_INFO = {
     abi: 'things for abi, e.g. halloween decoration',
     act: 'activism: learning how best to help',
     art: 'painting, etc.',
+    drc: 'dopamine resistance counter',
     err: 'errands',
     fam: 'family',
     fin: 'finances',
