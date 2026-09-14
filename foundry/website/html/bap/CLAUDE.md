@@ -31,5 +31,8 @@ the shatter later.
 - NO UI chrome (per Andrew: private site) — no title, counter, credit,
   or logout; just cat/table/cup plus the login overlay when logged out.
   A broken cup resets to home on refresh (shatters still counts).
-- Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`.
+- Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`,
+  `?test=hearts`, `?test=picks`, `?test=flowers` (an apology vase of
+  roses duct-taped to the table: buzzes and the stems whip on a bap,
+  never drifts; `?cup=` picks the cup color).
   Sounds are WebAudio-synthesized; no audio assets.
