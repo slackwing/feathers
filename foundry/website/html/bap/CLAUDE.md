@@ -24,7 +24,11 @@ the shatter later.
   near-level front rim, thick slab with a visible right end face, two
   square 3D legs (front + side face). The cup starts in the cat's line
   of sight, rides a track parallel to the far edge, and tips off the rim
-  at x~545 (under the cat's right paw). Physics: near-real gravity
+  at x~545 (under the cat's right paw). Left of the cup's home, in the
+  foreground, stands an apology: a glass vase of red roses with a
+  "sorry" card, duct-taped to the table (an X of torn strips over the
+  foot). It buzzes in place on a bap and the stems whip on a spring,
+  but it never drifts or falls. Physics: near-real gravity
   (1px ~ 1mm), baps only move a grounded cup, but a bap can resonantly
   catch a cup that's just about to land. Scene space is 1800×1000,
   scaled to the viewport.
@@ -32,7 +36,5 @@ the shatter later.
   or logout; just cat/table/cup plus the login overlay when logged out.
   A broken cup resets to home on refresh (shatters still counts).
 - Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`,
-  `?test=hearts`, `?test=picks`, `?test=flowers` (an apology vase of
-  roses duct-taped to the table: buzzes and the stems whip on a bap,
-  never drifts; `?cup=` picks the cup color).
+  `?test=hearts`, `?test=picks`; `?cup=blue|green|pink` picks the cup.
   Sounds are WebAudio-synthesized; no audio assets.

@@ -264,12 +264,12 @@ function renderCup() {
 renderCup();
 
 
-/* ================= vase of flowers (?test=flowers) =================
+/* ================= vase of flowers =================
    An apology bouquet, duct-taped to the table so the cat can't do to
    it what it does to cups. It's part of the table: it buzzes when the
    table is bapped (the stems sway) but it never drifts. */
 const VASE_AT = { x: 255, y: 770 };   // base center, scene coords
-const vase = { on: false, vib: 0, sway: 0, vSway: 0 };
+const vase = { on: true, vib: 0, sway: 0, vSway: 0 };
 const vaseG = $("vaseG");
 let bouquetG = null;
 function tapeStrip(parent, p0, c0, c1, p1, w) {
@@ -392,6 +392,7 @@ function renderVase() {
   vaseG.setAttribute("transform", `translate(${VASE_AT.x + jx} ${VASE_AT.y + jy})`);
   if (bouquetG) bouquetG.setAttribute("transform", `rotate(${vase.sway} 0 -170)`);
 }
+drawVase(vaseG);
 
 /* ================= physics loop ================= */
 let last = performance.now();
@@ -809,7 +810,6 @@ function applyTest() {
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
   if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y, false); }
   if (TEST === "picks") { cup.mode = "broken"; burstPicks(780, FLOOR_Y, false); }
-  if (TEST === "flowers") { vase.on = true; drawVase(vaseG); }
   if (TEST) renderCup();
 }
 applyTest();
