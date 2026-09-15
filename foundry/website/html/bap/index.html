@@ -268,9 +268,8 @@ renderCup();
    An apology bouquet, duct-taped to the table so the cat can't do to
    it what it does to cups. It's part of the table: it buzzes when the
    table is bapped (the stems sway) but it never drifts.
-   Built but NOT released yet: flip VASE_ON to put it on the table for
-   everyone; until then ?test=flowers previews it. */
-const VASE_ON = false;
+   VASE_ON puts it on the table for everyone; ?test=flowers forces it. */
+const VASE_ON = true;
 const VASE_AT = { x: 255, y: 770 };   // base center, scene coords
 const vase = { on: false, vib: 0, sway: 0, vSway: 0 };
 const vaseG = $("vaseG");
