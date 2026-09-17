@@ -35,9 +35,12 @@ license-only site from the show — rendered as a late-90s OS desktop.
   on invite acceptance), `invite.html`, `welcome.html` (table-based,
   inline-styled retro "window" emails in the site palette, Courier
   fallback since web fonts don't survive mail clients), and
-  `index.html` — an admin-only listing that previews each template with
-  the logged-in admin's data and can send a test to them. Sent from
-  the `/admin/` console; see `../CLAUDE.md` and
+  `index.html` — an admin-only preview page in the PLAIN admin-console
+  style (`/admin/assets/style.css`), deliberately not the site theme,
+  so the themed email inside the frame is unmistakably the email. The
+  frame is inert (`pointer-events: none`, sandboxed; the sample invite
+  link is not a real code) and it can send a test to the admin. Sent
+  for real from the `/admin/` console; see `../CLAUDE.md` and
   `~/src/hobby-server/docs/SHARED_AUTH.md`.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
@@ -49,8 +52,9 @@ license-only site from the show — rendered as a late-90s OS desktop.
   the summons window paints in jankily — frame first, menu bar ~90ms
   later, body ~200ms in (`Retro.open(..., {jank: true})`) — and the
   notice types. Roster and Registration are pre-positioned but closed
-  until opened (CTA, icons, Start menu). The tray shows the user's
-  initials avatar (shared-auth `initial` + `color`).
+  until opened (CTA, icons, Start menu). The Start menu has a Windows
+  style user header (initials avatar from shared-auth `initial` +
+  `color`, plus display name); nothing user-related in the tray.
 
 ## Retro chrome (shared files)
 
@@ -64,7 +68,7 @@ license-only site from the show — rendered as a late-90s OS desktop.
   `boot({badge, splash, lines, speed, tail})`, `place(id, at)`,
   `open(id, at, {scroll, jank})`, `toast(msg)`, `setCRT(on)`
   (persisted in `localStorage hxh.crt`), `avatar(acct)` + `setUser(acct)`
-  (tray avatar), `icon(name, size)` (ASCII-grid pixel icons → SVG,
+  (Start menu user header), `icon(name, size)` (ASCII-grid pixel icons → SVG,
   integer-scaled), and
   `sprite(emoji)` (emoji drawn on a 16px canvas, alpha-thresholded and
   snapped to the web-safe palette, upscaled with `image-rendering:
@@ -146,7 +150,8 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 ## Keep these three in sync
 
 The site chrome (`retro.css`/`retro.js` + pages), the invite page
-(`_invite/`), and the emails (`_email/*.html`) are one look. A theme
+(`_invite/`), and the emails (`_email/*.html`) are one look (the
+`_email/index.html` preview page is the exception — keep it plain). A theme
 change is not done until all three match — change them in the same
 commit, and re-screenshot `_email/` and `_invite/` alongside the
 desktop. The emails can't load the web fonts or the shared CSS, so

@@ -4,151 +4,127 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Hunter × Halloween — Email templates</title>
+<title>hxh email templates</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../retro.css?v=7">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<!-- Deliberately the plain admin-console look, NOT the site theme, so the
+     themed email inside the preview frame is unmistakably the email. -->
+<link rel="stylesheet" href="/admin/assets/style.css?v=2">
 <style>
-  .desktop { padding: 16px 16px calc(var(--taskbar-h) + 16px); max-width: 64rem; margin: 0 auto; }
-  .win.static { width: 100%; margin-bottom: 14px; }
-  .list { display: flex; flex-wrap: wrap; gap: 8px; }
-  .list .btn { text-transform: none; font: 16px/1 var(--font-dot); padding: 9px 14px; display: flex; align-items: center; gap: 8px; }
-  .subject { margin: 0 0 10px; }
-  .subject b { color: var(--blood); }
-  iframe { width: 100%; height: 720px; border: var(--px) solid var(--ink); background: var(--ink); display: block; }
-  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  #status { text-align: center; color: var(--ink-4); padding: 2rem 1rem; }
+  .tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .tabs button.on { background: var(--accent); color: var(--bg); }
+  .meta { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: baseline; color: var(--dim); font-size: .85rem; margin-bottom: .8rem; }
+  .meta b { color: var(--text); font-weight: 500; }
+  .frame { border: 1px solid var(--line); background: #fff; position: relative; }
+  .frame iframe { display: block; width: 100%; height: 760px; border: 0; pointer-events: none; }
+  .frame::after {
+    content: "preview — links are inert"; position: absolute; top: .5rem; right: .5rem;
+    background: var(--panel); color: var(--dim); border: 1px solid var(--line);
+    padding: .15rem .5rem; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .actions { display: flex; gap: .6rem; align-items: center; margin-top: 1rem; }
   .hidden { display: none !important; }
 </style>
 </head>
-<body class="nofloat">
-<div class="desktop" id="desktop">
-  <div class="win static" id="win-list" data-title="Email templates — hxh/_email" data-icon="envelope" data-noclose data-notask>
-    <div class="mbar">
-      <div class="menu"><button type="button"><u>F</u>ile</button>
-        <div class="dd">
-          <button type="button" data-act="site">Hunter Website</button>
-          <button type="button" data-act="rosterdb">Roster DB</button>
-          <hr>
-          <button type="button" data-act="logout">Log out</button>
-        </div></div>
-      <div class="menu"><button type="button"><u>V</u>iew</button>
-        <div class="dd"><button type="button" class="chk" data-crt>Scanlines</button></div></div>
-    </div>
-    <div class="body">
-      <div id="status">…</div>
-      <div class="list hidden" id="list"></div>
-    </div>
-  </div>
+<body>
+<main>
+  <header class="top">
+    <h1>hxh email templates</h1>
+    <span class="who"><a href="/hxh/">site</a> · <a href="/admin/">console</a></span>
+  </header>
 
-  <div class="win static hidden" id="win-preview" data-title="Preview" data-icon="x" data-noclose data-notask>
-    <div class="body">
-      <div class="row">
-        <p class="subject">Subject: <b id="subject"></b></p>
-        <div class="actions" style="margin:0"><button class="btn primary" type="button" id="send">Send test to me</button></div>
-      </div>
-      <iframe id="frame" title="Email preview" sandbox=""></iframe>
-      <div class="msg" id="msg"></div>
-    </div>
-  </div>
-</div>
-<div class="taskbar" id="taskbar"></div>
-<div class="startmenu" id="startmenu"></div>
+  <p id="status" class="msg">…</p>
 
-<script src="../retro.js?v=7"></script>
+  <section id="view" class="hidden">
+    <div class="tabs" id="tabs"></div>
+    <div class="meta">
+      <span>template <b id="tid"></b></span>
+      <span>subject <b id="subject"></b></span>
+      <span>to <b id="to"></b></span>
+      <span id="note"></span>
+    </div>
+    <div class="frame"><iframe id="frame" title="Email preview" sandbox=""></iframe></div>
+    <div class="actions">
+      <button id="send" class="quiet">Send test to me</button>
+      <span class="msg" id="msg" style="margin:0"></span>
+    </div>
+  </section>
+</main>
+
 <script>
-Retro.init({ start: true });
 const AUTH = "/admin/api";
 const SITE = "hxh";
 const $ = id => document.getElementById(id);
 let me = null, manifest = null, current = null;
 
-const ACT = {
-  site: () => { location.href = "/hxh/"; },
-  rosterdb: () => { location.href = "/hxh/roster.html"; },
-  logout: async () => { await fetch(AUTH + "/logout", { method: "POST" }); location.href = "/hxh/"; },
-};
-document.addEventListener("click", e => {
-  const b = e.target.closest("[data-act]");
-  if (b && ACT[b.dataset.act]) ACT[b.dataset.act]();
-});
-Retro.startMenu(() => [
-  { label: "Hunter Website", icon: "x", onclick: ACT.site },
-  { label: "Roster DB", icon: "db", onclick: ACT.rosterdb },
-  "sep",
-  { label: "Scanlines", icon: "crt", check: () => document.body.classList.contains("crt"),
-    onclick: () => Retro.setCRT(!document.body.classList.contains("crt")) },
-  "sep",
-  { label: "Log out", icon: "door", onclick: ACT.logout },
-]);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function textColor(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex || "")) return "#fff6e0";
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#0b0a08" : "#fff6e0";
+}
 
 // Same variable set the server substitutes (hobby-server
-// internal/shared/email.go) — sample values for the logged-in admin.
+// internal/shared/email.go), filled with the logged-in admin's account.
 function sampleVars() {
   const base = location.origin;
   const exp = new Date(Date.now() + 7 * 86400e3);
   return {
     display_name: me.display_name, username: me.username, initial: me.initial,
-    color: me.color, color_text: Retro.textColorFor(me.color),
-    email: me.email || "(no email on file)", website: SITE,
+    color: me.color, color_text: textColor(me.color),
+    email: me.email || "", website: SITE,
     site_url: `${base}/${SITE}/`, base_url: base,
     invite_url: `${base}/${SITE}/_invite/?code=SAMPLE-CODE`,
     expires_at: exp.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
     year: String(exp.getFullYear()),
   };
 }
-const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function render(s, vars, escape) {
-  return s.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => escape ? escHtml(vars[k] ?? "") : (vars[k] ?? ""));
+  return s.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => escape ? esc(vars[k] ?? "") : (vars[k] ?? ""));
 }
 
 async function preview(t) {
   current = t;
-  document.querySelectorAll("#list .btn").forEach(b => b.classList.toggle("pressed", b.dataset.id === t.id));
-  const res = await fetch(`${t.id}.html`, { cache: "no-cache" });
-  const body = await res.text();
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.id === t.id));
+  const body = await (await fetch(`${t.id}.html`, { cache: "no-cache" })).text();
   const vars = sampleVars();
+  $("tid").textContent = `${t.id}.html`;
   $("subject").textContent = render(t.subject, vars, false);
+  $("to").textContent = me.email || "(no email on your account)";
+  $("note").textContent = t.on ? `sent automatically on: ${t.on}` : (t.invite ? "mints a fresh 7-day invite link per send" : "");
   $("frame").srcdoc = render(body, vars, true);
   $("msg").textContent = "";
-  $("win-preview").classList.remove("hidden");
+  $("send").disabled = !me.email;
 }
 
 $("send").addEventListener("click", async () => {
   if (!current) return;
-  $("msg").className = "msg";
-  $("msg").textContent = "Sending…";
+  $("msg").className = "msg"; $("msg").textContent = "sending…";
   const res = await fetch(AUTH + "/email", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: me.username, website: SITE, template: current.id }),
   });
   if (!res.ok) { $("msg").className = "msg err"; $("msg").textContent = await res.text(); return; }
   const r = await res.json();
-  $("msg").className = "msg ok";
-  $("msg").textContent = `Sent "${r.subject}" to ${r.to}.`;
+  $("msg").className = "msg ok"; $("msg").textContent = `sent "${r.subject}" to ${r.to}`;
 });
 
 async function boot() {
   const res = await fetch(AUTH + "/me");
   if (!res.ok) { $("status").innerHTML = 'Not logged in. <a href="/hxh/">Log in first</a>.'; return; }
   me = await res.json();
-  const isAdmin = (me.roles || []).some(r => r.website === SITE && r.role === "admin");
-  if (!isAdmin) { $("status").textContent = "Exam committee only."; return; }
-  Retro.setUser(me);
+  if (!(me.roles || []).some(r => r.website === SITE && r.role === "admin")) { $("status").textContent = "Not authorized."; return; }
   manifest = await (await fetch("templates.json", { cache: "no-cache" })).json();
-  const list = $("list");
-  list.innerHTML = "";
+  const tabs = $("tabs");
   for (const t of manifest.templates) {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "btn"; b.dataset.id = t.id;
-    b.innerHTML = `${Retro.icon("envelope", 16)}<span>${escHtml(t.name)}</span>`;
-    b.title = t.on ? `sent automatically on: ${t.on}` : (t.invite ? "mints a fresh invite link per send" : "");
+    b.dataset.id = t.id; b.textContent = t.name;
     b.addEventListener("click", () => preview(t));
-    list.append(b);
+    tabs.append(b);
   }
   $("status").classList.add("hidden");
-  list.classList.remove("hidden");
+  $("view").classList.remove("hidden");
   if (manifest.templates[0]) preview(manifest.templates[0]);
 }
 boot();

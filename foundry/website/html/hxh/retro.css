@@ -318,7 +318,16 @@ body.crt::after {
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     4px 4px 0 rgba(0,0,0,.5);
 }
-.startmenu.open { display: flex; }
+.startmenu.open { display: flex; flex-direction: column; }
+.startmenu .row { display: flex; flex: 1; }
+.startmenu .user {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--ink); color: var(--paper);
+  padding: 8px 10px; margin-bottom: 4px;
+  border: var(--px) solid var(--ink);
+  font: 16px/1 var(--font-dot);
+}
+.startmenu .user .name { padding-top: 2px; }
 .startmenu .band {
   flex: 0 0 26px; background: var(--blood); color: var(--paper-hi);
   writing-mode: vertical-rl; transform: rotate(180deg);
@@ -373,7 +382,6 @@ body.crt::after {
   vertical-align: middle;
 }
 .avatar.lg { width: 44px; height: 44px; font-size: 14px; }
-.taskbar .tray .who { display: flex; align-items: center; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }
 

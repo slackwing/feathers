@@ -203,17 +203,10 @@ const Retro = (() => {
     const color = acct?.color || "#9a9a9a";
     return `<span class="avatar ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}">${esc(acct?.initial || "?")}</span>`;
   }
-  // Show the logged-in user in the taskbar tray.
-  function setUser(acct) {
-    const tray = taskbar && $(".tray", taskbar);
-    if (!tray) return;
-    $(".who", tray)?.remove();
-    if (!acct) return;
-    const w = document.createElement("span");
-    w.className = "who";
-    w.innerHTML = avatar(acct);
-    tray.prepend(w);
-  }
+  // Remember the logged-in user; the Start menu shows them in its
+  // header (Windows style), nothing in the tray.
+  let currentUser = null;
+  function setUser(acct) { currentUser = acct || null; }
 
   // ---------- windows ----------
   function register(el, o = {}) {
@@ -385,7 +378,10 @@ const Retro = (() => {
   function renderStart() {
     if (!startmenu || !menuItems) return;
     const items = typeof menuItems === "function" ? menuItems() : menuItems;
-    startmenu.innerHTML = `<div class="band">HUNTER×HALLOWEEN</div><div class="items"></div>`;
+    const head = currentUser
+      ? `<div class="user">${avatar(currentUser, "lg")}<span class="name">${esc(currentUser.display_name || currentUser.username || "")}</span></div>`
+      : "";
+    startmenu.innerHTML = `${head}<div class="row"><div class="band">HUNTER×HALLOWEEN</div><div class="items"></div></div>`;
     const box = $(".items", startmenu);
     items.forEach(it => {
       if (it === "sep") { box.append(document.createElement("hr")); return; }
