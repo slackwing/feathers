@@ -42,8 +42,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
 - **Boot**: every logged-in load boots — HunterOS 99 BIOS lines with
-  the "a purple square production" badge (blocky violet tee in a purple
-  square, `tee` icon) in the lower right the whole time; quick on a
+  the "a purple square production" badge (bare blocky violet tee, `tee`
+  icon, no backing square) in the lower right the whole time; quick on a
   returning session, a beat slower right after logging in; click skips.
   Then the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
   the summons window paints in jankily — frame first, menu bar ~90ms
