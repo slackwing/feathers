@@ -7,51 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=12">
+<link rel="stylesheet" href="retro.css?v=13">
+<link rel="stylesheet" href="binder.css?v=2">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
   .vn p { margin: 0; white-space: pre-line; }
   .ib { width: 32px; height: 32px; display: grid; place-items: center; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 0 12px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
-  .tile {
-    --hue: var(--none);
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 8px 4px; cursor: pointer;
-    font: inherit; color: var(--ink); background: var(--paper);
-    border: var(--px) solid var(--ink);
-    box-shadow:
-      inset var(--px) var(--px) 0 var(--paper-hi),
-      inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-      var(--px) var(--px) 0 var(--ink);
-  }
-  .tile:hover { background: var(--paper-hi); }
-  .tile:active {
-    transform: translate(var(--px), var(--px));
-    box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-hi);
-  }
-  .tile:focus-visible { outline: 2px dotted var(--ink); outline-offset: -6px; }
-  .spr {
-    --hue: var(--none);
-    display: grid; place-items: center;
-    width: 56px; height: 56px;
-    background: repeating-conic-gradient(color-mix(in srgb, var(--hue) 45%, var(--paper-hi)) 0 25%, var(--paper-hi) 0 50%) 0 0 / 4px 4px;
-    border: var(--px) solid var(--hue);
-    box-shadow: inset 0 0 0 var(--px) var(--ink);
-  }
-  .spr canvas { width: 48px; height: 48px; }
-  .tile .nm { font: 8px/1.3 var(--font-px); text-transform: uppercase; margin-top: 6px; }
-
-  .prof { display: flex; gap: 16px; align-items: flex-start; }
-  .prof .spr { flex: 0 0 auto; width: 112px; height: 112px; }
-  .prof .spr canvas { width: 96px; height: 96px; }
-  .prof .info { flex: 1; min-width: 0; }
-  .prof .blurb { min-height: 3em; white-space: pre-line; }
-  .prof .actions { justify-content: flex-start; margin-top: 0; }
-  .prof .cur::after { content: "▌"; animation: blink .8s steps(2) infinite; }
-  @media (max-width: 480px) { .prof { flex-direction: column; align-items: center; } .prof .info { width: 100%; } }
 
   .register .body { text-align: center; }
 </style>
@@ -67,7 +29,7 @@
         <div class="dd"><button type="button" data-act="logout">Log out</button></div></div>
       <div class="menu"><button type="button"><u>V</u>iew</button>
         <div class="dd">
-          <button type="button" data-act="roster">Roster</button>
+          <button type="button" data-act="binder">Binder</button>
           <button type="button" data-act="register">Registration</button>
           <button type="button" data-act="rosterdb" data-admin hidden>Roster DB</button>
           <hr>
@@ -81,14 +43,7 @@
       <h1 class="logo">HUNTER<span class="x">×</span><br><span class="hallow">HALLOWEEN</span></h1>
       <div class="kana">ハンター×ハロウィン</div>
       <div class="vn" id="vn" title="Skip"><span class="tag">Hunter Association</span><p id="vn-text"></p><span class="more">▼</span></div>
-      <div class="actions"><button class="btn primary" type="button" data-act="roster">▶ Choose your persona</button></div>
-    </div>
-  </div>
-
-  <div class="win roster" id="win-roster" data-title="Roster — select your hunter" data-icon="folder" data-width="600" hidden>
-    <div class="body">
-      <div class="legend" id="legend"></div>
-      <div class="grid" id="cards"></div>
+      <div class="actions"><button class="btn primary" type="button" data-act="binder">▶ Choose your persona</button></div>
     </div>
   </div>
 
@@ -114,32 +69,9 @@
 <div class="taskbar" id="taskbar" hidden></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=12"></script>
+<script src="retro.js?v=13"></script>
+<script src="binder.js?v=2"></script>
 <script>
-const CHARACTERS = [
-  { name: "Gon",        nen: "Enhancer",    glyph: "🎣", blurb: "Fishing-rod optimist from Whale Island. Will befriend your worst enemy, then punch through a wall for him." },
-  { name: "Killua",     nen: "Transmuter",  glyph: "⚡", blurb: "Retired assassin, yo-yos, lightning. Runs on chocolate robots and spite for his family." },
-  { name: "Kurapika",   nen: "Conjurer",    glyph: "⛓️", blurb: "Chains, scarlet eyes, one very long grudge. Do not mention spiders." },
-  { name: "Leorio",     nen: "Emitter",     glyph: "💼", blurb: "Briefcase, sunglasses, future doctor. Once punched a man through a table on live TV." },
-  { name: "Hisoka",     nen: "Transmuter",  glyph: "🃏", blurb: "Card-throwing clown with an appetite. Bungee Gum has the properties of both rubber and gum." },
-  { name: "Chrollo",    nen: "Specialist",  glyph: "📖", blurb: "Head of the Phantom Troupe. Carries a book of other people's abilities. Reads at parties." },
-  { name: "Illumi",     nen: "Manipulator", glyph: "📍", blurb: "Needle-wielding eldest Zoldyck. Face optional, boundaries nonexistent." },
-  { name: "Feitan",     nen: "Transmuter",  glyph: "☂️", blurb: "Umbrella, sword, a hobby in torture. Small, quiet, terrifying." },
-  { name: "Machi",      nen: "Transmuter",  glyph: "🪡", blurb: "Nen threads and a deadpan stare. Her intuition has never once been wrong." },
-  { name: "Shizuku",    nen: "Conjurer",    glyph: "🧹", blurb: "Conjures a vacuum cleaner named Blinky. Forgets everything except the important things." },
-  { name: "Biscuit",    nen: "Transmuter",  glyph: "💎", blurb: "Looks twelve, is fifty-seven, benches buses. Will make you train." },
-  { name: "Netero",     nen: "Enhancer",    glyph: "🙏", blurb: "Chairman of the Hunter Association. Prays faster than you can see. Extremely grateful." },
-  { name: "Kite",       nen: "Conjurer",    glyph: "🌀", blurb: "Wide hat, Crazy Slots, Ging's student. The reason Gon became a Hunter." },
-  { name: "Meruem",     nen: "Specialist",  glyph: "♟️", blurb: "King of the Chimera Ants. Undefeated at Gungi, except by one person." },
-  { name: "Neferpitou", nen: "Specialist",  glyph: "🐈", blurb: "Cat-eared Royal Guard, unsettlingly cheerful. Doctor Blythe is on call." },
-  { name: "Komugi",     nen: "Non-user",    glyph: "🀄", blurb: "Blind Gungi world champion. No Nen at all. Undefeated, full stop." },
-];
-const HUES = {
-  "Enhancer": "var(--enhancer)", "Transmuter": "var(--transmuter)",
-  "Conjurer": "var(--conjurer)", "Emitter": "var(--emitter)",
-  "Manipulator": "var(--manipulator)", "Specialist": "var(--specialist)",
-  "Non-user": "var(--none)",
-};
 const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
@@ -149,7 +81,7 @@ const NOTICE = [
 ];
 const DESKTOP_ICONS = [
   { icon: "envelope", label: "Summons", act: "summons" },
-  { icon: "folder",   label: "Roster",  act: "roster" },
+  { icon: "book",     label: "Binder",  act: "binder" },
   { icon: "card",     label: "Register", act: "register" },
   { icon: "question", label: "About",   act: "about" },
   { icon: "db",       label: "Roster DB", act: "rosterdb", admin: true },
@@ -162,7 +94,7 @@ let me = null, admin = false, notice = null;
 // ---- actions (data-act buttons, menus, icons, start menu) ----
 const ACT = {
   summons: () => Retro.open("win-summons"),
-  roster: () => Retro.open("win-roster"),
+  binder: () => Retro.open("win-binder"),
   register: () => Retro.open("win-register"),
   about: () => Retro.open("win-about"),
   "close-about": () => Retro.close("win-about"),
@@ -175,7 +107,7 @@ document.addEventListener("click", e => {
 });
 Retro.startMenu(() => [
   { label: "Summons", icon: "envelope", onclick: ACT.summons },
-  { label: "Roster", icon: "folder", onclick: ACT.roster },
+  { label: "Binder", icon: "book", onclick: ACT.binder },
   { label: "Registration", icon: "card", onclick: ACT.register },
   ...(admin ? [{ label: "Roster DB", icon: "db", onclick: ACT.rosterdb }] : []),
   "sep",
@@ -186,68 +118,14 @@ Retro.startMenu(() => [
   { label: "Log out", icon: "door", onclick: ACT.logout },
 ]);
 
-// ---- roster window ----
-const legend = $("legend");
-Object.entries(HUES).forEach(([nen, hue]) => {
-  if (nen === "Non-user") return;
-  legend.insertAdjacentHTML("beforeend", `<span class="pill" style="--hue:${hue}">${nen}</span>`);
+// ---- the Binder (chromeless card binder; see binder.js) ----
+Binder.mount({
+  desktop,
+  claim: c => {
+    Retro.toast(`${c.first || c.name} is a fine choice — registration opens soon.`);
+    Retro.open("win-register");
+  },
 });
-const grid = $("cards");
-CHARACTERS.forEach(c => {
-  const b = document.createElement("button");
-  b.type = "button"; b.className = "tile";
-  b.style.setProperty("--hue", HUES[c.nen]);
-  const spr = document.createElement("div");
-  spr.className = "spr"; spr.append(Retro.sprite(c.glyph, 16));
-  b.append(spr);
-  b.insertAdjacentHTML("beforeend", `<div class="nm">${c.name}</div><span class="pill">${c.nen}</span>`);
-  b.addEventListener("click", () => openProfile(c));
-  grid.append(b);
-});
-
-const profiles = new Map();
-function openProfile(c) {
-  const id = "prof-" + c.name.toLowerCase();
-  if (!profiles.has(id)) {
-    const el = Retro.spawn({
-      id, title: `${c.name} — Profile`, icon: "card", cls: "profile popup", width: 460,
-      onClose: () => Retro.backdrop(false),
-      html: `
-        <div class="prof">
-          <div class="spr" style="--hue:${HUES[c.nen]}"></div>
-          <div class="info">
-            <div>« Name: <b>${c.name}</b></div>
-            <div>« Nen: <span class="pill" style="--hue:${HUES[c.nen]}">${c.nen}</span></div>
-            <hr class="dash">
-            <p class="blurb"></p>
-            <hr class="dash">
-            <div class="actions"><button class="btn primary" type="button">Claim ×</button></div>
-          </div>
-        </div>`,
-    });
-    el.querySelector(".spr").append(Retro.sprite(c.glyph, 16));
-    el.querySelector(".btn").addEventListener("click", () => {
-      if (!Retro.floating()) Retro.close(id);
-      Retro.toast(`${c.name} is a fine choice — registration opens soon.`);
-      Retro.open("win-register");
-    });
-    profiles.set(id, el);
-  }
-  const el = profiles.get(id);
-  let at = null;
-  if (Retro.floating()) {
-    // Cascade off the roster window, or the summons if the roster is
-    // closed (icons / Start menu can reach tiles-less routes).
-    const base = ["win-roster", "win-summons"].map(id => $(id)).find(w => !w.hidden) || { offsetLeft: 60, offsetTop: 0 };
-    const n = [...profiles.values()].filter(p => !p.hidden && p !== el).length;
-    if (!el.dataset.placed) at = { x: base.offsetLeft + 60 + n * 28, y: base.offsetTop + 70 + n * 28 };
-  } else {
-    profiles.forEach((p, pid) => { if (p !== el && !p.hidden) Retro.close(pid); });
-    Retro.backdrop(true, () => Retro.close(id));
-  }
-  Retro.open(id, at);
-  Retro.type(el.querySelector(".blurb"), [c.blurb], { speed: 14 });
-}
 
 // registration progress bar, permanently at 35%
 $("prog").innerHTML = Array.from({ length: 20 }, (_, i) => `<i class="${i < 7 ? "on" : ""}"></i>`).join("");
@@ -275,16 +153,15 @@ function summonsPos() {
 function placeOthers() {
   if (!Retro.floating()) return;
   const vw = desktop.clientWidth;
+  // The binder (720 wide) sits beside the summons when there is room,
+  // otherwise centred over the desktop; registration goes to the right
+  // of the summons or below it.
+  const binderAt = vw >= 116 + 600 + 24 + 720 + 16 ? { x: 740, y: 40 } : { x: Math.max(16, Math.round((vw - 720) / 2)), y: 40 };
   const s = $("win-summons");
-  const side = vw >= 116 + 600 + 24 + 600 + 16;
-  const sBottom = s.offsetTop + s.offsetHeight;
-  const rosterAt = side ? { x: 740, y: 20 } : { x: Math.min(212, vw - 600 - 24), y: sBottom + 10 };
-  const rosterH = 620;   // 16 tiles + legend, roughly
-  const registerAt = side ? { x: 740, y: rosterAt.y + rosterH + 10 }
-    : (vw >= 116 + 600 + 24 + 360 + 24 ? { x: 740, y: 20 } : { x: rosterAt.x + 40, y: rosterAt.y + rosterH + 10 });
+  const registerAt = vw >= 116 + 600 + 24 + 360 + 24 ? { x: 740, y: 20 } : { x: 160, y: s.offsetTop + s.offsetHeight + 10 };
   // Never move a window the user already opened (e.g. from an icon
   // during the beat before the summons appears).
-  if (!$("win-roster").dataset.placed) Retro.place("win-roster", rosterAt);
+  if (!$("win-binder").dataset.placed) Retro.place("win-binder", binderAt);
   if (!$("win-register").dataset.placed) Retro.place("win-register", registerAt);
 }
 

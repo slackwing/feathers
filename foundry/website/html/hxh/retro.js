@@ -15,7 +15,7 @@ const Retro = (() => {
   const PAL = {
     k: "#0b0a08", p: "#e8dcc3", w: "#fff6e0", d: "#c4b48f", r: "#c8102e", h: "#ff2444",
     o: "#ff7518", g: "#58e05c", y: "#ffd166", b: "#37d0ff", n: "#9a9a9a",
-    v: "#c8a2ff", u: "#7c4dff",
+    v: "#c8a2ff", u: "#7c4dff", N: "#1d3557", G: "#d9a520",
   };
   const ICONS = {
     x: [
@@ -145,6 +145,19 @@ const Retro = (() => {
       "....uvvvvvvvvu....",
       "....uuuuuuuuuu....",
     ],
+    // the Greed Island style binder: navy boards, gold clasps, ring emblem
+    book: [
+      ".kkkkkkkkkkkkk..",
+      ".kNNNNNNNNNNNkG.",
+      ".kNNNNNNNNNNNkG.",
+      ".kNNNgggNNNNNk..",
+      ".kNNgNNNgNNNNk..",
+      ".kNNNgggNNNNNk..",
+      ".kNNNNNNNNNNNkG.",
+      ".kNNNNNNNNNNNkG.",
+      ".kNNNNNNNNNNNk..",
+      ".kkkkkkkkkkkkk..",
+    ],
     door: [
       "kkkkkkk...",
       "kpppppk...",
@@ -221,7 +234,8 @@ const Retro = (() => {
     };
     if (w.static) el.classList.add("static");
     if (el.dataset.width) el.style.width = el.dataset.width + "px";
-    if (!$(".tbar", el)) {
+    if (el.hasAttribute("data-chromeless")) el.classList.add("chromeless");
+    if (!$(".tbar", el) && !el.hasAttribute("data-chromeless")) {
       const tb = document.createElement("div");
       tb.className = "tbar";
       // The crimson × app icon would vanish on the crimson title bar, so

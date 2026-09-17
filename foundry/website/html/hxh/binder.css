@@ -1,0 +1,199 @@
+/* The Binder — a Greed Island style card binder, drawn from the show:
+   navy boards with gold clasps; left page of sleeved cards under Nen-type
+   tabs; right side a teal control panel with a black display screen, two
+   mint keys, a dial, a square pad and a red D-pad. Opens chromeless. */
+
+.binder {
+  --navy: #1d3557; --navy-2: #16243d; --navy-3: #0f1a2c;
+  --teal: #3b6b8c; --teal-2: #2c5470; --teal-3: #1f3d52;
+  --gold: #d9a520; --gold-2: #8f6a12;
+  --mint: #9fd8c8; --mint-2: #4f8f83;
+  --scr: #06080c; --scr-text: #dff3ff; --scr-dim: #7fa6b8; --scr-green: #58e05c;
+  --card: #1f2f4d; --card-2: #33486e; --cream: #efe6cf; --pink: #d63a6a; --pink-2: #8c1f44;
+  --bw: 720px; --bh: 540px;
+  font: 16px/1.5 var(--font-dot);
+  color: var(--paper);
+  user-select: none;
+}
+.book { position: relative; width: var(--bw); max-width: 100%; }
+
+/* ---------- closed: the front cover ---------- */
+.cover {
+  width: 360px; height: var(--bh); max-width: 100%;
+  margin: 0 auto; position: relative; cursor: pointer;
+  background: var(--navy);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset 4px 4px 0 #2a4a78, inset -4px -4px 0 var(--navy-3), 8px 8px 0 rgba(0,0,0,.55);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+}
+.cover::before {   /* spine strip on the left */
+  content: ""; position: absolute; left: 14px; top: 0; bottom: 0; width: var(--px);
+  background: var(--navy-3); box-shadow: 4px 0 0 #2a4a78;
+}
+.cover:hover { transform: translate(-2px, -2px); box-shadow: inset 4px 4px 0 #2a4a78, inset -4px -4px 0 var(--navy-3), 10px 10px 0 rgba(0,0,0,.55); }
+.cover .title { font: 14px/1.5 var(--font-px); text-align: center; color: var(--cream); text-shadow: 2px 2px 0 var(--ink); }
+.cover .title .x { color: var(--blood-hot); }
+.cover .sub { font: 8px/1 var(--font-px); letter-spacing: .3em; color: var(--gold); }
+.emblem {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: repeating-radial-gradient(circle, var(--scr-green) 0 6px, var(--navy-3) 6px 14px, #2f8a3a 14px 18px, var(--navy-3) 18px 28px);
+  border: var(--px) solid var(--ink); box-shadow: inset 0 0 0 var(--px) var(--navy-3), 0 0 0 4px var(--navy-2);
+  image-rendering: pixelated;
+}
+.clasps { position: absolute; right: -8px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
+.clasps i, .spine .clasp {
+  display: block; width: 16px; height: 44px;
+  background: var(--gold); border: var(--px) solid var(--ink);
+  box-shadow: inset var(--px) var(--px) 0 #f3cf5a, inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--gold-2);
+}
+
+/* opening: a three-step flip of the cover */
+.book.flipping .cover { animation: flip .24s steps(3) forwards; transform-origin: left center; pointer-events: none; }
+@keyframes flip { to { transform: scaleX(0); } }
+.book.closed .inside, .book.flipping .inside { display: none; }
+.book.open .cover { display: none; }
+
+/* ---------- open ---------- */
+.inside { display: flex; align-items: stretch; }
+.page, .panel { flex: 0 0 340px; width: 340px; min-height: var(--bh); box-sizing: border-box; }
+.spine {
+  flex: 0 0 40px; width: 40px; background: var(--navy-3);
+  border-top: var(--px) solid var(--ink); border-bottom: var(--px) solid var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+  box-shadow: inset 6px 0 0 var(--navy-2), inset -6px 0 0 var(--navy-2);
+}
+
+/* left page: tabs + card sleeves */
+.page {
+  position: relative; padding: 22px 10px 12px;
+  background: var(--navy);
+  border: var(--px) solid var(--ink); border-right: 0;
+  box-shadow: inset 4px 4px 0 #2a4a78, inset 0 -4px 0 var(--navy-3);
+}
+.tabs { position: absolute; left: 10px; right: 10px; top: -14px; display: flex; gap: 2px; align-items: flex-end; }
+.tab {
+  flex: 1 1 0; min-width: 0; max-width: 64px; height: 16px; padding: 0 2px;
+  background: var(--hue, var(--none)); color: var(--t, var(--ink));
+  border: var(--px) solid var(--ink); border-bottom: 0;
+  font: 8px/1 var(--font-px); text-transform: uppercase; overflow: hidden; white-space: nowrap;
+  cursor: pointer; display: grid; place-items: center; padding-top: 2px;
+  filter: brightness(.75);
+}
+.tab.on { height: 20px; filter: none; box-shadow: inset 0 var(--px) 0 rgba(255,255,255,.35); }
+.tab:hover { filter: brightness(.95); }
+.cards { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 112px; gap: 10px 10px; margin-top: 4px; }
+.slot {   /* empty sleeve */
+  border: var(--px) dashed #2a4a78; background: var(--navy-2);
+}
+.pageno { position: absolute; right: 12px; bottom: 0; font: 8px/1.6 var(--font-px); color: #6f8fb5; }
+
+/* a card */
+.card {
+  --hue: var(--none);
+  position: relative; cursor: pointer; text-align: left;
+  background: var(--card); color: var(--ink);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset var(--px) var(--px) 0 var(--card-2), var(--px) var(--px) 0 var(--navy-3);
+  padding: 4px; display: flex; flex-direction: column; gap: 3px;
+  font: inherit;
+}
+.card:hover { transform: translate(-1px, -1px); }
+.card.on { outline: var(--px) solid var(--gold); outline-offset: 1px; box-shadow: inset var(--px) var(--px) 0 var(--card-2), 0 0 0 4px rgba(217,165,32,.25); }
+.card .hd { display: flex; gap: 3px; height: 20px; }
+.card .hd span {
+  background: var(--cream); border: 1px solid var(--ink); color: var(--ink);
+  font: 16px/1.1 var(--font-dot); padding: 1px 3px 0; white-space: nowrap; overflow: hidden;
+}
+.card .hd .no { flex: 0 0 auto; font: 8px/1.4 var(--font-px); padding-top: 3px; }
+.card .hd .nm { flex: 1 1 auto; min-width: 0; text-align: center; text-overflow: ellipsis; }
+.card .hd .ty { flex: 0 0 auto; font: 8px/1.4 var(--font-px); padding-top: 3px; }
+.card .art {
+  flex: 1; display: grid; place-items: center;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--hue) 45%, #f1e8d2) 0 25%, #f1e8d2 0 50%) 0 0 / 4px 4px;
+  border: 1px solid var(--ink);
+}
+.card .art canvas { width: 40px; height: 40px; image-rendering: pixelated; }
+.card .tx {
+  height: 34px; overflow: hidden; box-sizing: border-box;
+  background: #fffaf0; border: var(--px) solid var(--pink); box-shadow: inset 0 0 0 1px var(--pink-2);
+  font: 12px/13px var(--font-dot); color: var(--ink); padding: 2px 4px;
+}
+
+/* right panel: the interface */
+.panel {
+  background: var(--teal);
+  border: var(--px) solid var(--ink); border-left: 0;
+  box-shadow: inset -4px 4px 0 #4f86a8, inset 4px -4px 0 var(--teal-3);
+  padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 12px;
+}
+.screen {
+  height: 250px; padding: 12px 12px 10px;
+  background: var(--scr); border: var(--px) solid var(--ink);
+  box-shadow: inset 0 0 0 var(--px) var(--teal-3), inset 0 0 24px rgba(88,224,92,.08);
+  color: var(--scr-text); overflow-y: auto; position: relative;
+  scrollbar-width: thin; scrollbar-color: var(--teal-3) var(--scr);
+}
+.screen::-webkit-scrollbar { width: 8px; }
+.screen::-webkit-scrollbar-track { background: var(--scr); }
+.screen::-webkit-scrollbar-thumb { background: var(--teal-3); border: 0; box-shadow: none; }
+.screen .idle { position: absolute; inset: 0; display: grid; place-items: center; }
+.screen .idle .emblem { width: 120px; height: 120px; box-shadow: none; border-color: var(--scr); }
+.screen .name { font: 12px/1.5 var(--font-px); color: var(--paper-hi); margin-bottom: 4px; }
+.screen .line { color: var(--scr-dim); }
+.screen .line b { color: var(--scr-text); font-weight: normal; }
+.screen .desc { margin-top: 6px; white-space: pre-line; }
+.screen .cur::after { content: "█"; animation: blink .8s steps(2) infinite; color: var(--scr-green); }
+.controls { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: 10px; align-items: center; justify-items: center; }
+.keys { grid-column: 1; grid-row: 1; display: flex; gap: 8px; justify-self: start; }
+.key {
+  width: 48px; height: 22px; background: var(--mint); color: var(--ink);
+  border: var(--px) solid var(--ink); box-shadow: inset 1px 1px 0 #d4f3ea, inset -1px -1px 0 var(--mint-2), 2px 2px 0 var(--teal-3);
+  font: 8px/1 var(--font-px); cursor: pointer; padding-top: 2px;
+}
+.key:active { box-shadow: inset 1px 1px 0 var(--mint-2); transform: translate(1px, 1px); }
+.dial {
+  grid-column: 1; grid-row: 2; justify-self: start;
+  width: 92px; height: 92px; border-radius: 50%;
+  background: var(--navy-2); border: var(--px) solid var(--ink);
+  box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 6px var(--ink), 2px 2px 0 var(--teal-3);
+}
+.pad {
+  grid-column: 2; grid-row: 1 / span 2;
+  width: 96px; height: 116px; background: var(--scr); border: var(--px) solid var(--ink);
+  box-shadow: inset 0 0 0 var(--px) var(--teal-3), 2px 2px 0 var(--teal-3);
+  background-image:
+    linear-gradient(#cfe6ef, #cfe6ef), linear-gradient(#cfe6ef, #cfe6ef),
+    linear-gradient(#cfe6ef, #cfe6ef), linear-gradient(#cfe6ef, #cfe6ef);
+  background-repeat: no-repeat; background-size: 2px 16px, 2px 16px, 16px 2px, 16px 2px;
+  background-position: 50% 8px, 50% calc(100% - 8px), 8px 50%, calc(100% - 8px) 50%;
+}
+.dpad {
+  grid-column: 3; grid-row: 1 / span 2; justify-self: end;
+  position: relative; width: 104px; height: 104px;
+}
+.dpad button {
+  position: absolute; width: 30px; height: 30px; padding: 0; border: 0; cursor: pointer;
+  background: var(--blood); filter: drop-shadow(1px 1px 0 var(--ink));
+}
+.dpad button:hover { background: var(--blood-hot); }
+.dpad button:active { transform: translate(1px, 1px); }
+.dpad [data-dir="up"]    { left: 37px; top: 0;   clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.dpad [data-dir="down"]  { left: 37px; top: 74px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.dpad [data-dir="left"]  { left: 0;  top: 37px; clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+.dpad [data-dir="right"] { left: 74px; top: 37px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.dpad .c { position: absolute; left: 36px; top: 36px; width: 32px; height: 32px; border-radius: 50%; background: var(--blood); box-shadow: 0 0 0 var(--px) var(--ink); }
+
+/* ---------- phone: pages stack ---------- */
+@media (max-width: 899px) {
+  .binder { --bw: 100%; --bh: auto; }
+  .book { width: 100%; }
+  .cover { width: 100%; height: 420px; }
+  .inside { flex-direction: column; }
+  .page, .panel { flex: none; width: 100%; min-height: 0; }
+  .page { border-right: var(--px) solid var(--ink); }
+  .panel { border-left: var(--px) solid var(--ink); border-top: 0; }
+  .spine { width: 100%; flex: 0 0 24px; flex-direction: row; border: var(--px) solid var(--ink); border-top: 0; border-bottom: 0; box-shadow: inset 0 6px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2); }
+  .spine .clasp { width: 44px; height: 14px; }
+  .tabs { top: -14px; }
+  .screen { height: 210px; }
+}

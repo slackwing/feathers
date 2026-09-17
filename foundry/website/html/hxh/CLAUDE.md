@@ -18,11 +18,10 @@ license-only site from the show — rendered as a late-90s OS desktop.
   CRT scanlines. The pre-retro site is tagged `hxh-pre-retro` in git —
   `git checkout hxh-pre-retro -- foundry/website/html/hxh` reverts it.
 - **index.html** — login-gated by the OS shell (see below). Logged in:
-  three windows — Summons (logotype, kana,
-  typewriter notice in a visual-novel box, CTA), Roster (16 character
-  tiles → per-character Profile windows with a CLAIM button), Registration
-  ("OPENS SOON" stamp + stuck progress bar) — plus desktop icons, an About
-  window, and a taskbar. Every logged-in load boots (see Boot below).
+  the Summons window (logotype, kana, typewriter
+  notice in a visual-novel box, CTA), the Binder (see below), and
+  Registration ("OPENS SOON" stamp + stuck progress bar) — plus desktop
+  icons, an About window, and a taskbar. Every logged-in load boots (see Boot below).
   Notice: Site 618 Bushwick Ave, Commences Oct 31, 2026 (no time), no
   "failure to commit" line (Andrew, 2026-09-17). Window title
   "Hunter × Halloween" (the special ×); login dialog likewise.
@@ -100,6 +99,37 @@ re-added per page. Every retro page starts with
 - Adding a page = call `os()`, then open windows. Never call `Retro.boot`
   or build a login form in a page.
 
+## The Binder (`binder.js` + `binder.css`)
+
+The roster as a Greed Island card binder, modelled on Andrew's
+screenshots from the show (E66/E67): navy boards with gold clasps; the
+left page holds sleeved cards; the right side is a teal control panel —
+black display screen on top, two mint keys, a big dial, a square touch
+pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
+
+- Opens from the "Binder" icon / Start / View menu / the summons CTA as a
+  **chromeless window** (`data-chromeless`: registered, in the taskbar,
+  Escape closes, but no title bar or frame). Starts CLOSED — front cover
+  only (ring emblem, title, BINDER) — click to open (3-step flip).
+- **Tabs on top of the left page, one per page**, coloured by Nen type
+  with a 2-letter code (EN TR CO EM MA SP, `--` non-user). A type never
+  shares a page (8 cards per page); a type with more than 8 gets more
+  tabs of the same colour (hover title says "page n of m"). So the type
+  isn't repeated under every card — Abi's idea. Room for 100+ characters.
+- **Cards** copy the show's layout: three cream header boxes (No., short
+  name, type code), a tinted art panel (pixelated emoji sprite on a
+  Nen-hue dither), and a pink-framed text box (first sentence).
+- **Screen** shows the selected card: number + full name, Nen line
+  (coloured), Arms, and the description typed out (scrolls to follow the
+  cursor). Idle = the ring emblem. Keys: CLAIM (toast + opens
+  Registration), CLOSE (back to the cover). D-pad: ◀ ▶ page, ▲ ▼ card.
+  Dial and pad are decoration.
+- Data: `roster.json` (all 40; `glyph` emoji + `first` short name were
+  added for the binder — extra fields the PUT endpoint ignores).
+- Phone: page and panel stack; the spine turns horizontal.
+- `Binder.mount({ desktop, claim })` must run BEFORE `Retro.os()` so the
+  shell registers the window.
+
 ## Wallpaper
 
 `Retro.wallpaper(canvas)` paints an ORIGINAL pixel-art Whale Island on a
@@ -119,6 +149,7 @@ over the sky.
 - `retro.css` — tokens (same five colours as before, plus `--ink-4` for
   muted text on cream), window/bevel/button/field styles, taskbar, Start
   menu, menus, toast, boot overlay, scanlines, phone stacking rules.
+- `binder.js` / `binder.css` — the Binder app (see above).
 - `retro.js` — `Retro` module: the OS shell (`os`, `go`, `session`,
   `login`, `logout`, `logon`, `wallpaper`), window manager (`register`, `spawn`,
   `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
@@ -186,8 +217,8 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
   `PUT /hxh/api/roster/characters?replace=1` (admin session).
   Characters were compiled from hunterxhunter.fandom.com; expect
   iterative correction rounds with Andrew.
-- The 16 tiles on index (names, Nen types, emoji glyphs, one-line blurbs)
-  are still hard-coded in index.html, separate from roster.json.
+- The Binder on index reads this same `roster.json` (with its `glyph`
+  and `first` fields), so the roster is defined in one place.
 
 ## Open questions (ask Andrew before building)
 
