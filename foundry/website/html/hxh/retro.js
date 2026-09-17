@@ -134,7 +134,7 @@ const Retro = (() => {
       "uvvvvvvuuuuvvvvvvu",
       "uvvvvvvvvvvvvvvvvu",
       "uvvvvvvvvvvvvvvvvu",
-      "uvvvuvvvvvvvvuvvvu",
+      "uvvvvvvvvvvvvvvvvu",
       "uuuuuvvvvvvvvuuuuu",
       "....uvvvvvvvvu....",
       "....uvvvvvvvvu....",
