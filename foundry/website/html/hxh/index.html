@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=8">
+<link rel="stylesheet" href="retro.css?v=10">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
@@ -57,9 +57,10 @@
 </style>
 </head>
 <body>
+<canvas class="wall" id="wall" width="320" height="180"></canvas>
 <div class="desktop center" id="desktop">
 
-  <div class="win static" id="win-login" data-title="Hunter Website — Log in" data-icon="card" data-noclose data-notask data-width="400" hidden>
+  <div class="win static" id="win-login" data-title="Hunter × Halloween — Log in" data-icon="card" data-noclose data-notask data-width="400" hidden>
     <div class="body">
       <div class="assoc">Hunter Association · Restricted Site</div>
       <h1 class="logo">HUNTER<span class="x">×</span><br><span class="hallow">HALLOWEEN</span></h1>
@@ -77,7 +78,7 @@
 
   <div class="icons" id="icons" hidden></div>
 
-  <div class="win summons" id="win-summons" data-title="Hunter Website" data-icon="x" data-width="600" hidden>
+  <div class="win summons" id="win-summons" data-title="Hunter × Halloween" data-icon="x" data-width="600" hidden>
     <div class="mbar">
       <div class="menu"><button type="button"><u>F</u>ile</button>
         <div class="dd"><button type="button" data-act="logout">Log out</button></div></div>
@@ -130,7 +131,7 @@
 <div class="taskbar" id="taskbar" hidden></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=8"></script>
+<script src="retro.js?v=10"></script>
 <script>
 const CHARACTERS = [
   { name: "Gon",        nen: "Enhancer",    glyph: "🎣", blurb: "Fishing-rod optimist from Whale Island. Will befriend your worst enemy, then punch through a wall for him." },
@@ -159,9 +160,9 @@ const HUES = {
 const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
-  ".\n\nPhase site: ", { t: "[LOCATION TBD]", cls: "tbd", title: "ask the host" },
-  "\nCommences: ", { t: "[DATE TBD]", cls: "tbd", title: "ask the host" }, ", nightfall.\n\n",
-  "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona. Failure to commit to the bit may result in disqualification.",
+  ".\n\nSite: ", { t: "618 Bushwick Ave", tag: "b" },
+  "\nCommences: ", { t: "Oct 31", tag: "b" }, "\n\n",
+  "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona.",
 ];
 const DESKTOP_ICONS = [
   { icon: "envelope", label: "Summons", act: "summons" },
@@ -177,6 +178,7 @@ const desktop = $("desktop");
 let me = null, admin = false, notice = null;
 
 Retro.init({ start: true });
+Retro.wallpaper($("wall"));
 
 // ---- actions (data-act buttons, menus, icons, start menu) ----
 const ACT = {

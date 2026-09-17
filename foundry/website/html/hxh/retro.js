@@ -158,13 +158,14 @@ const Retro = (() => {
     ],
   };
   // Integer-scaled so pixels stay crisp: an 8-wide grid at size 16 is 2x.
-  function icon(name, size = 16) {
+  function icon(name, size = 16, pal = null) {
     const rows = ICONS[name] || ICONS.x;
     const h = rows.length, w = rows[0].length;
     const k = Math.max(1, Math.floor(size / w));
+    const colors = pal ? { ...PAL, ...pal } : PAL;
     let rects = "";
     rows.forEach((row, y) => [...row].forEach((c, x) => {
-      if (PAL[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PAL[c]}"/>`;
+      if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
     }));
     return `<svg class="px" viewBox="0 0 ${w} ${h}" width="${w * k}" height="${h * k}" aria-hidden="true">${rects}</svg>`;
   }
@@ -223,7 +224,9 @@ const Retro = (() => {
     if (!$(".tbar", el)) {
       const tb = document.createElement("div");
       tb.className = "tbar";
-      tb.innerHTML = `<span class="ico">${icon(w.icon, 16)}</span><span class="ttl">${esc(w.title)}</span>`
+      // The crimson × app icon would vanish on the crimson title bar, so
+      // it is drawn in cream there.
+      tb.innerHTML = `<span class="ico">${icon(w.icon, 16, w.icon === "x" ? { r: "#fff6e0" } : null)}</span><span class="ttl">${esc(w.title)}</span>`
         + (w.static ? "" : `<button class="tbtn min" title="Minimize" type="button">_</button><button class="tbtn maxb" title="Maximize" type="button">□</button>`)
         + (w.closable ? `<button class="tbtn close" title="Close" type="button">×</button>` : "");
       el.prepend(tb);
@@ -516,6 +519,150 @@ const Retro = (() => {
     });
   }
 
+  // ---------- wallpaper: pixel-art Whale Island ----------
+  // Drawn procedurally at 320x180 and scaled up with image-rendering:
+  // pixelated. Original art (inspired by the island's silhouette: a
+  // forested hump, a low tail with the harbour town and lighthouse).
+  // Sea sparkles, clouds drift very slowly, a flock of birds crosses
+  // now and then. 8 fps; static under prefers-reduced-motion.
+  function wallpaper(canvas) {
+    if (!canvas) return;
+    const W = 320, H = 180, HZ = 112;   // horizon row
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    const layer = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+    const px = (g, x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
+    // deterministic hash so the island is the same every visit
+    const hash = (x, y = 0) => { let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
+    // sky
+    const sky = layer(), sg = sky.getContext("2d");
+    const SKY = ["#2456a4", "#2f6cc0", "#3f86d6", "#5aa2e6", "#86c0f0"];
+    for (let y = 0; y < HZ; y++) {
+      const f = y / HZ * SKY.length, i = Math.min(SKY.length - 1, Math.floor(f)), frac = f - i;
+      for (let x = 0; x < W; x++) {
+        // 2-row checker dither at each band boundary
+        const dither = frac > 0.8 && i < SKY.length - 1 && (x + y) % 2 === 0;
+        px(sg, x, y, SKY[dither ? i + 1 : i]);
+      }
+    }
+
+    // sea (with the island's dark reflection under its footprint)
+    const sea = layer(), eg = sea.getContext("2d");
+    const SEA = ["#2c73b5", "#245f9c", "#1c4b80", "#163b66"];
+    const seaBand = y => y < HZ + 8 ? 0 : y < HZ + 22 ? 1 : y < HZ + 44 ? 2 : 3;
+    for (let y = HZ; y < H; y++) for (let x = 0; x < W; x++) {
+      let b = seaBand(y);
+      const edge = [HZ + 8, HZ + 22, HZ + 44].some(e => y === e - 1) && (x + y) % 2 === 0;
+      if (edge) b = Math.min(3, b + 1);
+      let col = SEA[b];
+      if (hash(Math.floor(x / 6), y) < 0.045) col = SEA[Math.min(3, b + 1)];   // short horizontal wave streaks
+      if (y < HZ + 7 && x > 96 && x < 232 && (x + y) % 2 === 0) col = SEA[Math.min(3, b + 1)]; // reflection
+      px(eg, x, y, col);
+    }
+
+    // island
+    const isl = layer(), ig = isl.getContext("2d");
+    const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
+    const hump = (x, c, h, w) => h * Math.exp(-(((x - c) / w) ** 2));
+    const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+    const height = x => {
+      if (x < 88 || x > 236) return 0;
+      const taper = smooth((x - 88) / 14) * smooth((236 - x) / 10);
+      const body = 11 * smooth((x - 96) / 30) * smooth((232 - x) / 8);
+      // broad rounded hump (flattened gaussian) + low tail + lighthouse knoll
+      const h = Math.max(38 * Math.pow(Math.exp(-(((x - 134) / 34) ** 2)), 0.7), body, hump(x, 222, 9, 9)) + Math.floor(hash(x) * 3);
+      return Math.round(h * taper);
+    };
+    const hs = Array.from({ length: W }, (_, x) => height(x));
+    for (let x = 0; x < W; x++) {
+      const h = hs[x];
+      if (!h) continue;
+      const slope = (hs[x + 1] || 0) - (hs[x - 1] || 0);   // >0: rising to the right (faces left/sun)
+      for (let y = HZ - h; y < HZ; y++) {
+        const d = y - (HZ - h);                            // depth below the ridge
+        let col;
+        if (d === 0) col = GREEN[3];
+        else if (d < 3 && slope > 0) col = GREEN[2];
+        else if (slope < -1 && d < h * 0.6) col = (x + y) % 2 ? GREEN[0] : GREEN[1];
+        else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
+        px(ig, x, y, col);
+      }
+      px(ig, x, HZ - 1, x > 98 && x < 230 ? "#c9b88a" : GREEN[0]);   // beach strip
+    }
+    // harbour town on the low tail
+    const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
+    [154, 159, 165, 170, 176, 182, 188, 194].forEach((x, i) => {
+      const w = i % 3 === 1 ? 4 : 3, top = HZ - 5 - (i % 2);
+      ig.fillStyle = ROOF[i]; ig.fillRect(x, top, w, 1);
+      ig.fillStyle = "#efe3c8"; ig.fillRect(x, top + 1, w, HZ - 1 - (top + 1));
+      px(ig, x + 1, HZ - 2, "#0b0a08");
+    });
+    // lighthouse on the tail bump
+    const lx = 224, base = HZ - hs[lx];
+    ig.fillStyle = "#fff6e0"; ig.fillRect(lx, base - 12, 2, 12);
+    ig.fillStyle = "#c8102e"; ig.fillRect(lx, base - 13, 2, 1); ig.fillRect(lx, base - 7, 2, 1);
+    px(ig, lx, base - 11, "#ffd166");
+    // pier into the sea
+    ig.fillStyle = "#8b6d4b"; ig.fillRect(172, HZ, 14, 1); px(ig, 185, HZ + 1, "#8b6d4b"); px(ig, 174, HZ + 1, "#8b6d4b");
+
+    // clouds: unions of circles, shaded by row
+    const makeCloud = (parts, w, h) => {
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const g = c.getContext("2d");
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (!parts.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 * 2.2 <= r * r)) continue;
+        px(g, x, y, y < h * 0.45 ? "#fff6e0" : y < h * 0.75 ? "#e3edf6" : "#b7cde3");
+      }
+      return c;
+    };
+    const clouds = [
+      { img: makeCloud([[8, 5, 6], [15, 4, 7], [22, 5, 6]], 30, 9), x: 20, y: 18, v: 0.10 },
+      { img: makeCloud([[6, 4, 5], [12, 3, 6], [18, 4, 5]], 24, 8), x: 130, y: 40, v: 0.06 },
+      { img: makeCloud([[10, 6, 8], [20, 5, 9], [30, 6, 8], [38, 7, 6]], 46, 12), x: 220, y: 12, v: 0.08 },
+      { img: makeCloud([[5, 3, 4], [10, 3, 5]], 16, 6), x: 300, y: 58, v: 0.05 },
+      { img: makeCloud([[7, 4, 6], [15, 3, 7], [22, 4, 5]], 28, 8), x: 70, y: 70, v: 0.07 },
+    ];
+
+    // sparkles + birds state
+    let sparkles = [], flock = null, nextFlock = 60, tick = 0;
+    const BIRD = [[[0, 0], [2, 0], [1, 1]], [[1, 0], [0, 1], [2, 1]]];
+    const spawnFlock = () => {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      flock = { x: dir < 0 ? W + 6 : -12, y: 14 + Math.random() * 50, dir,
+        birds: Array.from({ length: 3 + Math.floor(Math.random() * 3) }, (_, i) => [i * 5, (i % 2) * 2 + Math.floor(i / 2) * 2]) };
+    };
+
+    const frame = () => {
+      tick++;
+      ctx.drawImage(sky, 0, 0);
+      for (const c of clouds) {
+        if (!reduced) { c.x += c.v; if (c.x > W + 4) c.x = -c.img.width - 4; }
+        ctx.drawImage(c.img, Math.round(c.x), c.y);
+      }
+      ctx.drawImage(sea, 0, 0);
+      ctx.drawImage(isl, 0, 0);
+      // sparkles: a few glints in the near sea
+      if (!reduced) {
+        if (sparkles.length < 16 && Math.random() < 0.7) sparkles.push({ x: Math.floor(Math.random() * W), y: HZ + 2 + Math.floor(Math.random() * 46), ttl: 2 + Math.floor(Math.random() * 4) });
+        sparkles = sparkles.filter(s => --s.ttl > 0);
+      }
+      for (const s of sparkles) px(ctx, s.x, s.y, s.ttl % 2 ? "#ffffff" : "#bfe3ff");
+      // birds
+      if (!reduced) {
+        if (!flock && --nextFlock <= 0) spawnFlock();
+        if (flock) {
+          flock.x += 1.6 * flock.dir;
+          const f = BIRD[Math.floor(tick / 3) % 2];
+          for (const [bx, by] of flock.birds) for (const [dx, dy] of f) px(ctx, Math.round(flock.x + bx + dx), Math.round(flock.y + by + dy), "#0b0a08");
+          if (flock.x < -30 || flock.x > W + 30) { flock = null; nextFlock = 8 * (12 + Math.random() * 28); }
+        }
+      }
+    };
+    frame();
+    if (!reduced) setInterval(() => { if (!document.hidden) frame(); }, 125);
+  }
+
   // ---------- init ----------
   function init({ start = false } = {}) {
     desktop = $(".desktop");
@@ -562,7 +709,7 @@ const Retro = (() => {
 
   return {
     init, register, spawn, open, place: placeWin, close, minimize, focus, toggleMax, fit,
-    floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc,
+    floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc, wallpaper,
     get active() { return activeId; },
     win: id => wins.get(id),
   };

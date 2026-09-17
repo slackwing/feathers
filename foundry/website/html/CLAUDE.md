@@ -28,6 +28,10 @@ from a site's own pages:
 - `<site>/_invite/index.html` — the site's invite / set-password page.
   Invite links generated in the console point at `/<site>/_invite/?code=`.
   Opened without a code by a logged-in user it becomes "change password".
+  It must make clear the invitee CHOOSES a password, say "password" (not
+  "passphrase"), and honour `?preview=invite|change|void` so that
+  `<site>/_invite/preview.html` — a plain admin-style previewer, same
+  look as the email one — can show every state in an inert frame.
 - `<site>/_email/` — the site's email templates: `templates.json`
   (manifest: id, name, subject, `invite`/`on` flags), one `<id>.html`
   body per template (email-safe HTML: tables + inline styles), and an

@@ -23,13 +23,22 @@ license-only site from the show — rendered as a late-90s OS desktop.
   tiles → per-character Profile windows with a CLAIM button), Registration
   ("OPENS SOON" stamp + stuck progress bar) — plus desktop icons, an About
   window, and a taskbar. Every logged-in load boots (see Boot below).
-  Party date/venue are still `TBD` placeholders.
+  Notice: Site 618 Bushwick Ave, Commences Oct 31 (no time), no
+  "failure to commit" line (Andrew, 2026-09-17). Window title
+  "Hunter × Halloween" (the special ×); login dialog likewise.
   The gate is client-side UX only; static HTML remains fetchable.
 - **_invite/index.html** — invite / set-password page at the standard
-  cross-project path (`/hxh/_invite/?code=...`), one static dialog in
-  the same chrome. Copy makes it explicit the invitee CHOOSES their own
-  passphrase. Opened without a code by a logged-in user it becomes
-  "New passphrase" for that user (`POST /admin/api/password`).
+  cross-project path (`/hxh/_invite/?code=...`). Boots (HunterOS lines
+  + tee badge) and then shows a single Windows-logon-style dialog on
+  the bare desktop, no taskbar: title "Hunter × Halloween", heading
+  "Choose a password", Applicant (readonly) + Password fields, button
+  "Accept summons". No lede, no hints, "password" not "passphrase"
+  (Andrew, 2026-09-17). Opened without a code by a logged-in user the
+  same dialog changes that user's password (button "Change password",
+  `POST /admin/api/password`); a bad code shows the void message only.
+  `?preview=invite|change|void` forces a state without the boot, for
+  **_invite/preview.html** — the plain admin-style previewer (same look
+  as `_email/index.html`, inert frame) that shows all three states.
 - **_email/** — hxh's email templates (standard cross-project dir):
   `templates.json` (invite → mints a link; welcome → sent automatically
   on invite acceptance), `invite.html`, `welcome.html` (table-based,
@@ -55,6 +64,20 @@ license-only site from the show — rendered as a late-90s OS desktop.
   until opened (CTA, icons, Start menu). The Start menu has a Windows
   style user header (initials avatar from shared-auth `initial` +
   `color`, plus display name); nothing user-related in the tray.
+
+## Wallpaper
+
+`Retro.wallpaper(canvas)` paints an ORIGINAL pixel-art Whale Island on a
+320×180 canvas (`<canvas class="wall">`, fixed, `object-fit: cover`,
+`image-rendering: pixelated`) behind the desktop on index and the
+invite page: banded dithered sky, a broad forested hump left of centre,
+a low tail with the harbour houses, pier and lighthouse, banded sea
+with a reflection. Animated at 8 fps: sea sparkles, clouds drifting
+very slowly (minutes to cross), a flock of birds every 12–40 s; one
+static frame under prefers-reduced-motion. Inspired by the anime's
+island silhouette but drawn procedurally — no copyrighted image is
+used. Desktop icon labels carry a 1px ink outline to stay readable
+over the sky.
 
 ## Retro chrome (shared files)
 
@@ -132,7 +155,8 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 
 ## Open questions (ask Andrew before building)
 
-- **Party date / time / venue** — placeholders in the notice right now.
+- **Party time** — the notice gives 618 Bushwick Ave and Oct 31; no time
+  yet, by Andrew's choice.
 - **Email sending** needs the `email:` block in the VM's hobby-server
   config (Gmail app password); until then the console's Send buttons
   say "email not configured".
