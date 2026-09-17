@@ -130,13 +130,13 @@ const Retro = (() => {
     ],
     // purple square's blocky violet tee (boot splash logo)
     tee: [
-      "uuuuuuu....uuuuuuu",
+      ".uuuuuu....uuuuuu.",
       "uvvvvvvuuuuvvvvvvu",
-      "uvvvvvvvvvvvvvvvvu",
       "uvvvvvvvvvvvvvvvvu",
       "uvvvvvvvvvvvvvvvvu",
       "uvvvuvvvvvvvvuvvvu",
       "uuuuuvvvvvvvvuuuuu",
+      "....uvvvvvvvvu....",
       "....uvvvvvvvvu....",
       "....uvvvvvvvvu....",
       "....uvvvvvvvvu....",
