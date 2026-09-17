@@ -353,6 +353,15 @@ body.crt::after {
   color: var(--paper); font: 10px/1.8 var(--font-px); text-align: center; padding: 20px;
 }
 .boot .splash .sq { padding: 16px; background: #2a1d4a; box-shadow: 0 0 0 var(--px) var(--u, #7c4dff); }
+.boot .badge {
+  position: absolute; right: 28px; bottom: 24px;
+  display: flex; align-items: center; gap: 14px;
+  color: var(--paper-dim); font: 8px/1.6 var(--font-px); text-align: right;
+}
+.boot .badge .sq { padding: 8px; background: #2a1d4a; box-shadow: 0 0 0 var(--px) #7c4dff; }
+
+/* janky window paint: frame → menu bar → body */
+.win.loading .mbar, .win.loading .body, .win.loading2 .body { visibility: hidden; }
 
 /* ---------- avatar (shared-auth initial + colour) ---------- */
 .avatar {

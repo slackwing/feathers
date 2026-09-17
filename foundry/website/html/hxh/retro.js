@@ -268,10 +268,14 @@ const Retro = (() => {
     renderTasks();
   }
 
-  function open(id, at, { scroll = true } = {}) {
+  // jank: true paints the empty frame first, the menu bar ~90ms later,
+  // the body ~200ms in — a 90s machine drawing a window. Returns a
+  // promise that resolves once the content is visible.
+  async function open(id, at, { scroll = true, jank = false } = {}) {
     const w = wins.get(id);
     if (!w) return;
     const wasHidden = w.el.hidden;
+    if (jank && !reduced) w.el.classList.add("loading");
     w.el.hidden = false; w.min = false; w.open = true;
     if (floating() && !w.static) {
       if (at) place(w.el, at);
@@ -282,6 +286,17 @@ const Retro = (() => {
     if (scroll && !floating() && wasHidden && !w.el.classList.contains("profile")) {
       w.el.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
     }
+    if (jank && !reduced) {
+      await wait(90);
+      w.el.classList.replace("loading", "loading2");
+      await wait(110);
+      w.el.classList.remove("loading2");
+    }
+  }
+  // Position a window without opening it (so a later open lands there).
+  function placeWin(id, at) {
+    const w = wins.get(id);
+    if (w && floating() && !w.static) place(w.el, at);
   }
   function place(el, { x, y, w }) {
     if (w) el.style.width = w + "px";
@@ -467,13 +482,18 @@ const Retro = (() => {
 
   // { splash: { html, ms }, lines: [{ text, ok, wait, pause }], speed }
   // — an optional publisher splash, then BIOS-style lines. Click to skip.
-  function boot({ splash, lines = [], speed = 12, tail = 600 } = {}) {
+  function boot({ splash, badge, lines = [], speed = 12, tail = 600 } = {}) {
     const el = $("#boot");
     if (!el || reduced) return Promise.resolve();
     return new Promise(res => {
       let done = false;
       const finish = () => { if (done) return; done = true; el.classList.remove("on"); el.onclick = null; res(); };
       el.classList.add("on"); el.innerHTML = ""; el.onclick = finish;
+      if (badge) {
+        const b = document.createElement("div");
+        b.className = "badge"; b.innerHTML = badge;
+        el.append(b);
+      }
       (async () => {
         if (splash) {
           const sp = document.createElement("div");
@@ -545,7 +565,7 @@ const Retro = (() => {
   }
 
   return {
-    init, register, spawn, open, close, minimize, focus, toggleMax, fit,
+    init, register, spawn, open, place: placeWin, close, minimize, focus, toggleMax, fit,
     floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc,
     get active() { return activeId; },
     win: id => wins.get(id),

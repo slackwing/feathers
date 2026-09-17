@@ -41,10 +41,15 @@ license-only site from the show — rendered as a late-90s OS desktop.
   `~/src/hobby-server/docs/SHARED_AUTH.md`.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
-- **Boot**: every logged-in load boots — "a purple square production"
-  splash (blocky violet tee in a purple square, `tee` icon) then
-  HunterOS 99 BIOS lines; quick on a returning session, a beat slower
-  right after logging in; click skips. The tray shows the user's
+- **Boot**: every logged-in load boots — HunterOS 99 BIOS lines with
+  the "a purple square production" badge (blocky violet tee in a purple
+  square, `tee` icon) in the lower right the whole time; quick on a
+  returning session, a beat slower right after logging in; click skips.
+  Then the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
+  the summons window paints in jankily — frame first, menu bar ~90ms
+  later, body ~200ms in (`Retro.open(..., {jank: true})`) — and the
+  notice types. Roster and Registration are pre-positioned but closed
+  until opened (CTA, icons, Start menu). The tray shows the user's
   initials avatar (shared-auth `initial` + `color`).
 
 ## Retro chrome (shared files)
@@ -56,7 +61,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
   `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
   only, 4px snap), taskbar + clock, `startMenu(items|fn)`, menu bars,
   `type(el, runs, {speed, onDone, instant})` typewriter,
-  `boot({splash, lines, speed, tail})`, `toast(msg)`, `setCRT(on)`
+  `boot({badge, splash, lines, speed, tail})`, `place(id, at)`,
+  `open(id, at, {scroll, jank})`, `toast(msg)`, `setCRT(on)`
   (persisted in `localStorage hxh.crt`), `avatar(acct)` + `setUser(acct)`
   (tray avatar), `icon(name, size)` (ASCII-grid pixel icons → SVG,
   integer-scaled), and

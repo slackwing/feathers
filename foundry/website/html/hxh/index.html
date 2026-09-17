@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=2">
+<link rel="stylesheet" href="retro.css?v=3">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
@@ -130,7 +130,7 @@
 <div class="taskbar" id="taskbar" hidden></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=2"></script>
+<script src="retro.js?v=3"></script>
 <script>
 const CHARACTERS = [
   { name: "Gon",        nen: "Enhancer",    glyph: "🎣", blurb: "Fishing-rod optimist from Whale Island. Will befriend your worst enemy, then punch through a wall for him." },
@@ -255,9 +255,11 @@ function openProfile(c) {
   const el = profiles.get(id);
   let at = null;
   if (Retro.floating()) {
-    const r = $("win-roster");
+    // Cascade off the roster window, or the summons if the roster is
+    // closed (icons / Start menu can reach tiles-less routes).
+    const base = ["win-roster", "win-summons"].map(id => $(id)).find(w => !w.hidden) || { offsetLeft: 60, offsetTop: 0 };
     const n = [...profiles.values()].filter(p => !p.hidden && p !== el).length;
-    if (!el.dataset.placed) at = { x: r.offsetLeft + 60 + n * 28, y: r.offsetTop + 70 + n * 28 };
+    if (!el.dataset.placed) at = { x: base.offsetLeft + 60 + n * 28, y: base.offsetTop + 70 + n * 28 };
   } else {
     profiles.forEach((p, pid) => { if (p !== el && !p.hidden) Retro.close(pid); });
     Retro.backdrop(true, () => Retro.close(id));
@@ -282,26 +284,27 @@ function buildIcons() {
   });
 }
 
-function layout() {
-  const f = Retro.floating();
+// Only the summons opens at startup; the roster and registration
+// windows are pre-positioned (side by side when the screen is wide,
+// cascaded below otherwise) so they land in place when opened.
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function summonsPos() {
+  return Retro.floating() ? { x: 116, y: 20 } : null;
+}
+function placeOthers() {
+  if (!Retro.floating()) return;
   const vw = desktop.clientWidth;
-  Retro.open("win-summons", f ? { x: 116, y: 20 } : null, { scroll: false });
   const s = $("win-summons");
   const side = vw >= 116 + 600 + 24 + 600 + 16;
-  let rosterAt = null, registerAt = null;
-  if (f) {
-    rosterAt = side ? { x: 740, y: 20 } : { x: Math.min(212, vw - 600 - 24), y: s.offsetTop + s.offsetHeight + 10 };
-  }
-  Retro.open("win-roster", rosterAt, { scroll: false });
-  const r = $("win-roster");
-  if (f) {
-    registerAt = side ? { x: 740, y: r.offsetTop + r.offsetHeight + 10 }
-      : (vw >= 116 + 600 + 24 + 360 + 24 ? { x: 740, y: 20 } : { x: r.offsetLeft + 40, y: r.offsetTop + r.offsetHeight + 10 });
-  }
-  Retro.open("win-register", registerAt, { scroll: false });
-  Retro.focus("win-summons");
-  Retro.fit();
-  if (!f) scrollTo(0, 0);
+  const sBottom = s.offsetTop + s.offsetHeight;
+  const rosterAt = side ? { x: 740, y: 20 } : { x: Math.min(212, vw - 600 - 24), y: sBottom + 10 };
+  const rosterH = 620;   // 16 tiles + legend, roughly
+  const registerAt = side ? { x: 740, y: rosterAt.y + rosterH + 10 }
+    : (vw >= 116 + 600 + 24 + 360 + 24 ? { x: 740, y: 20 } : { x: rosterAt.x + 40, y: rosterAt.y + rosterH + 10 });
+  // Never move a window the user already opened (e.g. from an icon
+  // during the beat before the summons appears).
+  if (!$("win-roster").dataset.placed) Retro.place("win-roster", rosterAt);
+  if (!$("win-register").dataset.placed) Retro.place("win-register", registerAt);
 }
 
 // Fill the notice instantly so the window is measured at its final height,
@@ -334,7 +337,7 @@ async function showDesktop(justLoggedIn) {
   document.querySelectorAll("[data-admin]").forEach(x => { x.hidden = !admin; });
   const k = justLoggedIn ? 1 : 0.4;
   await Retro.boot({
-    splash: { html: `<div class="sq">${Retro.icon("tee", 96)}</div><div>a purple square production</div>`, ms: 1000 * k + 500 },
+    badge: `<div>a purple square<br>production</div><div class="sq">${Retro.icon("tee", 48)}</div>`,
     lines: [
       { text: "HunterOS 99 · Hunter Association Network", pause: 300 * k },
       { text: "> connecting to hunter.net .........", ok: true, wait: 300 * k },
@@ -345,13 +348,17 @@ async function showDesktop(justLoggedIn) {
     speed: justLoggedIn ? 12 : 5,
     tail: 500 * k,
   });
+  // Booted: bare desktop first, then the summons window paints in.
   Retro.setUser(me);
   buildIcons();
   $("icons").hidden = false;
   $("taskbar").hidden = false;
   try { await document.fonts.ready; } catch {}
   prepNotice();
-  layout();
+  if (!Retro.floating()) scrollTo(0, 0);
+  await wait(justLoggedIn ? 650 : 420);
+  await Retro.open("win-summons", summonsPos(), { scroll: false, jank: true });
+  placeOthers();
   typeNotice();
 }
 
