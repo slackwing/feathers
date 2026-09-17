@@ -124,9 +124,27 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   cursor). Idle = the ring emblem. Keys: CLAIM (toast + opens
   Registration), CLOSE (back to the cover). D-pad: ◀ ▶ page, ▲ ▼ card.
   Dial and pad are decoration.
-- Data: `roster.json` (all 40; `glyph` emoji + `first` short name were
-  added for the binder — extra fields the PUT endpoint ignores).
-- Phone: page and panel stack; the spine turns horizontal.
+- Size: fills most of the screen — `Binder.layout()` sets `--bw/--bh`
+  from the viewport (up to 1180×780) and returns the window position;
+  12 sleeves per page (3×4). Phone: page and panel stack, the spine
+  turns horizontal, 2 columns.
+- Fidelity comes from Andrew's Netflix screenshots (E66 Strategy × and
+  × Scheme, E67 15 × 15): rivets and hinge lines on the boards, grooved
+  gold clasps, the cream nameplate, the ring emblem (the show's idle
+  screen), rounded header boxes, the hatched pink text frame, the bezelled
+  screen, the dial with its notch, the tick-marked pad, two-tone D-pad.
+  Japanese is mixed in where the show has it: 「name_ja」 on the screen's
+  top line, the kana given name on the card art, tab titles / page
+  footer with the Nen type in kanji, and a status line in the show's
+  style (所持者 0名 ／ 残り N枚 — holders / remaining, from the rank limit).
+- Data: `roster.json` — the master copy, schema v2 (2026-09-17): `no`
+  (card number, assigned by build.py), `slug`, `name`, `name_ja`,
+  `first`, `glyph`, `rank` (S/A/B/C → claim limit 1/2/3/4, proposed),
+  `nen_types`, `affiliation`, `weapons`, `arcs`, `description`,
+  `images`. Rules and the per-character checklist:
+  `foundry/website/hxh-roster/CHARACTER.md`; `validate.py` checks a
+  file, `build.py` orders it and assigns `no`. Follow the checklist for
+  EVERY character (Andrew's ask: one consistent procedure).
 - `Binder.mount({ desktop, claim })` must run BEFORE `Retro.os()` so the
   shell registers the window.
 
@@ -211,12 +229,17 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
   chips (double types supported), weapon slugs, arc chips, description.
 - Data: `hxh_characters` (slug PK; nen_types/weapons/arcs are
   comma-separated slug strings; images JSONB array of Fandom-wiki
-  URLs, hotlinked) + `hxh_arcs` (7 anime arcs, seeded by Liquibase).
+  URLs, hotlinked; since changeset 004 also card_no, name_ja, first,
+  glyph, rank, affiliation — the Binder's card fields) + `hxh_arcs`
+  (7 anime arcs, seeded by Liquibase).
 - Curation loop: edit `roster.json` (kept in this dir, master copy of
-  the data) and push with
-  `PUT /hxh/api/roster/characters?replace=1` (admin session).
-  Characters were compiled from hunterxhunter.fandom.com; expect
-  iterative correction rounds with Andrew.
+  the data) following `foundry/website/hxh-roster/CHARACTER.md`, run
+  `validate.py` + `build.py`, deploy, then push with
+  `PUT /hxh/api/roster/characters?replace=1` (admin session; without
+  Andrew's password, create a throwaway admin via psql on the VM, mint
+  it a token, log in, PUT, delete it). Characters were compiled from
+  hunterxhunter.fandom.com (the MediaWiki API `action=parse&prop=wikitext`
+  works when page fetches are blocked); expect correction rounds.
 - The Binder on index reads this same `roster.json` (with its `glyph`
   and `first` fields), so the roster is defined in one place.
 

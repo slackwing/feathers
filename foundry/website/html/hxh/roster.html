@@ -42,6 +42,7 @@
   .chip.nen { font-weight: bold; }
   .chip.weapon { background: var(--pumpkin); }
   .chip.arc { border-style: dashed; }
+  .chip.card { background: var(--ink); color: var(--paper-hi); }
   .empty { color: var(--ink-4); }
   .hidden { display: none !important; }
 </style>
@@ -142,11 +143,13 @@ function render(arcs, characters) {
       ? `<div class="strip">${c.images.map(u =>
           `<a href="${esc(u)}" target="_blank" rel="noreferrer"><img src="${esc(u)}" loading="lazy" alt="${esc(c.name)}"></a>`).join("")}</div>`
       : `<p class="empty" style="margin:.6rem 0">no images</p>`;
+    const card = `<span class="chip card">No.${String(c.no || 0).padStart(3, "0")} · ${esc(c.rank || "?")}</span>`
+      + (c.affiliation ? `<span class="chip">${esc(c.affiliation)}</span>` : "");
     el.innerHTML = `
-      <h2>${esc(c.name)} <span class="slug">${esc(c.slug)}</span></h2>
+      <h2>${c.glyph ? esc(c.glyph) + " " : ""}${esc(c.name)} <span class="slug">${esc(c.name_ja || "")}${c.name_ja ? " · " : ""}${esc(c.slug)}${c.first ? " · " + esc(c.first) : ""}</span></h2>
       <p class="desc">${esc(c.description)}</p>
       ${strip}
-      <div class="chips">${nen}${weapons}${arcChips}</div>`;
+      <div class="chips">${card}${nen}${weapons}${arcChips}</div>`;
     box.appendChild(el);
   }
 }

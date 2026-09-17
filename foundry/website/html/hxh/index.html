@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="retro.css?v=13">
-<link rel="stylesheet" href="binder.css?v=2">
+<link rel="stylesheet" href="binder.css?v=3">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
@@ -70,7 +70,7 @@
 <div class="startmenu" id="startmenu"></div>
 
 <script src="retro.js?v=13"></script>
-<script src="binder.js?v=2"></script>
+<script src="binder.js?v=3"></script>
 <script>
 const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
@@ -94,7 +94,7 @@ let me = null, admin = false, notice = null;
 // ---- actions (data-act buttons, menus, icons, start menu) ----
 const ACT = {
   summons: () => Retro.open("win-summons"),
-  binder: () => Retro.open("win-binder"),
+  binder: () => Retro.open("win-binder", Binder.layout()),
   register: () => Retro.open("win-register"),
   about: () => Retro.open("win-about"),
   "close-about": () => Retro.close("win-about"),
@@ -153,10 +153,9 @@ function summonsPos() {
 function placeOthers() {
   if (!Retro.floating()) return;
   const vw = desktop.clientWidth;
-  // The binder (720 wide) sits beside the summons when there is room,
-  // otherwise centred over the desktop; registration goes to the right
-  // of the summons or below it.
-  const binderAt = vw >= 116 + 600 + 24 + 720 + 16 ? { x: 740, y: 40 } : { x: Math.max(16, Math.round((vw - 720) / 2)), y: 40 };
+  // The binder fills most of the screen (Binder.layout sizes it);
+  // registration goes to the right of the summons or below it.
+  const binderAt = Binder.layout();
   const s = $("win-summons");
   const registerAt = vw >= 116 + 600 + 24 + 360 + 24 ? { x: 740, y: 20 } : { x: 160, y: s.offsetTop + s.offsetHeight + 10 };
   // Never move a window the user already opened (e.g. from an icon
