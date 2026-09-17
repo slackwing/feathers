@@ -238,6 +238,8 @@
   .spine .clasp { width: 56px; height: 16px; }
   .spine .clasp::after { left: 8px; right: 8px; top: 50%; bottom: auto; width: auto; height: var(--px); margin: -1px 0 0; }
   .tabs { top: -16px; }
+  .tab { font-size: 0; }             /* colour only on phones… */
+  .tab.on { font-size: 8px; padding: 2px 6px 0; flex: 0 0 auto; }   /* …except the open page */
   .screen { flex: none; height: 240px; }
   .pageno { position: static; text-align: right; margin-top: 6px; }
 }

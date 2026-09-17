@@ -112,10 +112,13 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   Escape closes, but no title bar or frame). Starts CLOSED — front cover
   only (ring emblem, title, BINDER) — click to open (3-step flip).
 - **Tabs on top of the left page, one per page**, coloured by Nen type
-  with a 2-letter code (EN TR CO EM MA SP, `--` non-user). A type never
-  shares a page (8 cards per page); a type with more than 8 gets more
-  tabs of the same colour (hover title says "page n of m"). So the type
-  isn't repeated under every card — Abi's idea. Room for 100+ characters.
+  with a 2-letter code (EN TR CO EM MA SP). A type never shares a page
+  (12 cards per page); a type with more than 12 gets more tabs of the
+  same colour (hover title says "page n of m"). So the type isn't
+  repeated under every card — Abi's idea. Characters with NO stated Nen
+  type (most of the 198) are filed by the arc they first appear in, on
+  muted arc-tinted tabs (EX ZO HA YN GI CA EL) — 23 tabs in all. On
+  phones only the open tab shows its label.
 - **Cards** copy the show's layout: three cream header boxes (No., short
   name, type code), a tinted art panel (pixelated emoji sprite on a
   Nen-hue dither), and a pink-framed text box (first sentence).
@@ -137,7 +140,10 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   top line, the kana given name on the card art, tab titles / page
   footer with the Nen type in kanji, and a status line in the show's
   style (所持者 0名 ／ 残り N枚 — holders / remaining, from the rank limit).
-- Data: `roster.json` — the master copy, schema v2 (2026-09-17): `no`
+- Data: `roster.json` — 198 characters, the complete named cast of the
+  2011 anime through the Election arc (researched 2026-09-17 by eight
+  parallel agents following CHARACTER.md; Japanese names verbatim from
+  the Fandom infoboxes). The master copy, schema v2 (2026-09-17): `no`
   (card number, assigned by build.py), `slug`, `name`, `name_ja`,
   `first`, `glyph`, `rank` (S/A/B/C → claim limit 1/2/3/4, proposed),
   `nen_types`, `affiliation`, `weapons`, `arcs`, `description`,

@@ -12,6 +12,17 @@ const Binder = (() => {
     { slug: "specialization", code: "SP", name: "Specialist",  ja: "特質系", hue: "var(--specialist)",  hex: "#58e05c" },
     { slug: "",               code: "--", name: "Non-user",    ja: "非能力者", hue: "var(--none)",      hex: "#9a9a9a" },
   ];
+  // Characters with no stated Nen type are filed by the arc they first
+  // appear in, on muted arc-coloured tabs, so a page is still one tab.
+  const ARCS = [
+    { slug: "hunter-exam",       code: "EX", name: "Hunter Exam",       ja: "ハンター試験編",     hex: "#b8ad97" },
+    { slug: "zoldyck-family",    code: "ZO", name: "Zoldyck Family",    ja: "ゾルディック家編",   hex: "#a89bb8" },
+    { slug: "heavens-arena",     code: "HA", name: "Heavens Arena",     ja: "天空闘技場編",       hex: "#9fb8b0" },
+    { slug: "yorknew-city",      code: "YN", name: "Yorknew City",      ja: "ヨークシン編",       hex: "#b8a0a0" },
+    { slug: "greed-island",      code: "GI", name: "Greed Island",      ja: "グリードアイランド編", hex: "#a3b89b" },
+    { slug: "chimera-ant",       code: "CA", name: "Chimera Ant",       ja: "キメラアント編",     hex: "#b8b493" },
+    { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "会長選挙編",         hex: "#a8aec0" },
+  ];
   const LIMIT = { S: 1, A: 2, B: 3, C: 4 };   // proposed claim limit per rank
   const PER_PAGE = 12;                        // 3 × 4 sleeves per page
   const esc = s => Retro.esc(s);
@@ -24,15 +35,18 @@ const Binder = (() => {
   const rankBox = c => `${c.rank || "C"}-${LIMIT[c.rank] || 4}`;
   const cardNo = c => String(c.no || 0).padStart(3, "0");
 
-  // One tab per page; a Nen type never shares a page with another.
+  // One tab per page; a group (Nen type, or first arc for the untyped)
+  // never shares a page with another.
   function paginate(chars) {
     const out = [];
-    for (const t of TYPES) {
-      const mine = chars.filter(c => typeOf(c) === t);
+    const push = (group, mine) => {
       for (let i = 0; i < mine.length; i += PER_PAGE) {
-        out.push({ type: t, cards: mine.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(mine.length / PER_PAGE) });
+        out.push({ type: group, cards: mine.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(mine.length / PER_PAGE) });
       }
-    }
+    };
+    for (const t of TYPES.slice(0, -1)) push(t, chars.filter(c => typeOf(c) === t));
+    const untyped = chars.filter(c => !c.nen_types.length);
+    for (const a of ARCS) push({ ...a, hue: a.hex }, untyped.filter(c => c.arcs[0] === a.slug));
     return out;
   }
 
@@ -185,7 +199,7 @@ const Binder = (() => {
     typer?.skip?.();
     if (!c) { idle(); return; }
     const t = typeOf(c);
-    const types = c.nen_types.length ? c.nen_types.map(n => (TYPES.find(x => x.slug === n) || {}).name || n).join(" / ") : "Non-user";
+    const types = c.nen_types.length ? c.nen_types.map(n => (TYPES.find(x => x.slug === n) || {}).name || n).join(" / ") : "—";
     const weapons = c.weapons.length ? c.weapons.map(title).join(", ") : "—";
     scr.innerHTML = `
       <div class="top">No.${esc(cardNo(c))}「${esc(c.name_ja || c.name)}」</div>
