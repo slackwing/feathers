@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=10">
+<link rel="stylesheet" href="retro.css?v=11">
 <style>
   .desktop { padding: 16px 16px calc(var(--taskbar-h) + 16px); }
   #win-db { width: 100%; max-width: 62rem; margin: 0 auto; }
@@ -71,11 +71,9 @@
 <div class="taskbar" id="taskbar"></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=10"></script>
+<script src="retro.js?v=11"></script>
 <script>
-Retro.init({ start: true });
 const API = "/hxh/api";
-const AUTH = "/admin/api";
 const $ = id => document.getElementById(id);
 const esc = Retro.esc;
 
@@ -87,7 +85,7 @@ const NEN_COLORS = {
 
 const ACT = {
   site: () => { location.href = "/hxh/"; },
-  logout: async () => { await fetch(AUTH + "/logout", { method: "POST" }); location.href = "/hxh/"; },
+  logout: () => Retro.logout(),
 };
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]");
@@ -103,6 +101,7 @@ Retro.startMenu(() => [
 ]);
 
 async function boot() {
+  await Retro.os({ wallpaper: true, start: true, gate: true });
   let res;
   try {
     res = await fetch(API + "/roster");
@@ -111,7 +110,7 @@ async function boot() {
     return;
   }
   if (res.status === 401) {
-    $("status").innerHTML = 'Not logged in. <a href="/hxh/">Log in first</a>.';
+    $("status").textContent = "Session expired.";
     return;
   }
   if (res.status === 403) {

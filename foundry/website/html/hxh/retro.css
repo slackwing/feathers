@@ -74,6 +74,9 @@ body.crt::after {
   z-index: 0; pointer-events: none;
 }
 
+/* while the OS logon dialog is up, a page's own windows and icons wait */
+body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !important; }
+
 /* ---------- desktop ---------- */
 .desktop {
   position: relative;

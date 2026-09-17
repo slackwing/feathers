@@ -241,11 +241,13 @@ const Retro = (() => {
     return el;
   }
 
-  function spawn({ id, title, icon: ic = "x", cls = "", width, html, onClose }) {
+  function spawn({ id, title, icon: ic = "x", cls = "", width, html, onClose, noclose = false, notask = false }) {
     const el = document.createElement("div");
     el.className = "win " + cls; el.id = id; el.hidden = true;
     el.dataset.title = title; el.dataset.icon = ic;
     if (width) el.dataset.width = width;
+    if (noclose) el.setAttribute("data-noclose", "");
+    if (notask) el.setAttribute("data-notask", "");
     el.innerHTML = `<div class="body">${html}</div>`;
     desktop.append(el);
     register(el, { onClose });
@@ -663,6 +665,108 @@ const Retro = (() => {
     if (!reduced) setInterval(() => { if (!document.hidden) frame(); }, 125);
   }
 
+  // ---------- OS shell ----------
+  // Every retro page opens inside the OS. The shell owns what used to be
+  // re-added per page: one boot per browser session (HunterOS lines +
+  // the purple-square badge), the session lookup, the Windows-style
+  // logon dialog, the wallpaper (only once logged in), and logout —
+  // which forgets the boot so the next logon screen boots again.
+  // Pages are apps: `const me = await Retro.os({...})`, then open windows.
+  const AUTH_API = "/admin/api";
+  const BOOT_KEY = "hxh.booted";
+  const badge = () => `<div>a purple square<br>production</div>${icon("tee", 54)}`;
+  const bootLines = (extra = []) => [
+    { text: "HunterOS 99 · Hunter Association Network", pause: 260 },
+    { text: "> connecting to hunter.net .........", ok: true, wait: 280, pause: 140 },
+    { text: "> verifying license ................", ok: true, wait: 340, pause: 160 },
+    ...extra,
+  ];
+
+  async function session() {
+    try { const r = await fetch(AUTH_API + "/me"); return r.ok ? await r.json() : null; } catch { return null; }
+  }
+  async function login(username, password) {
+    const r = await fetch(AUTH_API + "/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!r.ok) throw new Error(r.status === 401 ? "The committee does not recognize you." : "Something went wrong.");
+    return r.json();
+  }
+  async function logout() {
+    try { await fetch(AUTH_API + "/logout", { method: "POST" }); } catch {}
+    try { sessionStorage.removeItem(BOOT_KEY); } catch {}
+    location.href = "/hxh/";
+  }
+
+  // The logon dialog, alone on the bare desktop. Resolves with the account.
+  function logon() {
+    return new Promise(res => {
+      desktop.classList.add("center");
+      document.body.classList.add("logon");
+      const el = spawn({
+        id: "win-logon", title: "Hunter × Halloween — Log in", icon: "card", cls: "static", width: 400,
+        noclose: true, notask: true,
+        html: `
+          <h1 class="logo">HUNTER<span class="x">×</span><br><span class="hallow">HALLOWEEN</span></h1>
+          <p>Summoned applicants only. No summons? Reach out to the hosts.</p>
+          <form id="logon-form">
+            <label class="lbl" for="lg-u">Applicant</label>
+            <input class="field" id="lg-u" name="username" autocomplete="username" required>
+            <label class="lbl" for="lg-p">Password</label>
+            <input class="field" id="lg-p" name="password" type="password" autocomplete="current-password" required>
+            <div class="actions"><button class="btn primary wide" type="submit">Log in</button></div>
+            <div class="msg err" id="lg-msg"></div>
+          </form>`,
+      });
+      $(".body", el).style.textAlign = "center";
+      $("#logon-form", el).style.textAlign = "left";
+      $("#logon-form", el).addEventListener("submit", async e => {
+        e.preventDefault();
+        const msg = $("#lg-msg", el);
+        msg.textContent = "";
+        try {
+          const me = await login($("#lg-u", el).value.trim(), $("#lg-p", el).value);
+          close("win-logon"); wins.delete("win-logon"); el.remove();
+          desktop.classList.remove("center");
+          document.body.classList.remove("logon");
+          res(me);
+        } catch (err) {
+          msg.textContent = err.message;
+        }
+      });
+      open("win-logon", null, { scroll: false, jank: true }).then(() => $("#lg-u", el).focus());
+    });
+  }
+
+  function startWallpaper() {
+    if ($(".wall")) return;
+    const c = document.createElement("canvas");
+    c.className = "wall"; c.width = 320; c.height = 180;
+    document.body.prepend(c);
+    wallpaper(c);
+  }
+
+  // os(): boot (once per session) → session → logon if needed → in.
+  // Resolves with the account, or null when gate=false and logged out.
+  async function os({ wallpaper: wp = false, taskbar: tb = true, start = false, gate = true, boot: doBoot = true, bootLines: extra = [] } = {}) {
+    init({ start });
+    if (taskbar) taskbar.hidden = true;   // nothing else on screen while booting / logging on
+    let booted = false;
+    try { booted = sessionStorage.getItem(BOOT_KEY) === "1"; } catch {}
+    const pending = session();
+    if (doBoot && !booted) {
+      await boot({ badge: badge(), lines: bootLines(extra), speed: 9, tail: 420 });
+      try { sessionStorage.setItem(BOOT_KEY, "1"); } catch {}
+    }
+    let me = await pending;
+    if (!me && gate) me = await logon();
+    setUser(me);
+    if (me && wp) startWallpaper();      // Whale Island only once you're in
+    if (taskbar) taskbar.hidden = !tb;
+    return me;
+  }
+
   // ---------- init ----------
   function init({ start = false } = {}) {
     desktop = $(".desktop");
@@ -710,6 +814,7 @@ const Retro = (() => {
   return {
     init, register, spawn, open, place: placeWin, close, minimize, focus, toggleMax, fit,
     floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc, wallpaper,
+    os, session, login, logout, logon,
     get active() { return activeId; },
     win: id => wins.get(id),
   };

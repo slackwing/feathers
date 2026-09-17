@@ -17,13 +17,13 @@ license-only site from the show — rendered as a late-90s OS desktop.
   bevelled windows, crimson title bars, pixel fonts, taskbar + Start menu,
   CRT scanlines. The pre-retro site is tagged `hxh-pre-retro` in git —
   `git checkout hxh-pre-retro -- foundry/website/html/hxh` reverts it.
-- **index.html** — login-gated. Logged out: a centered "Hunter Website —
-  Log in" dialog. Logged in: three windows — Summons (logotype, kana,
+- **index.html** — login-gated by the OS shell (see below). Logged in:
+  three windows — Summons (logotype, kana,
   typewriter notice in a visual-novel box, CTA), Roster (16 character
   tiles → per-character Profile windows with a CLAIM button), Registration
   ("OPENS SOON" stamp + stuck progress bar) — plus desktop icons, an About
   window, and a taskbar. Every logged-in load boots (see Boot below).
-  Notice: Site 618 Bushwick Ave, Commences Oct 31 (no time), no
+  Notice: Site 618 Bushwick Ave, Commences Oct 31, 2026 (no time), no
   "failure to commit" line (Andrew, 2026-09-17). Window title
   "Hunter × Halloween" (the special ×); login dialog likewise.
   The gate is client-side UX only; static HTML remains fetchable.
@@ -53,11 +53,10 @@ license-only site from the show — rendered as a late-90s OS desktop.
   `~/src/hobby-server/docs/SHARED_AUTH.md`.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
-- **Boot**: every logged-in load boots — HunterOS 99 BIOS lines with
-  the "a purple square production" badge (bare blocky violet tee, `tee`
-  icon, no backing square) in the lower right the whole time; quick on a
-  returning session, a beat slower right after logging in; click skips.
-  Then the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
+- **Boot**: owned by the OS shell, once per browser session (see below):
+  HunterOS 99 BIOS lines with the "a purple square production" badge
+  (bare blocky violet tee, `tee` icon) in the lower right; click skips.
+  After logon the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
   the summons window paints in jankily — frame first, menu bar ~90ms
   later, body ~200ms in (`Retro.open(..., {jank: true})`) — and the
   notice types. Roster and Registration are pre-positioned but closed
@@ -65,12 +64,42 @@ license-only site from the show — rendered as a late-90s OS desktop.
   style user header (initials avatar from shared-auth `initial` +
   `color`, plus display name); nothing user-related in the tray.
 
+## The OS shell (`Retro.os`) — pages are apps
+
+Andrew's rule (2026-09-17): cross-page behaviour lives in ONE shell, never
+re-added per page. Every retro page starts with
+`const me = await Retro.os({ wallpaper, taskbar, start, gate, boot })`:
+
+1. `init()` — chrome, registers the page's `.win[data-title]` windows.
+2. **Boot once per browser session** — HunterOS lines + the purple-square
+   badge, ~2.5 s, skippable; `sessionStorage hxh.booted` remembers it so
+   logging in or moving between pages never reboots. `Retro.logout()`
+   ends the session, clears the flag and returns to `/hxh/`, which boots
+   again and shows the logon — like a real machine.
+3. **Session** — `GET /admin/api/me`.
+4. **Logon** (when `gate: true` and logged out) — the shared dialog
+   (`Retro.logon()`: title "Hunter × Halloween — Log in", logotype, one
+   line, Applicant + Password, no "restricted site" line) alone on the
+   bare ink desktop; the page's own windows/icons are hidden meanwhile
+   (`body.logon`). Resolves with the account.
+5. **Wallpaper** starts only now, i.e. only once logged in (`wallpaper:
+   true`); logon and invite splashes stay on the ink × tiles.
+6. Taskbar shown (`taskbar: true`), Start menu user header set.
+
+- index: `os({ wallpaper, start, gate })` then the empty-desktop → janky
+  summons sequence. roster.html: same, then loads data. `_invite/`:
+  `os({ wallpaper: false, taskbar: false, gate: false, boot: !preview })`
+  — it is itself a logon-style splash. Plain admin pages (`_email/`,
+  `_invite/preview.html`) are outside the OS.
+- Adding a page = call `os()`, then open windows. Never call `Retro.boot`
+  or build a login form in a page.
+
 ## Wallpaper
 
 `Retro.wallpaper(canvas)` paints an ORIGINAL pixel-art Whale Island on a
 320×180 canvas (`<canvas class="wall">`, fixed, `object-fit: cover`,
-`image-rendering: pixelated`) behind the desktop on index and the
-invite page: banded dithered sky, a broad forested hump left of centre,
+`image-rendering: pixelated`), created by the shell once logged in
+(never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
 a low tail with the harbour houses, pier and lighthouse, banded sea
 with a reflection. Animated at 8 fps: sea sparkles, clouds drifting
 very slowly (minutes to cross), a flock of birds every 12–40 s; one
@@ -84,7 +113,8 @@ over the sky.
 - `retro.css` — tokens (same five colours as before, plus `--ink-4` for
   muted text on cream), window/bevel/button/field styles, taskbar, Start
   menu, menus, toast, boot overlay, scanlines, phone stacking rules.
-- `retro.js` — `Retro` module: window manager (`register`, `spawn`,
+- `retro.js` — `Retro` module: the OS shell (`os`, `session`, `login`,
+  `logout`, `logon`, `wallpaper`), window manager (`register`, `spawn`,
   `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
   only, 4px snap), taskbar + clock, `startMenu(items|fn)`, menu bars,
   `type(el, runs, {speed, onDone, instant})` typewriter,

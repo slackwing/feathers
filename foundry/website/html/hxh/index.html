@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=10">
+<link rel="stylesheet" href="retro.css?v=11">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
@@ -57,24 +57,7 @@
 </style>
 </head>
 <body>
-<canvas class="wall" id="wall" width="320" height="180"></canvas>
-<div class="desktop center" id="desktop">
-
-  <div class="win static" id="win-login" data-title="Hunter × Halloween — Log in" data-icon="card" data-noclose data-notask data-width="400" hidden>
-    <div class="body">
-      <div class="assoc">Hunter Association · Restricted Site</div>
-      <h1 class="logo">HUNTER<span class="x">×</span><br><span class="hallow">HALLOWEEN</span></h1>
-      <p>This phase site is open to summoned applicants only. No summons? Reach out to the hosts.</p>
-      <form id="login-form">
-        <label class="lbl" for="lu">Applicant</label>
-        <input class="field" id="lu" name="username" autocomplete="username" required>
-        <label class="lbl" for="lp">Passphrase</label>
-        <input class="field" id="lp" name="password" type="password" autocomplete="current-password" required>
-        <div class="actions"><button class="btn primary wide" type="submit">Log in</button></div>
-        <div class="msg err" id="login-msg"></div>
-      </form>
-    </div>
-  </div>
+<div class="desktop" id="desktop">
 
   <div class="icons" id="icons" hidden></div>
 
@@ -131,7 +114,7 @@
 <div class="taskbar" id="taskbar" hidden></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=10"></script>
+<script src="retro.js?v=11"></script>
 <script>
 const CHARACTERS = [
   { name: "Gon",        nen: "Enhancer",    glyph: "🎣", blurb: "Fishing-rod optimist from Whale Island. Will befriend your worst enemy, then punch through a wall for him." },
@@ -161,7 +144,7 @@ const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
   ".\n\nSite: ", { t: "618 Bushwick Ave", tag: "b" },
-  "\nCommences: ", { t: "Oct 31", tag: "b" }, "\n\n",
+  "\nCommences: ", { t: "Oct 31, 2026", tag: "b" }, "\n\n",
   "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona.",
 ];
 const DESKTOP_ICONS = [
@@ -172,13 +155,9 @@ const DESKTOP_ICONS = [
   { icon: "db",       label: "Roster DB", act: "rosterdb", admin: true },
 ];
 
-const AUTH = "/admin/api";
 const $ = id => document.getElementById(id);
 const desktop = $("desktop");
 let me = null, admin = false, notice = null;
-
-Retro.init({ start: true });
-Retro.wallpaper($("wall"));
 
 // ---- actions (data-act buttons, menus, icons, start menu) ----
 const ACT = {
@@ -188,7 +167,7 @@ const ACT = {
   about: () => Retro.open("win-about"),
   "close-about": () => Retro.close("win-about"),
   rosterdb: () => { location.href = "/hxh/roster.html"; },
-  logout: async () => { await fetch(AUTH + "/logout", { method: "POST" }); location.reload(); },
+  logout: () => Retro.logout(),
 };
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]");
@@ -323,41 +302,16 @@ function typeNotice() {
 }
 $("vn").addEventListener("click", () => notice?.skip());
 
-// ---- auth ----
-function showGate() {
-  desktop.classList.add("center");
-  $("win-login").hidden = false;
-  $("taskbar").hidden = true;
-  $("icons").hidden = true;
-}
-
-// Every logged-in load boots: publisher splash, then HunterOS. Quick
-// on a returning session, a beat slower right after logging in.
-async function showDesktop(justLoggedIn) {
-  $("win-login").hidden = true;
-  desktop.classList.remove("center");
+// ---- app entry: open inside the OS, then bring up the desktop ----
+// Bare desktop first, then the summons window paints in.
+async function showDesktop() {
   document.querySelectorAll("[data-admin]").forEach(x => { x.hidden = !admin; });
-  const k = justLoggedIn ? 1 : 0.4;
-  await Retro.boot({
-    badge: `<div>a purple square<br>production</div>${Retro.icon("tee", 54)}`,
-    lines: [
-      { text: "HunterOS 99 · Hunter Association Network", pause: 300 * k },
-      { text: "> connecting to hunter.net .........", ok: true, wait: 300 * k },
-      { text: "> verifying license ................", ok: true, wait: 300 * k },
-      { text: `> welcome, ${me.display_name || me.username || "applicant"}`, pause: 400 * k },
-    ],
-    speed: justLoggedIn ? 12 : 5,
-    tail: 500 * k,
-  });
-  // Booted: bare desktop first, then the summons window paints in.
-  Retro.setUser(me);
   buildIcons();
   $("icons").hidden = false;
-  $("taskbar").hidden = false;
   try { await document.fonts.ready; } catch {}
   prepNotice();
   if (!Retro.floating()) scrollTo(0, 0);
-  await wait(justLoggedIn ? 650 : 420);
+  await wait(420);
   await Retro.open("win-summons", summonsPos(), { scroll: false, jank: true });
   placeOthers();
   typeNotice();
@@ -368,35 +322,10 @@ function setMe(json) {
   admin = (me.roles || []).some(r => r.website === "hxh" && r.role === "admin");
 }
 
-async function authBoot() {
-  try {
-    const res = await fetch(AUTH + "/me");
-    if (!res.ok) { showGate(); return; }
-    setMe(await res.json());
-    showDesktop(false);
-  } catch {
-    showGate();
-  }
-}
-
-$("login-form").addEventListener("submit", async e => {
-  e.preventDefault();
-  const msg = $("login-msg");
-  msg.textContent = "";
-  const res = await fetch(AUTH + "/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: $("lu").value.trim(), password: $("lp").value }),
-  });
-  if (!res.ok) {
-    msg.textContent = res.status === 401 ? "The committee does not recognize you." : "Something went wrong.";
-    return;
-  }
-  setMe(await res.json());
-  showDesktop(true);
-});
-
-authBoot();
+(async () => {
+  setMe(await Retro.os({ wallpaper: true, start: true, gate: true }));
+  showDesktop();
+})();
 </script>
 </body>
 </html>

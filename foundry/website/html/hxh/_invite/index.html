@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../retro.css?v=10">
+<link rel="stylesheet" href="../retro.css?v=11">
 <style>
   /* Logon dialog: boots, then sits alone on the desktop — no taskbar. */
   .desktop.center { min-height: 100svh; padding-bottom: 16px; }
@@ -17,7 +17,6 @@
 </style>
 </head>
 <body>
-<canvas class="wall" id="wall" width="320" height="180"></canvas>
 <div class="desktop center" id="desktop">
   <div class="win static" id="win-invite" data-title="Hunter × Halloween" data-icon="x" data-noclose data-notask data-width="400" hidden>
     <div class="body">
@@ -44,10 +43,8 @@
   </div>
 </div>
 
-<script src="../retro.js?v=10"></script>
+<script src="../retro.js?v=11"></script>
 <script>
-Retro.init();
-Retro.wallpaper(document.getElementById("wall"));
 const API = "/admin/api";
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -57,19 +54,15 @@ let mode = "invite";
 
 // Which state to show: an invite (code in URL), a password change (no
 // code, logged in), or a void link.
-async function decide() {
+async function decide(me) {
   if (preview === "invite") return { mode: "invite", username: "abi" };
   if (preview === "void") return { mode: "void" };
-  if (preview === "change") {
-    const r = await fetch(`${API}/me`).catch(() => null);
-    return { mode: "change", username: r && r.ok ? (await r.json()).username : "andrew" };
-  }
+  if (preview === "change") return { mode: "change", username: me ? me.username : "andrew" };
   if (code) {
     const r = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
     return r.ok ? { mode: "invite", username: (await r.json()).username } : { mode: "void" };
   }
-  const r = await fetch(`${API}/me`);
-  return r.ok ? { mode: "change", username: (await r.json()).username } : { mode: "void" };
+  return me ? { mode: "change", username: me.username } : { mode: "void" };
 }
 
 function render(state) {
@@ -81,19 +74,10 @@ function render(state) {
 }
 
 async function start() {
-  const pending = decide();
-  if (!preview) {
-    await Retro.boot({
-      badge: `<div>a purple square<br>production</div>${Retro.icon("tee", 54)}`,
-      lines: [
-        { text: "HunterOS 99 · Hunter Association Network", pause: 120 },
-        { text: "> connecting to hunter.net .........", ok: true, wait: 120 },
-        { text: "> starting logon ...................", ok: true, wait: 160 },
-      ],
-      speed: 5, tail: 250,
-    });
-  }
-  render(await pending);
+  // Inside the OS (boots once per session), but as a logon-style splash:
+  // no taskbar, no wallpaper, no gate — the dialog itself is the gate.
+  const me = await Retro.os({ wallpaper: false, taskbar: false, gate: false, boot: !preview });
+  render(await decide(me));
   await Retro.open("win-invite", null, { scroll: false, jank: !preview });
   if (mode !== "void") $("p").focus();
 }
