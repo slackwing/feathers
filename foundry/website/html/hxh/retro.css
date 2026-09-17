@@ -347,6 +347,24 @@ body.crt::after {
 }
 .boot.on { display: block; }
 .boot .cur::after { content: "█"; animation: blink .8s steps(2) infinite; }
+.boot .splash {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  color: var(--paper); font: 10px/1.8 var(--font-px); text-align: center; padding: 20px;
+}
+.boot .splash .sq { padding: 16px; background: #2a1d4a; box-shadow: 0 0 0 var(--px) var(--u, #7c4dff); }
+
+/* ---------- avatar (shared-auth initial + colour) ---------- */
+.avatar {
+  display: inline-grid; place-items: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--c, var(--none)); color: var(--t, var(--paper-hi));
+  font: 8px/1 var(--font-px); padding-top: 1px;
+  border: var(--px) solid var(--ink); box-shadow: 0 0 0 1px var(--paper-hi);
+  vertical-align: middle;
+}
+.avatar.lg { width: 44px; height: 44px; font-size: 14px; }
+.taskbar .tray .who { display: flex; align-items: center; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }
 

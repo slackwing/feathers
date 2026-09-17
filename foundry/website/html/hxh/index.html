@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="retro.css?v=1">
+<link rel="stylesheet" href="retro.css?v=2">
 <style>
   .summons .body { text-align: center; }
   .vn { text-align: left; }
@@ -130,7 +130,7 @@
 <div class="taskbar" id="taskbar" hidden></div>
 <div class="startmenu" id="startmenu"></div>
 
-<script src="retro.js?v=1"></script>
+<script src="retro.js?v=2"></script>
 <script>
 const CHARACTERS = [
   { name: "Gon",        nen: "Enhancer",    glyph: "🎣", blurb: "Fishing-rod optimist from Whale Island. Will befriend your worst enemy, then punch through a wall for him." },
@@ -326,19 +326,26 @@ function showGate() {
   $("icons").hidden = true;
 }
 
-async function showDesktop(withBoot) {
+// Every logged-in load boots: publisher splash, then HunterOS. Quick
+// on a returning session, a beat slower right after logging in.
+async function showDesktop(justLoggedIn) {
   $("win-login").hidden = true;
   desktop.classList.remove("center");
   document.querySelectorAll("[data-admin]").forEach(x => { x.hidden = !admin; });
-  if (withBoot) {
-    await Retro.boot([
-      { text: "HUNTER ASSOCIATION NETWORK  v2.0", pause: 400 },
-      { text: "> connecting to hunter.net .........", ok: true },
-      { text: "> verifying license ................", ok: true },
-      { text: "> loading halloween phase ..........", ok: true, wait: 600 },
-      { text: `> welcome, ${me.display_name || me.username || "applicant"}`, pause: 500 },
-    ]);
-  }
+  const k = justLoggedIn ? 1 : 0.4;
+  await Retro.boot({
+    splash: { html: `<div class="sq">${Retro.icon("tee", 96)}</div><div>a purple square production</div>`, ms: 1000 * k + 500 },
+    lines: [
+      { text: "HunterOS 99 · Hunter Association Network", pause: 300 * k },
+      { text: "> connecting to hunter.net .........", ok: true, wait: 300 * k },
+      { text: "> verifying license ................", ok: true, wait: 300 * k },
+      { text: "> loading halloween phase ..........", ok: true, wait: 500 * k },
+      { text: `> welcome, ${me.display_name || me.username || "applicant"}`, pause: 400 * k },
+    ],
+    speed: justLoggedIn ? 12 : 5,
+    tail: 500 * k,
+  });
+  Retro.setUser(me);
   buildIcons();
   $("icons").hidden = false;
   $("taskbar").hidden = false;

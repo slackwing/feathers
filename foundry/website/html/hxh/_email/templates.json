@@ -1,0 +1,16 @@
+{
+  "templates": [
+    {
+      "id": "invite",
+      "name": "Invite",
+      "subject": "You are summoned: Hunter × Halloween",
+      "invite": true
+    },
+    {
+      "id": "welcome",
+      "name": "Welcome",
+      "subject": "License in order, {{display_name}}",
+      "on": "accept"
+    }
+  ]
+}

@@ -22,13 +22,30 @@ license-only site from the show — rendered as a late-90s OS desktop.
   typewriter notice in a visual-novel box, CTA), Roster (16 character
   tiles → per-character Profile windows with a CLAIM button), Registration
   ("OPENS SOON" stamp + stuck progress bar) — plus desktop icons, an About
-  window, and a taskbar. A fake boot sequence plays after an explicit login
-  (not on returning sessions). Party date/venue are still `TBD` placeholders.
+  window, and a taskbar. Every logged-in load boots (see Boot below).
+  Party date/venue are still `TBD` placeholders.
   The gate is client-side UX only; static HTML remains fetchable.
-- **invite.html** — set-password page for invite links
-  (`/hxh/invite.html?code=...`), one static dialog in the same chrome.
+- **_invite/index.html** — invite / set-password page at the standard
+  cross-project path (`/hxh/_invite/?code=...`), one static dialog in
+  the same chrome. Copy makes it explicit the invitee CHOOSES their own
+  passphrase. Opened without a code by a logged-in user it becomes
+  "New passphrase" for that user (`POST /admin/api/password`).
+- **_email/** — hxh's email templates (standard cross-project dir):
+  `templates.json` (invite → mints a link; welcome → sent automatically
+  on invite acceptance), `invite.html`, `welcome.html` (table-based,
+  inline-styled retro "window" emails in the site palette, Courier
+  fallback since web fonts don't survive mail clients), and
+  `index.html` — an admin-only listing that previews each template with
+  the logged-in admin's data and can send a test to them. Sent from
+  the `/admin/` console; see `../CLAUDE.md` and
+  `~/src/hobby-server/docs/SHARED_AUTH.md`.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
+- **Boot**: every logged-in load boots — "a purple square production"
+  splash (blocky violet tee in a purple square, `tee` icon) then
+  HunterOS 99 BIOS lines; quick on a returning session, a beat slower
+  right after logging in; click skips. The tray shows the user's
+  initials avatar (shared-auth `initial` + `color`).
 
 ## Retro chrome (shared files)
 
@@ -38,9 +55,11 @@ license-only site from the show — rendered as a late-90s OS desktop.
 - `retro.js` — `Retro` module: window manager (`register`, `spawn`,
   `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
   only, 4px snap), taskbar + clock, `startMenu(items|fn)`, menu bars,
-  `type(el, runs, {speed, onDone, instant})` typewriter, `boot(lines)`,
-  `toast(msg)`, `setCRT(on)` (persisted in `localStorage hxh.crt`),
-  `icon(name, size)` (ASCII-grid pixel icons → SVG, integer-scaled), and
+  `type(el, runs, {speed, onDone, instant})` typewriter,
+  `boot({splash, lines, speed, tail})`, `toast(msg)`, `setCRT(on)`
+  (persisted in `localStorage hxh.crt`), `avatar(acct)` + `setUser(acct)`
+  (tray avatar), `icon(name, size)` (ASCII-grid pixel icons → SVG,
+  integer-scaled), and
   `sprite(emoji)` (emoji drawn on a 16px canvas, alpha-thresholded and
   snapped to the web-safe palette, upscaled with `image-rendering:
   pixelated` — our copyright-free "pixel art").
@@ -104,6 +123,9 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 ## Open questions (ask Andrew before building)
 
 - **Party date / time / venue** — placeholders in the notice right now.
+- **Email sending** needs the `email:` block in the VM's hobby-server
+  config (Gmail app password); until then the console's Send buttons
+  say "email not configured".
 - **Character exclusivity** — first-come-first-serve claims (no duplicate
   costumes) or can multiple guests pick the same character?
 - **Registration friction** — name-only, or name + email? Any login at all,
@@ -114,6 +136,18 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
   - Costume contest voting page (night-of)
   - Greed Island–style "party quest" card checklist
   - Phantom Troupe counter ("13 spiders" — first 13 to register?)
+
+## Keep these three in sync
+
+The site chrome (`retro.css`/`retro.js` + pages), the invite page
+(`_invite/`), and the emails (`_email/*.html`) are one look. A theme
+change is not done until all three match — change them in the same
+commit, and re-screenshot `_email/` and `_invite/` alongside the
+desktop. The emails can't load the web fonts or the shared CSS, so
+their look is hand-mirrored with inline styles: same palette
+(`#0b0a08` ink, `#e8dcc3` cream, `#c8102e` crimson, `#ff7518` pumpkin,
+`#5c5340` muted), a crimson title-bar row, a 2px ink frame with a
+hard shadow, and the user's avatar circle.
 
 ## Design direction
 

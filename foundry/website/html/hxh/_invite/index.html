@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hunter × Halloween — Summons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../retro.css?v=2">
+<style>
+  .body { text-align: center; }
+  form, #done, #invalid { text-align: left; }
+  .hint { color: var(--ink-4); margin-top: 6px; }
+  .me { margin: 6px 0 2px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="desktop center" id="desktop">
+  <div class="win static" id="win-invite" data-title="Hunter Website — Summons" data-icon="envelope" data-noclose data-notask data-width="420">
+    <div class="body">
+      <div class="assoc">Hunter Association · Official Summons</div>
+      <h1 class="logo" id="title">You Are<br>Chosen <span class="x">×</span></h1>
+
+      <form id="form" class="hidden">
+        <p id="lede">The committee has cleared you for the Halloween Phase.</p>
+        <label class="lbl" for="u">Applicant</label>
+        <input class="field" id="u" name="username" autocomplete="username" readonly>
+        <label class="lbl" for="p" id="plbl">Choose your passphrase</label>
+        <input class="field" id="p" name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <div class="hint" id="hint">Pick your own, at least 8 characters. Nobody sends you one.</div>
+        <div class="actions"><button class="btn primary wide" type="submit" id="submit">Accept summons</button></div>
+        <div class="msg err" id="msg"></div>
+      </form>
+
+      <div id="done" class="hidden">
+        <p class="ok" id="done-msg"></p>
+        <div class="actions"><a class="btn primary" href="/hxh/">Enter the exam site</a></div>
+      </div>
+
+      <p id="invalid" class="err hidden">
+        This summons is void or expired. Reach out to the hosts for a fresh one.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="taskbar" id="taskbar"></div>
+
+<script src="../retro.js?v=2"></script>
+<script>
+Retro.init();
+const API = "/admin/api";
+const $ = id => document.getElementById(id);
+const code = new URLSearchParams(location.search).get("code") || "";
+let mode = "invite";   // "invite" (code in URL) or "change" (logged in, no code)
+
+async function boot() {
+  if (code) {
+    const res = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
+    if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
+    const info = await res.json();
+    $("u").value = info.username;
+    $("form").classList.remove("hidden");
+    return;
+  }
+  // No code: a logged-in user (typically an admin previewing this
+  // page) gets the same form as a passphrase change.
+  const res = await fetch(`${API}/me`);
+  if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
+  const me = await res.json();
+  mode = "change";
+  Retro.setUser(me);
+  $("title").innerHTML = 'New<br>Passphrase <span class="x">×</span>';
+  $("lede").innerHTML = `Logged in as ${Retro.avatar(me)} <b>${Retro.esc(me.display_name)}</b>. Set a new passphrase.`;
+  $("lede").className = "me";
+  $("plbl").textContent = "New passphrase";
+  $("hint").textContent = "At least 8 characters. Takes effect immediately.";
+  $("submit").textContent = "Change passphrase";
+  $("u").value = me.username;
+  $("form").classList.remove("hidden");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("msg").textContent = "";
+  const password = $("p").value;
+  const res = mode === "invite"
+    ? await fetch(`${API}/set-password`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, password }) })
+    : await fetch(`${API}/password`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+  if (!res.ok) {
+    $("msg").textContent = res.status === 404 ? "This summons is void or expired." : await res.text();
+    return;
+  }
+  $("form").classList.add("hidden");
+  if (mode === "invite") {
+    const me = await res.json();
+    $("done-msg").textContent = `Welcome, ${me.display_name}. Your license is in order.`;
+  } else {
+    $("done-msg").textContent = "Passphrase changed.";
+  }
+  $("done").classList.remove("hidden");
+});
+
+boot();
+</script>
+</body>
+</html>

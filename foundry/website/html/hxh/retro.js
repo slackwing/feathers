@@ -15,6 +15,7 @@ const Retro = (() => {
   const PAL = {
     k: "#0b0a08", p: "#e8dcc3", w: "#fff6e0", d: "#c4b48f", r: "#c8102e", h: "#ff2444",
     o: "#ff7518", g: "#58e05c", y: "#ffd166", b: "#37d0ff", n: "#9a9a9a",
+    v: "#c8a2ff", u: "#7c4dff",
   };
   const ICONS = {
     x: [
@@ -127,6 +128,23 @@ const Retro = (() => {
       ".kyyyyk.",
       "kkkkkkkk",
     ],
+    // purple square's blocky violet tee (boot splash logo)
+    tee: [
+      "..uuuu....uuuu..",
+      ".uvvvvuuuuvvvvu.",
+      "uvvvvvvvvvvvvvvu",
+      "uvvvvvvvvvvvvvvu",
+      "uvvuvvvvvvvvuvvu",
+      "uuuuvvvvvvvvuuuu",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uvvvvvvvvu...",
+      "...uuuuuuuuuu...",
+    ],
     door: [
       "kkkkkkk...",
       "kpppppk...",
@@ -171,6 +189,30 @@ const Retro = (() => {
     }
     g.putImageData(d, 0, 0);
     return c;
+  }
+
+  // Circular initials avatar from the shared-auth profile fields
+  // (initial + color, both set by the admin). Text flips to ink on pale
+  // colours — same luminance rule as the rv admin page.
+  function textColorFor(hex) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex || "")) return "#fff6e0";
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#0b0a08" : "#fff6e0";
+  }
+  function avatar(acct, cls = "") {
+    const color = acct?.color || "#9a9a9a";
+    return `<span class="avatar ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}">${esc(acct?.initial || "?")}</span>`;
+  }
+  // Show the logged-in user in the taskbar tray.
+  function setUser(acct) {
+    const tray = taskbar && $(".tray", taskbar);
+    if (!tray) return;
+    $(".who", tray)?.remove();
+    if (!acct) return;
+    const w = document.createElement("span");
+    w.className = "who";
+    w.innerHTML = avatar(acct);
+    tray.prepend(w);
   }
 
   // ---------- windows ----------
@@ -423,8 +465,9 @@ const Retro = (() => {
     return { skip: finish };
   }
 
-  // lines: { text, ok, wait, pause }. Click anywhere to skip.
-  function boot(lines) {
+  // { splash: { html, ms }, lines: [{ text, ok, wait, pause }], speed }
+  // — an optional publisher splash, then BIOS-style lines. Click to skip.
+  function boot({ splash, lines = [], speed = 12, tail = 600 } = {}) {
     const el = $("#boot");
     if (!el || reduced) return Promise.resolve();
     return new Promise(res => {
@@ -432,18 +475,26 @@ const Retro = (() => {
       const finish = () => { if (done) return; done = true; el.classList.remove("on"); el.onclick = null; res(); };
       el.classList.add("on"); el.innerHTML = ""; el.onclick = finish;
       (async () => {
+        if (splash) {
+          const sp = document.createElement("div");
+          sp.className = "splash"; sp.innerHTML = splash.html;
+          el.append(sp);
+          await wait(splash.ms || 900);
+          if (done) return;
+          sp.remove();
+        }
         for (const l of lines) {
           if (done) return;
           const d = document.createElement("div");
           d.className = "cur"; el.append(d);
-          for (const ch of l.text) { if (done) return; d.textContent += ch; await wait(12); }
-          if (l.ok) { await wait(l.wait || 350); if (done) return; d.textContent += " OK"; }
+          for (const ch of l.text) { if (done) return; d.textContent += ch; await wait(speed); }
+          if (l.ok) { await wait(l.wait || 300); if (done) return; d.textContent += " OK"; }
           d.classList.remove("cur");
-          await wait(l.pause || 120);
+          await wait(l.pause || 100);
         }
         const d = document.createElement("div");
         d.className = "cur"; el.append(d);
-        await wait(700);
+        await wait(tail);
         finish();
       })();
     });
@@ -495,7 +546,7 @@ const Retro = (() => {
 
   return {
     init, register, spawn, open, close, minimize, focus, toggleMax, fit,
-    floating, icon, sprite, toast, type, boot, setCRT, backdrop, startMenu, esc,
+    floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc,
     get active() { return activeId; },
     win: id => wins.get(id),
   };
