@@ -53,7 +53,7 @@ license-only site from the show — rendered as a late-90s OS desktop.
   `~/src/hobby-server/docs/SHARED_AUTH.md`.
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
-- **Boot**: owned by the OS shell, once per browser session (see below):
+- **Boot**: owned by the OS shell, every cold load (see below):
   HunterOS 99 BIOS lines with the "a purple square production" badge
   (bare blocky violet tee, `tee` icon) in the lower right; click skips.
   After logon the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
@@ -71,16 +71,22 @@ re-added per page. Every retro page starts with
 `const me = await Retro.os({ wallpaper, taskbar, start, gate, boot })`:
 
 1. `init()` — chrome, registers the page's `.win[data-title]` windows.
-2. **Boot once per browser session** — HunterOS lines + the purple-square
-   badge, ~2.5 s, skippable; `sessionStorage hxh.booted` remembers it so
-   logging in or moving between pages never reboots. `Retro.logout()`
-   ends the session, clears the flag and returns to `/hxh/`, which boots
-   again and shows the logon — like a real machine.
+2. **Boot on every cold load** — refresh, typed URL, logout — HunterOS
+   lines + the purple-square badge, ~2.5 s, skippable. The ONLY loads
+   that skip it are navigations started from inside the OS via
+   `Retro.go(url)`, which leaves a one-shot `sessionStorage hxh.warm`
+   flag the next page consumes (desktop → Roster DB, roster → site,
+   invite "Enter the exam site"). Logging in happens in-page, so it never
+   reboots; `Retro.logout()` does a cold load of `/hxh/`, which boots and
+   shows the logon — like a real machine. Use `Retro.go`, never a bare
+   link, for links between OS pages.
 3. **Session** — `GET /admin/api/me`.
 4. **Logon** (when `gate: true` and logged out) — the shared dialog
    (`Retro.logon()`: title "Hunter × Halloween — Log in", logotype, one
    line, Applicant + Password, no "restricted site" line) alone on the
-   bare ink desktop; the page's own windows/icons are hidden meanwhile
+   bare ink desktop with the purple-square badge in the lower right
+   (`.os-badge`, also kept on the invite splash, removed once the
+   desktop is up); the page's own windows/icons are hidden meanwhile
    (`body.logon`). Resolves with the account.
 5. **Wallpaper** starts only now, i.e. only once logged in (`wallpaper:
    true`); logon and invite splashes stay on the ink × tiles.
@@ -113,8 +119,8 @@ over the sky.
 - `retro.css` — tokens (same five colours as before, plus `--ink-4` for
   muted text on cream), window/bevel/button/field styles, taskbar, Start
   menu, menus, toast, boot overlay, scanlines, phone stacking rules.
-- `retro.js` — `Retro` module: the OS shell (`os`, `session`, `login`,
-  `logout`, `logon`, `wallpaper`), window manager (`register`, `spawn`,
+- `retro.js` — `Retro` module: the OS shell (`os`, `go`, `session`,
+  `login`, `logout`, `logon`, `wallpaper`), window manager (`register`, `spawn`,
   `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
   only, 4px snap), taskbar + clock, `startMenu(items|fn)`, menu bars,
   `type(el, runs, {speed, onDone, instant})` typewriter,

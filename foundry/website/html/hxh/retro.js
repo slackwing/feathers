@@ -673,7 +673,14 @@ const Retro = (() => {
   // which forgets the boot so the next logon screen boots again.
   // Pages are apps: `const me = await Retro.os({...})`, then open windows.
   const AUTH_API = "/admin/api";
-  const BOOT_KEY = "hxh.booted";
+  // Boot on every load — refresh, typed URL, logout — EXCEPT navigations
+  // started from inside the OS (Retro.go), which leave a one-shot "warm"
+  // flag so opening another page doesn't reboot the machine.
+  const WARM_KEY = "hxh.warm";
+  function go(url) {
+    try { sessionStorage.setItem(WARM_KEY, "1"); } catch {}
+    location.href = url;
+  }
   const badge = () => `<div>a purple square<br>production</div>${icon("tee", 54)}`;
   const bootLines = (extra = []) => [
     { text: "HunterOS 99 · Hunter Association Network", pause: 260 },
@@ -695,9 +702,17 @@ const Retro = (() => {
   }
   async function logout() {
     try { await fetch(AUTH_API + "/logout", { method: "POST" }); } catch {}
-    try { sessionStorage.removeItem(BOOT_KEY); } catch {}
-    location.href = "/hxh/";
+    location.href = "/hxh/";   // cold load: boots, then the logon screen
   }
+  // "a purple square production" — on screen during boot and on the
+  // logon / invite splashes; gone once the desktop is up.
+  function showBadge() {
+    if ($(".os-badge")) return;
+    const b = document.createElement("div");
+    b.className = "badge os-badge"; b.innerHTML = badge();
+    document.body.append(b);
+  }
+  function hideBadge() { $(".os-badge")?.remove(); }
 
   // The logon dialog, alone on the bare desktop. Resolves with the account.
   function logon() {
@@ -752,15 +767,14 @@ const Retro = (() => {
   async function os({ wallpaper: wp = false, taskbar: tb = true, start = false, gate = true, boot: doBoot = true, bootLines: extra = [] } = {}) {
     init({ start });
     if (taskbar) taskbar.hidden = true;   // nothing else on screen while booting / logging on
-    let booted = false;
-    try { booted = sessionStorage.getItem(BOOT_KEY) === "1"; } catch {}
+    let warm = false;
+    try { warm = sessionStorage.getItem(WARM_KEY) === "1"; sessionStorage.removeItem(WARM_KEY); } catch {}
     const pending = session();
-    if (doBoot && !booted) {
-      await boot({ badge: badge(), lines: bootLines(extra), speed: 9, tail: 420 });
-      try { sessionStorage.setItem(BOOT_KEY, "1"); } catch {}
-    }
+    if (doBoot && !warm) await boot({ badge: badge(), lines: bootLines(extra), speed: 9, tail: 420 });
     let me = await pending;
+    if ((!me && gate) || !tb) showBadge();   // splash screens keep the badge
     if (!me && gate) me = await logon();
+    if (tb) hideBadge();
     setUser(me);
     if (me && wp) startWallpaper();      // Whale Island only once you're in
     if (taskbar) taskbar.hidden = !tb;
@@ -814,7 +828,7 @@ const Retro = (() => {
   return {
     init, register, spawn, open, place: placeWin, close, minimize, focus, toggleMax, fit,
     floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc, wallpaper,
-    os, session, login, logout, logon,
+    os, go, session, login, logout, logon,
     get active() { return activeId; },
     win: id => wins.get(id),
   };
