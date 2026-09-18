@@ -187,10 +187,18 @@ frame clock, brightest and clumpy at the top and centre, easing off
 with depth (peak 0.55, (1−t)^1.4 — a pixel-art density lower than the
 gif's 17%, which "looks like too much"), plus stragglers scattered past
 the curve that thin with distance so the edge isn't perfect; clouds
-(after his pixel-sky jpg) as clusters of round lobes top AND bottom —
-scalloped undersides, never a flat base — pale lilac-white with a lilac
-shadow following the lower scallops and white highlight blobs in the
-upper lobes, drifting very slowly; a flock of birds every 12–40 s; one
+(after his pixel-sky jpg) via `Retro.cloudSprite(lobes, w, h)`: a
+cluster of a few LARGE overlapping lobes, top and bottom (scalloped
+underside, never a flat base), treated as a bumpy dome — a metaball-
+style smooth union so lobes bridge instead of creasing — whose surface
+normal is dotted with ONE light from the upper right and quantised to
+four tones (white / pale lilac / lilac / lilac-grey). So the white sits
+in broad regions on the sides that face the light and the grey along
+the underside and lower left, connected and following the silhouette
+(Andrew: per-lobe highlights "look like polka dots"; "figure out an
+algorithm, test it out yourself first, compare with the reference" —
+compare on a scratch test page rendering the sprites beside the
+reference crop before changing tones or lobes), drifting very slowly; a flock of birds every 12–40 s; one
 static frame under prefers-reduced-motion. Inspired by the anime's
 island silhouette but drawn procedurally — no copyrighted image is
 used. Desktop icon labels carry a 1px ink outline to stay readable
