@@ -192,8 +192,12 @@ gif's 17%, which "looks like too much"), plus stragglers scattered past
 the curve that thin with distance so the edge isn't perfect; clouds
 (after his pixel-sky jpg) via `Retro.cloudSprite(lobes, {scale})` —
 the sprite sizes its own canvas from the lobes, because a lobe clipped
-by the canvas edge reads as "a piece missing"; drawn at scale .65
-(Andrew: smaller): a
+by the canvas edge reads as "a piece missing"; six hand-written
+shapes after the reference (`SHAPES`: wide cumulus, tall stacked,
+one with a long thin tail, a long low bank, a wisp, a tiny puff — keep
+every lobe r ≥ 4 unscaled with spacing ≤ r or thin parts fragment into
+dots), drawn at scale .6 and placed with wide gaps (Andrew: "smaller
+so there's more space between them"): a
 cluster of a few LARGE overlapping lobes, top and bottom (scalloped
 underside, never a flat base), treated as a bumpy dome — a metaball-
 style smooth union so lobes bridge instead of creasing — whose surface

@@ -683,14 +683,27 @@ const Retro = (() => {
     // clouds: cloudSprite() above, lit from the upper right
     // [cx, cy, r] lobes: a top row of big ones, a bottom row of smaller
     // ones tucked under them
-    const S = 0.65;   // Andrew: smaller
+    // Cloud shapes hand-written after the reference sky (lobes [cx, cy, r]
+    // in unscaled units): a wide cumulus, a tall stacked one, one with a
+    // long thin tail, a long low bank, a wisp, a tiny puff. Drawn small
+    // and spaced well apart (Andrew: not so many clouds close together).
+    const SHAPES = {
+      wide:    [[20, 16, 17], [44, 10, 21], [68, 15, 16], [86, 20, 10], [14, 25, 12], [38, 29, 14], [64, 28, 12], [84, 26, 8]],
+      stacked: [[14, 18, 12], [26, 10, 14], [40, 16, 12], [22, 27, 10], [38, 28, 9], [52, 23, 7], [62, 27, 5]],
+      tailed:  [[12, 10, 10], [26, 6, 12], [40, 10, 9], [10, 16, 7], [26, 18, 8], [42, 16, 6], [52, 17, 6], [61, 18, 5], [69, 18, 5], [76, 19, 4]],
+      bank:    [[10, 8, 8], [22, 6, 9], [36, 7, 9], [50, 8, 8], [64, 9, 7], [78, 10, 6], [90, 11, 5], [14, 13, 7], [30, 14, 7], [46, 14, 7], [60, 14, 6], [74, 14, 6], [86, 14, 5]],
+      wisp:    [[7, 5, 5], [14, 4, 6], [22, 4, 6], [30, 5, 5], [37, 5, 4]],
+      puff:    [[6, 5, 5], [13, 4, 6], [7, 8, 4], [14, 9, 4]],
+    };
+    const S = 0.6;
     const clouds = [
-      { img: cloudSprite([[18, 14, 15], [38, 10, 18], [58, 14, 14], [14, 22, 11], [34, 25, 12], [54, 24, 11]], { scale: S }), x: 18, y: 14, v: 0.10 },
-      { img: cloudSprite([[12, 9, 10], [26, 6, 12], [40, 10, 9], [10, 15, 7], [26, 17, 9], [40, 16, 7]], { scale: S }), x: 128, y: 44, v: 0.06 },
-      { img: cloudSprite([[20, 16, 17], [44, 10, 21], [68, 15, 16], [86, 20, 10], [14, 25, 12], [38, 29, 14], [64, 28, 12], [84, 26, 8]], { scale: S }), x: 214, y: 8, v: 0.08 },
-      { img: cloudSprite([[8, 6, 6], [17, 4, 8], [26, 6, 6], [8, 10, 4], [18, 12, 5], [26, 10, 4]], { scale: S }), x: 300, y: 60, v: 0.05 },
-      { img: cloudSprite([[13, 10, 11], [29, 6, 13], [45, 10, 10], [10, 17, 8], [26, 20, 10], [43, 18, 8]], { scale: S }), x: 66, y: 70, v: 0.07 },
-      { img: cloudSprite([[7, 5, 5], [14, 4, 6], [7, 8, 4], [14, 9, 4]], { scale: S }), x: 178, y: 32, v: 0.09 },
+      { img: cloudSprite(SHAPES.wide,    { scale: S }), x: 6,   y: 8,  v: 0.08 },
+      { img: cloudSprite(SHAPES.puff,    { scale: S }), x: 86,  y: 34, v: 0.05 },
+      { img: cloudSprite(SHAPES.stacked, { scale: S }), x: 112, y: 4,  v: 0.07 },
+      { img: cloudSprite(SHAPES.wisp,    { scale: S }), x: 172, y: 42, v: 0.10 },
+      { img: cloudSprite(SHAPES.tailed,  { scale: S }), x: 200, y: 10, v: 0.06 },
+      { img: cloudSprite(SHAPES.puff,    { scale: S * .8 }), x: 268, y: 46, v: 0.09 },
+      { img: cloudSprite(SHAPES.bank,    { scale: S }), x: 252, y: 68, v: 0.05 },
     ];
 
     // glitter (after the sea reference): a narrow inverted bell hanging
