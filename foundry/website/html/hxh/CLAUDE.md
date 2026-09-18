@@ -173,9 +173,11 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 320×180 canvas (`<canvas class="wall">`, fixed, `object-fit: cover`,
 `image-rendering: pixelated`), created by the shell once logged in
 (never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
-a low back with the harbour houses and pier that dips to a neck and
-then lifts at the tip like a raised fluke, with a pale rock spire
-standing on the lift, its foot sunk into the green (Andrew, 2026-09-18:
+a low back with the harbour houses and pier — just above the
+rooftops, held level right into the tail so there is no dip before
+it — that lifts at the tip into a hill-sized fluke with a pale rock
+spire (top three rows left off) standing on it, foot sunk into the
+green (Andrew, 2026-09-18:
 the reference's tail is a white rock structure, not a lighthouse, and
 the spire must not look like it floats; a later measured-from-the-
 title-card silhouette was rejected — "go back to the previous whale

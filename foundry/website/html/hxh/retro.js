@@ -632,8 +632,10 @@ const Retro = (() => {
       // neck, then the tail lifts at the tip like a raised fluke (after
       // the reference) — the rock spire stands on that lift
       const hump = 38 * Math.pow(Math.exp(-(((x - 134) / 34) ** 2)), 0.7);
-      const back = 11 * smooth((x - 96) / 30) * smooth((222 - x) / 14);
-      const fluke = 17 * smooth((x - 206) / 22) * smooth((238 - x) / 6);
+      // low back, just above the rooftops, carried right into the fin so
+      // there is no dip before it; the fin is a hill, not a mountain
+      const back = 7 * smooth((x - 96) / 30) * smooth((236 - x) / 4);
+      const fluke = 11 * smooth((x - 210) / 20) * smooth((238 - x) / 6);
       const h = Math.max(hump, back, fluke) + Math.floor(hash(x) * 3);
       return Math.round(h * taper);
     };
@@ -665,7 +667,7 @@ const Retro = (() => {
     // tip — wide at the base, tapering, leaning outward like a raised
     // fluke (after the reference) — with a little surf at the point
     const SP = 18, sx0 = 229, base = HZ - hs[sx0] + 2;   // foot sunk 2px into the green
-    for (let k = 0; k < SP; k++) {                       // k = 0 is the top
+    for (let k = 3; k < SP; k++) {                       // k = 0 would be the top; the top 3 rows are left off
       const t = k / (SP - 1);
       const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
       const cx = sx0 + Math.round(3 * (1 - t));           // top leans 3px outward
