@@ -576,7 +576,7 @@ const Retro = (() => {
       if (edge) b = Math.min(3, b + 1);
       let col = SEA[b];
       if (hash(Math.floor(x / 6), y) < 0.045) col = SEA[Math.min(3, b + 1)];   // short horizontal wave streaks
-      if (y < HZ + 7 && x > 96 && x < 232 && (x + y) % 2 === 0) col = SEA[Math.min(3, b + 1)]; // reflection
+      if (y < HZ + 7 && x > 96 && x < 240 && (x + y) % 2 === 0) col = SEA[Math.min(3, b + 1)]; // reflection
       px(eg, x, y, col);
     }
 
@@ -586,11 +586,15 @@ const Retro = (() => {
     const hump = (x, c, h, w) => h * Math.exp(-(((x - c) / w) ** 2));
     const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
     const height = x => {
-      if (x < 88 || x > 236) return 0;
-      const taper = smooth((x - 88) / 14) * smooth((236 - x) / 10);
-      const body = 11 * smooth((x - 96) / 30) * smooth((232 - x) / 8);
-      // broad rounded hump (flattened gaussian) + low tail + lighthouse knoll
-      const h = Math.max(38 * Math.pow(Math.exp(-(((x - 134) / 34) ** 2)), 0.7), body, hump(x, 222, 9, 9)) + Math.floor(hash(x) * 3);
+      if (x < 88 || x > 240) return 0;
+      const taper = smooth((x - 88) / 14) * smooth((240 - x) / 4);
+      // broad rounded hump (flattened gaussian), a low back that dips to a
+      // neck, then the tail lifts at the tip like a raised fluke (after
+      // the reference) — the rock spire stands on that lift
+      const hump = 38 * Math.pow(Math.exp(-(((x - 134) / 34) ** 2)), 0.7);
+      const back = 11 * smooth((x - 96) / 30) * smooth((222 - x) / 14);
+      const fluke = 17 * smooth((x - 206) / 22) * smooth((238 - x) / 6);
+      const h = Math.max(hump, back, fluke) + Math.floor(hash(x) * 3);
       return Math.round(h * taper);
     };
     const hs = Array.from({ length: W }, (_, x) => height(x));
@@ -607,7 +611,7 @@ const Retro = (() => {
         else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
         px(ig, x, y, col);
       }
-      px(ig, x, HZ - 1, x > 98 && x < 230 ? "#c9b88a" : GREEN[0]);   // beach strip
+      px(ig, x, HZ - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);   // beach strip
     }
     // harbour town on the low tail
     const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
@@ -620,7 +624,7 @@ const Retro = (() => {
     // the tail: a pale rock spire rising from the knoll at the island's
     // tip — wide at the base, tapering, leaning outward like a raised
     // fluke (after the reference) — with a little surf at the point
-    const SP = 18, sx0 = 227, base = HZ - hs[sx0];
+    const SP = 18, sx0 = 229, base = HZ - hs[sx0] + 2;   // foot sunk 2px into the green
     for (let k = 0; k < SP; k++) {                       // k = 0 is the top
       const t = k / (SP - 1);
       const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
@@ -631,8 +635,8 @@ const Retro = (() => {
         px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
       }
     }
-    px(ig, sx0 - 3, base - 1, GREEN[2]); px(ig, sx0 + 4, base - 1, GREEN[2]);   // scrub at the foot
-    for (const x of [234, 235, 237, 238]) px(ig, x, HZ - 1, "#fff6e0");         // surf at the tip
+    for (const dx of [-3, -2, 3]) { px(ig, sx0 + dx, base - 1, GREEN[2]); px(ig, sx0 + dx, base - 2, GREEN[1]); }   // scrub over the foot
+    for (const x of [238, 239, 241, 242]) px(ig, x, HZ - 1, "#fff6e0");         // surf at the tip
     // pier into the sea
     ig.fillStyle = "#8b6d4b"; ig.fillRect(172, HZ, 14, 1); px(ig, 185, HZ + 1, "#8b6d4b"); px(ig, 174, HZ + 1, "#8b6d4b");
 
