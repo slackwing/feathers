@@ -177,7 +177,10 @@ a low back with the harbour houses and pier that dips to a neck and
 then lifts at the tip like a raised fluke, with a pale rock spire
 standing on the lift, its foot sunk into the green (Andrew, 2026-09-18:
 the reference's tail is a white rock structure, not a lighthouse, and
-the spire must not look like it floats), banded sea
+the spire must not look like it floats; a later measured-from-the-
+title-card silhouette was rejected — "go back to the previous whale
+shape. it was cuter" — so the hump/neck/fluke profile is the keeper),
+banded sea
 with a reflection. Animated at 8 fps: glitter (after Andrew's anime-sea
 gif, measured 2026-09-18) as a NARROW inverted gaussian bell hanging
 from the horizon (σ = 12% of the width — Andrew: "not full page width")
@@ -187,7 +190,10 @@ frame clock, brightest and clumpy at the top and centre, easing off
 with depth (peak 0.55, (1−t)^1.4 — a pixel-art density lower than the
 gif's 17%, which "looks like too much"), plus stragglers scattered past
 the curve that thin with distance so the edge isn't perfect; clouds
-(after his pixel-sky jpg) via `Retro.cloudSprite(lobes, w, h)`: a
+(after his pixel-sky jpg) via `Retro.cloudSprite(lobes, {scale})` —
+the sprite sizes its own canvas from the lobes, because a lobe clipped
+by the canvas edge reads as "a piece missing"; drawn at scale .65
+(Andrew: smaller): a
 cluster of a few LARGE overlapping lobes, top and bottom (scalloped
 underside, never a flat base), treated as a bumpy dome — a metaball-
 style smooth union so lobes bridge instead of creasing — whose surface

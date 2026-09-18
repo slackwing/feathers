@@ -552,7 +552,13 @@ const Retro = (() => {
   const LIGHT = (() => { const v = [0.45, -0.55, 0.7], n = Math.hypot(...v); return v.map(c => c / n); })();
   // opts: flat = dome flattening (lower → flatter → more of the interior
   // reads as one tone), cut = dot-product thresholds for hi/base/shade.
-  function cloudSprite(lobes, w, h, { flat = 0.5, cut = [0.78, 0.5, 0.25] } = {}) {
+  function cloudSprite(lobesIn, { flat = 0.5, cut = [0.78, 0.5, 0.25], scale = 1 } = {}) {
+    // size the canvas from the lobes (plus a 1px margin) so no lobe is
+    // ever clipped — a clipped top reads as a cloud with a piece missing
+    const L = lobesIn.map(([cx, cy, r]) => [cx * scale, cy * scale, r * scale]);
+    const minX = Math.min(...L.map(l => l[0] - l[2])), minY = Math.min(...L.map(l => l[1] - l[2] * 0.85));
+    const lobes = L.map(([cx, cy, r]) => [cx - minX + 1, cy - minY + 1, r]);
+    const w = Math.ceil(Math.max(...lobes.map(l => l[0] + l[2]))) + 2, h = Math.ceil(Math.max(...lobes.map(l => l[1] + l[2] * 0.85))) + 2;
     const c = document.createElement("canvas"); c.width = w; c.height = h;
     const g = c.getContext("2d");
     // smooth union (metaball-style): overlapping lobes bridge into one
@@ -619,19 +625,17 @@ const Retro = (() => {
     const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
     const hump = (x, c, h, w) => h * Math.exp(-(((x - c) / w) ** 2));
     const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
-    // Silhouette measured from the show's Whale Island title card (height
-    // as a fraction of the island's width, sampled along it): a rounded
-    // head peaking a quarter of the way in, a steep drop, then a long low
-    // tail for the back half, lifting slightly at the tip under the rock.
-    const X0 = 88, X1 = 240, IW = X1 - X0;
-    const PROFILE = [[0, .05], [.05, .09], [.10, .125], [.15, .165], [.20, .205], [.25, .235], [.30, .215], [.35, .195], [.40, .17], [.45, .15], [.50, .13], [.55, .115], [.60, .10], [.65, .085], [.70, .07], [.75, .06], [.80, .05], [.85, .045], [.90, .04], [.95, .045], [.985, .06], [1, .03]];
     const height = x => {
-      if (x < X0 || x > X1) return 0;
-      const u = (x - X0) / IW;
-      let i = 1; while (i < PROFILE.length - 1 && PROFILE[i][0] < u) i++;
-      const [u0, h0] = PROFILE[i - 1], [u1, h1] = PROFILE[i];
-      const h = (h0 + (h1 - h0) * (u - u0) / (u1 - u0)) * IW;
-      return Math.max(1, Math.round(h + hash(x) * 2 - 0.5));
+      if (x < 88 || x > 240) return 0;
+      const taper = smooth((x - 88) / 14) * smooth((240 - x) / 4);
+      // broad rounded hump (flattened gaussian), a low back that dips to a
+      // neck, then the tail lifts at the tip like a raised fluke (after
+      // the reference) — the rock spire stands on that lift
+      const hump = 38 * Math.pow(Math.exp(-(((x - 134) / 34) ** 2)), 0.7);
+      const back = 11 * smooth((x - 96) / 30) * smooth((222 - x) / 14);
+      const fluke = 17 * smooth((x - 206) / 22) * smooth((238 - x) / 6);
+      const h = Math.max(hump, back, fluke) + Math.floor(hash(x) * 3);
+      return Math.round(h * taper);
     };
     const hs = Array.from({ length: W }, (_, x) => height(x));
     for (let x = 0; x < W; x++) {
@@ -647,12 +651,12 @@ const Retro = (() => {
         else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
         px(ig, x, y, col);
       }
-      px(ig, x, HZ - 1, x < 100 || x > 228 ? "#efe6d2" : "#c9b88a");   // pale cliff foot at both ends, sand between
+      px(ig, x, HZ - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);   // beach strip
     }
     // harbour town on the low tail
     const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
-    [156, 161, 167, 172, 178, 184, 190, 196].forEach((x, i) => {
-      const w = i % 3 === 1 ? 4 : 3, top = HZ - 4 - (i % 2);
+    [154, 159, 165, 170, 176, 182, 188, 194].forEach((x, i) => {
+      const w = i % 3 === 1 ? 4 : 3, top = HZ - 5 - (i % 2);
       ig.fillStyle = ROOF[i]; ig.fillRect(x, top, w, 1);
       ig.fillStyle = "#efe3c8"; ig.fillRect(x, top + 1, w, HZ - 1 - (top + 1));
       px(ig, x + 1, HZ - 2, "#0b0a08");
@@ -660,20 +664,18 @@ const Retro = (() => {
     // the tail: a pale rock spire rising from the knoll at the island's
     // tip — wide at the base, tapering, leaning outward like a raised
     // fluke (after the reference) — with a little surf at the point
-    const peakX = X0 + Math.round(IW * .25);            // a tiny rock pinnacle on the summit
-    for (let k = 0; k < 5; k++) { px(ig, peakX, HZ - hs[peakX] - 5 + k, k === 0 ? "#fff6e0" : "#dccb9f"); if (k > 2) px(ig, peakX + 1, HZ - hs[peakX] - 5 + k, "#b8a071"); }
-    const SP = 11, sx0 = 236, base = HZ - hs[sx0] + 1;   // foot sunk 1px into the green
+    const SP = 18, sx0 = 229, base = HZ - hs[sx0] + 2;   // foot sunk 2px into the green
     for (let k = 0; k < SP; k++) {                       // k = 0 is the top
       const t = k / (SP - 1);
-      const w = 1 + Math.round(3 * Math.pow(t, 1.4));     // 1px tip → 4px foot
-      const cx = sx0 + Math.round(2 * (1 - t));           // top leans 2px outward
+      const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
+      const cx = sx0 + Math.round(3 * (1 - t));           // top leans 3px outward
       const y = base - SP + 1 + k;
       for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
         const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);   // 0 = lit left edge, 1 = shaded right edge
         px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
       }
     }
-    for (const dx of [-2, 2]) px(ig, sx0 + dx, base - 1, GREEN[2]);          // scrub at the foot
+    for (const dx of [-3, -2, 3]) { px(ig, sx0 + dx, base - 1, GREEN[2]); px(ig, sx0 + dx, base - 2, GREEN[1]); }   // scrub over the foot
     for (const x of [238, 239, 241, 242]) px(ig, x, HZ - 1, "#fff6e0");         // surf at the tip
     // pier into the sea
     ig.fillStyle = "#8b6d4b"; ig.fillRect(172, HZ, 14, 1); px(ig, 185, HZ + 1, "#8b6d4b"); px(ig, 174, HZ + 1, "#8b6d4b");
@@ -681,13 +683,14 @@ const Retro = (() => {
     // clouds: cloudSprite() above, lit from the upper right
     // [cx, cy, r] lobes: a top row of big ones, a bottom row of smaller
     // ones tucked under them
+    const S = 0.65;   // Andrew: smaller
     const clouds = [
-      { img: cloudSprite([[18, 14, 15], [38, 10, 18], [58, 14, 14], [14, 22, 11], [34, 25, 12], [54, 24, 11]], 76, 36), x: 18, y: 10, v: 0.10 },
-      { img: cloudSprite([[12, 9, 10], [26, 6, 12], [40, 10, 9], [10, 15, 7], [26, 17, 9], [40, 16, 7]], 52, 26), x: 128, y: 42, v: 0.06 },
-      { img: cloudSprite([[20, 16, 17], [44, 10, 21], [68, 15, 16], [86, 20, 10], [14, 25, 12], [38, 29, 14], [64, 28, 12], [84, 26, 8]], 98, 42), x: 206, y: 4, v: 0.08 },
-      { img: cloudSprite([[8, 6, 6], [17, 4, 8], [26, 6, 6], [8, 10, 4], [18, 12, 5], [26, 10, 4]], 34, 17), x: 300, y: 60, v: 0.05 },
-      { img: cloudSprite([[13, 10, 11], [29, 6, 13], [45, 10, 10], [10, 17, 8], [26, 20, 10], [43, 18, 8]], 58, 30), x: 64, y: 68, v: 0.07 },
-      { img: cloudSprite([[7, 5, 5], [14, 4, 6], [7, 8, 4], [14, 9, 4]], 22, 13), x: 178, y: 30, v: 0.09 },
+      { img: cloudSprite([[18, 14, 15], [38, 10, 18], [58, 14, 14], [14, 22, 11], [34, 25, 12], [54, 24, 11]], { scale: S }), x: 18, y: 14, v: 0.10 },
+      { img: cloudSprite([[12, 9, 10], [26, 6, 12], [40, 10, 9], [10, 15, 7], [26, 17, 9], [40, 16, 7]], { scale: S }), x: 128, y: 44, v: 0.06 },
+      { img: cloudSprite([[20, 16, 17], [44, 10, 21], [68, 15, 16], [86, 20, 10], [14, 25, 12], [38, 29, 14], [64, 28, 12], [84, 26, 8]], { scale: S }), x: 214, y: 8, v: 0.08 },
+      { img: cloudSprite([[8, 6, 6], [17, 4, 8], [26, 6, 6], [8, 10, 4], [18, 12, 5], [26, 10, 4]], { scale: S }), x: 300, y: 60, v: 0.05 },
+      { img: cloudSprite([[13, 10, 11], [29, 6, 13], [45, 10, 10], [10, 17, 8], [26, 20, 10], [43, 18, 8]], { scale: S }), x: 66, y: 70, v: 0.07 },
+      { img: cloudSprite([[7, 5, 5], [14, 4, 6], [7, 8, 4], [14, 9, 4]], { scale: S }), x: 178, y: 32, v: 0.09 },
     ];
 
     // glitter (after the sea reference): a narrow inverted bell hanging
