@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap" rel="stylesheet">
+<!-- bap's invite skin over the shared machinery (/admin/assets/setpw.js). -->
 <style>
   :root { --ink: #0b0b0b; --soft: #9a9a9a; --red: #e0533d; --blue-deep: #1c6fae; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,6 +38,7 @@
     margin-top: 26px; padding: 2px 4px; text-align: center;
   }
   input[readonly] { color: var(--soft); border-bottom-style: dotted; }
+  input:disabled, button:disabled { opacity: .5; }
   button {
     font-family: inherit; font-size: 28px; color: var(--ink);
     background: #fff; cursor: pointer; padding: 4px 30px 0;
@@ -48,53 +50,25 @@
   .msg { font-size: 20px; min-height: 1.4em; margin-top: 12px; }
   .err { color: var(--red); }
   a { color: var(--blue-deep); }
-  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 <div class="box">
   <div class="t">meow?</div>
-
-  <form id="form" class="hidden">
-    <input id="u" name="username" autocomplete="username" readonly>
-    <input id="p" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="password" required>
-    <button type="submit">bap</button>
-    <div class="msg err" id="msg"></div>
+  <div class="sub">pick a password</div>
+  <form data-pw="form">
+    <p class="msg err" data-pw="nocode" hidden>open this from your invite link.</p>
+    <input data-pw="username" name="username" autocomplete="username" readonly>
+    <input data-pw="password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="password" required>
+    <button type="submit" data-pw="submit">bap in</button>
+    <p class="msg err" data-pw="msg"></p>
   </form>
-
-  <p id="invalid" class="msg err hidden">this invite is void or expired.</p>
+  <div data-pw="done" hidden>
+    <p class="msg">hi, <b data-pw="name"></b>. <a data-pw="enter" href="/bap/">go bap →</a></p>
+  </div>
+  <p class="msg err" data-pw="invalid" hidden>this invite is void or expired.</p>
 </div>
-
-<script>
-const API = "/admin/api";
-const $ = id => document.getElementById(id);
-const code = new URLSearchParams(location.search).get("code") || "";
-
-async function boot() {
-  if (!code) { $("invalid").classList.remove("hidden"); return; }
-  const res = await fetch(`${API}/token-info?code=${encodeURIComponent(code)}`);
-  if (!res.ok) { $("invalid").classList.remove("hidden"); return; }
-  const info = await res.json();
-  $("u").value = info.username;
-  $("form").classList.remove("hidden");
-}
-
-$("form").addEventListener("submit", async e => {
-  e.preventDefault();
-  $("msg").textContent = "";
-  const res = await fetch(`${API}/set-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code, password: $("p").value }),
-  });
-  if (!res.ok) {
-    $("msg").textContent = res.status === 404 ? "this invite is void or expired." : await res.text();
-    return;
-  }
-  location.href = "/bap/"; // set-password logs you in — straight to the cat
-});
-
-boot();
-</script>
+<script src="/admin/assets/setpw.js?v=1"></script>
+<script>SetPassword.mount();</script>
 </body>
 </html>

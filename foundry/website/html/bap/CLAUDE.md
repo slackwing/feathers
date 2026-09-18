@@ -7,7 +7,9 @@ the shatter later.
 
 - Auth: the SHARED auth system (see `~/src/hobby-server/docs/SHARED_AUTH.md`).
   Login form POSTs to `/admin/api/login`; any logged-in user can play.
-  `invite.html` is the bap-skinned set-password page.
+  `_invite/index.html` is the bap-skinned invite page (a skin over
+  `/admin/assets/setpw.js`); password resets use the default
+  `/admin/_reset/` page.
 - Backend pair: hobby-server's `bap` project (`internal/bap/`,
   `liquibase/bap/`). `GET/PUT /bap/api/state` (Apache maps to
   `/api/bap/state`) persists per-user `{cup_x, baps, broken, shatters}`;

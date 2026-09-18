@@ -257,6 +257,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .kana { font: 20px/1 var(--font-dot); letter-spacing: .3em; color: var(--ink-4); }
 .tbd { color: var(--nen-deep); border-bottom: var(--px) dashed var(--nen-deep); cursor: help; }
 
+.dialog-h { font: 20px/1.5 var(--font-px); text-align: center; margin: 10px 0 8px; }
+.forgot { margin: 10px 0 0; text-align: center; }
+.forgot a { color: var(--ink-4); }
+
 /* visual-novel dialog box */
 .vn {
   position: relative; margin-top: 22px; padding: 20px 38px 22px 18px;

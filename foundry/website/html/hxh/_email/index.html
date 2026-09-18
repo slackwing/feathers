@@ -5,25 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>hxh email templates</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-<!-- Deliberately the plain admin-console look, NOT the site theme, so the
-     themed email inside the preview frame is unmistakably the email. -->
-<link rel="stylesheet" href="/admin/assets/style.css?v=2">
+<!-- Plain admin look on purpose (not the site theme), so the themed email
+     inside the frame is unmistakably the email. -->
+<link rel="stylesheet" href="/admin/assets/style.css?v=3">
 <style>
-  .tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
-  .tabs button.on { background: var(--accent); color: var(--bg); }
-  .meta { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: baseline; color: var(--dim); font-size: .85rem; margin-bottom: .8rem; }
+  .tabs { display: flex; gap: .4rem; flex-wrap: wrap; margin: .8rem 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; align-items: baseline; color: var(--dim); margin-bottom: .6rem; }
   .meta b { color: var(--text); font-weight: 500; }
-  .frame { border: 1px solid var(--line); background: #fff; position: relative; }
+  .frame { border: 1px solid var(--line); background: #0b0a08; }
   .frame iframe { display: block; width: 100%; height: 760px; border: 0; pointer-events: none; }
-  .frame::after {
-    content: "preview — links are inert"; position: absolute; top: .5rem; right: .5rem;
-    background: var(--panel); color: var(--dim); border: 1px solid var(--line);
-    padding: .15rem .5rem; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
-  }
-  .actions { display: flex; gap: .6rem; align-items: center; margin-top: 1rem; }
+  .actions { display: flex; gap: .6rem; align-items: center; margin-top: .8rem; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -31,7 +22,7 @@
 <main>
   <header class="top">
     <h1>hxh email templates</h1>
-    <span class="who"><a href="/hxh/">site</a> · <a href="/admin/">console</a> · <a href="/hxh/_invite/preview.html">invite page</a></span>
+    <span class="who"><a href="/hxh/">site</a> · <a href="/admin/">admin</a></span>
   </header>
 
   <p id="status" class="msg">…</p>
@@ -42,21 +33,23 @@
       <span>template <b id="tid"></b></span>
       <span>subject <b id="subject"></b></span>
       <span>to <b id="to"></b></span>
-      <span id="note"></span>
     </div>
     <div class="frame"><iframe id="frame" title="Email preview" sandbox=""></iframe></div>
     <div class="actions">
-      <button id="send" class="quiet">Send test to me</button>
+      <button id="send" hidden>Send test to me</button>
       <span class="msg" id="msg" style="margin:0"></span>
     </div>
   </section>
 </main>
 
 <script>
+// Query: ?template=<id> picks the tab; ?user=<username> previews as that
+// user (needs the admin console role; falls back to yourself).
 const AUTH = "/admin/api";
 const SITE = "hxh";
 const $ = id => document.getElementById(id);
-let me = null, manifest = null, current = null;
+const params = new URLSearchParams(location.search);
+let me = null, who = null, manifest = null, layout = "", current = null;
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function textColor(hex) {
@@ -66,35 +59,46 @@ function textColor(hex) {
 }
 
 // Same variable set the server substitutes (hobby-server
-// internal/shared/email.go), filled with the logged-in admin's account.
-function sampleVars() {
+// internal/shared/email.go), with sample links.
+function sampleVars(t) {
   const base = location.origin;
-  const exp = new Date(Date.now() + 7 * 86400e3);
+  const inv = new Date(Date.now() + 7 * 86400e3), rst = new Date(Date.now() + 3600e3);
+  const ny = { timeZone: "America/New_York" };
   return {
-    display_name: me.display_name, username: me.username, initial: me.initial,
-    color: me.color, color_text: textColor(me.color),
-    email: me.email || "", website: SITE,
+    display_name: who.display_name, username: who.username, initial: who.initial,
+    color: who.color, color_text: textColor(who.color),
+    email: who.email || "", website: SITE,
     site_url: `${base}/${SITE}/`, base_url: base,
     invite_url: `${base}/${SITE}/_invite/?code=SAMPLE-CODE`,
-    expires_at: exp.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
-    year: String(exp.getFullYear()),
+    reset_url: `${base}/${SITE}/_reset/?code=SAMPLE-CODE`,
+    expires_at: t.reset
+      ? `${rst.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", ...ny })} at ${rst.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short", ...ny })}`
+      : inv.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", ...ny }),
+    year: String(new Date().getFullYear()),
   };
 }
-function render(s, vars, escape) {
-  return s.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => escape ? esc(vars[k] ?? "") : (vars[k] ?? ""));
+// Mirrors the server: escape everything except the layout's raw slots.
+function render(s, vars, escape, raw = []) {
+  return s.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => (escape && !raw.includes(k)) ? esc(vars[k] ?? "") : (vars[k] ?? ""));
 }
 
 async function preview(t) {
   current = t;
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.id === t.id));
   const body = await (await fetch(`${t.id}.html`, { cache: "no-cache" })).text();
-  const vars = sampleVars();
+  const vars = sampleVars(t);
+  const subject = render(t.subject, vars, false);
+  let html = render(body, vars, true);
+  if (layout) {
+    Object.assign(vars, { title: render(t.title || "", vars, false), kicker: render(t.kicker || "", vars, false), heading: render(t.heading || "", vars, false), subject, body: html });
+    html = render(layout, vars, true, ["title", "kicker", "heading", "body"]);
+  }
   $("tid").textContent = `${t.id}.html`;
-  $("subject").textContent = render(t.subject, vars, false);
-  $("to").textContent = me.email || "(no email on your account)";
-  $("note").textContent = t.on ? `sent automatically on: ${t.on}` : (t.invite ? "mints a fresh 7-day invite link per send" : "");
-  $("frame").srcdoc = render(body, vars, true);
+  $("subject").textContent = subject;
+  $("to").textContent = who.email || "(no email on the account)";
+  $("frame").srcdoc = html;
   $("msg").textContent = "";
+  $("send").hidden = who.username !== me.username;
   $("send").disabled = !me.email;
 }
 
@@ -115,7 +119,19 @@ async function boot() {
   if (!res.ok) { $("status").innerHTML = 'Not logged in. <a href="/hxh/">Log in first</a>.'; return; }
   me = await res.json();
   if (!(me.roles || []).some(r => r.website === SITE && r.role === "admin")) { $("status").textContent = "Not authorized."; return; }
+  who = me;
+  const asUser = params.get("user");
+  if (asUser && asUser !== me.username) {
+    try {
+      const r = await fetch(AUTH + "/users");
+      if (r.ok) who = (await r.json()).find(u => u.username === asUser) || me;
+    } catch {}
+  }
   manifest = await (await fetch("templates.json", { cache: "no-cache" })).json();
+  if (manifest.layout !== "") {
+    const r = await fetch(manifest.layout || "_layout.html", { cache: "no-cache" });
+    if (r.ok) layout = await r.text();
+  }
   const tabs = $("tabs");
   for (const t of manifest.templates) {
     const b = document.createElement("button");
@@ -125,7 +141,8 @@ async function boot() {
   }
   $("status").classList.add("hidden");
   $("view").classList.remove("hidden");
-  if (manifest.templates[0]) preview(manifest.templates[0]);
+  const want = manifest.templates.find(t => t.id === params.get("template")) || manifest.templates[0];
+  if (want) preview(want);
 }
 boot();
 </script>

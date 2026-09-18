@@ -25,21 +25,24 @@ auth system (`/admin/` console + hobby-server) reaches into them by
 convention. They are named with a leading underscore so they stand out
 from a site's own pages:
 
-- `<site>/_invite/index.html` — the site's invite / set-password page.
-  Invite links generated in the console point at `/<site>/_invite/?code=`.
-  Opened without a code by a logged-in user it becomes "change password".
-  It must make clear the invitee CHOOSES a password, say "password" (not
-  "passphrase"), and honour `?preview=invite|change|void` so that
-  `<site>/_invite/preview.html` — a plain admin-style previewer, same
-  look as the email one — can show every state in an inert frame.
+- `<site>/_invite/index.html` — the site's invite page (choose a
+  password). Invite links point at `/<site>/_invite/?code=`.
+- `<site>/_reset/index.html` — the site's password-reset page. Reset
+  links point at `/<site>/_reset/?code=`.
+  Both are SKINS: markup + styling only, tagged with `data-pw` hooks,
+  over the shared machinery `/admin/assets/setpw.js`. A site with no
+  skin gets the default pages `/admin/_invite/` and `/admin/_reset/`
+  automatically. Without a code either page renders disabled.
 - `<site>/_email/` — the site's email templates: `templates.json`
-  (manifest: id, name, subject, `invite`/`on` flags), one `<id>.html`
-  body per template (email-safe HTML: tables + inline styles), and an
-  admin-only `index.html` that previews them with sample data and can
-  send a test. hobby-server fetches these over HTTP when the console
-  sends mail — the server stores no templates.
+  (manifest: id, name, subject, title, kicker, heading, and
+  `invite` / `reset` / `on` flags), `_layout.html` (the one shared
+  frame), one `<id>.html` body per template, and an admin-only
+  `index.html` that previews them (plain admin style, inert frame,
+  `?template=&user=`). hobby-server fetches these over HTTP when the
+  console sends mail — the server stores no templates.
 
-Both are themed like their site; when a site's look changes, change
-its `_invite/` page and `_email/` templates in the same commit. Full
-spec and the variable list: `~/src/hobby-server/docs/SHARED_AUTH.md`.
-Reference implementation: `hxh/`.
+Themed like their site (except the `_email/` previewer, which stays
+plain); when a site's look changes, change its `_invite/`, `_reset/`
+and `_email/` in the same commit. Full spec and the variable list:
+`~/src/hobby-server/docs/SHARED_AUTH.md`. Reference implementation:
+`hxh/`.

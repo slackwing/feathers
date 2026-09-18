@@ -1,16 +1,32 @@
 {
+  "layout": "_layout.html",
   "templates": [
     {
       "id": "invite",
       "name": "Invite",
       "subject": "You are summoned: Hunter × Halloween",
+      "title": "Summons",
+      "kicker": "HUNTER ASSOCIATION · OFFICIAL SUMMONS",
+      "heading": "<span style=\"color:#0b0a08;\">HUNTER</span><span style=\"color:#c8102e;\">&times;</span><span style=\"color:#ff7518;\">HALLOWEEN</span><br><span style=\"font-size:13px;font-weight:normal;letter-spacing:4px;color:#5c5340;\">ハンター×ハロウィン</span>",
       "invite": true
     },
     {
-      "id": "welcome",
-      "name": "Welcome",
-      "subject": "License in order, {{display_name}}",
+      "id": "account-created",
+      "name": "Account Created",
+      "subject": "Account created: Hunter × Halloween",
+      "title": "Account",
+      "kicker": "HUNTER ASSOCIATION · ACCOUNTS DEPARTMENT",
+      "heading": "ACCOUNT CREATED",
       "on": "accept"
+    },
+    {
+      "id": "reset",
+      "name": "Password Reset",
+      "subject": "Password reset: Hunter × Halloween",
+      "title": "Account",
+      "kicker": "HUNTER ASSOCIATION · ACCOUNTS DEPARTMENT",
+      "heading": "PASSWORD RESET",
+      "reset": true
     }
   ]
 }

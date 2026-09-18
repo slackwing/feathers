@@ -5,102 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=2">
+<link rel="stylesheet" href="assets/style.css?v=3">
 </head>
 <body>
 <main>
 
   <!-- login -->
   <section id="login" class="card narrow hidden">
-    <h1 class="mono">▪ admin</h1>
+    <h1>admin</h1>
     <form id="login-form">
       <label for="lu">User</label>
       <input id="lu" name="username" autocomplete="username" required>
       <label for="lp">Password</label>
       <input id="lp" name="password" type="password" autocomplete="current-password" required>
       <button class="primary" type="submit">Log in</button>
-      <div class="msg err" id="login-msg"></div>
+      <p class="msg err" id="login-msg"></p>
     </form>
   </section>
 
   <!-- forbidden -->
   <section id="forbidden" class="card narrow hidden">
-    <h1 class="mono">▪ admin</h1>
-    <p style="margin-top:1rem">Not authorized.</p>
-    <button class="primary" id="forbidden-logout">Log out</button>
+    <h1>admin</h1>
+    <p class="msg">Not authorized.</p>
+    <button id="forbidden-logout">Log out</button>
   </section>
 
   <!-- console -->
   <section id="console" class="hidden">
     <header class="top">
       <h1>admin</h1>
-      <span class="who"><span id="who-avatar"></span> <b id="who"></b> <button class="quiet" id="logout">Log out</button></span>
+      <span class="who"><span id="who-avatar"></span> <b id="who"></b> <button id="logout">Log out</button></span>
     </header>
 
     <h2>Users <span class="note" id="email-note"></span></h2>
     <table>
       <thead>
-        <tr><th></th><th>User</th><th>Display name</th><th>Email</th><th>Roles</th><th>Links · Email</th><th></th></tr>
+        <tr>
+          <th></th><th>User</th><th>Name</th><th>Email</th><th>Active site</th><th>Roles</th><th>Invite · Reset</th><th></th>
+        </tr>
       </thead>
       <tbody id="users"></tbody>
+      <tfoot>
+        <tr id="create-row">
+          <td><span class="avatar" id="new-avatar">?</span></td>
+          <td><input id="cu" placeholder="username" autocomplete="off"></td>
+          <td><input id="cd" placeholder="display name" autocomplete="off"></td>
+          <td><input id="ce" placeholder="email" type="email" autocomplete="off"></td>
+          <td><select id="cs"></select></td>
+          <td class="dim">roles are added after creating</td>
+          <td colspan="2"><button class="primary" id="create" type="button" style="width:auto;margin:0">Create</button> <span class="msg err" id="create-msg" style="display:inline;margin:0 0 0 .5rem"></span></td>
+        </tr>
+      </tfoot>
     </table>
-
-    <h2>New user</h2>
-    <div class="card">
-      <form id="create-form" class="inline">
-        <span class="avatar" id="new-avatar">?</span>
-        <input id="cu" placeholder="username" autocomplete="off" required>
-        <input id="cd" placeholder="display name" autocomplete="off" required>
-        <input id="ci" placeholder="initial" maxlength="3" autocomplete="off" class="short" title="1–3 characters shown in the avatar">
-        <input id="cc" type="color" title="avatar color (random to start)">
-        <input id="ce" placeholder="email (optional)" type="email" autocomplete="off">
-        <button type="submit">Create</button>
-      </form>
-      <div class="msg err" id="create-msg"></div>
-    </div>
-
-    <div id="linkout" class="linkout hidden">
-      <span id="link-url" class="mono"></span>
-      <span class="exp" id="link-exp"></span>
-      <button class="quiet" id="link-copy" style="margin-top:.5rem">Copy</button>
-    </div>
-    <div class="msg" id="console-msg"></div>
   </section>
 
 </main>
 
-<dialog id="edit">
-  <form id="edit-form" method="dialog">
-    <h3 class="mono">▪ edit <span id="edit-user"></span></h3>
-    <div class="inline" style="margin-top:1rem">
-      <span class="avatar" id="edit-avatar">?</span>
-      <input id="ed" placeholder="display name" required>
-      <input id="ei" placeholder="initial" maxlength="3" class="short">
-      <input id="ec" type="color">
-    </div>
-    <input id="ee" placeholder="email (optional)" type="email" style="margin-top:.6rem">
-    <div class="inline" style="margin-top:1.2rem;justify-content:flex-end">
-      <button class="quiet" type="button" id="edit-cancel">Cancel</button>
-      <button type="submit">Save</button>
-    </div>
-    <div class="msg err" id="edit-msg"></div>
-  </form>
-</dialog>
-
 <script>
 const API = "/admin/api";
-let websites = [];   // [{website, roles:[...]}]
-let me = null;
-let emailConfigured = false;
-const tplCache = {};  // website -> [{id, name, subject, invite, on}]
-
 const $ = id => document.getElementById(id);
-const show = id => {
-  ["login", "forbidden", "console"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+const show = id => ["login", "forbidden", "console"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ICON = {
+  mail: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="9" rx="1"/><path d="M2 4l6 5 6-5"/></svg>',
+  link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.5 9.5l3-3"/><path d="M7.2 4.8l1.3-1.3a2.6 2.6 0 013.7 3.7L10.9 8.5"/><path d="M8.8 11.2l-1.3 1.3a2.6 2.6 0 01-3.7-3.7l1.3-1.3"/></svg>',
 };
+
+let me = null, websites = [], users = [], emailConfigured = false;
+const tplCache = {};   // site -> manifest templates
 
 async function api(path, opts = {}) {
   if (opts.body) opts.headers = { "Content-Type": "application/json", ...opts.headers };
@@ -108,53 +80,66 @@ async function api(path, opts = {}) {
   if (!res.ok) throw Object.assign(new Error(await res.text()), { status: res.status });
   return res.status === 204 ? null : res.json();
 }
-
 const isAdmin = m => m.roles.some(r => r.website === "admin" && r.role === "admin");
 
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-// ---- avatar helpers (same rules as rv's admin chips + the server) ----
+// ---- avatar helpers (same rules as the server) ----
 function textColor(hex) {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return "#fff";
   const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#1c2a25" : "#fff";
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#1c1c1a" : "#fff";
 }
-// Random hue, fixed saturation/lightness — mirrors shared.RandomColor.
-function randomColor() {
+function randomColor() {   // random hue, fixed saturation/lightness — mirrors shared.RandomColor
   const h = Math.floor(Math.random() * 360), s = 0.55, l = 0.45;
   const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
   const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
   return "#" + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("");
 }
-const defaultInitial = name => (name.trim()[0] || "?").toUpperCase();
-function paintAvatar(el, initial, color) {
-  el.textContent = initial || "?";
-  el.style.background = color;
-  el.style.color = textColor(color);
-}
-const avatarHTML = u => `<span class="avatar" style="background:${esc(u.color)};color:${textColor(u.color)}">${esc(u.initial)}</span>`;
+const defaultInitial = name => (name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase()) || "?";
+const paint = (el, initial, color) => { el.textContent = initial || "?"; el.style.background = color; el.style.color = textColor(color); };
+const avatarHTML = (u, cls = "avatar") => `<span class="${cls}" style="background:${esc(u.color)};color:${textColor(u.color)}">${esc(u.initial)}</span>`;
 
 async function templatesFor(site) {
-  if (site in tplCache) return tplCache[site];
-  try {
-    const r = await fetch(`/${site}/_email/templates.json`, { cache: "no-cache" });
-    tplCache[site] = r.ok ? ((await r.json()).templates || []) : [];
-  } catch { tplCache[site] = []; }
+  if (!site) return [];
+  if (!(site in tplCache)) {
+    try {
+      const r = await fetch(`/${site}/_email/templates.json`, { cache: "no-cache" });
+      tplCache[site] = r.ok ? ((await r.json()).templates || []) : [];
+    } catch { tplCache[site] = []; }
+  }
   return tplCache[site];
 }
 
+// ---- flash + popovers ----
+let flashTimer;
+function flash(text, isErr) {
+  document.querySelector(".flash")?.remove();
+  const f = document.createElement("div");
+  f.className = "flash" + (isErr ? " err" : ""); f.textContent = text;
+  document.body.append(f);
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => f.remove(), 3500);
+}
+function closePop() { document.querySelector(".pop")?.remove(); }
+function popover(anchor, html) {
+  closePop();
+  const p = document.createElement("div");
+  p.className = "pop"; p.innerHTML = html;
+  document.body.append(p);
+  const r = anchor.getBoundingClientRect();
+  p.style.top = (scrollY + r.bottom + 6) + "px";
+  p.style.left = Math.min(scrollX + r.left, scrollX + innerWidth - p.offsetWidth - 12) + "px";
+  p.addEventListener("click", e => e.stopPropagation());
+  return p;
+}
+document.addEventListener("click", closePop);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
+
+// ---- boot ----
 async function boot() {
-  try {
-    me = await api("/me");
-  } catch {
-    show("login");
-    return;
-  }
+  try { me = await api("/me"); } catch { show("login"); return; }
   if (!isAdmin(me)) { show("forbidden"); return; }
   $("who").textContent = me.display_name;
-  $("who-avatar").innerHTML = avatarHTML(me);
+  $("who-avatar").innerHTML = avatarHTML(me, "avatar sm");
   show("console");
   try {
     const st = await api("/email-status");
@@ -163,209 +148,192 @@ async function boot() {
   } catch { emailConfigured = false; }
   await refresh();
 }
-
 async function refresh() {
   websites = await api("/websites");
-  renderUsers(await api("/users"));
+  users = await api("/users");
+  $("cs").innerHTML = websites.map(w => `<option value="${esc(w.website)}"${w.website === "hxh" ? " selected" : ""}>${esc(w.website)}</option>`).join("");
+  renderUsers();
 }
 
-function renderUsers(users) {
+// ---- table ----
+function renderUsers() {
   const tbody = $("users");
   tbody.innerHTML = "";
-  for (const u of users) {
-    const tr = document.createElement("tr");
-
-    const roleChips = u.roles.map(r =>
-      `<span class="chip"><span class="site">${esc(r.website)}/</span>${esc(r.role)}<span class="x" data-act="rmrole" data-w="${esc(r.website)}" data-r="${esc(r.role)}">✕</span></span>`
-    ).join("");
-
-    const siteOpts = websites.filter(w => w.roles.length)
-      .map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
-    const userSites = new Set(u.roles.map(r => r.website));
-    const inviteOpts = websites.filter(w => userSites.has(w.website))
-      .map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("");
-    const inviteCtl = inviteOpts
-      ? `<select data-act="invite-site">${inviteOpts}</select>
-          <button class="quiet" data-act="invite" title="copy an invite link">Link</button>
-          <select data-act="mail-tpl" class="hidden"></select>
-          <button class="quiet hidden" data-act="mail">Send</button>`
-      : "";
-
-    tr.innerHTML = `
-      <td><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "password unset"}"></span> ${avatarHTML(u)}</td>
-      <td class="mono">${esc(u.username)}</td>
-      <td>${esc(u.display_name)}</td>
-      <td class="mono dim">${esc(u.email || "")}</td>
-      <td>
-        ${roleChips}
-        <span class="inline">
-          <select data-act="role-site">${siteOpts}</select>
-          <select data-act="role-role"></select>
-          <button class="quiet" data-act="addrole">Add</button>
-        </span>
-      </td>
-      <td>
-        <span class="inline">
-          <button class="quiet" data-act="reset" title="copy a password-reset link">Reset</button>
-          ${inviteCtl}
-        </span>
-      </td>
-      <td class="nowrap">
-        <button class="quiet" data-act="edit" title="edit profile">✎</button>
-        ${u.username === me.username ? "" : `<button class="quiet" data-act="del" title="delete user">Delete</button>`}
-      </td>`;
-
-    const siteSel = tr.querySelector('[data-act="role-site"]');
-    const roleSel = tr.querySelector('[data-act="role-role"]');
-    const fillRoles = () => {
-      const w = websites.find(x => x.website === siteSel.value);
-      roleSel.innerHTML = (w ? w.roles : []).map(r => `<option>${esc(r)}</option>`).join("");
-    };
-    siteSel.addEventListener("change", fillRoles);
-    fillRoles();
-
-    // Email templates follow the selected invite site; the Send button
-    // only appears when the site ships an _email/ manifest.
-    const invSel = tr.querySelector('[data-act="invite-site"]');
-    const tplSel = tr.querySelector('[data-act="mail-tpl"]');
-    const mailBtn = tr.querySelector('[data-act="mail"]');
-    const fillTpls = async () => {
-      const tpls = await templatesFor(invSel.value);
-      tplSel.innerHTML = tpls.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");
-      const on = tpls.length > 0;
-      tplSel.classList.toggle("hidden", !on);
-      mailBtn.classList.toggle("hidden", !on);
-      mailBtn.disabled = !emailConfigured || !u.email;
-      mailBtn.title = !emailConfigured ? "email not configured on the server" : (!u.email ? "user has no email" : `email ${u.email}`);
-    };
-    if (invSel) { invSel.addEventListener("change", fillTpls); fillTpls(); }
-
-    tr.addEventListener("click", async e => {
-      const act = e.target.dataset.act;
-      try {
-        if (act === "rmrole") {
-          await api("/roles", { method: "DELETE", body: JSON.stringify({ username: u.username, website: e.target.dataset.w, role: e.target.dataset.r }) });
-          await refresh();
-        } else if (act === "addrole") {
-          await api("/roles", { method: "POST", body: JSON.stringify({ username: u.username, website: siteSel.value, role: roleSel.value }) });
-          await refresh();
-        } else if (act === "edit") {
-          openEdit(u);
-        } else if (act === "del") {
-          if (confirm(`Delete ${u.username}? Roles, sessions, and pending links go with it.`)) {
-            await api(`/users/${encodeURIComponent(u.username)}`, { method: "DELETE" });
-            await refresh();
-          }
-        } else if (act === "reset") {
-          showLink(await api("/links", { method: "POST", body: JSON.stringify({ username: u.username, type: "reset" }) }));
-        } else if (act === "invite") {
-          showLink(await api("/links", { method: "POST", body: JSON.stringify({ username: u.username, type: "invite", website: invSel.value }) }));
-        } else if (act === "mail") {
-          mailBtn.disabled = true;
-          const r = await api("/email", { method: "POST", body: JSON.stringify({ username: u.username, website: invSel.value, template: tplSel.value }) });
-          mailBtn.disabled = false;
-          flash(`sent "${r.subject}" to ${r.to}`, false);
-          if (r.invite_url) showLink({ url: r.invite_url, expires_at: r.expires_at });
-        }
-      } catch (err) {
-        mailBtn && (mailBtn.disabled = false);
-        flash(err.message || "error", true);
-      }
-    });
-
-    tbody.appendChild(tr);
-  }
+  for (const u of users) tbody.append(row(u));
 }
 
-function showLink({ url, expires_at }) {
-  $("link-url").textContent = url;
-  $("link-exp").textContent = "expires " + new Date(expires_at).toLocaleString();
-  $("linkout").classList.remove("hidden");
+function row(u) {
+  const tr = document.createElement("tr");
+  const siteOpts = `<option value=""${u.active_site ? "" : " selected"}>—</option>` + websites.map(w =>
+    `<option value="${esc(w.website)}"${w.website === u.active_site ? " selected" : ""}>${esc(w.website)}</option>`).join("");
+  const roleSites = websites.filter(w => w.roles.length);
+  tr.innerHTML = `
+    <td>${avatarHTML(u).replace('<span class="avatar"', '<button type="button" class="avatar" title="initial and colour"').replace("</span>", "</button>")}</td>
+    <td class="user nowrap"><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "no password yet"}"></span>${esc(u.username)}</td>
+    <td><span class="edit" data-field="display_name">${esc(u.display_name)}</span></td>
+    <td><span class="edit${u.email ? "" : " empty"}" data-field="email">${esc(u.email || "add email")}</span></td>
+    <td><select class="site" title="the site invites, resets and emails act on">${siteOpts}</select></td>
+    <td>
+      ${u.roles.map(r => `<span class="chip"><em>site</em><span>${esc(r.website)}</span><em>role</em><span>${esc(r.role)}</span><button type="button" class="x" data-w="${esc(r.website)}" data-r="${esc(r.role)}" title="remove">✕</button></span>`).join("")}
+      <span class="addrole">
+        <select class="rs">${roleSites.map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("")}</select>
+        <select class="rr"></select>
+        <button type="button" class="add" title="add role">+</button>
+      </span>
+    </td>
+    <td>
+      <div class="matrix">
+        <span class="k">invite</span><button type="button" class="ib" data-kind="invite" data-do="mail" title="invite email">${ICON.mail}</button><button type="button" class="ib" data-kind="invite" data-do="link" title="copy invite link">${ICON.link}</button>
+        <span class="k">reset</span><button type="button" class="ib" data-kind="reset" data-do="mail" title="password-reset email">${ICON.mail}</button><button type="button" class="ib" data-kind="reset" data-do="link" title="copy password-reset link">${ICON.link}</button>
+      </div>
+    </td>
+    <td class="nowrap">${u.username === me.username ? "" : `<button type="button" class="danger del">Delete</button>`}</td>`;
+
+  // roles: role list follows the site
+  const rs = tr.querySelector(".rs"), rr = tr.querySelector(".rr");
+  const fillRoles = () => { const w = websites.find(x => x.website === rs.value); rr.innerHTML = (w ? w.roles : []).map(r => `<option>${esc(r)}</option>`).join(""); };
+  rs.addEventListener("change", fillRoles); fillRoles();
+  tr.querySelector(".add").addEventListener("click", () => act(async () => {
+    await api("/roles", { method: "POST", body: JSON.stringify({ username: u.username, website: rs.value, role: rr.value }) });
+    await refresh();
+  }));
+  tr.querySelectorAll(".chip .x").forEach(x => x.addEventListener("click", () => act(async () => {
+    await api("/roles", { method: "DELETE", body: JSON.stringify({ username: u.username, website: x.dataset.w, role: x.dataset.r }) });
+    await refresh();
+  })));
+
+  // active site
+  tr.querySelector(".site").addEventListener("change", e => act(async () => {
+    await patch(u, { active_site: e.target.value });
+    u.active_site = e.target.value;
+  }));
+
+  // click-to-edit name / email
+  tr.querySelectorAll(".edit").forEach(span => span.addEventListener("click", () => editInline(span, u)));
+
+  // avatar: initial + colour
+  tr.querySelector(".avatar").addEventListener("click", e => { e.stopPropagation(); avatarPop(e.currentTarget, u); });
+
+  // invite / reset matrix
+  tr.querySelectorAll(".ib").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); matrix(b, u, b.dataset.kind, b.dataset.do); }));
+
+  tr.querySelector(".del")?.addEventListener("click", () => {
+    if (!confirm(`Delete ${u.username}? Roles, sessions and pending links go with it. This cannot be undone.`)) return;
+    act(async () => { await api(`/users/${encodeURIComponent(u.username)}`, { method: "DELETE" }); await refresh(); flash(`deleted ${u.username}`); });
+  });
+  return tr;
 }
 
-let flashTimer;
-function flash(text, isErr) {
-  const m = $("console-msg");
-  m.textContent = text;
-  m.className = "msg " + (isErr ? "err" : "ok");
-  clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { m.textContent = ""; }, 5000);
+async function act(fn) { try { await fn(); } catch (err) { flash(err.message || "error", true); } }
+const patch = (u, body) => api(`/users/${encodeURIComponent(u.username)}`, { method: "PATCH", body: JSON.stringify(body) });
+
+function editInline(span, u) {
+  if (span.querySelector("input")) return;
+  const field = span.dataset.field, old = u[field] || "";
+  const input = document.createElement("input");
+  input.className = "inline"; input.value = old;
+  input.type = field === "email" ? "email" : "text";
+  span.replaceChildren(input); span.classList.remove("empty");
+  input.focus(); input.select();
+  let done = false;
+  const finish = async save => {
+    if (done) return; done = true;
+    const v = input.value.trim();
+    if (save && v !== old) {
+      try { await patch(u, { [field]: v }); u[field] = v; }
+      catch (err) { flash(err.message || "error", true); span.textContent = old || (field === "email" ? "add email" : ""); span.classList.toggle("empty", !old); return; }
+    }
+    const cur = u[field] || "";
+    span.textContent = cur || (field === "email" ? "add email" : "");
+    span.classList.toggle("empty", !cur);
+    if (field === "display_name" && u.username === me.username) $("who").textContent = cur;
+  };
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); finish(true); } if (e.key === "Escape") finish(false); });
+  input.addEventListener("blur", () => finish(true));
 }
 
-$("link-copy").addEventListener("click", async () => {
-  await navigator.clipboard.writeText($("link-url").textContent);
-  flash("copied", false);
-});
+function avatarPop(btn, u) {
+  const p = popover(btn, `
+    <div class="row"><span class="avatar" id="ap-prev"></span>
+      <input class="initial" id="ap-i" maxlength="2" value="${esc(u.initial)}" title="1–2 characters">
+      <input type="color" id="ap-c" value="${esc(u.color)}"></div>
+    <div class="row"><button type="button" class="primary" id="ap-save">Save</button><button type="button" id="ap-cancel">Cancel</button></div>`);
+  const prev = p.querySelector("#ap-prev"), i = p.querySelector("#ap-i"), c = p.querySelector("#ap-c");
+  const repaint = () => paint(prev, i.value.trim().toUpperCase() || "?", c.value);
+  repaint(); i.addEventListener("input", repaint); c.addEventListener("input", repaint);
+  p.querySelector("#ap-cancel").addEventListener("click", closePop);
+  p.querySelector("#ap-save").addEventListener("click", () => act(async () => {
+    const initial = i.value.trim().toUpperCase();
+    await patch(u, { initial, color: c.value });
+    u.initial = initial; u.color = c.value;
+    paint(btn, initial, c.value);
+    if (u.username === me.username) $("who-avatar").innerHTML = avatarHTML(u, "avatar sm");
+    closePop();
+  }));
+  i.focus(); i.select();
+}
 
-$("login-form").addEventListener("submit", async e => {
-  e.preventDefault();
-  $("login-msg").textContent = "";
-  try {
-    me = await api("/login", { method: "POST", body: JSON.stringify({ username: $("lu").value.trim(), password: $("lp").value }) });
-  } catch (err) {
-    $("login-msg").textContent = err.status === 401 ? "Invalid credentials." : (err.message || "error");
+// The invite / reset matrix: mail asks (send / preview / cancel), link copies.
+async function matrix(btn, u, kind, what) {
+  const site = u.active_site;
+  if (!site) { flash("pick an active site first", true); return; }
+  if (what === "link") {
+    try {
+      const { url, expires_at } = await api("/links", { method: "POST", body: JSON.stringify({ username: u.username, type: kind, website: site }) });
+      await navigator.clipboard.writeText(url);
+      flash(`${kind} link copied · expires ${new Date(expires_at).toLocaleString()}`);
+    } catch (err) { flash(err.message || "error", true); }
     return;
   }
-  boot();
-});
+  const tpls = await templatesFor(site);
+  const t = tpls.find(x => kind === "invite" ? x.invite : x.reset);
+  const why = !t ? `${site} has no ${kind} email template` : !u.email ? "no email on this account" : !emailConfigured ? "email is not configured on the server" : "";
+  const p = popover(btn, `
+    <p>${kind === "invite" ? "Invite" : "Password reset"} email to <b>${esc(u.email || "—")}</b>${why ? `<br><span class="dim">${esc(why)}</span>` : ""}</p>
+    <div class="row">
+      <button type="button" class="primary" id="mp-send"${why ? " disabled" : ""}>Send</button>
+      <button type="button" id="mp-preview"${t ? "" : " disabled"}>Preview</button>
+      <button type="button" id="mp-cancel">Cancel</button>
+    </div>`);
+  p.querySelector("#mp-cancel").addEventListener("click", closePop);
+  p.querySelector("#mp-preview").addEventListener("click", () => { open(`/${site}/_email/?template=${encodeURIComponent(t.id)}&user=${encodeURIComponent(u.username)}`, "_blank"); closePop(); });
+  p.querySelector("#mp-send").addEventListener("click", () => act(async () => {
+    const r = await api("/email", { method: "POST", body: JSON.stringify({ username: u.username, website: site, template: t.id }) });
+    closePop();
+    flash(`sent "${r.subject}" to ${r.to}`);
+  }));
+}
 
 // ---- create ----
-let initialTouched = false;
 function resetCreate() {
-  ["cu", "cd", "ci", "ce"].forEach(id => { $(id).value = ""; });
-  $("cc").value = randomColor();
-  initialTouched = false;
-  paintAvatar($("new-avatar"), "?", $("cc").value);
+  ["cu", "cd", "ce"].forEach(id => { $(id).value = ""; });
+  $("create-row").dataset.color = randomColor();
+  paint($("new-avatar"), "?", $("create-row").dataset.color);
+  $("create-msg").textContent = "";
 }
-$("cd").addEventListener("input", () => {
-  if (!initialTouched) $("ci").value = $("cd").value.trim() ? defaultInitial($("cd").value) : "";
-  paintAvatar($("new-avatar"), $("ci").value || "?", $("cc").value);
-});
-$("ci").addEventListener("input", () => { initialTouched = $("ci").value !== ""; paintAvatar($("new-avatar"), $("ci").value || "?", $("cc").value); });
-$("cc").addEventListener("input", () => paintAvatar($("new-avatar"), $("ci").value || "?", $("cc").value));
-$("create-form").addEventListener("submit", async e => {
-  e.preventDefault();
+$("cd").addEventListener("input", () => paint($("new-avatar"), defaultInitial($("cd").value), $("create-row").dataset.color));
+$("create").addEventListener("click", async () => {
   $("create-msg").textContent = "";
   try {
     await api("/users", { method: "POST", body: JSON.stringify({
       username: $("cu").value.trim(), display_name: $("cd").value.trim(),
-      initial: $("ci").value.trim() || defaultInitial($("cd").value),
-      color: $("cc").value, email: $("ce").value.trim(),
+      initial: defaultInitial($("cd").value), color: $("create-row").dataset.color,
+      email: $("ce").value.trim(), active_site: $("cs").value,
     }) });
-    resetCreate();
-    await refresh();
-  } catch (err) {
-    $("create-msg").textContent = err.message || "error";
-  }
+    resetCreate(); await refresh();
+  } catch (err) { $("create-msg").textContent = err.message || "error"; }
 });
+["cu", "cd", "ce"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("create").click(); }));
 resetCreate();
 
-// ---- edit dialog ----
-let editing = null;
-function openEdit(u) {
-  editing = u;
-  $("edit-user").textContent = u.username;
-  $("ed").value = u.display_name; $("ei").value = u.initial; $("ec").value = u.color; $("ee").value = u.email || "";
-  $("edit-msg").textContent = "";
-  paintAvatar($("edit-avatar"), u.initial, u.color);
-  $("edit").showModal();
-}
-["ei", "ec"].forEach(id => $(id).addEventListener("input", () => paintAvatar($("edit-avatar"), $("ei").value || "?", $("ec").value)));
-$("edit-cancel").addEventListener("click", () => $("edit").close());
-$("edit-form").addEventListener("submit", async e => {
+// ---- auth ----
+$("login-form").addEventListener("submit", async e => {
   e.preventDefault();
-  try {
-    await api(`/users/${encodeURIComponent(editing.username)}`, { method: "PATCH", body: JSON.stringify({
-      display_name: $("ed").value.trim(), initial: $("ei").value.trim(), color: $("ec").value, email: $("ee").value.trim(),
-    }) });
-    $("edit").close();
-    if (editing.username === me.username) me = await api("/me"), $("who").textContent = me.display_name, $("who-avatar").innerHTML = avatarHTML(me);
-    await refresh();
-  } catch (err) {
-    $("edit-msg").textContent = err.message || "error";
-  }
+  $("login-msg").textContent = "";
+  try { me = await api("/login", { method: "POST", body: JSON.stringify({ username: $("lu").value.trim(), password: $("lp").value }) }); }
+  catch (err) { $("login-msg").textContent = err.status === 401 ? "Invalid credentials." : (err.message || "error"); return; }
+  boot();
 });
-
 const doLogout = async () => { await api("/logout", { method: "POST" }); show("login"); };
 $("logout").addEventListener("click", doLogout);
 $("forbidden-logout").addEventListener("click", doLogout);

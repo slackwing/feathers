@@ -26,30 +26,34 @@ license-only site from the show — rendered as a late-90s OS desktop.
   "failure to commit" line (Andrew, 2026-09-17). Window title
   "Hunter × Halloween" (the special ×); login dialog likewise.
   The gate is client-side UX only; static HTML remains fetchable.
-- **_invite/index.html** — invite / set-password page at the standard
-  cross-project path (`/hxh/_invite/?code=...`). Boots (HunterOS lines
-  + tee badge) and then shows a single Windows-logon-style dialog on
-  the bare desktop, no taskbar: title "Hunter × Halloween", heading
-  "Choose a password", Applicant (readonly) + Password fields, button
-  "Accept summons". No lede, no hints, "password" not "passphrase"
-  (Andrew, 2026-09-17). Opened without a code by a logged-in user the
-  same dialog changes that user's password (button "Change password",
-  `POST /admin/api/password`); a bad code shows the void message only.
-  `?preview=invite|change|void` forces a state without the boot, for
-  **_invite/preview.html** — the plain admin-style previewer (same look
-  as `_email/index.html`, inert frame) that shows all three states.
+- **_invite/** and **_reset/** — the invite and password-reset pages at
+  the standard cross-project paths, as hxh SKINS over the shared
+  machinery `/admin/assets/setpw.js`: `pwpage.js` builds one
+  Windows-logon-style dialog (title "Hunter × Halloween", heading
+  "Choose a password" / "Reset your password", Applicant + Password,
+  button "Accept summons" / "Reset password"; "password" never
+  "passphrase"; no lede, no hints) on the bare desktop after the OS
+  boots (no taskbar, no wallpaper, purple-square badge). Each page only
+  passes its words. Both need `?code=`; without one the form is
+  disabled with a one-line note; a code of the wrong kind (invite code
+  on the reset page) shows the void message.
 - **_email/** — hxh's email templates (standard cross-project dir):
-  `templates.json` (invite → mints a link; welcome → sent automatically
-  on invite acceptance), `invite.html`, `welcome.html` (table-based,
-  inline-styled retro "window" emails in the site palette, Courier
-  fallback since web fonts don't survive mail clients), and
+  `templates.json` (invite → mints a 7-day link; account-created → sent
+  automatically when an invite is accepted; reset → mints a 1-hour
+  link), `_layout.html` (THE frame: crimson title bar, kicker,
+  heading, footer "HUNTER × HALLOWEEN · year" — change it once for every
+  email), and body fragments `invite.html`, `account-created.html`,
+  `reset.html` (table-based, inline-styled, Courier). Wording per
+  Andrew (2026-09-18): no avatar / applicant / ID block; invite says
+  "choose your own secure password*" with a "VIEW SUMMONS" button and
+  a footnote describing the real hashing (HTTPS → Argon2id 19 MiB / 2
+  passes / 16-byte salt → hash only, in Cloud SQL Postgres on a private
+  network); account-created is the "Accounts Department" / "ACCOUNT
+  CREATED" note with the fixed welcome text; no "unofficial fan party".
   `index.html` — an admin-only preview page in the PLAIN admin-console
-  style (`/admin/assets/style.css`), deliberately not the site theme,
-  so the themed email inside the frame is unmistakably the email. The
-  frame is inert (`pointer-events: none`, sandboxed; the sample invite
-  link is not a real code) and it can send a test to the admin. Sent
-  for real from the `/admin/` console; see `../CLAUDE.md` and
-  `~/src/hobby-server/docs/SHARED_AUTH.md`.
+  style, deliberately not the site theme; inert frame, no metadata
+  beyond template / subject / to; `?template=&user=` for the console's
+  Preview; "send test to me".
 - **roster.html** — admin-only Roster DB view (see below), one static
   full-width window.
 - **Boot**: owned by the OS shell, every cold load (see below):
@@ -82,7 +86,8 @@ re-added per page. Every retro page starts with
 3. **Session** — `GET /admin/api/me`.
 4. **Logon** (when `gate: true` and logged out) — the shared dialog
    (`Retro.logon()`: title "Hunter × Halloween — Log in", logotype, one
-   line, Applicant + Password, no "restricted site" line) alone on the
+   line, Applicant + Password, "Forgot password?" → `POST
+   /admin/api/forgot`, no "restricted site" line) alone on the
    bare ink desktop with the purple-square badge in the lower right
    (`.os-badge`, also kept on the invite splash, removed once the
    desktop is up); the page's own windows/icons are hidden meanwhile
@@ -277,9 +282,10 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 
 ## Keep these three in sync
 
-The site chrome (`retro.css`/`retro.js` + pages), the invite page
-(`_invite/`), and the emails (`_email/*.html`) are one look (the
-`_email/index.html` preview page is the exception — keep it plain). A theme
+The site chrome (`retro.css`/`retro.js` + pages), the set-password
+pages (`_invite/`, `_reset/` via `pwpage.js`), and the emails
+(`_email/_layout.html` + bodies) are one look (the `_email/index.html`
+preview page is the exception — keep it plain). A theme
 change is not done until all three match — change them in the same
 commit, and re-screenshot `_email/` and `_invite/` alongside the
 desktop. The emails can't load the web fonts or the shared CSS, so

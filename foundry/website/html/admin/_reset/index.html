@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Reset your password</title>
+<link rel="stylesheet" href="/admin/assets/style.css?v=3">
+</head>
+<body>
+<!-- Default password-reset page: used for any website that has no
+     _reset/ skin of its own, and for the admin console itself. The
+     machinery is /admin/assets/setpw.js. -->
+<main>
+  <section class="card narrow">
+    <h1>Reset your password</h1>
+    <form data-pw="form">
+      <p class="msg err" data-pw="nocode" hidden>This page needs the link from a password-reset email.</p>
+      <label for="u">User</label>
+      <input id="u" data-pw="username" autocomplete="username" readonly>
+      <label for="p">New password</label>
+      <input id="p" data-pw="password" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="primary" type="submit" data-pw="submit">Reset password</button>
+      <p class="msg err" data-pw="msg"></p>
+    </form>
+    <div data-pw="done" hidden>
+      <p class="msg ok">Password reset. You're logged in, <b data-pw="name"></b>.</p>
+      <p><a data-pw="enter" href="/">Continue →</a></p>
+    </div>
+    <p class="msg err" data-pw="invalid" hidden>This link is invalid or has expired. Ask for a new one.</p>
+  </section>
+</main>
+<script src="/admin/assets/setpw.js?v=1"></script>
+<script>SetPassword.mount();</script>
+</body>
+</html>

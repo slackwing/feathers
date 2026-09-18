@@ -1,70 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>You are summoned: Hunter × Halloween</title>
-</head>
-<body style="margin:0;padding:24px 12px;background:#0b0a08;font-family:'Courier New',Courier,monospace;color:#0b0a08;">
-<div style="display:none;max-height:0;overflow:hidden;color:#0b0a08;">Applicant {{display_name}}: your summons to the 289th Hunter Exam, Halloween Phase. Choose your password to accept.</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-<tr><td align="center">
-  <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#e8dcc3;border:2px solid #0b0a08;box-shadow:6px 6px 0 #000;">
-    <tr>
-      <td style="background:#c8102e;color:#fff6e0;padding:8px 10px;font-weight:bold;font-size:13px;letter-spacing:1px;">
-        &times;&nbsp; Hunter Website &mdash; Summons
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:22px 22px 8px 22px;text-align:center;">
-        <div style="font-size:11px;letter-spacing:2px;color:#2a2620;">HUNTER ASSOCIATION &middot; OFFICIAL SUMMONS</div>
-        <div style="font-size:26px;font-weight:bold;line-height:1.2;margin:10px 0 4px 0;">
-          <span style="color:#0b0a08;">HUNTER</span><span style="color:#c8102e;">&times;</span><span style="color:#ff7518;">HALLOWEEN</span>
-        </div>
-        <div style="font-size:13px;letter-spacing:4px;color:#5c5340;">ハンター×ハロウィン</div>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:12px 22px 0 22px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff6e0;border:2px solid #0b0a08;">
-          <tr>
-            <td style="padding:16px 16px 14px 16px;font-size:15px;line-height:1.55;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                <td width="40" height="40" align="center" valign="middle" style="width:40px;height:40px;border-radius:50%;background:{{color}};color:{{color_text}};font-weight:bold;font-size:14px;border:2px solid #0b0a08;">{{initial}}</td>
-                <td style="padding-left:12px;font-size:15px;">Applicant <b>{{display_name}}</b><br><span style="color:#5c5340;font-size:13px;">ID: {{username}}</span></td>
-              </tr></table>
-              <p style="margin:14px 0 0 0;">By order of Chairman Netero, you are hereby summoned to the <b>289th Hunter Exam &mdash; Halloween Phase</b>.</p>
-              <p style="margin:12px 0 0 0;">To accept, open the link below and <b>choose your own password</b>. You set it yourself right there. Nobody will send you one.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" style="padding:18px 22px 6px 22px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="background:#c8102e;border:2px solid #0b0a08;box-shadow:3px 3px 0 #0b0a08;">
-              <a href="{{invite_url}}" style="display:inline-block;padding:13px 22px;color:#fff6e0;font-weight:bold;font-size:13px;letter-spacing:1px;text-decoration:none;">&#9654; ACCEPT SUMMONS</a>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:10px 22px 20px 22px;font-size:12px;line-height:1.6;color:#5c5340;text-align:center;">
-        This summons expires {{expires_at}}.<br>
-        If the button does nothing, paste this into your browser:<br>
-        <a href="{{invite_url}}" style="color:#c8102e;word-break:break-all;">{{invite_url}}</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="background:#c4b48f;border-top:2px solid #0b0a08;padding:8px 10px;font-size:11px;color:#2a2620;text-align:center;">
-        HUNTER &times; HALLOWEEN &middot; an unofficial fan party &middot; {{year}}
-      </td>
-    </tr>
-  </table>
-</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff6e0;border:2px solid #0b0a08;">
+  <tr>
+    <td style="padding:16px 16px 14px 16px;font-size:15px;line-height:1.55;">
+      <p style="margin:0;">By order of Chairman Netero, you are hereby summoned to the <b>289th Hunter Exam &mdash; Halloween Phase</b>.</p>
+      <p style="margin:12px 0 0 0;">To view the summons and more, open the link below and <b>choose your own secure password</b>*.</p>
+    </td>
+  </tr>
 </table>
-</body>
-</html>
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:18px auto 6px auto;">
+  <tr>
+    <td style="background:#c8102e;border:2px solid #0b0a08;box-shadow:3px 3px 0 #0b0a08;">
+      <a href="{{invite_url}}" style="display:inline-block;padding:13px 22px;color:#fff6e0;font-weight:bold;font-size:13px;letter-spacing:1px;text-decoration:none;">&#9654; VIEW SUMMONS</a>
+    </td>
+  </tr>
+</table>
+<p style="margin:10px 0 0 0;font-size:12px;line-height:1.6;color:#5c5340;text-align:center;">
+  This summons expires {{expires_at}}. Ask for a new link if needed. If the button does nothing, paste this into your browser:<br>
+  <a href="{{invite_url}}" style="color:#c8102e;word-break:break-all;">{{invite_url}}</a>
+</p>
+<p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#5c5340;">
+  * Your password travels only over an encrypted HTTPS connection and is never stored or logged as typed. The server immediately hashes it with Argon2id (a memory-hard algorithm: 19&nbsp;MiB, two passes) using a random 16-byte salt unique to you, and keeps only that hash in a Google Cloud SQL Postgres database on a private network. No one, including the admin, can see or recover it, so even a password you use elsewhere stays private.
+</p>

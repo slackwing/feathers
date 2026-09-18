@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{subject}}</title>
+</head>
+<!-- The one frame every hxh email shares: a retro "window" in the site
+     palette (email-safe: tables + inline styles, Courier since web fonts
+     don't survive mail clients). Slots come from templates.json —
+     {{title}} (title bar), {{kicker}}, {{heading}} — and {{body}} is the
+     template's own file. Change the frame here, once. -->
+<body style="margin:0;padding:24px 12px;background:#0b0a08;font-family:'Courier New',Courier,monospace;color:#0b0a08;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td align="center">
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#e8dcc3;border:2px solid #0b0a08;box-shadow:6px 6px 0 #000;">
+    <tr>
+      <td style="background:#c8102e;color:#fff6e0;padding:8px 10px;font-weight:bold;font-size:13px;letter-spacing:1px;">
+        &times;&nbsp; Hunter Website &mdash; {{title}}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:22px 22px 8px 22px;text-align:center;">
+        <div style="font-size:11px;letter-spacing:2px;color:#2a2620;">{{kicker}}</div>
+        <div style="font-size:26px;font-weight:bold;line-height:1.2;margin:10px 0 4px 0;">{{heading}}</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:12px 22px 20px 22px;">
+        {{body}}
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#c4b48f;border-top:2px solid #0b0a08;padding:8px 10px;font-size:11px;color:#2a2620;text-align:center;">
+        HUNTER &times; HALLOWEEN &middot; {{year}}
+      </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
