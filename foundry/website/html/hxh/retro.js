@@ -910,7 +910,7 @@ const Retro = (() => {
     taskbar = $("#taskbar");
     if (taskbar) {
       taskbar.innerHTML =
-        (start ? `<button class="btn start" id="startbtn" type="button">${icon("pumpkin", 36)}<span>Start</span></button>` : "")
+        (start ? `<button class="btn start" id="startbtn" type="button">${icon("pumpkin", 24)}<span>Start</span></button>` : "")
         + `<div class="tasks"></div>`
         + `<div class="tray"><button type="button" data-crt title="Scanlines">${icon("crt", 12)}</button><span class="clock"></span></div>`;
       $("#startbtn")?.addEventListener("click", e => { e.stopPropagation(); toggleStart(); });
