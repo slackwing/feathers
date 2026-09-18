@@ -127,9 +127,11 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   cursor). Idle = the ring emblem. Keys: CLAIM (toast + opens
   Registration), CLOSE (back to the cover). D-pad: ◀ ▶ page, ▲ ▼ card.
   Dial and pad are decoration.
-- Size: fills most of the screen — `Binder.layout()` sets `--bw/--bh`
-  from the viewport (up to 1180×780) and returns the window position;
-  12 sleeves per page (3×4). Phone: page and panel stack, the spine
+- Size: fills the screen with slim margins — `Binder.layout()` sets
+  `--bw/--bh` to the midpoint between the first sizing (≤1180×780) and
+  the full desktop above the taskbar (Andrew: "fill halfway the
+  margins"; 1273×822 at 1366×900) and returns the window position; 12
+  sleeves per page (3×4), sprites 64px on desktop. Phone: page and panel stack, the spine
   turns horizontal, 2 columns.
 - Fidelity comes from Andrew's Netflix screenshots (E66 Strategy × and
   × Scheme, E67 15 × 15): rivets and hinge lines on the boards, grooved

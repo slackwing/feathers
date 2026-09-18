@@ -54,7 +54,11 @@ const Binder = (() => {
   function layout() {
     if (!el || !Retro.floating()) return null;
     const vw = innerWidth, vh = innerHeight;
-    const bw = Math.min(vw - 48, 1180), bh = Math.min(vh - 100, 780);
+    // Andrew: "fill halfway the margins" of the first sizing (up to
+    // 1180×780 with 24px/50px gutters) — so the binder takes the midpoint
+    // between that and the full desktop above the taskbar.
+    const w0 = Math.min(vw - 48, 1180), h0 = Math.min(vh - 100, 780);
+    const bw = Math.round((vw + w0) / 2), bh = Math.round((vh - 36 + h0) / 2);
     el.style.setProperty("--bw", bw + "px");
     el.style.setProperty("--bh", bh + "px");
     el.style.setProperty("--pw", Math.floor((bw - 40) / 2) + "px");
