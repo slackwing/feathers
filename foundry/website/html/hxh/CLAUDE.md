@@ -114,12 +114,28 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 
 - Opens from the "Binder" icon / Start / View menu / the summons CTA as a
   **chromeless window** (`data-chromeless`: registered, in the taskbar,
-  Escape closes, but no title bar or frame). Starts CLOSED — front cover
-  only (ring emblem, title, BINDER) — click to open (3-step flip).
+  Escape closes, but no title bar or frame). A window-style ✕ sits at
+  the book's top-right anyway ("that's where people would look" —
+  Andrew). Starts CLOSED — front cover only (ring emblem, title,
+  BINDER) — click to open.
+- **The page turn (2026-09-18):** the cover is the front face of a
+  `.flap` hinged at the spine's centre (`transform-origin: left`,
+  `perspective: 1800px` on `.book`, `preserve-3d`). Opening rotates it
+  −180° over .85s: the free edge flares toward the viewer (the 2.5-D
+  trapezoid), the right-hand page with the screen is visible underneath
+  the whole time (a `.shade` over the panel fades out as the cover
+  lifts), and past 90° the flap's BACK face — the actual card `.page`,
+  with a half-spine strip — comes into view and lands on the left. On
+  `transitionend` binder.js moves `.page` into `.leaf` so the open book
+  is plain flow layout; `shut()` puts it back on the flap and swings it
+  home. Phones and reduced-motion skip the 3-D and just switch. Freeze
+  any angle for screenshots with the harness `?demo=binderfreeze&deg=N`.
 - **Tabs on top of the left page, one per page**, coloured by Nen type
-  with a 2-letter code (EN TR CO EM MA SP). A type never shares a page
-  (12 cards per page); a type with more than 12 gets more tabs of the
-  same colour (hover title says "page n of m"). So the type isn't
+  with a 2-letter code (EN TR CO EM MA SP), wrapping into a second row
+  UPWARD when they overflow. A type never shares a page (9 cards per
+  page, 3×3 like the show — Andrew, so cards are taller); a type with
+  more than 9 gets more tabs of the same colour (hover title says
+  "page n of m"). So the type isn't
   repeated under every card — Abi's idea. Characters with NO stated Nen
   type (most of the 198) are filed by the arc they first appear in, on
   muted arc-tinted tabs (EX ZO HA YN GI CA EL) — 23 tabs in all. On
@@ -136,8 +152,8 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   `--bw/--bh` to the midpoint between the first sizing (≤1180×780) and
   the full desktop above the taskbar (Andrew: "fill halfway the
   margins"; ~1273×815 at 1366×900, leaving room for the tab row) and
-  returns the window position; 12 sleeves per page (3×4), sprites 80px
-  (5×) on desktop. Closed, the cover sits over the RIGHT page's spot
+  returns the window position; 9 sleeves per page (3×3), sprites 96px
+  (6×) on desktop. Closed, the cover sits over the RIGHT page's spot
   with the spine to its left, so opening doesn't recentre the book.
 - Everything in the chrome is 25% larger than the first build (Andrew,
   2026-09-17: "actual math, not scale"): DotGothic body 20px, Press

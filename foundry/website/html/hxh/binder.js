@@ -24,7 +24,7 @@ const Binder = (() => {
     { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "会長選挙編",         hex: "#a8aec0" },
   ];
   const LIMIT = { S: 1, A: 2, B: 3, C: 4 };   // proposed claim limit per rank
-  const PER_PAGE = 12;                        // 3 × 4 sleeves per page
+  const PER_PAGE = 9;                         // 3 × 3 sleeves per page, like the show
   const esc = s => Retro.esc(s);
   const $ = (sel, r = document) => r.querySelector(sel);
 
@@ -57,7 +57,7 @@ const Binder = (() => {
     // Andrew: "fill halfway the margins" of the first sizing (up to
     // 1180×780 with 24px/50px gutters) — so the binder takes the midpoint
     // between that and the full desktop above the taskbar.
-    const TASKBAR = 45, TABS = 24;   // the tab row hangs above the page
+    const TASKBAR = 45, TABS = 46;   // two rows of tabs can hang above the page
     const w0 = Math.min(vw - 48, 1180), h0 = Math.min(vh - 100, 780);
     const bw = Math.round((vw + w0) / 2);
     const bh = Math.min(Math.round((vh - TASKBAR + h0) / 2), vh - TASKBAR - TABS - 16);
@@ -78,19 +78,9 @@ const Binder = (() => {
     el.setAttribute("data-chromeless", "");
     el.innerHTML = `
       <div class="book closed">
-        <div class="cover" role="button" tabindex="0" title="Open">
-          <i class="rivet tl"></i><i class="rivet tr"></i><i class="rivet bl"></i><i class="rivet br"></i>
-          <div class="emblem"></div>
-          <div class="plate">HUNTER<span class="x">×</span>HALLOWEEN<span class="ja">ハンター×ハロウィン</span></div>
-          <div class="sub">BINDER<span class="ja">バインダー</span></div>
-          <div class="clasps"><i></i><i></i></div>
-        </div>
+        <button class="tbtn bookx" type="button" title="Close" data-act="dismiss">×</button>
         <div class="inside">
-          <div class="page">
-            <div class="tabs"></div>
-            <div class="cards"></div>
-            <div class="pageno"></div>
-          </div>
+          <div class="leaf"></div>
           <div class="spine"><i class="clasp"></i><i class="clasp"></i></div>
           <div class="panel">
             <div class="screen"></div>
@@ -109,6 +99,26 @@ const Binder = (() => {
                 <button type="button" data-dir="down" title="Next card"></button>
               </div>
             </div>
+            <div class="shade"></div>
+          </div>
+        </div>
+        <div class="flap">
+          <div class="face front">
+            <div class="cover" role="button" tabindex="0" title="Open">
+              <i class="rivet tl"></i><i class="rivet tr"></i><i class="rivet bl"></i><i class="rivet br"></i>
+              <div class="emblem"></div>
+              <div class="plate">HUNTER<span class="x">×</span>HALLOWEEN<span class="ja">ハンター×ハロウィン</span></div>
+              <div class="sub">BINDER<span class="ja">バインダー</span></div>
+              <div class="clasps"><i></i><i></i></div>
+            </div>
+          </div>
+          <div class="face back">
+            <div class="page">
+              <div class="tabs"></div>
+              <div class="cards"></div>
+              <div class="pageno"></div>
+            </div>
+            <i class="halfspine"></i>
           </div>
         </div>
       </div>`;
@@ -123,6 +133,7 @@ const Binder = (() => {
       const act = e.target.closest("[data-act]")?.dataset.act;
       const dir = e.target.closest("[data-dir]")?.dataset.dir;
       if (act === "shut") shut();
+      if (act === "dismiss") Retro.close("win-binder");
       if (act === "claim") claimSel();
       if (dir === "left") showPage(page - 1);
       if (dir === "right") showPage(page + 1);
@@ -139,15 +150,41 @@ const Binder = (() => {
     return el;
   }
 
+  // The page turn: the cover (front face) swings -180° on the spine hinge
+  // and its back face, the card page, lands on the left. On finish the
+  // page moves into .leaf (plain flow); shut() puts it back on the leaf
+  // and swings it home. No 3D on phones or with reduced motion.
+  const animated = () => Retro.floating() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let turnTimer = null;
+  const settle = (from, to, fn) => {
+    const flap = $(".flap", el);
+    const done = () => {
+      if (!book.classList.contains(from)) return;
+      clearTimeout(turnTimer); flap.removeEventListener("transitionend", onEnd);
+      fn(); book.classList.replace(from, to); Retro.fit();
+    };
+    const onEnd = e => { if (e.target === flap) done(); };
+    flap.addEventListener("transitionend", onEnd);
+    turnTimer = setTimeout(done, 1000);
+  };
   function openBook() {
     if (!book.classList.contains("closed")) return;
-    book.classList.replace("closed", "flipping");
-    setTimeout(() => { book.classList.replace("flipping", "open"); Retro.fit(); }, 260);
+    const page = $(".page", el), leaf = $(".leaf", el);
+    if (!animated()) { leaf.append(page); book.classList.replace("closed", "open"); Retro.fit(); return; }
+    book.classList.replace("closed", "opening");
+    settle("opening", "open", () => leaf.append(page));
   }
   function shut() {
-    book.classList.remove("open", "flipping");
-    book.classList.add("closed");
-    Retro.fit();
+    if (book.classList.contains("closed") || book.classList.contains("closing")) return;
+    const page = $(".page", el), back = $(".face.back", el);
+    back.prepend(page);
+    if (!animated() || !book.classList.contains("open")) {
+      book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); Retro.fit(); return;
+    }
+    book.classList.remove("open"); book.classList.add("closing", "start");
+    void $(".flap", el).offsetWidth;   // commit the -180° start before transitioning home
+    book.classList.remove("start");
+    settle("closing", "closed", () => {});
   }
 
   function renderTabs() {

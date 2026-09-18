@@ -19,14 +19,49 @@
   color: var(--paper);
   user-select: none;
 }
-.book { position: relative; width: var(--bw); max-width: 100%; }
+.book { position: relative; width: var(--bw); max-width: 100%; perspective: 1800px; perspective-origin: 50% 50%; }
+/* a window-style ✕ at the book's top-right — not how a binder works, but
+   it is where people look for "close" (Andrew) */
+.bookx { position: absolute; right: 8px; top: 8px; z-index: 6; }
 
-/* ---------- closed: the front cover ---------- */
-/* Closed, the front cover sits where the right-hand page will be, spine
-   to its left, so opening swings it away without the book recentring. */
+/* ---------- the flap: front cover + its back, the card page ----------
+   The cover is the front face of a leaf hinged at the CENTRE of the spine
+   (transform-origin: left). Closed, it lies over the right-hand page;
+   opening rotates it -180° in perspective (the free edge flares as it
+   comes toward the viewer) and its back face — the actual card page — is
+   what lands on the left. Below it, the right page with the screen is
+   visible the whole time, its shade fading as the cover lifts. When the
+   turn finishes, binder.js moves the page into the flow (.leaf) so the
+   open book is plain layout, not a 3D transform. */
+.flap {
+  position: absolute; left: calc(var(--pw) + 25px); top: 0;
+  width: calc(var(--pw) + 25px); height: var(--bh);
+  transform-origin: left center; transform-style: preserve-3d;
+  transform: rotateY(0deg); z-index: 3;
+}
+.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.face.back { transform: rotateY(180deg); display: flex; align-items: stretch; }
+.face.back .page { flex: 0 0 var(--pw); }
+.face.back .halfspine {
+  flex: 0 0 25px; background: var(--navy-3);
+  border-top: var(--px) solid var(--ink); border-bottom: var(--px) solid var(--ink);
+  box-shadow: inset 8px 0 0 var(--navy-2), inset 15px 0 0 var(--navy-3);
+}
+.book.open .flap { display: none; }
+.book.opening .flap { transform: rotateY(-180deg); transition: transform .85s cubic-bezier(.55, .05, .25, 1); pointer-events: none; }
+.book.closing .flap { transform: rotateY(0deg); transition: transform .85s cubic-bezier(.55, .05, .25, 1); pointer-events: none; }
+.book.closing.start .flap { transform: rotateY(-180deg); transition: none; }
+.book.closed .spine { visibility: hidden; }
+.leaf { flex: 0 0 var(--pw); width: var(--pw); }
+.shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 1; pointer-events: none; z-index: 2; }
+.book.open .shade { display: none; }
+.book.opening .shade { opacity: 0; transition: opacity .85s ease-out; }
+.book.closing .shade { opacity: 1; transition: opacity .85s ease-in; }
+.book.closing.start .shade { opacity: 0; transition: none; }
+
 .cover {
-  width: var(--pw); height: var(--bh); max-width: 100%;
-  margin: 0 0 0 calc(var(--pw) + 50px); position: relative; cursor: pointer;
+  width: 100%; height: 100%; padding-left: 25px;
+  position: relative; cursor: pointer;
   background:
     repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px),
     var(--navy);
@@ -34,14 +69,14 @@
   box-shadow: inset 8px 8px 0 var(--navy-hi), inset -6px -6px 0 var(--navy-3), 12px 12px 0 rgba(0,0,0,.55);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
 }
-.cover::before {   /* spine strip on the left with two hinge lines */
-  content: ""; position: absolute; left: 28px; top: 0; bottom: 0; width: var(--px);
-  background: var(--navy-3); box-shadow: 8px 0 0 var(--navy-hi), 15px 0 0 var(--navy-3);
+.cover::before {   /* the spine band: this leaf hinges at the spine's centre */
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 25px;
+  background: var(--navy-3); box-shadow: inset -8px 0 0 var(--navy-2), inset -15px 0 0 var(--navy-3);
 }
 .cover .rivet { position: absolute; width: 10px; height: 10px; background: var(--gold); border: var(--px) solid var(--ink); box-shadow: inset 1px 1px 0 var(--gold-hi); }
-.cover .rivet.tl { left: 15px; top: 15px; } .cover .rivet.tr { right: 15px; top: 15px; }
-.cover .rivet.bl { left: 15px; bottom: 15px; } .cover .rivet.br { right: 15px; bottom: 15px; }
-.cover:hover { transform: translate(-2px, -2px); box-shadow: inset 8px 8px 0 var(--navy-hi), inset -6px -6px 0 var(--navy-3), 15px 15px 0 rgba(0,0,0,.55); }
+.cover .rivet.tl { left: 40px; top: 15px; } .cover .rivet.tr { right: 15px; top: 15px; }
+.cover .rivet.bl { left: 40px; bottom: 15px; } .cover .rivet.br { right: 15px; bottom: 15px; }
+.cover:hover { box-shadow: inset 8px 8px 0 var(--navy-hi), inset -6px -6px 0 var(--navy-3), 15px 15px 0 rgba(0,0,0,.55); }
 .plate {
   position: relative;   /* above the spine strip */
   background: var(--cream); color: var(--blood);
@@ -73,12 +108,6 @@
   background: var(--gold-2); box-shadow: 1px 0 0 var(--gold-hi);
 }
 
-/* opening: a three-step flip of the cover */
-.book.flipping .cover { animation: flip .24s steps(3) forwards; transform-origin: left center; pointer-events: none; }
-@keyframes flip { to { transform: scaleX(0); } }
-.book.closed .inside, .book.flipping .inside { display: none; }
-.book.open .cover { display: none; }
-
 /* ---------- open ---------- */
 .inside { display: flex; align-items: stretch; }
 .page, .panel { flex: 0 0 var(--pw); width: var(--pw); height: var(--bh); box-sizing: border-box; }
@@ -99,9 +128,12 @@
   box-shadow: inset 8px 8px 0 var(--navy-hi), inset 0 -6px 0 var(--navy-3);
   display: flex; flex-direction: column;
 }
-.tabs { position: absolute; left: 18px; right: 18px; top: -16px; display: flex; gap: 2px; align-items: flex-end; }
+.tabs {   /* one tab per page; rows wrap UPWARD from the page's top edge */
+  position: absolute; left: 18px; right: 18px; bottom: 100%;
+  display: flex; flex-wrap: wrap-reverse; align-content: flex-end; align-items: flex-end; gap: 2px;
+}
 .tab {
-  flex: 1 1 0; min-width: 0; max-width: 90px; height: 22px; padding: 2px 3px 0;
+  flex: 0 0 auto; min-width: 34px; height: 22px; padding: 2px 3px 0;
   background: var(--hue, var(--none)); color: var(--t, var(--ink));
   border: var(--px) solid var(--ink); border-bottom: 0;
   font: 10px/1 var(--font-px); text-transform: uppercase; overflow: hidden; white-space: nowrap;
@@ -110,7 +142,7 @@
 }
 .tab.on { height: 28px; filter: none; box-shadow: inset 0 var(--px) 0 rgba(255,255,255,.4); }
 .tab:hover { filter: brightness(.95); }
-.cards { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 12px; margin-top: 5px; min-height: 0; }
+.cards { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; margin-top: 5px; min-height: 0; }
 .slot {   /* empty sleeve */
   border: var(--px) dashed var(--navy-hi); background: var(--navy-2);
   box-shadow: inset 0 0 0 5px var(--navy);
@@ -144,7 +176,7 @@
   background: repeating-conic-gradient(color-mix(in srgb, var(--hue) 45%, #f1e8d2) 0 25%, #f1e8d2 0 50%) 0 0 / 4px 4px;
   border: 1px solid var(--ink); box-shadow: inset 0 0 0 2px var(--cream-2), inset 0 0 0 3px var(--ink);
 }
-.card .art canvas { width: 80px; height: 80px; image-rendering: pixelated; }
+.card .art canvas { width: 96px; height: 96px; image-rendering: pixelated; }
 .card .art .ja { position: absolute; right: 6px; bottom: 3px; font: 15px/1 var(--font-dot); color: var(--ink); opacity: .75; }
 .card .tx {   /* hatched pink frame around a white text box */
   flex: none; height: 48px; padding: 3px;
@@ -155,6 +187,7 @@
 
 /* right panel: the interface */
 .panel {
+  position: relative;
   background:
     repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px),
     var(--teal);
@@ -234,7 +267,17 @@
 @media (max-width: 899px) {
   .binder { --bw: 100%; --bh: auto; --pw: 100%; }
   .book { width: 100%; }
-  .cover { width: 100%; height: 575px; margin: 0; }
+  .book { perspective: none; }
+  .flap { position: static; width: auto; height: auto; transform: none !important; transition: none !important; }
+  .face { position: static; }
+  .face.back { display: none; }
+  .cover { width: 100%; height: 575px; padding-left: 0; }
+  .cover::before { display: none; }
+  .cover .rivet.tl, .cover .rivet.bl { left: 15px; }
+  .book.closed .inside { display: none; }
+  .book.opening .inside, .book.closing .inside { display: flex; }
+  .shade { display: none; }
+  .leaf { flex: none; width: 100%; }
   .inside { flex-direction: column; }
   .page, .panel { flex: none; width: 100%; height: auto; }
   .page { border-right: var(--px) solid var(--ink); }
@@ -244,8 +287,8 @@
   .spine { width: 100%; flex: 0 0 30px; flex-direction: row; border: var(--px) solid var(--ink); border-top: 0; border-bottom: 0; box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2); }
   .spine .clasp { width: 70px; height: 20px; }
   .spine .clasp::after { left: 10px; right: 10px; top: 50%; bottom: auto; width: auto; height: var(--px); margin: -1px 0 0; }
-  .tabs { top: -16px; }
-  .tab { font-size: 0; }             /* colour only on phones… */
+  .tabs { flex-wrap: nowrap; }       /* one shrinking row on phones */
+  .tab { font-size: 0; flex: 1 1 0; min-width: 0; }             /* colour only… */
   .tab.on { font-size: 10px; padding: 2px 8px 0; flex: 0 0 auto; }   /* …except the open page */
   .screen { flex: none; height: 300px; }
   .pageno { position: static; text-align: right; margin-top: 8px; }
