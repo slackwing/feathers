@@ -177,11 +177,14 @@ a low tail with the harbour houses and pier, ending in a pale rock
 spire that leans outward like a raised fluke (Andrew, 2026-09-18: the
 reference's tail is a white rock structure, not a lighthouse), banded sea
 with a reflection. Animated at 8 fps: glitter (after Andrew's anime-sea
-gif, measured 2026-09-18) as an inverted gaussian bell hanging from the
-horizon — ~65% of the sea deep at the centre, nothing at the sides,
-plus a thin strip along the whole horizon; ~2000 candidate pixels each
-twinkling on a 2–4 frame clock, denser at the top and centre, fading to
-the bell's rounded edge (Andrew: "upside down gaussian shape"); clouds
+gif, measured 2026-09-18) as a NARROW inverted gaussian bell hanging
+from the horizon (σ = 12% of the width — Andrew: "not full page width")
+— ~65% of the sea deep at the centre, nothing at the sides, a short
+strip along the horizon; candidate pixels each twinkling on a 2–4
+frame clock, brightest and clumpy at the top and centre, easing off
+with depth (peak 0.55, (1−t)^1.4 — a pixel-art density lower than the
+gif's 17%, which "looks like too much"), plus stragglers scattered past
+the curve that thin with distance so the edge isn't perfect; clouds
 (after his pixel-sky jpg) as clusters of round lobes top AND bottom —
 scalloped undersides, never a flat base — pale lilac-white with a lilac
 shadow following the lower scallops and white highlight blobs in the

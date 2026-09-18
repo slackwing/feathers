@@ -670,22 +670,31 @@ const Retro = (() => {
       { img: makeCloud([[6, 5, 5], [13, 4, 6], [5, 9, 4], [12, 10, 4]], 20, 13), x: 178, y: 30, v: 0.09 },
     ];
 
-    // glitter (after the sea reference): an inverted bell hanging from the
-    // horizon — about 65% of the sea deep at the centre, nothing at the
-    // sides — plus a thin strip right along the horizon. Dense and clumpy
-    // near the top, fading toward the bell's rounded lower edge; each
+    // glitter (after the sea reference): a narrow inverted bell hanging
+    // from the horizon — about 65% of the sea deep at the centre, nothing
+    // at the sides — with a short strip along the horizon. Brightest and
+    // clumpy near the top, easing off with depth, and a scatter of
+    // stragglers beyond the curve so the edge isn't perfect; each
     // candidate pixel twinkles on its own 2-4 frame clock.
     let flock = null, nextFlock = 60, tick = 0;
-    const GX = W * 0.5, GS = 58, GD = 44;
-    const bell = x => Math.exp(-(((x - GX) / GS) ** 2) / 2);
+    const GX = W * 0.5, GS = 40, GD = 44;                 // a narrow bell: σ = 12% of the width
+    const bell = (x, k = 1) => Math.exp(-(((x - GX) / (GS * k)) ** 2) / 2);
     const glints = [];
     for (let y = HZ; y < H; y++) for (let x = 0; x < W; x++) {
       const d = y - HZ, dmax = GD * bell(x);
-      let dens = 0;
-      if (d <= dmax) { const t = d / dmax; dens = 0.6 * (1 - t * t) * (0.6 + 0.4 * bell(x)); }
-      if (d <= 1) dens = Math.max(dens, 0.32 * Math.exp(-(((x - GX) / (W * 0.4)) ** 2) / 2));
-      if (dens < 0.05) continue;
-      glints.push({ i: y * W + x, x, y, d: dens, phase: (hash(x, y) * 7) | 0, per: 2 + ((hash(y, x) * 3) | 0), big: d > 10 && hash(x * 3, y) < 0.06 });
+      let dens;
+      if (d <= dmax) {
+        // inside the bell: brightest at the horizon, easing off with depth
+        const t = d / dmax;
+        dens = 0.55 * Math.pow(1 - t, 1.4) * (0.55 + 0.45 * bell(x));
+      } else {
+        // stragglers outside the curve, rarer the farther from it
+        dens = 0.05 * Math.exp(-(d - dmax) / 12) * (0.4 + 0.6 * bell(x, 1.6));
+      }
+      if (d <= 1) dens = Math.max(dens, 0.2 * bell(x, 1.4));      // a short strip along the horizon
+      dens *= 0.65 + 0.7 * hash((x >> 2) + 977, y >> 2);           // clumps, like the reference
+      if (dens < 0.012) continue;
+      glints.push({ i: y * W + x, x, y, d: Math.min(dens, 0.9), phase: (hash(x, y) * 7) | 0, per: 2 + ((hash(y, x) * 3) | 0), big: d > 10 && d <= dmax && hash(x * 3, y) < 0.06 });
     }
     const drawGlints = () => {
       for (const g of glints) {
