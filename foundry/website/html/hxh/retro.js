@@ -617,11 +617,22 @@ const Retro = (() => {
       ig.fillStyle = "#efe3c8"; ig.fillRect(x, top + 1, w, HZ - 1 - (top + 1));
       px(ig, x + 1, HZ - 2, "#0b0a08");
     });
-    // lighthouse on the tail bump
-    const lx = 224, base = HZ - hs[lx];
-    ig.fillStyle = "#fff6e0"; ig.fillRect(lx, base - 12, 2, 12);
-    ig.fillStyle = "#c8102e"; ig.fillRect(lx, base - 13, 2, 1); ig.fillRect(lx, base - 7, 2, 1);
-    px(ig, lx, base - 11, "#ffd166");
+    // the tail: a pale rock spire rising from the knoll at the island's
+    // tip — wide at the base, tapering, leaning outward like a raised
+    // fluke (after the reference) — with a little surf at the point
+    const SP = 18, sx0 = 227, base = HZ - hs[sx0];
+    for (let k = 0; k < SP; k++) {                       // k = 0 is the top
+      const t = k / (SP - 1);
+      const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
+      const cx = sx0 + Math.round(3 * (1 - t));           // top leans 3px outward
+      const y = base - SP + 1 + k;
+      for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
+        const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);   // 0 = lit left edge, 1 = shaded right edge
+        px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
+      }
+    }
+    px(ig, sx0 - 3, base - 1, GREEN[2]); px(ig, sx0 + 4, base - 1, GREEN[2]);   // scrub at the foot
+    for (const x of [234, 235, 237, 238]) px(ig, x, HZ - 1, "#fff6e0");         // surf at the tip
     // pier into the sea
     ig.fillStyle = "#8b6d4b"; ig.fillRect(172, HZ, 14, 1); px(ig, 185, HZ + 1, "#8b6d4b"); px(ig, 174, HZ + 1, "#8b6d4b");
 

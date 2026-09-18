@@ -173,7 +173,9 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 320×180 canvas (`<canvas class="wall">`, fixed, `object-fit: cover`,
 `image-rendering: pixelated`), created by the shell once logged in
 (never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
-a low tail with the harbour houses, pier and lighthouse, banded sea
+a low tail with the harbour houses and pier, ending in a pale rock
+spire that leans outward like a raised fluke (Andrew, 2026-09-18: the
+reference's tail is a white rock structure, not a lighthouse), banded sea
 with a reflection. Animated at 8 fps: glitter (after Andrew's anime-sea
 gif, measured 2026-09-18) as an inverted gaussian bell hanging from the
 horizon — ~65% of the sea deep at the centre, nothing at the sides,
