@@ -174,13 +174,17 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 `image-rendering: pixelated`), created by the shell once logged in
 (never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
 a low tail with the harbour houses, pier and lighthouse, banded sea
-with a reflection. Animated at 8 fps: a dense glitter band just below
-the horizon fanning out toward the viewer (after Andrew's anime-sea
-reference, 2026-09-18; ~190 glints, a few as small crosses), pixel
-cumulus clouds (flat base, rounded lobes, shadowed underside, inner
-highlight — after his pixel-sky reference) drifting very slowly, a
-flock of birds every 12–40 s; one static frame under
-prefers-reduced-motion. Inspired by the anime's
+with a reflection. Animated at 8 fps: glitter (after Andrew's anime-sea
+gif, measured 2026-09-18) as an inverted gaussian bell hanging from the
+horizon — ~65% of the sea deep at the centre, nothing at the sides,
+plus a thin strip along the whole horizon; ~2000 candidate pixels each
+twinkling on a 2–4 frame clock, denser at the top and centre, fading to
+the bell's rounded edge (Andrew: "upside down gaussian shape"); clouds
+(after his pixel-sky jpg) as clusters of round lobes top AND bottom —
+scalloped undersides, never a flat base — pale lilac-white with a lilac
+shadow following the lower scallops and white highlight blobs in the
+upper lobes, drifting very slowly; a flock of birds every 12–40 s; one
+static frame under prefers-reduced-motion. Inspired by the anime's
 island silhouette but drawn procedurally — no copyrighted image is
 used. Desktop icon labels carry a 1px ink outline to stay readable
 over the sky.
