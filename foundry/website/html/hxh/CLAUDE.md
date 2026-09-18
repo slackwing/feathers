@@ -130,8 +130,14 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 - Size: fills the screen with slim margins — `Binder.layout()` sets
   `--bw/--bh` to the midpoint between the first sizing (≤1180×780) and
   the full desktop above the taskbar (Andrew: "fill halfway the
-  margins"; 1273×822 at 1366×900) and returns the window position; 12
-  sleeves per page (3×4), sprites 64px on desktop. Phone: page and panel stack, the spine
+  margins"; ~1273×815 at 1366×900, leaving room for the tab row) and
+  returns the window position; 12 sleeves per page (3×4), sprites 80px
+  (5×) on desktop. Closed, the cover sits over the RIGHT page's spot
+  with the spine to its left, so opening doesn't recentre the book.
+- Everything in the chrome is 25% larger than the first build (Andrew,
+  2026-09-17: "actual math, not scale"): DotGothic body 20px, Press
+  Start labels 10px, taskbar 45px, windows 750/450/475/500 wide, icons
+  48px, tee badge 72px; hairlines and dither patterns unchanged. Phone: page and panel stack, the spine
   turns horizontal, 2 columns.
 - Fidelity comes from Andrew's Netflix screenshots (E66 Strategy × and
   × Scheme, E67 15 × 15): rivets and hinge lines on the boards, grooved

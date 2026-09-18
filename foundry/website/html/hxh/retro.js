@@ -8,6 +8,9 @@ const Retro = (() => {
   let menuItems = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const floating = () => matchMedia("(min-width: 900px)").matches && !document.body.classList.contains("nofloat");
+  // The desktop runs under a CSS zoom (retro.css); pointer/viewport
+  // pixels must be divided by it to land in layout pixels.
+  const zoom = () => parseFloat(getComputedStyle(document.body).zoom) || 1;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -291,7 +294,7 @@ const Retro = (() => {
     w.el.hidden = false; w.min = false; w.open = true;
     if (floating() && !w.static) {
       if (at) place(w.el, at);
-      else if (!w.el.dataset.placed) place(w.el, { x: 120 + (wins.size % 6) * 28, y: 24 + (wins.size % 6) * 28 });
+      else if (!w.el.dataset.placed) place(w.el, { x: 150 + (wins.size % 6) * 35, y: 30 + (wins.size % 6) * 35 });
     }
     focus(id);
     fit();
@@ -353,8 +356,8 @@ const Retro = (() => {
     });
     handle.addEventListener("pointermove", e => {
       if (!moving) return;
-      const snap = v => Math.round(v / 4) * 4;
-      const x = snap(ox + e.clientX - sx), y = snap(oy + e.clientY - sy);
+      const snap = v => Math.round(v / 4) * 4, z = zoom();
+      const x = snap(ox + (e.clientX - sx) / z), y = snap(oy + (e.clientY - sy) / z);
       el.style.left = Math.min(desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
       el.style.top = Math.max(0, y) + "px";
     });
@@ -369,7 +372,7 @@ const Retro = (() => {
     if (!floating()) { desktop.style.minHeight = ""; return; }
     let bottom = 0;
     wins.forEach(w => { if (w.el.hidden || w.static) return; bottom = Math.max(bottom, w.el.offsetTop + w.el.offsetHeight); });
-    desktop.style.minHeight = Math.max(innerHeight, bottom + 24 + 48) + "px";
+    desktop.style.minHeight = Math.max(innerHeight / zoom(), bottom + 24 + 48) + "px";
   }
   function relayout() {
     if (!floating()) { fit(); return; }
@@ -695,7 +698,7 @@ const Retro = (() => {
     try { sessionStorage.setItem(WARM_KEY, "1"); } catch {}
     location.href = url;
   }
-  const badge = () => `<div>a purple square<br>production</div>${icon("tee", 54)}`;
+  const badge = () => `<div>a purple square<br>production</div>${icon("tee", 72)}`;
   const bootLines = (extra = []) => [
     { text: "HunterOS 99 · Hunter Association Network", pause: 260 },
     { text: "> connecting to hunter.net .........", ok: true, wait: 280, pause: 140 },
@@ -734,7 +737,7 @@ const Retro = (() => {
       desktop.classList.add("center");
       document.body.classList.add("logon");
       const el = spawn({
-        id: "win-logon", title: "Hunter × Halloween — Log in", icon: "card", cls: "static", width: 400,
+        id: "win-logon", title: "Hunter × Halloween — Log in", icon: "card", cls: "static", width: 500,
         noclose: true, notask: true,
         html: `
           <h1 class="logo">HUNTER<span class="x">×</span><br><span class="hallow">HALLOWEEN</span></h1>
@@ -802,7 +805,7 @@ const Retro = (() => {
     taskbar = $("#taskbar");
     if (taskbar) {
       taskbar.innerHTML =
-        (start ? `<button class="btn start" id="startbtn" type="button">${icon("pumpkin", 24)}<span>Start</span></button>` : "")
+        (start ? `<button class="btn start" id="startbtn" type="button">${icon("pumpkin", 36)}<span>Start</span></button>` : "")
         + `<div class="tasks"></div>`
         + `<div class="tray"><button type="button" data-crt title="Scanlines">${icon("crt", 12)}</button><span class="clock"></span></div>`;
       $("#startbtn")?.addEventListener("click", e => { e.stopPropagation(); toggleStart(); });
@@ -841,7 +844,7 @@ const Retro = (() => {
 
   return {
     init, register, spawn, open, place: placeWin, close, minimize, focus, toggleMax, fit,
-    floating, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc, wallpaper,
+    floating, zoom, icon, sprite, avatar, setUser, textColorFor, toast, type, boot, setCRT, backdrop, startMenu, esc, wallpaper,
     os, go, session, login, logout, logon,
     get active() { return activeId; },
     win: id => wins.get(id),

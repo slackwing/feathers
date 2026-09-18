@@ -53,16 +53,18 @@ const Binder = (() => {
   // Size to the viewport (most of the screen) and return where to put it.
   function layout() {
     if (!el || !Retro.floating()) return null;
-    const vw = innerWidth, vh = innerHeight;
+    const z = Retro.zoom(), vw = innerWidth / z, vh = innerHeight / z;
     // Andrew: "fill halfway the margins" of the first sizing (up to
     // 1180×780 with 24px/50px gutters) — so the binder takes the midpoint
     // between that and the full desktop above the taskbar.
+    const TASKBAR = 45, TABS = 24;   // the tab row hangs above the page
     const w0 = Math.min(vw - 48, 1180), h0 = Math.min(vh - 100, 780);
-    const bw = Math.round((vw + w0) / 2), bh = Math.round((vh - 36 + h0) / 2);
+    const bw = Math.round((vw + w0) / 2);
+    const bh = Math.min(Math.round((vh - TASKBAR + h0) / 2), vh - TASKBAR - TABS - 16);
     el.style.setProperty("--bw", bw + "px");
     el.style.setProperty("--bh", bh + "px");
-    el.style.setProperty("--pw", Math.floor((bw - 40) / 2) + "px");
-    return { x: Math.max(16, Math.round((vw - bw) / 2)), y: Math.max(16, Math.round((vh - 36 - bh) / 2)) };
+    el.style.setProperty("--pw", Math.floor((bw - 50) / 2) + "px");
+    return { x: Math.max(16, Math.round((vw - bw) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - bh) / 2)) };
   }
 
   function mount({ desktop, claim } = {}) {
