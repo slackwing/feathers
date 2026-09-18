@@ -25,8 +25,12 @@ the shared machinery every site's invite / reset pages run on.
   password-reset pages, used for any site without its own, and for the
   console's own resets. Both need a code; without one the form is
   disabled.
-- **assets/style.css** — shared styles for the console, the default
-  pages and each site's `_email/` previewer.
+- **assets/style.css** — the ADMINISTRATIVE BASE: one light, plain
+  stylesheet shared on purpose by the console, the default `_invite/` /
+  `_reset/` pages, and every site's `_email/` previewer, so everything
+  an admin operates looks like one tool and a site's theme only ever
+  appears inside a preview frame. New admin-facing pages link it; site
+  pages never do.
 
 Backend: the `admin` project in
 [`slackwing/hobby-server`](https://github.com/slackwing/hobby-server)

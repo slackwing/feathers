@@ -625,26 +625,56 @@ const Retro = (() => {
     // pier into the sea
     ig.fillStyle = "#8b6d4b"; ig.fillRect(172, HZ, 14, 1); px(ig, 185, HZ + 1, "#8b6d4b"); px(ig, 174, HZ + 1, "#8b6d4b");
 
-    // clouds: unions of circles, shaded by row
-    const makeCloud = (parts, w, h) => {
+    // clouds: pixel cumulus (after the cloud reference) — a wide flat
+    // base with 3-5 rounded lobes bulging up, a two-step shadow along
+    // the underside/right, and a lighter highlight inside each lobe.
+    const makeCloud = (lobes, w, h) => {
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       const g = c.getContext("2d");
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        if (!parts.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 * 2.2 <= r * r)) continue;
-        px(g, x, y, y < h * 0.45 ? "#fff6e0" : y < h * 0.75 ? "#e3edf6" : "#b7cde3");
+      const inLobe = (x, y) => lobes.some(([cx, cy, r]) => (x - cx) ** 2 + ((y - cy) * 1.15) ** 2 <= r * r);
+      const base = h - 1;
+      // rounded tops, flat bottom: each column is filled from the first
+      // lobe pixel down to the base line
+      const top = Array.from({ length: w }, (_, x) => { for (let y = 0; y <= base; y++) if (inLobe(x, y)) return y; return -1; });
+      const filled = (x, y) => x >= 0 && x < w && top[x] >= 0 && y >= top[x] && y <= base;
+      for (let x = 0; x < w; x++) {
+        if (top[x] < 0) continue;
+        for (let y = top[x]; y <= base; y++) {
+          const shadow = y >= base - 1 || (y >= base - 3 && !filled(x, y + 4));
+          const edgeR = !filled(x + 2, y) && y > top[x] + 1;
+          const hi = y > top[x] + 2 && y < base - 4 && filled(x - 2, y) && filled(x + 3, y) &&
+            lobes.some(([cx, cy, r]) => (x - cx + r * .2) ** 2 + ((y - cy + r * .25) * 1.15) ** 2 <= (r * .5) ** 2);
+          px(g, x, y, shadow ? "#b7cde3" : edgeR ? "#dde9f4" : hi ? "#ffffff" : "#f2f6fb");
+        }
       }
       return c;
     };
     const clouds = [
-      { img: makeCloud([[8, 5, 6], [15, 4, 7], [22, 5, 6]], 30, 9), x: 20, y: 18, v: 0.10 },
-      { img: makeCloud([[6, 4, 5], [12, 3, 6], [18, 4, 5]], 24, 8), x: 130, y: 40, v: 0.06 },
-      { img: makeCloud([[10, 6, 8], [20, 5, 9], [30, 6, 8], [38, 7, 6]], 46, 12), x: 220, y: 12, v: 0.08 },
-      { img: makeCloud([[5, 3, 4], [10, 3, 5]], 16, 6), x: 300, y: 58, v: 0.05 },
-      { img: makeCloud([[7, 4, 6], [15, 3, 7], [22, 4, 5]], 28, 8), x: 70, y: 70, v: 0.07 },
+      { img: makeCloud([[10, 12, 9], [21, 8, 10], [33, 10, 9], [42, 13, 7]], 52, 20), x: 20, y: 14, v: 0.10 },
+      { img: makeCloud([[7, 9, 7], [16, 6, 8], [25, 9, 6]], 33, 15), x: 130, y: 44, v: 0.06 },
+      { img: makeCloud([[12, 14, 11], [26, 8, 12], [41, 11, 10], [53, 15, 8]], 64, 24), x: 215, y: 8, v: 0.08 },
+      { img: makeCloud([[6, 6, 5], [13, 4, 6], [20, 6, 5]], 26, 11), x: 300, y: 60, v: 0.05 },
+      { img: makeCloud([[8, 9, 7], [18, 5, 8], [28, 8, 7], [36, 10, 5]], 44, 16), x: 68, y: 72, v: 0.07 },
+      { img: makeCloud([[5, 5, 4], [11, 4, 5]], 17, 9), x: 178, y: 30, v: 0.09 },
     ];
 
-    // sparkles + birds state
+    // sparkles + birds state. Glitter (after the sea reference): a band of
+    // white glints densest just below the horizon, thinning toward the
+    // viewer; each glint is a 1px dot or a small + and lives 2-6 frames.
     let sparkles = [], flock = null, nextFlock = 60, tick = 0;
+    const spawnSparkle = () => {
+      const t = Math.random() ** 2.2;                 // 0 = horizon; heavily bunched there
+      const y = HZ + 1 + Math.floor(t * 50);
+      const spread = 0.42 + t * 0.5;                  // a fan: narrow at the horizon, wider nearer
+      const x = Math.floor(W / 2 + (Math.random() - 0.5) * W * spread);
+      const big = t > 0.3 && Math.random() < 0.12;    // a few larger glints nearer the viewer
+      sparkles.push({ x, y, ttl: 2 + Math.floor(Math.random() * 5), big });
+    };
+    const drawSparkle = s => {
+      const c = s.ttl > 3 ? "#ffffff" : "#d8eeff";
+      px(ctx, s.x, s.y, c);
+      if (s.big && s.ttl > 2) { px(ctx, s.x - 1, s.y, c); px(ctx, s.x + 1, s.y, c); px(ctx, s.x, s.y - 1, c); px(ctx, s.x, s.y + 1, c); }
+    };
     const BIRD = [[[0, 0], [2, 0], [1, 1]], [[1, 0], [0, 1], [2, 1]]];
     const spawnFlock = () => {
       const dir = Math.random() < 0.5 ? -1 : 1;
@@ -661,12 +691,14 @@ const Retro = (() => {
       }
       ctx.drawImage(sea, 0, 0);
       ctx.drawImage(isl, 0, 0);
-      // sparkles: a few glints in the near sea
+      // sparkles: keep ~70 glints alive in the band
       if (!reduced) {
-        if (sparkles.length < 16 && Math.random() < 0.7) sparkles.push({ x: Math.floor(Math.random() * W), y: HZ + 2 + Math.floor(Math.random() * 46), ttl: 2 + Math.floor(Math.random() * 4) });
         sparkles = sparkles.filter(s => --s.ttl > 0);
+        for (let k = 0; k < 40 && sparkles.length < 190; k++) spawnSparkle();
+      } else if (!sparkles.length) {
+        for (let k = 0; k < 170; k++) spawnSparkle();
       }
-      for (const s of sparkles) px(ctx, s.x, s.y, s.ttl % 2 ? "#ffffff" : "#bfe3ff");
+      for (const s of sparkles) drawSparkle(s);
       // birds
       if (!reduced) {
         if (!flock && --nextFlock <= 0) spawnFlock();

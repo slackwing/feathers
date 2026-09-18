@@ -1,7 +1,12 @@
 /* hxh skin for the shared set-password pages (_invite/ and _reset/): the
    OS boots as a logon-style splash (no taskbar, no wallpaper), then one
    dialog appears, wired to /admin/assets/setpw.js — the machinery lives
-   there; this file only supplies the look and the words. */
+   there; this file only supplies the look and the words.
+
+   THEME: this skin borrows retro.css wholesale, so a chrome change shows
+   up here automatically — but re-screenshot both pages whenever the
+   chrome changes, and keep _email/_layout.html in step (see the note at
+   the top of retro.css). */
 const PwPage = {
   async start({ title, heading, submit, done, nocode, invalid }) {
     const desktop = document.getElementById("desktop");

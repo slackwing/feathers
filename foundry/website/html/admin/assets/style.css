@@ -113,7 +113,7 @@ tfoot input, tfoot select { font-size: 12px; padding: .3rem .45rem; }
 .edit { cursor: text; border-bottom: 1px dashed transparent; }
 .edit:hover { border-bottom-color: var(--line-2); }
 .edit.empty { color: var(--dim); font-style: italic; }
-input.inline { width: auto; min-width: 9rem; padding: .15rem .35rem; font-size: 13px; }
+input.inline { width: auto; max-width: 100%; min-width: 0; padding: .15rem .35rem; font-size: 13px; }
 
 /* avatar */
 .avatar {
@@ -125,19 +125,22 @@ input.inline { width: auto; min-width: 9rem; padding: .15rem .35rem; font-size: 
 .avatar.sm { width: 22px; height: 22px; font-size: 10px; cursor: default; }
 .avatar:hover { box-shadow: 0 0 0 2px var(--accent-bg), 0 0 0 3px var(--accent); }
 
-/* roles */
-.chip {
-  display: inline-flex; align-items: center; gap: .3rem;
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: 3px; padding: .1rem .4rem .1rem .45rem; margin: .1rem .25rem .1rem 0;
-  font-size: 12px; white-space: nowrap;
+/* roles: two-sided badges (site | role), pickers on their own line */
+.badges { display: flex; flex-wrap: wrap; gap: .25rem .35rem; min-height: 1.4rem; }
+.badge {
+  --c: var(--dim);
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  border-radius: 3px; font-size: 11px; line-height: 1; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.06);
 }
-.chip em { font-style: normal; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
-.chip em + span { margin-right: .3rem; }
-.chip .x { cursor: pointer; color: var(--dim); background: none; border: 0; padding: 0 0 0 .15rem; font-size: 12px; line-height: 1; }
-.chip .x:hover { color: var(--danger); }
-.addrole { display: inline-flex; gap: .3rem; align-items: center; margin-top: .2rem; }
-.addrole select { width: auto; font-size: 12px; padding: .2rem .35rem; }
+.badge .l { background: #555; color: #fff; padding: .3rem .45rem; }
+.badge .r { background: var(--c); color: #fff; padding: .3rem .1rem .3rem .45rem; }
+.badge .x { background: var(--c); color: rgba(255,255,255,.7); border: 0; padding: 0 .4rem 0 .25rem; font-size: 11px; cursor: pointer; }
+.badge .x:hover { color: #fff; }
+.addrole { display: flex; gap: .3rem; align-items: stretch; margin-top: .35rem; }
+.addrole select, .addrole button { height: 1.7rem; padding: 0 .4rem; font-size: 12px; width: auto; }
+.addrole select:invalid, .addrole select.placeholder { color: var(--dim); }
+.addrole select option { color: var(--text); }
 
 /* the invite / reset matrix */
 .matrix { display: grid; grid-template-columns: auto auto auto; gap: 3px 8px; align-items: center; font-size: 12px; }
@@ -155,6 +158,11 @@ input.inline { width: auto; min-width: 9rem; padding: .15rem .35rem; font-size: 
 .pop p { margin-bottom: .6rem; }
 .pop input { width: auto; }
 .pop input.initial { width: 3.4rem; text-align: center; text-transform: uppercase; }
+.pop input[type="color"] { width: 2.6rem; min-width: 2.6rem; height: 2rem; padding: .1rem; }
+.pop .menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .35rem .5rem; border-radius: 3px; }
+.pop .menu button:hover { background: var(--panel-2); }
+.pop .menu button.danger:hover { background: var(--danger-bg); }
+.kebab { font-size: 16px; letter-spacing: 1px; line-height: 1; }
 
 .msg { margin-top: .6rem; font-size: 12px; min-height: 1.2rem; }
 .msg.err { color: var(--danger); }

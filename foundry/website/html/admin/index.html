@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>admin</title>
-<link rel="stylesheet" href="assets/style.css?v=3">
+<link rel="stylesheet" href="assets/style.css?v=4">
 </head>
 <body>
 <main>
@@ -174,12 +174,12 @@ function row(u) {
     <td><span class="edit${u.email ? "" : " empty"}" data-field="email">${esc(u.email || "add email")}</span></td>
     <td><select class="site" title="the site invites, resets and emails act on">${siteOpts}</select></td>
     <td>
-      ${u.roles.map(r => `<span class="chip"><em>site</em><span>${esc(r.website)}</span><em>role</em><span>${esc(r.role)}</span><button type="button" class="x" data-w="${esc(r.website)}" data-r="${esc(r.role)}" title="remove">✕</button></span>`).join("")}
-      <span class="addrole">
-        <select class="rs">${roleSites.map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("")}</select>
-        <select class="rr"></select>
-        <button type="button" class="add" title="add role">+</button>
-      </span>
+      <div class="badges">${u.roles.map(r => `<span class="badge" style="--c:${roleColor(r.role)}"><span class="l">${esc(r.website)}</span><span class="r">${esc(r.role)}</span><button type="button" class="x" data-w="${esc(r.website)}" data-r="${esc(r.role)}" title="remove">✕</button></span>`).join("")}</div>
+      <div class="addrole">
+        <select class="rs placeholder" required><option value="" disabled selected>site</option>${roleSites.map(w => `<option value="${esc(w.website)}">${esc(w.website)}</option>`).join("")}</select>
+        <select class="rr placeholder" required disabled><option value="" disabled selected>role</option></select>
+        <button type="button" class="add" title="add role" disabled>+</button>
+      </div>
     </td>
     <td>
       <div class="matrix">
@@ -187,17 +187,21 @@ function row(u) {
         <span class="k">reset</span><button type="button" class="ib" data-kind="reset" data-do="mail" title="password-reset email">${ICON.mail}</button><button type="button" class="ib" data-kind="reset" data-do="link" title="copy password-reset link">${ICON.link}</button>
       </div>
     </td>
-    <td class="nowrap">${u.username === me.username ? "" : `<button type="button" class="danger del">Delete</button>`}</td>`;
+    <td class="nowrap">${u.username === me.username ? "" : `<button type="button" class="ib kebab" title="more">⋯</button>`}</td>`;
 
-  // roles: role list follows the site
-  const rs = tr.querySelector(".rs"), rr = tr.querySelector(".rr");
-  const fillRoles = () => { const w = websites.find(x => x.website === rs.value); rr.innerHTML = (w ? w.roles : []).map(r => `<option>${esc(r)}</option>`).join(""); };
-  rs.addEventListener("change", fillRoles); fillRoles();
-  tr.querySelector(".add").addEventListener("click", () => act(async () => {
+  // roles: the role list follows the site; + only once both are picked
+  const rs = tr.querySelector(".rs"), rr = tr.querySelector(".rr"), add = tr.querySelector(".add");
+  rs.addEventListener("change", () => {
+    const w = websites.find(x => x.website === rs.value);
+    rr.innerHTML = `<option value="" disabled selected>role</option>` + (w ? w.roles : []).map(r => `<option>${esc(r)}</option>`).join("");
+    rr.disabled = false; rr.classList.add("placeholder"); rs.classList.remove("placeholder"); add.disabled = true;
+  });
+  rr.addEventListener("change", () => { rr.classList.toggle("placeholder", !rr.value); add.disabled = !(rs.value && rr.value); });
+  add.addEventListener("click", () => act(async () => {
     await api("/roles", { method: "POST", body: JSON.stringify({ username: u.username, website: rs.value, role: rr.value }) });
     await refresh();
   }));
-  tr.querySelectorAll(".chip .x").forEach(x => x.addEventListener("click", () => act(async () => {
+  tr.querySelectorAll(".badge .x").forEach(x => x.addEventListener("click", () => act(async () => {
     await api("/roles", { method: "DELETE", body: JSON.stringify({ username: u.username, website: x.dataset.w, role: x.dataset.r }) });
     await refresh();
   })));
@@ -217,12 +221,19 @@ function row(u) {
   // invite / reset matrix
   tr.querySelectorAll(".ib").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); matrix(b, u, b.dataset.kind, b.dataset.do); }));
 
-  tr.querySelector(".del")?.addEventListener("click", () => {
-    if (!confirm(`Delete ${u.username}? Roles, sessions and pending links go with it. This cannot be undone.`)) return;
-    act(async () => { await api(`/users/${encodeURIComponent(u.username)}`, { method: "DELETE" }); await refresh(); flash(`deleted ${u.username}`); });
+  tr.querySelector(".kebab")?.addEventListener("click", e => {
+    e.stopPropagation();
+    const p = popover(e.currentTarget, `<div class="menu"><button type="button" class="danger" id="k-del">Delete user…</button></div>`);
+    p.querySelector("#k-del").addEventListener("click", () => {
+      closePop();
+      if (!confirm(`Delete ${u.username}? Roles, sessions and pending links go with it. This cannot be undone.`)) return;
+      act(async () => { await api(`/users/${encodeURIComponent(u.username)}`, { method: "DELETE" }); await refresh(); flash(`deleted ${u.username}`); });
+    });
   });
   return tr;
 }
+const ROLE_COLORS = { admin: "#1f5fbf", guest: "#1a7f37", player: "#6f42c1" };
+const roleColor = r => ROLE_COLORS[r] || "#71716c";
 
 async function act(fn) { try { await fn(); } catch (err) { flash(err.message || "error", true); } }
 const patch = (u, body) => api(`/users/${encodeURIComponent(u.username)}`, { method: "PATCH", body: JSON.stringify(body) });
@@ -233,6 +244,9 @@ function editInline(span, u) {
   const input = document.createElement("input");
   input.className = "inline"; input.value = old;
   input.type = field === "email" ? "email" : "text";
+  // Fit the cell as it is so the table doesn't reflow while editing.
+  const cell = span.closest("td"), cs = getComputedStyle(cell);
+  input.style.width = (cell.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2) + "px";
   span.replaceChildren(input); span.classList.remove("empty");
   input.focus(); input.select();
   let done = false;

@@ -17,6 +17,6 @@
   This summons expires {{expires_at}}. Ask for a new link if needed. If the button does nothing, paste this into your browser:<br>
   <a href="{{invite_url}}" style="color:#c8102e;word-break:break-all;">{{invite_url}}</a>
 </p>
-<p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#5c5340;">
-  * Your password travels only over an encrypted HTTPS connection and is never stored or logged as typed. The server immediately hashes it with Argon2id (a memory-hard algorithm: 19&nbsp;MiB, two passes) using a random 16-byte salt unique to you, and keeps only that hash in a Google Cloud SQL Postgres database on a private network. No one, including the admin, can see or recover it, so even a password you use elsewhere stays private.
+<p style="margin:14px 0 0 0;font-size:10px;line-height:1.5;color:#5c5340;">
+  * Your password is secure from us! It travels over HTTPS only, is never stored or logged as typed, and is immediately hashed with Argon2id (19&nbsp;MiB, two passes, a unique 16-byte salt); only that hash lives in our Google Cloud SQL Postgres database on a private network. No one, including the admin, can see or recover it &mdash; even a password you use elsewhere stays private.
 </p>

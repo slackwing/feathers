@@ -1,6 +1,17 @@
 /* Hunter Website — retro OS chrome shared by the hxh pages.
    Dark ink desktop, cream bevelled windows, crimson title bars.
-   Pixel fonts: Press Start 2P (display) + DotGothic16 (body, kana). */
+   Pixel fonts: Press Start 2P (display) + DotGothic16 (body, kana).
+
+   THEME CHANGES TRAVEL TOGETHER. The site's look lives in three places
+   that must change in the same commit:
+     1. this chrome (retro.css / retro.js / binder.css) — the site,
+     2. the set-password skins (_invite/, _reset/ via pwpage.js) — the
+        dialogs guests see before they are in,
+     3. the email templates (_email/_layout.html + bodies) — the same
+        palette and "window" hand-mirrored in inline styles, since mail
+        clients load none of this CSS.
+   Change a colour, font or motif here and re-check 2 and 3 (screenshot
+   _invite/, _reset/ and _email/ alongside the desktop). */
 
 :root {
   --ink: #0b0a08;
