@@ -421,7 +421,17 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   top line, the kana given name on the card art, tab titles / page
   footer with the Nen type in kanji, and a status line in the show's
   style (所持者 0名 ／ 残り N枚 — holders / remaining, from the rank limit).
-- Data: `roster.json` — 198 characters, the complete named cast of the
+- Data (2026-09-19): the Roster DB — `GET /hxh/api/db/binder`, the
+  ACCEPTED characters only, printed by `apps/card.js` (GICard, spec
+  `docs/GI_CARD.md`: the real Greed Island card, measured; English
+  names that shrink to fit; `card_description` in the box, else the
+  profile's first sentence; the 16:9 card picture, else the avatar).
+  Tabs come from `groupCards` (one per group that has cards — one
+  character, one tab; Andrew has "a better idea for the tabs" to come).
+  The book's margins drag the window (`WindowManager.drag` with an
+  `allow` predicate). `roster.json` is DEPRECATED — kept for reference
+  and as the skill's cross-check, read by nothing.
+- Old data: `roster.json` — 198 characters, the complete named cast of the
   2011 anime through the Election arc (researched 2026-09-17 by eight
   parallel agents following CHARACTER.md; Japanese names verbatim from
   the Fandom infoboxes). The master copy, schema v2 (2026-09-17): `no`

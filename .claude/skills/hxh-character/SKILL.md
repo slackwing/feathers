@@ -81,6 +81,14 @@ habit, a line, a relationship). Anime spellings, no episode numbers,
 no manga-only facts, no fan theories, no series-ending spoilers in the
 first sentence.
 
+## 3b. Card description
+
+`card_description` — what the Greed Island card's white box prints
+(the Binder reads it): 25 to 40 words, original prose, present tense,
+one or two sentences that fit the card — who they are and the one
+thing they do. It is reviewed like every other field. Leave the
+profile `description` as the longer text.
+
 ## 4. Notes
 
 `notes` — for the reviewer, terse, and always present: where each
@@ -124,9 +132,10 @@ Then for each pick:
 `python3 roster.py fetch <id> "<url>" --caption "<scene, ≤ 12 words, episode if known>"`.
 The caption is what the reviewer reads under the thumbnail. If `fetch`
 answers "already there", the picture is in the set already: pick
-another. Prefer proportions between 2:3 and 3:2 (they show whole in
-the gallery); a 1:1 close-up and a 2:3 upper body are the ones that
-become avatar and card. For a lead with a rich gallery
+another. Prefer proportions between 16:9 and 9:16 (they show whole in
+the gallery); a 1:1 close-up becomes the avatar and a 16:9 scene or
+upper-body still becomes the card's picture (the Greed Island card's
+window is 16:9). For a lead with a rich gallery
 eight to ten raws are welcome; for a minor character six is the aim
 and if the wiki cannot give six clean pictures, say so in `notes`
 rather than padding with weak ones.

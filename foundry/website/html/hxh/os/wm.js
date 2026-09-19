@@ -139,11 +139,13 @@ export class WindowManager {
     w.state.placed = true;
   }
 
-  drag(win, handle) {
+  /** Move `win` by dragging `handle`; `allow(e)` may veto a press (a chromeless window dragged by its margins only). */
+  drag(win, handle, { allow = null } = {}) {
     const el = win.el;
     let sx, sy, ox, oy, moving = false;
     handle.addEventListener("pointerdown", e => {
       if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
+      if (allow && !allow(e)) return;
       moving = true; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
       handle.setPointerCapture?.(e.pointerId);
       e.preventDefault();

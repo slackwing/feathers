@@ -1,13 +1,19 @@
-/* The Binder — the roster as a Greed Island style card binder in a
-   chromeless window (minimize + close float at the book's corner). It
-   reads the full roster from roster.json (the master copy — field rules in
-   foundry/website/hxh-roster/CHARACTER.md). The pure parts (pagination,
-   layout maths) are exported for tests. */
+/* The Binder — the roster as a Greed Island card binder in a chromeless
+   window (minimize + close float at the book's corner; the book's own
+   margins drag the window). Cards are the accepted characters of the
+   Roster DB (GET /hxh/api/db/binder — the old html/hxh/roster.json is
+   DEPRECATED, kept only for reference), each printed by GICard
+   (apps/card.js, spec docs/GI_CARD.md). Tabs are one per GROUP of
+   cards; the grouping is one function (groupCards) and only groups
+   that have cards get a tab, so tabs appear on their own as characters
+   are added. The pure parts (grouping, pagination, layout maths) are
+   exported for tests. */
 import { App } from "../os/apps.js";
 import { Window } from "../os/window.js";
 import { h, esc } from "../os/dom.js";
-import { sprite, textColorFor } from "../os/icons.js";
+import { textColorFor } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
+import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
 import "./binder.css";
 
 export const TYPES = [
@@ -30,26 +36,47 @@ export const ARCS = [
   { slug: "chimera-ant",       code: "CA", name: "Chimera Ant",       ja: "キメラアント編",     hex: "#b8b493" },
   { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "会長選挙編",         hex: "#a8aec0" },
 ];
-export const LIMIT = { S: 1, A: 2, B: 3, C: 4 };   // proposed claim limit per rank
+export { LIMIT };
 export const PER_PAGE = 9;                         // 3 × 3 sleeves per page, like the show
+export const SOURCE = "/hxh/api/db/binder";        // the Roster DB's accepted characters
 
 export const typeOf = c => TYPES.find(t => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
 const titleCase = s => s.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
-export const rankBox = c => `${c.rank || "C"}-${LIMIT[c.rank] || 4}`;
-export const cardNo = c => String(c.no || 0).padStart(3, "0");
+export const rankBox = c => rankLimit(c.rank || "C");
+export const cardNo = c => cardNoOf(c.no ?? c.id);
 export const firstSentence = s => (String(s || "").match(/^[^.!?]*[.!?]/) || [s || ""])[0].trim();
+/** What a card's description box prints: the card description, else the profile's first sentence. */
+export const cardText = c => c.card_description || firstSentence(c.description);
 
-/** One tab per page; a group (Nen type, or first arc for the untyped) never shares a page. */
+/**
+ * The grouping behind the tabs: one group per Nen type, the untyped by
+ * first arc. Returns only groups that have cards, in tab order. Swap
+ * this function to change what the tabs mean (Andrew has "a better
+ * idea for the tabs" — everything else keys off the group objects).
+ */
+export function groupCards(chars) {
+  const out = [];
+  for (const t of TYPES.slice(0, -1)) {
+    const mine = chars.filter(c => typeOf(c) === t);
+    if (mine.length) out.push({ ...t, cards: mine });
+  }
+  const untyped = chars.filter(c => !(c.nen_types || []).length);
+  for (const a of ARCS) {
+    const mine = untyped.filter(c => (c.arcs || [])[0] === a.slug);
+    if (mine.length) out.push({ ...a, hue: a.hex, cards: mine });
+  }
+  return out;
+}
+
+/** One tab per page; a group never shares a page. */
 export function paginate(chars) {
   const out = [];
-  const push = (group, mine) => {
-    for (let i = 0; i < mine.length; i += PER_PAGE) {
-      out.push({ type: group, cards: mine.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(mine.length / PER_PAGE) });
+  for (const g of groupCards(chars)) {
+    const { cards, ...type } = g;
+    for (let i = 0; i < cards.length; i += PER_PAGE) {
+      out.push({ type, cards: cards.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(cards.length / PER_PAGE) });
     }
-  };
-  for (const t of TYPES.slice(0, -1)) push(t, chars.filter(c => typeOf(c) === t));
-  const untyped = chars.filter(c => !(c.nen_types || []).length);
-  for (const a of ARCS) push({ ...a, hue: a.hex }, untyped.filter(c => (c.arcs || [])[0] === a.slug));
+  }
   return out;
 }
 
@@ -112,6 +139,9 @@ const BOOK = `
     </div>
   </div>`;
 
+/* Presses on these are the book's own controls; anything else on the book drags the window. */
+const CONTROLS = ".card, .gicard, .tab, button, .cover, .screen, .dpad, .keys, .pad, .dial, .fbtns";
+
 export class BinderApp extends App {
   static id = "binder";
   static name = "Binder";
@@ -120,8 +150,8 @@ export class BinderApp extends App {
 
   constructor(os, options = {}) {
     super(os, options);
-    this.pages = []; this.page = 0; this.sel = null; this.roster = []; this.typer = null;
-    this.src = options.src || "roster.json";
+    this.pages = []; this.page = 0; this.sel = null; this.roster = []; this.typer = null; this.cards = new Map();
+    this.src = options.src || SOURCE;
   }
 
   /** The chromeless window with the book inside. Built once. */
@@ -149,6 +179,8 @@ export class BinderApp extends App {
       if (dir === "right") this.showPage(this.page + 1);
       if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
     });
+    // drag the window by the book's margins (Andrew, 2026-09-19) — never by a card or a control
+    os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS) });
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
     this.load();
     return this.win;
@@ -157,12 +189,14 @@ export class BinderApp extends App {
   load() {
     const fetch = this.options.fetch || this.os.win.fetch?.bind(this.os.win);
     if (!fetch) return Promise.resolve();
-    return fetch(this.src, { cache: "no-cache" }).then(r => r.json()).then(list => this.setRoster(list))
+    return fetch(this.src, { cache: "no-cache", credentials: "same-origin" }).then(r => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+      .then(list => this.setRoster(list))
       .catch(() => { this.$(".cards").textContent = "The binder is empty."; });
   }
 
+  /** The cards, in the order the API gives them (by number). */
   setRoster(list) {
-    this.roster = list.map((c, i) => ({ ...c, no: c.no || i + 1 }));
+    this.roster = (list || []).map(c => ({ ...c, no: c.no ?? c.id }));
     this.pages = paginate(this.roster);
     this.renderTabs();
     this.showPage(0);
@@ -177,12 +211,15 @@ export class BinderApp extends App {
     el.style.setProperty("--bw", l.bw + "px");
     el.style.setProperty("--bh", l.bh + "px");
     el.style.setProperty("--pw", l.pw + "px");
+    for (const c of this.cards.values()) c.fit();
     return { x: l.x, y: l.y };
   }
 
   launch() {
     const win = this.window();
-    return this.os.wm.open(win.id, this.layout());
+    const p = this.os.wm.open(win.id, this.layout());
+    for (const c of this.cards.values()) c.fit();
+    return p;
   }
 
   /* The page turn: the cover (front face) swings -180° on the spine hinge
@@ -197,6 +234,7 @@ export class BinderApp extends App {
       if (!book.classList.contains(from)) return;
       clearTimeout(this.turnTimer); flap.removeEventListener("transitionend", onEnd);
       fn(); book.classList.replace(from, to); this.os.wm.fit();
+      for (const c of this.cards.values()) c.fit();
     };
     const onEnd = e => { if (e.target === flap) done(); };
     flap.addEventListener("transitionend", onEnd);
@@ -209,7 +247,7 @@ export class BinderApp extends App {
     const book = this.book;
     if (!book.classList.contains("closed")) return;
     const page = this.$(".page"), leaf = this.$(".leaf");
-    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); return; }
+    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); for (const c of this.cards.values()) c.fit(); return; }
     book.classList.replace("closed", "opening");
     this.settle("opening", "open", () => leaf.append(page));
   }
@@ -242,28 +280,27 @@ export class BinderApp extends App {
   }
 
   showPage(i) {
-    if (!this.pages.length) return;
+    const box = this.$(".cards");
+    for (const c of this.cards.values()) c.unmount();
+    this.cards.clear();
+    box.replaceChildren();
+    if (!this.pages.length) { this.$(".pageno").textContent = ""; return; }
     this.page = (i + this.pages.length) % this.pages.length;
     const p = this.pages[this.page];
     this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
-    const box = this.$(".cards");
-    box.replaceChildren();
     p.cards.forEach(c => box.append(this.cardEl(c)));
     for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
     this.$(".pageno").innerHTML = `${this.page + 1} / ${this.pages.length}<span class="ja">${esc(p.type.ja)}</span>`;
     if (this.sel && !p.cards.includes(this.sel)) this.select(null);
   }
 
+  /** A sleeve holding one printed card. */
   cardEl(c) {
-    const t = typeOf(c);
-    const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { slug: c.slug },
-      html: `
-      <div class="hd"><span class="no">${cardNo(c)}</span><span class="nm">${esc(c.first || c.name)}</span><span class="rk">${esc(rankBox(c))}</span></div>
-      <div class="art">${c.name_ja ? `<span class="ja">${esc(c.name_ja.split("＝")[0])}</span>` : ""}</div>
-      <div class="tx"><div>${esc(firstSentence(c.description))}</div></div>`,
-      onclick: () => this.select(c) });
-    b.style.setProperty("--hue", t.hue);
-    b.querySelector(".art").prepend(sprite(c.glyph || "❔", 16));
+    const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
+    const card = new GICard({ no: c.no, name: c.name, rank: c.rank, description: cardText(c), alt: c.name,
+      image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : (c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null) });
+    card.mount(b);
+    this.cards.set(c.id, card);
     return b;
   }
 
@@ -273,19 +310,19 @@ export class BinderApp extends App {
 
   select(c) {
     this.sel = c;
-    this.$(".cards").querySelectorAll(".card").forEach(b => b.classList.toggle("on", b.dataset.slug === (c && c.slug)));
+    this.$(".cards").querySelectorAll(".card").forEach(b => b.classList.toggle("on", b.dataset.id === String(c && c.id)));
     const scr = this.$(".screen");
     this.typer?.skip?.();
     clearInterval(this.follow);
     if (!c) { this.idle(); return; }
     const t = typeOf(c);
     const types = (c.nen_types || []).length ? c.nen_types.map(n => (TYPES.find(x => x.slug === n) || {}).name || n).join(" / ") : "—";
-    const weapons = (c.weapons || []).length ? c.weapons.map(titleCase).join(", ") : "—";
+    const arms = (c.arms || []).length ? c.arms.map(titleCase).join(", ") : "—";
     scr.innerHTML = `
-      <div class="top">No.${esc(cardNo(c))}「${esc(c.name_ja || c.name)}」</div>
+      <div class="top">No.${esc(cardNo(c))}「${esc(c.first || c.name)}」</div>
       <div class="name">${esc(c.name)}</div>
       <div class="line">Nen: <b style="color:${t.hex}">${esc(types)}</b>${c.affiliation ? ` · <b>${esc(c.affiliation)}</b>` : ""}</div>
-      <div class="line">Arms: <b>${esc(weapons)}</b></div>
+      <div class="line">Arms: <b>${esc(arms)}</b></div>
       <div class="desc"></div>
       <div class="status">所持者 0名 ／ 残り ${LIMIT[c.rank] || 4}枚</div>`;
     // keep the typing cursor in view on the small screen

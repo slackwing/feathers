@@ -76,7 +76,7 @@
 .rchar .slot { position: relative; width: 108px; height: 108px; display: grid; place-items: center;
   background: var(--paper-hi); border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
   box-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.3); overflow: hidden; }
-.rchar .slot.cd { width: 108px; height: 162px; }
+.rchar .slot.cd { width: 192px; height: 108px; }   /* the card illustration is 16:9 */
 .rchar .slot .lab { font: var(--t-small); color: var(--paper-dim); font-style: normal; text-transform: uppercase; letter-spacing: .06em; }
 .rchar .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .rchar .slot .clear { position: absolute; top: 4px; right: 4px; width: 20px; height: 18px; display: none; }
@@ -104,6 +104,7 @@
 /* arms, description and notes: smaller type (DotGothic at its native 16), the two prose boxes tall and equal */
 .rchar .field.prose { font: var(--t-chat); }
 .rchar textarea.field.prose { height: 170px; min-height: 96px; }
+.rchar textarea.field.prose.short { height: 96px; min-height: 60px; }
 .rchar .pair { display: flex; gap: 6px; }
 .rchar .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0 0; }
 .rchar .pics { padding-bottom: 8px; }

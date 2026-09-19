@@ -1,0 +1,58 @@
+/* A Greed Island card. Spec: docs/GI_CARD.md — every length is a
+   fraction of the card's width, measured from the Fandom scans of the
+   real cards (card body 1475×2072 in a 1530-wide scan). Fonts are the
+   card's own: the gi-plaque's bold Didone serif and the description's
+   plain gothic, loaded for the Binder in index.html — this is a
+   picture of a printed card, not OS chrome. */
+.gicard {
+  --ink: #1c1b1b; --base: #353233; --cream: #e8e3cc; --paper: #f0f0f1;
+  position: relative; container-type: inline-size;
+  width: 100%; aspect-ratio: 1475 / 2072;
+  user-select: none;
+}
+/* the card body sizes itself from the box above; a container cannot use its own cqw */
+.gicard .gi-body {
+  position: absolute; inset: 0;
+  background: var(--base); color: var(--ink);
+  border-radius: 4.5cqw; overflow: hidden;
+  font-family: "Bodoni Moda", "Didot", "Times New Roman", serif;
+}
+/* the plaque: one cream strip, three outlined panels 26 : 39.5 : 26 */
+.gicard .gi-plaque {
+  position: absolute; left: 2.85cqw; top: 5.83cqw; width: 94.6cqw; height: 13.5cqw;
+  background: var(--cream);
+  display: grid; grid-template-columns: 26.1fr 39.6fr 26.1fr; column-gap: 0.4cqw;
+  padding: 0.62cqw 0.58cqw 0.55cqw 0.75cqw; box-sizing: border-box;
+}
+.gicard .gi-panel { position: relative; display: grid; place-items: center; min-width: 0; color: var(--ink); }
+.gicard .gi-panel svg.gi-outline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.gicard .gi-panel .gi-txt { position: relative; z-index: 1; white-space: nowrap; line-height: 1; font-weight: 700; letter-spacing: 0.01em; padding-top: 0.4cqw; }
+.gicard .gi-panel.no .gi-txt { font-size: 9.3cqw; letter-spacing: 0.02em; }
+.gicard .gi-panel.rank .gi-txt { font-size: 8cqw; letter-spacing: 0.02em; }
+.gicard .gi-panel.name .gi-txt { font-size: 7.4cqw; max-width: 92%; overflow: hidden; }
+/* the picture: cream frame, thin dark inner line, 16:9 window */
+.gicard .gi-frame {
+  position: absolute; left: 2.85cqw; top: 22.9cqw; width: 94.6cqw; height: 54.8cqw;
+  background: var(--cream); padding: 1.5cqw; box-sizing: border-box;
+}
+.gicard .gi-frame .gi-pic { width: 100%; height: 100%; box-sizing: border-box; border: 0.3cqw solid var(--ink); background: #2b2a2a; overflow: hidden; }
+.gicard .gi-frame .gi-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gicard .gi-frame .gi-pic .gi-nopic { width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #3a3838 0 2cqw, #2b2a2a 0 4cqw); }
+/* the description band: foil mottle, a white rounded inset with a dark outline */
+.gicard .gi-band {
+  position: absolute; left: 2.85cqw; top: 80.95cqw; width: 94.6cqw; height: 56.65cqw;
+  background: var(--foil) center / 100% 100% no-repeat, #d4577c;
+  padding: 4.1cqw; box-sizing: border-box;
+}
+.gicard.kind-spell .gi-band { background-color: #4c6cc0; }
+.gicard.kind-free .gi-band { background-color: #d8b23c; }
+.gicard.kind-master .gi-band { background-color: #2a2a2e; }
+.gicard .gi-inset {
+  width: 100%; height: 100%; box-sizing: border-box;
+  background: var(--paper); border: 0.65cqw solid var(--ink); border-radius: 1.3cqw;
+  padding: 3.2cqw 4.2cqw 3cqw 4.7cqw; overflow: hidden;
+}
+.gicard .gi-desc {
+  margin: 0; font: 400 3.5cqw/1.34 "Zen Kaku Gothic New", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  color: #202020; letter-spacing: 0.005em; overflow-wrap: anywhere;
+}

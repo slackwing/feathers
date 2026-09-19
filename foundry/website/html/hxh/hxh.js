@@ -1184,11 +1184,13 @@ var HxH = (() => {
       w.el.style.top = Math.max(0, Math.round(y)) + "px";
       w.state.placed = true;
     }
-    drag(win, handle) {
+    /** Move `win` by dragging `handle`; `allow(e)` may veto a press (a chromeless window dragged by its margins only). */
+    drag(win, handle, { allow = null } = {}) {
       const el = win.el;
       let sx, sy, ox, oy, moving = false;
       handle.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
+        if (allow && !allow(e)) return;
         moving = true;
         sx = e.clientX;
         sy = e.clientY;
@@ -2837,6 +2839,98 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/card.js
+  var KINDS = {
+    restricted: { foil: "#d4577c", foilHi: "#f7a4c0", foilLo: "#902a54" },
+    // the 100 specified slot cards: pink-red glitter
+    spell: { foil: "#4a72cf", foilHi: "#8fb2f2", foilLo: "#213d92" },
+    // the 40 spell cards
+    free: { foil: "#dcb43a", foilHi: "#f6dd7c", foilLo: "#a27f12" },
+    // free slots
+    master: { foil: "#2c2c31", foilHi: "#5d5d66", foilLo: "#0b0b0e" }
+    // game-master cards
+  };
+  var LIMIT = { SS: 1, S: 1, A: 2, B: 3, C: 4 };
+  var NAME_MAX = 7.4;
+  var NAME_MIN = 3.2;
+  function foilURI(kind) {
+    const k = KINDS[kind] || KINDS.restricted;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240">
+    <filter id="f" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.07 0.09" numOctaves="4" seed="11"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 2.2 -0.55"/></filter>
+    <filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.05 0.07" numOctaves="3" seed="3"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.8 -0.5"/></filter>
+    <rect width="100%" height="100%" fill="${k.foil}"/>
+    <rect width="100%" height="100%" fill="${k.foilHi}" filter="url(#f)"/>
+    <rect width="100%" height="100%" fill="${k.foilLo}" filter="url(#g)" opacity=".85"/>
+  </svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace(/\s+/g, " "));
+  }
+  var cardNo = (n) => String(n ?? 0).padStart(3, "0");
+  var rankLimit = (rank) => `${rank || "C"}-${LIMIT[rank] ?? 4}`;
+  function panelPath(w, hh, r) {
+    const A = (x, y, sweep) => `A ${r} ${r} 0 0 ${sweep} ${x} ${y}`;
+    const edges = `M ${r} 0 L ${w - r} 0 ${A(w, r, 0)} L ${w} ${hh - r} ${A(w - r, hh, 0)} L ${r} ${hh} ${A(0, hh - r, 0)} L 0 ${r} ${A(r, 0, 0)} Z`;
+    const ring = (cx, cy) => `M ${cx - r} ${cy} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0`;
+    return `${edges} ${ring(0, 0)} ${ring(w, 0)} ${ring(w, hh)} ${ring(0, hh)}`;
+  }
+  var GICard = class extends Component {
+    /** props: no, name, rank, image (url|null), description, kind = "restricted", alt */
+    render() {
+      const p = this.props;
+      const kind = KINDS[p.kind] ? p.kind : "restricted";
+      const el = h("div", { className: `gicard kind-${kind}`, dataset: { no: cardNo(p.no) } });
+      this.body = h("div", { className: "gi-body" });
+      el.append(this.body);
+      this.body.style.setProperty("--foil", `url("${foilURI(kind)}")`);
+      const panel = (cls, text) => h("div", { className: `gi-panel ${cls}` }, h("span", { className: "gi-txt", text }));
+      this.plaque = h("div", { className: "gi-plaque" }, panel("no", cardNo(p.no)), panel("name", p.name || ""), panel("rank", rankLimit(p.rank)));
+      for (const pn of this.plaque.children) pn.prepend(this.outline());
+      this.frame = h("div", { className: "gi-frame" }, h("div", { className: "gi-pic" }, p.image ? h("img", { alt: p.alt || p.name || "", src: p.image, draggable: "false" }) : h("div", { className: "gi-nopic" })));
+      this.band = h("div", { className: "gi-band" }, h("div", { className: "gi-inset" }, h("p", { className: "gi-desc", text: p.description || "" })));
+      this.body.append(this.plaque, this.frame, this.band);
+      this.nameEl = this.plaque.querySelector(".gi-panel.name .gi-txt");
+      return el;
+    }
+    outline() {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "gi-outline");
+      svg.setAttribute("viewBox", "0 0 1000 1000");
+      svg.setAttribute("preserveAspectRatio", "none");
+      return svg;
+    }
+    onMount() {
+      this.fit();
+    }
+    /** Size each panel's outline to its box (rings must stay round, so the path is built in the box's own pixels) and shrink a long name. */
+    fit() {
+      if (!this.el) return;
+      const cw = this.el.clientWidth;
+      if (!cw) return;
+      for (const pn of this.plaque.children) {
+        const svg = pn.querySelector("svg.gi-outline");
+        const w = pn.clientWidth, hh = pn.clientHeight;
+        if (!w || !hh) continue;
+        const stroke = cw * 47e-4, r = cw * 75e-4, inset = stroke / 2 + r;
+        svg.setAttribute("viewBox", `0 0 ${w} ${hh}`);
+        svg.innerHTML = `<path d="${panelPath(w - 2 * inset, hh - 2 * inset, r)}" transform="translate(${inset} ${inset})" fill="none" stroke="currentColor" stroke-width="${stroke}"/>`;
+      }
+      fitText(this.nameEl, cw * NAME_MAX / 100, cw * NAME_MIN / 100);
+    }
+  };
+  function fitText(el, maxPx, minPx) {
+    if (!el) return 0;
+    let size = maxPx;
+    el.style.fontSize = size + "px";
+    const box = el.parentElement;
+    let guard = 24;
+    while (guard-- > 0 && size > minPx && el.scrollWidth > box.clientWidth - box.clientWidth * 0.08) {
+      size = Math.max(minPx, size * 0.92);
+      el.style.fontSize = size + "px";
+    }
+    return size;
+  }
+
   // html/hxh/apps/binder.js
   var TYPES = [
     { slug: "enhancement", code: "EN", name: "Enhancer", ja: "\u5F37\u5316\u7CFB", hue: "var(--enhancer)", hex: "#ff5a36" },
@@ -2856,23 +2950,34 @@ var HxH = (() => {
     { slug: "chimera-ant", code: "CA", name: "Chimera Ant", ja: "\u30AD\u30E1\u30E9\u30A2\u30F3\u30C8\u7DE8", hex: "#b8b493" },
     { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "\u4F1A\u9577\u9078\u6319\u7DE8", hex: "#a8aec0" }
   ];
-  var LIMIT = { S: 1, A: 2, B: 3, C: 4 };
   var PER_PAGE = 9;
+  var SOURCE = "/hxh/api/db/binder";
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
   var titleCase = (s) => s.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
-  var rankBox = (c) => `${c.rank || "C"}-${LIMIT[c.rank] || 4}`;
-  var cardNo = (c) => String(c.no || 0).padStart(3, "0");
+  var cardNo2 = (c) => cardNo(c.no ?? c.id);
   var firstSentence = (s) => (String(s || "").match(/^[^.!?]*[.!?]/) || [s || ""])[0].trim();
+  var cardText = (c) => c.card_description || firstSentence(c.description);
+  function groupCards(chars) {
+    const out = [];
+    for (const t of TYPES.slice(0, -1)) {
+      const mine = chars.filter((c) => typeOf(c) === t);
+      if (mine.length) out.push({ ...t, cards: mine });
+    }
+    const untyped = chars.filter((c) => !(c.nen_types || []).length);
+    for (const a of ARCS) {
+      const mine = untyped.filter((c) => (c.arcs || [])[0] === a.slug);
+      if (mine.length) out.push({ ...a, hue: a.hex, cards: mine });
+    }
+    return out;
+  }
   function paginate(chars) {
     const out = [];
-    const push = (group, mine) => {
-      for (let i = 0; i < mine.length; i += PER_PAGE) {
-        out.push({ type: group, cards: mine.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(mine.length / PER_PAGE) });
+    for (const g of groupCards(chars)) {
+      const { cards, ...type2 } = g;
+      for (let i = 0; i < cards.length; i += PER_PAGE) {
+        out.push({ type: type2, cards: cards.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(cards.length / PER_PAGE) });
       }
-    };
-    for (const t of TYPES.slice(0, -1)) push(t, chars.filter((c) => typeOf(c) === t));
-    const untyped = chars.filter((c) => !(c.nen_types || []).length);
-    for (const a of ARCS) push({ ...a, hue: a.hex }, untyped.filter((c) => (c.arcs || [])[0] === a.slug));
+    }
     return out;
   }
   var TASKBAR = 45;
@@ -2929,6 +3034,7 @@ var HxH = (() => {
       </div>
     </div>
   </div>`;
+  var CONTROLS = ".card, .gicard, .tab, button, .cover, .screen, .dpad, .keys, .pad, .dial, .fbtns";
   var BinderApp = class extends App {
     static id = "binder";
     static name = "Binder";
@@ -2941,7 +3047,8 @@ var HxH = (() => {
       this.sel = null;
       this.roster = [];
       this.typer = null;
-      this.src = options.src || "roster.json";
+      this.cards = /* @__PURE__ */ new Map();
+      this.src = options.src || SOURCE;
     }
     /** The chromeless window with the book inside. Built once. */
     window() {
@@ -2979,6 +3086,7 @@ var HxH = (() => {
         if (dir === "right") this.showPage(this.page + 1);
         if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
       });
+      os.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
       os.bus.on("resize", () => {
         if (this.win.state.open) {
           const at = this.layout();
@@ -2992,12 +3100,13 @@ var HxH = (() => {
     load() {
       const fetch = this.options.fetch || this.os.win.fetch?.bind(this.os.win);
       if (!fetch) return Promise.resolve();
-      return fetch(this.src, { cache: "no-cache" }).then((r) => r.json()).then((list) => this.setRoster(list)).catch(() => {
+      return fetch(this.src, { cache: "no-cache", credentials: "same-origin" }).then((r) => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))).then((list) => this.setRoster(list)).catch(() => {
         this.$(".cards").textContent = "The binder is empty.";
       });
     }
+    /** The cards, in the order the API gives them (by number). */
     setRoster(list) {
-      this.roster = list.map((c, i) => ({ ...c, no: c.no || i + 1 }));
+      this.roster = (list || []).map((c) => ({ ...c, no: c.no ?? c.id }));
       this.pages = paginate(this.roster);
       this.renderTabs();
       this.showPage(0);
@@ -3011,11 +3120,14 @@ var HxH = (() => {
       el.style.setProperty("--bw", l.bw + "px");
       el.style.setProperty("--bh", l.bh + "px");
       el.style.setProperty("--pw", l.pw + "px");
+      for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
     launch() {
       const win = this.window();
-      return this.os.wm.open(win.id, this.layout());
+      const p = this.os.wm.open(win.id, this.layout());
+      for (const c of this.cards.values()) c.fit();
+      return p;
     }
     /* The page turn: the cover (front face) swings -180° on the spine hinge
        and its back face, the card page, lands on the left. On finish the
@@ -3033,6 +3145,7 @@ var HxH = (() => {
         fn();
         book.classList.replace(from, to);
         this.os.wm.fit();
+        for (const c of this.cards.values()) c.fit();
       };
       const onEnd = (e) => {
         if (e.target === flap) done();
@@ -3051,6 +3164,7 @@ var HxH = (() => {
         leaf.append(page);
         book.classList.replace("closed", "open");
         this.os.wm.fit();
+        for (const c of this.cards.values()) c.fit();
         return;
       }
       book.classList.replace("closed", "opening");
@@ -3091,31 +3205,35 @@ var HxH = (() => {
       });
     }
     showPage(i) {
-      if (!this.pages.length) return;
+      const box = this.$(".cards");
+      for (const c of this.cards.values()) c.unmount();
+      this.cards.clear();
+      box.replaceChildren();
+      if (!this.pages.length) {
+        this.$(".pageno").textContent = "";
+        return;
+      }
       this.page = (i + this.pages.length) % this.pages.length;
       const p = this.pages[this.page];
       this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
-      const box = this.$(".cards");
-      box.replaceChildren();
       p.cards.forEach((c) => box.append(this.cardEl(c)));
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
       this.$(".pageno").innerHTML = `${this.page + 1} / ${this.pages.length}<span class="ja">${esc(p.type.ja)}</span>`;
       if (this.sel && !p.cards.includes(this.sel)) this.select(null);
     }
+    /** A sleeve holding one printed card. */
     cardEl(c) {
-      const t = typeOf(c);
-      const b = h("button", {
-        type: "button",
-        className: "card" + (c === this.sel ? " on" : ""),
-        dataset: { slug: c.slug },
-        html: `
-      <div class="hd"><span class="no">${cardNo(c)}</span><span class="nm">${esc(c.first || c.name)}</span><span class="rk">${esc(rankBox(c))}</span></div>
-      <div class="art">${c.name_ja ? `<span class="ja">${esc(c.name_ja.split("\uFF1D")[0])}</span>` : ""}</div>
-      <div class="tx"><div>${esc(firstSentence(c.description))}</div></div>`,
-        onclick: () => this.select(c)
+      const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
+      const card = new GICard({
+        no: c.no,
+        name: c.name,
+        rank: c.rank,
+        description: cardText(c),
+        alt: c.name,
+        image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null
       });
-      b.style.setProperty("--hue", t.hue);
-      b.querySelector(".art").prepend(sprite(c.glyph || "\u2754", 16));
+      card.mount(b);
+      this.cards.set(c.id, card);
       return b;
     }
     idle() {
@@ -3123,7 +3241,7 @@ var HxH = (() => {
     }
     select(c) {
       this.sel = c;
-      this.$(".cards").querySelectorAll(".card").forEach((b) => b.classList.toggle("on", b.dataset.slug === (c && c.slug)));
+      this.$(".cards").querySelectorAll(".card").forEach((b) => b.classList.toggle("on", b.dataset.id === String(c && c.id)));
       const scr = this.$(".screen");
       this.typer?.skip?.();
       clearInterval(this.follow);
@@ -3133,12 +3251,12 @@ var HxH = (() => {
       }
       const t = typeOf(c);
       const types = (c.nen_types || []).length ? c.nen_types.map((n) => (TYPES.find((x) => x.slug === n) || {}).name || n).join(" / ") : "\u2014";
-      const weapons = (c.weapons || []).length ? c.weapons.map(titleCase).join(", ") : "\u2014";
+      const arms = (c.arms || []).length ? c.arms.map(titleCase).join(", ") : "\u2014";
       scr.innerHTML = `
-      <div class="top">No.${esc(cardNo(c))}\u300C${esc(c.name_ja || c.name)}\u300D</div>
+      <div class="top">No.${esc(cardNo2(c))}\u300C${esc(c.first || c.name)}\u300D</div>
       <div class="name">${esc(c.name)}</div>
       <div class="line">Nen: <b style="color:${t.hex}">${esc(types)}</b>${c.affiliation ? ` \xB7 <b>${esc(c.affiliation)}</b>` : ""}</div>
-      <div class="line">Arms: <b>${esc(weapons)}</b></div>
+      <div class="line">Arms: <b>${esc(arms)}</b></div>
       <div class="desc"></div>
       <div class="status">\u6240\u6301\u8005 0\u540D \uFF0F \u6B8B\u308A ${LIMIT[c.rank] || 4}\u679A</div>`;
       this.follow = setInterval(() => {
@@ -4816,8 +4934,12 @@ var HxH = (() => {
     ["arcs", "Arcs"],
     ["arms", "Arms"],
     ["description", "Description"],
+    ["card_description", "Card description"],
     ["notes", "Notes"]
   ];
+  var AVATAR_RATIO = 1;
+  var CARD_RATIO = 16 / 9;
+  var CARD_RATIO_LABEL = "16:9";
   var LABEL = Object.fromEntries(FIELDS);
   var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
   var TYPE_LABEL = Object.fromEntries(TYPES2);
@@ -4964,8 +5086,6 @@ var HxH = (() => {
     ["chairman-election", "Chairman Election"]
   ];
   var RANKS = ["S", "A", "B", "C"];
-  var AVATAR_RATIO = 1;
-  var CARD_RATIO = 2 / 3;
   var RATIO_TOL = 0.02;
   var FIT_MIN = 9 / 16;
   var FIT_MAX = 16 / 9;
@@ -4990,6 +5110,7 @@ var HxH = (() => {
     <div class="f"><label class="lbl">${LABEL.arms}</label><input class="field prose" data-f="arms"></div>
   </div>
   <div class="f"><label class="lbl">${LABEL.description} <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
+  <div class="f"><label class="lbl">${LABEL.card_description} <span class="count" data-count2></span></label><textarea class="field prose short" data-f="card_description"></textarea></div>
   <div class="f"><label class="lbl">${LABEL.notes}</label><textarea class="field prose" data-f="notes"></textarea></div>`;
   var CharacterWindow = class extends Window {
     /** props: id, name, menus (win => spec), thumbURL(id) */
@@ -5060,7 +5181,7 @@ var HxH = (() => {
       });
       const form = el.querySelector(".form");
       form.addEventListener("input", (e) => {
-        if (e.target.dataset.f === "description") this.updateCount();
+        if (e.target.dataset.f === "description" || e.target.dataset.f === "card_description") this.updateCount();
       });
       form.addEventListener("change", (e) => {
         const t = e.target;
@@ -5167,7 +5288,7 @@ var HxH = (() => {
     }
     fillForm() {
       const c = this.char, f = this.el.querySelector(".form");
-      for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
+      for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
       f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
       f.querySelectorAll("[data-nen]").forEach((s, i) => {
         s.value = (c.nen_types || [])[i] || "";
@@ -5179,6 +5300,9 @@ var HxH = (() => {
       const n = words(this.el.querySelector('[data-f="description"]').value), el = this.el.querySelector("[data-count]");
       el.textContent = n ? `${n} words` : "";
       el.classList.toggle("bad", n > 0 && (n < 45 || n > 75));
+      const m = words(this.el.querySelector('[data-f="card_description"]').value), el2 = this.el.querySelector("[data-count2]");
+      el2.textContent = m ? `${m} words` : "";
+      el2.classList.toggle("bad", m > 40);
     }
     renderGallery() {
       const c = this.char, byType = {};
@@ -5503,7 +5627,7 @@ var HxH = (() => {
   var PALETTE = ["#000000", "#808080", "#800000", "#ff0000", "#ff7f27", "#ffff00", "#22b14c", "#008000", "#00ffff", "#0000ff", "#000080", "#800080", "#ff00ff", "#804000", "#c0c0c0", "#ffffff"];
   var EXPAND_PX = 20;
   var PRESET_SHARE = 0.6;
-  var LABELS = { 1: "1:1 Avatar", [2 / 3]: "2:3 Card" };
+  var LABELS = { [AVATAR_RATIO]: "1:1 Avatar", [CARD_RATIO]: `${CARD_RATIO_LABEL} Card` };
   var MIN_WIDTH = 720;
   var CropWindow = class extends Window {
     /** props: image {id,width,height,type}, char {id,name}, src (url), desktop {vw,vh}, ratio, menus */

@@ -8,14 +8,15 @@
 import { Window } from "../../os/window.js";
 import { h, esc } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
-import { LABEL, TYPES } from "./fields.js";
+import { LABEL, TYPES, AVATAR_RATIO, CARD_RATIO } from "./fields.js";
 
 export const NEN = ["enhancement", "transmutation", "conjuration", "emission", "manipulation", "specialization"];
 export const ARCS = [["hunter-exam", "Hunter Exam"], ["zoldyck-family", "Zoldyck Family"], ["heavens-arena", "Heavens Arena"],
   ["yorknew-city", "Yorknew City"], ["greed-island", "Greed Island"], ["chimera-ant", "Chimera Ant"], ["chairman-election", "Chairman Election"]];
 export const RANKS = ["S", "A", "B", "C"];
 export { TYPES };
-export const AVATAR_RATIO = 1, CARD_RATIO = 2 / 3, RATIO_TOL = 0.02;
+export { AVATAR_RATIO, CARD_RATIO };
+export const RATIO_TOL = 0.02;
 export const FIT_MIN = 9 / 16, FIT_MAX = 16 / 9;   // thumbnails inside this range show whole; outside, the short side shows and chevrons mark the cut
 export const eligible = (im, ratio) => Math.abs(im.width / im.height - ratio) <= RATIO_TOL;
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
@@ -39,6 +40,7 @@ const FORM = `
     <div class="f"><label class="lbl">${LABEL.arms}</label><input class="field prose" data-f="arms"></div>
   </div>
   <div class="f"><label class="lbl">${LABEL.description} <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
+  <div class="f"><label class="lbl">${LABEL.card_description} <span class="count" data-count2></span></label><textarea class="field prose short" data-f="card_description"></textarea></div>
   <div class="f"><label class="lbl">${LABEL.notes}</label><textarea class="field prose" data-f="notes"></textarea></div>`;
 
 export class CharacterWindow extends Window {
@@ -110,7 +112,7 @@ export class CharacterWindow extends Window {
     });
     // form: save on change
     const form = el.querySelector(".form");
-    form.addEventListener("input", e => { if (e.target.dataset.f === "description") this.updateCount(); });
+    form.addEventListener("input", e => { if (e.target.dataset.f === "description" || e.target.dataset.f === "card_description") this.updateCount(); });
     form.addEventListener("change", e => {
       const t = e.target;
       if (t.dataset.f) {
@@ -190,7 +192,7 @@ export class CharacterWindow extends Window {
 
   fillForm() {
     const c = this.char, f = this.el.querySelector(".form");
-    for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
+    for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
     f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
     f.querySelectorAll("[data-nen]").forEach((s, i) => { s.value = (c.nen_types || [])[i] || ""; });
     for (const [s] of ARCS) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);
@@ -201,6 +203,9 @@ export class CharacterWindow extends Window {
     const n = words(this.el.querySelector('[data-f="description"]').value), el = this.el.querySelector("[data-count]");
     el.textContent = n ? `${n} words` : "";
     el.classList.toggle("bad", n > 0 && (n < 45 || n > 75));
+    const m = words(this.el.querySelector('[data-f="card_description"]').value), el2 = this.el.querySelector("[data-count2]");
+    el2.textContent = m ? `${m} words` : "";
+    el2.classList.toggle("bad", m > 40);
   }
 
   renderGallery() {

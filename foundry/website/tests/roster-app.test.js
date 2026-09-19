@@ -12,7 +12,7 @@ const IMG = (id, type, extra = {}) => ({ id, char_id: 3, type, source_image_id: 
 const gon = () => ({ id: 3, name: "Gon Freecss", name_ja: "ゴン＝フリークス", first: "Gon", rank: "S", nen_types: ["enhancement"], affiliation: "Hunter Association",
   arcs: ["hunter-exam", "greed-island"], arms: ["fishing-rod"], description: "A boy.", notes: "n", version: 4, review_status: "pending", review_reason: "",
   avatar_image_id: null, card_image_id: null, owner: "claude", created_at: "2026-09-19T00:00:00Z", updated_at: "2026-09-19T00:00:00Z", image_count: 3,
-  images: [IMG(12, "cropped", { source_image_id: 10, width: 400, height: 600, owner: "abi" }), IMG(11, "cropped", { source_image_id: 10, width: 500, height: 500, owner: "andrew" }), IMG(10, "raw")],
+  card_description: "", images: [IMG(12, "cropped", { source_image_id: 10, width: 640, height: 360, owner: "abi" }), IMG(11, "cropped", { source_image_id: 10, width: 500, height: 500, owner: "andrew" }), IMG(10, "raw")],
   reviews: [{ id: 1, char_id: 3, version: 2, status: "rejected", reason: "wrong Nen", owner: "andrew", created_at: "2026-09-18T00:00:00Z" }] });
 const killua = () => ({ ...gon(), id: 4, name: "Killua Zoldyck", review_status: "accepted", images: [], reviews: [], image_count: 0, version: 1 });
 
@@ -122,7 +122,9 @@ test("the character window: profile, review box, every picture category (empty o
   assert.equal([...el.querySelectorAll(".profile .lbl")].find(l => l.textContent === "Card Rank")?.textContent, "Card Rank");
   assert.equal(el.querySelector('.tile[data-id="10"] .pic').className, "pic fit");     // 16:9 is the edge of the range — shows whole
   assert.equal(el.querySelector('.tile[data-id="11"] .pic').className, "pic fit");     // 1:1 shows whole
-  assert.equal(el.querySelector('.tile[data-id="12"] .pic').className, "pic fit");     // 2:3 shows whole
+  assert.equal(el.querySelector('.tile[data-id="12"] .pic').className, "pic fit");     // 16:9 shows whole
+  assert.ok(el.querySelector('[data-f="card_description"]'), "the card description field exists");
+  assert.equal([...el.querySelectorAll(".profile .lbl")].some(l => l.textContent.startsWith("Card description")), true);
   state.gon.images.push(IMG(15, "raw", { width: 2000, height: 500 }), IMG(16, "raw", { width: 500, height: 2000 }));
   w.setChar(state.gon);
   assert.equal(el.querySelector('.tile[data-id="15"] .pic').className, "pic cut-x");   // 4:1 — short side full, chevrons left/right
@@ -138,7 +140,7 @@ test("the character window: profile, review box, every picture category (empty o
   assert.equal(w.msgEl.textContent, "Saved");
 });
 
-test("the toolbar: Set as Avatar only for 1:1, Set as Card only for 2:3; Crop, Open in New Tab, Delete for any; no picture-level reject", async () => {
+test("the toolbar: Set as Avatar only for 1:1, Set as Card only for 16:9; Crop, Open in New Tab, Delete for any; no picture-level reject", async () => {
   await boot();
   await app().openChar(3);
   await tick();
@@ -147,13 +149,13 @@ test("the toolbar: Set as Avatar only for 1:1, Set as Card only for 2:3; Crop, O
   assert.ok(!el.querySelector('[data-img="reject"]') && !el.querySelector("[data-show-rejected]"));
   const enabled = () => [...el.querySelectorAll(".gtools [data-img]")].filter(b => !b.disabled).map(b => b.dataset.img);
   assert.deepEqual(enabled(), ["upload"]);
-  d.click(el.querySelector('.tile[data-id="10"]'));   // 16:9 raw: neither slot
-  assert.deepEqual(enabled(), ["crop", "open", "delete", "upload"]);
+  d.click(el.querySelector('.tile[data-id="10"]'));   // 16:9 raw: card-shaped already
+  assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "upload"]);
   d.click(el.querySelector('.tile[data-id="11"]'));   // 1:1
   assert.deepEqual(enabled(), ["avatar", "crop", "open", "delete", "upload"]);
-  d.click(el.querySelector('.tile[data-id="12"]'));   // 2:3
+  d.click(el.querySelector('.tile[data-id="12"]'));   // 16:9
   assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "upload"]);
-  assert.match(w.selEl.textContent, /#12 · cropped · 400×600/);
+  assert.match(w.selEl.textContent, /#12 · cropped · 640×360/);
   d.click(el.querySelector('[data-img="card"]'));
   await tick();
   assert.deepEqual(log.at(-1).body, { card_image_id: 12 });
@@ -210,7 +212,7 @@ test("crop window: sized to show the whole picture; a ratio button starts a cent
   assert.equal(c.posEl.textContent, "1920 × 1080");
   assert.equal(c.saveBtn.textContent, "Save");
   assert.equal(c.saveBtn.disabled, true);
-  assert.deepEqual([...c.el.querySelectorAll("[data-r]")].map(b => b.textContent), ["Free", "1:1 Avatar", "2:3 Card", "3:2", "4:5", "5:4", "16:9", "9:16"]);
+  assert.deepEqual([...c.el.querySelectorAll("[data-r]")].map(b => b.textContent), ["Free", "1:1 Avatar", "2:3", "3:2", "4:5", "5:4", "16:9 Card", "9:16"]);
   assert.deepEqual(c.menuBar.menus[0].itemsNow().filter(i => i !== "sep").map(i => i.label), ["Save", "Exit"]);
   d.click(c.el.querySelector('[data-r="1"]'));
   assert.deepEqual(c.box, { x: 636, y: 216, w: 648, h: 648 });   // 60 % of the short side, centred

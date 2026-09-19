@@ -143,46 +143,17 @@
 .tab:hover { filter: brightness(.95); }
 .cards { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; margin-top: 5px; min-height: 0; }
 .slot {   /* empty sleeve */
-  border: var(--px) dashed var(--navy-hi); background: var(--navy-2);
-  box-shadow: inset 0 0 0 5px var(--navy);
+  border: var(--px) dashed rgba(255,255,255,.18); border-radius: 4px; background: rgba(0,0,0,.12); min-height: 0;
 }
-.pageno { position: absolute; right: 18px; bottom: 2px; font: 10px/1.6 var(--font-px); color: #6f8fb5; }
-.pageno .ja { font: 15px/1 var(--font-dot); margin-left: 8px; }
-
-/* a card: three header boxes, framed art, framed text */
+/* a sleeve: the printed card (GICard, apps/card.js) sized to its cell — as wide as the cell allows, never taller than the row */
 .card {
-  --hue: var(--none);
-  position: relative; cursor: pointer; text-align: left; min-height: 0;
-  background: var(--card); color: var(--ink);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset var(--px) var(--px) 0 var(--card-2), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--navy-3), var(--px) var(--px) 0 var(--navy-3);
-  padding: 6px; display: flex; flex-direction: column; gap: 5px;
-  font: inherit;
+  position: relative; min-height: 0; min-width: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
+  display: grid; place-items: center; overflow: hidden; border-radius: 6px;
+  container-type: size;   /* so the card can size itself from the sleeve's height (cqh) as well as its width */
 }
-.card:hover { transform: translate(-1px, -1px); }
-.card.on { outline: var(--px) solid var(--gold); outline-offset: 1px; box-shadow: inset var(--px) var(--px) 0 var(--card-2), 0 0 0 6px rgba(217,165,32,.28); }
-.card .hd { display: flex; gap: 3px; height: 28px; flex: none; }
-.card .hd span {
-  background: var(--cream); border: 1px solid var(--ink); border-radius: 3px; color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--cream-2);
-  font: 20px/1.1 var(--font-dot); padding: 2px 5px 0; white-space: nowrap; overflow: hidden;
-}
-.card .hd .no { flex: 0 0 auto; font: 10px/1.4 var(--font-px); padding-top: 5px; }
-.card .hd .nm { flex: 1 1 auto; min-width: 0; text-align: center; text-overflow: ellipsis; }
-.card .hd .rk { flex: 0 0 auto; font: 10px/1.4 var(--font-px); padding-top: 5px; }
-.card .art {
-  flex: 1; min-height: 0; display: grid; place-items: center; position: relative;
-  background: repeating-conic-gradient(color-mix(in srgb, var(--hue) 45%, #f1e8d2) 0 25%, #f1e8d2 0 50%) 0 0 / 4px 4px;
-  border: 1px solid var(--ink); box-shadow: inset 0 0 0 2px var(--cream-2), inset 0 0 0 3px var(--ink);
-}
-.card .art canvas { width: 96px; height: 96px; image-rendering: pixelated; }
-.card .art .ja { position: absolute; right: 6px; bottom: 3px; font: 15px/1 var(--font-dot); color: var(--ink); opacity: .75; }
-.card .tx {   /* hatched pink frame around a white text box */
-  flex: none; height: 48px; padding: 3px;
-  background: repeating-linear-gradient(45deg, var(--pink) 0 2px, var(--pink-2) 2px 4px);
-  border: 1px solid var(--ink);
-}
-.card .tx div { height: 100%; overflow: hidden; background: #fffaf0; font: 15px/16px var(--font-dot); color: var(--ink); padding: 1px 5px; }
+.card .gicard { width: min(100%, calc(100cqh * 1475 / 2072)); filter: drop-shadow(2px 3px 0 rgba(0,0,0,.45)); }
+.card:hover .gicard { transform: translate(-1px, -1px); }
+.card.on .gicard .gi-body { outline: 3px solid var(--gold); outline-offset: -3px; box-shadow: 0 0 0 6px rgba(217,165,32,.28); }
 
 /* right panel: the interface */
 .panel {
@@ -281,7 +252,6 @@ body.stacked .page, body.stacked .panel {flex: none; width: 100%; height: auto; 
 body.stacked .page {border-right: var(--px) solid var(--ink); }
 body.stacked .panel {border-left: var(--px) solid var(--ink); border-top: 0; }
 body.stacked .cards {grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: 188px; }
-body.stacked .card .art canvas {width: 48px; height: 48px; }
 body.stacked .spine {width: 100%; flex: 0 0 30px; flex-direction: row; border: var(--px) solid var(--ink); border-top: 0; border-bottom: 0; box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2); }
 body.stacked .spine .clasp {width: 70px; height: 20px; }
 body.stacked .spine .clasp::after {left: 10px; right: 10px; top: 50%; bottom: auto; width: auto; height: var(--px); margin: -1px 0 0; }

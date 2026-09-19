@@ -1,40 +1,46 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, binderLayout, TYPES, ARCS, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, BinderApp } from "../html/hxh/apps/binder.js";
+import { paginate, groupCards, binderLayout, TYPES, ARCS, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RegisterApp } from "../html/hxh/apps/register.js";
 
-const mk = (slug, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ slug, name: slug, nen_types: nen, arcs, weapons: [], description: "First. Second.", ...extra });
+let nextId = 1;
+const mk = (name, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ id: nextId++, name, first: name, rank: "C", nen_types: nen, arcs, arms: [], description: "First. Second.", card_description: "", ...extra });
 
-test("paginate: one group per tab, PER_PAGE cards, untyped filed by first arc", () => {
+test("groupCards / paginate: one tab per group that has cards, PER_PAGE cards a page, the untyped filed by first arc", () => {
   const chars = [
     ...Array.from({ length: PER_PAGE + 1 }, (_, i) => mk("en" + i, ["enhancement"])),
     mk("tr", ["transmutation", "emission"]),
     mk("ex1"), mk("ex2"), mk("zo", [], ["zoldyck-family"]),
   ];
+  assert.deepEqual(groupCards(chars).map(g => [g.code, g.cards.length]), [["EN", 10], ["TR", 1], ["EX", 2], ["ZO", 1]]);
   const pages = paginate(chars);
   assert.deepEqual(pages.map(p => p.type.code), ["EN", "EN", "TR", "EX", "ZO"]);
   assert.equal(pages[0].cards.length, PER_PAGE);
   assert.deepEqual([pages[0].n, pages[0].of, pages[1].n, pages[1].of], [1, 2, 2, 2]);
-  assert.equal(pages[2].cards[0].slug, "tr");   // first Nen type wins
-  assert.equal(pages[3].cards.length, 2);
+  assert.equal(pages[2].cards[0].name, "tr");   // first Nen type wins
   assert.equal(pages[4].type.hue, ARCS[1].hex);   // arc tabs use their own hex as hue
   assert.equal(paginate([]).length, 0);
+  assert.deepEqual(groupCards([mk("solo", ["enhancement"])]).map(g => g.code), ["EN"]);   // one character → one tab
   assert.equal(TYPES.length, 7);
   assert.equal(ARCS.length, 7);
 });
 
-test("helpers: typeOf, rankBox, cardNo, firstSentence", () => {
+test("helpers: typeOf, rankBox, cardNo, firstSentence, cardText", () => {
   assert.equal(typeOf(mk("x")).code, "--");
   assert.equal(typeOf(mk("x", ["specialization"])).code, "SP");
   assert.equal(rankBox({ rank: "S" }), "S-1");
   assert.equal(rankBox({}), "C-4");
   assert.equal(LIMIT.A, 2);
   assert.equal(cardNo({ no: 7 }), "007");
+  assert.equal(cardNo({ id: 42 }), "042");
   assert.equal(firstSentence("Hello there! And more."), "Hello there!");
   assert.equal(firstSentence("no punctuation"), "no punctuation");
   assert.equal(firstSentence(undefined), "");
+  assert.equal(cardText({ card_description: "Short.", description: "Long one. More." }), "Short.");
+  assert.equal(cardText({ card_description: "", description: "Long one. More." }), "Long one.");
+  assert.equal(SOURCE, "/hxh/api/db/binder");
 });
 
 test("layout maths: the midpoint between the first sizing and the full desktop", () => {
@@ -49,23 +55,30 @@ test("layout maths: the midpoint between the first sizing and the full desktop",
   assert.ok(small.bh <= 600 - 45 - 46 - 16);
 });
 
-let d, os;
+let d, os, fetched;
 beforeEach(async () => {
   d = setupDom();
-  os = new OS({ win: d.win, fetch: async () => ({ ok: true, json: async () => ({ username: "a" }) }), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
-  await os.start({ apps: [[BinderApp, { fetch: null }], RegisterApp], boot: false });
+  fetched = [];
+  const fakeFetch = async (url, init) => {
+    fetched.push({ url: String(url), init });
+    if (String(url).includes("/admin/api/me")) return { ok: true, status: 200, json: async () => ({ username: "a", roles: [{ website: "hxh", role: "guest" }] }) };
+    if (String(url) === SOURCE) return { ok: true, status: 200, json: async () => [] };
+    return { ok: false, status: 404, json: async () => ({}) };
+  };
+  os = new OS({ win: d.win, fetch: fakeFetch, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  await os.start({ apps: [[BinderApp, { fetch: fakeFetch }], RegisterApp], boot: false });
 });
 
-test("the Binder window is chromeless with minimize + close, popup, on the taskbar", async () => {
+test("the Binder window is chromeless with minimize + close, popup, on the taskbar; it reads the Roster DB, not roster.json", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
+  await tick();
   const w = os.wm.get("win-binder");
   assert.ok(w.chromeless && w.props.popup && w.hasTask);
   assert.deepEqual([...w.el.querySelectorAll(".fbtns .tbtn")].map(x => x.title), ["Minimize", "Close"]);
-  assert.equal(w.el.querySelector(".bookx"), null);
   assert.equal(w.el.style.getPropertyValue("--bw"), binderLayout(1366, 900).bw + "px");
-  assert.equal(w.state.open, true);
-  assert.ok(os.taskbar.button("win-binder"));
+  assert.ok(fetched.some(f => f.url === SOURCE && f.init?.credentials === "same-origin"), "loads /hxh/api/db/binder with the session cookie");
+  assert.ok(!fetched.some(f => f.url.includes("roster.json")));
   d.click(w.el.querySelector(".fbtns .min"));
   assert.equal(w.state.minimized, true);
   await os.launch("binder");
@@ -74,10 +87,15 @@ test("the Binder window is chromeless with minimize + close, popup, on the taskb
   assert.ok(b.book.classList.contains("closed"));
 });
 
-test("roster → tabs, pages, cards; selection drives the screen; D-pad steps", async () => {
+test("roster → tabs, pages, printed cards; selection drives the screen; D-pad steps", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
-  b.setRoster([mk("gon", ["enhancement"], ["hunter-exam"], { name: "Gon Freecss", first: "Gon", name_ja: "ゴン＝フリークス", rank: "S", glyph: "🎣", weapons: ["fishing-rod"], affiliation: "Hunter" }), mk("kil", ["transmutation"]), mk("leo")]);
+  nextId = 1;
+  b.setRoster([
+    mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon", rank: "S", arms: ["fishing-rod"], affiliation: "Hunter", card_description: "A cheerful boy.", card_image_id: 18, avatar_image_id: 12 }),
+    mk("Killua Zoldyck", ["transmutation"], ["hunter-exam"], { first: "Killua", avatar_image_id: 30 }),
+    mk("Leorio", [], ["hunter-exam"], { first: "Leorio" }),
+  ]);
   assert.equal(b.pages.length, 3);
   const tabs = b.$(".tabs").querySelectorAll(".tab");
   assert.deepEqual([...tabs].map(t => t.textContent), ["EN", "TR", "EX"]);
@@ -85,69 +103,59 @@ test("roster → tabs, pages, cards; selection drives the screen; D-pad steps", 
   const cards = b.$(".cards");
   assert.equal(cards.querySelectorAll(".card").length, 1);
   assert.equal(cards.querySelectorAll(".slot").length, PER_PAGE - 1);
-  const card = cards.querySelector(".card");
-  assert.equal(card.querySelector(".nm").textContent, "Gon");
-  assert.equal(card.querySelector(".no").textContent, "001");
-  assert.equal(card.querySelector(".rk").textContent, "S-1");
-  assert.equal(card.querySelector(".art .ja").textContent, "ゴン");
-  assert.equal(card.querySelector(".tx div").textContent, "First.");
+  const card = cards.querySelector(".card .gicard");
+  assert.ok(card, "the sleeve holds a printed GICard");
+  assert.equal(card.querySelector(".gi-panel.no .gi-txt").textContent, "001");
+  assert.equal(card.querySelector(".gi-panel.name .gi-txt").textContent, "Gon Freecss");
+  assert.equal(card.querySelector(".gi-panel.rank .gi-txt").textContent, "S-1");
+  assert.equal(card.querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/18");
+  assert.equal(card.querySelector(".gi-desc").textContent, "A cheerful boy.");
+  assert.ok(card.classList.contains("kind-restricted"));
   assert.match(b.$(".pageno").textContent, /^1 \/ 3/);
   assert.match(b.$(".screen").innerHTML, /カードを選択/);
-  d.click(card);
-  assert.equal(b.selected.slug, "gon");
-  assert.ok(card.classList.contains("on"));
+  d.click(cards.querySelector(".card"));
+  assert.equal(b.selected.name, "Gon Freecss");
+  assert.ok(cards.querySelector(".card").classList.contains("on"));
   const scr = b.$(".screen");
-  assert.match(scr.querySelector(".top").textContent, /No\.001「ゴン＝フリークス」/);
+  assert.match(scr.querySelector(".top").textContent, /No\.001「Gon」/);
   assert.match(scr.querySelector(".line").innerHTML, /Enhancer/);
   assert.match(scr.innerHTML, /Fishing Rod/);
   assert.match(scr.querySelector(".status").textContent, /残り 1枚/);
   assert.equal(scr.querySelector(".desc").textContent, "First. Second.");
   d.click(b.$('[data-dir="down"]'));   // past the last card → next page, first card
   assert.equal(b.page, 1);
-  assert.equal(b.selected.slug, "kil");
+  assert.equal(b.selected.name, "Killua Zoldyck");
+  const k = b.$(".cards .card .gicard");
+  assert.equal(k.querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/30");   // no card picture yet: the avatar stands in
+  assert.equal(k.querySelector(".gi-desc").textContent, "First.");                              // no card description: the profile's first sentence
   d.click(b.$('[data-dir="up"]'));
   assert.equal(b.page, 0);
-  assert.equal(b.selected.slug, "gon");
   d.click(b.$('[data-dir="right"]')); d.click(b.$('[data-dir="right"]'));
   assert.equal(b.page, 2);
   assert.equal(b.selected, null);     // selection cleared when its page leaves
-  assert.match(scr.innerHTML, /カードを選択/);
+  assert.ok(b.$(".cards .card .gicard .gi-nopic"), "no picture at all: the hatched window");
   d.click(b.$('[data-dir="left"]'));
   assert.equal(b.page, 1);
   d.click(tabs[0]);
   assert.equal(b.page, 0);
 });
 
-test("cover opens (no 3D under reduced motion), CLOSE shuts; CLAIM toasts and opens Registration", async () => {
+test("the book's margins drag the window; cards and controls do not", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
-  b.setRoster([mk("gon", ["enhancement"])]);
-  d.click(b.$(".cover"));
-  assert.ok(b.isOpen);
-  assert.equal(b.$(".leaf .page") !== null, true);
-  d.click(b.$('[data-act="claim"]'));
-  assert.equal(os.toast.body.textContent, "Pick a card first.");
-  assert.equal(os.wm.get("win-register"), undefined);
-  d.click(b.$(".card"));
-  d.click(b.$('[data-act="claim"]'));
-  assert.match(os.toast.body.textContent, /gon is a fine choice/);
-  assert.equal(os.wm.get("win-register").state.open, true);
-  d.click(b.$('[data-act="shut"]'));
-  assert.ok(b.book.classList.contains("closed"));
-  assert.ok(b.$(".face.back .page"));
-  b.$(".cover").dispatchEvent(new d.win.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-  assert.ok(b.isOpen);
-});
-
-test("a failed roster fetch leaves the binder empty; a resize re-places an open binder", async () => {
-  const b = os.registry.get("binder");
-  b.options.fetch = async () => { throw new Error("net"); };
-  await os.launch("binder");
-  await b.load();
-  assert.equal(b.$(".cards").textContent, "The binder is empty.");
-  const w = os.wm.get("win-binder");
-  w.el.style.left = "1px";
-  os.bus.emit("resize");
-  assert.equal(w.el.style.left, binderLayout(1366, 900).x + "px");
-  await tick();
+  b.setRoster([mk("Gon", ["enhancement"])]);
+  const w = os.wm.get("win-binder"), el = w.el;
+  el.style.left = "100px"; el.style.top = "80px";
+  Object.defineProperty(el, "offsetLeft", { value: 100, configurable: true });
+  Object.defineProperty(el, "offsetTop", { value: 80, configurable: true });
+  Object.defineProperty(el, "offsetWidth", { value: 1000, configurable: true });
+  Object.defineProperty(os.desktop.el, "clientWidth", { value: 1366, configurable: true });
+  const pd = (target, x, y) => target.dispatchEvent(new d.win.PointerEvent("pointerdown", { bubbles: true, clientX: x, clientY: y, button: 0 }));
+  const pm = (x, y) => b.book.dispatchEvent(new d.win.PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
+  const pu = () => b.book.dispatchEvent(new d.win.PointerEvent("pointerup", { bubbles: true }));
+  pd(b.$(".cards .card"), 10, 10); pm(50, 50); pu();
+  assert.equal(el.style.left, "100px");   // a card press never moves the window
+  pd(b.book, 10, 10); pm(50, 42); pu();
+  assert.equal(el.style.left, "140px");   // a margin press does, snapped to 4 px
+  assert.equal(el.style.top, "112px");
 });

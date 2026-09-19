@@ -12,6 +12,7 @@
 import { Window } from "../../os/window.js";
 import { icon } from "../../os/icons.js";
 import { PaintDoc } from "./paint.js";
+import { AVATAR_RATIO, CARD_RATIO, CARD_RATIO_LABEL } from "./fields.js";
 import { RATIOS, clamp, roundBox, fromAnchor, refit, fitAround, moveTo, resize, fitZoom, cropCanvas } from "./geometry.js";
 
 export const cropId = imageId => "win-crop-" + imageId;
@@ -20,7 +21,7 @@ export const TOOLS = ["marquee", "brush", "bucket", "dropper"];
 export const PALETTE = ["#000000", "#808080", "#800000", "#ff0000", "#ff7f27", "#ffff00", "#22b14c", "#008000", "#00ffff", "#0000ff", "#000080", "#800080", "#ff00ff", "#804000", "#c0c0c0", "#ffffff"];
 export const EXPAND_PX = 20;
 export const PRESET_SHARE = 0.6;   // a ratio button's starting selection: this much of the limiting side
-const LABELS = { 1: "1:1 Avatar", [2 / 3]: "2:3 Card" };
+const LABELS = { [AVATAR_RATIO]: "1:1 Avatar", [CARD_RATIO]: `${CARD_RATIO_LABEL} Card` };
 const MIN_WIDTH = 720;
 
 export class CropWindow extends Window {
