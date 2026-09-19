@@ -5,28 +5,28 @@
    slowly, a flock of birds crosses now and then. 8 fps; one static frame
    under prefers-reduced-motion.
 
-   Geometry (Andrew, 2026-09-19): the island always takes the MIDDLE
-   HALF of the viewport with ocean on both sides, on every screen. The
-   canvas is 304 columns wide (the island spans 152 of them, centred)
-   and as many rows as the viewport's aspect needs, horizon at 62 % —
-   extra sky above, extra sea below. The rest of the desktop is zoomed
-   by the same rule (OS.applyZoom), so the whole site follows the whale.
+   Geometry (Andrew, 2026-09-19): the art (320×180, island in columns
+   88–240) covers the view as it naturally would, except that the island
+   may never exceed 85 % of the width — then the scale is capped and the
+   whole desktop zooms down with it (Env.whale, OS.applyZoom). The
+   canvas is exactly the columns and rows the view needs at that scale,
+   island centred, horizon at 62 %, extra sky above and sea below on
+   tall views.
    The pure pieces (geometry, cloudBounds, the height profile, glints)
    are exported for tests; drawing needs a 2-D canvas. */
 import { Component } from "./component.js";
 import { h } from "./dom.js";
+import { whale, WHALE } from "./env.js";
 
-export const ISLAND_W = 320;          // the space the island art is drawn in
-export const ISLAND_CENTER = 164;     // its midpoint (columns 88..240)
-export const CANVAS_W = 304;          // 152 island columns = 50 % of the view
-export const HORIZON = 0.62;          // horizon row as a fraction of the height
+export const ISLAND_W = WHALE.artW;          // the space the island art is drawn in
+export const ISLAND_CENTER = WHALE.center;   // its midpoint (columns 88..240)
+export const HORIZON = WHALE.horizon;        // horizon row as a fraction of the height
 
-/** Canvas geometry for a viewport aspect: width is fixed, height follows. */
+/** Canvas geometry for a view: the columns and rows that cover it at the whale scale. */
 export function geometry(vw = 1366, vh = 900) {
-  const W = CANVAS_W;
-  const H = Math.max(120, Math.min(1400, Math.round(W * (vh / Math.max(1, vw)))));
+  const { W, H, scale, zoom } = whale(vw, vh);
   const HZ = Math.round(H * HORIZON);
-  return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2 };
+  return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2, scale, zoom };
 }
 
 /* deterministic hash so the island is the same every visit */
@@ -284,7 +284,7 @@ export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = 
     viewport's aspect whenever the OS announces a resize. */
 export class Wallpaper extends Component {
   /** props: env, bus */
-  render() { return h("canvas", { className: "wall", width: CANVAS_W, height: 180 }); }
+  render() { return h("canvas", { className: "wall", width: 320, height: 180 }); }
   onMount() {
     this.paint();
     if (this.props.bus) this.listen(this.props.bus, "resize", () => this.paint());

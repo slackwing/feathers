@@ -390,21 +390,26 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 
 ## The whale rule — one zoom for the whole site (2026-09-19)
 
-Andrew: "scale the site always dynamically, such that for narrower
-views everything is shrunk so the whale takes the middle 50% of the
-view, so we always see ocean on either side, even for mobile … the
-entire site scaled to this directive." So:
+Andrew's final wording: "don't let the whale ever take any more than
+85% of the width. so in mobile, i want some ocean shown on each side …
+when there is enough real estate naturally that the whale is under
+that limit, i want it to scale whatever its natural intent was." So:
 
-- The wallpaper canvas is 304 columns wide — the island art (drawn in
-  its own 320-column space, columns 88–240) is placed centred, i.e.
-  25 %–75 % of the view — and as many rows as the viewport's aspect
-  needs (`geometry(vw, vh)`: horizon at 62 %, extra sky above, extra
-  sea below, clouds spread with the sky, glitter hangs from the
-  horizon). It repaints on the OS `resize` event.
-- `OS.applyZoom()` sets `--zoom = vw / 1366` (`Env.DESIGN_WIDTH`) on
-  `<html>`; `body { zoom: var(--zoom) }` scales every window, icon,
-  menu and the taskbar with it. `Env.width/height` are in design
-  pixels (always 1366 wide), so layout code never sees the zoom.
+- `Env.whale(vw, vh)`: the natural scale is the 320×180 art covering
+  the view (`max(vw/320, vh/180)` px per art px — the island is then
+  56 % of a 1366×900 screen, 47.5 % of 1920×1080); the cap is
+  `0.85·vw/152`; scale = min of the two; `zoom = scale / natural` (1
+  whenever the cap doesn't bite — every landscape or square view;
+  ≈ vw/vh on portrait views: 0.46 on a 390×844 phone, 0.75 on a
+  1024×1366 tablet).
+- The canvas is exactly the columns and rows the view needs at that
+  scale (`geometry(vw, vh)`: island art centred, horizon at 62 %, extra
+  sky above and sea below on tall views, clouds spread with the sky,
+  glitter hanging from the horizon). It repaints on the OS `resize`
+  event.
+- `OS.applyZoom()` sets `--zoom` on `<html>`; `body { zoom }` scales
+  every window, icon, menu and the taskbar with it. `Env.width/height`
+  are in design pixels, so layout code never sees the zoom.
 - There is NO phone breakpoint any more: `Env.floating()` is true
   everywhere (opt out with `body.nofloat` / `body.stacked`); the old
   stacking rules live on as `body.stacked …` selectors in os.css,

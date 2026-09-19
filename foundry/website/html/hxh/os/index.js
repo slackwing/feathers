@@ -5,7 +5,7 @@ import "./os.css";
 export { EventBus } from "./bus.js";
 export { Component } from "./component.js";
 export { h, esc, $, $$ } from "./dom.js";
-export { Env, DESIGN_WIDTH } from "./env.js";
+export { Env, DESIGN_WIDTH, whale, WHALE } from "./env.js";
 export { icon, sprite, avatar, textColorFor, ICONS, PAL } from "./icons.js";
 export { Menus, Menu, MenuBar, renderItems } from "./menu.js";
 export { Window, TitleBar, ChromeButton, CHROME } from "./window.js";

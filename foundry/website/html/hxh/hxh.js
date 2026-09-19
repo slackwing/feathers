@@ -62,6 +62,7 @@ var HxH = (() => {
     Tray: () => Tray,
     TrayIcon: () => TrayIcon,
     WARM_KEY: () => WARM_KEY,
+    WHALE: () => WHALE,
     Wallpaper: () => Wallpaper,
     Window: () => Window,
     WindowManager: () => WindowManager,
@@ -79,7 +80,8 @@ var HxH = (() => {
     start: () => start,
     textColorFor: () => textColorFor,
     type: () => type,
-    wallpaper: () => wallpaper
+    wallpaper: () => wallpaper,
+    whale: () => whale
   });
 
   // html/hxh/os/bus.js
@@ -231,6 +233,15 @@ var HxH = (() => {
 
   // html/hxh/os/env.js
   var DESIGN_WIDTH = 1366;
+  var WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62 };
+  function whale(vw = 1366, vh = 900) {
+    vw = Math.max(1, vw);
+    vh = Math.max(1, vh);
+    const natural = Math.max(vw / WHALE.artW, vh / WHALE.artH);
+    const cap = WHALE.maxShare * vw / WHALE.span;
+    const scale = Math.min(natural, cap);
+    return { scale, zoom: scale / natural, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
+  }
   var Env = class {
     constructor(win = globalThis.window) {
       this.win = win;
@@ -253,10 +264,9 @@ var HxH = (() => {
       const cl = this.win.document?.body?.classList;
       return !(cl?.contains("nofloat") || cl?.contains("stacked"));
     }
-    /** The zoom the whale rule wants: the island is the middle half of the
-        view at every width, i.e. everything scales with vw / DESIGN_WIDTH. */
+    /** The zoom the whale rule wants (≤ 1; below 1 only when the island would exceed 85 % of the width). */
     wantedZoom() {
-      return (this.win.innerWidth || DESIGN_WIDTH) / DESIGN_WIDTH;
+      return whale(this.win.innerWidth || DESIGN_WIDTH, this.win.innerHeight || 900).zoom;
     }
     /** CSS zoom on <body>, if any — pointer/viewport pixels must be divided by it. */
     zoom() {
@@ -1972,15 +1982,13 @@ var HxH = (() => {
   };
 
   // html/hxh/os/wallpaper.js
-  var ISLAND_W = 320;
-  var ISLAND_CENTER = 164;
-  var CANVAS_W = 304;
-  var HORIZON = 0.62;
+  var ISLAND_W = WHALE.artW;
+  var ISLAND_CENTER = WHALE.center;
+  var HORIZON = WHALE.horizon;
   function geometry(vw = 1366, vh = 900) {
-    const W = CANVAS_W;
-    const H = Math.max(120, Math.min(1400, Math.round(W * (vh / Math.max(1, vw)))));
+    const { W, H, scale, zoom } = whale(vw, vh);
     const HZ = Math.round(H * HORIZON);
-    return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2 };
+    return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2, scale, zoom };
   }
   var hash = (x, y = 0) => {
     let h2 = x * 374761393 + y * 668265263 ^ 1540483477;
@@ -2232,7 +2240,7 @@ var HxH = (() => {
   var Wallpaper = class extends Component {
     /** props: env, bus */
     render() {
-      return h("canvas", { className: "wall", width: CANVAS_W, height: 180 });
+      return h("canvas", { className: "wall", width: 320, height: 180 });
     }
     onMount() {
       this.paint();
