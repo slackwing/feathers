@@ -86,16 +86,15 @@ export class PromptDialog extends Dialog {
 
 export class ReasonDialog extends Dialog {
   constructor({ name } = {}) {
-    super({ title: "Reject", body: `<p class="q">Why is <b>${esc(name)}</b> rejected?</p><textarea class="field" rows="4"></textarea>`,
+    void name;
+    super({ title: "Reject", body: `<label class="lbl" for="dlg-reason">Rejection reason (optional):</label><textarea class="field" id="dlg-reason" rows="4"></textarea>`,
       buttons: [{ act: "ok", label: "Reject", primary: true }, { act: "cancel", label: "Cancel" }], focus: "textarea", width: 460 });
   }
   render() {
     const el = super.render();
-    const ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]');
-    const sync = () => { ok.disabled = !ta.value.trim(); };
-    ta.addEventListener("input", sync); sync();
-    ta.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.finish("ok"); } });
+    el.querySelector("textarea").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.finish("ok"); } });
     return el;
   }
+  /** The reason, possibly empty — OK always means "reject". */
   value() { return this.$("textarea").value.trim(); }
 }

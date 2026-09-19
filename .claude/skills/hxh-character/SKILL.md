@@ -1,6 +1,6 @@
 ---
 name: hxh-character
-description: Add or redo ONE Hunter × Hunter character in the hxh Roster DB — verified profile fields plus at least six high-resolution raw pictures — as a pending entry for Andrew and Abi to review in the Roster DB app on the Hunter Website desktop. Use for "add <character> to the roster", "we're missing <character>", "redo <character>", or "fix <character>" after a rejection.
+description: Add or redo ONE Hunter × Hunter character in the hxh Roster DB — verified profile fields, notes that say where every fact came from and which calls were judgment, plus at least six high-resolution pictures found by looking — as a pending entry for Andrew and Abi to review in the Roster DB app on the Hunter Website desktop. Use for "add <character> to the roster", "we're missing <character>", "redo <character>", or "fix <character>" after a rejection.
 ---
 
 # hxh-character — one character, start to finish
@@ -17,12 +17,12 @@ comes back here: fix what the reason says, then `roster.py review <id>
 pending` to resubmit.
 
 Tools (feathers `foundry/website/hxh-roster/`):
-- `roster.py` — the Roster DB API. Access is mine to arrange (Andrew:
-  "you already know how to access everything"): `./prod_access.sh start`
-  mints a throwaway hxh admin on the VM and writes
-  `~/.claude/hxh-roster.env` (base + login) for PRODUCTION;
-  `./prod_access.sh stop` removes it when the job is done. For the
-  local stack, write the env file by hand.
+- `roster.py` — the Roster DB API, logged in as **claude**, the
+  shared-auth bot user (role admin on the `admin` website — a site-wide
+  admin, no hxh role; it owns what the skill creates). If the login in
+  `~/.claude/hxh-roster.env` is missing or stale, run
+  `./claude_access.sh` (production) or `./claude_access.sh --local`
+  once: it ensures the user, sets a fresh password and writes the file.
 - `wiki.py` — the Fandom wiki through its MediaWiki API (page fetches
   are blocked with 402; the API works).
 - The previous attempt, `html/hxh/roster.json` (198 entries, 2026-09-17,
@@ -83,17 +83,20 @@ first sentence.
 
 ## 4. Notes
 
-`notes` — for the reviewer, terse: which wiki page and sections you
-used, every judgment call (name variant chosen, rank reasoning, a Nen
-type that comes from the databook rather than the anime, an
-ambiguous affiliation), and anything you could not verify.
+`notes` — for the reviewer, terse, and always present: where each
+fact came from (which wiki page and sections), every judgment call
+(name variant chosen, rank reasoning, a Nen type that comes from the
+databook rather than the anime, an ambiguous affiliation), how the
+pictures were chosen, and anything you could not verify. Andrew
+reads these first ("i like how the notes explain how the information
+was obtained").
 
 ## 5. Create
 
 Write the JSON (all fields above; it is created pending at version 1)
 and run `python3 roster.py create entry.json`. Note the returned `id`.
 
-## 6. Pictures — at least six raws
+## 6. Pictures — at least six (they show under "Random" in the app: found by me, not uploaded by a person)
 
 Never choose by file name or caption alone — LOOK. Run
 `python3 wiki.py sheet "<Page>" sheet.png --only <name>` (a numbered
@@ -120,8 +123,10 @@ Choose at least six, using ALL of these tests:
 Then for each pick:
 `python3 roster.py fetch <id> "<url>" --caption "<scene, ≤ 12 words, episode if known>"`.
 The caption is what the reviewer reads under the thumbnail. If `fetch`
-answers "already there (rejected)", Andrew rejected that picture
-before: drop it, pick another. For a lead with a rich gallery
+answers "already there", the picture is in the set already: pick
+another. Prefer proportions between 2:3 and 3:2 (they show whole in
+the gallery); a 1:1 close-up and a 2:3 upper body are the ones that
+become avatar and card. For a lead with a rich gallery
 eight to ten raws are welcome; for a minor character six is the aim
 and if the wiki cannot give six clean pictures, say so in `notes`
 rather than padding with weak ones.
@@ -149,8 +154,8 @@ Every derived picture carries `source_image_id` so lineage is visible.
 ## 9. Feedback loop
 
 When a review rejects something: read the reason (`roster.py get <id>`
-shows `review_reason` and the log), apply the fix with `roster.py
-patch` / `fetch` / `reject`, resubmit with `roster.py review <id>
+shows `review_reason` — it may be empty, then ask — and the log), apply the fix with `roster.py
+patch` / `fetch`, resubmit with `roster.py review <id>
 pending`, then edit THIS file so the same mistake cannot recur, and
 commit both. Keep a dated line in the log below.
 
@@ -161,3 +166,6 @@ commit both. Keep a dated line in the log below.
   sheet step (look first) was added after Gon.
 - 2026-09-19 — no slug; review verdicts with versions and reasons;
   the review happens in the OS app, not a separate admin page.
+- 2026-09-19 — the skill acts as the bot user "claude" (owner of what
+  it finds); pictures it finds are the "Random" category, people's
+  uploads are "Uploaded"; picture-level rejection is gone.

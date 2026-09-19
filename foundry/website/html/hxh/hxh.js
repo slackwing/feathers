@@ -554,91 +554,110 @@ var HxH = (() => {
       "................"
     ],
     // Roster DB crop tools
+    // Log out: a door and the way out
     crop: [
-      "................",
-      "................",
-      "....k......k....",
-      "....k......k....",
-      "..kkkkkkkkkkkk..",
-      "....kppppppk....",
-      "....kppppppk....",
-      "....kpprrppk....",
-      "....kpprrppk....",
-      "....kppppppk....",
-      "....kppppppk....",
-      "..kkkkkkkkkkkk..",
-      "....k......k....",
-      "....k......k....",
-      "................",
-      "................"
+      "...k........k...",
+      "...k........k...",
+      "...k........k...",
+      "kkkkkkkkkkkkkkkk",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "...kpppkkpppk...",
+      "...kpppkkpppk...",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "kkkkkkkkkkkkkkkk",
+      "...k........k...",
+      "...k........k...",
+      "...k........k..."
     ],
     marquee: [
+      "kk.kk.kk.kk.kk.k",
       "................",
+      "k..............k",
+      "k..............k",
       "................",
-      "..kk.kk.kk.kk...",
+      "k..............k",
+      "k..............k",
       "................",
-      "..k..........k..",
-      "..k..........k..",
+      "k..............k",
+      "k..............k",
       "................",
-      "..k..........k..",
-      "..k..........k..",
+      "k..............k",
+      "k..............k",
       "................",
-      "..k..........k..",
-      "..k..........k..",
-      "................",
-      "...kk.kk.kk.kk..",
-      "................",
-      "................"
+      "k..............k",
+      "k.kk.kk.kk.kk.kk"
     ],
     brush: [
-      "................",
-      "................",
-      "............kk..",
-      "...........kyk..",
+      "..............kk",
+      ".............kyk",
+      "............kyyk",
+      "...........kyyk.",
       "..........kyyk..",
       ".........kyyk...",
       "........kyyk....",
       ".......kyyk.....",
       "......kkkk......",
       ".....krrrk......",
-      "....krrrk.......",
-      "...krrrk........",
-      "..kkkkk.........",
-      "................",
-      "................",
+      "....krrrrk......",
+      "...krrrrk.......",
+      "..krrrrk........",
+      ".krrrrk.........",
+      "kkkkkk..........",
       "................"
     ],
+    bucket: [
+      "................",
+      "......kkkk......",
+      ".....kppppk.....",
+      "....kppppppk....",
+      "...kkkkkkkkkk...",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "...kppppppppk...",
+      "....kppppppk....",
+      "....kppppppk....",
+      ".....kppppk.....",
+      ".....kkkkkk.....",
+      "..........bb....",
+      ".........bbbb...",
+      ".........bbbb...",
+      "..........bb...."
+    ],
     dropper: [
-      "................",
-      "................",
-      "...........kkk..",
-      "..........kkkk..",
-      ".........kkkkk..",
-      "........kbkkk...",
-      ".......kbbk.....",
-      "......kbbk......",
-      ".....kbbk.......",
-      "....kbbk........",
-      "...kbbk.........",
-      "..kbbk..........",
-      "..kkk...........",
-      "................",
-      "................",
+      "............kkkk",
+      "...........kkkkk",
+      "..........kkkkkk",
+      ".........kbkkkk.",
+      "........kbbkkk..",
+      ".......kbbbk....",
+      "......kbbbk.....",
+      ".....kbbbk......",
+      "....kbbbk.......",
+      "...kbbbk........",
+      "..kbbbk.........",
+      ".kbbbk..........",
+      "kbbbk...........",
+      "kbbk............",
+      "kkk.............",
       "................"
     ],
     undo: [
       "................",
       "................",
-      "................",
-      ".....k..........",
-      "....kk..........",
-      "...kkkkkkkk.....",
+      "....k...........",
+      "...kk...........",
       "..kkkkkkkkkk....",
-      "...kkk....kkk...",
-      "....k......kk...",
-      "...........kk...",
-      "..........kk....",
-      ".......kkkk.....",
+      ".kkkkkkkkkkkkk..",
+      "..kkkk.....kkkk.",
+      "...kk........kk.",
+      "....k.........kk",
+      "..............kk",
+      ".............kkk",
+      "........kkkkkk..",
       "................",
       "................",
       "................",
@@ -647,16 +666,16 @@ var HxH = (() => {
     redo: [
       "................",
       "................",
-      "................",
-      "..........k.....",
-      "..........kk....",
-      ".....kkkkkkkk...",
+      "...........k....",
+      "...........kk...",
       "....kkkkkkkkkk..",
-      "...kkk....kkk...",
-      "...kk......k....",
-      "...kk...........",
-      "....kk..........",
-      ".....kkkk.......",
+      "..kkkkkkkkkkkkk.",
+      ".kkkk.....kkkk..",
+      ".kk........kk...",
+      "kk.........k....",
+      "kk..............",
+      "kkk.............",
+      "..kkkkkk........",
       "................",
       "................",
       "................",
@@ -664,23 +683,40 @@ var HxH = (() => {
     ],
     revert: [
       "................",
-      "................",
-      "......kkkk......",
-      "....kk....kk.k..",
-      "...k........kk..",
-      "...k.......kkk..",
-      "................",
-      "................",
+      ".....kkkkkk.....",
+      "...kkk....kkk...",
+      "..kk........kk.k",
+      ".kk..........kkk",
+      ".k..........kkkk",
       "................",
       "................",
-      "..kkk.......k...",
-      "..kk........k...",
-      "..k.kk....kk....",
-      "......kkkk......",
       "................",
+      "................",
+      "kkkk..........k.",
+      "kkk..........kk.",
+      "k.kk........kk..",
+      "...kkk....kkk...",
+      ".....kkkkkk.....",
       "................"
     ],
-    // Log out: a door and the way out
+    expand: [
+      ".......kk.......",
+      "......kkkk......",
+      ".....kkkkkk.....",
+      ".......kk.......",
+      ".......kk.......",
+      "..k..........k..",
+      ".kk..........kk.",
+      "kkkkk......kkkkk",
+      ".kk..........kk.",
+      "..k..........k..",
+      ".......kk.......",
+      ".......kk.......",
+      ".....kkkkkk.....",
+      "......kkkk......",
+      ".......kk.......",
+      "................"
+    ],
     door: [
       "kkkkkkkkkk......",
       "kppppppppk......",
@@ -736,9 +772,9 @@ var HxH = (() => {
     g.putImageData(d, 0, 0);
     return c;
   }
-  function textColorFor(hex2) {
-    if (!/^#[0-9a-f]{6}$/i.test(hex2 || "")) return "#fff6e0";
-    const r = parseInt(hex2.slice(1, 3), 16), g = parseInt(hex2.slice(3, 5), 16), b = parseInt(hex2.slice(5, 7), 16);
+  function textColorFor(hex) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex || "")) return "#fff6e0";
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#0b0a08" : "#fff6e0";
   }
   function avatar(acct, cls = "") {
@@ -4656,7 +4692,7 @@ var HxH = (() => {
         width: 1280,
         cls: "roster rlist",
         content: `
-        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
+        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Card rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
         <div class="status"><span class="msg"></span><span class="count"></span></div>`,
         ...props
       });
@@ -4766,12 +4802,17 @@ var HxH = (() => {
     ["chairman-election", "Chairman Election"]
   ];
   var RANKS = ["S", "A", "B", "C"];
-  var TYPES2 = [["raw", "Raw"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+  var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+  var AVATAR_RATIO = 1;
+  var CARD_RATIO = 2 / 3;
+  var RATIO_TOL = 0.02;
+  var FIT_MIN = 2 / 3;
+  var FIT_MAX = 3 / 2;
+  var eligible = (im, ratio) => Math.abs(im.width / im.height - ratio) <= RATIO_TOL;
   var cap2 = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   var words = (s) => (String(s || "").trim().match(/\S+/g) || []).length;
   var winId = (id) => "win-roster-c-" + id;
-  var TILE_RATIO = 3 / 2;
   var FORM = `
   <div class="frow">
     <div class="f"><label class="lbl">Name</label><input class="field" data-f="name" maxlength="100"></div>
@@ -4779,7 +4820,7 @@ var HxH = (() => {
   </div>
   <div class="frow four">
     <div class="f"><label class="lbl">Short</label><input class="field" data-f="first" maxlength="20"></div>
-    <div class="f"><label class="lbl">Rank</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
+    <div class="f"><label class="lbl">Card rank</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
     <div class="f"><label class="lbl">Nen</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
     <div class="f"><label class="lbl">Affiliation</label><input class="field" data-f="affiliation" maxlength="60"></div>
   </div>
@@ -4820,14 +4861,13 @@ var HxH = (() => {
         <fieldset class="group profile"><legend>Profile</legend><div class="form">${FORM}</div></fieldset>
         <fieldset class="group pics"><legend>Pictures</legend>
           <div class="gtools">
-            <button class="btn sm" type="button" data-img="avatar" disabled>Avatar</button>
-            <button class="btn sm" type="button" data-img="card" disabled>Card</button>
+            <button class="btn sm" type="button" data-img="avatar" disabled>Set as Avatar</button>
+            <button class="btn sm" type="button" data-img="card" disabled>Set as Card</button>
+            <span class="gap"></span>
             <button class="btn sm" type="button" data-img="crop" disabled>Crop</button>
-            <button class="btn sm" type="button" data-img="open" disabled>Open</button>
-            <button class="btn sm" type="button" data-img="reject" disabled>Reject</button>
+            <button class="btn sm" type="button" data-img="open" disabled>Open in New Tab</button>
             <button class="btn sm" type="button" data-img="delete" disabled>Delete</button>
             <span class="grow"></span>
-            <label class="chk"><input type="checkbox" data-show-rejected><span>Rejected</span></label>
             <button class="btn sm" type="button" data-img="upload">Upload\u2026</button>
           </div>
         </fieldset>
@@ -4838,7 +4878,6 @@ var HxH = (() => {
       this.charId = id;
       this.char = null;
       this.selected = null;
-      this.showRejected = false;
     }
     render() {
       const el = super.render();
@@ -4894,10 +4933,6 @@ var HxH = (() => {
         }
         this.emit("image", { act: b.dataset.img, id: this.selected });
       });
-      el.querySelector("[data-show-rejected]").addEventListener("change", (e) => {
-        this.showRejected = e.target.checked;
-        this.renderGallery();
-      });
       this.file.addEventListener("change", () => {
         if (this.file.files.length) this.emit("upload", { files: [...this.file.files] });
         this.file.value = "";
@@ -4952,7 +4987,7 @@ var HxH = (() => {
       st.className = "st " + c.review_status;
       el.querySelector(".verdict .ver").textContent = "v" + c.version;
       const last = (c.reviews || [])[0];
-      el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.reviewer}` : "";
+      el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
       el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
       for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
       const log = el.querySelector(".log");
@@ -4960,7 +4995,7 @@ var HxH = (() => {
         "div",
         { className: "lrow" },
         h("b", { text: `v${r.version} ${r.status}` }),
-        ` ${r.reviewer}`,
+        ` ${r.owner}`,
         r.reason ? h("span", { className: "why", text: " \u2014 " + r.reason }) : null,
         h("span", { className: "when", text: this.when(r.created_at) })
       )));
@@ -4987,17 +5022,14 @@ var HxH = (() => {
     renderGallery() {
       const c = this.char, byType = {};
       for (const im of c.images || []) (byType[im.type] ||= []).push(im);
-      this.gallery.replaceChildren(...TYPES2.flatMap(([t, label]) => {
+      this.gallery.replaceChildren(...TYPES2.map(([t, label]) => {
         const all = byType[t] || [];
-        const shown = all.filter((i) => this.showRejected || i.status !== "rejected");
-        if (!all.length && t !== "raw") return [];
-        const sec = h(
+        return h(
           "div",
-          { className: "sec", dataset: { type: t } },
-          h("div", { className: "sech" }, h("b", { text: label }), h("span", { className: "n", text: String(all.filter((i) => i.status !== "rejected").length) })),
-          h("div", { className: "tiles" }, shown.length ? shown.map((im) => this.tile(im)) : h("div", { className: "empty", text: t === "raw" ? "Drop pictures here." : "" }))
+          { className: "sec" + (all.length ? "" : " none"), dataset: { type: t } },
+          h("div", { className: "sech" }, h("b", { text: label }), h("span", { className: "n", text: String(all.length) })),
+          all.length ? h("div", { className: "tiles" }, all.map((im) => this.tile(im))) : null
         );
-        return [sec];
       }));
       if (this.selected && !(c.images || []).some((i) => i.id === this.selected)) this.selected = null;
       this.markSel();
@@ -5007,11 +5039,12 @@ var HxH = (() => {
       const c = this.char;
       const roles = [c.avatar_image_id === im.id && "avatar", c.card_image_id === im.id && "card"].filter(Boolean).join(" \xB7 ");
       const from = im.source_image_id ? `from #${im.source_image_id}` : "";
-      const cut = im.width / im.height > TILE_RATIO + 0.01 ? " cut-x" : im.width / im.height < TILE_RATIO - 0.01 ? " cut-y" : "";
+      const r = im.width / im.height;
+      const fit = r > FIT_MAX ? "cut-x" : r < FIT_MIN ? "cut-y" : "fit";
       return h(
         "figure",
-        { className: `tile ${im.status}${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-        h("div", { className: "pic" + cut }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+        { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
+        h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
         h(
           "figcaption",
           {},
@@ -5027,8 +5060,8 @@ var HxH = (() => {
       const tools = this.el.querySelector(".gtools");
       for (const b of tools.querySelectorAll("[data-img]")) if (b.dataset.img !== "upload") b.disabled = !im;
       if (im) {
-        tools.querySelector('[data-img="reject"]').textContent = im.status === "rejected" ? "Restore" : "Reject";
-        tools.querySelector('[data-img="reject"]').disabled = im.type !== "raw";
+        tools.querySelector('[data-img="avatar"]').disabled = !eligible(im, AVATAR_RATIO);
+        tools.querySelector('[data-img="card"]').disabled = !eligible(im, CARD_RATIO);
         tools.querySelector('[data-img="avatar"]').classList.toggle("pressed", this.char.avatar_image_id === id);
         tools.querySelector('[data-img="card"]').classList.toggle("pressed", this.char.card_image_id === id);
         this.selEl.textContent = `#${im.id} \xB7 ${im.type} \xB7 ${im.width}\xD7${im.height} \xB7 ${Math.round(im.bytes / 1024)} KB`;
@@ -5041,6 +5074,187 @@ var HxH = (() => {
       for (const t of this.gallery.querySelectorAll(".tile")) t.classList.toggle("sel", +t.dataset.id === this.selected);
     }
   };
+
+  // html/hxh/apps/roster/paint.js
+  var HISTORY = 15;
+  var PaintDoc = class {
+    /** canvas: the <canvas>; onChange(doc) after any state change */
+    constructor({ canvas, width, height, depth = HISTORY, onChange = null }) {
+      this.canvas = canvas;
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.ctx = canvas.getContext?.("2d") || null;
+      this.W = width;
+      this.H = height;
+      this.depth = depth;
+      this.onChange = onChange;
+      this.states = [];
+      this.pos = -1;
+      this.clean = -1;
+      this.source = null;
+      this.stroking = false;
+    }
+    get dirty() {
+      return this.pos !== this.clean;
+    }
+    get canUndo() {
+      return this.pos > 0;
+    }
+    get canRedo() {
+      return this.pos < this.states.length - 1;
+    }
+    /** Draw the stored picture and make that state 0, the clean one. */
+    load(img) {
+      this.source = img;
+      if (this.ctx) {
+        this.ctx.clearRect(0, 0, this.W, this.H);
+        this.ctx.drawImage(img, 0, 0, this.W, this.H);
+      }
+      this.states = [];
+      this.pos = -1;
+      this.commit({ clean: true });
+    }
+    snapshot() {
+      return { w: this.W, h: this.H, data: this.ctx ? this.ctx.getImageData(0, 0, this.W, this.H) : null };
+    }
+    /** Record the canvas as the next state (dropping any redo future); clean marks it as what is stored. */
+    commit({ clean = false } = {}) {
+      this.states.length = this.pos + 1;
+      this.states.push(this.snapshot());
+      this.pos = this.states.length - 1;
+      if (clean) this.clean = this.pos;
+      while (this.states.length > this.depth + 1) {
+        this.states.shift();
+        this.pos--;
+        this.clean--;
+      }
+      this.changed();
+    }
+    restore(st) {
+      this.W = st.w;
+      this.H = st.h;
+      this.canvas.width = st.w;
+      this.canvas.height = st.h;
+      if (this.ctx && st.data) this.ctx.putImageData(st.data, 0, 0);
+    }
+    undo() {
+      if (!this.canUndo) return false;
+      this.restore(this.states[--this.pos]);
+      this.changed();
+      return true;
+    }
+    redo() {
+      if (!this.canRedo) return false;
+      this.restore(this.states[++this.pos]);
+      this.changed();
+      return true;
+    }
+    /** Back to the stored picture — as a new state, so it can be undone. */
+    revert() {
+      if (!this.source) return false;
+      const st = this.states[0];
+      this.restore({ w: st?.w ?? this.W, h: st?.h ?? this.H, data: null });
+      if (this.ctx) {
+        this.ctx.clearRect(0, 0, this.W, this.H);
+        this.ctx.drawImage(this.source, 0, 0, this.W, this.H);
+      }
+      this.commit({ clean: true });
+      return true;
+    }
+    changed() {
+      this.onChange?.(this);
+    }
+    /* ---------- operations ---------- */
+    /** A stroke: dots and segments between pointer events, committed once at the end. */
+    beginStroke(p, color, radius) {
+      this.stroking = true;
+      this.dot(p, color, radius);
+    }
+    dot(p, color, radius) {
+      const c = this.ctx;
+      if (!c) return;
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      c.fill();
+    }
+    segment(a, b, color, radius) {
+      const c = this.ctx;
+      if (!c) return;
+      c.strokeStyle = color;
+      c.lineWidth = radius * 2;
+      c.lineCap = "round";
+      c.lineJoin = "round";
+      c.beginPath();
+      c.moveTo(a.x, a.y);
+      c.lineTo(b.x, b.y);
+      c.stroke();
+    }
+    endStroke() {
+      if (!this.stroking) return;
+      this.stroking = false;
+      this.commit();
+    }
+    /** The colour under a point, as #rrggbb. */
+    pick(p) {
+      if (!this.ctx) return null;
+      const d = this.ctx.getImageData(Math.min(this.W - 1, Math.max(0, Math.floor(p.x))), Math.min(this.H - 1, Math.max(0, Math.floor(p.y))), 1, 1).data;
+      return "#" + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, "0")).join("");
+    }
+    /** Bucket: every pixel connected to (x,y) with EXACTLY its colour takes `color`. */
+    fill(p, color) {
+      const c = this.ctx;
+      if (!c) return false;
+      const x = Math.floor(p.x), y = Math.floor(p.y), W = this.W, H = this.H;
+      if (x < 0 || y < 0 || x >= W || y >= H) return false;
+      const img = c.getImageData(0, 0, W, H);
+      const d = new Uint32Array(img.data.buffer);
+      const target = d[y * W + x], repl = packRGBA(color);
+      if (target === repl) return false;
+      const stack = [y * W + x];
+      while (stack.length) {
+        let i = stack.pop();
+        if (d[i] !== target) continue;
+        let l = i, r = i;
+        while (l % W > 0 && d[l - 1] === target) l--;
+        while (r % W < W - 1 && d[r + 1] === target) r++;
+        for (let j = l; j <= r; j++) {
+          d[j] = repl;
+          if (j >= W && d[j - W] === target) stack.push(j - W);
+          if (j + W < W * H && d[j + W] === target) stack.push(j + W);
+        }
+      }
+      c.putImageData(img, 0, 0);
+      this.commit();
+      return true;
+    }
+    /** Add `px` of white canvas on every side. */
+    expand(px = 20) {
+      const c = this.ctx;
+      const w2 = this.W + 2 * px, h2 = this.H + 2 * px;
+      if (c) {
+        const keep = c.getImageData(0, 0, this.W, this.H);
+        this.canvas.width = w2;
+        this.canvas.height = h2;
+        c.fillStyle = "#ffffff";
+        c.fillRect(0, 0, w2, h2);
+        c.putImageData(keep, px, px);
+      } else {
+        this.canvas.width = w2;
+        this.canvas.height = h2;
+      }
+      this.W = w2;
+      this.H = h2;
+      this.commit();
+      return { w: w2, h: h2 };
+    }
+  };
+  function packRGBA(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+    const buf = new Uint8ClampedArray([r, g, b, 255]);
+    return new Uint32Array(buf.buffer)[0];
+  }
 
   // html/hxh/apps/roster/geometry.js
   var RATIOS = [["Free", 0], ["1:1", 1], ["2:3", 2 / 3], ["3:2", 3 / 2], ["4:5", 4 / 5], ["5:4", 5 / 4], ["16:9", 16 / 9], ["9:16", 9 / 16]];
@@ -5124,12 +5338,14 @@ var HxH = (() => {
 
   // html/hxh/apps/roster/crop.js
   var cropId = (imageId) => "win-crop-" + imageId;
-  var TOOLS = ["marquee", "brush", "dropper"];
+  var TOOLS = ["marquee", "brush", "bucket", "dropper"];
   var PALETTE = ["#000000", "#808080", "#800000", "#ff0000", "#ff7f27", "#ffff00", "#22b14c", "#008000", "#00ffff", "#0000ff", "#000080", "#800080", "#ff00ff", "#804000", "#c0c0c0", "#ffffff"];
-  var UNDO_DEPTH = 15;
-  var hex = (r, g, b) => "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+  var EXPAND_PX = 20;
+  var PRESET_SHARE = 0.6;
+  var LABELS = { 1: "1:1 Avatar", [2 / 3]: "2:3 Card" };
+  var MIN_WIDTH = 720;
   var CropWindow = class extends Window {
-    /** props: image {id,width,height,type}, char {id,name}, src (url), canvas {cw,ch}, ratio, fit */
+    /** props: image {id,width,height,type}, char {id,name}, src (url), desktop {vw,vh}, ratio, menus */
     constructor(props) {
       const { image, char } = props;
       super({
@@ -5150,32 +5366,35 @@ var HxH = (() => {
           <button class="btn sm ic" type="button" data-act="revert" title="Revert" disabled>${icon("revert", 16)}</button>
         </div>
         <div class="ctools">
-          <div class="ratios">${RATIOS.map(([l, r]) => `<button class="btn sm" type="button" data-r="${r}">${l}</button>`).join("")}</div>
+          <div class="ratios">${RATIOS.map(([l, r]) => `<button class="btn sm" type="button" data-r="${r}">${LABELS[r] || l}</button>`).join("")}</div>
           <span class="grow"></span>
-          <button class="btn sm" type="button" data-act="fit">Fit</button>
+          <button class="btn sm ic" type="button" data-act="expand" title="Expand canvas">${icon("expand", 16)}</button>
         </div>
         <div class="canvas sunken"><div class="wrap"><canvas class="pic"></canvas><i class="cursor" hidden></i><div class="box" hidden><i class="ants"></i>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<b class="hd ${d}" data-h="${d}"></b>`).join("")}</div></div></div>
         <div class="foot">
           <span class="status"><span class="pos"></span><span class="saved"></span></span>
-          <button class="btn primary" type="button" data-act="save" disabled>Crop and save</button>
+          <button class="btn primary" type="button" data-act="save" disabled>Save</button>
         </div>`,
         ...props
       });
-      this.W = image.width;
-      this.H = image.height;
+      this.desktop = props.desktop || { vw: 1366, vh: 900 };
       this.z = 1;
-      this.fit = !!props.fit;
       this.ratio = props.ratio || 0;
       this.box = null;
       this.drag = null;
       this.tool = "marquee";
       this.radius = 8;
       this.color = "#000000";
-      this.undoStack = [];
-      this.redoStack = [];
-      this.dirty = false;
-      this.ctx = null;
-      this.source = null;
+      this.doc = null;
+    }
+    get W() {
+      return this.doc ? this.doc.W : this.props.image.width;
+    }
+    get H() {
+      return this.doc ? this.doc.H : this.props.image.height;
+    }
+    get dirty() {
+      return !!this.doc?.dirty;
     }
     render() {
       const el = super.render();
@@ -5190,24 +5409,22 @@ var HxH = (() => {
       this.rangeEl = el.querySelector(".radius input");
       this.colorEl = el.querySelector(".swatch input");
       this.wrap.classList.toggle("pixel", ["pixelated", "transparent"].includes(this.props.image.type));
-      this.pic.width = this.W;
-      this.pic.height = this.H;
-      this.ctx = this.pic.getContext?.("2d") || null;
+      this.doc = new PaintDoc({ canvas: this.pic, width: this.props.image.width, height: this.props.image.height, onChange: () => this.onDocChange() });
       el.querySelector(".ratios").addEventListener("click", (e) => {
         const b = e.target.closest("[data-r]");
         if (b) this.setRatio(+b.dataset.r);
       });
-      el.querySelector('[data-act="fit"]').addEventListener("click", () => this.setFit(!this.fit));
-      el.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => this.setTool(b.dataset.tool)));
+      el.querySelectorAll("button[data-tool]").forEach((b) => b.addEventListener("click", () => this.setTool(b.dataset.tool)));
       el.querySelector(".palette").addEventListener("click", (e) => {
         const b = e.target.closest("[data-color]");
         if (b) this.setColor(b.dataset.color);
       });
       this.colorEl.addEventListener("input", () => this.setColor(this.colorEl.value, { fromInput: true }));
       this.rangeEl.addEventListener("input", () => this.setRadius(+this.rangeEl.value));
-      el.querySelector('[data-act="undo"]').addEventListener("click", () => this.undo());
-      el.querySelector('[data-act="redo"]').addEventListener("click", () => this.redo());
-      el.querySelector('[data-act="revert"]').addEventListener("click", () => this.revert());
+      el.querySelector('[data-act="undo"]').addEventListener("click", () => this.doc.undo());
+      el.querySelector('[data-act="redo"]').addEventListener("click", () => this.doc.redo());
+      el.querySelector('[data-act="revert"]').addEventListener("click", () => this.emit("revert"));
+      el.querySelector('[data-act="expand"]').addEventListener("click", () => this.expand());
       this.saveBtn.addEventListener("click", () => this.save());
       this.wrap.addEventListener("pointerdown", (e) => this.down(e));
       this.wrap.addEventListener("pointermove", (e) => this.move(e));
@@ -5228,45 +5445,50 @@ var HxH = (() => {
       this.setTool(this.tool);
       this.setColor(this.color);
       this.setRadius(this.radius);
+      this.syncHistory();
     }
-    /** Paint the source picture onto the canvas (same origin, so the canvas stays clean for reading pixels). */
+    /** Paint the stored picture onto the canvas (same origin, so pixels stay readable). */
     loadPicture() {
       if (!this.props.src || typeof Image === "undefined") return;
       const img = new Image();
-      img.onload = () => {
-        this.source = img;
-        this.ctx?.drawImage(img, 0, 0, this.W, this.H);
-      };
+      img.onload = () => this.doc.load(img);
       img.src = this.props.src;
     }
-    /** Size the canvas frame to what the desktop affords and pick the zoom. */
+    /** After any history move: the picture may have changed size. */
+    onDocChange() {
+      if (this.box && (this.box.x + this.box.w > this.W || this.box.y + this.box.h > this.H)) this.box = null;
+      if (this.el) {
+        this.layout();
+        this.syncHistory();
+      }
+    }
+    /** The window holds the whole picture: scale down to what the desktop affords, never up. */
     layout() {
-      const { cw, ch } = this.props.canvas || cropCanvas(this.W, this.H, 1366, 900);
-      this.z = this.fit ? fitZoom(this.W, this.H, cw, ch) : 1;
+      const { cw, ch } = cropCanvas(this.W, this.H, this.desktop.vw, this.desktop.vh);
+      this.z = fitZoom(this.W, this.H, cw, ch);
       const ww = Math.round(this.W * this.z), wh = Math.round(this.H * this.z);
-      this.canvas.style.width = Math.min(cw, ww) + "px";
-      this.canvas.style.height = Math.min(ch, wh) + "px";
+      this.canvas.style.width = ww + "px";
+      this.canvas.style.height = wh + "px";
       this.wrap.style.width = ww + "px";
       this.wrap.style.height = wh + "px";
-      this.el.style.width = Math.max(640, Math.min(cw, ww) + 44) + "px";
-      const fitBtn = this.el.querySelector('[data-act="fit"]');
-      fitBtn.classList.toggle("pressed", this.fit);
-      fitBtn.textContent = this.fit ? `Fit ${Math.round(this.z * 100)}%` : "Fit";
+      this.el.style.width = Math.max(MIN_WIDTH, ww + 44) + "px";
+      this.sizeCursor();
       this.draw();
-    }
-    setFit(on) {
-      this.fit = on;
-      this.emit("fit", { fit: on });
-      this.layout();
     }
     setRatio(r) {
       this.ratio = r;
       this.emit("ratio", { ratio: r });
       this.markRatio();
-      if (this.box && r) {
-        this.box = refit(this.W, this.H, r, this.box);
+      if (!r) {
         this.draw();
+        return;
       }
+      if (this.box) this.box = refit(this.W, this.H, r, this.box);
+      else {
+        const w = Math.min(this.W, this.H * r) * PRESET_SHARE;
+        this.box = roundBox(fitAround(this.W, this.H, r, this.W / 2, this.H / 2, w, w / r));
+      }
+      this.draw();
     }
     markRatio() {
       for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", +b.dataset.r === this.ratio);
@@ -5297,45 +5519,22 @@ var HxH = (() => {
       Object.assign(this.cursorEl.style, { width: d + "px", height: d + "px" });
       if (p) Object.assign(this.cursorEl.style, { left: p.x * this.z + "px", top: p.y * this.z + "px" });
     }
-    /* ---------- undo / redo / revert ---------- */
-    snapshot() {
-      if (!this.ctx) return;
-      this.undoStack.push(this.ctx.getImageData(0, 0, this.W, this.H));
-      while (this.undoStack.length > UNDO_DEPTH) this.undoStack.shift();
-      this.redoStack.length = 0;
-      this.syncHistory();
-    }
-    undo() {
-      const s = this.undoStack.pop();
-      if (!s || !this.ctx) return;
-      this.redoStack.push(this.ctx.getImageData(0, 0, this.W, this.H));
-      this.ctx.putImageData(s, 0, 0);
-      this.dirty = this.undoStack.length > 0 || this.redoStack.length === 0 ? this.dirty : this.dirty;
-      this.dirty = this.undoStack.length > 0;
-      this.syncHistory();
-    }
-    redo() {
-      const s = this.redoStack.pop();
-      if (!s || !this.ctx) return;
-      this.undoStack.push(this.ctx.getImageData(0, 0, this.W, this.H));
-      this.ctx.putImageData(s, 0, 0);
-      this.dirty = true;
-      this.syncHistory();
-    }
-    /** Back to the picture as stored — itself undoable. */
-    revert() {
-      if (!this.dirty || !this.ctx || !this.source) return;
-      this.snapshot();
-      this.ctx.clearRect(0, 0, this.W, this.H);
-      this.ctx.drawImage(this.source, 0, 0, this.W, this.H);
-      this.dirty = false;
-      this.syncHistory();
-    }
+    /* ---------- history ---------- */
     syncHistory() {
-      this.el.querySelector('[data-act="undo"]').disabled = !this.undoStack.length;
-      this.el.querySelector('[data-act="redo"]').disabled = !this.redoStack.length;
-      this.el.querySelector('[data-act="revert"]').disabled = !this.dirty;
+      const d = this.doc;
+      this.el.querySelector('[data-act="undo"]').disabled = !d?.canUndo;
+      this.el.querySelector('[data-act="redo"]').disabled = !d?.canRedo;
+      this.el.querySelector('[data-act="revert"]').disabled = !d?.dirty;
       this.draw();
+    }
+    /** After the app has confirmed. */
+    doRevert() {
+      this.doc.revert();
+    }
+    expand() {
+      this.doc.expand(EXPAND_PX);
+      if (this.box) this.box = { ...this.box, x: this.box.x + EXPAND_PX, y: this.box.y + EXPAND_PX };
+      this.layout();
     }
     /* ---------- pointer ---------- */
     pt(e) {
@@ -5348,15 +5547,18 @@ var HxH = (() => {
       this.wrap.setPointerCapture?.(e.pointerId);
       const p = this.pt(e);
       if (this.tool === "brush") {
-        this.snapshot();
+        this.doc.beginStroke(p, this.color, this.radius);
         this.drag = { kind: "paint", last: p };
-        this.dot(p);
-        this.dirty = true;
-        this.syncHistory();
+        return;
+      }
+      if (this.tool === "bucket") {
+        this.doc.fill(p, this.color);
         return;
       }
       if (this.tool === "dropper") {
-        this.pick(p);
+        const c = this.doc.pick(p);
+        if (c) this.setColor(c);
+        this.setTool("brush");
         return;
       }
       const hd = e.target.closest?.(".hd");
@@ -5377,7 +5579,7 @@ var HxH = (() => {
       if (!this.drag) return;
       const d = this.drag;
       if (d.kind === "paint") {
-        this.stroke(d.last, p);
+        this.doc.segment(d.last, p, this.color, this.radius);
         d.last = p;
         return;
       }
@@ -5390,7 +5592,10 @@ var HxH = (() => {
       if (!this.drag) return;
       const kind = this.drag.kind;
       this.drag = null;
-      if (kind === "paint") return;
+      if (kind === "paint") {
+        this.doc.endStroke();
+        return;
+      }
       if (this.box && (this.box.w < 1 || this.box.h < 1)) this.box = null;
       if (this.box) this.box = roundBox(this.box);
       this.draw();
@@ -5399,12 +5604,12 @@ var HxH = (() => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        e.shiftKey ? this.redo() : this.undo();
+        e.shiftKey ? this.doc.redo() : this.doc.undo();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
         e.preventDefault();
-        this.redo();
+        this.doc.redo();
         return;
       }
       if (e.key === "Escape" && this.box) {
@@ -5413,7 +5618,7 @@ var HxH = (() => {
         this.draw();
         return;
       }
-      if (e.key === "Enter" && this.box) {
+      if (e.key === "Enter") {
         e.preventDefault();
         this.save();
         return;
@@ -5426,33 +5631,6 @@ var HxH = (() => {
       this.box = moveTo(this.W, this.H, b, b.x + dx, b.y + dy);
       this.draw();
     }
-    /* ---------- painting ---------- */
-    dot(p) {
-      const c = this.ctx;
-      if (!c) return;
-      c.fillStyle = this.color;
-      c.beginPath();
-      c.arc(p.x, p.y, this.radius, 0, Math.PI * 2);
-      c.fill();
-    }
-    stroke(a, b) {
-      const c = this.ctx;
-      if (!c) return;
-      c.strokeStyle = this.color;
-      c.lineWidth = this.radius * 2;
-      c.lineCap = "round";
-      c.lineJoin = "round";
-      c.beginPath();
-      c.moveTo(a.x, a.y);
-      c.lineTo(b.x, b.y);
-      c.stroke();
-    }
-    pick(p) {
-      if (!this.ctx) return;
-      const d = this.ctx.getImageData(Math.min(this.W - 1, Math.floor(p.x)), Math.min(this.H - 1, Math.floor(p.y)), 1, 1).data;
-      this.setColor(hex(d[0], d[1], d[2]));
-      this.setTool("brush");
-    }
     /** Set the box from outside (tests, presets). */
     setBox(b) {
       this.box = b ? roundBox(b) : null;
@@ -5462,15 +5640,16 @@ var HxH = (() => {
       const b = this.box && roundBox(this.box);
       this.boxEl.hidden = !b;
       this.saveBtn.disabled = !(b && b.w >= 1 && b.h >= 1) && !this.dirty;
+      const painted = this.dirty ? "  \xB7  painted" : "";
       if (!b) {
-        this.posEl.textContent = this.dirty ? "painted" : "";
+        this.posEl.textContent = `${this.W} \xD7 ${this.H}${painted}`;
         return;
       }
       const z = this.z;
       Object.assign(this.boxEl.style, { left: b.x * z + "px", top: b.y * z + "px", width: b.w * z + "px", height: b.h * z + "px" });
-      this.posEl.textContent = `${b.x}, ${b.y}  \xB7  ${b.w} \xD7 ${b.h}${this.dirty ? "  \xB7  painted" : ""}`;
+      this.posEl.textContent = `${b.x}, ${b.y}  \xB7  ${b.w} \xD7 ${b.h}${painted}`;
     }
-    /** The pixels of rect (or the whole picture) as a PNG blob. */
+    /** The pixels of rect as a PNG blob. */
     exportPNG(rect) {
       return new Promise((res, rej) => {
         const out = this.pic.ownerDocument.createElement("canvas");
@@ -5483,8 +5662,8 @@ var HxH = (() => {
       });
     }
     async save() {
-      const rect = this.box ? roundBox(this.box) : { x: 0, y: 0, w: this.W, h: this.H };
-      if (rect.w < 1 || rect.h < 1) return;
+      const rect = this.box ? roundBox(this.box) : this.dirty ? { x: 0, y: 0, w: this.W, h: this.H } : null;
+      if (!rect || rect.w < 1 || rect.h < 1) return;
       this.saveBtn.disabled = true;
       this.savedEl.textContent = "";
       if (!this.dirty) {
@@ -5498,9 +5677,8 @@ var HxH = (() => {
         this.failed(err.message);
       }
     }
-    /** Called by the app with the server's answer. */
+    /** Called by the app with the server's answer (the app then closes the window). */
     saved(image, created = true) {
-      this.saveBtn.disabled = !this.box && !this.dirty;
       this.savedEl.textContent = `${created ? "Saved" : "Already"} #${image.id} ${image.width}\xD7${image.height}`;
       this.savedEl.classList.remove("err");
     }
@@ -5612,9 +5790,10 @@ var HxH = (() => {
   };
   var ReasonDialog = class extends Dialog {
     constructor({ name } = {}) {
+      void name;
       super({
         title: "Reject",
-        body: `<p class="q">Why is <b>${esc(name)}</b> rejected?</p><textarea class="field" rows="4"></textarea>`,
+        body: `<label class="lbl" for="dlg-reason">Rejection reason (optional):</label><textarea class="field" id="dlg-reason" rows="4"></textarea>`,
         buttons: [{ act: "ok", label: "Reject", primary: true }, { act: "cancel", label: "Cancel" }],
         focus: "textarea",
         width: 460
@@ -5622,13 +5801,7 @@ var HxH = (() => {
     }
     render() {
       const el = super.render();
-      const ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]');
-      const sync = () => {
-        ok.disabled = !ta.value.trim();
-      };
-      ta.addEventListener("input", sync);
-      sync();
-      ta.addEventListener("keydown", (e) => {
+      el.querySelector("textarea").addEventListener("keydown", (e) => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
           this.finish("ok");
@@ -5636,13 +5809,42 @@ var HxH = (() => {
       });
       return el;
     }
+    /** The reason, possibly empty — OK always means "reject". */
     value() {
       return this.$("textarea").value.trim();
     }
   };
 
+  // html/hxh/apps/roster/busy.js
+  function busy(win, promise, label = "Please wait\u2026") {
+    const el = win.el;
+    if (!el) return promise;
+    let ov = el.querySelector(":scope > .busy");
+    if (!ov) {
+      ov = h("div", { className: "busy" }, h("div", { className: "bbox" }, h("span", { className: "hg", html: icon("hourglass", 16) }), h("span", { className: "bl" })));
+      el.append(ov);
+    }
+    ov.querySelector(".bl").textContent = label;
+    ov.hidden = false;
+    el.classList.add("frozen");
+    win.busyCount = (win.busyCount || 0) + 1;
+    const done = () => {
+      if (--win.busyCount <= 0) {
+        win.busyCount = 0;
+        ov.hidden = true;
+        el.classList.remove("frozen");
+      }
+    };
+    return Promise.resolve(promise).then((v) => {
+      done();
+      return v;
+    }, (err) => {
+      done();
+      throw err;
+    });
+  }
+
   // html/hxh/apps/roster/app.js
-  var SETTING_FIT = "roster.fit";
   var SETTING_RATIO = "roster.ratio";
   var RosterApp = class extends App {
     static id = "roster";
@@ -5744,7 +5946,7 @@ var HxH = (() => {
     async reload(id, { form = true } = {}) {
       const w = this.chars.get(id);
       try {
-        const c = await this.api.get(id);
+        const c = await this.hold(w, this.api.get(id));
         w?.setChar(c, { form });
         w?.say("");
         this.listWin?.update(c);
@@ -5754,10 +5956,14 @@ var HxH = (() => {
         return null;
       }
     }
+    /** Every call to the database freezes its window until the answer is back. */
+    hold(win, promise, label) {
+      return win ? busy(win, promise, label) : promise;
+    }
     async patch(id, fields) {
       const w = this.chars.get(id);
       try {
-        const c = await this.api.patch(id, fields);
+        const c = await this.hold(w, this.api.patch(id, fields));
         w?.setChar(c, { form: false });
         w?.say("Saved");
         this.listWin?.update(c);
@@ -5770,10 +5976,10 @@ var HxH = (() => {
       let reason = "";
       if (status === "rejected") {
         reason = await new ReasonDialog({ name: w?.char?.name || "#" + id }).ask(this.os);
-        if (!reason) return;
+        if (reason === null) return;
       }
       try {
-        const c = await this.api.review(id, status, reason);
+        const c = await this.hold(w, this.api.review(id, status, reason));
         w?.setChar(c, { form: false });
         w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
         this.listWin?.update(c);
@@ -5787,7 +5993,7 @@ var HxH = (() => {
       for (const f of files) {
         if (!/^image\//.test(f.type)) continue;
         try {
-          const r = await this.api.upload(id, f, { caption: (f.name || "").replace(/\.[a-z0-9]+$/i, "") });
+          const r = await this.hold(w, this.api.upload(id, f, { type: "uploaded", caption: (f.name || "").replace(/\.[a-z0-9]+$/i, "") }), "Uploading\u2026");
           r.created ? n++ : dup++;
         } catch (err) {
           w?.say(`${f.name}: ${err.message}`, true);
@@ -5799,7 +6005,7 @@ var HxH = (() => {
     async imageAct(id, act, imageId) {
       const w = this.chars.get(id);
       if (!imageId) return;
-      const im = (w?.char?.images || []).find((i) => i.id === imageId);
+      void (w?.char?.images || []).find((i) => i.id === imageId);
       try {
         switch (act) {
           case "avatar":
@@ -5816,14 +6022,9 @@ var HxH = (() => {
           case "open":
             this.os.win.open?.(this.api.imageURL(imageId), "_blank");
             break;
-          case "reject":
-            await this.api.patchImage(imageId, { status: im?.status === "rejected" ? "kept" : "rejected" });
-            await this.reload(id, { form: false });
-            w.select(imageId);
-            break;
           case "delete":
             if (!await new ConfirmDialog({ message: `Delete picture #${imageId}?`, ok: "Delete" }).ask(this.os)) return;
-            await this.api.deleteImage(imageId);
+            await this.hold(w, this.api.deleteImage(imageId));
             w.select(null);
             await this.reload(id, { form: false });
             break;
@@ -5837,7 +6038,7 @@ var HxH = (() => {
       const name = w?.char?.name || "#" + id;
       if (!await new ConfirmDialog({ message: `Delete ${name} and all its pictures?`, ok: "Delete" }).ask(this.os)) return;
       try {
-        await this.api.remove(id);
+        await this.hold(w, this.api.remove(id));
         w?.close();
         this.listWin?.drop(id);
       } catch (err) {
@@ -5856,19 +6057,16 @@ var HxH = (() => {
           os.toast.show(err.message);
           return null;
         }
-        const canvas = cropCanvas(meta.image.width, meta.image.height, os.env.width, os.env.height);
         w = new CropWindow({
           image: meta.image,
           char: meta.char,
           src: this.api.imageURL(imageId),
-          canvas,
-          fit: os.settings.get(SETTING_FIT, true),
+          desktop: { vw: os.env.width, vh: os.env.height },
           ratio: this.savedRatio(),
-          menus: (win) => os.appMenus(win, {})
+          menus: (win) => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] })
         });
         os.wm.add(w);
         this.crops.set(imageId, w);
-        w.on("fit", ({ fit }) => os.settings.set(SETTING_FIT, fit));
         w.on("ratio", ({ ratio }) => {
           try {
             os.win.localStorage?.setItem(SETTING_RATIO, String(ratio));
@@ -5876,6 +6074,9 @@ var HxH = (() => {
           }
         });
         w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
+        w.on("revert", async () => {
+          if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os)) w.doRevert();
+        });
         w.on("close", () => {
           this.crops.delete(imageId);
           os.wm.remove(w.id);
@@ -5894,12 +6095,14 @@ var HxH = (() => {
         return 0;
       }
     }
-    /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped" picture. */
+    /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
+        picture. Once the database has answered, the crop window closes. */
     async crop(imageId, meta, rect, blob = null) {
       const w = this.crops.get(imageId);
       try {
-        const r = blob ? await this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` }) : await this.api.crop(imageId, rect);
+        const r = await this.hold(w, blob ? this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` }) : this.api.crop(imageId, rect), "Saving\u2026");
         w?.saved(r.image, r.created);
+        w?.close();
         await this.reload(meta.char.id, { form: false });
       } catch (err) {
         w?.failed(err.message);

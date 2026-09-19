@@ -13,12 +13,14 @@ export const NEN = ["enhancement", "transmutation", "conjuration", "emission", "
 export const ARCS = [["hunter-exam", "Hunter Exam"], ["zoldyck-family", "Zoldyck Family"], ["heavens-arena", "Heavens Arena"],
   ["yorknew-city", "Yorknew City"], ["greed-island", "Greed Island"], ["chimera-ant", "Chimera Ant"], ["chairman-election", "Chairman Election"]];
 export const RANKS = ["S", "A", "B", "C"];
-export const TYPES = [["raw", "Raw"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+export const TYPES = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+export const AVATAR_RATIO = 1, CARD_RATIO = 2 / 3, RATIO_TOL = 0.02;
+export const FIT_MIN = 2 / 3, FIT_MAX = 3 / 2;   // thumbnails inside this range show whole; outside, the short side shows and chevrons mark the cut
+export const eligible = (im, ratio) => Math.abs(im.width / im.height - ratio) <= RATIO_TOL;
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 export const slugify = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 export const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
 export const winId = id => "win-roster-c-" + id;
-export const TILE_RATIO = 3 / 2;   // the thumbnail box
 
 const FORM = `
   <div class="frow">
@@ -27,7 +29,7 @@ const FORM = `
   </div>
   <div class="frow four">
     <div class="f"><label class="lbl">Short</label><input class="field" data-f="first" maxlength="20"></div>
-    <div class="f"><label class="lbl">Rank</label><select class="field" data-f="rank">${RANKS.map(r => `<option>${r}</option>`).join("")}</select></div>
+    <div class="f"><label class="lbl">Card rank</label><select class="field" data-f="rank">${RANKS.map(r => `<option>${r}</option>`).join("")}</select></div>
     <div class="f"><label class="lbl">Nen</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
     <div class="f"><label class="lbl">Affiliation</label><input class="field" data-f="affiliation" maxlength="60"></div>
   </div>
@@ -65,14 +67,13 @@ export class CharacterWindow extends Window {
         <fieldset class="group profile"><legend>Profile</legend><div class="form">${FORM}</div></fieldset>
         <fieldset class="group pics"><legend>Pictures</legend>
           <div class="gtools">
-            <button class="btn sm" type="button" data-img="avatar" disabled>Avatar</button>
-            <button class="btn sm" type="button" data-img="card" disabled>Card</button>
+            <button class="btn sm" type="button" data-img="avatar" disabled>Set as Avatar</button>
+            <button class="btn sm" type="button" data-img="card" disabled>Set as Card</button>
+            <span class="gap"></span>
             <button class="btn sm" type="button" data-img="crop" disabled>Crop</button>
-            <button class="btn sm" type="button" data-img="open" disabled>Open</button>
-            <button class="btn sm" type="button" data-img="reject" disabled>Reject</button>
+            <button class="btn sm" type="button" data-img="open" disabled>Open in New Tab</button>
             <button class="btn sm" type="button" data-img="delete" disabled>Delete</button>
             <span class="grow"></span>
-            <label class="chk"><input type="checkbox" data-show-rejected><span>Rejected</span></label>
             <button class="btn sm" type="button" data-img="upload">Upload…</button>
           </div>
         </fieldset>
@@ -83,7 +84,6 @@ export class CharacterWindow extends Window {
     this.charId = id;
     this.char = null;
     this.selected = null;
-    this.showRejected = false;
   }
 
   render() {
@@ -134,7 +134,6 @@ export class CharacterWindow extends Window {
       if (b.dataset.img === "upload") { this.file.click(); return; }
       this.emit("image", { act: b.dataset.img, id: this.selected });
     });
-    el.querySelector("[data-show-rejected]").addEventListener("change", e => { this.showRejected = e.target.checked; this.renderGallery(); });
     this.file.addEventListener("change", () => { if (this.file.files.length) this.emit("upload", { files: [...this.file.files] }); this.file.value = ""; });
     const gbox = this.pane.el;
     gbox.addEventListener("dragover", e => { e.preventDefault(); gbox.classList.add("drop"); });
@@ -174,12 +173,12 @@ export class CharacterWindow extends Window {
     st.className = "st " + c.review_status;
     el.querySelector(".verdict .ver").textContent = "v" + c.version;
     const last = (c.reviews || [])[0];
-    el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.reviewer}` : "";
+    el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
     el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
     for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },
-      h("b", { text: `v${r.version} ${r.status}` }), ` ${r.reviewer}`, r.reason ? h("span", { className: "why", text: " — " + r.reason }) : null,
+      h("b", { text: `v${r.version} ${r.status}` }), ` ${r.owner}`, r.reason ? h("span", { className: "why", text: " — " + r.reason }) : null,
       h("span", { className: "when", text: this.when(r.created_at) }))));
   }
 
@@ -206,14 +205,12 @@ export class CharacterWindow extends Window {
   renderGallery() {
     const c = this.char, byType = {};
     for (const im of c.images || []) (byType[im.type] ||= []).push(im);
-    this.gallery.replaceChildren(...TYPES.flatMap(([t, label]) => {
+    // every category shows, empty ones with a 0 — a hint of what else can exist
+    this.gallery.replaceChildren(...TYPES.map(([t, label]) => {
       const all = byType[t] || [];
-      const shown = all.filter(i => this.showRejected || i.status !== "rejected");
-      if (!all.length && t !== "raw") return [];
-      const sec = h("div", { className: "sec", dataset: { type: t } },
-        h("div", { className: "sech" }, h("b", { text: label }), h("span", { className: "n", text: String(all.filter(i => i.status !== "rejected").length) })),
-        h("div", { className: "tiles" }, shown.length ? shown.map(im => this.tile(im)) : h("div", { className: "empty", text: t === "raw" ? "Drop pictures here." : "" })));
-      return [sec];
+      return h("div", { className: "sec" + (all.length ? "" : " none"), dataset: { type: t } },
+        h("div", { className: "sech" }, h("b", { text: label }), h("span", { className: "n", text: String(all.length) })),
+        all.length ? h("div", { className: "tiles" }, all.map(im => this.tile(im))) : null);
     }));
     if (this.selected && !(c.images || []).some(i => i.id === this.selected)) this.selected = null;
     this.markSel();
@@ -224,10 +221,12 @@ export class CharacterWindow extends Window {
     const c = this.char;
     const roles = [c.avatar_image_id === im.id && "avatar", c.card_image_id === im.id && "card"].filter(Boolean).join(" · ");
     const from = im.source_image_id ? `from #${im.source_image_id}` : "";
-    // the thumbnail fills its 3:2 box; whichever edge is longer is cut equally on both sides, and chevrons say so
-    const cut = im.width / im.height > TILE_RATIO + 0.01 ? " cut-x" : im.width / im.height < TILE_RATIO - 0.01 ? " cut-y" : "";
-    return h("figure", { className: `tile ${im.status}${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-      h("div", { className: "pic" + cut }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+    // a square slot per picture, pictures centred in it: between 2:3 and 3:2 the whole picture shows at its own
+    // proportion; beyond that the short side shows in full and chevrons mark the long side that was cut
+    const r = im.width / im.height;
+    const fit = r > FIT_MAX ? "cut-x" : r < FIT_MIN ? "cut-y" : "fit";
+    return h("figure", { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
+      h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
       h("figcaption", {},
         h("div", { className: "l1" }, h("b", { text: "#" + im.id }), h("span", { text: `${im.width}×${im.height}` }), h("span", { className: "role", text: roles })),
         h("div", { className: "l2", text: [from, im.caption].filter(Boolean).join(" · ") })));
@@ -240,8 +239,9 @@ export class CharacterWindow extends Window {
     const tools = this.el.querySelector(".gtools");
     for (const b of tools.querySelectorAll("[data-img]")) if (b.dataset.img !== "upload") b.disabled = !im;
     if (im) {
-      tools.querySelector('[data-img="reject"]').textContent = im.status === "rejected" ? "Restore" : "Reject";
-      tools.querySelector('[data-img="reject"]').disabled = im.type !== "raw";
+      // only a picture of the right proportion can be the avatar (1:1) or the card (2:3)
+      tools.querySelector('[data-img="avatar"]').disabled = !eligible(im, AVATAR_RATIO);
+      tools.querySelector('[data-img="card"]').disabled = !eligible(im, CARD_RATIO);
       tools.querySelector('[data-img="avatar"]').classList.toggle("pressed", this.char.avatar_image_id === id);
       tools.querySelector('[data-img="card"]').classList.toggle("pressed", this.char.card_image_id === id);
       this.selEl.textContent = `#${im.id} · ${im.type} · ${im.width}×${im.height} · ${Math.round(im.bytes / 1024)} KB`;

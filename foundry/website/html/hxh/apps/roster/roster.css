@@ -39,7 +39,7 @@
 
 /* ---------- the list ---------- */
 .rlist .body { padding: 8px 10px 10px; }
-.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 62px 1.5fr 1.3fr 54px 54px 112px; align-items: center; gap: 6px; }
+.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.5fr 1.3fr 54px 54px 112px; align-items: center; gap: 6px; }
 .rlist .lhead > span {
   padding: 4px 6px 3px; font: var(--t-ui); color: var(--ink); white-space: nowrap; overflow: hidden;
   background: var(--paper); border: var(--px) solid var(--ink);
@@ -98,19 +98,23 @@
 .rchar .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0 0; }
 .rchar .pics { padding-bottom: 8px; }
 .rchar .gtools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rchar .gtools .gap { width: 18px; }
 .rchar .gbox { height: 380px; max-height: 48vh; }
 .rchar .gbox.drop { outline: var(--px) dashed var(--blood); outline-offset: -4px; }
 .rchar .gallery { padding: 6px 8px 10px; }
 .rchar .sec + .sec { margin-top: 8px; border-top: var(--px) dashed var(--paper-lo); padding-top: 6px; }
+.rchar .sec.none .sech { margin-bottom: 0; color: var(--ink-4); }
 .rchar .sech { display: flex; align-items: baseline; gap: 8px; font: var(--t-ui-bold); margin: 2px 0 6px; }
 .rchar .sech .n { color: var(--ink-4); font: var(--t-small); }
 .rchar .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .rchar .tiles .empty { grid-column: 1 / -1; color: var(--ink-4); font: var(--t-ui); padding: 6px 2px; }
 .rchar .tile { margin: 0; padding: 4px; cursor: default; user-select: none; border: 1px solid transparent; }
 .rchar .tile.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
-.rchar .tile.rejected { opacity: .45; }
-.rchar .tile .pic { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--paper-lo); border: 1px solid var(--ink); }
-.rchar .tile .pic img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+/* a square slot; the picture sits centred in it */
+.rchar .tile .pic { position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; }
+.rchar .tile .pic img { display: block; border: 1px solid var(--ink); box-sizing: border-box; }
+.rchar .tile .pic.fit img { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+.rchar .tile .pic.cut-x img, .rchar .tile .pic.cut-y img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 /* chevrons on the edges that were cut (the whole picture shows when opened) */
 .rchar .tile .pic::before, .rchar .tile .pic::after {
   position: absolute; z-index: 1; padding: 1px 3px 0; pointer-events: none;
@@ -183,6 +187,14 @@
 .rcrop .saved { color: var(--nen-deep); }
 .rcrop .saved.err { color: var(--blood); }
 @keyframes ants { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; } }
+
+/* ---------- a frozen window: the hourglass overlay while the database answers ---------- */
+.win > .busy { position: absolute; inset: 0; z-index: 9; display: grid; place-items: center; cursor: wait; background: rgba(232,220,195,.5); }
+.win > .busy .bbox { display: flex; align-items: center; gap: 10px; padding: 10px 16px 9px; font: var(--t-ui-bold); color: var(--ink);
+  background: var(--paper); border: var(--px) solid var(--ink);
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo), 5px 5px 0 rgba(0,0,0,.5); }
+.win > .busy .hg { display: grid; animation: hourglass 1s steps(2) infinite; }
+@keyframes hourglass { 50% { transform: rotate(180deg); } }
 
 /* ---------- dialogs ---------- */
 .dlg .body { padding: 14px 16px 14px; }

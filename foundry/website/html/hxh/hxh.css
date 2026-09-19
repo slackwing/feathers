@@ -2430,7 +2430,7 @@ body.stacked .room .logbox {
 .rlist .lhead,
 .rlist .row {
   display: grid;
-  grid-template-columns: 48px 44px 1.1fr 1.1fr 62px 1.5fr 1.3fr 54px 54px 112px;
+  grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.5fr 1.3fr 54px 54px 112px;
   align-items: center;
   gap: 6px;
 }
@@ -2670,6 +2670,9 @@ body.stacked .room .logbox {
   gap: 6px;
   margin-bottom: 8px;
 }
+.rchar .gtools .gap {
+  width: 18px;
+}
 .rchar .gbox {
   height: 380px;
   max-height: 48vh;
@@ -2685,6 +2688,10 @@ body.stacked .room .logbox {
   margin-top: 8px;
   border-top: var(--px) dashed var(--paper-lo);
   padding-top: 6px;
+}
+.rchar .sec.none .sech {
+  margin-bottom: 0;
+  color: var(--ink-4);
 }
 .rchar .sech {
   display: flex;
@@ -2720,22 +2727,30 @@ body.stacked .room .logbox {
   color: var(--paper-hi);
   outline: 1px dotted var(--paper-hi);
 }
-.rchar .tile.rejected {
-  opacity: .45;
-}
 .rchar .tile .pic {
   position: relative;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  background: var(--paper-lo);
-  border: 1px solid var(--ink);
 }
 .rchar .tile .pic img {
+  display: block;
+  border: 1px solid var(--ink);
+  box-sizing: border-box;
+}
+.rchar .tile .pic.fit img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+.rchar .tile .pic.cut-x img,
+.rchar .tile .pic.cut-y img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;
 }
 .rchar .tile .pic::before,
 .rchar .tile .pic::after {
@@ -3065,6 +3080,38 @@ body.stacked .room .logbox {
       -8px 100%,
       0 -8px,
       100% 8px;
+  }
+}
+.win > .busy {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  cursor: wait;
+  background: rgba(232, 220, 195, .5);
+}
+.win > .busy .bbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 9px;
+  font: var(--t-ui-bold);
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--px) solid var(--ink);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--paper-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
+    5px 5px 0 rgba(0, 0, 0, .5);
+}
+.win > .busy .hg {
+  display: grid;
+  animation: hourglass 1s steps(2) infinite;
+}
+@keyframes hourglass {
+  50% {
+    transform: rotate(180deg);
   }
 }
 .dlg .body {

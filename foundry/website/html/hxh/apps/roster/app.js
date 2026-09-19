@@ -13,10 +13,9 @@ import { RosterWindow, FILTERS } from "./list.js";
 import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
 import { ConfirmDialog, PromptDialog, ReasonDialog } from "./dialogs.js";
-import { cropCanvas } from "./geometry.js";
+import { busy } from "./busy.js";
 import "./roster.css";
 
-export const SETTING_FIT = "roster.fit";
 export const SETTING_RATIO = "roster.ratio";
 
 export class RosterApp extends App {
@@ -118,7 +117,7 @@ export class RosterApp extends App {
   async reload(id, { form = true } = {}) {
     const w = this.chars.get(id);
     try {
-      const c = await this.api.get(id);
+      const c = await this.hold(w, this.api.get(id));
       w?.setChar(c, { form });
       w?.say("");
       this.listWin?.update(c);
@@ -129,10 +128,13 @@ export class RosterApp extends App {
     }
   }
 
+  /** Every call to the database freezes its window until the answer is back. */
+  hold(win, promise, label) { return win ? busy(win, promise, label) : promise; }
+
   async patch(id, fields) {
     const w = this.chars.get(id);
     try {
-      const c = await this.api.patch(id, fields);
+      const c = await this.hold(w, this.api.patch(id, fields));
       w?.setChar(c, { form: false });
       w?.say("Saved");
       this.listWin?.update(c);
@@ -144,10 +146,10 @@ export class RosterApp extends App {
     let reason = "";
     if (status === "rejected") {
       reason = await new ReasonDialog({ name: w?.char?.name || "#" + id }).ask(this.os);
-      if (!reason) return;
+      if (reason === null) return;   // cancelled; an empty reason is allowed
     }
     try {
-      const c = await this.api.review(id, status, reason);
+      const c = await this.hold(w, this.api.review(id, status, reason));
       w?.setChar(c, { form: false });
       w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
       this.listWin?.update(c);
@@ -160,7 +162,7 @@ export class RosterApp extends App {
     for (const f of files) {
       if (!/^image\//.test(f.type)) continue;
       try {
-        const r = await this.api.upload(id, f, { caption: (f.name || "").replace(/\.[a-z0-9]+$/i, "") });
+        const r = await this.hold(w, this.api.upload(id, f, { type: "uploaded", caption: (f.name || "").replace(/\.[a-z0-9]+$/i, "") }), "Uploading…");
         r.created ? n++ : dup++;
       } catch (err) { w?.say(`${f.name}: ${err.message}`, true); }
     }
@@ -171,19 +173,16 @@ export class RosterApp extends App {
   async imageAct(id, act, imageId) {
     const w = this.chars.get(id);
     if (!imageId) return;
-    const im = (w?.char?.images || []).find(i => i.id === imageId);
+    void (w?.char?.images || []).find(i => i.id === imageId);
     try {
       switch (act) {
         case "avatar": await this.patch(id, { avatar_image_id: w.char.avatar_image_id === imageId ? null : imageId }); w.select(imageId); break;
         case "card": await this.patch(id, { card_image_id: w.char.card_image_id === imageId ? null : imageId }); w.select(imageId); break;
         case "crop": this.openCrop(imageId); break;
         case "open": this.os.win.open?.(this.api.imageURL(imageId), "_blank"); break;
-        case "reject":
-          await this.api.patchImage(imageId, { status: im?.status === "rejected" ? "kept" : "rejected" });
-          await this.reload(id, { form: false }); w.select(imageId); break;
         case "delete":
           if (!await new ConfirmDialog({ message: `Delete picture #${imageId}?`, ok: "Delete" }).ask(this.os)) return;
-          await this.api.deleteImage(imageId);
+          await this.hold(w, this.api.deleteImage(imageId));
           w.select(null);
           await this.reload(id, { form: false });
           break;
@@ -196,7 +195,7 @@ export class RosterApp extends App {
     const name = w?.char?.name || "#" + id;
     if (!await new ConfirmDialog({ message: `Delete ${name} and all its pictures?`, ok: "Delete" }).ask(this.os)) return;
     try {
-      await this.api.remove(id);
+      await this.hold(w, this.api.remove(id));
       w?.close();
       this.listWin?.drop(id);
     } catch (err) { w?.say(err.message, true); }
@@ -210,14 +209,13 @@ export class RosterApp extends App {
       let meta;
       try { meta = await this.api.imageMeta(imageId); }
       catch (err) { os.toast.show(err.message); return null; }
-      const canvas = cropCanvas(meta.image.width, meta.image.height, os.env.width, os.env.height);
-      w = new CropWindow({ image: meta.image, char: meta.char, src: this.api.imageURL(imageId), canvas,
-        fit: os.settings.get(SETTING_FIT, true), ratio: this.savedRatio(), menus: win => os.appMenus(win, {}) });
+      w = new CropWindow({ image: meta.image, char: meta.char, src: this.api.imageURL(imageId), desktop: { vw: os.env.width, vh: os.env.height },
+        ratio: this.savedRatio(), menus: win => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] }) });
       os.wm.add(w);
       this.crops.set(imageId, w);
-      w.on("fit", ({ fit }) => os.settings.set(SETTING_FIT, fit));
       w.on("ratio", ({ ratio }) => { try { os.win.localStorage?.setItem(SETTING_RATIO, String(ratio)); } catch {} });
       w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
+      w.on("revert", async () => { if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os)) w.doRevert(); });
       w.on("close", () => { this.crops.delete(imageId); os.wm.remove(w.id); });
     }
     // open where the reviewer is looking: the character window can be taller than the screen
@@ -230,14 +228,16 @@ export class RosterApp extends App {
 
   savedRatio() { try { return +this.os.win.localStorage?.getItem(SETTING_RATIO) || 0; } catch { return 0; } }
 
-  /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped" picture. */
+  /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
+      picture. Once the database has answered, the crop window closes. */
   async crop(imageId, meta, rect, blob = null) {
     const w = this.crops.get(imageId);
     try {
-      const r = blob
-        ? await this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` })
-        : await this.api.crop(imageId, rect);
+      const r = await this.hold(w, blob
+        ? this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` })
+        : this.api.crop(imageId, rect), "Saving…");
       w?.saved(r.image, r.created);
+      w?.close();
       await this.reload(meta.char.id, { form: false });
     } catch (err) { w?.failed(err.message); }
   }

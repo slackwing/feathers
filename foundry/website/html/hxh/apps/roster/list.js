@@ -16,7 +16,7 @@ export class RosterWindow extends Window {
     super({
       id: "win-roster", title: "Roster DB", icon: "db", width: 1280, cls: "roster rlist",
       content: `
-        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
+        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Card rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
         <div class="status"><span class="msg"></span><span class="count"></span></div>`,
       ...props,
     });
