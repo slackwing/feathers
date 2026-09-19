@@ -23,14 +23,35 @@
   --specialist: #58e05c;
   --none: #9a9a9a;
   --px: 2px;
-  --font-px:
-    "Press Start 2P",
-    "Courier New",
-    monospace;
-  --font-dot:
+  --font-ui:
+    "Pixelify Sans",
+    Tahoma,
+    Verdana,
+    "DejaVu Sans",
+    sans-serif;
+  --font-body:
     "DotGothic16",
     "Courier New",
     monospace;
+  --font-display:
+    "Press Start 2P",
+    "Courier New",
+    monospace;
+  --font-px: var(--font-display);
+  --font-dot: var(--font-body);
+  --fs-ui: 13px;
+  --fs-title: 13px;
+  --fs-body: 16px;
+  --fs-small: 11px;
+  --fs-caption: 12px;
+  --t-ui: 500 var(--fs-ui)/1.25 var(--font-ui);
+  --t-ui-bold: 700 var(--fs-ui)/1.25 var(--font-ui);
+  --t-title: 700 var(--fs-title)/1 var(--font-ui);
+  --t-body: 400 var(--fs-body)/1.5 var(--font-body);
+  --t-small: 500 var(--fs-small)/1.3 var(--font-ui);
+  --t-caption: 500 var(--fs-caption)/1.2 var(--font-ui);
+  --t-kicker: 400 10px/1.6 var(--font-display);
+  --t-heading: 400 18px/1.5 var(--font-display);
   --taskbar-h: 45px;
   --dither: repeating-conic-gradient(var(--paper-hi) 0 25%, var(--paper) 0 50%) 0 0 / 4px 4px;
 }
@@ -45,7 +66,7 @@ body {
   min-height: 100svh;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='%23e8dcc3' fill-opacity='.07'%3E%3Crect x='9' y='9' width='2' height='2'/%3E%3Crect x='13' y='9' width='2' height='2'/%3E%3Crect x='11' y='11' width='2' height='2'/%3E%3Crect x='9' y='13' width='2' height='2'/%3E%3Crect x='13' y='13' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E") var(--ink);
   color: var(--paper);
-  font: 20px/1.5 var(--font-dot);
+  font: var(--t-body);
   overflow-x: hidden;
   scrollbar-color: var(--paper) var(--paper-lo);
 }
@@ -145,7 +166,7 @@ body.logon .icons {
   border: 0;
   cursor: pointer;
   color: var(--paper);
-  font: 20px/1.2 var(--font-dot);
+  font: var(--t-caption);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -189,7 +210,7 @@ body.logon .icons {
     inset var(--px) var(--px) 0 var(--paper-hi),
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     8px 8px 0 rgba(0, 0, 0, .55);
-  font: 20px/1.5 var(--font-dot);
+  font: var(--t-body);
 }
 .win.static {
   position: relative;
@@ -217,12 +238,6 @@ body.logon .icons {
   display: flex;
   gap: 2px;
 }
-.win.max {
-  left: 0 !important;
-  top: 0 !important;
-  width: 100% !important;
-  max-width: none;
-}
 .tbar {
   display: flex;
   align-items: center;
@@ -231,11 +246,19 @@ body.logon .icons {
   color: var(--paper-hi);
   padding: 5px 5px 5px 8px;
   min-height: 30px;
-  font: 12px/1 var(--font-px);
+  font: var(--t-title);
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
   touch-action: none;
+}
+.tbar .tbtns {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+.win.flash .tbar {
+  animation: tbarflash 1s steps(2) infinite;
 }
 .win.inactive .tbar {
   background: var(--ink-3);
@@ -246,7 +269,7 @@ body.logon .icons {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-top: 2px;
+  padding-top: 1px;
 }
 .tbar .ico {
   flex: 0 0 20px;
@@ -263,16 +286,13 @@ body.logon .icons {
   color: var(--ink);
   border: var(--px) solid var(--ink);
   box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
-  font: 12px/1 var(--font-px);
+  font: var(--t-ui-bold);
   cursor: pointer;
   display: grid;
   place-items: center;
 }
 .tbtn:active {
   box-shadow: inset 1px 1px 0 var(--paper-lo);
-}
-.tbtn.close {
-  margin-left: 2px;
 }
 .mbar {
   display: flex;
@@ -282,7 +302,7 @@ body.logon .icons {
   margin-bottom: 5px;
   border-bottom: var(--px) solid var(--paper-lo);
   box-shadow: 0 var(--px) 0 var(--paper-hi);
-  font: 20px/1 var(--font-dot);
+  font: var(--t-ui);
 }
 .menu {
   position: relative;
@@ -293,7 +313,7 @@ body.logon .icons {
   cursor: pointer;
   font: inherit;
   color: var(--ink);
-  padding: 3px 10px 1px;
+  padding: 4px 9px 3px;
 }
 .menu > button u {
   text-decoration: underline;
@@ -337,9 +357,18 @@ body.logon .icons {
   border: 0;
   cursor: pointer;
   text-align: left;
-  font: 20px/1.2 var(--font-dot);
+  font: var(--t-ui);
   color: var(--ink);
-  padding: 6px 12px 3px;
+  padding: 6px 12px 5px;
+}
+.dd button:disabled,
+.startmenu .items button:disabled {
+  color: var(--ink-4);
+  cursor: default;
+}
+.dd button:disabled:hover {
+  background: none;
+  color: var(--ink-4);
 }
 .dd button:hover,
 .dd button:focus-visible,
@@ -358,12 +387,14 @@ body.logon .icons {
 }
 .dd .chk::before,
 .startmenu .chk::before {
-  content: "\25a1";
+  content: "";
   width: 1em;
+  flex: none;
+  text-align: center;
 }
 .dd .chk.on::before,
 .startmenu .chk.on::before {
-  content: "\25a0";
+  content: "\2713";
 }
 .body {
   padding: 12px 15px 15px;
@@ -376,8 +407,7 @@ body.logon .icons {
   margin-bottom: 0;
 }
 .btn {
-  font: 12px/1 var(--font-px);
-  text-transform: uppercase;
+  font: var(--t-ui-bold);
   color: var(--ink);
   background: var(--paper);
   border: var(--px) solid var(--ink);
@@ -385,7 +415,7 @@ body.logon .icons {
     inset var(--px) var(--px) 0 var(--paper-hi),
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     var(--px) var(--px) 0 var(--ink);
-  padding: 14px 18px 11px;
+  padding: 10px 16px 9px;
   cursor: pointer;
   transition: none;
 }
@@ -430,15 +460,16 @@ body.logon .icons {
 }
 .lbl {
   display: block;
-  font: 10px/1 var(--font-px);
+  font: var(--t-small);
   text-transform: uppercase;
+  letter-spacing: .04em;
   color: var(--ink-3);
-  margin: 18px 0 8px;
+  margin: 16px 0 6px;
 }
 .field {
   display: block;
   width: 100%;
-  font: 20px/1.3 var(--font-dot);
+  font: var(--t-body);
   color: var(--ink);
   background: var(--paper-hi);
   border: var(--px) solid;
@@ -485,7 +516,7 @@ body.logon .icons {
   line-height: 1.3;
 }
 .assoc {
-  font: 10px/1.6 var(--font-px);
+  font: var(--t-kicker);
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -516,7 +547,7 @@ body.logon .icons {
   text-shadow: 3px 3px 0 var(--ink);
 }
 .kana {
-  font: 20px/1 var(--font-dot);
+  font: var(--t-body);
   letter-spacing: .3em;
   color: var(--ink-4);
 }
@@ -526,7 +557,7 @@ body.logon .icons {
   cursor: help;
 }
 .dialog-h {
-  font: 20px/1.5 var(--font-px);
+  font: var(--t-heading);
   text-align: center;
   margin: 10px 0 8px;
 }
@@ -575,8 +606,11 @@ body.logon .icons {
 .taskbar .start {
   padding-right: 12px;
 }
+.taskbar .start {
+  font: var(--t-ui-bold);
+}
 .taskbar .start span {
-  padding-top: 2px;
+  padding-top: 1px;
 }
 .taskbar .tasks {
   flex: 1;
@@ -586,8 +620,7 @@ body.logon .icons {
   overflow: hidden;
 }
 .taskbar .task {
-  font: 20px/1 var(--font-dot);
-  text-transform: none;
+  font: var(--t-ui);
   max-width: 275px;
   min-width: 0;
 }
@@ -595,14 +628,14 @@ body.logon .icons {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-top: 2px;
+  padding-top: 1px;
 }
 .taskbar .tray {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 10px;
-  font: 20px/1 var(--font-dot);
+  font: var(--t-ui);
   border: var(--px) solid;
   border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
 }
@@ -625,7 +658,7 @@ body.logon .icons {
   animation: taskflash 1s steps(2) infinite;
 }
 .taskbar .clock {
-  padding-top: 2px;
+  padding-top: 1px;
   white-space: nowrap;
 }
 .startmenu {
@@ -656,15 +689,16 @@ body.logon .icons {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--paper-lo);
+  color: var(--ink);
   padding: 10px 12px;
   margin-bottom: 5px;
-  border: var(--px) solid var(--ink);
-  font: 20px/1 var(--font-dot);
+  border: var(--px) solid;
+  border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  font: var(--t-ui-bold);
 }
 .startmenu .user .name {
-  padding-top: 2px;
+  padding-top: 1px;
 }
 .startmenu .band {
   flex: 0 0 32px;
@@ -684,7 +718,7 @@ body.logon .icons {
   padding: 2px 0;
 }
 .startmenu .items button {
-  padding: 10px 15px 8px;
+  padding: 9px 15px 8px;
 }
 .win.toast {
   position: fixed;
@@ -708,7 +742,8 @@ body.logon .icons {
   display: none;
   background: var(--ink);
   color: var(--nen);
-  font: 20px/1.7 var(--font-dot);
+  font: var(--t-body);
+  line-height: 1.7;
   padding: 30px 25px;
   white-space: pre-wrap;
   cursor: pointer;
@@ -729,7 +764,7 @@ body.logon .icons {
   justify-content: center;
   gap: 28px;
   color: var(--paper);
-  font: 12px/1.8 var(--font-px);
+  font: 12px/1.8 var(--font-display);
   text-align: center;
   padding: 25px;
 }
@@ -748,7 +783,7 @@ body.logon .icons {
   align-items: center;
   gap: 18px;
   color: var(--paper-dim);
-  font: 10px/1.6 var(--font-px);
+  font: var(--t-kicker);
   text-align: right;
 }
 .boot .badge {
@@ -764,6 +799,59 @@ body.logon .icons {
 .win.loading2 .body {
   visibility: hidden;
 }
+.scrollpane {
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+}
+.scrollpane > .sp-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.scrollpane > .sp-content::-webkit-scrollbar {
+  display: none;
+}
+.scrollpane > .sp-bar {
+  flex: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  background: var(--dither);
+  border-left: 1px solid var(--paper-lo);
+}
+.scrollpane > .sp-bar .sp-btn {
+  flex: none;
+  height: 18px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+  font: 700 9px/1 var(--font-ui);
+}
+.scrollpane > .sp-bar .sp-btn:active {
+  box-shadow: inset 1px 1px 0 var(--paper-lo);
+}
+.scrollpane > .sp-bar .sp-track {
+  flex: 1;
+  position: relative;
+}
+.scrollpane > .sp-bar .sp-thumb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  min-height: 20px;
+  cursor: pointer;
+  background: var(--paper);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+}
+.scrollpane.sp-none > .sp-bar .sp-thumb {
+  display: none;
+}
 .avatar {
   display: inline-grid;
   place-items: center;
@@ -772,7 +860,7 @@ body.logon .icons {
   border-radius: 50%;
   background: var(--c, var(--none));
   color: var(--t, var(--paper-hi));
-  font: 10px/1 var(--font-px);
+  font: 700 11px/1 var(--font-ui);
   padding-top: 1px;
   border: var(--px) solid var(--ink);
   box-shadow: 0 0 0 1px var(--paper-hi);
@@ -781,7 +869,7 @@ body.logon .icons {
 .avatar.lg {
   width: 55px;
   height: 55px;
-  font-size: 18px;
+  font-size: 20px;
 }
 .backdrop {
   position: fixed;
@@ -792,6 +880,16 @@ body.logon .icons {
 }
 .backdrop.on {
   display: block;
+}
+@keyframes tbarflash {
+  0%, 100% {
+    background: var(--blood);
+    color: var(--paper-hi);
+  }
+  50% {
+    background: var(--ink-3);
+    color: var(--paper-dim);
+  }
 }
 @keyframes taskflash {
   0%, 100% {
@@ -842,9 +940,6 @@ body.logon .icons {
     max-width: none;
     margin-bottom: 15px;
   }
-  .win.max {
-    width: auto !important;
-  }
   .win.chromeless {
     position: relative;
   }
@@ -859,8 +954,7 @@ body.logon .icons {
     max-height: 82svh;
     overflow: auto;
   }
-  .tbtn.min,
-  .tbtn.maxb {
+  .tbtn.min {
     display: none;
   }
   .tbar {
@@ -912,8 +1006,8 @@ body.logon .icons {
   left: 12px;
   background: var(--blood);
   color: var(--paper-hi);
-  font: 10px/1 var(--font-px);
-  padding: 8px 10px 5px;
+  font: var(--t-kicker);
+  padding: 6px 10px 4px;
   border: var(--px) solid var(--ink);
 }
 .vn .more {
@@ -921,7 +1015,7 @@ body.logon .icons {
   right: 12px;
   bottom: 8px;
   color: var(--blood);
-  font: 12px/1 var(--font-px);
+  font: 12px/1 var(--font-display);
   visibility: hidden;
   animation: bob 1s steps(2) infinite;
 }
@@ -1789,7 +1883,7 @@ body.logon .icons {
 .stamp {
   display: inline-block;
   transform: rotate(-4deg);
-  font: 18px/1 var(--font-px);
+  font: 18px/1 var(--font-display);
   color: var(--blood);
   border: 3px solid var(--blood);
   padding: 10px 15px 8px;
@@ -1819,13 +1913,6 @@ body.logon .icons {
 .win.chat .body {
   padding: 8px 10px 10px;
 }
-.chat .btn.sm {
-  padding: 9px 12px 7px;
-  font-size: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
 .chat .sunken {
   background: var(--paper-hi);
   border: var(--px) solid;
@@ -1838,11 +1925,11 @@ body.logon .icons {
   align-items: center;
   gap: 10px;
   margin-top: 8px;
-  padding: 4px 8px 2px;
-  min-height: 26px;
+  padding: 4px 8px 3px;
+  min-height: 24px;
   border: var(--px) solid;
   border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  font: 15px/1.4 var(--font-dot);
+  font: var(--t-small);
   color: var(--ink-4);
 }
 .chat .status .conn::before {
@@ -1851,38 +1938,61 @@ body.logon .icons {
   width: 8px;
   height: 8px;
   margin-right: 6px;
+  border-radius: 50%;
   background: var(--nen);
   border: 1px solid var(--ink);
+  vertical-align: -1px;
 }
 .chat .status .conn.off::before {
   background: var(--none);
+}
+.dot {
+  flex: none;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--ink);
+  background: var(--none);
+}
+.dot.online {
+  background: var(--nen);
+}
+.dot.away {
+  background: var(--emitter);
+}
+.dot.offline {
+  background: var(--none);
+}
+.dot.nopass {
+  background: var(--blood);
 }
 .contacts .banner {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: var(--ink);
-  color: var(--paper);
-  border: var(--px) solid var(--ink);
-  font: 20px/1.1 var(--font-dot);
+  background: var(--paper-lo);
+  color: var(--ink);
+  border: var(--px) solid;
+  border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  font: var(--t-ui);
 }
 .contacts .banner .who {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
-  padding-top: 2px;
 }
 .contacts .banner .who b {
-  font-weight: normal;
+  font: var(--t-ui-bold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .contacts .banner .who .st {
-  font-size: 15px;
-  color: var(--paper-dim);
+  font: var(--t-small);
+  color: var(--ink-4);
 }
 .contacts .ltabs {
   display: flex;
@@ -1892,84 +2002,76 @@ body.logon .icons {
   padding: 0 4px;
 }
 .contacts .ltab {
-  padding: 6px 12px 3px;
+  padding: 5px 12px 3px;
   cursor: pointer;
   background: var(--paper);
   color: var(--ink-4);
   border: var(--px) solid var(--ink);
   border-bottom: 0;
   box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) 0 0 var(--paper-lo);
-  font: 10px/1 var(--font-px);
-  text-transform: uppercase;
+  font: var(--t-ui);
 }
 .contacts .ltab.on {
   color: var(--ink);
   background: var(--paper-hi);
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   margin-bottom: -2px;
   position: relative;
   z-index: 1;
 }
-.contacts .tree {
+.contacts .listbox {
   height: 440px;
   max-height: 60vh;
-  overflow-y: auto;
-  padding: 4px 4px 8px;
   position: relative;
-  font: 20px/1.2 var(--font-dot);
+}
+.contacts .tree {
+  padding: 4px 4px 8px;
+  font: var(--t-ui);
 }
 .contacts .grp {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 4px 2px;
+  padding: 6px 4px 3px;
   cursor: pointer;
   user-select: none;
   color: var(--ink);
-  font-weight: bold;
+  font: var(--t-ui-bold);
 }
 .contacts .grp .tri {
-  font: 10px/1 var(--font-px);
+  font-size: 9px;
   width: 12px;
   color: var(--ink-3);
 }
 .contacts .grp.off {
   color: var(--ink-4);
 }
-.contacts .grp:hover .lbl {
+.contacts .grp:hover .glbl {
   background: var(--emitter);
 }
 .contacts .contact {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 6px 2px 22px;
+  padding: 4px 6px 3px 22px;
   cursor: pointer;
   color: var(--c, var(--ink));
 }
-.contacts .contact .fig {
-  display: block;
-}
 .contacts .contact .nm {
-  padding-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .contacts .contact .st {
-  font-size: 15px;
+  font: var(--t-small);
   color: var(--ink-4);
-  font-style: italic;
-  padding-top: 2px;
 }
 .contacts .contact.away .nm,
 .contacts .contact.offline .nm {
   color: var(--ink-4);
-  font-style: italic;
 }
 .contacts .contact.nopass .nm {
   color: var(--blood);
-  font-style: italic;
 }
 .contacts .contact.sel {
   background: var(--emitter);
@@ -1996,11 +2098,7 @@ body.logon .icons {
 }
 .contacts .tool {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 4px 4px;
+  padding: 7px 4px 6px;
   cursor: pointer;
   background: var(--paper);
   color: var(--ink);
@@ -2009,8 +2107,7 @@ body.logon .icons {
     inset var(--px) var(--px) 0 var(--paper-hi),
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     var(--px) var(--px) 0 var(--ink);
-  font: 10px/1 var(--font-px);
-  text-transform: uppercase;
+  font: var(--t-ui-bold);
 }
 .contacts .tool:hover {
   background: var(--paper-hi);
@@ -2019,11 +2116,12 @@ body.logon .icons {
   box-shadow: inset var(--px) var(--px) 0 var(--paper-lo);
   transform: translate(var(--px), var(--px));
 }
-.room .log {
+.room .logbox {
   height: 250px;
-  overflow-y: auto;
+}
+.room .log {
   padding: 8px 10px;
-  font: 20px/1.4 var(--font-dot);
+  font: var(--t-body);
 }
 .room .m {
   margin: 0 0 2px;
@@ -2033,7 +2131,7 @@ body.logon .icons {
 }
 .room .m .ts {
   color: var(--ink-4);
-  font-size: 15px;
+  font: var(--t-small);
 }
 .room .m .txt {
   white-space: pre-wrap;
@@ -2056,14 +2154,97 @@ body.logon .icons {
 }
 .room .status .typing {
   font-style: italic;
-  min-height: 1.4em;
+  min-height: 1.3em;
+}
+.cracktro .body {
+  padding: 0;
+}
+.cracktro .ct {
+  background: #050505;
+  color: var(--nen);
+  padding: 14px 16px 16px;
+  text-align: center;
+  border: var(--px) solid var(--ink);
+  box-shadow: inset 0 0 0 var(--px) #1d1d1d;
+  font: var(--t-body);
+}
+.cracktro .art {
+  margin: 0 auto 6px;
+  color: #7c4dff;
+  text-shadow: 0 0 6px rgba(124, 77, 255, .6);
+  font: var(--t-body);
+  line-height: 1.15;
+  display: inline-block;
+  text-align: left;
+}
+.cracktro .ttl {
+  font: 20px/1.4 var(--font-display);
+  color: var(--paper-hi);
+  text-shadow: 3px 3px 0 #7c4dff;
+}
+.cracktro .ttl span {
+  font-size: 10px;
+  color: var(--nen);
+  text-shadow: none;
+}
+.cracktro .sub {
+  font: var(--t-small);
+  color: var(--paper-dim);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin: 4px 0 10px;
+}
+.cracktro .marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px dashed #2a2a2a;
+  border-bottom: 1px dashed #2a2a2a;
+  padding: 4px 0;
+  margin: 0 -16px;
+}
+.cracktro .marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 28s linear infinite;
+  font: var(--t-small);
+  letter-spacing: .12em;
+  color: var(--emitter);
+}
+.cracktro .credits {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+  text-align: left;
+  margin: 12px auto 0;
+  width: max-content;
+  max-width: 100%;
+  font: var(--t-ui);
+  color: var(--paper);
+}
+.cracktro .credits b {
+  color: #7c4dff;
+  text-transform: uppercase;
+  font: var(--t-small);
+  letter-spacing: .08em;
+  padding-top: 2px;
+}
+.cracktro .actions {
+  margin-top: 14px;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 .profile-view .pbody {
   min-height: 140px;
   max-height: 60vh;
   overflow-y: auto;
   padding: 12px 14px;
-  font: 20px/1.4 var(--font-dot);
+  font: var(--t-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -2104,7 +2285,7 @@ body.logon .icons {
   max-height: 50vh;
   overflow-y: auto;
   padding: 10px 12px;
-  font: 20px/1.4 var(--font-dot);
+  font: var(--t-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -2123,19 +2304,18 @@ body.logon .icons {
   gap: 8px;
 }
 .profile-edit .count {
-  font: 10px/1 var(--font-px);
+  font: var(--t-small);
   color: var(--ink-3);
 }
 .profile-edit .count.over {
   color: var(--blood);
 }
 @media (max-width: 899px) {
-  .contacts .tree {
-    height: auto;
-    min-height: 240px;
+  .contacts .listbox {
+    height: 320px;
     max-height: none;
   }
-  .room .log {
+  .room .logbox {
     height: 220px;
   }
 }

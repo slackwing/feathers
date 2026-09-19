@@ -1,5 +1,5 @@
 /* Window — THE window class. Chrome is an option, not a copy:
-     chrome: "full"   title bar with minimize / maximize / close, draggable
+     chrome: "full"   title bar with minimize / close, draggable
      chrome: "static" title bar (optionally a close), sits in flow — dialogs
      chrome: "none"   no title bar; optional float buttons at the top right
                       (the binder: minimize + close)
@@ -11,9 +11,10 @@ import { h, esc } from "./dom.js";
 import { icon } from "./icons.js";
 import { MenuBar } from "./menu.js";
 
+/* Windows are a set size — no maximize anywhere (Andrew, 2026-09-19:
+   "maximize adds too many headaches"). */
 export const CHROME = {
   min:   { cls: "min",   glyph: "_", title: "Minimize" },
-  max:   { cls: "maxb",  glyph: "□", title: "Maximize" },
   close: { cls: "close", glyph: "×", title: "Close" },
 };
 
@@ -39,9 +40,13 @@ export class TitleBar extends Component {
     tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "#fff6e0" } : null) }));
     this.ttl = h("span", { className: "ttl", text: title });
     tb.append(this.ttl);
-    for (const kind of buttons) {
-      const b = this.adopt(new ChromeButton({ kind }), tb);
-      b.on("press", k => this.emit("press", k));
+    if (buttons.length) {
+      const cluster = h("span", { className: "tbtns" });
+      for (const kind of buttons) {
+        const b = this.adopt(new ChromeButton({ kind }), cluster);
+        b.on("press", k => this.emit("press", k));
+      }
+      tb.append(cluster);
     }
     return tb;
   }
@@ -51,7 +56,7 @@ export class TitleBar extends Component {
 export class Window extends Component {
   /**
    * props: id, title, icon = "x", width, chrome = "full" | "static" | "none",
-   *        closable = true, minimizable = true, maximizable = true,
+   *        closable = true, minimizable = true,
    *        task = true (taskbar button), popup = false (Escape closes),
    *        cls = "", buttons (chromeless float buttons, e.g. ["min", "close"]),
    *        menus (a MenuBar spec, or win => spec — see OS.appMenus),
@@ -59,8 +64,8 @@ export class Window extends Component {
    */
   constructor(props = {}) {
     if (!props.id) throw new Error("Window needs an id");
-    super({ chrome: "full", icon: "x", closable: true, minimizable: true, maximizable: true, task: true, popup: false, cls: "", ...props });
-    this.state = { open: false, minimized: false, maximized: false, placed: false };
+    super({ chrome: "full", icon: "x", closable: true, minimizable: true, task: true, popup: false, cls: "", ...props });
+    this.state = { open: false, minimized: false, placed: false };
     this.wm = null;
   }
 
@@ -76,7 +81,7 @@ export class Window extends Component {
     const p = this.props;
     if (this.static) return p.closable && p.buttons !== undefined ? p.buttons : (p.closable && p.staticClose ? ["close"] : []);
     if (this.chromeless) return p.buttons ?? [];
-    return [...(p.minimizable ? ["min"] : []), ...(p.maximizable ? ["max"] : []), ...(p.closable ? ["close"] : [])];
+    return [...(p.minimizable ? ["min"] : []), ...(p.closable ? ["close"] : [])];
   }
 
   render() {
@@ -114,8 +119,9 @@ export class Window extends Component {
     this.emit("title", t);
   }
 
-  /** Ask for the user's eye (taskbar flash etc.); the WM/bus decides how. */
-  requestAttention() { this.emit("attention"); }
+  /** Ask for the user's eye: the title bar blinks (until focused) and the taskbar button flashes. */
+  requestAttention() { this.el?.classList.add("flash"); this.emit("attention"); }
+  get flashing() { return !!this.el?.classList.contains("flash"); }
 
   /** Convenience passthroughs when managed. */
   open(at, opts) { return this.wm?.open(this.id, at, opts); }

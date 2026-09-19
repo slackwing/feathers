@@ -1,27 +1,26 @@
-/* ChatWindow — one conversation, after the AIM "Instant Message"
-   window: a sunken log (names bold in the sender's avatar colour, time
-   stamps), a sunken compose box, a button row with Info and Send, and
-   a status bar at the bottom that reads "<name> is typing…". Enter
-   sends, Shift+Enter breaks a line. */
+/* ChatWindow — one conversation: a sunken log with a real scrollbar
+   (names bold in the sender's avatar colour, time stamps), a compose
+   box, a button row (Profile for a buddy's chat, Send), and a status
+   bar at the bottom that reads "<name> is typing…". Enter sends,
+   Shift+Enter breaks a line. */
 import { Window } from "../../os/window.js";
 import { h } from "../../os/dom.js";
-import { icon } from "../../os/icons.js";
+import { ScrollPane } from "../../os/scrollpane.js";
 
 export const roomSlug = room => room.replace(/[^a-z0-9]+/gi, "-");
 export const MAX_LOG = 500;
 
 export class ChatWindow extends Window {
-  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), info (bool: show the Info button) */
+  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button) */
   constructor(props) {
     super({
       id: "win-chat-" + roomSlug(props.room), title: props.title, icon: props.icon || "comment", width: 470, cls: "chat room",
       content: `
-        <div class="log sunken" role="log"></div>
         <div class="compose">
           <textarea class="field" rows="3" aria-label="Message"></textarea>
           <div class="cbtns">
-            ${props.info === false ? "" : `<button class="btn sm" type="button" data-act="info" title="Profile">${icon("card", 12)}Info</button>`}
-            <button class="btn sm primary" type="button" data-act="send">Send</button>
+            ${props.profile ? `<button class="btn" type="button" data-act="profile">Profile</button>` : ""}
+            <button class="btn primary" type="button" data-act="send">Send</button>
           </div>
         </div>
         <div class="status"><span class="typing"></span></div>`,
@@ -33,11 +32,13 @@ export class ChatWindow extends Window {
 
   render() {
     const el = super.render();
-    this.log = el.querySelector(".log");
+    this.log = h("div", { className: "log", role: "log" });
+    this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
+    this.pane.el.classList.add("sunken", "logbox");
     this.typingEl = el.querySelector(".typing");
     this.input = el.querySelector("textarea");
     el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
-    el.querySelector('[data-act="info"]')?.addEventListener("click", () => this.emit("info"));
+    el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
     this.input.addEventListener("keydown", e => {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); this.submit(); }
       else if (e.key.length === 1 || e.key === "Backspace") this.emit("typing");
@@ -76,6 +77,7 @@ export class ChatWindow extends Window {
     this.log.append(row);
     while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
     if (scroll) this.scrollDown();
+    else this.pane.update();
     return row;
   }
 
@@ -102,7 +104,7 @@ export class ChatWindow extends Window {
     return isNaN(d) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
-  scrollDown() { this.log.scrollTop = this.log.scrollHeight; }
+  scrollDown() { this.log.scrollTop = this.log.scrollHeight; this.pane.update(); }
 
   get messageCount() { return this.ids.size; }
 }

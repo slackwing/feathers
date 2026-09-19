@@ -1,9 +1,8 @@
-/* Beetle messenger — buddy list, chat windows, profiles. Drawn after
-   AIM 4.x / MSN 4.x on Windows 98 (sunken white lists, raised tabs,
-   icon toolbars, a status bar) in the site's palette. THEME: part of
-   the site chrome, see the note at the top of os/os.css. */
+/* Beetle messenger — buddy list, chat windows, profiles, the about
+   cracktro. Fonts come from the OS type system (os.css --t-*), never
+   from numbers here. THEME: part of the site chrome, see the note at the
+   top of os/os.css. */
 .win.chat .body { padding: 8px 10px 10px; }
-.chat .btn.sm { padding: 9px 12px 7px; font-size: 10px; display: inline-flex; align-items: center; gap: 6px; }
 .chat .sunken {
   background: var(--paper-hi);
   border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
@@ -12,52 +11,56 @@
 /* the status bar every messenger window had along its bottom edge */
 .chat .status {
   display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px;
-  padding: 4px 8px 2px; min-height: 26px;
+  padding: 4px 8px 3px; min-height: 24px;
   border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  font: 15px/1.4 var(--font-dot); color: var(--ink-4);
+  font: var(--t-small); color: var(--ink-4);
 }
-.chat .status .conn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--nen); border: 1px solid var(--ink); }
+.chat .status .conn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--nen); border: 1px solid var(--ink); vertical-align: -1px; }
 .chat .status .conn.off::before { background: var(--none); }
+/* presence dots: green online, yellow away, grey offline, red = no password yet */
+.dot { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); background: var(--none); }
+.dot.online { background: var(--nen); }
+.dot.away { background: var(--emitter); }
+.dot.offline { background: var(--none); }
+.dot.nopass { background: var(--blood); }
 
 /* ---------- buddy list ----------
    (.ltabs/.ltab, not .tabs/.tab: the binder's stylesheet owns those names unscoped) */
 .contacts .banner {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-  background: var(--ink); color: var(--paper); border: var(--px) solid var(--ink);
-  font: 20px/1.1 var(--font-dot);
+  background: var(--paper-lo); color: var(--ink);
+  border: var(--px) solid; border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  font: var(--t-ui);
 }
-.contacts .banner .who { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 2px; }
-.contacts .banner .who b { font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contacts .banner .who .st { font-size: 15px; color: var(--paper-dim); }
+.contacts .banner .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.contacts .banner .who b { font: var(--t-ui-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contacts .banner .who .st { font: var(--t-small); color: var(--ink-4); }
 .contacts .ltabs { display: flex; align-items: flex-end; gap: 2px; margin-top: 10px; padding: 0 4px; }
 .contacts .ltab {
-  padding: 6px 12px 3px; cursor: pointer;
+  padding: 5px 12px 3px; cursor: pointer;
   background: var(--paper); color: var(--ink-4);
   border: var(--px) solid var(--ink); border-bottom: 0;
   box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) 0 0 var(--paper-lo);
-  font: 10px/1 var(--font-px); text-transform: uppercase;
+  font: var(--t-ui);
 }
-.contacts .ltab.on { color: var(--ink); background: var(--paper-hi); padding-bottom: 6px; margin-bottom: -2px; position: relative; z-index: 1; }
-.contacts .tree {
-  height: 440px; max-height: 60vh; overflow-y: auto; padding: 4px 4px 8px; position: relative;
-  font: 20px/1.2 var(--font-dot);
-}
+.contacts .ltab.on { color: var(--ink); background: var(--paper-hi); padding-bottom: 5px; margin-bottom: -2px; position: relative; z-index: 1; }
+.contacts .listbox { height: 440px; max-height: 60vh; position: relative; }
+.contacts .tree { padding: 4px 4px 8px; font: var(--t-ui); }
 .contacts .grp {
-  display: flex; align-items: center; gap: 6px; padding: 5px 4px 2px; cursor: pointer; user-select: none;
-  color: var(--ink); font-weight: bold;
+  display: flex; align-items: center; gap: 6px; padding: 6px 4px 3px; cursor: pointer; user-select: none;
+  color: var(--ink); font: var(--t-ui-bold);
 }
-.contacts .grp .tri { font: 10px/1 var(--font-px); width: 12px; color: var(--ink-3); }
+.contacts .grp .tri { font-size: 9px; width: 12px; color: var(--ink-3); }
 .contacts .grp.off { color: var(--ink-4); }
-.contacts .grp:hover .lbl { background: var(--emitter); }
+.contacts .grp:hover .glbl { background: var(--emitter); }
 .contacts .contact {
-  display: flex; align-items: center; gap: 8px; padding: 3px 6px 2px 22px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; padding: 4px 6px 3px 22px; cursor: pointer;
   color: var(--c, var(--ink));
 }
-.contacts .contact .fig { display: block; }
-.contacts .contact .nm { padding-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contacts .contact .st { font-size: 15px; color: var(--ink-4); font-style: italic; padding-top: 2px; }
-.contacts .contact.away .nm, .contacts .contact.offline .nm { color: var(--ink-4); font-style: italic; }
-.contacts .contact.nopass .nm { color: var(--blood); font-style: italic; }
+.contacts .contact .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contacts .contact .st { font: var(--t-small); color: var(--ink-4); }
+.contacts .contact.away .nm, .contacts .contact.offline .nm { color: var(--ink-4); }
+.contacts .contact.nopass .nm { color: var(--blood); }
 .contacts .contact.sel { background: var(--emitter); color: var(--ink); outline: 1px dotted var(--ink); }
 .contacts .contact.sel .nm { color: var(--ink); }
 .contacts .contact:hover:not(.sel) { background: var(--paper); }
@@ -65,29 +68,48 @@
 .contacts .dd.ctx { position: absolute; z-index: 7; }
 .contacts .tools { display: flex; gap: 6px; margin-top: 8px; }
 .contacts .tool {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 4px; cursor: pointer;
+  flex: 1; padding: 7px 4px 6px; cursor: pointer;
   background: var(--paper); color: var(--ink); border: var(--px) solid var(--ink);
   box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo), var(--px) var(--px) 0 var(--ink);
-  font: 10px/1 var(--font-px); text-transform: uppercase;
+  font: var(--t-ui-bold);
 }
 .contacts .tool:hover { background: var(--paper-hi); }
 .contacts .tool:active { box-shadow: inset var(--px) var(--px) 0 var(--paper-lo); transform: translate(var(--px), var(--px)); }
 
 /* ---------- a chat window ---------- */
-.room .log { height: 250px; overflow-y: auto; padding: 8px 10px; font: 20px/1.4 var(--font-dot); }
+.room .logbox { height: 250px; }
+.room .log { padding: 8px 10px; font: var(--t-body); }
 .room .m { margin: 0 0 2px; }
 .room .m .who { color: var(--c, var(--ink)); }
-.room .m .ts { color: var(--ink-4); font-size: 15px; }
+.room .m .ts { color: var(--ink-4); font: var(--t-small); }
 .room .m .txt { white-space: pre-wrap; overflow-wrap: anywhere; }
 .room .compose { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .room .compose textarea { resize: none; min-height: 72px; }
 .room .cbtns { display: flex; justify-content: flex-end; gap: 8px; }
-.room .status .typing { font-style: italic; min-height: 1.4em; }
+.room .status .typing { font-style: italic; min-height: 1.3em; }
+
+/* ---------- about: the cracktro ---------- */
+.cracktro .body { padding: 0; }
+.cracktro .ct {
+  background: #050505; color: var(--nen); padding: 14px 16px 16px; text-align: center;
+  border: var(--px) solid var(--ink); box-shadow: inset 0 0 0 var(--px) #1d1d1d;
+  font: var(--t-body);
+}
+.cracktro .art { margin: 0 auto 6px; color: #7c4dff; text-shadow: 0 0 6px rgba(124,77,255,.6); font: var(--t-body); line-height: 1.15; display: inline-block; text-align: left; }
+.cracktro .ttl { font: 20px/1.4 var(--font-display); color: var(--paper-hi); text-shadow: 3px 3px 0 #7c4dff; }
+.cracktro .ttl span { font-size: 10px; color: var(--nen); text-shadow: none; }
+.cracktro .sub { font: var(--t-small); color: var(--paper-dim); letter-spacing: .1em; text-transform: uppercase; margin: 4px 0 10px; }
+.cracktro .marquee { overflow: hidden; white-space: nowrap; border-top: 1px dashed #2a2a2a; border-bottom: 1px dashed #2a2a2a; padding: 4px 0; margin: 0 -16px; }
+.cracktro .marquee span { display: inline-block; padding-left: 100%; animation: marquee 28s linear infinite; font: var(--t-small); letter-spacing: .12em; color: var(--emitter); }
+.cracktro .credits { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; text-align: left; margin: 12px auto 0; width: max-content; max-width: 100%; font: var(--t-ui); color: var(--paper); }
+.cracktro .credits b { color: #7c4dff; text-transform: uppercase; font: var(--t-small); letter-spacing: .08em; padding-top: 2px; }
+.cracktro .actions { margin-top: 14px; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
 /* ---------- profiles ---------- */
 .profile-view .pbody {
   min-height: 140px; max-height: 60vh; overflow-y: auto; padding: 12px 14px;
-  font: 20px/1.4 var(--font-dot); white-space: pre-wrap; overflow-wrap: anywhere;
+  font: var(--t-body); white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .profile-view .empty { color: var(--ink-4); }
 .profile-edit .tb { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
@@ -100,15 +122,15 @@
 .profile-edit .tb .swatch input { width: 22px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; }
 .profile-edit .ed {
   min-height: 200px; max-height: 50vh; overflow-y: auto; padding: 10px 12px;
-  font: 20px/1.4 var(--font-dot); white-space: pre-wrap; overflow-wrap: anywhere;
+  font: var(--t-body); white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .profile-edit .ed:focus { outline: var(--px) solid var(--nen); }
 .profile-edit .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .profile-edit .foot .actions { margin: 0; display: flex; gap: 8px; }
-.profile-edit .count { font: 10px/1 var(--font-px); color: var(--ink-3); }
+.profile-edit .count { font: var(--t-small); color: var(--ink-3); }
 .profile-edit .count.over { color: var(--blood); }
 
 @media (max-width: 899px) {
-  .contacts .tree { height: auto; min-height: 240px; max-height: none; }
-  .room .log { height: 220px; }
+  .contacts .listbox { height: 320px; max-height: none; }
+  .room .logbox { height: 220px; }
 }

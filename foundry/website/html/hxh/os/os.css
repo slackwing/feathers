@@ -36,8 +36,34 @@
   --specialist: #58e05c;
   --none: #9a9a9a;
   --px: 2px;
-  --font-px: "Press Start 2P", "Courier New", monospace;
-  --font-dot: "DotGothic16", "Courier New", monospace;
+  /* TYPE SYSTEM — the only place font families and sizes are decided.
+     Windows 98 drew every piece of chrome (menus, buttons, title bars,
+     icons, the tray, the clock) in MS Sans Serif 8 pt = 11 px, titles
+     bold; XP kept Tahoma 8 pt for all of it with a 10 pt bold title.
+     Documents used ~10 pt. Ours is that scale ×1.2 for modern screens,
+     with a proportional pixel face for the chrome (Pixelify Sans),
+     DotGothic16 at its native 16 px for prose (it is a bitmap font and
+     blurs at any other size), and Press Start 2P only for display
+     pieces (logotype, stamps, kickers). Apps use the --t-* shorthands,
+     never their own numbers. */
+  --font-ui: "Pixelify Sans", Tahoma, Verdana, "DejaVu Sans", sans-serif;
+  --font-body: "DotGothic16", "Courier New", monospace;
+  --font-display: "Press Start 2P", "Courier New", monospace;
+  --font-px: var(--font-display);   /* legacy names, still used by the binder's device art */
+  --font-dot: var(--font-body);
+  --fs-ui: 13px;        /* 8 pt chrome ×1.2 */
+  --fs-title: 13px;     /* XP's 10 pt bold title */
+  --fs-body: 16px;      /* DotGothic16 native */
+  --fs-small: 11px;     /* status bars, time stamps, captions */
+  --fs-caption: 12px;   /* desktop icon labels */
+  --t-ui: 500 var(--fs-ui)/1.25 var(--font-ui);
+  --t-ui-bold: 700 var(--fs-ui)/1.25 var(--font-ui);
+  --t-title: 700 var(--fs-title)/1 var(--font-ui);
+  --t-body: 400 var(--fs-body)/1.5 var(--font-body);
+  --t-small: 500 var(--fs-small)/1.3 var(--font-ui);
+  --t-caption: 500 var(--fs-caption)/1.2 var(--font-ui);
+  --t-kicker: 400 10px/1.6 var(--font-display);
+  --t-heading: 400 18px/1.5 var(--font-display);
   --taskbar-h: 45px;
   --dither: repeating-conic-gradient(var(--paper-hi) 0 25%, var(--paper) 0 50%) 0 0 / 4px 4px;
 }
@@ -51,7 +77,7 @@ body {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='%23e8dcc3' fill-opacity='.07'%3E%3Crect x='9' y='9' width='2' height='2'/%3E%3Crect x='13' y='9' width='2' height='2'/%3E%3Crect x='11' y='11' width='2' height='2'/%3E%3Crect x='9' y='13' width='2' height='2'/%3E%3Crect x='13' y='13' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E")
     var(--ink);
   color: var(--paper);
-  font: 20px/1.5 var(--font-dot);
+  font: var(--t-body);
   overflow-x: hidden;
   scrollbar-color: var(--paper) var(--paper-lo);
 }
@@ -105,7 +131,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .icon {
   width: 100px; padding: 5px 2px;
   background: none; border: 0; cursor: pointer;
-  color: var(--paper); font: 20px/1.2 var(--font-dot); text-align: center;
+  color: var(--paper); font: var(--t-caption); text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .icon .ib { width: 48px; height: 48px; display: grid; place-items: center; }
@@ -124,23 +150,25 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
     inset var(--px) var(--px) 0 var(--paper-hi),
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     8px 8px 0 rgba(0,0,0,.55);
-  font: 20px/1.5 var(--font-dot);
+  font: var(--t-body);
 }
 .win.static { position: relative; z-index: auto; }
 .win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; }
 .win.chromeless.inactive { filter: none; }
 .win.chromeless .body { padding: 0; container-type: normal; }
 .win.chromeless .fbtns { position: absolute; right: 8px; top: 8px; z-index: 6; display: flex; gap: 2px; }
-.win.max { left: 0 !important; top: 0 !important; width: 100% !important; max-width: none; }
 .tbar {
   display: flex; align-items: center; gap: 8px;
   background: var(--blood); color: var(--paper-hi);
   padding: 5px 5px 5px 8px; min-height: 30px;
-  font: 12px/1 var(--font-px);
+  font: var(--t-title);
   user-select: none; -webkit-user-select: none; cursor: default; touch-action: none;
 }
+.tbar .tbtns { display: flex; gap: 2px; margin-left: 4px; }   /* the buttons touch, Windows style */
+/* an inactive window asking for attention blinks its title bar (with its taskbar button) */
+.win.flash .tbar { animation: tbarflash 1s steps(2) infinite; }
 .win.inactive .tbar { background: var(--ink-3); color: var(--paper-dim); }
-.tbar .ttl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 2px; }
+.tbar .ttl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
 .tbar .ico { flex: 0 0 20px; }
 .win.inactive .tbar .ico { opacity: .6; }
 .tbtn {
@@ -148,22 +176,21 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   background: var(--paper); color: var(--ink);
   border: var(--px) solid var(--ink);
   box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
-  font: 12px/1 var(--font-px); cursor: pointer;
+  font: var(--t-ui-bold); cursor: pointer;
   display: grid; place-items: center;
 }
 .tbtn:active { box-shadow: inset 1px 1px 0 var(--paper-lo); }
-.tbtn.close { margin-left: 2px; }
 .mbar {
   display: flex; gap: 2px; position: relative;
   padding: 5px 2px 2px; margin-bottom: 5px;
   border-bottom: var(--px) solid var(--paper-lo);
   box-shadow: 0 var(--px) 0 var(--paper-hi);
-  font: 20px/1 var(--font-dot);
+  font: var(--t-ui);
 }
 .menu { position: relative; }
 .menu > button {
   background: none; border: var(--px) solid transparent; cursor: pointer;
-  font: inherit; color: var(--ink); padding: 3px 10px 1px;
+  font: inherit; color: var(--ink); padding: 4px 9px 3px;
 }
 .menu > button u { text-decoration: underline; }
 .menu.open > button { background: var(--blood); color: var(--paper-hi); }
@@ -182,8 +209,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .dd button, .startmenu .items button {
   display: flex; align-items: center; gap: 10px; width: 100%;
   background: none; border: 0; cursor: pointer; text-align: left;
-  font: 20px/1.2 var(--font-dot); color: var(--ink); padding: 6px 12px 3px;
+  font: var(--t-ui); color: var(--ink); padding: 6px 12px 5px;
 }
+.dd button:disabled, .startmenu .items button:disabled { color: var(--ink-4); cursor: default; }
+.dd button:disabled:hover { background: none; color: var(--ink-4); }
 .dd button:hover, .dd button:focus-visible,
 .startmenu .items button:hover, .startmenu .items button:focus-visible {
   background: var(--blood); color: var(--paper-hi); outline: none;
@@ -192,22 +221,23 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   border: 0; border-top: var(--px) solid var(--paper-lo);
   box-shadow: 0 var(--px) 0 var(--paper-hi); margin: 5px 2px;
 }
-.dd .chk::before, .startmenu .chk::before { content: "□"; width: 1em; }
-.dd .chk.on::before, .startmenu .chk.on::before { content: "■"; }
+/* a checkable item: a plain check mark when on, nothing when off (no boxes) */
+.dd .chk::before, .startmenu .chk::before { content: ""; width: 1em; flex: none; text-align: center; }
+.dd .chk.on::before, .startmenu .chk.on::before { content: "✓"; }
 .body { padding: 12px 15px 15px; container-type: inline-size; }
 .body p { margin: 0 0 12px; }
 .body p:last-child { margin-bottom: 0; }
 
 /* ---------- controls ---------- */
 .btn {
-  font: 12px/1 var(--font-px); text-transform: uppercase;
+  font: var(--t-ui-bold);
   color: var(--ink); background: var(--paper);
   border: var(--px) solid var(--ink);
   box-shadow:
     inset var(--px) var(--px) 0 var(--paper-hi),
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     var(--px) var(--px) 0 var(--ink);
-  padding: 14px 18px 11px; cursor: pointer;
+  padding: 10px 16px 9px; cursor: pointer;
   transition: none;
 }
 .btn:hover { background: var(--paper-hi); }
@@ -229,10 +259,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .btn.primary:focus-visible { outline-color: var(--paper-hi); }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 18px; }
 
-.lbl { display: block; font: 10px/1 var(--font-px); text-transform: uppercase; color: var(--ink-3); margin: 18px 0 8px; }
+.lbl { display: block; font: var(--t-small); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); margin: 16px 0 6px; }
 .field {
   display: block; width: 100%;
-  font: 20px/1.3 var(--font-dot); color: var(--ink);
+  font: var(--t-body); color: var(--ink);
   background: var(--paper-hi);
   border: var(--px) solid;
   border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
@@ -256,7 +286,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .pill { display: inline-block; padding: 1px 8px 0; background: var(--hue, var(--none)); color: var(--ink); line-height: 1.3; }
 
 /* ---------- typography ---------- */
-.assoc { font: 10px/1.6 var(--font-px); text-transform: uppercase; color: var(--ink-3); }
+.assoc { font: var(--t-kicker); text-transform: uppercase; color: var(--ink-3); }
 .logo {
   font: clamp(15px, 6cqw, 38px)/1.25 var(--font-px);
   color: var(--ink); margin: 8px 0 10px;
@@ -269,10 +299,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 }
 .logo .x { color: var(--blood); text-shadow: 3px 3px 0 var(--ink); animation: xblink 1.4s steps(2) infinite; }
 .logo .hallow { color: var(--pumpkin); text-shadow: 3px 3px 0 var(--ink); }
-.kana { font: 20px/1 var(--font-dot); letter-spacing: .3em; color: var(--ink-4); }
+.kana { font: var(--t-body); letter-spacing: .3em; color: var(--ink-4); }
 .tbd { color: var(--nen-deep); border-bottom: var(--px) dashed var(--nen-deep); cursor: help; }
 
-.dialog-h { font: 20px/1.5 var(--font-px); text-align: center; margin: 10px 0 8px; }
+.dialog-h { font: var(--t-heading); text-align: center; margin: 10px 0 8px; }
 .win.logon .body { text-align: center; }
 .win.logon .logon-form { text-align: left; }
 .forgot { margin: 10px 0 0; text-align: center; }
@@ -290,13 +320,14 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .taskbar .btn { padding: 0 10px; display: flex; align-items: center; gap: 8px; box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo); }
 .taskbar .btn:active, .taskbar .btn.pressed { transform: none; background: var(--dither); box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-hi); }
 .taskbar .start { padding-right: 12px; }
-.taskbar .start span { padding-top: 2px; }
+.taskbar .start { font: var(--t-ui-bold); }
+.taskbar .start span { padding-top: 1px; }
 .taskbar .tasks { flex: 1; display: flex; gap: 5px; min-width: 0; overflow: hidden; }
-.taskbar .task { font: 20px/1 var(--font-dot); text-transform: none; max-width: 275px; min-width: 0; }
-.taskbar .task span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-top: 2px; }
+.taskbar .task { font: var(--t-ui); max-width: 275px; min-width: 0; }
+.taskbar .task span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-top: 1px; }
 .taskbar .tray {
   display: flex; align-items: center; gap: 10px; padding: 0 10px;
-  font: 20px/1 var(--font-dot);
+  font: var(--t-ui);
   border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
 }
 .taskbar .tray .trayicon { position: relative; display: block; }
@@ -304,7 +335,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .taskbar .tray .trayicon > button.on { opacity: 1; }
 /* a window asking for attention (window:attention) blinks its task button until focused */
 .taskbar .task.flash { animation: taskflash 1s steps(2) infinite; }
-.taskbar .clock { padding-top: 2px; white-space: nowrap; }
+.taskbar .clock { padding-top: 1px; white-space: nowrap; }
 
 .startmenu {
   position: fixed; left: 5px; bottom: var(--taskbar-h); z-index: 60;
@@ -320,12 +351,12 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .startmenu .row { display: flex; flex: 1; }
 .startmenu .user {
   display: flex; align-items: center; gap: 12px;
-  background: var(--ink); color: var(--paper);
+  background: var(--paper-lo); color: var(--ink);
   padding: 10px 12px; margin-bottom: 5px;
-  border: var(--px) solid var(--ink);
-  font: 20px/1 var(--font-dot);
+  border: var(--px) solid; border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  font: var(--t-ui-bold);
 }
-.startmenu .user .name { padding-top: 2px; }
+.startmenu .user .name { padding-top: 1px; }
 .startmenu .band {
   flex: 0 0 32px; background: var(--blood); color: var(--paper-hi);
   writing-mode: vertical-rl; transform: rotate(180deg);
@@ -333,7 +364,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   border: var(--px) solid var(--ink);
 }
 .startmenu .items { flex: 1; display: flex; flex-direction: column; padding: 2px 0; }
-.startmenu .items button { padding: 10px 15px 8px; }
+.startmenu .items button { padding: 9px 15px 8px; }
 
 /* ---------- toast (mini window) ---------- */
 .win.toast {
@@ -349,7 +380,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .boot {
   position: fixed; inset: 0; z-index: 200; display: none;
   background: var(--ink); color: var(--nen);
-  font: 20px/1.7 var(--font-dot); padding: 30px 25px;
+  font: var(--t-body); line-height: 1.7; padding: 30px 25px;
   white-space: pre-wrap; cursor: pointer;
 }
 .boot.on { display: block; }
@@ -357,13 +388,13 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .boot .splash {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
-  color: var(--paper); font: 12px/1.8 var(--font-px); text-align: center; padding: 25px;
+  color: var(--paper); font: 12px/1.8 var(--font-display); text-align: center; padding: 25px;
 }
 .boot .splash .sq { padding: 20px; background: #2a1d4a; box-shadow: 0 0 0 var(--px) var(--u, #7c4dff); }
 .badge {
   position: fixed; right: 35px; bottom: 30px; z-index: 5; pointer-events: none;
   display: flex; align-items: center; gap: 18px;
-  color: var(--paper-dim); font: 10px/1.6 var(--font-px); text-align: right;
+  color: var(--paper-dim); font: var(--t-kicker); text-align: right;
 }
 .boot .badge { z-index: auto; }
 .boot .badge .sq { padding: 10px; background: #2a1d4a; box-shadow: 0 0 0 var(--px) #7c4dff; }
@@ -371,19 +402,43 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 /* janky window paint: frame → menu bar → body */
 .win.loading .mbar, .win.loading .body, .win.loading2 .body { visibility: hidden; }
 
+/* ---------- scroll pane: an always-visible, bevelled scrollbar ---------- */
+.scrollpane { display: flex; align-items: stretch; min-height: 0; }
+.scrollpane > .sp-content { flex: 1; min-width: 0; overflow-y: auto; scrollbar-width: none; }
+.scrollpane > .sp-content::-webkit-scrollbar { display: none; }
+.scrollpane > .sp-bar {
+  flex: 0 0 18px; display: flex; flex-direction: column; user-select: none;
+  background: var(--dither); border-left: 1px solid var(--paper-lo);
+}
+.scrollpane > .sp-bar .sp-btn {
+  flex: none; height: 18px; padding: 0; cursor: pointer;
+  background: var(--paper); color: var(--ink); border: var(--px) solid var(--ink);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+  font: 700 9px/1 var(--font-ui);
+}
+.scrollpane > .sp-bar .sp-btn:active { box-shadow: inset 1px 1px 0 var(--paper-lo); }
+.scrollpane > .sp-bar .sp-track { flex: 1; position: relative; }
+.scrollpane > .sp-bar .sp-thumb {
+  position: absolute; left: 0; right: 0; min-height: 20px; cursor: pointer;
+  background: var(--paper); border: var(--px) solid var(--ink);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+}
+.scrollpane.sp-none > .sp-bar .sp-thumb { display: none; }
+
 /* ---------- avatar (shared-auth initial + colour) ---------- */
 .avatar {
   display: inline-grid; place-items: center;
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--c, var(--none)); color: var(--t, var(--paper-hi));
-  font: 10px/1 var(--font-px); padding-top: 1px;
+  font: 700 11px/1 var(--font-ui); padding-top: 1px;
   border: var(--px) solid var(--ink); box-shadow: 0 0 0 1px var(--paper-hi);
   vertical-align: middle;
 }
-.avatar.lg { width: 55px; height: 55px; font-size: 18px; }
+.avatar.lg { width: 55px; height: 55px; font-size: 20px; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }
 
+@keyframes tbarflash { 0%, 100% { background: var(--blood); color: var(--paper-hi); } 50% { background: var(--ink-3); color: var(--paper-dim); } }
 @keyframes taskflash { 0%, 100% { background: var(--paper); } 50% { background: var(--blood); color: var(--paper-hi); } }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
@@ -395,13 +450,12 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   .desktop.center { padding-top: 30px; }
   .icons { display: none; }
   .win { position: static; width: auto !important; max-width: none; margin-bottom: 15px; }
-  .win.max { width: auto !important; }
   .win.chromeless { position: relative; }
   .win.profile {
     position: fixed; left: 15px; right: 15px; top: 50%; transform: translateY(-50%);
     z-index: 45; margin: 0; max-height: 82svh; overflow: auto;
   }
-  .tbtn.min, .tbtn.maxb { display: none; }
+  .tbtn.min { display: none; }
   .tbar { touch-action: auto; }
   .taskbar .task span { display: none; }
   .assoc { font-size: 8px; }

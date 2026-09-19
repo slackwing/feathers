@@ -1,8 +1,8 @@
 /* WindowManager — the only thing that opens, closes, focuses, minimizes,
-   maximizes, places and drags windows. Windows talk to it through their
+   places and drags windows. Windows talk to it through their
    "chrome" / "pointerdown" events; it talks to everyone else through the OS
    bus: window:add, window:remove, window:open, window:close,
-   window:minimize, window:maximize, window:focus, window:title,
+   window:minimize, window:focus, window:title,
    window:attention (each payload carries the window id). */
 export class WindowManager {
   constructor({ bus, env, desktop }) {
@@ -28,7 +28,6 @@ export class WindowManager {
     win.on("chrome", kind => {
       if (kind === "close") this.close(win.id);
       else if (kind === "min") this.minimize(win.id);
-      else if (kind === "max") this.toggleMax(win.id);
     });
     win.on("pointerdown", () => this.focus(win.id));
     win.on("title", title => this.bus.emit("window:title", { id: win.id, title }));
@@ -59,6 +58,7 @@ export class WindowManager {
       this.activeId = id;
     }
     if (!w.static) w.el.style.zIndex = ++this.zTop;
+    w.el.classList.remove("flash");
     this.bus.emit("window:focus", { id });
   }
 
@@ -116,15 +116,6 @@ export class WindowManager {
     this.bus.emit("window:minimize", { id });
   }
 
-  toggleMax(id) {
-    const w = this.wins.get(id);
-    if (!w) return;
-    w.state.maximized = w.el.classList.toggle("max");
-    this.focus(id);
-    this.fit();
-    this.bus.emit("window:maximize", { id, max: w.state.maximized });
-  }
-
   focusTop() {
     let best = null;
     for (const w of this.wins.values()) {
@@ -151,7 +142,7 @@ export class WindowManager {
     const el = win.el;
     let sx, sy, ox, oy, moving = false;
     handle.addEventListener("pointerdown", e => {
-      if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || el.classList.contains("max") || win.static) return;
+      if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
       moving = true; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
       handle.setPointerCapture?.(e.pointerId);
       e.preventDefault();

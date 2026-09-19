@@ -61,6 +61,15 @@
   then the room settles until the next initiation.
 - Weight 0.3 + 0.7·talkativity, chance = weight / Σweights (so a
   talkativity-0 bot initiates 30 % as often as a talkativity-1 bot).
+- The global room weighs as much as three people when a bot picks a
+  target (Andrew, after seeing nobody type in global).
+- Beetle's buddy list does NOT mark bots (Andrew: "they should be
+  indistinguishable"); `is_bot` is in the contacts payload but unused
+  there.
+- Presence bug found by Andrew ("Katerina replied but never went
+  green"): the hub had recorded a bot's own contacts fetch as "everyone
+  saw her online", so her connect was never announced. Snapshots no
+  longer write the last-broadcast state.
 - Delay 5 s + 55 s·u², u uniform.
 - After sending, a bot keeps its socket open 30–120 s, then hangs up:
   online for a minute, away for an hour, then offline — presence you

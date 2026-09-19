@@ -12,6 +12,7 @@ import { ChatClient, ChatAPI, wsURL } from "./client.js";
 import { ContactsWindow } from "./contacts.js";
 import { ChatWindow } from "./window.js";
 import { ProfileWindow, ProfileEditor } from "./profile.js";
+import { AboutWindow } from "./about.js";
 import "./chat.css";
 
 export const ROOM_GLOBAL = "global";
@@ -97,36 +98,37 @@ export class ChatApp extends App {
     }
   }
 
-  /* ---------- menus ---------- */
-  /** The Settings menu shared by every Beetle window. */
+  /* ---------- menus (Andrew's layout, 2026-09-19; no icons — 90s menus had none) ---------- */
+  /** Beetle's Settings: checkable, remembered per browser. */
   settingsItems() {
     const os = this.os;
     return [
-      os.settings.item({ key: SETTING_TRAY, label: "New message icon", icon: "comment", onChange: () => this.syncNewIcon() }),
-      os.settings.item({ key: SETTING_FLASH, label: "Flash taskbar", icon: "crt" }),
-      { label: "Sounds", icon: "comment", check: () => os.sounds.on, onclick: () => os.sounds.toggle() },
+      os.settings.item({ key: SETTING_FLASH, label: "Flash on new" }),
+      os.settings.item({ key: SETTING_TRAY, label: "Systray alert", onChange: () => this.syncNewIcon() }),
+      { label: "Sounds", check: () => os.sounds.on, onclick: () => os.sounds.toggle() },
     ];
   }
   get traySetting() { return this.os.settings.get(SETTING_TRAY, true); }
   get flashSetting() { return this.os.settings.get(SETTING_FLASH, true); }
 
+  /** The Beetle window: File (About, Update, Exit), Edit (Profile…), Settings. */
   contactsMenus(win) {
     return this.os.appMenus(win, {
-      edit: () => [{ label: "Profile", icon: "card", onclick: () => this.editProfile() }],
+      file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],
+      edit: () => [{ label: "Profile…", onclick: () => this.editProfile() }],
       settings: () => this.settingsItems(),
     });
   }
 
+  /** A chat: File (Exit) only in the global room; a buddy's chat adds View (Profile). */
   roomMenus(win, room) {
-    const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find(u => u !== this.me);
+    const other = this.otherOf(room);
     return this.os.appMenus(win, {
-      edit: () => [
-        ...(other ? [{ label: `${this.nameOf(other)}'s profile`, icon: "card", onclick: () => this.viewProfile(other) }] : []),
-        { label: "My profile", icon: "card", onclick: () => this.editProfile() },
-      ],
-      settings: () => this.settingsItems(),
+      view: other ? () => [{ label: "Profile", onclick: () => this.viewProfile(other) }] : null,
     });
   }
+
+  otherOf(room) { return room === ROOM_GLOBAL ? null : room.slice(3).split(":").find(u => u !== this.me); }
 
   /* ---------- windows ---------- */
   launch({ autostart = false } = {}) {
@@ -160,14 +162,14 @@ export class ChatApp extends App {
     const os = this.os;
     let w = this.windows.get(room);
     if (!w) {
-      const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find(u => u !== this.me);
+      const other = this.otherOf(room);
       w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u),
-        menus: win => this.roomMenus(win, room), info: !!other });
+        menus: win => this.roomMenus(win, room), profile: !!other });
       os.wm.add(w);
       this.windows.set(room, w);
       w.on("send", ({ body }) => this.send(room, body));
       w.on("typing", () => this.client?.typing(room));
-      w.on("info", () => other && this.viewProfile(other));
+      w.on("profile", () => other && this.viewProfile(other));
       w.on("close", () => { this.markRead(room); });
       this.loadHistory(room, w);
     }
@@ -241,6 +243,16 @@ export class ChatApp extends App {
   focusOldestUnread() {
     const room = this.unread[0];
     if (room) this.openRoom(room, { focus: true });
+  }
+
+  /* ---------- about ---------- */
+  about() {
+    const os = this.os;
+    let w = os.wm.get("win-chat-about");
+    if (!w) { w = new AboutWindow({ sounds: os.sounds }); os.wm.add(w); }
+    os.wm.open(w.id);
+    w.startMusic();
+    return w;
   }
 
   /* ---------- profiles ---------- */

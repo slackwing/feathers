@@ -5,7 +5,7 @@
    and call start(); everything on screen after that is a Component, and
    everything they say to each other goes over `bus`.
 
-   Bus events: window:add/remove/open/close/minimize/maximize/focus/title/
+   Bus events: window:add/remove/open/close/minimize/focus/title/
    attention {id}, tray:add {spec} / tray:remove {id} / tray:refresh,
    app:register / app:launch {id}, session:user {user}, crt {on}, resize,
    os:ready. */
@@ -81,12 +81,13 @@ export class OS {
     });
   }
 
-  /** Scanlines etc. — the system entries shared by the Start and View menus. */
-  systemItems() {
-    return [
+  /** Scanlines etc. — the system entries shared by the Start and Settings menus. Window menus carry no icons (90s menus didn't). */
+  systemItems({ icons = true } = {}) {
+    const items = [
       { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
       { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
     ];
+    return icons ? items : items.map(({ icon, ...i }) => i);
   }
 
   /**
@@ -107,10 +108,10 @@ export class OS {
   }
 
   /** Apps by group: [{ label, icon, onclick }] for menus. */
-  appItems(group = "apps", { except = null, long = false } = {}) {
+  appItems(group = "apps", { except = null, long = false, icons = true } = {}) {
     return this.registry.visible(this.user, { desktop: false, menuable: true })
       .filter(a => (a.constructor.group || "apps") === group && a.id !== except)
-      .map(a => ({ label: long ? (a.constructor.longName || a.name) : a.name, icon: a.icon, onclick: () => this.launch(a.id) }));
+      .map(a => ({ label: long ? (a.constructor.longName || a.name) : a.name, ...(icons ? { icon: a.icon } : {}), onclick: () => this.launch(a.id) }));
   }
 
   startItems() {

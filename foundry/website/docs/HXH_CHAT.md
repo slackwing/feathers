@@ -14,7 +14,12 @@
 > the client. Presence: a live socket or activity < 1 min = online,
 > < 1 h = away, else offline, no password = red. History and fan-out
 > apply the activation rule server-side. `html/hxh/CLAUDE.md` ("Beetle")
-> is the living reference.
+> is the living reference. Later the same day Andrew dropped unsend
+> ("anachronistic"), had the buddy list redrawn after AIM/MSN and then
+> toned down, fixed the menus (File About/Update/Exit, Edit Profile…,
+> Settings Flash on new / Systray alert / Sounds; chats File+View),
+> removed maximize everywhere, and asked for a system-wide type scale
+> (see the Type system note in `html/hxh/CLAUDE.md`).
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,

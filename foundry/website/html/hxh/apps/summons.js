@@ -32,10 +32,10 @@ export class SummonsApp extends App {
   menus(win) {
     const os = this.os;
     return os.appMenus(win, {
-      file: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }],
-      view: () => os.appItems("apps", { except: this.id, long: true }),
-      settings: () => os.systemItems(),
-      help: () => os.appItems("system", { long: true }),
+      file: () => [{ label: "Log out", onclick: () => os.logout() }],
+      view: () => os.appItems("apps", { except: this.id, long: true, icons: false }),
+      settings: () => os.systemItems({ icons: false }),
+      help: () => os.appItems("system", { long: true, icons: false }),
     });
   }
 

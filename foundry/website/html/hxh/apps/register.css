@@ -5,7 +5,7 @@
 /* stamp + progress */
 .stamp {
   display: inline-block; transform: rotate(-4deg);
-  font: 18px/1 var(--font-px); color: var(--blood);
+  font: 18px/1 var(--font-display); color: var(--blood);
   border: 3px solid var(--blood); padding: 10px 15px 8px; margin: 5px 0 18px;
   box-shadow: 2px 2px 0 var(--ink);
 }

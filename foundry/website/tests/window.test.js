@@ -9,17 +9,18 @@ test("a Window needs an id", () => {
   assert.throws(() => new Window({}), /needs an id/);
 });
 
-test("full chrome: title bar with the three identical buttons, hidden until opened", () => {
+test("full chrome: title bar with the two identical buttons (no maximize anywhere), hidden until opened", () => {
   const w = new Window({ id: "w1", title: "One", icon: "card", width: 500, cls: "extra" });
   w.mount(document.body);
   assert.equal(w.el.id, "w1");
   assert.equal(w.el.hidden, true);
   assert.equal(w.el.style.width, "500px");
   assert.ok(w.el.classList.contains("win") && w.el.classList.contains("extra"));
-  assert.deepEqual(w.buttonKinds(), ["min", "max", "close"]);
-  const btns = [...w.el.querySelectorAll(".tbar .tbtn")];
-  assert.deepEqual(btns.map(b => b.textContent), [CHROME.min.glyph, CHROME.max.glyph, CHROME.close.glyph]);
-  assert.deepEqual(btns.map(b => b.title), ["Minimize", "Maximize", "Close"]);
+  assert.deepEqual(w.buttonKinds(), ["min", "close"]);
+  const btns = [...w.el.querySelectorAll(".tbar .tbtns .tbtn")];
+  assert.deepEqual(btns.map(b => b.textContent), [CHROME.min.glyph, CHROME.close.glyph]);
+  assert.deepEqual(btns.map(b => b.title), ["Minimize", "Close"]);
+  assert.equal(CHROME.max, undefined);
   assert.equal(w.el.querySelector(".tbar .ttl").textContent, "One");
   assert.equal(w.hasTask, true);
   w.unmount();
@@ -32,16 +33,18 @@ test("chrome buttons emit 'chrome' with their kind and do not bubble to the wind
   let bodyClicks = 0;
   document.body.addEventListener("click", () => bodyClicks++);
   for (const b of w.el.querySelectorAll(".tbtn")) click(b);
-  assert.deepEqual(got, ["min", "max", "close"]);
+  assert.deepEqual(got, ["min", "close"]);
   assert.equal(bodyClicks, 0);
   w.unmount();
 });
 
-test("options remove buttons: not closable / minimizable / maximizable", () => {
-  const w = new Window({ id: "w3", closable: false, maximizable: false }).mount(document.body);
+test("options remove buttons: not closable / not minimizable", () => {
+  const w = new Window({ id: "w3", closable: false }).mount(document.body);
   assert.deepEqual(w.buttonKinds(), ["min"]);
   assert.equal(w.el.querySelectorAll(".tbtn").length, 1);
-  w.unmount();
+  const v = new Window({ id: "w3b", minimizable: false }).mount(document.body);
+  assert.deepEqual(v.buttonKinds(), ["close"]);
+  w.unmount(); v.unmount();
 });
 
 test("static chrome: in-flow dialog, no buttons, no task", () => {
@@ -64,6 +67,17 @@ test("chromeless: no title bar, float buttons as asked", () => {
   w.on("chrome", k => got.push(k));
   click(f.querySelector(".close"));
   assert.deepEqual(got, ["close"]);
+  w.unmount();
+});
+
+test("menus may be a function of the window (OS.appMenus style)", () => {
+  const w = new Window({ id: "mf", menus: win => [{ label: "File", key: "F", items: () => [{ label: "Exit", onclick: () => win.emit("chrome", "close") }] }] }).mount(document.body);
+  assert.equal(w.menuBar.menus.length, 1);
+  let closed = 0;
+  w.on("chrome", k => { if (k === "close") closed++; });
+  w.menuBar.menus[0].open();
+  click(w.menuBar.menus[0].el.querySelector("button"));
+  assert.equal(closed, 1);
   w.unmount();
 });
 
@@ -90,6 +104,7 @@ test("setTitle updates the bar and emits; requestAttention emits; pointerdown em
   assert.equal(w.title, "New");
   assert.equal(w.el.querySelector(".ttl").textContent, "New");
   w.requestAttention();
+  assert.equal(w.flashing, true);   // the title bar blinks until focused
   w.el.querySelector(".body").dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
   assert.deepEqual(ev, ["title:New", "attention", "down"]);
   w.unmount();

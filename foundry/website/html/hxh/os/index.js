@@ -22,6 +22,7 @@ export { LogonDialog } from "./logon.js";
 export { CRT, CRT_KEY } from "./crt.js";
 export { Sounds, SOUND_KEY, CUES } from "./sound.js";
 export { Settings } from "./settings.js";
+export { ScrollPane } from "./scrollpane.js";
 export { wallpaper, cloudSprite, Wallpaper } from "./wallpaper.js";
 export { OS } from "./os.js";
 import { OS } from "./os.js";

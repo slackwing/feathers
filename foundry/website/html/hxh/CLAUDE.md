@@ -182,7 +182,9 @@ the OS.
   `Settings` (`settings.js`, per-browser checkable options + the
   standard menu item for them; `OS.appMenus(win, {file, edit, view,
   settings, help})` builds the File/Edit/View/Settings/Help bar every
-  app window shares — File always ends with Exit),
+  app window shares — File always ends with Exit), `ScrollPane`
+  (`scrollpane.js`), the chiptune tracker in `Sounds` (`playTune` /
+  `stopTune`, `TUNES`, `noteFreq`),
   `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
   `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
   `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
@@ -249,19 +251,28 @@ component architecture (many windows, tray icons + menus, the bus).
   Sounds). `launch()` connects and opens the **buddy list**
   (`contacts.js`, window title just "Beetle", tall/narrow at the right
   edge, drawn after AIM 4.x / MSN 4.x from screenshots Andrew asked me
-  to study: a status banner with your avatar and "(Online)", Online /
-  List tabs (`.ltabs` — the binder owns `.tabs` unscoped), a sunken
-  tree of collapsible groups — Buddies (present/total), Bots
-  (`is_bot` members: the thirteen chat bots, `docs/HXH_BOTS.md`), Offline
-  — with away and offline names in grey italics and "(Away)" / "(No
-  password)" suffixes, an icon toolbar IM / Info / Global acting on
-  the selected buddy, and a status bar "Connected · n of m online";
-  one click on a name selects it AND opens a chat, right-click gives
-  Send Message / Profile) and the **global chat** (behind the
-  contacts, not focused). Every Beetle window carries the OS-standard
-  menus via `os.appMenus(win, {...})`: File (… Exit), Edit (Profile /
-  "<name>'s profile"), Settings (☑ New message icon, ☑ Flash taskbar,
-  ☑ Sounds — `os.settings`, localStorage `hxh.set.*`). `window.js` `ChatWindow` — one
+  to study, then toned down at his request ("modeling this on real
+  UIs back then just looks too shitty for modern day"): a status
+  banner (grey, your avatar, "(Online)"), Online / List tabs
+  (`.ltabs` — the binder owns `.tabs` unscoped), a sunken list box
+  with a real scrollbar of two collapsible groups — Buddies
+  (present/total) and Offline — coloured status DOTS (green/yellow/
+  grey/red), grey away/offline names with "(Away)" / "(No password)"
+  suffixes, a toolbar IM / Profile / Global acting on the selected
+  buddy, and a status bar "Connected · n of m online". Bots are
+  indistinguishable from people here (Andrew). One click on a name
+  selects it AND opens a chat; right-click gives Send Message /
+  Profile) and the **global chat** (behind the contacts, not focused).
+  Menus (Andrew's layout): Beetle — File (About, Update greyed, —,
+  Exit), Edit (Profile…), Settings (✓ Flash on new, ✓ Systray alert,
+  ✓ Sounds — `os.settings`, localStorage `hxh.set.*`); global chat —
+  File (Exit); a buddy's chat — File (Exit), View (Profile), and a
+  Profile button beside Send. File › About opens the **cracktro**
+  (`apps/chat/about.js`): ASCII beetle, scrolling greetz, credits to
+  purple square, and "Beetle 07", an ORIGINAL chiptune from the OS
+  tracker (`Sounds.playTune`, `TUNES` in `os/sound.js`) — Andrew asked
+  for Hunter × Hunter MIDI, but those compositions are copyrighted, so
+  the music is ours; it stops when the window closes. `window.js` `ChatWindow` — one
   per room (`win-chat-<room>`): the log (names in the sender's avatar
   colour, HH:MM, last 100 from history), the "<name> is typing…" line,
   the compose box (Enter sends, Shift+Enter breaks; no unsend — Andrew
@@ -443,10 +454,34 @@ over the sky.
   `.backdrop`. `.profile` = fixed modal on phones.
 - Breakpoint: `>= 900px` windows float and drag; below, they stack in DOM
   order, min/max buttons hide, desktop icons hide, Start menu is the nav.
-- Fonts: **Press Start 2P** (logotype, title bars, buttons, small caps
-  labels at 8px) and **DotGothic16** (all body text, always 16px — it is a
-  16px bitmap font and blurs at other sizes; it also renders the kana).
-  Logotype sizes via container-query units and breaks onto two lines in
+- **Type system (2026-09-19, Andrew: "the proportion of fonts don't
+  make sense throughout the system … research the actual default
+  perceived font sizes for Windows 98/XP and make it systematically
+  inherited").** Windows 98 drew all chrome — menus, buttons, title
+  bars (bold), icon captions, tray, clock — in MS Sans Serif 8 pt
+  (11 px at 96 dpi); XP kept Tahoma 8 pt everywhere with a Trebuchet
+  10 pt bold title (≈13 px). Ours is that scale ×1.2, declared ONCE in
+  `os/os.css` and used everywhere as `font: var(--t-*)`:
+  `--t-ui` 13 px / `--t-ui-bold` (Pixelify Sans, a proportional pixel
+  face — title bars are NOT monospace), `--t-title` 13 px bold,
+  `--t-body` DotGothic16 at its native 16 px (bitmap; blurs at any
+  other size; renders the kana), `--t-small` 11 px (status bars, time
+  stamps), `--t-caption` 12 px (desktop icons), `--t-kicker` /
+  `--t-heading` (Press Start 2P, display only: logotype, stamps,
+  kickers). App stylesheets never write font sizes or families; the
+  binder's device art (its own fonts) is the one exception. "Realistic
+  but if too shitty, a little modernized" — Andrew.
+- **No maximize anywhere** (2026-09-19): windows are a set size; title
+  bars carry minimize + close in a `.tbtns` cluster with a 2 px gap.
+  `requestAttention()` blinks the title bar (`.win.flash`) as well as
+  the taskbar button until the window is focused.
+- Window menus carry no icons (90s menus had none); the Start menu and
+  tray menus keep theirs. Checkable items show a plain ✓ when on and
+  nothing when off. Disabled items are grey.
+- `ScrollPane` (`os/scrollpane.js`) wraps any scrolling box with an
+  always-visible bevelled scrollbar (overlay scrollbars hide; a 90s
+  list box never did); the buddy list and chat logs use it.
+- Logotype sizes via container-query units and breaks onto two lines in
   windows narrower than 440px.
 - Icons are hand-drawn ASCII grids in `os/icons.js` (→ integer-scaled
   SVG); sprites are emoji drawn on a 16px canvas, alpha-thresholded and

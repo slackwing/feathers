@@ -13,7 +13,7 @@ function fresh(opts = {}) {
   desktop = d.doc.createElement("div"); desktop.className = "desktop"; d.doc.body.append(desktop);
   wm = new WindowManager({ bus, env, desktop });
   events = [];
-  for (const ev of ["window:add", "window:remove", "window:open", "window:close", "window:minimize", "window:maximize", "window:focus", "window:title", "window:attention"]) {
+  for (const ev of ["window:add", "window:remove", "window:open", "window:close", "window:minimize", "window:focus", "window:title", "window:attention"]) {
     bus.on(ev, p => events.push(ev + ":" + p.id));
   }
 }
@@ -83,8 +83,8 @@ test("focus raises z-order and marks the others inactive", async () => {
   assert.equal(wm.active, a);
 });
 
-test("chrome buttons drive the manager: minimize, maximize, close", async () => {
-  const a = wm.add(new Window({ id: "a" }));
+test("chrome buttons drive the manager: minimize, close; focus clears an attention flash", async () => {
+  const a = wm.add(new Window({ id: "a" })), b = wm.add(new Window({ id: "b" }));
   await wm.open("a");
   a.emit("chrome", "min");
   assert.equal(a.el.hidden, true);
@@ -92,13 +92,14 @@ test("chrome buttons drive the manager: minimize, maximize, close", async () => 
   assert.ok(events.includes("window:minimize:a"));
   await wm.open("a");
   assert.equal(a.state.minimized, false);
-  a.emit("chrome", "max");
-  assert.equal(a.state.maximized, true);
-  assert.ok(a.el.classList.contains("max"));
-  a.emit("chrome", "max");
-  assert.equal(a.state.maximized, false);
+  await wm.open("b");
+  a.requestAttention();
+  assert.equal(a.flashing, true);
+  wm.focus("a");
+  assert.equal(a.flashing, false);
   a.emit("chrome", "close");
   assert.equal(a.state.open, false);
+  assert.equal(typeof wm.toggleMax, "undefined");
 });
 
 test("closing the active window focuses the top remaining one", async () => {

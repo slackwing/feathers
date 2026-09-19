@@ -48,6 +48,7 @@ var HxH = (() => {
     OS: () => OS,
     PAL: () => PAL,
     SOUND_KEY: () => SOUND_KEY,
+    ScrollPane: () => ScrollPane,
     Session: () => Session,
     Settings: () => Settings,
     Sounds: () => Sounds,
@@ -638,7 +639,6 @@ var HxH = (() => {
   // html/hxh/os/window.js
   var CHROME = {
     min: { cls: "min", glyph: "_", title: "Minimize" },
-    max: { cls: "maxb", glyph: "\u25A1", title: "Maximize" },
     close: { cls: "close", glyph: "\xD7", title: "Close" }
   };
   var ChromeButton = class extends Component {
@@ -666,9 +666,13 @@ var HxH = (() => {
       tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "#fff6e0" } : null) }));
       this.ttl = h("span", { className: "ttl", text: title });
       tb.append(this.ttl);
-      for (const kind of buttons) {
-        const b = this.adopt(new ChromeButton({ kind }), tb);
-        b.on("press", (k) => this.emit("press", k));
+      if (buttons.length) {
+        const cluster = h("span", { className: "tbtns" });
+        for (const kind of buttons) {
+          const b = this.adopt(new ChromeButton({ kind }), cluster);
+          b.on("press", (k) => this.emit("press", k));
+        }
+        tb.append(cluster);
       }
       return tb;
     }
@@ -679,7 +683,7 @@ var HxH = (() => {
   var Window = class extends Component {
     /**
      * props: id, title, icon = "x", width, chrome = "full" | "static" | "none",
-     *        closable = true, minimizable = true, maximizable = true,
+     *        closable = true, minimizable = true,
      *        task = true (taskbar button), popup = false (Escape closes),
      *        cls = "", buttons (chromeless float buttons, e.g. ["min", "close"]),
      *        menus (a MenuBar spec, or win => spec — see OS.appMenus),
@@ -687,8 +691,8 @@ var HxH = (() => {
      */
     constructor(props = {}) {
       if (!props.id) throw new Error("Window needs an id");
-      super({ chrome: "full", icon: "x", closable: true, minimizable: true, maximizable: true, task: true, popup: false, cls: "", ...props });
-      this.state = { open: false, minimized: false, maximized: false, placed: false };
+      super({ chrome: "full", icon: "x", closable: true, minimizable: true, task: true, popup: false, cls: "", ...props });
+      this.state = { open: false, minimized: false, placed: false };
       this.wm = null;
     }
     get id() {
@@ -714,7 +718,7 @@ var HxH = (() => {
       const p = this.props;
       if (this.static) return p.closable && p.buttons !== void 0 ? p.buttons : p.closable && p.staticClose ? ["close"] : [];
       if (this.chromeless) return p.buttons ?? [];
-      return [...p.minimizable ? ["min"] : [], ...p.maximizable ? ["max"] : [], ...p.closable ? ["close"] : []];
+      return [...p.minimizable ? ["min"] : [], ...p.closable ? ["close"] : []];
     }
     render() {
       const p = this.props;
@@ -748,9 +752,13 @@ var HxH = (() => {
       this.titleBar?.setTitle(t);
       this.emit("title", t);
     }
-    /** Ask for the user's eye (taskbar flash etc.); the WM/bus decides how. */
+    /** Ask for the user's eye: the title bar blinks (until focused) and the taskbar button flashes. */
     requestAttention() {
+      this.el?.classList.add("flash");
       this.emit("attention");
+    }
+    get flashing() {
+      return !!this.el?.classList.contains("flash");
     }
     /** Convenience passthroughs when managed. */
     open(at, opts) {
@@ -801,7 +809,6 @@ var HxH = (() => {
       win.on("chrome", (kind) => {
         if (kind === "close") this.close(win.id);
         else if (kind === "min") this.minimize(win.id);
-        else if (kind === "max") this.toggleMax(win.id);
       });
       win.on("pointerdown", () => this.focus(win.id));
       win.on("title", (title) => this.bus.emit("window:title", { id: win.id, title }));
@@ -830,6 +837,7 @@ var HxH = (() => {
         this.activeId = id;
       }
       if (!w.static) w.el.style.zIndex = ++this.zTop;
+      w.el.classList.remove("flash");
       this.bus.emit("window:focus", { id });
     }
     /**
@@ -891,14 +899,6 @@ var HxH = (() => {
       this.fit();
       this.bus.emit("window:minimize", { id });
     }
-    toggleMax(id) {
-      const w = this.wins.get(id);
-      if (!w) return;
-      w.state.maximized = w.el.classList.toggle("max");
-      this.focus(id);
-      this.fit();
-      this.bus.emit("window:maximize", { id, max: w.state.maximized });
-    }
     focusTop() {
       let best = null;
       for (const w of this.wins.values()) {
@@ -922,7 +922,7 @@ var HxH = (() => {
       const el = win.el;
       let sx, sy, ox, oy, moving = false;
       handle.addEventListener("pointerdown", (e) => {
-        if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || el.classList.contains("max") || win.static) return;
+        if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
         moving = true;
         sx = e.clientX;
         sy = e.clientY;
@@ -1695,11 +1695,42 @@ var HxH = (() => {
     dooropen: [[220, 0, 0.28, 520, "triangle"]],
     doorclose: [[520, 0, 0.28, 220, "triangle"]]
   };
+  var NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  function noteFreq(tok) {
+    const m = /^([A-G])(#|b)?(\d)$/.exec(tok);
+    if (!m) return 440;
+    const semi = NOTE[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + (+m[3] + 1) * 12;
+    return 440 * Math.pow(2, (semi - 69) / 12);
+  }
+  var TUNES = {
+    beetle: {
+      bpm: 150,
+      volume: 0.11,
+      channels: [
+        { wave: "square", gain: 0.35, steps: `
+        A4 . A4 . C5 . E5 . A5 - - . G5 . E5 .   F5 - . E5 D5 - . C5 D5 - - - . . . .
+        A4 . A4 . C5 . E5 . A5 - - . G5 . A5 .   B5 - . A5 G5 - . E5 F5 - - - . . . .
+        F5 . F5 . A5 . C6 . F6 - - . E6 . C6 .   D6 - . C6 B5 - . A5 G5 - - - . . . .
+        E5 . E5 . G5 . B5 . E6 - - . D6 . B5 .   C6 - . B5 A5 - - - - - - - . . . .` },
+        { wave: "square", gain: 0.12, gate: 0.6, steps: `
+        A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4   A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4
+        A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4   E3 G#3 B3 E4 E3 G#3 B3 E4 E3 G#3 B3 E4 E3 G#3 B3 E4
+        F3 A3 C4 F4 F3 A3 C4 F4 F3 A3 C4 F4 F3 A3 C4 F4   D3 F3 A3 D4 D3 F3 A3 D4 G3 B3 D4 G4 G3 B3 D4 G4
+        E3 G#3 B3 E4 E3 G#3 B3 E4 E3 G#3 B3 E4 E3 G#3 B3 E4   A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4 A3 C4 E4 A4` },
+        { wave: "triangle", gain: 0.6, gate: 0.8, steps: `
+        A2 . . . A2 . . . E2 . . . E2 . . .   A2 . . . A2 . . . E2 . . . E2 . . .
+        A2 . . . A2 . . . E2 . . . E2 . . .   E2 . . . E2 . . . E2 . . . E2 . . .
+        F2 . . . F2 . . . F2 . . . F2 . . .   D2 . . . D2 . . . G2 . . . G2 . . .
+        E2 . . . E2 . . . E2 . . . E2 . . .   A2 . . . A2 . . . A2 . . . A2 . . .` }
+      ]
+    }
+  };
   var Sounds = class {
     constructor({ storage = globalThis.localStorage, AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext } = {}) {
       this.storage = storage;
       this.AC = AudioContext;
       this.context = null;
+      this.tune = null;
       this.played = [];
     }
     get on() {
@@ -1730,6 +1761,79 @@ var HxH = (() => {
       }
       if (this.context.state === "suspended") this.context.resume?.();
       return this.context;
+    }
+    /* ---------- tunes: a tiny chiptune tracker ----------
+       A tune is channels of 16th-note steps: "A4" starts a note, "-"
+       holds it, "." rests. Scheduled a little ahead on the audio clock so
+       timers can be sloppy. One tune plays at a time; it loops until
+       stopTune(). Original music — no MIDI transcriptions of copyrighted
+       songs live here. */
+    playTune(name, { loop = true } = {}) {
+      const tune = TUNES[name];
+      if (!tune || !this.on) return false;
+      const ctx = this.ctx();
+      if (!ctx) return false;
+      this.stopTune();
+      const step = 60 / tune.bpm / 4;
+      const chans = tune.channels.map((c) => ({ ...c, steps: c.steps.trim().split(/\s+/) }));
+      const len = Math.max(...chans.map((c) => c.steps.length));
+      const master = ctx.createGain();
+      master.gain.value = tune.volume ?? 0.12;
+      master.connect(ctx.destination);
+      const state = { name, ctx, master, pos: 0, at: ctx.currentTime + 0.05, timer: null, stopped: false };
+      const schedule = () => {
+        if (state.stopped) return;
+        const horizon = ctx.currentTime + 0.3;
+        while (state.at < horizon) {
+          if (state.pos >= len) {
+            if (!loop) {
+              this.stopTune();
+              return;
+            }
+            state.pos = 0;
+          }
+          for (const c of chans) {
+            const tok = c.steps[state.pos % c.steps.length];
+            if (!tok || tok === "." || tok === "-") continue;
+            let held = 1;
+            while (c.steps[(state.pos + held) % c.steps.length] === "-" && held < 64) held++;
+            const osc = ctx.createOscillator(), g = ctx.createGain();
+            osc.type = c.wave || "square";
+            osc.frequency.setValueAtTime(noteFreq(tok), state.at);
+            const dur = held * step * (c.gate ?? 0.9);
+            g.gain.setValueAtTime(1e-4, state.at);
+            g.gain.linearRampToValueAtTime(c.gain ?? 0.5, state.at + 5e-3);
+            g.gain.exponentialRampToValueAtTime(1e-4, state.at + dur);
+            osc.connect(g);
+            g.connect(master);
+            osc.start(state.at);
+            osc.stop(state.at + dur + 0.02);
+          }
+          state.pos++;
+          state.at += step;
+        }
+        state.timer = setTimeout(schedule, 100);
+        state.timer.unref?.();
+      };
+      this.tune = state;
+      schedule();
+      return true;
+    }
+    stopTune() {
+      const t = this.tune;
+      if (!t) return false;
+      t.stopped = true;
+      clearTimeout(t.timer);
+      try {
+        t.master.gain.setValueAtTime(1e-4, t.ctx.currentTime);
+        t.master.disconnect();
+      } catch {
+      }
+      this.tune = null;
+      return true;
+    }
+    get tunePlaying() {
+      return !!this.tune;
     }
     /** Play a cue; returns false when muted or audio is unavailable. */
     play(name) {
@@ -1783,6 +1887,72 @@ var HxH = (() => {
     /** A checkable menu item bound to `key`. */
     item({ key, label, icon: icon2, def = true, onChange } = {}) {
       return { label, icon: icon2, check: () => this.get(key, def), onclick: () => onChange?.(this.toggle(key, def)) };
+    }
+  };
+
+  // html/hxh/os/scrollpane.js
+  var STEP = 24;
+  var ScrollPane = class extends Component {
+    /** props: content (the element that scrolls; it is moved into the pane) */
+    render() {
+      const el = h("div", { className: "scrollpane" });
+      this.content = this.props.content;
+      this.content.classList.add("sp-content");
+      el.append(this.content);
+      this.up = h("button", { type: "button", className: "sp-btn", text: "\u25B2", tabindex: "-1", onclick: () => this.by(-STEP) });
+      this.down = h("button", { type: "button", className: "sp-btn", text: "\u25BC", tabindex: "-1", onclick: () => this.by(STEP) });
+      this.thumb = h("div", { className: "sp-thumb" });
+      this.track = h("div", { className: "sp-track" }, this.thumb);
+      el.append(h("div", { className: "sp-bar" }, this.up, this.track, this.down));
+      this.content.addEventListener("scroll", () => this.update());
+      this.track.addEventListener("mousedown", (e) => {
+        if (e.target === this.thumb) return;
+        const r = this.track.getBoundingClientRect();
+        this.by((e.clientY < r.top + this.thumb.offsetTop + this.thumb.offsetHeight / 2 ? -1 : 1) * this.content.clientHeight);
+      });
+      this.thumb.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        const startY = e.clientY, startTop = this.content.scrollTop;
+        const ratio = () => (this.content.scrollHeight - this.content.clientHeight) / Math.max(1, this.track.clientHeight - this.thumb.offsetHeight);
+        const move = (ev) => {
+          this.content.scrollTop = startTop + (ev.clientY - startY) * ratio();
+        };
+        const upH = () => {
+          this.thumb.ownerDocument.removeEventListener("pointermove", move);
+          this.thumb.ownerDocument.removeEventListener("pointerup", upH);
+        };
+        this.thumb.ownerDocument.addEventListener("pointermove", move);
+        this.thumb.ownerDocument.addEventListener("pointerup", upH);
+      });
+      return el;
+    }
+    onMount() {
+      if (typeof ResizeObserver !== "undefined") {
+        this.ro = new ResizeObserver(() => this.update());
+        this.ro.observe(this.content);
+      }
+      this.update();
+    }
+    onUnmount() {
+      this.ro?.disconnect();
+    }
+    by(px) {
+      this.content.scrollTop += px;
+      this.update();
+    }
+    /** Size and place the thumb from the content's scroll geometry. */
+    update() {
+      const c = this.content, trackH = this.track.clientHeight || 0;
+      const range = c.scrollHeight - c.clientHeight;
+      this.el.classList.toggle("sp-none", range <= 0 || !trackH);
+      if (range <= 0 || !trackH) return;
+      const size = Math.max(20, Math.round(trackH * c.clientHeight / c.scrollHeight));
+      const top = Math.round((trackH - size) * (c.scrollTop / range));
+      this.thumb.style.height = size + "px";
+      this.thumb.style.top = top + "px";
+    }
+    get scrollable() {
+      return !this.el.classList.contains("sp-none");
     }
   };
 
@@ -2102,12 +2272,13 @@ var HxH = (() => {
         }, 120);
       });
     }
-    /** Scanlines etc. — the system entries shared by the Start and View menus. */
-    systemItems() {
-      return [
+    /** Scanlines etc. — the system entries shared by the Start and Settings menus. Window menus carry no icons (90s menus didn't). */
+    systemItems({ icons = true } = {}) {
+      const items = [
         { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
         { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
       ];
+      return icons ? items : items.map(({ icon: icon2, ...i }) => i);
     }
     /**
      * The standard menu bar every app window shares (Andrew: "File menu
@@ -2129,8 +2300,8 @@ var HxH = (() => {
       return menus;
     }
     /** Apps by group: [{ label, icon, onclick }] for menus. */
-    appItems(group = "apps", { except = null, long = false } = {}) {
-      return this.registry.visible(this.user, { desktop: false, menuable: true }).filter((a) => (a.constructor.group || "apps") === group && a.id !== except).map((a) => ({ label: long ? a.constructor.longName || a.name : a.name, icon: a.icon, onclick: () => this.launch(a.id) }));
+    appItems(group = "apps", { except = null, long = false, icons = true } = {}) {
+      return this.registry.visible(this.user, { desktop: false, menuable: true }).filter((a) => (a.constructor.group || "apps") === group && a.id !== except).map((a) => ({ label: long ? a.constructor.longName || a.name : a.name, ...icons ? { icon: a.icon } : {}, onclick: () => this.launch(a.id) }));
     }
     startItems() {
       return [
@@ -2264,10 +2435,10 @@ var HxH = (() => {
     menus(win) {
       const os = this.os;
       return os.appMenus(win, {
-        file: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }],
-        view: () => os.appItems("apps", { except: this.id, long: true }),
-        settings: () => os.systemItems(),
-        help: () => os.appItems("system", { long: true })
+        file: () => [{ label: "Log out", onclick: () => os.logout() }],
+        view: () => os.appItems("apps", { except: this.id, long: true, icons: false }),
+        settings: () => os.systemItems({ icons: false }),
+        help: () => os.appItems("system", { long: true, icons: false })
       });
     }
     window() {
@@ -2945,7 +3116,6 @@ var HxH = (() => {
 
   // html/hxh/apps/chat/contacts.js
   var STATE_LABEL = { online: "Online", away: "Away", offline: "Offline", nopass: "No password" };
-  var STATE_TINT = { online: "#58e05c", away: "#ffd166", offline: "#9a9a9a", nopass: "#c8102e" };
   var present = (state) => state === "online" || state === "away";
   var ContactsWindow = class extends Window {
     /** props: me, menus (win => spec) */
@@ -2956,16 +3126,14 @@ var HxH = (() => {
         icon: "beetle",
         width: 300,
         cls: "chat contacts",
-        maximizable: false,
         menus,
         content: `
         <div class="banner"></div>
         <div class="ltabs"><button class="ltab on" type="button" data-tab="online">Online</button><button class="ltab" type="button" data-tab="list">List</button></div>
-        <div class="tree sunken" role="tree"></div>
         <div class="tools">
-          <button class="tool" type="button" data-act="im" title="Send message">${icon("comment", 16)}<span>IM</span></button>
-          <button class="tool" type="button" data-act="info" title="Profile">${icon("card", 16)}<span>Info</span></button>
-          <button class="tool" type="button" data-act="global" title="Global chat">${icon("beetle", 16)}<span>Global</span></button>
+          <button class="tool" type="button" data-act="im" title="Send message">IM</button>
+          <button class="tool" type="button" data-act="profile" title="Profile">Profile</button>
+          <button class="tool" type="button" data-act="global" title="Global chat">Global</button>
         </div>
         <div class="status"><span class="conn off">Offline</span><span class="count"></span></div>`
       });
@@ -2979,9 +3147,11 @@ var HxH = (() => {
     render() {
       const el = super.render();
       this.banner = el.querySelector(".banner");
-      this.tree = el.querySelector(".tree");
       this.countEl = el.querySelector(".count");
       this.connEl = el.querySelector(".conn");
+      this.tree = h("div", { className: "tree", role: "tree" });
+      this.pane = this.adopt(new ScrollPane({ content: this.tree }), el.querySelector(".body"), { before: el.querySelector(".tools") });
+      this.pane.el.classList.add("sunken", "listbox");
       el.querySelector(".ltabs").addEventListener("click", (e) => {
         const t = e.target.closest("[data-tab]");
         if (!t) return;
@@ -3018,21 +3188,21 @@ var HxH = (() => {
         const act = e.target.closest("[data-act]")?.dataset.act;
         if (act === "global") this.emit("global");
         else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
-        else if (act === "info") this.emit("profile", { user: this.selected || this.me?.username });
+        else if (act === "profile") this.emit("profile", { user: this.selected || this.me?.username });
       });
       this.menu = this.adopt(new Menu({ items: () => this.selected ? [
-        { label: "Send Message", icon: "comment", onclick: () => this.emit("chat", { user: this.selected }) },
-        { label: "Profile", icon: "card", onclick: () => this.emit("profile", { user: this.selected }) }
-      ] : [] }), el);
+        { label: "Send Message", onclick: () => this.emit("chat", { user: this.selected }) },
+        { label: "Profile", onclick: () => this.emit("profile", { user: this.selected }) }
+      ] : [] }), el.querySelector(".body"));
       this.menu.el.classList.add("ctx");
       this.renderBanner();
       this.renderTree();
       return el;
     }
     contextMenu(row) {
-      const m = this.menu;
-      m.el.style.top = row.offsetTop + row.offsetHeight + this.tree.offsetTop - this.tree.scrollTop + "px";
-      m.el.style.left = this.tree.offsetLeft + 24 + "px";
+      const m = this.menu, pane = this.pane.el;
+      m.el.style.top = pane.offsetTop + row.offsetTop + row.offsetHeight - this.tree.scrollTop + "px";
+      m.el.style.left = pane.offsetLeft + 28 + "px";
       m.open();
     }
     setMe(acct) {
@@ -3073,18 +3243,15 @@ var HxH = (() => {
       this.selected = user;
       for (const r of this.tree.querySelectorAll("[data-user]")) r.classList.toggle("sel", r.dataset.user === user);
     }
-    /** Everyone but me, grouped for the Online tab: buddies (people present), bots present, offline. */
+    /** Everyone but me: the present under Buddies, the rest under Offline. */
     groups() {
       const mine = this.me?.username;
       const all = [...this.contacts.values()].filter((c) => c.username !== mine);
       const byName = (a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username);
-      const people = all.filter((c) => !c.is_bot), bots = all.filter((c) => c.is_bot);
-      const g = [
-        { key: "buddies", label: "Buddies", rows: people.filter((c) => present(c.state)).sort(byName), total: people.length }
+      return [
+        { key: "buddies", label: "Buddies", rows: all.filter((c) => present(c.state)).sort(byName), total: all.length },
+        { key: "offline", label: "Offline", rows: all.filter((c) => !present(c.state)).sort(byName), total: all.length, off: true }
       ];
-      if (bots.length) g.push({ key: "bots", label: "Bots", rows: bots.filter((c) => present(c.state)).sort(byName), total: bots.length });
-      g.push({ key: "offline", label: "Offline", rows: all.filter((c) => !present(c.state)).sort(byName), total: all.length, off: true });
-      return g;
     }
     row(c, { flat = false } = {}) {
       const state = c.state || "offline";
@@ -3093,13 +3260,10 @@ var HxH = (() => {
         dataset: { user: c.username },
         role: "treeitem",
         tabindex: "0",
-        title: state === "nopass" ? "Hasn't set a password yet" : c.is_bot ? "Bot" : ""
+        title: state === "nopass" ? "Hasn't set a password yet" : ""
       });
       row.style.setProperty("--c", c.color || "#9a9a9a");
-      row.append(
-        h("span", { className: "fig", html: icon("buddy", 16, { g: STATE_TINT[state] || STATE_TINT.offline }) }),
-        h("span", { className: "nm", text: c.display_name || c.username })
-      );
+      row.append(h("i", { className: "dot " + state }), h("span", { className: "nm", text: c.display_name || c.username }));
       if (state === "away" || state === "nopass" || flat && state !== "online") row.append(h("span", { className: "st", text: `(${STATE_LABEL[state]})` }));
       return row;
     }
@@ -3112,25 +3276,26 @@ var HxH = (() => {
         const all = [...this.contacts.values()].filter((c) => c.username !== mine).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
         for (const c of all) box.append(this.row(c, { flat: true }));
         if (this.countEl) this.countEl.textContent = `${all.length} buddies`;
+        this.pane?.update();
         return;
       }
       let online = 0, total = 0;
       for (const g of this.groups()) {
         const open = !this.collapsed.has(g.key);
-        const shown = g.off ? `${g.rows.length}/${g.total}` : `${g.rows.length}/${g.total}`;
         box.append(h(
           "div",
           { className: `grp${g.off ? " off" : ""}${open ? "" : " closed"}`, dataset: { group: g.key } },
           h("span", { className: "tri", text: open ? "\u25BC" : "\u25B6" }),
-          h("span", { className: "lbl", text: `${g.label} (${shown})` })
+          h("span", { className: "glbl", text: `${g.label} (${g.rows.length}/${g.total})` })
         ));
         if (open) for (const c of g.rows) box.append(this.row(c));
         if (!g.off) {
           online += g.rows.filter((c) => c.state === "online").length;
-          total += g.total;
+          total = g.total;
         }
       }
       if (this.countEl) this.countEl.textContent = `${online} of ${total} online`;
+      this.pane?.update();
     }
   };
 
@@ -3138,7 +3303,7 @@ var HxH = (() => {
   var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
   var MAX_LOG = 500;
   var ChatWindow = class extends Window {
-    /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), info (bool: show the Info button) */
+    /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button) */
     constructor(props) {
       super({
         id: "win-chat-" + roomSlug(props.room),
@@ -3147,12 +3312,11 @@ var HxH = (() => {
         width: 470,
         cls: "chat room",
         content: `
-        <div class="log sunken" role="log"></div>
         <div class="compose">
           <textarea class="field" rows="3" aria-label="Message"></textarea>
           <div class="cbtns">
-            ${props.info === false ? "" : `<button class="btn sm" type="button" data-act="info" title="Profile">${icon("card", 12)}Info</button>`}
-            <button class="btn sm primary" type="button" data-act="send">Send</button>
+            ${props.profile ? `<button class="btn" type="button" data-act="profile">Profile</button>` : ""}
+            <button class="btn primary" type="button" data-act="send">Send</button>
           </div>
         </div>
         <div class="status"><span class="typing"></span></div>`,
@@ -3163,11 +3327,13 @@ var HxH = (() => {
     }
     render() {
       const el = super.render();
-      this.log = el.querySelector(".log");
+      this.log = h("div", { className: "log", role: "log" });
+      this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
+      this.pane.el.classList.add("sunken", "logbox");
       this.typingEl = el.querySelector(".typing");
       this.input = el.querySelector("textarea");
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
-      el.querySelector('[data-act="info"]')?.addEventListener("click", () => this.emit("info"));
+      el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
       this.input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -3206,6 +3372,7 @@ var HxH = (() => {
       this.log.append(row);
       while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
       if (scroll) this.scrollDown();
+      else this.pane.update();
       return row;
     }
     /** Re-apply names and colours (contacts may arrive after history did). */
@@ -3232,6 +3399,7 @@ var HxH = (() => {
     }
     scrollDown() {
       this.log.scrollTop = this.log.scrollHeight;
+      this.pane.update();
     }
     get messageCount() {
       return this.ids.size;
@@ -3527,6 +3695,76 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/chat/about.js
+  var ART = String.raw`
+            ,-.               ,-.
+            \  \             /  /
+          .--\  \___________/  /--.
+         /    '-.   _   _   .-'    \
+        |   .-'  \ / \_/ \ /  '-.   |
+        |  /      \|  |  |/      \  |
+        |  |       |  |  |       |  |
+         \ |       |  |  |       | /
+          \ \      |  |  |      / /
+           \ '-.___|__|__|___.-' /
+            '-._  /       \  _.-'
+               .'/         \'.
+              '-'           '-'`;
+  var GREETZ = "\xB7 BEETLE 1.0 \xB7 HUNTER NETWORK MESSENGER \xB7 NO LICENSE CHECK, NO SERIAL \xB7 CRACKED FOR THE 289TH HUNTER EXAM \xB7 GREETZ TO THE HUNTER ASSOCIATION, ABI, THE EXAM COMMITTEE, EVERY APPLICANT WHO SHOWS UP IN COSTUME \xB7 PRESS OK TO CONTINUE \xB7";
+  var AboutWindow = class extends Window {
+    /** props: sounds (os.sounds) */
+    constructor(props = {}) {
+      super({
+        id: "win-chat-about",
+        title: "About Beetle",
+        icon: "beetle",
+        width: 560,
+        cls: "chat cracktro",
+        popup: true,
+        content: `
+        <div class="ct">
+          <pre class="art">${esc(ART)}</pre>
+          <div class="ttl">B E E T L E <span>v1.0</span></div>
+          <div class="sub">Hunter Network Messenger \xB7 HunterOS 99</div>
+          <div class="marquee"><span>${esc(GREETZ)} ${esc(GREETZ)}</span></div>
+          <div class="credits">
+            <div><b>Code</b> purple square</div>
+            <div><b>Art</b> purple square</div>
+            <div><b>Music</b> "Beetle 07", an original chiptune</div>
+            <div><b>Made for</b> Hunter \xD7 Halloween, Oct 31, 2026</div>
+          </div>
+          <div class="actions"><button class="btn" type="button" data-act="music">Music</button><button class="btn primary" type="button" data-act="ok">OK</button></div>
+        </div>`,
+        onClose: () => props.sounds?.stopTune(),
+        ...props
+      });
+    }
+    render() {
+      const el = super.render();
+      this.musicBtn = el.querySelector('[data-act="music"]');
+      this.musicBtn.addEventListener("click", () => this.toggleMusic());
+      el.querySelector('[data-act="ok"]').addEventListener("click", () => this.close());
+      return el;
+    }
+    /** Start the tune (if sounds are on); called by the app when the window opens. */
+    startMusic() {
+      const s = this.props.sounds;
+      const on = !!s?.playTune("beetle");
+      this.musicBtn.classList.toggle("pressed", on);
+      return on;
+    }
+    toggleMusic() {
+      const s = this.props.sounds;
+      if (!s) return false;
+      if (s.tunePlaying) {
+        s.stopTune();
+        this.musicBtn.classList.remove("pressed");
+        return false;
+      }
+      return this.startMusic();
+    }
+  };
+
   // html/hxh/apps/chat/app.js
   var ROOM_GLOBAL = "global";
   var dmRoom = (a, b) => "dm:" + [a, b].sort().join(":");
@@ -3623,14 +3861,14 @@ var HxH = (() => {
         else if (prev === "online") this.os.sounds.play("doorclose");
       }
     }
-    /* ---------- menus ---------- */
-    /** The Settings menu shared by every Beetle window. */
+    /* ---------- menus (Andrew's layout, 2026-09-19; no icons — 90s menus had none) ---------- */
+    /** Beetle's Settings: checkable, remembered per browser. */
     settingsItems() {
       const os = this.os;
       return [
-        os.settings.item({ key: SETTING_TRAY, label: "New message icon", icon: "comment", onChange: () => this.syncNewIcon() }),
-        os.settings.item({ key: SETTING_FLASH, label: "Flash taskbar", icon: "crt" }),
-        { label: "Sounds", icon: "comment", check: () => os.sounds.on, onclick: () => os.sounds.toggle() }
+        os.settings.item({ key: SETTING_FLASH, label: "Flash on new" }),
+        os.settings.item({ key: SETTING_TRAY, label: "Systray alert", onChange: () => this.syncNewIcon() }),
+        { label: "Sounds", check: () => os.sounds.on, onclick: () => os.sounds.toggle() }
       ];
     }
     get traySetting() {
@@ -3639,21 +3877,23 @@ var HxH = (() => {
     get flashSetting() {
       return this.os.settings.get(SETTING_FLASH, true);
     }
+    /** The Beetle window: File (About, Update, Exit), Edit (Profile…), Settings. */
     contactsMenus(win) {
       return this.os.appMenus(win, {
-        edit: () => [{ label: "Profile", icon: "card", onclick: () => this.editProfile() }],
+        file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],
+        edit: () => [{ label: "Profile\u2026", onclick: () => this.editProfile() }],
         settings: () => this.settingsItems()
       });
     }
+    /** A chat: File (Exit) only in the global room; a buddy's chat adds View (Profile). */
     roomMenus(win, room) {
-      const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
+      const other = this.otherOf(room);
       return this.os.appMenus(win, {
-        edit: () => [
-          ...other ? [{ label: `${this.nameOf(other)}'s profile`, icon: "card", onclick: () => this.viewProfile(other) }] : [],
-          { label: "My profile", icon: "card", onclick: () => this.editProfile() }
-        ],
-        settings: () => this.settingsItems()
+        view: other ? () => [{ label: "Profile", onclick: () => this.viewProfile(other) }] : null
       });
+    }
+    otherOf(room) {
+      return room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
     }
     /* ---------- windows ---------- */
     launch({ autostart = false } = {}) {
@@ -3686,7 +3926,7 @@ var HxH = (() => {
       const os = this.os;
       let w = this.windows.get(room);
       if (!w) {
-        const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
+        const other = this.otherOf(room);
         w = new ChatWindow({
           room,
           title: this.roomTitle(room),
@@ -3694,13 +3934,13 @@ var HxH = (() => {
           nameOf: (u) => this.nameOf(u),
           colorOf: (u) => this.colorOf(u),
           menus: (win) => this.roomMenus(win, room),
-          info: !!other
+          profile: !!other
         });
         os.wm.add(w);
         this.windows.set(room, w);
         w.on("send", ({ body }) => this.send(room, body));
         w.on("typing", () => this.client?.typing(room));
-        w.on("info", () => other && this.viewProfile(other));
+        w.on("profile", () => other && this.viewProfile(other));
         w.on("close", () => {
           this.markRead(room);
         });
@@ -3776,6 +4016,18 @@ var HxH = (() => {
     focusOldestUnread() {
       const room = this.unread[0];
       if (room) this.openRoom(room, { focus: true });
+    }
+    /* ---------- about ---------- */
+    about() {
+      const os = this.os;
+      let w = os.wm.get("win-chat-about");
+      if (!w) {
+        w = new AboutWindow({ sounds: os.sounds });
+        os.wm.add(w);
+      }
+      os.wm.open(w.id);
+      w.startMusic();
+      return w;
     }
     /* ---------- profiles ---------- */
     async viewProfile(user) {
