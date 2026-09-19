@@ -19,7 +19,10 @@
 > toned down, fixed the menus (File About/Update/Exit, Edit Profile…,
 > Settings Flash on new / Systray alert / Sounds; chats File+View),
 > removed maximize everywhere, and asked for a system-wide type scale
-> (see the Type system note in `html/hxh/CLAUDE.md`).
+> (see the Type system note in `html/hxh/CLAUDE.md`). 2026-09-19: after
+> a night's sleep the reconnected socket showed new messages but not the
+> missed ones — fixed with the OS `wake` event + `ChatClient.nudge()` +
+> `ChatApp.resync()` (history refetch and merge on every reconnect).
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,

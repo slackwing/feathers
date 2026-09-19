@@ -63,6 +63,7 @@ var HxH = (() => {
     TrayIcon: () => TrayIcon,
     WARM_KEY: () => WARM_KEY,
     WHALE: () => WHALE,
+    WakeWatch: () => WakeWatch,
     Wallpaper: () => Wallpaper,
     Window: () => Window,
     WindowManager: () => WindowManager,
@@ -2078,6 +2079,59 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/wake.js
+  var WakeWatch = class {
+    constructor({ win = globalThis.window, bus, now = () => Date.now(), interval = 15e3, gap = 45e3, debounce = 2e3 } = {}) {
+      this.win = win;
+      this.bus = bus;
+      this.now = now;
+      this.interval = interval;
+      this.gap = gap;
+      this.debounce = debounce;
+      this.last = now();
+      this.lastEmit = 0;
+      this.timer = null;
+      this.wakes = 0;
+    }
+    start() {
+      const w = this.win, d = w.document;
+      this._onVis = () => {
+        if (d.visibilityState === "visible") this.wake("visible");
+      };
+      this._onOnline = () => this.wake("online");
+      this._onFocus = () => this.wake("focus");
+      d.addEventListener("visibilitychange", this._onVis);
+      w.addEventListener("online", this._onOnline);
+      w.addEventListener("focus", this._onFocus);
+      this.timer = setInterval(() => this.tick(), this.interval);
+      this.timer.unref?.();
+      return this;
+    }
+    stop() {
+      const w = this.win, d = w.document;
+      d.removeEventListener("visibilitychange", this._onVis);
+      w.removeEventListener("online", this._onOnline);
+      w.removeEventListener("focus", this._onFocus);
+      clearInterval(this.timer);
+    }
+    /** A heartbeat that arrives much later than scheduled means the clock ran
+        while we didn't — unless the tab is hidden, where browsers slow timers
+        to once a minute on purpose (coming back fires visibilitychange). */
+    tick() {
+      const t = this.now();
+      if (t - this.last > this.gap && this.win.document.visibilityState !== "hidden") this.wake("sleep");
+      this.last = t;
+    }
+    wake(reason) {
+      const t = this.now();
+      if (t - this.lastEmit < this.debounce) return false;
+      this.lastEmit = t;
+      this.wakes++;
+      this.bus?.emit("wake", { reason, at: t });
+      return true;
+    }
+  };
+
   // html/hxh/os/wallpaper.js
   var ISLAND_W = WHALE.artW;
   var ISLAND_CENTER = WHALE.center;
@@ -2399,6 +2453,7 @@ var HxH = (() => {
       this.doc.addEventListener("keydown", (e) => {
         if (e.key === "Escape") this.wm.handleEscape();
       });
+      this.wake = new WakeWatch({ win: this.win, bus: this.bus }).start();
       this.applyZoom();
       let rt;
       this.win.addEventListener("resize", () => {
@@ -3061,6 +3116,8 @@ var HxH = (() => {
       url,
       WebSocket: WS,
       pingMs = 25e3,
+      grace = pingMs / 2,
+      probeMs = 3e3,
       backoff = DEFAULT_BACKOFF,
       now = () => Date.now(),
       setTimeout: st = (f, ms) => globalThis.setTimeout(f, ms),
@@ -3071,6 +3128,8 @@ var HxH = (() => {
       this.url = url;
       this.WS = WS;
       this.pingMs = pingMs;
+      this.grace = grace;
+      this.probeMs = probeMs;
       this.backoff = backoff;
       this.now = now;
       this.st = st;
@@ -3085,9 +3144,13 @@ var HxH = (() => {
       this.queue = [];
       this.sent = [];
       this.lastTyping = /* @__PURE__ */ new Map();
+      this.opens = 0;
+      this.lastPing = 0;
       this.lastPong = 0;
+      this.awaiting = false;
       this.pingTimer = null;
       this.reconnectTimer = null;
+      this.probeTimer = null;
     }
     on(ev, fn) {
       return this.events.on(ev, fn);
@@ -3107,13 +3170,17 @@ var HxH = (() => {
       }
       this.ws = ws;
       ws.onopen = () => {
+        const again = this.opens > 0;
+        this.opens++;
         this.connected = true;
         this.attempts = 0;
         this.lastPong = this.now();
-        this.emit("open");
+        this.awaiting = false;
+        this.emit("open", { reconnect: again });
         this.emit("state", { connected: true });
         for (const f of this.queue.splice(0)) this.raw(f);
         this.startPing();
+        if (again) this.emit("reconnect");
       };
       ws.onmessage = (e) => this.receive(e.data);
       ws.onerror = () => {
@@ -3151,15 +3218,92 @@ var HxH = (() => {
         this.pingTimer = null;
       }
     }
-    /** Ping, and give up on a socket whose pong is two intervals late. */
+    /** Heartbeat: a ping every pingMs; a ping still unanswered by the next
+        tick means the connection is dead even if the socket has not noticed. */
     tick() {
       if (!this.connected) return;
-      if (this.now() - this.lastPong > this.pingMs * 2) {
-        this.ws?.close();
+      if (this.stale()) {
+        this.drop();
         return;
       }
-      this.raw({ t: "ping" });
+      this.ping();
       this.startPing();
+    }
+    ping() {
+      this.lastPing = this.now();
+      this.awaiting = true;
+      return this.raw({ t: "ping" });
+    }
+    /** Dead by our reckoning: a ping has gone unanswered for longer than
+        `grace`. Measured from the ping, not from the last pong, so a hidden
+        tab whose timers the browser slows to once a minute is not mistaken
+        for a dead one. */
+    stale() {
+      return this.connected && this.awaiting && this.now() - this.lastPing > this.grace;
+    }
+    /** Abandon the current socket without waiting for its close handshake
+        (which can take a minute over a dead link) and connect again at once. */
+    drop() {
+      const ws = this.ws;
+      if (ws) {
+        ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+        try {
+          ws.close();
+        } catch {
+        }
+      }
+      const was = this.connected;
+      this.ws = null;
+      this.connected = false;
+      this.awaiting = false;
+      this.stopPing();
+      this.stopProbe();
+      if (this.reconnectTimer) {
+        this.ct(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      this.attempts = 0;
+      if (was) {
+        this.emit("close");
+        this.emit("state", { connected: false });
+      }
+      return this.connect();
+    }
+    stopProbe() {
+      if (this.probeTimer) {
+        this.ct(this.probeTimer);
+        this.probeTimer = null;
+      }
+    }
+    /** The machine or tab came back: a socket already known stale is replaced
+        now; one waiting out a backoff reconnects now; one that looks healthy
+        is probed — a pong within probeMs keeps it, silence replaces it (a
+        laptop's socket dies in its sleep without a close event). True when a
+        fresh connection is on its way: its hello and "reconnect" follow. */
+    nudge() {
+      if (this.stopped) return false;
+      if (this.ws) {
+        if (this.stale()) {
+          this.drop();
+          return true;
+        }
+        if (this.connected && !this.probeTimer) {
+          this.ping();
+          this.probeTimer = this.st(() => {
+            this.probeTimer = null;
+            if (this.connected && this.awaiting) this.drop();
+          }, this.probeMs);
+          this.probeTimer?.unref?.();
+        }
+        return false;
+      }
+      if (this.reconnectTimer) {
+        this.ct(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      this.attempts = 0;
+      this.connect();
+      return true;
     }
     receive(data) {
       let f;
@@ -3171,6 +3315,7 @@ var HxH = (() => {
       switch (f.t) {
         case "pong":
           this.lastPong = this.now();
+          this.awaiting = false;
           break;
         case "hello":
           this.emit("hello", f);
@@ -3226,6 +3371,7 @@ var HxH = (() => {
     close() {
       this.stopped = true;
       this.stopPing();
+      this.stopProbe();
       if (this.reconnectTimer) {
         this.ct(this.reconnectTimer);
         this.reconnectTimer = null;
@@ -3469,6 +3615,7 @@ var HxH = (() => {
       });
       this.room = props.room;
       this.ids = /* @__PURE__ */ new Set();
+      this.messages = [];
     }
     render() {
       const el = super.render();
@@ -3500,8 +3647,19 @@ var HxH = (() => {
     setMessages(list) {
       this.log.replaceChildren();
       this.ids.clear();
+      this.messages = [];
       for (const m of list || []) this.addMessage(m, { scroll: false });
       this.scrollDown();
+    }
+    /** Fold a fresh history into the log (after a sleep or a reconnect the
+        socket missed whatever was said): new messages slot in by id, the rest
+        stay. Returns how many were new. */
+    mergeMessages(list) {
+      const fresh = (list || []).filter((m) => !this.ids.has(m.id));
+      if (!fresh.length) return 0;
+      const all = [...this.messages, ...fresh].sort((a, b) => a.id - b.id);
+      this.setMessages(all.slice(-MAX_LOG));
+      return fresh.length;
     }
     addMessage(m, { scroll = true } = {}) {
       if (this.ids.has(m.id)) return null;
@@ -3515,7 +3673,11 @@ var HxH = (() => {
         h("span", { className: "txt", text: m.body })
       );
       this.log.append(row);
-      while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
+      this.messages.push(m);
+      while (this.log.childElementCount > MAX_LOG) {
+        this.log.firstElementChild.remove();
+        this.messages.shift();
+      }
       if (scroll) this.scrollDown();
       else this.pane.update();
       return row;
@@ -3978,6 +4140,8 @@ var HxH = (() => {
         os.bus.emit("tray:refresh", { id: this.id });
         this.contactsWin?.setConnected(connected);
       });
+      c.on("reconnect", () => this.resync("reconnect"));
+      this.stopWake = os.bus.on("wake", ({ reason }) => this.onWake(reason));
       c.on("error", (e) => {
         if (e.code === "rate") os.toast.show("Slow down.");
       });
@@ -4105,6 +4269,30 @@ var HxH = (() => {
       if (!os.env.floating()) return null;
       const n = this.windows.size;
       return { x: Math.max(16, Math.min(os.env.width - 500, 430 + n % 5 * 30)), y: 120 + n % 5 * 30 };
+    }
+    /** The laptop woke, the tab came back or the network returned (OS `wake`):
+        the client replaces a dead socket now — its hello and "reconnect" then
+        resync — or probes a live-looking one. After a sleep or an outage the
+        history is refetched regardless, in case the socket only looks alive. */
+    onWake(reason) {
+      if (!this.client) return;
+      if (!this.client.nudge() && (reason === "sleep" || reason === "online")) this.resync(reason);
+    }
+    /** Whatever was said while the socket was down: refetch every open room's
+        history and fold the gap in (ids dedupe; the hello refreshed contacts). */
+    async resync(reason = "") {
+      this.resyncs = (this.resyncs || 0) + 1;
+      this.lastResync = reason;
+      let added = 0;
+      for (const [room, w] of this.windows) {
+        if (!w.state.open || !this.loaded.has(room)) continue;
+        try {
+          const { messages } = await this.api.history(room);
+          added += w.mergeMessages(messages);
+        } catch {
+        }
+      }
+      return added;
     }
     async loadHistory(room, w) {
       if (this.loaded.has(room)) return;

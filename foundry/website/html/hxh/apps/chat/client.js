@@ -13,15 +13,16 @@ export function wsURL(location) {
 }
 
 export class ChatClient {
-  constructor({ url, WebSocket: WS, pingMs = 25000, backoff = DEFAULT_BACKOFF, now = () => Date.now(),
+  constructor({ url, WebSocket: WS, pingMs = 25000, grace = pingMs / 2, probeMs = 3000, backoff = DEFAULT_BACKOFF, now = () => Date.now(),
     setTimeout: st = (f, ms) => globalThis.setTimeout(f, ms), clearTimeout: ct = id => globalThis.clearTimeout(id),
     typingEvery = 2000, rate = 10 } = {}) {
-    this.url = url; this.WS = WS; this.pingMs = pingMs; this.backoff = backoff; this.now = now;
+    this.url = url; this.WS = WS; this.pingMs = pingMs; this.grace = grace; this.probeMs = probeMs; this.backoff = backoff; this.now = now;
     this.st = st; this.ct = ct; this.typingEvery = typingEvery; this.rate = rate;
     this.events = new EventBus();
     this.ws = null; this.connected = false; this.stopped = false; this.attempts = 0;
-    this.queue = []; this.sent = []; this.lastTyping = new Map(); this.lastPong = 0;
-    this.pingTimer = null; this.reconnectTimer = null;
+    this.queue = []; this.sent = []; this.lastTyping = new Map(); this.opens = 0;
+    this.lastPing = 0; this.lastPong = 0; this.awaiting = false;   // a ping is out and no pong has answered it
+    this.pingTimer = null; this.reconnectTimer = null; this.probeTimer = null;
   }
 
   on(ev, fn) { return this.events.on(ev, fn); }
@@ -33,10 +34,13 @@ export class ChatClient {
     try { ws = new this.WS(this.url); } catch (err) { this.emit("error", { code: "connect", err }); this.scheduleReconnect(); return this; }
     this.ws = ws;
     ws.onopen = () => {
-      this.connected = true; this.attempts = 0; this.lastPong = this.now();
-      this.emit("open"); this.emit("state", { connected: true });
+      const again = this.opens > 0;
+      this.opens++;
+      this.connected = true; this.attempts = 0; this.lastPong = this.now(); this.awaiting = false;
+      this.emit("open", { reconnect: again }); this.emit("state", { connected: true });
       for (const f of this.queue.splice(0)) this.raw(f);
       this.startPing();
+      if (again) this.emit("reconnect");
     };
     ws.onmessage = e => this.receive(e.data);
     ws.onerror = () => {};
@@ -63,19 +67,65 @@ export class ChatClient {
   }
   stopPing() { if (this.pingTimer) { this.ct(this.pingTimer); this.pingTimer = null; } }
 
-  /** Ping, and give up on a socket whose pong is two intervals late. */
+  /** Heartbeat: a ping every pingMs; a ping still unanswered by the next
+      tick means the connection is dead even if the socket has not noticed. */
   tick() {
     if (!this.connected) return;
-    if (this.now() - this.lastPong > this.pingMs * 2) { this.ws?.close(); return; }
-    this.raw({ t: "ping" });
+    if (this.stale()) { this.drop(); return; }
+    this.ping();
     this.startPing();
+  }
+
+  ping() { this.lastPing = this.now(); this.awaiting = true; return this.raw({ t: "ping" }); }
+
+  /** Dead by our reckoning: a ping has gone unanswered for longer than
+      `grace`. Measured from the ping, not from the last pong, so a hidden
+      tab whose timers the browser slows to once a minute is not mistaken
+      for a dead one. */
+  stale() { return this.connected && this.awaiting && this.now() - this.lastPing > this.grace; }
+
+  /** Abandon the current socket without waiting for its close handshake
+      (which can take a minute over a dead link) and connect again at once. */
+  drop() {
+    const ws = this.ws;
+    if (ws) { ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null; try { ws.close(); } catch {} }
+    const was = this.connected;
+    this.ws = null; this.connected = false; this.awaiting = false; this.stopPing(); this.stopProbe();
+    if (this.reconnectTimer) { this.ct(this.reconnectTimer); this.reconnectTimer = null; }
+    this.attempts = 0;
+    if (was) { this.emit("close"); this.emit("state", { connected: false }); }
+    return this.connect();
+  }
+
+  stopProbe() { if (this.probeTimer) { this.ct(this.probeTimer); this.probeTimer = null; } }
+
+  /** The machine or tab came back: a socket already known stale is replaced
+      now; one waiting out a backoff reconnects now; one that looks healthy
+      is probed — a pong within probeMs keeps it, silence replaces it (a
+      laptop's socket dies in its sleep without a close event). True when a
+      fresh connection is on its way: its hello and "reconnect" follow. */
+  nudge() {
+    if (this.stopped) return false;
+    if (this.ws) {
+      if (this.stale()) { this.drop(); return true; }
+      if (this.connected && !this.probeTimer) {
+        this.ping();
+        this.probeTimer = this.st(() => { this.probeTimer = null; if (this.connected && this.awaiting) this.drop(); }, this.probeMs);
+        this.probeTimer?.unref?.();
+      }
+      return false;
+    }
+    if (this.reconnectTimer) { this.ct(this.reconnectTimer); this.reconnectTimer = null; }
+    this.attempts = 0;
+    this.connect();
+    return true;
   }
 
   receive(data) {
     let f;
     try { f = JSON.parse(data); } catch { return; }
     switch (f.t) {
-      case "pong": this.lastPong = this.now(); break;
+      case "pong": this.lastPong = this.now(); this.awaiting = false; break;
       case "hello": this.emit("hello", f); break;
       case "msg": this.emit("msg", f.msg); break;
       case "typing": this.emit("typing", { room: f.room, user: f.user }); break;
@@ -118,7 +168,7 @@ export class ChatClient {
 
   close() {
     this.stopped = true;
-    this.stopPing();
+    this.stopPing(); this.stopProbe();
     if (this.reconnectTimer) { this.ct(this.reconnectTimer); this.reconnectTimer = null; }
     this.ws?.close();
   }

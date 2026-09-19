@@ -255,6 +255,71 @@ test("an incoming DM opens its window behind the active one, flashes it, adds th
   assert.ok(os.taskbar.tray.has(NEW_TRAY_ID));
 });
 
+test("a reconnect refetches every open room and folds in what the socket missed; a wake probes the socket", async () => {
+  await os.launch("chat"); hello();
+  await tick();
+  const global = os.wm.get("win-chat-global"), client = app().client;
+  assert.equal(global.messageCount, 1);
+  d.click(os.wm.get("win-chat-contacts").el.querySelector('.contact[data-user="abi"]'));
+  const dm = os.wm.get("win-chat-dm-abi-andrew");
+  await tick();
+  // the night passes: three more messages land in global, one in the DM, while the socket is dead
+  api["GET /hxh/api/chat/history?room=global"] = [200, { room: "global", messages: [
+    { id: 1, room: "global", sender: "abi", body: "hello all", created_at: "2026-10-31T20:00:00Z" },
+    { id: 2, room: "global", sender: "gon", body: "night owls", created_at: "2026-10-31T23:00:00Z" },
+    { id: 3, room: "global", sender: "alyosha", body: "the sun rose", created_at: "2026-11-01T06:00:00Z" },
+  ] }];
+  api["GET /hxh/api/chat/history?room=dm%3Aabi%3Aandrew"] = [200, { room: "dm:abi:andrew", messages: [
+    { id: 4, room: "dm:abi:andrew", sender: "abi", body: "psst", created_at: "2026-11-01T07:00:00Z" },
+  ] }];
+  // a message the socket did deliver after waking, before the gap is filled: it must keep its place
+  sockets[0].push({ t: "msg", msg: { id: 5, room: "global", sender: "killua", body: "morning", created_at: "2026-11-01T08:00:00Z" } });
+  assert.equal(global.messageCount, 2);
+  const fetches = log.length;
+  // the heartbeat notices the dead socket: dropped, replaced, hello again
+  client.awaiting = true; client.lastPing = 0;   // a ping went out long ago and was never answered
+  os.bus.emit("wake", { reason: "focus" });
+  assert.equal(sockets.length, 2, "a stale socket is replaced on the spot");
+  assert.equal(client.connected, false);
+  assert.equal(os.wm.get("win-chat-contacts").connEl.textContent, "Offline");
+  sockets[1].open(); sockets[1].push({ t: "hello", me: "andrew", contacts: CONTACTS });
+  await tick(); await tick();
+  assert.equal(app().lastResync, "reconnect");
+  assert.deepEqual(log.slice(fetches).map(l => l.path).sort(), ["/hxh/api/chat/history?room=dm%3Aabi%3Aandrew", "/hxh/api/chat/history?room=global"]);
+  assert.deepEqual([...global.el.querySelectorAll(".m .txt")].map(e => e.textContent), ["hello all", "night owls", "the sun rose", "morning"]);
+  assert.equal(dm.messageCount, 1);
+  assert.equal(os.wm.get("win-chat-contacts").connEl.textContent, "Connected");
+  // a wake with a healthy socket: a probe ping, no refetch on a mere focus
+  const before = log.length, pings = sockets[1].sent.filter(f => f.t === "ping").length;
+  os.bus.emit("wake", { reason: "focus" });
+  assert.equal(sockets[1].sent.filter(f => f.t === "ping").length, pings + 1);
+  assert.equal(log.length, before);
+  // …but a detected sleep refetches anyway, and a merge with nothing new changes nothing
+  sockets[1].push({ t: "pong" });
+  os.bus.emit("wake", { reason: "sleep" });
+  await tick(); await tick();
+  assert.equal(app().lastResync, "sleep");
+  assert.equal(log.length, before + 2);
+  assert.equal(global.messageCount, 4);
+  // closed windows are left alone
+  os.wm.close(dm.id);
+  const b2 = log.length;
+  await app().resync("test");
+  assert.deepEqual(log.slice(b2).map(l => l.path), ["/hxh/api/chat/history?room=global"]);
+});
+
+test("merging a history: new ids slot in by id, known ones stay, the log is capped", () => {
+  const w = new ChatWindow({ room: "global", title: "Global chat", me: "andrew" });
+  os.wm.add(w); os.wm.open(w.id);
+  w.setMessages([{ id: 2, sender: "a", body: "two" }, { id: 5, sender: "a", body: "five" }]);
+  assert.equal(w.mergeMessages([{ id: 2, sender: "a", body: "two" }, { id: 5, sender: "a", body: "five" }]), 0);
+  assert.equal(w.mergeMessages([{ id: 1, sender: "a", body: "one" }, { id: 3, sender: "a", body: "three" }, { id: 5, sender: "a", body: "five" }, { id: 6, sender: "a", body: "six" }]), 3);
+  assert.deepEqual([...w.el.querySelectorAll(".m .txt")].map(e => e.textContent), ["one", "two", "three", "five", "six"]);
+  assert.equal(w.messageCount, 5);
+  w.addMessage({ id: 7, sender: "a", body: "seven" });
+  assert.deepEqual(w.messages.map(m => m.id), [1, 2, 3, 5, 6, 7]);
+});
+
 test("presence updates regroup contacts and play the door sounds", async () => {
   await os.launch("chat"); hello();
   const w = os.wm.get("win-chat-contacts");

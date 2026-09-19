@@ -75,6 +75,8 @@ export class ChatApp extends App {
     c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
     c.on("presence", p => this.onPresence(p));
     c.on("state", ({ connected }) => { os.bus.emit("tray:refresh", { id: this.id }); this.contactsWin?.setConnected(connected); });
+    c.on("reconnect", () => this.resync("reconnect"));
+    this.stopWake = os.bus.on("wake", ({ reason }) => this.onWake(reason));
     c.on("error", e => { if (e.code === "rate") os.toast.show("Slow down."); });
     this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
     c.connect();
@@ -187,6 +189,28 @@ export class ChatApp extends App {
     if (!os.env.floating()) return null;
     const n = this.windows.size;
     return { x: Math.max(16, Math.min(os.env.width - 500, 430 + (n % 5) * 30)), y: 120 + (n % 5) * 30 };
+  }
+
+  /** The laptop woke, the tab came back or the network returned (OS `wake`):
+      the client replaces a dead socket now — its hello and "reconnect" then
+      resync — or probes a live-looking one. After a sleep or an outage the
+      history is refetched regardless, in case the socket only looks alive. */
+  onWake(reason) {
+    if (!this.client) return;
+    if (!this.client.nudge() && (reason === "sleep" || reason === "online")) this.resync(reason);
+  }
+
+  /** Whatever was said while the socket was down: refetch every open room's
+      history and fold the gap in (ids dedupe; the hello refreshed contacts). */
+  async resync(reason = "") {
+    this.resyncs = (this.resyncs || 0) + 1;
+    this.lastResync = reason;
+    let added = 0;
+    for (const [room, w] of this.windows) {
+      if (!w.state.open || !this.loaded.has(room)) continue;
+      try { const { messages } = await this.api.history(room); added += w.mergeMessages(messages); } catch {}
+    }
+    return added;
   }
 
   async loadHistory(room, w) {

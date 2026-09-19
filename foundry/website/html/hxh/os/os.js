@@ -8,7 +8,7 @@
    Bus events: window:add/remove/open/close/minimize/focus/title/
    attention {id}, tray:add {spec} / tray:remove {id} / tray:refresh,
    app:register / app:launch {id}, session:user {user}, crt {on}, resize,
-   os:ready. */
+   wake {reason} (the machine or the tab came back — see wake.js), os:ready. */
 import { EventBus } from "./bus.js";
 import { Env } from "./env.js";
 import { Session, Nav } from "./session.js";
@@ -25,6 +25,7 @@ import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
+import { WakeWatch } from "./wake.js";
 
 export class OS {
   constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
@@ -74,6 +75,7 @@ export class OS {
     }
 
     this.doc.addEventListener("keydown", e => { if (e.key === "Escape") this.wm.handleEscape(); });
+    this.wake = new WakeWatch({ win: this.win, bus: this.bus }).start();
     this.applyZoom();
     let rt;
     this.win.addEventListener("resize", () => {

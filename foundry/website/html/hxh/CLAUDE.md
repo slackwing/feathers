@@ -139,8 +139,8 @@ the OS.
   `window:add/remove/open/close/minimize/maximize/focus/title/attention
   {id}`, `tray:add {spec} / tray:remove {id} / tray:refresh`,
   `app:register / app:launch {id}`, `session:user {user}`, `crt {on}`,
-  `resize`, `os:ready`. Components never call each other across the
-  taskbar/app boundary — they emit and listen.
+  `resize`, `wake {reason}`, `os:ready`. Components never call each
+  other across the taskbar/app boundary — they emit and listen.
 - `Window` (`window.js`) — THE window class. `chrome: "full"` (title
   bar + identical min/max/close `ChromeButton`s, draggable), `"static"`
   (in-flow dialog, no taskbar entry), `"none"` (chromeless; `buttons:
@@ -183,8 +183,12 @@ the OS.
   standard menu item for them; `OS.appMenus(win, {file, edit, view,
   settings, help})` builds the File/Edit/View/Settings/Help bar every
   app window shares — File always ends with Exit), `ScrollPane`
-  (`scrollpane.js`), the chiptune tracker in `Sounds` (`playTune` /
-  `stopTune`, `TUNES`, `noteFreq`),
+  (`scrollpane.js`), `WakeWatch` (`wake.js`: browsers have no "woke
+  from sleep" event, so the OS emits `wake {reason}` on the proxies —
+  `visible`, `online`, `focus`, and `sleep` when a 15 s heartbeat
+  arrives > 45 s late while the tab is visible; debounced 2 s; hidden
+  tabs' slowed timers are ignored), the chiptune tracker in `Sounds`
+  (`playTune` / `stopTune`, `TUNES`, `noteFreq`),
   `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
   `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
   `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
@@ -280,10 +284,26 @@ component architecture (many windows, tray icons + menus, the bus).
   colour, HH:MM, last 100 from history), the "<name> is typing…" line,
   the compose box (Enter sends, Shift+Enter breaks; no unsend — Andrew
   dropped it as anachronistic). `client.js`
-  `ChatClient` — the socket: ping every 25 s, drop after two missed
-  pongs, reconnect with backoff (1/2/5/10/30 s), queue while offline,
-  ≤ 10 messages/s, typing at most every 2 s per room; `ChatAPI` for
-  the REST calls. `profile.js` — `ProfileWindow` (view) and
+  `ChatClient` — the socket: ping every 25 s; a ping still unanswered
+  after `grace` (12.5 s) marks the link dead and `drop()` replaces the
+  socket at once — no waiting for a close handshake that a dead link
+  never finishes, and measured from the ping (not the last pong) so a
+  hidden tab whose timers run once a minute is not mistaken for dead;
+  reconnect with backoff (1/2/5/10/30 s); `open {reconnect}` and a
+  distinct `reconnect` event after every re-open; `nudge()` on an OS
+  `wake`: a known-stale socket is replaced now, a pending backoff is
+  skipped, a healthy-looking one is probed (ping; 3 s of silence
+  condemns it — a laptop's socket dies in its sleep without any event);
+  queue while offline, ≤ 10 messages/s, typing at most every 2 s per
+  room; `ChatAPI` for the REST calls.
+- **Resync (2026-09-19)** — Andrew's laptop slept overnight; on wake the
+  socket reconnected and new messages arrived, but the night's messages
+  never showed until a refresh. Now `ChatApp.resync()` runs on every
+  `reconnect` (and after a `sleep`/`online` wake whose probe passed):
+  it refetches history for every OPEN room and `ChatWindow.
+  mergeMessages()` folds the gap in by id (known ids stay, the log is
+  re-laid in id order, capped at 500). A mere `focus`/`visible` wake on
+  a healthy socket is one probe ping and no fetch. `profile.js` — `ProfileWindow` (view) and
   `ProfileEditor` (WYSIWYG via `execCommand`: font, size, colour,
   highlight, B/I/U, live count vs 1024). `runs.js` — the profile
   format `{t, b, i, u, font, size, color, bg}[]`, normalised

@@ -28,6 +28,7 @@ export class ChatWindow extends Window {
     });
     this.room = props.room;
     this.ids = new Set();
+    this.messages = [];
   }
 
   render() {
@@ -58,9 +59,20 @@ export class ChatWindow extends Window {
 
   setMessages(list) {
     this.log.replaceChildren();
-    this.ids.clear();
+    this.ids.clear(); this.messages = [];
     for (const m of list || []) this.addMessage(m, { scroll: false });
     this.scrollDown();
+  }
+
+  /** Fold a fresh history into the log (after a sleep or a reconnect the
+      socket missed whatever was said): new messages slot in by id, the rest
+      stay. Returns how many were new. */
+  mergeMessages(list) {
+    const fresh = (list || []).filter(m => !this.ids.has(m.id));
+    if (!fresh.length) return 0;
+    const all = [...this.messages, ...fresh].sort((a, b) => a.id - b.id);
+    this.setMessages(all.slice(-MAX_LOG));
+    return fresh.length;
   }
 
   addMessage(m, { scroll = true } = {}) {
@@ -75,7 +87,8 @@ export class ChatWindow extends Window {
       h("span", { className: "txt", text: m.body }),
     );
     this.log.append(row);
-    while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
+    this.messages.push(m);
+    while (this.log.childElementCount > MAX_LOG) { this.log.firstElementChild.remove(); this.messages.shift(); }
     if (scroll) this.scrollDown();
     else this.pane.update();
     return row;

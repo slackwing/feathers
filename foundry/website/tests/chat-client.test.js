@@ -8,7 +8,7 @@ function fakeWS() {
   const sockets = [];
   class WS {
     constructor(url) { this.url = url; this.sent = []; this.readyState = 0; sockets.push(this); }
-    send(d) { if (this.readyState !== 1) throw new Error("not open"); this.sent.push(JSON.parse(d)); }
+    send(d) { if (this.readyState !== 1) throw new Error("not open"); const f = JSON.parse(d); this.sent.push(f); if (this.autopong && f.t === "ping") this.push({ t: "pong" }); }
     close() { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.({}); }
     open() { this.readyState = 1; this.onopen?.(); }
     push(obj) { this.onmessage?.({ data: JSON.stringify(obj) }); }
@@ -24,7 +24,9 @@ function clock() {
     now: () => t,
     setTimeout: (fn, ms) => { const id = ++seq; timers.set(id, { at: t + ms, fn }); return id; },
     clearTimeout: id => timers.delete(id),
-    run(ms) { const end = t + ms; for (;;) { const due = [...timers].filter(([, x]) => x.at <= end).sort((a, b) => a[1].at - b[1].at); if (!due.length) break; const [id, x] = due[0]; timers.delete(id); t = x.at; x.fn(); } t = end; },
+    run(ms) { const end = t + ms; for (;;) { const due = [...timers].filter(([, x]) => x.at <= end).sort((a, b) => a[1].at - b[1].at); if (!due.length) break; const [id, x] = due[0]; timers.delete(id); t = Math.max(t, x.at); x.fn(); } t = end; },
+    /** the machine slept: the clock moves, no timer fires */
+    jump(ms) { t += ms; },
     pending: () => timers.size,
   };
 }
@@ -34,7 +36,7 @@ function make(opts = {}) {
   const c = clock();
   const client = new ChatClient({ url: "ws://x/ws", WebSocket: WS, now: c.now, setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, pingMs: 1000, backoff: [100, 200, 500], ...opts });
   const got = [];
-  for (const ev of ["open", "close", "hello", "msg", "typing", "presence", "error", "state"]) client.on(ev, p => got.push([ev, p]));
+  for (const ev of ["open", "close", "reconnect", "hello", "msg", "typing", "presence", "error", "state"]) client.on(ev, p => got.push([ev, p]));
   return { client, sockets, c, got };
 }
 
@@ -84,36 +86,110 @@ test("rate limit: ten messages a second, then refused until the window passes", 
   assert.equal(client.sendMessage("global", "later"), true);
 });
 
-test("heartbeat pings and drops a socket whose pong is late; reconnects with backoff", () => {
+test("heartbeat pings and drops a socket whose ping goes unanswered; reconnects with backoff", () => {
   const { client, sockets, c, got } = make();
   client.connect(); sockets[0].open();
+  assert.deepEqual(got.at(-2), ["open", { reconnect: false }]);
   sockets[0].push({ t: "pong" });
   c.run(1000);
   assert.deepEqual(sockets[0].sent, [{ t: "ping" }]);
   sockets[0].push({ t: "pong" });
   c.run(1000);
-  assert.equal(sockets[0].sent.length, 2);
-  c.run(1000);   // no pong answered the second ping → still within 2 intervals
-  c.run(1000);   // now two intervals late → closed
+  assert.equal(sockets[0].sent.length, 2);   // answered: pinged again
+  c.run(1000);   // that ping went unanswered for a whole interval → dead: dropped and replaced at once
   assert.equal(sockets[0].readyState, 3);
+  assert.equal(sockets[0].onclose, null);   // the corpse cannot disturb the new socket
   assert.equal(client.connected, false);
   assert.ok(got.some(g => g[0] === "close"));
-  assert.equal(sockets.length, 1);
-  c.run(100);    // first backoff step
-  assert.equal(sockets.length, 2);
-  sockets[1].close();   // fails before opening: no "close" event, next step is 200
+  assert.equal(sockets.length, 2);   // no backoff for a socket we know is dead
+  sockets[1].close();   // fails before opening: no "close" event, next step is the first backoff
   const closes = got.filter(g => g[0] === "close").length;
-  c.run(199);
+  c.run(99);
   assert.equal(sockets.length, 2);
   c.run(1);
   assert.equal(sockets.length, 3);
   assert.equal(got.filter(g => g[0] === "close").length, closes);
   sockets[2].open();
+  assert.deepEqual(got.at(-3), ["open", { reconnect: true }]);
+  assert.equal(got.at(-1)[0], "reconnect");   // after open + state, so hello handlers are wired
   assert.equal(client.attempts, 0);
   client.close();
   assert.equal(sockets[2].readyState, 3);
   c.run(10000);
   assert.equal(sockets.length, 3);   // stopped: no reconnect
+});
+
+test("a slow hidden tab is not mistaken for a dead link: staleness counts from the ping", () => {
+  const { client, sockets, c } = make();
+  client.connect(); sockets[0].open();
+  for (let i = 0; i < 5; i++) {
+    c.jump(59000);   // the browser held the heartbeat tick for a minute…
+    c.run(0);        // …then let it fire: it pings
+    assert.equal(client.stale(), false);
+    sockets[0].push({ t: "pong" });   // answered promptly, as a live link does
+  }
+  assert.equal(sockets[0].sent.length, 5);
+  assert.equal(sockets.length, 1);
+  assert.equal(client.connected, true);
+});
+
+test("a probe condemns a socket that looks fine but never answers", () => {
+  const { client, sockets, c, got } = make({ pingMs: 100000 });
+  client.connect(); sockets[0].open();
+  c.jump(8 * 3600 * 1000);                        // asleep; nothing was pending when the lid closed
+  assert.equal(client.stale(), false);
+  assert.equal(client.nudge(), false);            // so it is probed…
+  assert.deepEqual(sockets[0].sent, [{ t: "ping" }]);
+  c.run(2999);
+  assert.equal(sockets.length, 1);
+  c.run(1);                                       // …and three seconds of silence condemn it
+  assert.equal(sockets.length, 2);
+  assert.equal(sockets[0].readyState, 3);
+  assert.equal(client.connected, false);
+  assert.ok(got.some(g => g[0] === "close"));
+  sockets[1].open();
+  assert.equal(got.at(-1)[0], "reconnect");
+});
+
+test("nudge after a sleep: a stale socket is replaced now, a backoff is skipped, a healthy one is probed", () => {
+  const { client, sockets, c, got } = make();
+  client.connect(); sockets[0].open(); sockets[0].autopong = true;
+  // healthy: a probe ping goes out, the pong keeps the socket
+  assert.equal(client.nudge(), false);
+  assert.deepEqual(sockets[0].sent, [{ t: "ping" }]);
+  assert.equal(client.nudge(), false);           // one probe at a time
+  assert.equal(sockets[0].sent.length, 1);
+  c.run(3000);                                   // heartbeats answered, the probe deadline passes quietly
+  assert.equal(sockets.length, 1);
+  // the machine sleeps for eight hours; the socket died in its sleep without a close event
+  sockets[0].autopong = false;
+  c.jump(8 * 3600 * 1000);
+  assert.equal(client.stale(), false);            // nothing was pending: by the book it looks fine
+  assert.equal(client.nudge(), false);            // so it is probed…
+  c.run(3000);                                    // …and silence condemns it
+  assert.equal(sockets.length, 2);
+  assert.equal(sockets[0].readyState, 3);
+  assert.ok(got.some(g => g[0] === "close"));
+  sockets[1].open();
+  assert.equal(got.at(-1)[0], "reconnect");
+  // a ping already out and unanswered: dropped on the spot
+  c.run(1000);                                    // tick pings
+  c.jump(60000);
+  assert.equal(client.stale(), true);
+  assert.equal(client.nudge(), true);
+  assert.equal(sockets.length, 3);
+  // waiting out a backoff when the network returns: reconnect now
+  sockets[2].close();                             // failed before opening → backoff 100
+  assert.equal(client.reconnectTimer !== null, true);
+  assert.equal(client.nudge(), true);
+  assert.equal(sockets.length, 4);
+  assert.equal(client.reconnectTimer, null);
+  c.run(1000);
+  assert.equal(sockets.length, 4);                // the cancelled backoff did not double up
+  sockets[3].open();
+  client.close();
+  assert.equal(client.nudge(), false);
+  assert.equal(sockets.length, 4);
 });
 
 test("a host without WebSocket stays quiet", () => {
