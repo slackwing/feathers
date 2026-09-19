@@ -20,10 +20,11 @@
 .roster .btn:disabled svg { opacity: .35; }
 .roster .grow { flex: 1; }
 .roster .verdict, .roster .st { font: var(--t-ui-bold); }
-.roster i.verdict, .roster .st { font-style: normal; display: inline-block; padding: 2px 8px 1px; border: 1px solid var(--ink); background: var(--paper-hi); }
-.roster .pending { background: var(--emitter); }
-.roster .accepted { background: var(--nen); }
-.roster .rejected { background: var(--blood); color: var(--paper-hi); }
+/* the verdict chip keeps its own colours whatever row or box it sits in (a selected row turns text white) */
+.roster i.verdict, .roster .st { font-style: normal; display: inline-block; padding: 2px 8px 1px; border: 1px solid var(--ink); background: var(--paper-hi); color: var(--ink); }
+.roster i.verdict.pending, .roster .st.pending { background: var(--emitter); color: var(--ink); }
+.roster i.verdict.accepted, .roster .st.accepted { background: var(--nen); color: var(--ink); }
+.roster i.verdict.rejected, .roster .st.rejected { background: var(--blood); color: var(--paper-hi); }
 
 /* group boxes, the 90s fieldset */
 .roster .group {
@@ -60,7 +61,6 @@
 .rlist .row.sel .c-pics i.zero { color: rgba(255,246,224,.5); }
 .rlist .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
 .rlist .row.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
-.rlist .row.sel .verdict { border-color: var(--paper-hi); }
 .rlist .row:hover:not(.sel) { background: var(--paper); }
 .rlist .c-no, .rlist .c-ver { color: var(--ink-4); text-align: right; }
 .rlist .row.sel .c-no, .rlist .row.sel .c-ver { color: var(--paper-hi); }
