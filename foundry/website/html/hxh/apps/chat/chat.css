@@ -17,7 +17,8 @@
 }
 .chat .status .conn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--nen); border: 1px solid var(--ink); vertical-align: -1px; }
 .chat .status .conn.off::before { background: var(--none); }
-.chat .status .note { color: var(--ink-4); margin-left: auto; }
+.room .compose textarea:disabled { background: var(--paper-lo); color: var(--ink-4); }
+.room .compose textarea:disabled::placeholder { font-style: italic; color: var(--ink-4); opacity: 1; }
 /* presence dots: green online, yellow away, grey offline, red = no password yet */
 .dot { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); background: var(--none); }
 .dot.online { background: var(--nen); }

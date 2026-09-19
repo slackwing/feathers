@@ -401,11 +401,11 @@ test("you can message the online and the away, not the offline: IM button, compo
   assert.ok(dm.state.open);   // the window still opens (history is readable)
   assert.equal(dm.input.disabled, true);
   assert.equal(dm.el.querySelector('[data-act="send"]').disabled, true);
-  assert.equal(dm.el.querySelector(".status .note").textContent, "Killua is offline");
+  assert.equal(dm.input.placeholder, "Killua is offline.");   // said inside the greyed field, in italics (CSS)
   dm.input.value = "hello?"; assert.equal(dm.submit(), false);
   sockets[0].push({ t: "presence", user: "killua", state: "online", last_seen_at: null });
   assert.equal(dm.input.disabled, false);
-  assert.equal(dm.el.querySelector(".status .note").textContent, "");
+  assert.equal(dm.input.placeholder, "");
   assert.equal(im.disabled, false);
   sockets[0].push({ t: "presence", user: "killua", state: "offline", last_seen_at: null });
   assert.equal(dm.input.disabled, true);

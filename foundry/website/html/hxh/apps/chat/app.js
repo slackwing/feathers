@@ -113,7 +113,7 @@ export class ChatApp extends App {
   syncCanSend(room, w = this.windows.get(room)) {
     const other = this.otherOf(room);
     if (!w || !other) return;
-    w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline`);
+    w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline.`);
   }
 
   onPresence({ user, state, last_seen_at }) {

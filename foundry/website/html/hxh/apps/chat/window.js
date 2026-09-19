@@ -23,7 +23,7 @@ export class ChatWindow extends Window {
             <button class="btn primary" type="button" data-act="send">Send</button>
           </div>
         </div>
-        <div class="status"><span class="typing"></span><span class="note"></span></div>`,
+        <div class="status"><span class="typing"></span></div>`,
       ...props,
     });
     this.room = props.room;
@@ -37,7 +37,6 @@ export class ChatWindow extends Window {
     this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
     this.pane.el.classList.add("sunken", "logbox");
     this.typingEl = el.querySelector(".typing");
-    this.noteEl = el.querySelector(".note");
     this.input = el.querySelector("textarea");
     el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
     el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
@@ -61,13 +60,12 @@ export class ChatWindow extends Window {
   /** The newest message shown (what a read marker points at). */
   get lastId() { return this.messages.length ? this.messages[this.messages.length - 1].id : 0; }
 
-  /** Compose on or off — off with a note in the status line (a buddy who is offline cannot be messaged). */
+  /** Compose on or off — off, the field greys out and says why in italics (a buddy who is offline cannot be messaged). */
   setCanSend(on, note = "") {
     this.canSend = !!on;
-    if (this.input) this.input.disabled = !on;
+    if (this.input) { this.input.disabled = !on; this.input.placeholder = on ? "" : note; }
     const send = this.el?.querySelector('[data-act="send"]');
     if (send) send.disabled = !on;
-    if (this.noteEl) this.noteEl.textContent = on ? "" : note;
   }
 
   setMessages(list) {

@@ -27,6 +27,24 @@ import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { WakeWatch } from "./wake.js";
 
+/* Settings › Display choices (the values are what localStorage keeps). */
+export const THEME_KEY = "theme", THEME_DEFAULT = "win98";
+export const THEME_OPTIONS = [
+  ["win98", "Win98"],
+  ["tropical", "Whale Island Tropical"],
+  ["seapumpkin", "Whale Island Sea Pumpkin"],
+  ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"],
+];
+export const SKY_KEY = "sky", SKY_DEFAULT = "original";
+export const SKY_OPTIONS = [
+  ["original", "Original"],
+  ["gradual", "Gradual"],
+  ["noisy-gradual", "Noisy Gradual"],
+  ["hypergradient", "Hypergradient"],
+  ["gradient", "Gradient"],
+  ["noisy-gradient", "Noisy Gradient"],
+];
+
 export class OS {
   constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
     this.win = win;
@@ -50,6 +68,7 @@ export class OS {
     const body = this.doc.body;
     Menus.install(this.doc);
     this.crt.apply();
+    this.applyTheme();
 
     const existing = this.doc.getElementById("desktop");
     this.desktop = new Desktop({ registry: this.registry, user: () => this.user, el: existing });
@@ -70,8 +89,8 @@ export class OS {
         this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
         this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
       }
-      this.taskbar.tray.add({ id: "crt", icon: "crt", title: "Scanlines", on: () => this.crt.on, onClick: () => this.crt.toggle() });
-      this.bus.on("crt", () => this.bus.emit("tray:refresh", { id: "crt" }));
+      // the gear: the same Settings tree the Start menu shows, popping up from the tray
+      this.taskbar.tray.add({ id: "settings", icon: "gear", title: "Settings", on: true, menu: () => this.settingsItems() });
     }
 
     this.doc.addEventListener("keydown", e => { if (e.key === "Escape") this.wm.handleEscape(); });
@@ -91,13 +110,43 @@ export class OS {
     return z;
   }
 
-  /** Scanlines etc. — the system entries shared by the Start and Settings menus. Window menus carry no icons (90s menus didn't). */
-  systemItems({ icons = true } = {}) {
+  /**
+   * THE Settings tree (Andrew, 2026-09-19: "keep all our experiments in
+   * the UI as settings people can toggle") — one source rendered by the
+   * Start menu (Settings ▸), the tray gear, and any app's Settings menu.
+   * Cascading submenus, Windows style. Choices persist per browser
+   * (`Settings`, localStorage); Scanlines is off by default. Window menus
+   * carry no icons (90s menus didn't), so `icons: false` strips them.
+   */
+  settingsItems({ icons = true } = {}) {
+    const st = this.settings;
     const items = [
-      { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-      { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
+      { label: "Display", icon: "crt", items: () => [
+        { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: v => this.applyTheme(v) }) },
+        { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: v => this.applySky(v) }) },
+        { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
+      ] },
+      { label: "Sounds", icon: "sound", items: () => [
+        { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
+      ] },
     ];
-    return icons ? items : items.map(({ icon, ...i }) => i);
+    const strip = list => list.map(it => (it === "sep" ? it : { ...it, icon: undefined, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : undefined }));
+    return icons ? items : strip(items);
+  }
+
+  /** The current theme / sky (Settings › Display), applied to the page. */
+  get theme() { return this.settings.getStr(THEME_KEY, THEME_DEFAULT); }
+  get sky() { return this.settings.getStr(SKY_KEY, SKY_DEFAULT); }
+  applyTheme(name = this.theme) {
+    if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
+    this.doc.documentElement.dataset.theme = name;
+    this.bus.emit("theme", { name });
+    return name;
+  }
+  applySky(name = this.sky) {
+    if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
+    this.bus.emit("sky", { name });
+    return name;
   }
 
   /**
@@ -124,11 +173,12 @@ export class OS {
       .map(a => ({ label: long ? (a.constructor.longName || a.name) : a.name, ...(icons ? { icon: a.icon } : {}), onclick: () => this.launch(a.id) }));
   }
 
+  /** The Start menu: every desktop app (derived from the registry, like the icons), Settings ▸, system apps, Log out. */
   startItems() {
     return [
       ...this.appItems("apps"),
       "sep",
-      ...this.systemItems(),
+      { label: "Settings", icon: "gear", items: () => this.settingsItems() },
       ...this.appItems("system"),
       "sep",
       { label: "Log out", icon: "door", onclick: () => this.logout() },

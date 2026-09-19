@@ -34,8 +34,7 @@ export class SummonsApp extends App {
     return os.appMenus(win, {
       file: () => [{ label: "Log out", onclick: () => os.logout() }],
       view: () => os.appItems("apps", { except: this.id, long: true, icons: false }),
-      settings: () => os.systemItems({ icons: false }),
-      help: () => os.appItems("system", { long: true, icons: false }),
+      settings: () => os.settingsItems({ icons: false }),
     });
   }
 

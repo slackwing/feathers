@@ -2,7 +2,12 @@
    subclass declares its identity as statics (id, name, icon, desktop,
    order, menuable) and implements launch(); the AppRegistry holds one
    instance of each, and desktop icons, the Start menu, View menus and tray
-   icons are all DERIVED from it — nothing lists apps by hand. */
+   icons are all DERIVED from it — nothing lists apps by hand. Registering
+   an app therefore puts it on the desktop AND in the Start menu's app
+   section at once (Andrew, 2026-09-19), which is why `register` insists
+   on an icon that draws at both sizes. */
+import { hasIconPair } from "./icons.js";
+
 export class App {
   static id = "";          // unique, used for data-act and launch()
   static name = "";        // label on icons and menus
@@ -44,6 +49,8 @@ export class AppRegistry {
     const id = app.id;
     if (!id) throw new Error(`app ${app.constructor.name} has no static id`);
     if (this.apps.has(id)) throw new Error(`app "${id}" already registered`);
+    // desktop icon (48 px) and Start-menu / taskbar icon (16 px) are one 16×16 grid; both are derived from it
+    if (!hasIconPair(app.icon)) throw new Error(`app "${id}" needs a 16×16 icon (draws its desktop and menu icons); "${app.icon}" is not one`);
     app._seq = this.seq++;
     this.apps.set(id, app);
     this.os.bus?.emit("app:register", { id });

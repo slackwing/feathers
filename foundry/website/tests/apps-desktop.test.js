@@ -4,7 +4,6 @@ import { setupDom, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { SummonsApp, NOTICE } from "../html/hxh/apps/summons.js";
 import { RegisterApp, BARS, BARS_ON } from "../html/hxh/apps/register.js";
-import { AboutApp } from "../html/hxh/apps/about.js";
 import { BinderApp } from "../html/hxh/apps/binder.js";
 import * as apps from "../html/hxh/apps/index.js";
 
@@ -20,13 +19,13 @@ beforeEach(() => make());
 test("the index page's app set is exported under short names", () => {
   assert.equal(apps.Summons, SummonsApp);
   assert.equal(apps.Register, RegisterApp);
-  assert.equal(apps.About, AboutApp);
+  assert.equal(apps.About, undefined);   // removed 2026-09-19
   assert.equal(apps.Binder, BinderApp);
   assert.ok(apps.SetPassword);
 });
 
 test("summons autostart: bare desktop, then the window at 145,24 with the notice typed", async () => {
-  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp, AboutApp], autostart: ["summons"], start: true, boot: false });
+  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp], autostart: ["summons"], start: true, boot: false });
   const w = os.wm.get("win-summons");
   assert.equal(w.title, "Hunter × Halloween");
   assert.equal(w.el.style.width, "750px");
@@ -40,21 +39,26 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
   assert.match(text, /Oct 31, 2026/);
   assert.equal(w.$("#vn-text b").textContent, NOTICE[1].t);
   assert.ok(w.$("#vn").classList.contains("done"));   // reduced motion: typed instantly
-  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View", "Settings", "Help"]);
+  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View", "Settings"]);   // no Help: About is gone
 });
 
 test("summons menus are derived from the registry", async () => {
-  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp, AboutApp], autostart: ["summons"], boot: false });
+  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp], autostart: ["summons"], boot: false });
   const w = os.wm.get("win-summons");
-  const [file, view, settings, help] = w.menuBar.menus;
+  const [file, view, settings] = w.menuBar.menus;
   view.open();
   assert.deepEqual([...view.el.children].map(c => c.textContent), ["Binder", "Registration"]);
   settings.open();
-  assert.deepEqual([...settings.el.children].map(c => c.textContent), ["Scanlines", "Sounds"]);
-  help.open();
-  assert.deepEqual([...help.el.children].map(c => c.textContent), ["About Hunter Website"]);
-  d.click(help.el.querySelector("button"));
-  assert.equal(os.wm.get("win-about").state.open, true);
+  assert.deepEqual([...settings.el.children].map(c => c.querySelector("button").firstChild.textContent), ["Display", "Sounds"]);   // the OS Settings tree, cascading
+  assert.equal(settings.el.querySelector("svg"), null);   // window menus carry no icons
+  d.click(settings.el.querySelector(".menu.sub > button"));   // Display ▸
+  const display = settings.subs[0];
+  assert.ok(display.isOpen && settings.isOpen, "the submenu opens and keeps its parent open");
+  assert.deepEqual([...display.el.querySelectorAll(":scope > button, :scope > .menu > button")].map(b => b.firstChild.textContent), ["Theme", "Sky", "Scanlines"]);
+  d.click([...display.el.querySelectorAll("button")].find(b => b.textContent === "Scanlines"));
+  assert.equal(os.crt.on, true);
+  assert.ok(!settings.isOpen && !display.isOpen, "picking a leaf closes the chain");
+  os.crt.set(false);
   file.open();
   assert.deepEqual([...file.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Log out", "-", "Exit"]);
   d.click(file.el.querySelectorAll("button")[1]);   // Exit closes the window
@@ -100,17 +104,3 @@ test("registration: OPENS SOON, 7 of 20 bars, beside the summons on wide screens
   assert.equal(n.el.style.top, "12px");   // summons offset* are 0 in jsdom
 });
 
-test("about: a popup that OK closes and Escape closes", async () => {
-  await os.start({ apps: [AboutApp], boot: false });
-  await os.launch("about");
-  const w = os.wm.get("win-about");
-  assert.ok(w.props.popup);
-  assert.equal(w.el.style.width, "475px");
-  assert.match(w.body.textContent, /v2\.0/);
-  d.click(w.$('[data-act="ok"]'));
-  assert.equal(w.state.open, false);
-  await os.launch("about");
-  d.key(document.body, "Escape");
-  assert.equal(w.state.open, false);
-  await tick();
-});

@@ -8,7 +8,7 @@ export class CRT {
     this.bus = bus;
   }
   get on() {
-    try { return this.storage?.getItem(CRT_KEY) !== "0"; } catch { return true; }
+    try { return this.storage?.getItem(CRT_KEY) === "1"; } catch { return false; }   // off by default (Andrew, 2026-09-19); the browser remembers an override
   }
   set(on) {
     this.body?.classList.toggle("crt", !!on);

@@ -167,7 +167,6 @@ export const ICONS = {
   hourglass: [
     ".kkkkkkkkkkkkkk.",
     ".kttttttttttttk.",
-    ".kkkkkkkkkkkkkk.",
     "..kwwwwwwwwwwk..",
     "..kwwwwwwwwwwk..",
     "...kwyyyyyywk...",
@@ -178,6 +177,7 @@ export const ICONS = {
     ".....kwyywk.....",
     "....kwyyyywk....",
     "...kwyyyyyywk...",
+    "..kyyyyyyyyyyk..",
     "..kyyyyyyyyyyk..",
     ".kttttttttttttk.",
     ".kkkkkkkkkkkkkk.",
@@ -206,36 +206,37 @@ export const ICONS = {
     ".kqNNNNNNNNNNkG.",
     ".kqNNNNNNNNNNkG.",
     ".kqNNNNNNNNNNk..",
-    ".kqNNNNgggNNNk..",
-    ".kqNNNgNNNgNNk..",
-    ".kqNNNgNNNgNNk..",
-    ".kqNNNNgggNNNk..",
+    ".kqNNNggggNNNk..",
+    ".kqNNgNNNNgNNk..",
+    ".kqNNgNNNNgNNk..",
+    ".kqNNgNNNNgNNk..",
+    ".kqNNNggggNNNk..",
     ".kqNNNNNNNNNNk..",
     ".kqNNNNNNNNNNkG.",
     ".kqNNNNNNNNNNkG.",
-    ".kqNNNNNNNNNNk..",
     ".kkkkkkkkkkkkk..",
     "................",
     "................",
   ],
   // Beetle: the Beetle 07 phone from the show — black head with two antennae,
-  // rounded red shell split down the middle, a cream highlight
+  // rounded red shell split down the middle. Drawn 15 wide, mirror-symmetric
+  // about column 7 (Abi noticed one wing was bigger); column 15 stays empty
   beetle: [
     "................",
-    "...k........k...",
-    "....k......k....",
-    ".....kkkkkk.....",
-    "....kkkkkkkk....",
-    "...khrrrkrrrhk..",
-    "..kwhrrrkrrrhk..",
-    "..kwrrrrkrrrrk..",
-    "..khrrrrkrrrrk..",
-    "..khrrrrkrrrrk..",
-    "...krrrrkrrrk...",
-    "...kkrrrkrrkk...",
-    "....kkkkkkkk....",
-    "...k..k..k..k...",
-    "..k...k..k...k..",
+    "...k.......k....",
+    "....k.....k.....",
+    ".....kkkkk......",
+    "....kkkkkkk.....",
+    "...khrrkrrhk....",
+    "..khrrrkrrrhk...",
+    ".khrrrrkrrrrhk..",
+    ".krrrrrkrrrrrk..",
+    ".krrrrrkrrrrrk..",
+    "..krrrrkrrrrk...",
+    "...krrrkrrrk....",
+    "....kkkkkkk.....",
+    "..k..k...k..k...",
+    ".k...k...k...k..",
     "................",
   ],
   // a speech bubble (tray "new message" icon, chat app)
@@ -421,6 +422,44 @@ export const ICONS = {
     ".......kk.......",
     "................",
   ],
+  // Settings: a gear (generated: ring, eight teeth, a hole, ink edge)
+  gear: [
+    "................",
+    "......kkkk......",
+    "...kk.knnk.kk...",
+    "..kkkkknnkkkkk..",
+    "..kknnnnnnnnkk..",
+    "...knkkkkkknk...",
+    ".kkknk....knkkk.",
+    ".knnnk....knnnk.",
+    ".knnnk....knnnk.",
+    ".kkknk....knkkk.",
+    "...knkkkkkknk...",
+    "..kknnnnnnnnkk..",
+    "..kkkkknnkkkkk..",
+    "...kk.knnk.kk...",
+    "......kkkk......",
+    "................",
+  ],
+  // Settings › Sounds: a speaker
+  sound: [
+    "................",
+    "........k.......",
+    ".......kk.k.....",
+    "......knk..k.k..",
+    ".....knnk.k.k.k.",
+    ".kkkkknnk..k.k.k",
+    ".knnnnnnk..k.k.k",
+    ".knnnnnnk..k.k.k",
+    ".knnnnnnk..k.k.k",
+    ".knnnnnnk..k.k.k",
+    ".kkkkknnk..k.k.k",
+    ".....knnk.k.k.k.",
+    "......knk..k.k..",
+    ".......kk.k.....",
+    "........k.......",
+    "................",
+  ],
   door: [
     "kkkkkkkkkk......",
     "kppppppppk......",
@@ -452,6 +491,14 @@ export function icon(name, size = 16, pal = null) {
     if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
   }));
   return `<svg class="px" viewBox="0 0 ${w} ${h}" width="${w * k}" height="${h * k}" aria-hidden="true">${rects}</svg>`;
+}
+
+/** Does `name` exist as a 16×16 grid — i.e. can it draw both the 16 px
+    (taskbar, tray, menus, title bars) and the 48 px (desktop) size? Every
+    registered app must pass this: one grid IS the icon pair. */
+export function hasIconPair(name) {
+  const rows = ICONS[name];
+  return !!rows && rows.length === 16 && rows.every(r => r.length === 16);
 }
 
 /** Pixel size of icon(name, size) — the grid's integer scale. */

@@ -463,7 +463,6 @@ var HxH = (() => {
     hourglass: [
       ".kkkkkkkkkkkkkk.",
       ".kttttttttttttk.",
-      ".kkkkkkkkkkkkkk.",
       "..kwwwwwwwwwwk..",
       "..kwwwwwwwwwwk..",
       "...kwyyyyyywk...",
@@ -474,6 +473,7 @@ var HxH = (() => {
       ".....kwyywk.....",
       "....kwyyyywk....",
       "...kwyyyyyywk...",
+      "..kyyyyyyyyyyk..",
       "..kyyyyyyyyyyk..",
       ".kttttttttttttk.",
       ".kkkkkkkkkkkkkk."
@@ -502,36 +502,37 @@ var HxH = (() => {
       ".kqNNNNNNNNNNkG.",
       ".kqNNNNNNNNNNkG.",
       ".kqNNNNNNNNNNk..",
-      ".kqNNNNgggNNNk..",
-      ".kqNNNgNNNgNNk..",
-      ".kqNNNgNNNgNNk..",
-      ".kqNNNNgggNNNk..",
+      ".kqNNNggggNNNk..",
+      ".kqNNgNNNNgNNk..",
+      ".kqNNgNNNNgNNk..",
+      ".kqNNgNNNNgNNk..",
+      ".kqNNNggggNNNk..",
       ".kqNNNNNNNNNNk..",
       ".kqNNNNNNNNNNkG.",
       ".kqNNNNNNNNNNkG.",
-      ".kqNNNNNNNNNNk..",
       ".kkkkkkkkkkkkk..",
       "................",
       "................"
     ],
     // Beetle: the Beetle 07 phone from the show — black head with two antennae,
-    // rounded red shell split down the middle, a cream highlight
+    // rounded red shell split down the middle. Drawn 15 wide, mirror-symmetric
+    // about column 7 (Abi noticed one wing was bigger); column 15 stays empty
     beetle: [
       "................",
-      "...k........k...",
-      "....k......k....",
-      ".....kkkkkk.....",
-      "....kkkkkkkk....",
-      "...khrrrkrrrhk..",
-      "..kwhrrrkrrrhk..",
-      "..kwrrrrkrrrrk..",
-      "..khrrrrkrrrrk..",
-      "..khrrrrkrrrrk..",
-      "...krrrrkrrrk...",
-      "...kkrrrkrrkk...",
-      "....kkkkkkkk....",
-      "...k..k..k..k...",
-      "..k...k..k...k..",
+      "...k.......k....",
+      "....k.....k.....",
+      ".....kkkkk......",
+      "....kkkkkkk.....",
+      "...khrrkrrhk....",
+      "..khrrrkrrrhk...",
+      ".khrrrrkrrrrhk..",
+      ".krrrrrkrrrrrk..",
+      ".krrrrrkrrrrrk..",
+      "..krrrrkrrrrk...",
+      "...krrrkrrrk....",
+      "....kkkkkkk.....",
+      "..k..k...k..k...",
+      ".k...k...k...k..",
       "................"
     ],
     // a speech bubble (tray "new message" icon, chat app)
@@ -717,6 +718,44 @@ var HxH = (() => {
       ".......kk.......",
       "................"
     ],
+    // Settings: a gear (generated: ring, eight teeth, a hole, ink edge)
+    gear: [
+      "................",
+      "......kkkk......",
+      "...kk.knnk.kk...",
+      "..kkkkknnkkkkk..",
+      "..kknnnnnnnnkk..",
+      "...knkkkkkknk...",
+      ".kkknk....knkkk.",
+      ".knnnk....knnnk.",
+      ".knnnk....knnnk.",
+      ".kkknk....knkkk.",
+      "...knkkkkkknk...",
+      "..kknnnnnnnnkk..",
+      "..kkkkknnkkkkk..",
+      "...kk.knnk.kk...",
+      "......kkkk......",
+      "................"
+    ],
+    // Settings › Sounds: a speaker
+    sound: [
+      "................",
+      "........k.......",
+      ".......kk.k.....",
+      "......knk..k.k..",
+      ".....knnk.k.k.k.",
+      ".kkkkknnk..k.k.k",
+      ".knnnnnnk..k.k.k",
+      ".knnnnnnk..k.k.k",
+      ".knnnnnnk..k.k.k",
+      ".knnnnnnk..k.k.k",
+      ".kkkkknnk..k.k.k",
+      ".....knnk.k.k.k.",
+      "......knk..k.k..",
+      ".......kk.k.....",
+      "........k.......",
+      "................"
+    ],
     door: [
       "kkkkkkkkkk......",
       "kppppppppk......",
@@ -746,6 +785,10 @@ var HxH = (() => {
       if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
     }));
     return `<svg class="px" viewBox="0 0 ${w} ${h2}" width="${w * k}" height="${h2 * k}" aria-hidden="true">${rects}</svg>`;
+  }
+  function hasIconPair(name) {
+    const rows = ICONS[name];
+    return !!rows && rows.length === 16 && rows.every((r) => r.length === 16);
   }
   function sprite(emoji, n = 16) {
     const c = document.createElement("canvas");
@@ -794,7 +837,7 @@ var HxH = (() => {
       openSet.delete(m);
     },
     closeAll(except = null) {
-      for (const m of [...openSet]) if (m !== except) m.close();
+      for (const m of [...openSet]) if (m !== except && !isAncestor(m, except)) m.close();
     },
     get openCount() {
       return openSet.size;
@@ -809,8 +852,13 @@ var HxH = (() => {
       });
     }
   };
-  function renderItems(items, container, onPick) {
+  function isAncestor(m, of) {
+    for (let p = of?.props?.parent; p; p = p.props?.parent) if (p === m) return true;
+    return false;
+  }
+  function renderItems(items, container, onPick, parent = null) {
     container.replaceChildren();
+    const subs = [];
     for (const it of items || []) {
       if (it === "sep" || it?.sep) {
         container.append(h("hr"));
@@ -825,6 +873,27 @@ var HxH = (() => {
       if (it.icon) b.innerHTML = icon(it.icon, 16);
       if (it.attrs) for (const [k, v] of Object.entries(it.attrs)) b.setAttribute(k, v);
       b.append(it.label);
+      if (it.items) {
+        const wrap = h("div", { className: "menu sub" });
+        b.append(h("span", { className: "arr", text: "\u25B8" }));
+        wrap.append(b);
+        const sub = new Menu({ items: it.items, cls: "sub", parent });
+        sub.onPick = onPick;
+        sub.mount(wrap);
+        b.addEventListener("click", (e) => {
+          e.stopPropagation();
+          sub.toggle();
+        });
+        wrap.addEventListener("mouseenter", () => {
+          if (!it.disabled) sub.open();
+        });
+        container.append(wrap);
+        subs.push(sub);
+        continue;
+      }
+      b.addEventListener("mouseenter", () => {
+        if (parent) Menus.closeAll(parent);
+      });
       b.addEventListener("click", (e) => {
         e.stopPropagation();
         onPick?.(it, e);
@@ -832,21 +901,29 @@ var HxH = (() => {
       });
       container.append(b);
     }
-    return container;
+    return subs;
   }
   var Menu = class extends Component {
-    /** props: items (array or () => array), cls ("up" pops above its anchor) */
+    /** props: items (array or () => array), cls ("up" pops above its anchor; "sub" cascades right), parent (the owning menu, for submenus) */
     render() {
       const el = h("div", { className: `dd ${this.props.cls || ""}`.trim() });
       el.addEventListener("click", (e) => e.stopPropagation());
+      this.subs = [];
       return el;
     }
     itemsNow() {
       const i = this.props.items;
       return typeof i === "function" ? i() : i || [];
     }
+    /** The root menu of a cascade closes the whole chain when a leaf is picked. */
+    get root() {
+      let m = this;
+      while (m.props.parent) m = m.props.parent;
+      return m;
+    }
     refresh() {
-      renderItems(this.itemsNow(), this.el, () => this.close());
+      for (const s of this.subs) s.unmount();
+      this.subs = renderItems(this.itemsNow(), this.el, this.onPick || (() => this.root.close()), this);
     }
     get isOpen() {
       return !!this.el?.classList.contains("open");
@@ -861,6 +938,7 @@ var HxH = (() => {
     }
     close() {
       if (!this.isOpen) return;
+      for (const s of this.subs) s.close();
       this.el.classList.remove("open");
       this.el.parentElement?.classList.remove("open");
       Menus.untrack(this);
@@ -870,6 +948,7 @@ var HxH = (() => {
       this.isOpen ? this.close() : this.open();
     }
     onUnmount() {
+      for (const s of this.subs || []) s.unmount();
       Menus.untrack(this);
     }
   };
@@ -1464,7 +1543,8 @@ var HxH = (() => {
       }
       const row = h("div", { className: "row" }, h("div", { className: "band", text: band }));
       const box = h("div", { className: "items" });
-      renderItems(this.props.items?.() || [], box, () => this.close());
+      for (const s of this.subs || []) s.unmount();
+      this.subs = renderItems(this.props.items?.() || [], box, () => this.close(), this);
       row.append(box);
       this.el.append(row);
     }
@@ -1480,6 +1560,7 @@ var HxH = (() => {
     }
     close() {
       if (!this.isOpen) return;
+      for (const s of this.subs || []) s.close();
       this.el.classList.remove("open");
       Menus.untrack(this);
       this.emit("close");
@@ -1488,6 +1569,7 @@ var HxH = (() => {
       this.isOpen ? this.close() : this.open();
     }
     onUnmount() {
+      for (const s of this.subs || []) s.unmount();
       Menus.untrack(this);
     }
   };
@@ -1548,6 +1630,7 @@ var HxH = (() => {
       const id = app.id;
       if (!id) throw new Error(`app ${app.constructor.name} has no static id`);
       if (this.apps.has(id)) throw new Error(`app "${id}" already registered`);
+      if (!hasIconPair(app.icon)) throw new Error(`app "${id}" needs a 16\xD716 icon (draws its desktop and menu icons); "${app.icon}" is not one`);
       app._seq = this.seq++;
       this.apps.set(id, app);
       this.os.bus?.emit("app:register", { id });
@@ -1933,9 +2016,9 @@ var HxH = (() => {
     }
     get on() {
       try {
-        return this.storage?.getItem(CRT_KEY) !== "0";
+        return this.storage?.getItem(CRT_KEY) === "1";
       } catch {
-        return true;
+        return false;
       }
     }
     set(on) {
@@ -2153,6 +2236,29 @@ var HxH = (() => {
     }
     toggle(key, def = true) {
       return this.set(key, !this.get(key, def));
+    }
+    /** String-valued settings (a radio group: theme, sky…). */
+    getStr(key, def = "") {
+      try {
+        const v = this.storage?.getItem(this.prefix + key);
+        return v == null ? def : v;
+      } catch {
+        return def;
+      }
+    }
+    setStr(key, value) {
+      try {
+        this.storage?.setItem(this.prefix + key, String(value));
+      } catch {
+      }
+      return value;
+    }
+    /** A radio group as menu items: one check mark, on the current value. */
+    radio({ key, def, options, onChange } = {}) {
+      return options.map(([value, label]) => ({ label, check: () => this.getStr(key, def) === value, onclick: () => {
+        this.setStr(key, value);
+        onChange?.(value);
+      } }));
     }
     /** A checkable menu item bound to `key`. */
     item({ key, label, icon: icon2, def = true, onChange } = {}) {
@@ -2555,6 +2661,24 @@ var HxH = (() => {
   };
 
   // html/hxh/os/os.js
+  var THEME_KEY = "theme";
+  var THEME_DEFAULT = "win98";
+  var THEME_OPTIONS = [
+    ["win98", "Win98"],
+    ["tropical", "Whale Island Tropical"],
+    ["seapumpkin", "Whale Island Sea Pumpkin"],
+    ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"]
+  ];
+  var SKY_KEY = "sky";
+  var SKY_DEFAULT = "original";
+  var SKY_OPTIONS = [
+    ["original", "Original"],
+    ["gradual", "Gradual"],
+    ["noisy-gradual", "Noisy Gradual"],
+    ["hypergradient", "Hypergradient"],
+    ["gradient", "Gradient"],
+    ["noisy-gradient", "Noisy Gradient"]
+  ];
   var OS = class {
     constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
       this.win = win;
@@ -2577,6 +2701,7 @@ var HxH = (() => {
       const body = this.doc.body;
       Menus.install(this.doc);
       this.crt.apply();
+      this.applyTheme();
       const existing = this.doc.getElementById("desktop");
       this.desktop = new Desktop({ registry: this.registry, user: () => this.user, el: existing });
       this.desktop.mount(existing ? null : body);
@@ -2594,8 +2719,7 @@ var HxH = (() => {
           this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
           this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
         }
-        this.taskbar.tray.add({ id: "crt", icon: "crt", title: "Scanlines", on: () => this.crt.on, onClick: () => this.crt.toggle() });
-        this.bus.on("crt", () => this.bus.emit("tray:refresh", { id: "crt" }));
+        this.taskbar.tray.add({ id: "settings", icon: "gear", title: "Settings", on: true, menu: () => this.settingsItems() });
       }
       this.doc.addEventListener("keydown", (e) => {
         if (e.key === "Escape") this.wm.handleEscape();
@@ -2618,13 +2742,46 @@ var HxH = (() => {
       this.doc.documentElement.style.setProperty("--zoom", String(z));
       return z;
     }
-    /** Scanlines etc. — the system entries shared by the Start and Settings menus. Window menus carry no icons (90s menus didn't). */
-    systemItems({ icons = true } = {}) {
+    /**
+     * THE Settings tree (Andrew, 2026-09-19: "keep all our experiments in
+     * the UI as settings people can toggle") — one source rendered by the
+     * Start menu (Settings ▸), the tray gear, and any app's Settings menu.
+     * Cascading submenus, Windows style. Choices persist per browser
+     * (`Settings`, localStorage); Scanlines is off by default. Window menus
+     * carry no icons (90s menus didn't), so `icons: false` strips them.
+     */
+    settingsItems({ icons = true } = {}) {
+      const st = this.settings;
       const items = [
-        { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-        { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
+        { label: "Display", icon: "crt", items: () => [
+          { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: (v) => this.applyTheme(v) }) },
+          { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: (v) => this.applySky(v) }) },
+          { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() }
+        ] },
+        { label: "Sounds", icon: "sound", items: () => [
+          { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
+        ] }
       ];
-      return icons ? items : items.map(({ icon: icon2, ...i }) => i);
+      const strip = (list) => list.map((it) => it === "sep" ? it : { ...it, icon: void 0, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : void 0 });
+      return icons ? items : strip(items);
+    }
+    /** The current theme / sky (Settings › Display), applied to the page. */
+    get theme() {
+      return this.settings.getStr(THEME_KEY, THEME_DEFAULT);
+    }
+    get sky() {
+      return this.settings.getStr(SKY_KEY, SKY_DEFAULT);
+    }
+    applyTheme(name = this.theme) {
+      if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
+      this.doc.documentElement.dataset.theme = name;
+      this.bus.emit("theme", { name });
+      return name;
+    }
+    applySky(name = this.sky) {
+      if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
+      this.bus.emit("sky", { name });
+      return name;
     }
     /**
      * The standard menu bar every app window shares (Andrew: "File menu
@@ -2649,11 +2806,12 @@ var HxH = (() => {
     appItems(group = "apps", { except = null, long = false, icons = true } = {}) {
       return this.registry.visible(this.user, { desktop: false, menuable: true }).filter((a) => (a.constructor.group || "apps") === group && a.id !== except).map((a) => ({ label: long ? a.constructor.longName || a.name : a.name, ...icons ? { icon: a.icon } : {}, onclick: () => this.launch(a.id) }));
     }
+    /** The Start menu: every desktop app (derived from the registry, like the icons), Settings ▸, system apps, Log out. */
     startItems() {
       return [
         ...this.appItems("apps"),
         "sep",
-        ...this.systemItems(),
+        { label: "Settings", icon: "gear", items: () => this.settingsItems() },
         ...this.appItems("system"),
         "sep",
         { label: "Log out", icon: "door", onclick: () => this.logout() }
@@ -2747,7 +2905,6 @@ var HxH = (() => {
   // html/hxh/apps/index.js
   var apps_exports = {};
   __export(apps_exports, {
-    About: () => AboutApp,
     Binder: () => BinderApp,
     Chat: () => ChatApp,
     NOTICE: () => NOTICE,
@@ -2784,8 +2941,7 @@ var HxH = (() => {
       return os.appMenus(win, {
         file: () => [{ label: "Log out", onclick: () => os.logout() }],
         view: () => os.appItems("apps", { except: this.id, long: true, icons: false }),
-        settings: () => os.systemItems({ icons: false }),
-        help: () => os.appItems("system", { long: true, icons: false })
+        settings: () => os.settingsItems({ icons: false })
       });
     }
     window() {
@@ -3444,37 +3600,6 @@ var HxH = (() => {
     }
   };
 
-  // html/hxh/apps/about.js
-  var VERSION = "v2.0";
-  var AboutApp = class extends App {
-    static id = "about";
-    static name = "About";
-    static longName = "About Hunter Website";
-    static icon = "question";
-    static group = "system";
-    static order = 90;
-    window() {
-      if (this.win) return this.win;
-      this.win = new Window({
-        id: "win-about",
-        title: "About Hunter Website",
-        icon: "question",
-        width: 475,
-        popup: true,
-        content: `
-        <p><b>HUNTER \xD7 HALLOWEEN</b> ${VERSION}</p>
-        <p>An unofficial fan party. No affiliation with the Hunter Association (or Shueisha).</p>
-        <div class="actions"><button class="btn" type="button" data-act="ok">OK</button></div>`
-      });
-      this.os.wm.add(this.win);
-      this.win.$('[data-act="ok"]').addEventListener("click", () => this.win.close());
-      return this.win;
-    }
-    launch() {
-      return this.os.wm.open(this.window().id);
-    }
-  };
-
   // html/hxh/apps/chat/client.js
   var DEFAULT_BACKOFF = [1e3, 2e3, 5e3, 1e4, 3e4];
   function wsURL(location) {
@@ -3998,7 +4123,7 @@ var HxH = (() => {
             <button class="btn primary" type="button" data-act="send">Send</button>
           </div>
         </div>
-        <div class="status"><span class="typing"></span><span class="note"></span></div>`,
+        <div class="status"><span class="typing"></span></div>`,
         ...props
       });
       this.room = props.room;
@@ -4011,7 +4136,6 @@ var HxH = (() => {
       this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
       this.pane.el.classList.add("sunken", "logbox");
       this.typingEl = el.querySelector(".typing");
-      this.noteEl = el.querySelector(".note");
       this.input = el.querySelector("textarea");
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
       el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
@@ -4037,13 +4161,15 @@ var HxH = (() => {
     get lastId() {
       return this.messages.length ? this.messages[this.messages.length - 1].id : 0;
     }
-    /** Compose on or off — off with a note in the status line (a buddy who is offline cannot be messaged). */
+    /** Compose on or off — off, the field greys out and says why in italics (a buddy who is offline cannot be messaged). */
     setCanSend(on, note = "") {
       this.canSend = !!on;
-      if (this.input) this.input.disabled = !on;
+      if (this.input) {
+        this.input.disabled = !on;
+        this.input.placeholder = on ? "" : note;
+      }
       const send = this.el?.querySelector('[data-act="send"]');
       if (send) send.disabled = !on;
-      if (this.noteEl) this.noteEl.textContent = on ? "" : note;
     }
     setMessages(list) {
       this.log.replaceChildren();
@@ -4581,7 +4707,7 @@ var HxH = (() => {
     syncCanSend(room, w = this.windows.get(room)) {
       const other = this.otherOf(room);
       if (!w || !other) return;
-      w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline`);
+      w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline.`);
     }
     onPresence({ user, state, last_seen_at }) {
       const c = this.contacts.get(user);

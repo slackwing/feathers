@@ -47,7 +47,8 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.equal(document.querySelector(".os-badge"), null);
   assert.equal(os.desktop.iconBox.hidden, false);
   assert.deepEqual([...os.desktop.iconBox.children].map(b => b.dataset.act), ["hello", "sys", "adm"]);
-  assert.ok(os.taskbar.tray.has("crt") && os.taskbar.tray.has("tr"));
+  assert.ok(os.taskbar.tray.has("settings") && os.taskbar.tray.has("tr"));
+  assert.ok(!os.taskbar.tray.has("crt"));   // the scanlines icon gave way to the Settings gear
   assert.equal(os.taskbar.tray.get("tr").btn.title, "Tray thing");
   const hello = os.registry.get("hello");
   assert.equal(hello.launched, 1);
@@ -58,25 +59,70 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(events.includes("os:ready:andrew") && events.includes("app:launch:hello"));
 });
 
-test("the Start menu lists apps, system items, system apps and Log out", async () => {
+test("the Start menu lists apps, Settings ▸, system apps and Log out; the Settings tree is one source for Start, tray and windows", async () => {
   const { os } = make();
   await os.start({ apps: [Hello, Sys, Tray, AdminOnly], start: true });
   const items = os.startItems();
-  assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Scanlines", "Sounds", "Sys", "-", "Log out"]);
-  assert.equal(items[3].check(), true);
-  items[3].onclick();
-  assert.equal(os.crt.on, false);
-  assert.equal(items[4].check(), true);   // sounds default on
-  items[4].onclick();
+  assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Settings", "Sys", "-", "Log out"]);
+  const labels = list => list.map(i => i.label);
+  const tree = items[3].items();
+  assert.deepEqual(labels(tree), ["Display", "Sounds"]);
+  const display = tree[0].items(), sounds = tree[1].items();
+  assert.deepEqual(labels(display), ["Theme", "Sky", "Scanlines"]);
+  assert.deepEqual(labels(sounds), ["Sounds"]);
+  assert.equal(display[2].check(), false);   // scanlines OFF by default
+  display[2].onclick();
+  assert.equal(os.crt.on, true);
+  assert.ok(document.body.classList.contains("crt"));
+  display[2].onclick();
+  assert.equal(sounds[0].check(), true);    // sounds default on
+  sounds[0].onclick();
   assert.equal(os.sounds.on, false);
-  assert.ok(!document.body.classList.contains("crt"));
+  // radio groups: one check, the choice sticks in localStorage and reaches the page
+  const themes = display[0].items(), skies = display[1].items();
+  assert.deepEqual(labels(themes), ["Win98", "Whale Island Tropical", "Whale Island Sea Pumpkin", "Whale Island Sea Pumpkin Pastel"]);
+  assert.deepEqual(labels(skies), ["Original", "Gradual", "Noisy Gradual", "Hypergradient", "Gradient", "Noisy Gradient"]);
+  assert.deepEqual(themes.map(t => t.check()), [true, false, false, false]);
+  assert.equal(document.documentElement.dataset.theme, "win98");
+  const seen = [];
+  os.bus.on("theme", p => seen.push("theme:" + p.name)); os.bus.on("sky", p => seen.push("sky:" + p.name));
+  themes[1].onclick(); skies[2].onclick();
+  assert.deepEqual(themes.map(t => t.check()), [false, true, false, false]);
+  assert.equal(document.documentElement.dataset.theme, "tropical");
+  assert.equal(d.win.localStorage.getItem("hxh.set.theme"), "tropical");
+  assert.equal(os.sky, "noisy-gradual");
+  assert.deepEqual(seen, ["theme:tropical", "sky:noisy-gradual"]);
+  // the tray gear pops the same tree; window menus get it without icons
+  assert.deepEqual(labels(os.taskbar.tray.get("settings").props.menu()), ["Display", "Sounds"]);
+  const bare = os.settingsItems({ icons: false });
+  assert.deepEqual(labels(bare), ["Display", "Sounds"]);
+  assert.ok(bare.every(i => i.icon === undefined) && bare[0].items().every(i => i.icon === undefined));
+  assert.ok(tree.every(i => i.icon));
   os.startMenu.open();
+  assert.ok(os.startMenu.el.querySelector(".menu.sub .arr"));   // Settings ▸ renders as a cascading item
   assert.equal(os.startMenu.el.querySelector(".user .name").textContent, "Andrew");
   assert.ok(os.taskbar.startButton.el.classList.contains("pressed"));
   os.startMenu.close();
   assert.ok(!os.taskbar.startButton.el.classList.contains("pressed"));
   assert.deepEqual(os.appItems("apps", { except: "hello" }).map(i => i.label), ["Adm"]);
   assert.deepEqual(os.appItems("system", { long: true }).map(i => i.label), ["Sys"]);
+});
+
+test("desktop icons and the Start menu's app entries are one list (the registry); an app must bring a 16×16 icon", async () => {
+  const { os } = make();
+  await os.start({ apps: [Hello, Sys, Tray, AdminOnly], start: true });
+  const onDesktop = [...os.desktop.iconBox.children].map(b => b.querySelector(".cap").textContent);
+  const inStart = [...os.appItems("apps"), ...os.appItems("system")].map(i => i.label);
+  assert.deepEqual([...inStart].sort(), [...onDesktop].sort());   // same set; the Start menu groups system apps after Settings
+  // …and both draw the same grid, at 48 px and 16 px
+  const startIcon = os.startMenu; os.startMenu.open();
+  assert.match(os.desktop.iconBox.querySelector('[data-act="hello"] svg').outerHTML, /width="48" height="48"/);
+  assert.match(startIcon.el.querySelector(".items button svg").outerHTML, /width="16" height="16"/);
+  os.startMenu.close();
+  class Odd extends App { static id = "odd"; static name = "Odd"; static icon = "pumpkin"; }   // 12×12: only the Start button may
+  assert.throws(() => os.registry.register(Odd), /needs a 16×16 icon/);
+  class Nope extends App { static id = "nope"; static name = "Nope"; static icon = "no-such-icon"; }
+  assert.throws(() => os.registry.register(Nope), /needs a 16×16 icon/);
 });
 
 test("logged out + gate: the logon dialog alone, then the desktop after login", async () => {

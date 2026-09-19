@@ -343,7 +343,7 @@ body.logon .icons {
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     5px 5px 0 rgba(0, 0, 0, .5);
 }
-.menu.open .dd,
+.menu.open > .dd,
 .dd.open {
   display: block;
 }
@@ -352,6 +352,40 @@ body.logon .icons {
   bottom: 100%;
   left: auto;
   right: 0;
+}
+.dd .menu.sub,
+.startmenu .items .menu.sub {
+  position: relative;
+}
+.menu.sub > .dd.sub {
+  top: -7px;
+  left: calc(100% + 2px);
+  bottom: auto;
+  right: auto;
+}
+.dd.up .menu.sub > .dd.sub,
+.dd.up .dd.sub .menu.sub > .dd.sub {
+  top: auto;
+  bottom: -7px;
+  left: auto;
+  right: calc(100% + 2px);
+}
+.dd:has(> .chk) > button:not(.chk)::before,
+.dd:has(> .chk) > .menu.sub > button::before,
+.startmenu .items:has(> .chk) > button:not(.chk)::before,
+.startmenu .items:has(> .chk) > .menu.sub > button::before {
+  content: "";
+  width: 1em;
+  flex: none;
+}
+.dd .arr,
+.startmenu .arr {
+  margin-left: auto;
+  padding-left: 12px;
+}
+.menu.sub.open > button {
+  background: var(--blood);
+  color: var(--paper-hi);
 }
 .dd button,
 .startmenu .items button {
@@ -1999,9 +2033,14 @@ body.stacked .pageno {
 .chat .status .conn.off::before {
   background: var(--none);
 }
-.chat .status .note {
+.room .compose textarea:disabled {
+  background: var(--paper-lo);
   color: var(--ink-4);
-  margin-left: auto;
+}
+.room .compose textarea:disabled::placeholder {
+  font-style: italic;
+  color: var(--ink-4);
+  opacity: 1;
 }
 .dot {
   flex: none;

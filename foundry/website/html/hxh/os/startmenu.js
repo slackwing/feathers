@@ -24,7 +24,8 @@ export class StartMenu extends Component {
     }
     const row = h("div", { className: "row" }, h("div", { className: "band", text: band }));
     const box = h("div", { className: "items" });
-    renderItems(this.props.items?.() || [], box, () => this.close());
+    for (const s of this.subs || []) s.unmount();
+    this.subs = renderItems(this.props.items?.() || [], box, () => this.close(), this);
     row.append(box);
     this.el.append(row);
   }
@@ -41,6 +42,7 @@ export class StartMenu extends Component {
 
   close() {
     if (!this.isOpen) return;
+    for (const s of this.subs || []) s.close();
     this.el.classList.remove("open");
     Menus.untrack(this);
     this.emit("close");
@@ -48,5 +50,5 @@ export class StartMenu extends Component {
 
   toggle() { this.isOpen ? this.close() : this.open(); }
 
-  onUnmount() { Menus.untrack(this); }
+  onUnmount() { for (const s of this.subs || []) s.unmount(); Menus.untrack(this); }
 }

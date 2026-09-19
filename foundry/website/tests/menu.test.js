@@ -44,6 +44,48 @@ test("Menu opens/closes, re-renders dynamic items each open, marks its .menu par
   m.unmount(); wrap.remove();
 });
 
+test("submenus cascade: open on click or hover, keep ancestors open, one sibling at a time, a leaf closes the chain", () => {
+  const wrap = document.createElement("div"); wrap.className = "menu"; document.body.append(wrap);
+  const picked = [];
+  const m = new Menu({ items: [
+    { label: "Display", items: () => [{ label: "Theme", items: [{ label: "Win98", onclick: () => picked.push("win98") }] }, { label: "Scanlines", onclick: () => picked.push("crt") }] },
+    { label: "Sounds", items: [{ label: "Sounds" }] },
+    { label: "Leaf", onclick: () => picked.push("leaf") },
+  ] }).mount(wrap);
+  m.open();
+  assert.equal(m.subs.length, 2);
+  const [display, sounds] = m.subs;
+  const btn = sub => sub.el.parentElement.querySelector(":scope > button");
+  assert.match(btn(display).textContent, /Display▸$/);
+  assert.equal(display.isOpen, false);
+  click(btn(display));
+  assert.ok(display.isOpen && m.isOpen, "clicking Display opens it and keeps the root");
+  assert.equal(Menus.openCount, 2);
+  display.el.parentElement.dispatchEvent(new window.Event("mouseenter"));   // hovering again is harmless
+  sounds.el.parentElement.dispatchEvent(new window.Event("mouseenter"));
+  assert.ok(sounds.isOpen && !display.isOpen && m.isOpen, "hovering a sibling swaps the open submenu");
+  click(btn(display));
+  const theme = display.subs[0];
+  click(btn(theme));
+  assert.ok(theme.isOpen && display.isOpen && m.isOpen, "three levels deep, all ancestors open");
+  assert.equal(Menus.openCount, 3);
+  [...display.el.querySelectorAll(":scope > button")].find(b => b.textContent === "Scanlines").dispatchEvent(new window.Event("mouseenter"));
+  assert.ok(!theme.isOpen && display.isOpen, "hovering a leaf folds the sibling submenu");
+  click(btn(theme));
+  click(theme.el.querySelector("button"));   // Win98
+  assert.deepEqual(picked, ["win98"]);
+  assert.ok(!theme.isOpen && !display.isOpen && !m.isOpen, "a leaf pick closes the whole chain");
+  m.open();   // re-rendered: fresh submenu instances, the old ones unmounted
+  assert.equal(m.subs.length, 2);
+  assert.equal(display.el.parentElement, null);
+  click(btn(m.subs[0])); key(document.body, "Escape");
+  assert.equal(Menus.openCount, 0);
+  m.open();
+  m.close();
+  m.unmount(); wrap.remove();
+  assert.equal(Menus.openCount, 0);
+});
+
 test("only one menu is open at a time; document click and Escape close everything", () => {
   const a = new Menu({ items: [{ label: "a" }] }).mount(document.body);
   const b = new Menu({ items: [{ label: "b" }] }).mount(document.body);
