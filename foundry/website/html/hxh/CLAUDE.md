@@ -251,7 +251,8 @@ component architecture (many windows, tray icons + menus, the bus).
   edge, drawn after AIM 4.x / MSN 4.x from screenshots Andrew asked me
   to study: a status banner with your avatar and "(Online)", Online /
   List tabs (`.ltabs` — the binder owns `.tabs` unscoped), a sunken
-  tree of collapsible groups — Buddies (present/total), Bots, Offline
+  tree of collapsible groups — Buddies (present/total), Bots
+  (`is_bot` members: the thirteen chat bots, `docs/HXH_BOTS.md`), Offline
   — with away and offline names in grey italics and "(Away)" / "(No
   password)" suffixes, an icon toolbar IM / Info / Global acting on
   the selected buddy, and a status bar "Connected · n of m online";

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>admin</title>
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
 <main>
@@ -57,6 +57,14 @@
         </tr>
       </tfoot>
     </table>
+
+    <section id="bots-section" class="hidden">
+      <h2>Bots <span class="note">programs run by hobby-server against the public site</span></h2>
+      <table class="bots">
+        <thead><tr><th>Program</th><th>Enabled</th><th>Last tick</th><th>Ticks</th><th>Hooks</th></tr></thead>
+        <tbody id="bots"></tbody>
+      </table>
+    </section>
   </section>
 
 </main>
@@ -153,13 +161,45 @@ async function refresh() {
   users = await api("/users");
   $("cs").innerHTML = websites.map(w => `<option value="${esc(w.website)}"${w.website === "hxh" ? " selected" : ""}>${esc(w.website)}</option>`).join("");
   renderUsers();
+  await refreshBots();
+}
+
+// ---- bot programs (404 when the bot service is off: section hidden) ----
+async function refreshBots() {
+  let programs;
+  try { programs = await api("/bots"); } catch { $("bots-section").classList.add("hidden"); return; }
+  $("bots-section").classList.remove("hidden");
+  const tbody = $("bots");
+  tbody.innerHTML = "";
+  for (const p of programs) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nowrap"><code>${esc(p.name)}</code></td>
+      <td><label class="switch"><input type="checkbox"${p.enabled ? " checked" : ""}> <span>${p.enabled ? "on" : "off"}</span></label></td>
+      <td class="dim">${p.last_tick && !p.last_tick.startsWith("0001") ? new Date(p.last_tick).toLocaleString() : "—"}</td>
+      <td>${p.ticks}</td><td>${p.hooks}</td>`;
+    tr.querySelector("input").addEventListener("change", e => act(async () => {
+      await api(`/bots/${encodeURIComponent(p.name)}`, { method: "PUT", body: JSON.stringify({ enabled: e.target.checked }) });
+      flash(`${p.name} ${e.target.checked ? "enabled" : "disabled"}`);
+      await refreshBots();
+    }));
+    tbody.append(tr);
+  }
 }
 
 // ---- table ----
 function renderUsers() {
   const tbody = $("users");
   tbody.innerHTML = "";
-  for (const u of users) tbody.append(row(u));
+  const people = users.filter(u => !u.is_bot), bots = users.filter(u => u.is_bot);
+  for (const u of people) tbody.append(row(u));
+  if (bots.length) {
+    const div = document.createElement("tr");
+    div.className = "divider";
+    div.innerHTML = `<td colspan="8">Bots <span class="dim">— fake users driven by hobby-server's bot programs; passwords are provisioned by the service</span></td>`;
+    tbody.append(div);
+    for (const u of bots) tbody.append(row(u));
+  }
 }
 
 function row(u) {
@@ -169,7 +209,7 @@ function row(u) {
   const roleSites = websites.filter(w => w.roles.length);
   tr.innerHTML = `
     <td>${avatarHTML(u).replace('<span class="avatar"', '<button type="button" class="avatar" title="initial and colour"').replace("</span>", "</button>")}</td>
-    <td class="user nowrap"><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "no password yet"}"></span>${esc(u.username)}</td>
+    <td class="user nowrap"><span class="dot ${u.has_password ? "set" : "unset"}" title="${u.has_password ? "password set" : "no password yet"}"></span>${esc(u.username)}${u.is_bot ? ' <span class="bot" title="bot">bot</span>' : ""}</td>
     <td><span class="edit" data-field="display_name">${esc(u.display_name)}</span></td>
     <td><span class="edit${u.email ? "" : " empty"}" data-field="email">${esc(u.email || "add email")}</span></td>
     <td><select class="site" title="the site invites, resets and emails act on">${siteOpts}</select></td>

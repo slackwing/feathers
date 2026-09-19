@@ -177,3 +177,11 @@ input.inline { width: auto; max-width: 100%; min-width: 0; padding: .15rem .35re
 .dot.unset { background: var(--warn); }
 
 .hidden { display: none !important; }
+
+/* bots: the divider row and the badge next to a bot's username; the programs table */
+tr.divider td { background: var(--panel-2); font-weight: 600; padding-top: .9rem; border-top: 2px solid var(--line, #ddd); }
+tr.divider .dim { font-weight: 400; }
+.bot { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; padding: .1rem .35rem; margin-left: .4rem; border-radius: 3px; background: #6f42c1; color: #fff; vertical-align: middle; }
+table.bots { margin-top: .5rem; }
+.switch { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.switch input { width: auto; margin: 0; }

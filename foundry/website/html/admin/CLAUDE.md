@@ -42,3 +42,13 @@ guide: `~/src/hobby-server/docs/SHARED_AUTH.md`.
 
 The gate this powers on sites (e.g. hxh) is client-side UX only —
 static HTML remains fetchable by URL; the protection is for API data.
+
+## Bots (2026-09-19)
+
+Users with `is_bot` (hobby-server admin changeset 007) are listed AFTER
+real users under a "Bots" divider row, with a purple `bot` badge next to
+the username; their passwords are provisioned by hobby-server's bot
+service, not by invite. Below the Users table, a "Bots" section lists
+the bot programs (`GET /admin/api/bots`) with an on/off switch
+(`PUT /admin/api/bots/{name}`); it hides itself when the bot service is
+off (404). Spec: `foundry/website/docs/HXH_BOTS.md`.
