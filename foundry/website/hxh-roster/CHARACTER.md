@@ -1,3 +1,6 @@
+> Superseded 2026-09-19 by the `hxh-character` skill (`.claude/skills/hxh-character/SKILL.md`)
+> and the Roster DB at `/hxh/roster/`. This checklist described the roster.json process.
+
 # Adding a character to the hxh roster — the checklist
 
 Every character card in the Binder (`html/hxh/`) is one entry in

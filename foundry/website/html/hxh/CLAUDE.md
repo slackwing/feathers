@@ -627,3 +627,37 @@ under `/.staging/` for previews. Before deploying: `cd
 foundry/website && npm run check` (rebuilds `hxh.js`/`hxh.css` and
 runs the tests), then bump the `?v=` on `hxh.js`/`hxh.css` in
 `index.html`, `_invite/index.html` and `_reset/index.html`.
+
+## Roster DB (2026-09-19)
+
+The curated character base, rebuilt from scratch one character at a
+time (Andrew: the 2026-09-17 automated roster lost too much quality;
+`roster.json` is now only a cross-check). Two halves:
+
+- **`roster/`** — the admin page at `/hxh/roster/`, deliberately in the
+  PLAIN administrative base style (`/admin/assets/style.css`, like
+  `_email/`), not the OS theme, and NOT part of the esbuild bundle:
+  `index.html` + `roster.js` + `roster.css` (list with status tabs and
+  a new-character row; a profile with avatar 1:1 and card 2:3 slots,
+  in-place fields that PATCH on change, and a gallery by type — raw,
+  cropped, pixel art, upscaled, transparent — newest first; click a
+  tile to select and act via the bottom bar: Avatar, Card, Crop, Open,
+  Reject (raws only, remembered so the skill never refetches), Delete;
+  double-click opens the crop tool; drop files on the raw section to
+  upload) and `crop.html` + `crop.js` (the picture at native size or
+  Fit, one crop box, freeform or 1:1 · 2:3 · 3:2 · 4:5 · 5:4 · 16:9 ·
+  9:16, arrows nudge, Enter saves; the SERVER cuts the exact source
+  pixels; a BroadcastChannel refreshes the profile tab). Backend:
+  hobby-server `internal/hxh/rosterdb.go`, tables `hxh_char` +
+  `hxh_char_image` (changeset 006), API `/hxh/api/db/*` — writes need
+  hxh admin, picture reads any hxh role.
+- **The skill** `.claude/skills/hxh-character/SKILL.md` (repo root)
+  is the process for adding ONE character as pending, with tools in
+  `foundry/website/hxh-roster/`: `roster.py` (the API; credentials in
+  `~/.claude/hxh-roster.env`) and `wiki.py` (Fandom via the MediaWiki
+  API). Andrew's reviews feed back into the skill text — that is the
+  point. `CHARACTER.md` there is the superseded roster.json checklist.
+
+Pictures are anime stills from the wiki (and Andrew's own uploads),
+so the "no copyrighted art" line under Design direction no longer
+holds for character pictures; the site chrome stays original.

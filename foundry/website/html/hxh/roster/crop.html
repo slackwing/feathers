@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Crop · Roster DB</title>
+<link rel="stylesheet" href="/admin/assets/style.css?v=4">
+<style>
+  /* Crop — opened from the gallery in its own tab: the picture at its
+     original resolution and one crop box. */
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  header.top { margin: 0; padding: .55rem 1rem; gap: .8rem; flex-wrap: wrap; background: var(--panel); }
+  header.top h1 { white-space: nowrap; }
+  header.top h1 .dim { font-weight: 400; }
+  .seg { display: inline-flex; }
+  .seg button { border-radius: 0; margin-left: -1px; }
+  .seg button:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+  .seg button:last-child { border-radius: 0 4px 4px 0; }
+  .seg button.on { position: relative; z-index: 1; }
+  .readout { color: var(--dim); font-variant-numeric: tabular-nums; min-width: 12rem; }
+  .right { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
+  #stage { flex: 1; overflow: auto; background: #3a3a38; position: relative; }
+  #wrap { position: relative; margin: 0 auto; touch-action: none; cursor: crosshair; }
+  #wrap img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+  #wrap.pixel img { image-rendering: pixelated; }
+  #box { position: absolute; box-sizing: border-box; border: 1px solid #fff; box-shadow: 0 0 0 100vmax rgba(0,0,0,.5); cursor: move;
+    background-image: linear-gradient(rgba(255,255,255,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.28) 1px, transparent 1px);
+    background-size: 33.34% 33.34%; background-position: -1px -1px; }
+  #box[hidden] { display: none; }
+  .h { position: absolute; width: 10px; height: 10px; background: #fff; border: 1px solid #333; box-sizing: border-box; }
+  .h.n { top: -5px; left: calc(50% - 5px); cursor: ns-resize; } .h.s { bottom: -5px; left: calc(50% - 5px); cursor: ns-resize; }
+  .h.e { right: -5px; top: calc(50% - 5px); cursor: ew-resize; } .h.w { left: -5px; top: calc(50% - 5px); cursor: ew-resize; }
+  .h.ne { top: -5px; right: -5px; cursor: nesw-resize; } .h.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+  .h.nw { top: -5px; left: -5px; cursor: nwse-resize; } .h.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+  .msg { margin: 0; }
+  #saved a { margin-left: .3rem; }
+  .card.narrow { margin-top: 12vh; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="title">Crop</h1>
+  <div class="seg" id="ratios"></div>
+  <button type="button" id="fit">Fit</button>
+  <span class="readout" id="readout"></span>
+  <span class="msg" id="saved"></span>
+  <span class="right">
+    <span class="msg err" id="err"></span>
+    <button type="button" class="primary" id="save" disabled>Crop and save</button>
+  </span>
+</header>
+<div id="stage">
+  <div id="wrap" hidden>
+    <img id="img" alt="">
+    <div id="box" hidden>
+      <div class="h n" data-h="n"></div><div class="h s" data-h="s"></div><div class="h e" data-h="e"></div><div class="h w" data-h="w"></div>
+      <div class="h ne" data-h="ne"></div><div class="h nw" data-h="nw"></div><div class="h se" data-h="se"></div><div class="h sw" data-h="sw"></div>
+    </div>
+  </div>
+  <section id="denied" class="card narrow hidden"><h1>Roster DB</h1><p class="msg">Log in at <a href="/hxh/roster/">Roster DB</a> first.</p></section>
+</div>
+<script src="crop.js?v=1"></script>
+</body>
+</html>
