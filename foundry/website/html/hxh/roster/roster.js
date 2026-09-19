@@ -299,10 +299,11 @@
   function tile(im) {
     const c = state.cur;
     const roles = [c.avatar_image_id === im.id && "avatar", c.card_image_id === im.id && "card"].filter(Boolean).join(" · ");
-    const from = im.source_image_id ? `<span>from #${im.source_image_id}</span>` : "";
+    const from = im.source_image_id ? `from #${im.source_image_id}` : "";
+    const line2 = [from, im.caption].filter(Boolean).join(" · ");
     return `<figure class="tile ${im.status} ${["pixelated", "transparent"].includes(im.type) ? "pixel" : ""}" data-id="${im.id}" title="${esc(im.caption)}">
       <div class="pic"><img alt="" src="${API}/images/${im.id}/thumb" loading="lazy"></div>
-      <figcaption><b>#${im.id}</b><span>${im.width}×${im.height}</span>${from}<span class="cap">${esc(im.caption)}</span><span class="badge2">${roles}</span></figcaption>
+      <figcaption><div class="l1"><b>#${im.id}</b><span>${im.width}×${im.height}</span><span class="badge2">${roles}</span></div><div class="l2">${esc(line2)}</div></figcaption>
     </figure>`;
   }
   function markSel() {

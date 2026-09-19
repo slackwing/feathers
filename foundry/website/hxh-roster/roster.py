@@ -145,13 +145,23 @@ def http_get(url):
 
 
 def pixelate(data, size=96, colors=32):
-    from PIL import Image
+    """Pixel art at its true size: shrink with Lanczos, then quantize with
+    no dither. libimagequant keeps the anime palette (Gon's yellow eyes
+    stayed yellow); median cut turned everything brown. Compared
+    2026-09-19 on Gon's portrait crop; fallback = octree + a little
+    saturation, the runner-up."""
+    from PIL import Image, ImageEnhance
     im = Image.open(io.BytesIO(data)).convert("RGBA")
     w, h = im.size
     scale = size / max(w, h)
     small = im.resize((max(1, round(w * scale)), max(1, round(h * scale))), Image.LANCZOS)
-    rgb = small.convert("RGB").quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
-    outim = Image.merge("RGBA", (*rgb.split(), small.getchannel("A")))
+    rgb = small.convert("RGB")
+    try:
+        q = rgb.quantize(colors=colors, method=Image.Quantize.LIBIMAGEQUANT, dither=Image.Dither.NONE)
+    except Exception:
+        rgb = ImageEnhance.Color(rgb).enhance(1.2)
+        q = rgb.quantize(colors=colors, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+    outim = Image.merge("RGBA", (*q.convert("RGB").split(), small.getchannel("A")))
     buf = io.BytesIO()
     outim.save(buf, "PNG", optimize=True)
     return buf.getvalue()
