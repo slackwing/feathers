@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
-import { GICard, KINDS, LIMIT, cardNo, rankLimit, panelPath, foilURI, fitText, NAME_MAX, NAME_MIN } from "../html/hxh/apps/card.js";
+import { GICard, KINDS, LIMIT, cardNo, rankLimit, panelPath, foilURI, fitText, NAME_MAX, NAME_MIN, rgbToHsl, hslToHex, isSkin, isInteresting, interestingPalette, foilFromPalette } from "../html/hxh/apps/card.js";
 
 test("numbers and rank-limits print as the cards do", () => {
   assert.equal(cardNo(7), "007");
@@ -65,4 +65,30 @@ test("GICard renders the gi-plaque, gi-frame and gi-band from its props alone; k
   const u = new GICard({ no: 1, name: "X", kind: "bogus" });
   u.mount(d.doc.body);
   assert.ok(u.el.classList.contains("kind-restricted"), "unknown kinds fall back to the red specified-slot card");
+});
+
+test("the picture's palette: saturated mid-light hues count, skin / white / black do not; the strongest hue colours the foil, a second hue its veins", () => {
+  assert.deepEqual(rgbToHsl(255, 0, 0).map(v => Math.round(v * 100) / 100), [0, 1, 0.5]);
+  assert.equal(hslToHex(120, 1, 0.5), "#00ff00");
+  assert.equal(hslToHex(0, 0, 1), "#ffffff");
+  assert.ok(isSkin(...rgbToHsl(222, 184, 150)), "peach is skin");
+  assert.ok(!isInteresting(...rgbToHsl(222, 184, 150)));
+  assert.ok(!isInteresting(...rgbToHsl(250, 250, 250)) && !isInteresting(...rgbToHsl(10, 10, 12)) && !isInteresting(...rgbToHsl(120, 120, 120)));
+  assert.ok(isInteresting(...rgbToHsl(40, 170, 60)) && isInteresting(...rgbToHsl(200, 30, 40)) && isInteresting(...rgbToHsl(30, 80, 200)));
+  const px = [];
+  const put = (rgb, n) => { for (let i = 0; i < n; i++) px.push(...rgb, 255); };
+  put([40, 170, 60], 120); put([60, 190, 80], 60); put([222, 184, 150], 200); put([250, 250, 250], 300); put([12, 12, 12], 200); put([30, 80, 200], 50);
+  const pal = interestingPalette(new Uint8ClampedArray(px));
+  assert.equal(pal.count, 230);
+  assert.ok(pal.dominant[0] > 110 && pal.dominant[0] < 135, "green wins: " + pal.dominant[0]);
+  assert.ok(pal.second && pal.second[0] > 210 && pal.second[0] < 235, "blue is the second hue: " + JSON.stringify(pal.second));
+  const f = foilFromPalette(pal);
+  assert.match(f.foil, /^#[0-9a-f]{6}$/);
+  const [fh] = rgbToHsl(...[1, 3, 5].map(i => parseInt(f.foil.slice(i, i + 2), 16)));
+  assert.ok(fh > 110 && fh < 135, "the foil is green: " + f.foil);
+  const [lh] = rgbToHsl(...[1, 3, 5].map(i => parseInt(f.foilLo.slice(i, i + 2), 16)));
+  assert.ok(lh > 210 && lh < 235, "the veins are blue: " + f.foilLo);
+  assert.deepEqual(foilFromPalette({ dominant: null, count: 0 }, "spell"), KINDS.spell);
+  assert.deepEqual(interestingPalette(new Uint8ClampedArray([250, 250, 250, 255])), { dominant: null, second: null, count: 0 });
+  assert.equal(foilURI({ foil: "#123456", foilHi: "#abcdef", foilLo: "#000000" }).includes(encodeURIComponent("#123456")), true);
 });

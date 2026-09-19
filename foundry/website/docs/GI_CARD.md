@@ -53,9 +53,24 @@ exactly 16:9 (the print is 1.76:1).
   (`foilURI`).
 - White inset (`#efeff0`) inset **4.1** on every side, dark outline
   **0.65**, corner radius **1.3**, text padding **4.7** left, **3.2** top.
-- Text: plain gothic (Zen Kaku Gothic New 400), size **3.15**, line height
-  1.32, left aligned, dark grey. The print fits 5–7 lines; ours holds
-  the `card_description` from the Roster DB (target ≤ 40 words).
+- Text: the rules-text face of a real trading card, an old-style serif
+  (Crimson Pro 500), size **4.5**, line height 1.28, left aligned, near
+  black (Andrew: the print's gothic read too small). Ours holds the
+  `card_description` from the Roster DB (target 25–40 words).
+- Foil colour (Andrew, 2026-09-19): not the kind's fixed colour but the
+  picture's own — pixels that are saturated and mid-light and not
+  skin-toned are binned by hue (24 × 15°); the strongest hue is the
+  base and highlight, a second distant hue darkens the veins
+  (`interestingPalette`, `foilFromPalette`, `paletteOfImage`). A
+  picture with nothing interesting keeps the kind's colour.
+
+## In the Binder
+
+The card is the anchor: `CARD_W` = 150 book pixels; a page is exactly
+3 × 3 cards (+ 12 gaps, 20 padding, a 30 page-number strip), the book is
+two pages and a 50 spine, and the whole book is shown at `BINDER_ZOOM`
+1.1 (CSS zoom, applied once — never a transform, never per-value
+maths). A small desktop shrinks the card to fit; it never grows.
 
 ## What a character card prints
 

@@ -1151,18 +1151,9 @@ body.stacked .taskbar .task {
   top: 80.95cqw;
   width: 94.6cqw;
   height: 56.65cqw;
-  background: var(--foil) center / 100% 100% no-repeat, #d4577c;
+  background: var(--foil) center / 100% 100% no-repeat, var(--foil-base, #d4577c);
   padding: 4.1cqw;
   box-sizing: border-box;
-}
-.gicard.kind-spell .gi-band {
-  background-color: #4c6cc0;
-}
-.gicard.kind-free .gi-band {
-  background-color: #d8b23c;
-}
-.gicard.kind-master .gi-band {
-  background-color: #2a2a2e;
 }
 .gicard .gi-inset {
   width: 100%;
@@ -1177,13 +1168,13 @@ body.stacked .taskbar .task {
 .gicard .gi-desc {
   margin: 0;
   font:
-    400 3.5cqw/1.34 "Zen Kaku Gothic New",
-    "Noto Sans",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  color: #202020;
-  letter-spacing: 0.005em;
+    500 4.5cqw/1.28 "Crimson Pro",
+    "Crimson Text",
+    Georgia,
+    "Times New Roman",
+    serif;
+  color: #1e1e1e;
+  letter-spacing: 0.002em;
   overflow-wrap: anywhere;
 }
 
@@ -1484,7 +1475,7 @@ body.stacked .taskbar .task {
 }
 .page {
   position: relative;
-  padding: 30px 18px 22px;
+  padding: 20px 20px 50px;
   background:
     repeating-linear-gradient(
       45deg,
@@ -1499,8 +1490,8 @@ body.stacked .taskbar .task {
 }
 .tabs {
   position: absolute;
-  left: 18px;
-  right: 18px;
+  left: 20px;
+  right: 20px;
   bottom: 100%;
   display: flex;
   flex-wrap: wrap-reverse;
@@ -1535,13 +1526,12 @@ body.stacked .taskbar .task {
   filter: brightness(.95);
 }
 .cards {
-  flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(3, var(--cardw, 150px));
+  grid-template-rows: repeat(3, var(--cardh, 210px));
   gap: 12px;
-  margin-top: 5px;
-  min-height: 0;
+  justify-content: center;
+  align-content: start;
 }
 .slot {
   border: var(--px) dashed rgba(255, 255, 255, .18);
@@ -1565,7 +1555,7 @@ body.stacked .taskbar .task {
   container-type: size;
 }
 .card .gicard {
-  width: min(100%, calc(100cqh * 1475 / 2072));
+  width: 100%;
   filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, .45));
 }
 .card:hover .gicard {

@@ -2853,8 +2853,79 @@ var HxH = (() => {
   var LIMIT = { SS: 1, S: 1, A: 2, B: 3, C: 4 };
   var NAME_MAX = 7.4;
   var NAME_MIN = 3.2;
+  var rgbToHsl = (r, g, b) => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min, s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h2 = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h2 * 60, s, l];
+  };
+  var hslToHex = (h2, s, l) => {
+    h2 = (h2 % 360 + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(h2 / 60 % 2 - 1)), m = l - c / 2;
+    const [r, g, b] = h2 < 60 ? [c, x, 0] : h2 < 120 ? [x, c, 0] : h2 < 180 ? [0, c, x] : h2 < 240 ? [0, x, c] : h2 < 300 ? [x, 0, c] : [c, 0, x];
+    return "#" + [r, g, b].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("");
+  };
+  var isSkin = (h2, s, l) => h2 >= 8 && h2 <= 45 && s <= 0.62 && l >= 0.35 && l <= 0.9;
+  var isInteresting = (h2, s, l) => s >= 0.32 && l >= 0.16 && l <= 0.82 && !isSkin(h2, s, l);
+  function interestingPalette(data, { step = 1 } = {}) {
+    const bins = Array.from({ length: 24 }, () => ({ w: 0, sx: 0, sy: 0, s: 0, l: 0, n: 0 }));
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4 * step) {
+      if (data[i + 3] < 128) continue;
+      const [h2, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+      if (!isInteresting(h2, s, l)) continue;
+      const b = bins[Math.floor(h2 / 15) % 24], w = s * (1 - Math.abs(l - 0.5));
+      b.w += w;
+      b.sx += Math.cos(h2 * Math.PI / 180) * w;
+      b.sy += Math.sin(h2 * Math.PI / 180) * w;
+      b.s += s * w;
+      b.l += l * w;
+      b.n++;
+      count++;
+    }
+    if (!count) return { dominant: null, second: null, count: 0 };
+    const merged = bins.map((b, i) => {
+      const p = bins[(i + 23) % 24], n = bins[(i + 1) % 24];
+      return { i, w: b.w + p.w * 0.5 + n.w * 0.5, sx: b.sx + p.sx * 0.5 + n.sx * 0.5, sy: b.sy + p.sy * 0.5 + n.sy * 0.5, s: b.s + p.s * 0.5 + n.s * 0.5, l: b.l + p.l * 0.5 + n.l * 0.5 };
+    });
+    const hsl = (m) => [(Math.atan2(m.sy, m.sx) * 180 / Math.PI + 360) % 360, m.s / m.w, m.l / m.w];
+    const order = [...merged].sort((a, b) => b.w - a.w);
+    const top = order[0];
+    const far = order.find((m) => m.w > 0 && Math.min(Math.abs(m.i - top.i), 24 - Math.abs(m.i - top.i)) >= 4);
+    return { dominant: hsl(top), second: far && far.w >= top.w * 0.18 ? hsl(far) : null, count };
+  }
+  function foilFromPalette(pal, kind = "restricted") {
+    if (!pal?.dominant) return KINDS[kind] || KINDS.restricted;
+    const [h2, s] = pal.dominant, sat = Math.min(0.85, Math.max(0.45, s * 1.15));
+    const veinH = pal.second ? pal.second[0] : h2;
+    return { foil: hslToHex(h2, sat, 0.5), foilHi: hslToHex(h2, sat * 0.9, 0.72), foilLo: hslToHex(veinH, sat, 0.28) };
+  }
+  var paletteCache = /* @__PURE__ */ new Map();
+  function paletteOfImage(img, doc = document) {
+    const key = img.currentSrc || img.src;
+    if (paletteCache.has(key)) return paletteCache.get(key);
+    let pal = null;
+    try {
+      const c = doc.createElement("canvas");
+      c.width = 64;
+      c.height = 36;
+      const ctx = c.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, 64, 36);
+        pal = interestingPalette(ctx.getImageData(0, 0, 64, 36).data);
+      }
+    } catch {
+      pal = null;
+    }
+    paletteCache.set(key, pal);
+    return pal;
+  }
   function foilURI(kind) {
-    const k = KINDS[kind] || KINDS.restricted;
+    const k = typeof kind === "object" && kind ? kind : KINDS[kind] || KINDS.restricted;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240">
     <filter id="f" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.07 0.09" numOctaves="4" seed="11"/>
       <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 2.2 -0.55"/></filter>
@@ -2882,15 +2953,30 @@ var HxH = (() => {
       const el = h("div", { className: `gicard kind-${kind}`, dataset: { no: cardNo(p.no) } });
       this.body = h("div", { className: "gi-body" });
       el.append(this.body);
-      this.body.style.setProperty("--foil", `url("${foilURI(kind)}")`);
+      this.setFoil(KINDS[kind]);
       const panel = (cls, text) => h("div", { className: `gi-panel ${cls}` }, h("span", { className: "gi-txt", text }));
       this.plaque = h("div", { className: "gi-plaque" }, panel("no", cardNo(p.no)), panel("name", p.name || ""), panel("rank", rankLimit(p.rank)));
       for (const pn of this.plaque.children) pn.prepend(this.outline());
-      this.frame = h("div", { className: "gi-frame" }, h("div", { className: "gi-pic" }, p.image ? h("img", { alt: p.alt || p.name || "", src: p.image, draggable: "false" }) : h("div", { className: "gi-nopic" })));
+      this.img = p.image ? h("img", { alt: p.alt || p.name || "", src: p.image, draggable: "false" }) : null;
+      this.frame = h("div", { className: "gi-frame" }, h("div", { className: "gi-pic" }, this.img || h("div", { className: "gi-nopic" })));
+      if (this.img && p.foilFrom !== "kind") {
+        const paint = () => {
+          const pal = paletteOfImage(this.img, this.img.ownerDocument);
+          if (pal?.dominant) this.setFoil(foilFromPalette(pal, kind));
+        };
+        if (this.img.complete && this.img.naturalWidth) paint();
+        else this.img.addEventListener("load", paint, { once: true });
+      }
       this.band = h("div", { className: "gi-band" }, h("div", { className: "gi-inset" }, h("p", { className: "gi-desc", text: p.description || "" })));
       this.body.append(this.plaque, this.frame, this.band);
       this.nameEl = this.plaque.querySelector(".gi-panel.name .gi-txt");
       return el;
+    }
+    /** Colour the band: { foil, foilHi, foilLo }. */
+    setFoil(colors) {
+      this.foil = colors;
+      this.body.style.setProperty("--foil", `url("${foilURI(colors)}")`);
+      this.body.style.setProperty("--foil-base", colors.foil);
     }
     outline() {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -2980,14 +3066,26 @@ var HxH = (() => {
     }
     return out;
   }
+  var CARD_W = 150;
+  var CARD_RATIO = 2072 / 1475;
+  var BINDER_ZOOM = 1.1;
+  var GAP = 12;
+  var PAD = 20;
+  var PAGENO = 30;
+  var SPINE = 50;
   var TASKBAR = 45;
   var TABS = 46;
-  function binderLayout(vw, vh) {
-    const w0 = Math.min(vw - 48, 1180), h0 = Math.min(vh - 100, 780);
-    const bw = Math.round((vw + w0) / 2);
-    const bh = Math.min(Math.round((vh - TASKBAR + h0) / 2), vh - TASKBAR - TABS - 16);
-    const pw = Math.floor((bw - 50) / 2);
-    return { bw, bh, pw, x: Math.max(16, Math.round((vw - bw) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - bh) / 2)) };
+  function binderLayout(vw, vh, { card = CARD_W, zoom = BINDER_ZOOM } = {}) {
+    const size = (cw2) => {
+      const ch = cw2 * CARD_RATIO, pw = 3 * cw2 + 2 * GAP + 2 * PAD;
+      return { cw: cw2, ch, pw, bw: 2 * pw + SPINE, bh: 3 * ch + 2 * GAP + 2 * PAD + PAGENO };
+    };
+    const availW = (vw - 32) / zoom, availH = (vh - TASKBAR - TABS - 16) / zoom;
+    const cw = Math.max(40, Math.min(card, (availW - 4 * GAP - 4 * PAD - SPINE) / 6, (availH - 2 * GAP - 2 * PAD - PAGENO) / (3 * CARD_RATIO)));
+    let l = size(cw);
+    const r = (o) => Math.round(o * 100) / 100;
+    l = { cw: r(l.cw), ch: r(l.ch), pw: r(l.pw), bw: r(l.bw), bh: r(l.bh) };
+    return { ...l, zoom, x: Math.max(16, Math.round((vw - l.bw * zoom) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - l.bh * zoom) / 2)) };
   }
   var BOOK = `
   <div class="book closed">
@@ -3120,6 +3218,9 @@ var HxH = (() => {
       el.style.setProperty("--bw", l.bw + "px");
       el.style.setProperty("--bh", l.bh + "px");
       el.style.setProperty("--pw", l.pw + "px");
+      el.style.setProperty("--cardw", l.cw + "px");
+      el.style.setProperty("--cardh", l.ch + "px");
+      el.style.zoom = String(l.zoom);
       for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
@@ -4938,7 +5039,7 @@ var HxH = (() => {
     ["notes", "Notes"]
   ];
   var AVATAR_RATIO = 1;
-  var CARD_RATIO = 16 / 9;
+  var CARD_RATIO2 = 16 / 9;
   var CARD_RATIO_LABEL = "16:9";
   var LABEL = Object.fromEntries(FIELDS);
   var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
@@ -5346,7 +5447,7 @@ var HxH = (() => {
       for (const b of tools.querySelectorAll("[data-img]")) if (b.dataset.img !== "upload") b.disabled = !im;
       if (im) {
         tools.querySelector('[data-img="avatar"]').disabled = !eligible(im, AVATAR_RATIO);
-        tools.querySelector('[data-img="card"]').disabled = !eligible(im, CARD_RATIO);
+        tools.querySelector('[data-img="card"]').disabled = !eligible(im, CARD_RATIO2);
         tools.querySelector('[data-img="avatar"]').classList.toggle("pressed", this.char.avatar_image_id === id);
         tools.querySelector('[data-img="card"]').classList.toggle("pressed", this.char.card_image_id === id);
         this.selEl.textContent = `#${im.id} \xB7 ${im.type} \xB7 ${im.width}\xD7${im.height} \xB7 ${Math.round(im.bytes / 1024)} KB`;
@@ -5627,7 +5728,7 @@ var HxH = (() => {
   var PALETTE = ["#000000", "#808080", "#800000", "#ff0000", "#ff7f27", "#ffff00", "#22b14c", "#008000", "#00ffff", "#0000ff", "#000080", "#800080", "#ff00ff", "#804000", "#c0c0c0", "#ffffff"];
   var EXPAND_PX = 20;
   var PRESET_SHARE = 0.6;
-  var LABELS = { [AVATAR_RATIO]: "1:1 Avatar", [CARD_RATIO]: `${CARD_RATIO_LABEL} Card` };
+  var LABELS = { [AVATAR_RATIO]: "1:1 Avatar", [CARD_RATIO2]: `${CARD_RATIO_LABEL} Card` };
   var MIN_WIDTH = 720;
   var CropWindow = class extends Window {
     /** props: image {id,width,height,type}, char {id,name}, src (url), desktop {vw,vh}, ratio, menus */

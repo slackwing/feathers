@@ -80,17 +80,29 @@ export function paginate(chars) {
   return out;
 }
 
-/* Size to the viewport (most of the screen). Andrew: "fill halfway the
-   margins" of the first sizing (up to 1180×780 with 24px/50px gutters) —
-   so the binder takes the midpoint between that and the full desktop
-   above the taskbar. Two rows of tabs can hang above the page. */
-export const TASKBAR = 45, TABS = 46;
-export function binderLayout(vw, vh) {
-  const w0 = Math.min(vw - 48, 1180), h0 = Math.min(vh - 100, 780);
-  const bw = Math.round((vw + w0) / 2);
-  const bh = Math.min(Math.round((vh - TASKBAR + h0) / 2), vh - TASKBAR - TABS - 16);
-  const pw = Math.floor((bw - 50) / 2);
-  return { bw, bh, pw, x: Math.max(16, Math.round((vw - bw) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - bh) / 2)) };
+/* The card is the anchor (Andrew, 2026-09-19: "i like the card size, so
+   make that the anchor to compute the binder size around"): a page is
+   exactly a 3 × 3 grid of cards plus its gaps, padding and the page
+   number; the book is two pages and the spine; the right panel mirrors
+   the page. The whole book is then shown at BINDER_ZOOM (CSS zoom —
+   not a transform, not per-value maths). When the desktop is too small
+   the card shrinks to fit, never grows. Tabs hang above the page. */
+export const CARD_W = 150;                 // a card's width in book pixels, before the zoom
+export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
+export const BINDER_ZOOM = 1.1;
+export const GAP = 12, PAD = 20, PAGENO = 30, SPINE = 50, TASKBAR = 45, TABS = 46;
+export function binderLayout(vw, vh, { card = CARD_W, zoom = BINDER_ZOOM } = {}) {
+  const size = cw => {
+    const ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
+    return { cw, ch, pw, bw: 2 * pw + SPINE, bh: 3 * ch + 2 * GAP + 2 * PAD + PAGENO };
+  };
+  // the largest card that keeps the book inside the desktop at this zoom — the gaps, padding, spine and page number are fixed
+  const availW = (vw - 32) / zoom, availH = (vh - TASKBAR - TABS - 16) / zoom;
+  const cw = Math.max(40, Math.min(card, (availW - 4 * GAP - 4 * PAD - SPINE) / 6, (availH - 2 * GAP - 2 * PAD - PAGENO) / (3 * CARD_RATIO)));
+  let l = size(cw);
+  const r = o => Math.round(o * 100) / 100;
+  l = { cw: r(l.cw), ch: r(l.ch), pw: r(l.pw), bw: r(l.bw), bh: r(l.bh) };
+  return { ...l, zoom, x: Math.max(16, Math.round((vw - l.bw * zoom) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - l.bh * zoom) / 2)) };
 }
 
 const BOOK = `
@@ -211,6 +223,9 @@ export class BinderApp extends App {
     el.style.setProperty("--bw", l.bw + "px");
     el.style.setProperty("--bh", l.bh + "px");
     el.style.setProperty("--pw", l.pw + "px");
+    el.style.setProperty("--cardw", l.cw + "px");
+    el.style.setProperty("--cardh", l.ch + "px");
+    el.style.zoom = String(l.zoom);
     for (const c of this.cards.values()) c.fit();
     return { x: l.x, y: l.y };
   }

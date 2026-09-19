@@ -41,18 +41,16 @@
 /* the description band: foil mottle, a white rounded inset with a dark outline */
 .gicard .gi-band {
   position: absolute; left: 2.85cqw; top: 80.95cqw; width: 94.6cqw; height: 56.65cqw;
-  background: var(--foil) center / 100% 100% no-repeat, #d4577c;
+  background: var(--foil) center / 100% 100% no-repeat, var(--foil-base, #d4577c);
   padding: 4.1cqw; box-sizing: border-box;
 }
-.gicard.kind-spell .gi-band { background-color: #4c6cc0; }
-.gicard.kind-free .gi-band { background-color: #d8b23c; }
-.gicard.kind-master .gi-band { background-color: #2a2a2e; }
 .gicard .gi-inset {
   width: 100%; height: 100%; box-sizing: border-box;
   background: var(--paper); border: 0.65cqw solid var(--ink); border-radius: 1.3cqw;
   padding: 3.2cqw 4.2cqw 3cqw 4.7cqw; overflow: hidden;
 }
 .gicard .gi-desc {
-  margin: 0; font: 400 3.5cqw/1.34 "Zen Kaku Gothic New", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-  color: #202020; letter-spacing: 0.005em; overflow-wrap: anywhere;
+  /* the rules-text face of a real trading card: a sturdy old-style serif, larger than the print's gothic */
+  margin: 0; font: 500 4.5cqw/1.28 "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;
+  color: #1e1e1e; letter-spacing: 0.002em; overflow-wrap: anywhere;
 }
