@@ -179,6 +179,10 @@ the OS.
   (`session.js`, fetch/storage injectable), `LogonDialog` (`logon.js`,
   a Window subclass), `CRT` (`crt.js`, `localStorage hxh.crt`),
   `Sounds` (`sound.js`, WebAudio cues, `localStorage hxh.sound`),
+  `Settings` (`settings.js`, per-browser checkable options + the
+  standard menu item for them; `OS.appMenus(win, {file, edit, view,
+  settings, help})` builds the File/Edit/View/Settings/Help bar every
+  app window shares — File always ends with Exit),
   `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
   `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
   `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
@@ -242,11 +246,21 @@ component architecture (many windows, tray icons + menus, the bus).
 - **Frontend**: `apps/chat/app.js` `ChatApp` (id `chat`, name
   "Beetle", icon `beetle`, order 15; `tray()` → the app's tray icon,
   lit while connected, with a menu: Contacts, Global chat, My profile,
-  Sounds). `launch()` connects and opens the **contacts list**
-  (`contacts.js`, tall/narrow at the right edge: you on top, then
-  Online / Away / Offline groups; one click on a name opens a chat,
-  the little card opens their profile) and the **global chat**
-  (behind the contacts, not focused). `window.js` `ChatWindow` — one
+  Sounds). `launch()` connects and opens the **buddy list**
+  (`contacts.js`, window title just "Beetle", tall/narrow at the right
+  edge, drawn after AIM 4.x / MSN 4.x from screenshots Andrew asked me
+  to study: a status banner with your avatar and "(Online)", Online /
+  List tabs (`.ltabs` — the binder owns `.tabs` unscoped), a sunken
+  tree of collapsible groups — Buddies (present/total), Bots, Offline
+  — with away and offline names in grey italics and "(Away)" / "(No
+  password)" suffixes, an icon toolbar IM / Info / Global acting on
+  the selected buddy, and a status bar "Connected · n of m online";
+  one click on a name selects it AND opens a chat, right-click gives
+  Send Message / Profile) and the **global chat** (behind the
+  contacts, not focused). Every Beetle window carries the OS-standard
+  menus via `os.appMenus(win, {...})`: File (… Exit), Edit (Profile /
+  "<name>'s profile"), Settings (☑ New message icon, ☑ Flash taskbar,
+  ☑ Sounds — `os.settings`, localStorage `hxh.set.*`). `window.js` `ChatWindow` — one
   per room (`win-chat-<room>`): the log (names in the sender's avatar
   colour, HH:MM, last 100 from history), the "<name> is typing…" line,
   the compose box (Enter sends, Shift+Enter breaks; no unsend — Andrew
