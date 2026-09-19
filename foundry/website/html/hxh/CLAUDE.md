@@ -683,8 +683,11 @@ time (Andrew: the 2026-09-17 automated roster lost too much quality;
   site-wide `admin` role) only. Andrew: Abi will do a lot of the
   cropping, so it must be in theme and fun, not a plain admin page.
   `app.js` (RosterApp, icon `db`) opens the list (`list.js`: 90s
-  details view, 1280 wide so nothing clips; View filters Pending /
-  Accepted / Rejected / All; Enter or double-click opens), one window
+  details view, 1280 wide so nothing clips; the header row sits INSIDE
+  the sunken list so it lines up with the rows; every verdict shows,
+  pending first, then accepted, then rejected, View narrows; Pics is
+  one count per category in category order; Enter or double-click
+  opens), one window
   per character (`character.js`: avatar 1:1 + card 2:3 slots; a Review
   group box — verdict, version, reason, log with owners, Accept /
   Reject… (reason optional) / Pending; the profile as a dialog form
@@ -706,7 +709,11 @@ time (Andrew: the 2026-09-17 automated roster lost too much quality;
   sends the box to the server untouched or uploads the painted pixels,
   then the window closes), 90s message boxes (`dialogs.js`), and
   `busy.js` — every database call freezes its window under an
-  hourglass. Every change bumps the character's version; a verdict
+  hourglass. `fields.js` is the ONE place field labels (Name … Card
+  Rank … Notes) and picture categories (Random, Uploaded, Edited, …)
+  are spelled; the list headers and the form labels both read it.
+  Thumbnails show whole between 16:9 and 9:16, chevrons beyond. A
+  ratio button pressed again cancels the selection. Every change bumps the character's version; a verdict
   is logged against the version it judged. Backend: hobby-server
   `internal/hxh/rosterdb.go`, tables `hxh_char`, `hxh_char_image`,
   `hxh_char_review` (changesets 006–007; `owner` on all three), API

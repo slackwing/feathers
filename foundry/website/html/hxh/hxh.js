@@ -574,75 +574,75 @@ var HxH = (() => {
       "...k........k..."
     ],
     marquee: [
-      "kk.kk.kk.kk.kk.k",
       "................",
-      "k..............k",
-      "k..............k",
+      ".k.k.k.k.k.k.k..",
       "................",
-      "k..............k",
-      "k..............k",
+      ".k...........k..",
       "................",
-      "k..............k",
-      "k..............k",
+      ".k...........k..",
       "................",
-      "k..............k",
-      "k..............k",
+      ".k...........k..",
       "................",
-      "k..............k",
-      "k.kk.kk.kk.kk.kk"
+      ".k...........k..",
+      "................",
+      ".k...........k..",
+      "................",
+      ".k.k.k.k.k.k.k..",
+      "................",
+      "................"
     ],
     brush: [
-      "..............kk",
-      ".............kyk",
-      "............kyyk",
+      "............kkk.",
       "...........kyyk.",
-      "..........kyyk..",
-      ".........kyyk...",
-      "........kyyk....",
-      ".......kyyk.....",
-      "......kkkk......",
-      ".....krrrk......",
-      "....krrrrk......",
-      "...krrrrk.......",
-      "..krrrrk........",
-      ".krrrrk.........",
-      "kkkkkk..........",
+      "..........kyyyk.",
+      ".........kyyyk..",
+      "........kyyyk...",
+      ".......kyyyk....",
+      "......kkkkk.....",
+      ".....knnnk......",
+      "....knnnnk......",
+      "...kkkkkkk......",
+      "..kkkkkkk.......",
+      ".kkkkkkk........",
+      "kkkkkkk.........",
+      "kkkkk...........",
+      "kkk.............",
       "................"
     ],
     bucket: [
-      "................",
-      "......kkkk......",
-      ".....kppppk.....",
-      "....kppppppk....",
-      "...kkkkkkkkkk...",
-      "...kppppppppk...",
-      "...kppppppppk...",
-      "...kppppppppk...",
-      "....kppppppk....",
-      "....kppppppk....",
-      ".....kppppk.....",
-      ".....kkkkkk.....",
-      "..........bb....",
-      ".........bbbb...",
-      ".........bbbb...",
-      "..........bb...."
+      "..........kkkk..",
+      ".........k....k.",
+      "........k......k",
+      ".......kkkkkk..k",
+      "......kwwwwwwk.k",
+      ".....kwwwwwwk.k.",
+      "....kwwwwwwk....",
+      "...kwwwwwwk.....",
+      "..kwwwwwwk......",
+      ".kwwwwwwk.......",
+      ".kkkkkkk........",
+      "bb..............",
+      "bbbb............",
+      "bbbbb...........",
+      ".bbbb...........",
+      "..bb............"
     ],
     dropper: [
-      "............kkkk",
-      "...........kkkkk",
+      "...........kkkk.",
       "..........kkkkkk",
-      ".........kbkkkk.",
-      "........kbbkkk..",
-      ".......kbbbk....",
+      "..........kkkkkk",
+      ".........kkkkkkk",
+      "........kbkkkkk.",
+      ".......kbbkkkk..",
       "......kbbbk.....",
       ".....kbbbk......",
       "....kbbbk.......",
       "...kbbbk........",
       "..kbbbk.........",
       ".kbbbk..........",
-      "kbbbk...........",
-      "kbbk............",
-      "kkk.............",
+      "kkbbk...........",
+      "kkkk............",
+      "kk..............",
       "................"
     ],
     undo: [
@@ -4679,9 +4679,29 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/roster/fields.js
+  var FIELDS = [
+    ["name", "Name"],
+    ["name_ja", "Japanese"],
+    ["first", "Short"],
+    ["rank", "Card Rank"],
+    ["nen_types", "Nen"],
+    ["affiliation", "Affiliation"],
+    ["arcs", "Arcs"],
+    ["arms", "Arms"],
+    ["description", "Description"],
+    ["notes", "Notes"]
+  ];
+  var LABEL = Object.fromEntries(FIELDS);
+  var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+  var TYPE_LABEL = Object.fromEntries(TYPES2);
+  var STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+  var STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));
+
   // html/hxh/apps/roster/list.js
-  var FILTERS = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["", "All"]];
+  var FILTERS = [["", "All"], ...STATUSES];
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
+  var PICS_TITLE = TYPES2.map(([, l]) => l).join(" \xB7 ");
   var RosterWindow = class extends Window {
     /** props: menus (win => spec), thumbURL(id) */
     constructor(props = {}) {
@@ -4691,27 +4711,41 @@ var HxH = (() => {
         icon: "db",
         width: 1280,
         cls: "roster rlist",
-        content: `
-        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Card rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
-        <div class="status"><span class="msg"></span><span class="count"></span></div>`,
+        content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`,
         ...props
       });
       this.chars = [];
-      this.filter = "pending";
+      this.filter = "";
       this.selected = null;
     }
     render() {
       const el = super.render();
       this.rows = h("div", { className: "rows", role: "listbox", tabindex: "0" });
+      this.head = h(
+        "div",
+        { className: "lhead" },
+        h("span", { className: "c-no", text: "#" }),
+        h("span", { className: "c-av" }),
+        h("span", { className: "c-name", text: LABEL.name }),
+        h("span", { className: "c-ja", text: LABEL.name_ja }),
+        h("span", { className: "c-rank", text: LABEL.rank }),
+        h("span", { className: "c-nen", text: LABEL.nen_types }),
+        h("span", { className: "c-aff", text: LABEL.affiliation }),
+        h("span", { className: "c-pics", text: "Pics", title: PICS_TITLE }),
+        h("span", { className: "c-ver", text: "v", title: "Version" }),
+        h("span", { className: "c-st", text: "Review" })
+      );
+      this.body = h("div", { className: "lbody" });
+      this.rows.append(this.head, this.body);
       this.pane = this.adopt(new ScrollPane({ content: this.rows }), el.querySelector(".body"), { before: el.querySelector(".status") });
       this.pane.el.classList.add("sunken", "listbox");
       this.msgEl = el.querySelector(".msg");
       this.countEl = el.querySelector(".count");
-      this.rows.addEventListener("click", (e) => {
+      this.body.addEventListener("click", (e) => {
         const r = e.target.closest(".row");
         if (r) this.select(+r.dataset.id);
       });
-      this.rows.addEventListener("dblclick", (e) => {
+      this.body.addEventListener("dblclick", (e) => {
         const r = e.target.closest(".row");
         if (r) this.emit("open", { id: +r.dataset.id });
       });
@@ -4741,13 +4775,14 @@ var HxH = (() => {
       this.msgEl.textContent = msg;
       this.msgEl.classList.toggle("err", !!err);
     }
+    /** Pending first, then accepted, then rejected; by number within. */
     shown() {
-      return this.chars.filter((c) => !this.filter || c.review_status === this.filter);
+      return this.chars.filter((c) => !this.filter || c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || a.id - b.id);
     }
     renderRows() {
       const list = this.shown();
-      this.rows.replaceChildren(...list.map((c) => this.row(c)));
-      if (!list.length) this.rows.append(h("div", { className: "empty", text: "None." }));
+      this.body.replaceChildren(...list.map((c) => this.row(c)));
+      if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
       this.markSel();
       const pending = this.chars.filter((c) => c.review_status === "pending").length;
       this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending`;
@@ -4755,6 +4790,7 @@ var HxH = (() => {
     }
     row(c) {
       const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
+      const counts = TYPES2.map(([t]) => (c.image_counts || {})[t] || 0);
       return h(
         "div",
         { className: "row", dataset: { id: String(c.id) }, role: "option" },
@@ -4765,8 +4801,8 @@ var HxH = (() => {
         h("span", { className: "c-rank", text: c.rank || "" }),
         h("span", { className: "c-nen", text: (c.nen_types || []).map(cap).join(" / ") }),
         h("span", { className: "c-aff", text: c.affiliation || "" }),
-        h("span", { className: "c-pics", text: String(c.image_count ?? "") }),
-        h("span", { className: "c-ver", text: "v" + (c.version || 1) }),
+        h("span", { className: "c-pics", title: PICS_TITLE }, ...counts.map((n, i) => h("i", { className: n ? "" : "zero", text: String(n), title: TYPES2[i][1] }))),
+        h("span", { className: "c-ver", text: String(c.version || 1) }),
         h("span", { className: "c-st" }, h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) }))
       );
     }
@@ -4775,7 +4811,7 @@ var HxH = (() => {
       this.markSel();
     }
     markSel() {
-      for (const r of this.rows.querySelectorAll(".row")) r.classList.toggle("sel", +r.dataset.id === this.selected);
+      for (const r of this.body.querySelectorAll(".row")) r.classList.toggle("sel", +r.dataset.id === this.selected);
     }
     /** Replace one character's row in place (after an edit elsewhere). */
     update(c) {
@@ -4802,12 +4838,11 @@ var HxH = (() => {
     ["chairman-election", "Chairman Election"]
   ];
   var RANKS = ["S", "A", "B", "C"];
-  var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
   var AVATAR_RATIO = 1;
   var CARD_RATIO = 2 / 3;
   var RATIO_TOL = 0.02;
-  var FIT_MIN = 2 / 3;
-  var FIT_MAX = 3 / 2;
+  var FIT_MIN = 9 / 16;
+  var FIT_MAX = 16 / 9;
   var eligible = (im, ratio) => Math.abs(im.width / im.height - ratio) <= RATIO_TOL;
   var cap2 = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -4815,21 +4850,21 @@ var HxH = (() => {
   var winId = (id) => "win-roster-c-" + id;
   var FORM = `
   <div class="frow">
-    <div class="f"><label class="lbl">Name</label><input class="field" data-f="name" maxlength="100"></div>
-    <div class="f"><label class="lbl">Japanese</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
+    <div class="f"><label class="lbl">${LABEL.name}</label><input class="field" data-f="name" maxlength="100"></div>
+    <div class="f"><label class="lbl">${LABEL.name_ja}</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
   </div>
   <div class="frow four">
-    <div class="f"><label class="lbl">Short</label><input class="field" data-f="first" maxlength="20"></div>
-    <div class="f"><label class="lbl">Card rank</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
-    <div class="f"><label class="lbl">Nen</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
-    <div class="f"><label class="lbl">Affiliation</label><input class="field" data-f="affiliation" maxlength="60"></div>
+    <div class="f"><label class="lbl">${LABEL.first}</label><input class="field" data-f="first" maxlength="20"></div>
+    <div class="f"><label class="lbl">${LABEL.rank}</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
+    <div class="f"><label class="lbl">${LABEL.nen_types}</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
+    <div class="f"><label class="lbl">${LABEL.affiliation}</label><input class="field" data-f="affiliation" maxlength="60"></div>
   </div>
   <div class="frow">
-    <div class="f"><label class="lbl">Arcs</label><div class="checks">${ARCS2.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
-    <div class="f"><label class="lbl">Arms</label><input class="field prose" data-f="arms"></div>
+    <div class="f"><label class="lbl">${LABEL.arcs}</label><div class="checks">${ARCS2.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
+    <div class="f"><label class="lbl">${LABEL.arms}</label><input class="field prose" data-f="arms"></div>
   </div>
-  <div class="f"><label class="lbl">Description <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
-  <div class="f"><label class="lbl">Notes</label><textarea class="field prose" data-f="notes"></textarea></div>`;
+  <div class="f"><label class="lbl">${LABEL.description} <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
+  <div class="f"><label class="lbl">${LABEL.notes}</label><textarea class="field prose" data-f="notes"></textarea></div>`;
   var CharacterWindow = class extends Window {
     /** props: id, name, menus (win => spec), thumbURL(id) */
     constructor(props) {
@@ -5379,7 +5414,8 @@ var HxH = (() => {
       });
       this.desktop = props.desktop || { vw: 1366, vh: 900 };
       this.z = 1;
-      this.ratio = props.ratio || 0;
+      this.ratio = 0;
+      this.preset = null;
       this.box = null;
       this.drag = null;
       this.tool = "marquee";
@@ -5475,7 +5511,17 @@ var HxH = (() => {
       this.sizeCursor();
       this.draw();
     }
+    /** A ratio button: press to start (or refit) a selection; press again to cancel it and clear the box. */
     setRatio(r) {
+      if (this.preset === r) {
+        this.preset = null;
+        this.ratio = 0;
+        this.box = null;
+        this.markRatio();
+        this.draw();
+        return;
+      }
+      this.preset = r;
       this.ratio = r;
       this.emit("ratio", { ratio: r });
       this.markRatio();
@@ -5491,7 +5537,7 @@ var HxH = (() => {
       this.draw();
     }
     markRatio() {
-      for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", +b.dataset.r === this.ratio);
+      for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", this.preset !== null && +b.dataset.r === this.preset);
     }
     /* ---------- tools ---------- */
     setTool(t) {
@@ -5845,7 +5891,6 @@ var HxH = (() => {
   }
 
   // html/hxh/apps/roster/app.js
-  var SETTING_RATIO = "roster.ratio";
   var RosterApp = class extends App {
     static id = "roster";
     static name = "Roster DB";
@@ -6062,17 +6107,10 @@ var HxH = (() => {
           char: meta.char,
           src: this.api.imageURL(imageId),
           desktop: { vw: os.env.width, vh: os.env.height },
-          ratio: this.savedRatio(),
           menus: (win) => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] })
         });
         os.wm.add(w);
         this.crops.set(imageId, w);
-        w.on("ratio", ({ ratio }) => {
-          try {
-            os.win.localStorage?.setItem(SETTING_RATIO, String(ratio));
-          } catch {
-          }
-        });
         w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
         w.on("revert", async () => {
           if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os)) w.doRevert();
@@ -6087,13 +6125,6 @@ var HxH = (() => {
       os.wm.open(w.id, at);
       w.el.focus?.();
       return w;
-    }
-    savedRatio() {
-      try {
-        return +this.os.win.localStorage?.getItem(SETTING_RATIO) || 0;
-      } catch {
-        return 0;
-      }
     }
     /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
         picture. Once the database has answered, the crop window closes. */

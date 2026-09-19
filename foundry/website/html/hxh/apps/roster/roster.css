@@ -14,6 +14,10 @@
 }
 .roster .status .err { color: var(--blood); }
 .roster .btn.sm { padding: 6px 10px 5px; font: var(--t-ui); }
+/* a disabled button is greyed and flat — no hover, no press */
+.roster .btn:disabled, .roster .btn:disabled:hover { color: var(--paper-dim); background: var(--paper); cursor: default; text-shadow: 1px 1px 0 var(--paper-hi);
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo); transform: none; }
+.roster .btn:disabled svg { opacity: .35; }
 .roster .grow { flex: 1; }
 .roster .verdict, .roster .st { font: var(--t-ui-bold); }
 .roster i.verdict, .roster .st { font-style: normal; display: inline-block; padding: 2px 8px 1px; border: 1px solid var(--ink); background: var(--paper-hi); }
@@ -39,21 +43,27 @@
 
 /* ---------- the list ---------- */
 .rlist .body { padding: 8px 10px 10px; }
-.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.5fr 1.3fr 54px 54px 112px; align-items: center; gap: 6px; }
+.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 112px; align-items: center; gap: 6px; padding: 0 6px; }
+/* the header lives inside the list, above the rows it rules, and stays put when they scroll */
+.rlist .lhead { position: sticky; top: 0; z-index: 2; padding: 3px 6px; background: var(--paper); border-bottom: var(--px) solid var(--paper-lo); box-shadow: 0 var(--px) 0 var(--paper-hi); }
 .rlist .lhead > span {
   padding: 4px 6px 3px; font: var(--t-ui); color: var(--ink); white-space: nowrap; overflow: hidden;
   background: var(--paper); border: var(--px) solid var(--ink);
   box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
 }
-.rlist .listbox { height: 560px; max-height: 66vh; margin-top: 4px; }
+.rlist .listbox { height: 580px; max-height: 68vh; }
 .rlist .rows { font: var(--t-ui); }
 .rlist .row { padding: 3px 6px; cursor: default; }
+.rlist .c-pics { display: flex; gap: 0; font-variant-numeric: tabular-nums; }
+.rlist .c-pics i { font-style: normal; width: 24px; text-align: right; }
+.rlist .c-pics i.zero { color: var(--paper-dim); }
+.rlist .row.sel .c-pics i.zero { color: rgba(255,246,224,.5); }
 .rlist .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
 .rlist .row.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
 .rlist .row.sel .verdict { border-color: var(--paper-hi); }
 .rlist .row:hover:not(.sel) { background: var(--paper); }
-.rlist .c-no, .rlist .c-pics, .rlist .c-ver { color: var(--ink-4); text-align: right; }
-.rlist .row.sel .c-no, .rlist .row.sel .c-pics, .rlist .row.sel .c-ver { color: var(--paper-hi); }
+.rlist .c-no, .rlist .c-ver { color: var(--ink-4); text-align: right; }
+.rlist .row.sel .c-no, .rlist .row.sel .c-ver { color: var(--paper-hi); }
 .rlist .c-name { font: var(--t-ui-bold); }
 .rlist .av { width: 30px; height: 30px; object-fit: cover; display: block; border: 1px solid var(--ink); background: var(--paper-lo); }
 .rlist i.av.none { display: block; border: 1px dashed var(--paper-dim); }

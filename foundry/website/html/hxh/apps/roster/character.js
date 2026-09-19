@@ -8,14 +8,15 @@
 import { Window } from "../../os/window.js";
 import { h, esc } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
+import { LABEL, TYPES } from "./fields.js";
 
 export const NEN = ["enhancement", "transmutation", "conjuration", "emission", "manipulation", "specialization"];
 export const ARCS = [["hunter-exam", "Hunter Exam"], ["zoldyck-family", "Zoldyck Family"], ["heavens-arena", "Heavens Arena"],
   ["yorknew-city", "Yorknew City"], ["greed-island", "Greed Island"], ["chimera-ant", "Chimera Ant"], ["chairman-election", "Chairman Election"]];
 export const RANKS = ["S", "A", "B", "C"];
-export const TYPES = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+export { TYPES };
 export const AVATAR_RATIO = 1, CARD_RATIO = 2 / 3, RATIO_TOL = 0.02;
-export const FIT_MIN = 2 / 3, FIT_MAX = 3 / 2;   // thumbnails inside this range show whole; outside, the short side shows and chevrons mark the cut
+export const FIT_MIN = 9 / 16, FIT_MAX = 16 / 9;   // thumbnails inside this range show whole; outside, the short side shows and chevrons mark the cut
 export const eligible = (im, ratio) => Math.abs(im.width / im.height - ratio) <= RATIO_TOL;
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 export const slugify = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -24,21 +25,21 @@ export const winId = id => "win-roster-c-" + id;
 
 const FORM = `
   <div class="frow">
-    <div class="f"><label class="lbl">Name</label><input class="field" data-f="name" maxlength="100"></div>
-    <div class="f"><label class="lbl">Japanese</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
+    <div class="f"><label class="lbl">${LABEL.name}</label><input class="field" data-f="name" maxlength="100"></div>
+    <div class="f"><label class="lbl">${LABEL.name_ja}</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
   </div>
   <div class="frow four">
-    <div class="f"><label class="lbl">Short</label><input class="field" data-f="first" maxlength="20"></div>
-    <div class="f"><label class="lbl">Card rank</label><select class="field" data-f="rank">${RANKS.map(r => `<option>${r}</option>`).join("")}</select></div>
-    <div class="f"><label class="lbl">Nen</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
-    <div class="f"><label class="lbl">Affiliation</label><input class="field" data-f="affiliation" maxlength="60"></div>
+    <div class="f"><label class="lbl">${LABEL.first}</label><input class="field" data-f="first" maxlength="20"></div>
+    <div class="f"><label class="lbl">${LABEL.rank}</label><select class="field" data-f="rank">${RANKS.map(r => `<option>${r}</option>`).join("")}</select></div>
+    <div class="f"><label class="lbl">${LABEL.nen_types}</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
+    <div class="f"><label class="lbl">${LABEL.affiliation}</label><input class="field" data-f="affiliation" maxlength="60"></div>
   </div>
   <div class="frow">
-    <div class="f"><label class="lbl">Arcs</label><div class="checks">${ARCS.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
-    <div class="f"><label class="lbl">Arms</label><input class="field prose" data-f="arms"></div>
+    <div class="f"><label class="lbl">${LABEL.arcs}</label><div class="checks">${ARCS.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
+    <div class="f"><label class="lbl">${LABEL.arms}</label><input class="field prose" data-f="arms"></div>
   </div>
-  <div class="f"><label class="lbl">Description <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
-  <div class="f"><label class="lbl">Notes</label><textarea class="field prose" data-f="notes"></textarea></div>`;
+  <div class="f"><label class="lbl">${LABEL.description} <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
+  <div class="f"><label class="lbl">${LABEL.notes}</label><textarea class="field prose" data-f="notes"></textarea></div>`;
 
 export class CharacterWindow extends Window {
   /** props: id, name, menus (win => spec), thumbURL(id) */

@@ -53,7 +53,7 @@ export class CropWindow extends Window {
       ...props,
     });
     this.desktop = props.desktop || { vw: 1366, vh: 900 };
-    this.z = 1; this.ratio = props.ratio || 0;
+    this.z = 1; this.ratio = 0; this.preset = null;   // preset: the pressed ratio button (0 = Free), null = none
     this.box = null;
     this.drag = null;
     this.tool = "marquee"; this.radius = 8; this.color = "#000000";
@@ -123,8 +123,10 @@ export class CropWindow extends Window {
     this.draw();
   }
 
+  /** A ratio button: press to start (or refit) a selection; press again to cancel it and clear the box. */
   setRatio(r) {
-    this.ratio = r;
+    if (this.preset === r) { this.preset = null; this.ratio = 0; this.box = null; this.markRatio(); this.draw(); return; }
+    this.preset = r; this.ratio = r;
     this.emit("ratio", { ratio: r });
     this.markRatio();
     if (!r) { this.draw(); return; }
@@ -136,7 +138,7 @@ export class CropWindow extends Window {
     }
     this.draw();
   }
-  markRatio() { for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", +b.dataset.r === this.ratio); }
+  markRatio() { for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", this.preset !== null && +b.dataset.r === this.preset); }
 
   /* ---------- tools ---------- */
   setTool(t) {

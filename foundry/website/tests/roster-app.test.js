@@ -71,21 +71,32 @@ test("only hxh admins see the app", async () => {
   assert.equal(app().name, "Roster DB");
 });
 
-test("launch opens the list with pending rows, View filters, Enter opens a character", async () => {
+test("launch opens the list: every verdict, pending first; headers inside the list from the shared field names; per-category counts; Enter opens", async () => {
   await boot();
+  state.gon.review_status = "accepted";   // Gon accepted, Killua (also accepted) plus a rejected and a pending one to sort
+  api["GET /hxh/api/db/chars"] = () => [200, [
+    { ...killua(), id: 7, name: "Zzz Rejected", review_status: "rejected" }, { ...killua(), id: 4 }, { ...state.gon, images: undefined, reviews: undefined, image_counts: { raw: 11, cropped: 2 } }, { ...killua(), id: 6, name: "Aaa Pending", review_status: "pending" },
+  ]];
   await os.launch("roster");
   await tick();
   const w = os.wm.get("win-roster");
   assert.ok(w instanceof RosterWindow && w.state.open);
   assert.equal(w.el.style.width, "1280px");
-  assert.deepEqual([...w.rows.querySelectorAll(".row .c-name")].map(e => e.textContent), ["Gon Freecss"]);   // Killua is accepted
-  assert.equal(w.el.querySelector(".lhead .c-rank").textContent, "Card rank");
-  assert.equal(w.countEl.textContent, "2 characters · 1 pending");
+  assert.equal(w.filter, "");
+  assert.deepEqual([...w.body.querySelectorAll(".row .c-name")].map(e => e.textContent), ["Aaa Pending", "Gon Freecss", "Killua Zoldyck", "Zzz Rejected"]);
+  assert.equal(w.head.parentElement, w.rows);   // the header scrolls with the rows, under the same scrollbar
+  assert.deepEqual([...w.head.children].map(e => e.textContent), ["#", "", "Name", "Japanese", "Card Rank", "Nen", "Affiliation", "Pics", "v", "Review"]);
+  assert.equal(w.countEl.textContent, "4 characters · 1 pending");
+  const gonRow = w.body.querySelector('.row[data-id="3"]');
+  assert.equal(gonRow.querySelector(".c-ver").textContent, "4");
+  assert.deepEqual([...gonRow.querySelectorAll(".c-pics i")].map(i => i.textContent), ["11", "0", "2", "0", "0", "0"]);
+  assert.equal(gonRow.querySelector(".c-pics").title, "Random · Uploaded · Edited · Pixel art · Upscaled · Transparent");
+  w.setFilter("rejected");
+  assert.equal(w.body.querySelectorAll(".row").length, 1);
   w.setFilter("");
-  assert.equal(w.rows.querySelectorAll(".row").length, 2);
-  assert.equal(w.rows.querySelector(".row .c-ver").textContent, "v4");
   const items = w.menuBar.menus[1].itemsNow();
-  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["Pending", "Accepted", "Rejected", "All", "Refresh"]);
+  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Accepted", "Rejected", "Refresh"]);
+  assert.equal(items[0].check(), true);
   w.select(3);
   d.key(w.rows, "Enter");
   await tick();
@@ -106,10 +117,16 @@ test("the character window: profile, review box, every picture category (empty o
   assert.equal(el.querySelector(".verdict .ver").textContent, "v4");
   assert.match(el.querySelector(".log").textContent, /v2 rejected andrew — wrong Nen/);
   assert.deepEqual([...el.querySelectorAll(".sec")].map(s => s.dataset.type), ["raw", "uploaded", "cropped", "pixelated", "upscaled", "transparent"]);
-  assert.deepEqual([...el.querySelectorAll(".sec .sech")].map(s => s.textContent), ["Random1", "Uploaded0", "Cropped2", "Pixel art0", "Upscaled0", "Transparent0"]);
-  assert.equal(el.querySelector('.tile[data-id="10"] .pic').className, "pic cut-x");   // 16:9 is beyond 3:2 — short side full, chevrons
+  assert.deepEqual([...el.querySelectorAll(".sec .sech")].map(s => s.textContent), ["Random1", "Uploaded0", "Edited2", "Pixel art0", "Upscaled0", "Transparent0"]);
+  assert.equal(el.querySelector(".profile .lbl").textContent, "Name");
+  assert.equal([...el.querySelectorAll(".profile .lbl")].find(l => l.textContent === "Card Rank")?.textContent, "Card Rank");
+  assert.equal(el.querySelector('.tile[data-id="10"] .pic').className, "pic fit");     // 16:9 is the edge of the range — shows whole
   assert.equal(el.querySelector('.tile[data-id="11"] .pic').className, "pic fit");     // 1:1 shows whole
   assert.equal(el.querySelector('.tile[data-id="12"] .pic').className, "pic fit");     // 2:3 shows whole
+  state.gon.images.push(IMG(15, "raw", { width: 2000, height: 500 }), IMG(16, "raw", { width: 500, height: 2000 }));
+  w.setChar(state.gon);
+  assert.equal(el.querySelector('.tile[data-id="15"] .pic').className, "pic cut-x");   // 4:1 — short side full, chevrons left/right
+  assert.equal(el.querySelector('.tile[data-id="16"] .pic').className, "pic cut-y");
   const first = el.querySelector('[data-f="first"]');
   first.value = "Gonny";
   d.fire(first, "change");
@@ -199,6 +216,13 @@ test("crop window: sized to show the whole picture; a ratio button starts a cent
   assert.deepEqual(c.box, { x: 636, y: 216, w: 648, h: 648 });   // 60 % of the short side, centred
   assert.equal(c.posEl.textContent, "636, 216  ·  648 × 648");
   assert.equal(c.saveBtn.disabled, false);
+  assert.ok(c.el.querySelector('[data-r="1"]').classList.contains("pressed"));
+  d.click(c.el.querySelector('[data-r="1"]'));   // again: cancels the selection and unpresses
+  assert.equal(c.box, null);
+  assert.equal(c.preset, null);
+  assert.ok(!c.el.querySelector('[data-r="1"]').classList.contains("pressed"));
+  assert.equal(c.posEl.textContent, "1920 × 1080");
+  d.click(c.el.querySelector('[data-r="1"]'));
   d.click(c.el.querySelector(`[data-r="${2 / 3}"]`));
   assert.deepEqual(c.box, { x: 744, y: 216, w: 432, h: 648 });   // refit around the centre
   d.click(c.saveBtn);

@@ -16,7 +16,6 @@ import { ConfirmDialog, PromptDialog, ReasonDialog } from "./dialogs.js";
 import { busy } from "./busy.js";
 import "./roster.css";
 
-export const SETTING_RATIO = "roster.ratio";
 
 export class RosterApp extends App {
   static id = "roster";
@@ -210,10 +209,9 @@ export class RosterApp extends App {
       try { meta = await this.api.imageMeta(imageId); }
       catch (err) { os.toast.show(err.message); return null; }
       w = new CropWindow({ image: meta.image, char: meta.char, src: this.api.imageURL(imageId), desktop: { vw: os.env.width, vh: os.env.height },
-        ratio: this.savedRatio(), menus: win => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] }) });
+        menus: win => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] }) });
       os.wm.add(w);
       this.crops.set(imageId, w);
-      w.on("ratio", ({ ratio }) => { try { os.win.localStorage?.setItem(SETTING_RATIO, String(ratio)); } catch {} });
       w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
       w.on("revert", async () => { if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os)) w.doRevert(); });
       w.on("close", () => { this.crops.delete(imageId); os.wm.remove(w.id); });
@@ -225,8 +223,6 @@ export class RosterApp extends App {
     w.el.focus?.();
     return w;
   }
-
-  savedRatio() { try { return +this.os.win.localStorage?.getItem(SETTING_RATIO) || 0; } catch { return 0; } }
 
   /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
       picture. Once the database has answered, the crop window closes. */
