@@ -2,8 +2,8 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { ChatApp, dmRoom, NEW_TRAY_ID } from "../html/hxh/apps/chat/app.js";
-import { ContactsWindow, groupOf } from "../html/hxh/apps/chat/contacts.js";
+import { ChatApp, dmRoom, NEW_TRAY_ID, SETTING_TRAY, SETTING_FLASH } from "../html/hxh/apps/chat/app.js";
+import { ContactsWindow, present } from "../html/hxh/apps/chat/contacts.js";
 import { ChatWindow } from "../html/hxh/apps/chat/window.js";
 import { ProfileWindow, ProfileEditor } from "../html/hxh/apps/chat/profile.js";
 import { Window } from "../html/hxh/os/window.js";
@@ -15,6 +15,7 @@ const CONTACTS = [
   { username: "gon", display_name: "Gon", initial: "GO", color: "#58e05c", state: "away" },
   { username: "killua", display_name: "Killua", initial: "KI", color: "#37d0ff", state: "offline" },
   { username: "leorio", display_name: "Leorio", initial: "LE", color: "#ff7518", state: "nopass" },
+  { username: "alyosha", display_name: "Alyosha", initial: "AL", color: "#7c4dff", state: "online", is_bot: true },
 ];
 
 function fakeWS() {
@@ -66,6 +67,7 @@ test("launch connects, opens contacts (right side) and the global chat with hist
   assert.ok(contacts instanceof ContactsWindow && contacts.state.open);
   assert.ok(global instanceof ChatWindow && global.state.open);
   assert.equal(contacts.el.style.left, (1366 - 330) + "px");
+  assert.equal(contacts.title, "Beetle");
   assert.equal(global.title, "Global chat");
   assert.equal(os.wm.activeId, "win-chat-contacts");   // global opened without stealing focus
   await tick();
@@ -73,34 +75,95 @@ test("launch connects, opens contacts (right side) and the global chat with hist
   assert.equal(global.el.querySelector(".m .txt").textContent, "hello all");
   hello();
   assert.ok(os.taskbar.tray.get("chat").btn.classList.contains("on"));
+  assert.equal(contacts.connEl.textContent, "Connected");
   assert.equal(global.el.querySelector(".m .who").style.color, "rgb(52, 157, 178)");   // abi's colour, applied once contacts are known
-  assert.equal(global.el.querySelector(".m .who").textContent, "Abigail Goh:");
+  assert.equal(global.el.querySelector(".m .who").textContent, "Abigail Goh");
 });
 
-test("contacts are grouped by presence; me on top; click opens a DM, card opens a profile", async () => {
+test("buddy list: banner, tabs, collapsible groups, click opens a DM, Info shows a profile", async () => {
   await os.launch("chat"); hello();
   const w = os.wm.get("win-chat-contacts");
-  assert.equal(w.el.querySelector(".me .nm").textContent, "Andrew");
-  const groups = [...w.el.querySelectorAll(".grp")].map(g => g.textContent);
-  assert.deepEqual(groups, ["Online1", "Away1", "Offline2"]);
+  assert.equal(w.el.querySelector(".banner .who b").textContent, "Andrew");
+  assert.equal(w.el.querySelector(".banner .st").textContent, "(Online)");
+  const groups = [...w.el.querySelectorAll(".grp .lbl")].map(g => g.textContent);
+  assert.deepEqual(groups, ["Buddies (2/4)", "Bots (1/1)", "Offline (2/5)"]);
   const rows = [...w.el.querySelectorAll(".contact")].map(r => r.dataset.user);
-  assert.deepEqual(rows, ["abi", "gon", "killua", "leorio"]);
-  assert.ok(w.el.querySelector('[data-user="leorio"] .dot').classList.contains("nopass"));
-  assert.equal(groupOf("nopass"), "offline");
+  assert.deepEqual(rows, ["abi", "gon", "alyosha", "killua", "leorio"]);
+  assert.equal(w.el.querySelector('[data-user="gon"] .st').textContent, "(Away)");
+  assert.ok(w.el.querySelector('[data-user="leorio"]').classList.contains("nopass"));
+  assert.equal(w.countEl.textContent, "2 of 5 online");   // people and bots, minus me
+  assert.equal(present("nopass"), false);
+  // collapse a group
+  d.click(w.el.querySelector('.grp[data-group="offline"]'));
+  assert.equal(w.el.querySelector('[data-user="killua"]'), null);
+  assert.equal(w.el.querySelector('.grp[data-group="offline"] .tri').textContent, "▶");
+  d.click(w.el.querySelector('.grp[data-group="offline"]'));
+  assert.ok(w.el.querySelector('[data-user="killua"]'));
+  // the List tab is flat and alphabetical
+  d.click(w.el.querySelector('[data-tab="list"]'));
+  assert.deepEqual([...w.el.querySelectorAll(".contact")].map(r => r.dataset.user), ["abi", "alyosha", "gon", "killua", "leorio"]);
+  assert.equal(w.el.querySelector(".grp"), null);
+  d.click(w.el.querySelector('[data-tab="online"]'));
+  // click = select + open a DM
   d.click(w.el.querySelector('[data-user="abi"] .nm'));
   const dm = os.wm.get("win-chat-dm-abi-andrew");
   assert.ok(dm && dm.state.open);
   assert.equal(dm.title, "Abigail Goh");
   assert.equal(os.wm.activeId, dm.id);
-  d.click(w.el.querySelector('[data-user="abi"] [data-profile]'));
+  assert.ok(w.el.querySelector('[data-user="abi"]').classList.contains("sel"));
+  // Info acts on the selection
+  d.click(w.el.querySelector('[data-act="info"]'));
   await tick();
   const pw = os.wm.get("win-chat-profile-abi");
   assert.ok(pw instanceof ProfileWindow && pw.state.open);
   assert.equal(pw.el.querySelector(".pbody span").textContent, "lyrics");
   assert.equal(pw.el.querySelector(".pbody span").style.fontWeight, "bold");
+  // right-click: context menu
+  w.el.querySelector('[data-user="gon"]').dispatchEvent(new d.win.MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+  assert.equal(w.menu.isOpen, true);
+  assert.deepEqual([...w.menu.el.querySelectorAll("button")].map(b => b.textContent), ["Send Message", "Profile"]);
+  d.click(w.menu.el.querySelectorAll("button")[0]);
+  assert.ok(os.wm.get("win-chat-dm-andrew-gon").state.open);
+  // Chat Room tool
+  os.wm.close("win-chat-global");
+  d.click(w.el.querySelector('[data-act="global"]'));
+  assert.equal(os.wm.get("win-chat-global").state.open, true);
 });
 
-test("sending: Enter sends over the socket in the sender's colour, typing is relayed, unsend takes back the last", async () => {
+test("standard menus: File has Exit, Edit has Profile, Settings has the checkable options", async () => {
+  await os.launch("chat"); hello();
+  const w = os.wm.get("win-chat-contacts");
+  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "Edit", "Settings"]);
+  const [file, edit, settings] = w.menuBar.menus;
+  file.open();
+  assert.deepEqual([...file.el.children].map(c => c.textContent), ["Exit"]);
+  edit.open();
+  assert.deepEqual([...edit.el.children].map(c => c.textContent), ["Profile"]);
+  settings.open();
+  const items = [...settings.el.children];
+  assert.deepEqual(items.map(c => c.textContent), ["New message icon", "Flash taskbar", "Sounds"]);
+  assert.ok(items[0].classList.contains("on") && items[1].classList.contains("on"));
+  d.click(items[0]);
+  assert.equal(os.settings.get(SETTING_TRAY), false);
+  assert.equal(d.win.localStorage.getItem("hxh.set." + SETTING_TRAY), "0");
+  d.click(edit.el.querySelector("button"));
+  await tick();
+  assert.equal(os.wm.get("win-chat-profile-edit").state.open, true);
+  file.open();
+  d.click(file.el.querySelector("button"));
+  assert.equal(w.state.open, false);
+  const dm = app().openChat("abi");
+  assert.deepEqual([...dm.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "Edit", "Settings"]);
+  dm.menuBar.menus[1].open();
+  assert.deepEqual([...dm.menuBar.menus[1].el.children].map(c => c.textContent), ["Abigail Goh's profile", "My profile"]);
+  const g = os.wm.get("win-chat-global");
+  g.menuBar.menus[1].open();
+  assert.deepEqual([...g.menuBar.menus[1].el.children].map(c => c.textContent), ["My profile"]);
+  assert.equal(g.el.querySelector('[data-act="info"]'), null);   // no one to get info on in the room
+  assert.ok(dm.el.querySelector('[data-act="info"]'));
+});
+
+test("sending: Enter sends over the socket in the sender's colour; typing is relayed", async () => {
   await os.launch("chat"); hello();
   const g = os.wm.get("win-chat-global");
   g.input.value = "yo";
@@ -111,16 +174,11 @@ test("sending: Enter sends over the socket in the sender's colour, typing is rel
   const mine = g.el.querySelector('.m[data-id="2"]');
   assert.ok(mine.classList.contains("mine"));
   assert.equal(mine.querySelector(".who").style.color, "rgb(217, 20, 227)");
-  assert.equal(g.unsendBtn.hidden, false);
+  assert.match(mine.querySelector(".ts").textContent, /^ \(.*\):$/);
   d.key(g.input, "a");
   assert.deepEqual(sockets[0].sent.at(-1), { t: "typing", room: "global" });
   sockets[0].push({ t: "typing", room: "global", user: "abi" });
   assert.equal(g.typingEl.textContent, "Abigail Goh is typing…");
-  d.click(g.unsendBtn);
-  assert.deepEqual(sockets[0].sent.at(-1), { t: "unsend", room: "global" });
-  sockets[0].push({ t: "unsend", room: "global", id: 2 });
-  assert.equal(g.el.querySelector('.m[data-id="2"]'), null);
-  assert.equal(g.unsendBtn.hidden, true);
   assert.ok(os.sounds.played.includes("sent"));
 });
 
@@ -149,19 +207,33 @@ test("an incoming DM opens its window behind the active one, flashes it, adds th
   sockets[0].push({ t: "msg", msg: { id: 7, room: "global", sender: "gon", body: "again", created_at: "2026-10-31T20:04:00Z" } });
   assert.deepEqual(app().unread, []);
   assert.equal(os.taskbar.button("win-chat-global").flashing, false);
+  // settings off: no flash, no bubble
+  os.settings.set(SETTING_TRAY, false); os.settings.set(SETTING_FLASH, false);
+  os.wm.focus("win-chat-contacts");
+  sockets[0].push({ t: "msg", msg: { id: 8, room: "global", sender: "gon", body: "quiet", created_at: "2026-10-31T20:05:00Z" } });
+  assert.deepEqual(app().unread, ["global"]);
+  assert.equal(os.taskbar.button("win-chat-global").flashing, false);
+  assert.ok(!os.taskbar.tray.has(NEW_TRAY_ID));
+  os.settings.set(SETTING_TRAY, true);
+  app().syncNewIcon();
+  assert.ok(os.taskbar.tray.has(NEW_TRAY_ID));
 });
 
 test("presence updates regroup contacts and play the door sounds", async () => {
   await os.launch("chat"); hello();
   const w = os.wm.get("win-chat-contacts");
   sockets[0].push({ t: "presence", user: "killua", state: "online", last_seen_at: "2026-10-31T20:05:00Z" });
-  assert.ok(w.el.querySelector('[data-user="killua"] .dot').classList.contains("online"));
-  assert.equal([...w.el.querySelectorAll(".grp")][0].textContent, "Online2");
+  const row = w.el.querySelector('[data-user="killua"]');
+  assert.ok(row.classList.contains("online"));
+  assert.equal(row.previousElementSibling.dataset.user, "gon");   // now under Buddies, after Gon
+  assert.equal(w.el.querySelector('.grp[data-group="buddies"] .lbl').textContent, "Buddies (3/4)");
   assert.equal(os.sounds.played.at(-1), "dooropen");
   sockets[0].push({ t: "presence", user: "killua", state: "away", last_seen_at: null });
+  assert.equal(w.el.querySelector('[data-user="killua"] .st').textContent, "(Away)");
   assert.equal(os.sounds.played.at(-1), "doorclose");
   sockets[0].push({ t: "presence", user: "killua", state: "offline", last_seen_at: null });
   assert.equal(os.sounds.played.filter(s => s === "doorclose").length, 1);   // away → offline is silent
+  assert.equal(w.el.querySelector('.grp[data-group="offline"] .lbl').textContent, "Offline (2/5)");
   sockets[0].push({ t: "presence", user: "andrew", state: "away", last_seen_at: null });
   assert.equal(os.sounds.played.filter(s => s === "doorclose").length, 1);   // never for yourself
 });

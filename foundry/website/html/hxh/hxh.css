@@ -1826,7 +1826,38 @@ body.logon .icons {
   align-items: center;
   gap: 6px;
 }
-.contacts .me {
+.chat .sunken {
+  background: var(--paper-hi);
+  border: var(--px) solid;
+  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .3);
+}
+.chat .status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 4px 8px 2px;
+  min-height: 26px;
+  border: var(--px) solid;
+  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  font: 15px/1.4 var(--font-dot);
+  color: var(--ink-4);
+}
+.chat .status .conn::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  background: var(--nen);
+  border: 1px solid var(--ink);
+}
+.chat .status .conn.off::before {
+  background: var(--none);
+}
+.contacts .banner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1834,151 +1865,204 @@ body.logon .icons {
   background: var(--ink);
   color: var(--paper);
   border: var(--px) solid var(--ink);
-  font: 20px/1 var(--font-dot);
+  font: 20px/1.1 var(--font-dot);
 }
-.contacts .me .nm {
-  flex: 1;
+.contacts .banner .who {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
   padding-top: 2px;
+}
+.contacts .banner .who b {
+  font-weight: normal;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.contacts .tools {
-  display: flex;
-  gap: 6px;
-  margin: 8px 0;
+.contacts .banner .who .st {
+  font-size: 15px;
+  color: var(--paper-dim);
 }
-.contacts .groups {
-  min-height: 420px;
+.contacts .ltabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 0 4px;
+}
+.contacts .ltab {
+  padding: 6px 12px 3px;
+  cursor: pointer;
+  background: var(--paper);
+  color: var(--ink-4);
+  border: var(--px) solid var(--ink);
+  border-bottom: 0;
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) 0 0 var(--paper-lo);
+  font: 10px/1 var(--font-px);
+  text-transform: uppercase;
+}
+.contacts .ltab.on {
+  color: var(--ink);
+  background: var(--paper-hi);
+  padding-bottom: 6px;
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 1;
+}
+.contacts .tree {
+  height: 440px;
   max-height: 60vh;
   overflow-y: auto;
-  background: var(--paper-hi);
-  border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .25);
   padding: 4px 4px 8px;
+  position: relative;
+  font: 20px/1.2 var(--font-dot);
 }
 .contacts .grp {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 6px;
+  padding: 5px 4px 2px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--ink);
+  font-weight: bold;
+}
+.contacts .grp .tri {
   font: 10px/1 var(--font-px);
-  text-transform: uppercase;
+  width: 12px;
   color: var(--ink-3);
-  padding: 10px 6px 4px;
-  border-bottom: var(--px) dashed var(--paper-lo);
-  margin-bottom: 4px;
+}
+.contacts .grp.off {
+  color: var(--ink-4);
+}
+.contacts .grp:hover .lbl {
+  background: var(--emitter);
 }
 .contacts .contact {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px;
+  padding: 3px 6px 2px 22px;
   cursor: pointer;
-  font: 20px/1.2 var(--font-dot);
   color: var(--c, var(--ink));
 }
-.contacts .contact:hover,
-.contacts .contact:focus-visible {
-  background: var(--blood);
-  color: var(--paper-hi);
-  outline: none;
+.contacts .contact .fig {
+  display: block;
 }
 .contacts .contact .nm {
-  flex: 1;
   padding-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.contacts .contact .pf {
-  background: none;
-  border: 0;
-  padding: 2px;
-  cursor: pointer;
-  opacity: .55;
-  display: block;
+.contacts .contact .st {
+  font-size: 15px;
+  color: var(--ink-4);
+  font-style: italic;
+  padding-top: 2px;
 }
-.contacts .contact .pf:hover {
-  opacity: 1;
+.contacts .contact.away .nm,
+.contacts .contact.offline .nm {
+  color: var(--ink-4);
+  font-style: italic;
 }
-.dot {
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border: var(--px) solid var(--ink);
-  background: var(--none);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .5);
+.contacts .contact.nopass .nm {
+  color: var(--blood);
+  font-style: italic;
 }
-.dot.online {
-  background: var(--nen);
-}
-.dot.away {
+.contacts .contact.sel {
   background: var(--emitter);
+  color: var(--ink);
+  outline: 1px dotted var(--ink);
 }
-.dot.offline {
-  background: var(--none);
+.contacts .contact.sel .nm {
+  color: var(--ink);
 }
-.dot.nopass {
-  background: var(--blood);
+.contacts .contact:hover:not(.sel) {
+  background: var(--paper);
+}
+.contacts .contact:focus-visible {
+  outline: 1px dotted var(--ink);
+}
+.contacts .dd.ctx {
+  position: absolute;
+  z-index: 7;
+}
+.contacts .tools {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.contacts .tool {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px 4px;
+  cursor: pointer;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--px) solid var(--ink);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--paper-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
+    var(--px) var(--px) 0 var(--ink);
+  font: 10px/1 var(--font-px);
+  text-transform: uppercase;
+}
+.contacts .tool:hover {
+  background: var(--paper-hi);
+}
+.contacts .tool:active {
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo);
+  transform: translate(var(--px), var(--px));
 }
 .room .log {
-  height: 280px;
+  height: 250px;
   overflow-y: auto;
   padding: 8px 10px;
-  background: var(--paper-hi);
-  border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .25);
   font: 20px/1.4 var(--font-dot);
 }
 .room .m {
   margin: 0 0 2px;
 }
+.room .m .who {
+  color: var(--c, var(--ink));
+}
 .room .m .ts {
   color: var(--ink-4);
   font-size: 15px;
-  margin-right: 8px;
-}
-.room .m .who {
-  font-weight: normal;
-  color: var(--c, var(--ink));
 }
 .room .m .txt {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.room .typing {
-  min-height: 1.5em;
-  padding: 2px 4px;
-  font: 15px/1.5 var(--font-dot);
-  color: var(--ink-4);
-}
 .room .compose {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-}
-.room .compose textarea {
-  flex: 1;
-  resize: none;
-  min-height: 60px;
-}
-.room .cbtns {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 8px;
+}
+.room .compose textarea {
+  resize: none;
+  min-height: 72px;
+}
+.room .cbtns {
+  display: flex;
   justify-content: flex-end;
+  gap: 8px;
+}
+.room .status .typing {
+  font-style: italic;
+  min-height: 1.4em;
 }
 .profile-view .pbody {
   min-height: 140px;
   max-height: 60vh;
   overflow-y: auto;
   padding: 12px 14px;
-  background: var(--paper-hi);
-  border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .25);
   font: 20px/1.4 var(--font-dot);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -2046,8 +2130,9 @@ body.logon .icons {
   color: var(--blood);
 }
 @media (max-width: 899px) {
-  .contacts .groups {
-    min-height: 0;
+  .contacts .tree {
+    height: auto;
+    min-height: 240px;
     max-height: none;
   }
   .room .log {

@@ -49,6 +49,7 @@ var HxH = (() => {
     PAL: () => PAL,
     SOUND_KEY: () => SOUND_KEY,
     Session: () => Session,
+    Settings: () => Settings,
     Sounds: () => Sounds,
     StartButton: () => StartButton,
     StartMenu: () => StartMenu,
@@ -424,6 +425,17 @@ var HxH = (() => {
       ".kNNNNNNNNNNNk..",
       ".kkkkkkkkkkkkk.."
     ],
+    // a buddy-list figure; the "g" tint is overridden per presence state
+    buddy: [
+      "...kk...",
+      "..kggk..",
+      "..kggk..",
+      "...kk...",
+      ".kkggkk.",
+      "kggggggk",
+      "kggggggk",
+      "kkkkkkkk"
+    ],
     // the Beetle messenger's app icon: a green beetle, elytra split
     beetle: [
       "..k........k..",
@@ -670,7 +682,8 @@ var HxH = (() => {
      *        closable = true, minimizable = true, maximizable = true,
      *        task = true (taskbar button), popup = false (Escape closes),
      *        cls = "", buttons (chromeless float buttons, e.g. ["min", "close"]),
-     *        menus (a MenuBar spec), content (html | element | fn(body, win)), onClose
+     *        menus (a MenuBar spec, or win => spec — see OS.appMenus),
+     *        content (html | element | fn(body, win)), onClose
      */
     constructor(props = {}) {
       if (!props.id) throw new Error("Window needs an id");
@@ -717,7 +730,7 @@ var HxH = (() => {
         for (const kind of this.buttonKinds()) this.adopt(new ChromeButton({ kind }), f).on("press", (k) => this.emit("chrome", k));
         el.append(f);
       }
-      if (p.menus) this.menuBar = this.adopt(new MenuBar({ menus: p.menus }), el);
+      if (p.menus) this.menuBar = this.adopt(new MenuBar({ menus: typeof p.menus === "function" ? p.menus(this) : p.menus }), el);
       this.body = h("div", { className: "body" });
       el.append(this.body);
       this.setContent(p.content);
@@ -1743,6 +1756,36 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/settings.js
+  var Settings = class {
+    constructor({ storage = globalThis.localStorage, prefix = "hxh.set." } = {}) {
+      this.storage = storage;
+      this.prefix = prefix;
+    }
+    get(key, def = true) {
+      try {
+        const v = this.storage?.getItem(this.prefix + key);
+        return v == null ? def : v === "1";
+      } catch {
+        return def;
+      }
+    }
+    set(key, on) {
+      try {
+        this.storage?.setItem(this.prefix + key, on ? "1" : "0");
+      } catch {
+      }
+      return !!on;
+    }
+    toggle(key, def = true) {
+      return this.set(key, !this.get(key, def));
+    }
+    /** A checkable menu item bound to `key`. */
+    item({ key, label, icon: icon2, def = true, onChange } = {}) {
+      return { label, icon: icon2, check: () => this.get(key, def), onclick: () => onChange?.(this.toggle(key, def)) };
+    }
+  };
+
   // html/hxh/os/wallpaper.js
   var W = 320;
   var H = 180;
@@ -2016,6 +2059,7 @@ var HxH = (() => {
       this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
       this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
       this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
+      this.settings = new Settings({ storage: win.localStorage });
       this.registry = new AppRegistry(this);
       this.user = null;
       this.ready = false;
@@ -2064,6 +2108,25 @@ var HxH = (() => {
         { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
         { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
       ];
+    }
+    /**
+     * The standard menu bar every app window shares (Andrew: "File menu
+     * etc. should be a standard part of the OS"): File always ends with
+     * Exit (closes the window); Edit / View / Settings / Help appear when
+     * the app supplies them. Sections are arrays or functions returning
+     * arrays, evaluated when the menu opens.
+     */
+    appMenus(win, { file, edit, view, settings, help } = {}) {
+      const call = (x) => (typeof x === "function" ? x() : x) || [];
+      const menus = [{ label: "File", key: "F", items: () => {
+        const f = call(file);
+        return [...f, ...f.length ? ["sep"] : [], { label: "Exit", onclick: () => win.close() }];
+      } }];
+      if (edit) menus.push({ label: "Edit", key: "E", items: () => call(edit) });
+      if (view) menus.push({ label: "View", key: "V", items: () => call(view) });
+      if (settings) menus.push({ label: "Settings", key: "S", items: () => call(settings) });
+      if (help) menus.push({ label: "Help", key: "H", items: () => call(help) });
+      return menus;
     }
     /** Apps by group: [{ label, icon, onclick }] for menus. */
     appItems(group = "apps", { except = null, long = false } = {}) {
@@ -2198,13 +2261,14 @@ var HxH = (() => {
     static name = "Summons";
     static icon = "envelope";
     static order = 10;
-    menus() {
+    menus(win) {
       const os = this.os;
-      return [
-        { label: "File", key: "F", items: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }] },
-        { label: "View", key: "V", items: () => [...os.appItems("apps", { except: this.id, long: true }), "sep", ...os.systemItems()] },
-        { label: "Help", key: "H", items: () => os.appItems("system", { long: true }) }
-      ];
+      return os.appMenus(win, {
+        file: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }],
+        view: () => os.appItems("apps", { except: this.id, long: true }),
+        settings: () => os.systemItems(),
+        help: () => os.appItems("system", { long: true })
+      });
     }
     window() {
       if (this.win) return this.win;
@@ -2215,7 +2279,7 @@ var HxH = (() => {
         icon: "x",
         width: 750,
         cls: "summons",
-        menus: this.menus(),
+        menus: (w) => this.menus(w),
         content: CONTENT
       });
       os.wm.add(this.win);
@@ -2801,9 +2865,6 @@ var HxH = (() => {
         case "typing":
           this.emit("typing", { room: f.room, user: f.user });
           break;
-        case "unsend":
-          this.emit("unsend", { room: f.room, id: f.id });
-          break;
         case "presence":
           this.emit("presence", { user: f.user, state: f.state, last_seen_at: f.last_seen_at });
           break;
@@ -2846,9 +2907,6 @@ var HxH = (() => {
       this.raw({ t: "typing", room });
       return true;
     }
-    unsend(room) {
-      return this.send({ t: "unsend", room });
-    }
     close() {
       this.stopped = true;
       this.stopPing();
@@ -2886,88 +2944,193 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/chat/contacts.js
-  var GROUPS = [["online", "Online"], ["away", "Away"], ["offline", "Offline"]];
-  var groupOf = (state) => state === "online" || state === "away" ? state : "offline";
+  var STATE_LABEL = { online: "Online", away: "Away", offline: "Offline", nopass: "No password" };
+  var STATE_TINT = { online: "#58e05c", away: "#ffd166", offline: "#9a9a9a", nopass: "#c8102e" };
+  var present = (state) => state === "online" || state === "away";
   var ContactsWindow = class extends Window {
-    constructor({ me } = {}) {
+    /** props: me, menus (win => spec) */
+    constructor({ me, menus } = {}) {
       super({
         id: "win-chat-contacts",
-        title: "Beetle \u2014 Contacts",
+        title: "Beetle",
         icon: "beetle",
         width: 300,
         cls: "chat contacts",
         maximizable: false,
-        content: `<div class="me"></div><div class="tools"><button class="btn sm" type="button" data-act="global">${icon("comment", 12)}Global chat</button></div><div class="groups"></div>`
+        menus,
+        content: `
+        <div class="banner"></div>
+        <div class="ltabs"><button class="ltab on" type="button" data-tab="online">Online</button><button class="ltab" type="button" data-tab="list">List</button></div>
+        <div class="tree sunken" role="tree"></div>
+        <div class="tools">
+          <button class="tool" type="button" data-act="im" title="Send message">${icon("comment", 16)}<span>IM</span></button>
+          <button class="tool" type="button" data-act="info" title="Profile">${icon("card", 16)}<span>Info</span></button>
+          <button class="tool" type="button" data-act="global" title="Global chat">${icon("beetle", 16)}<span>Global</span></button>
+        </div>
+        <div class="status"><span class="conn off">Offline</span><span class="count"></span></div>`
       });
       this.me = me;
       this.contacts = /* @__PURE__ */ new Map();
+      this.tab = "online";
+      this.collapsed = /* @__PURE__ */ new Set();
+      this.selected = null;
+      this.connected = false;
     }
     render() {
       const el = super.render();
-      this.meBox = el.querySelector(".me");
-      this.groupsBox = el.querySelector(".groups");
-      this.meBox.addEventListener("click", (e) => {
-        if (e.target.closest("[data-act=myprofile]")) this.emit("myprofile");
+      this.banner = el.querySelector(".banner");
+      this.tree = el.querySelector(".tree");
+      this.countEl = el.querySelector(".count");
+      this.connEl = el.querySelector(".conn");
+      el.querySelector(".ltabs").addEventListener("click", (e) => {
+        const t = e.target.closest("[data-tab]");
+        if (!t) return;
+        this.tab = t.dataset.tab;
+        for (const b of el.querySelectorAll(".ltab")) b.classList.toggle("on", b === t);
+        this.renderTree();
       });
-      el.querySelector('[data-act="global"]').addEventListener("click", () => this.emit("global"));
-      this.groupsBox.addEventListener("click", (e) => {
+      this.tree.addEventListener("click", (e) => {
+        const grp = e.target.closest(".grp");
+        if (grp) {
+          const g = grp.dataset.group;
+          this.collapsed.has(g) ? this.collapsed.delete(g) : this.collapsed.add(g);
+          this.renderTree();
+          return;
+        }
+        const row = e.target.closest("[data-user]");
+        if (row) {
+          this.select(row.dataset.user);
+          this.emit("chat", { user: row.dataset.user });
+        }
+      });
+      this.tree.addEventListener("contextmenu", (e) => {
         const row = e.target.closest("[data-user]");
         if (!row) return;
-        if (e.target.closest("[data-profile]")) this.emit("profile", { user: row.dataset.user });
-        else this.emit("chat", { user: row.dataset.user });
+        e.preventDefault();
+        this.select(row.dataset.user);
+        this.contextMenu(row);
       });
-      this.renderMe();
+      this.tree.addEventListener("keydown", (e) => {
+        const row = e.target.closest("[data-user]");
+        if (row && e.key === "Enter") this.emit("chat", { user: row.dataset.user });
+      });
+      el.querySelector(".tools").addEventListener("click", (e) => {
+        const act = e.target.closest("[data-act]")?.dataset.act;
+        if (act === "global") this.emit("global");
+        else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
+        else if (act === "info") this.emit("profile", { user: this.selected || this.me?.username });
+      });
+      this.menu = this.adopt(new Menu({ items: () => this.selected ? [
+        { label: "Send Message", icon: "comment", onclick: () => this.emit("chat", { user: this.selected }) },
+        { label: "Profile", icon: "card", onclick: () => this.emit("profile", { user: this.selected }) }
+      ] : [] }), el);
+      this.menu.el.classList.add("ctx");
+      this.renderBanner();
+      this.renderTree();
       return el;
+    }
+    contextMenu(row) {
+      const m = this.menu;
+      m.el.style.top = row.offsetTop + row.offsetHeight + this.tree.offsetTop - this.tree.scrollTop + "px";
+      m.el.style.left = this.tree.offsetLeft + 24 + "px";
+      m.open();
     }
     setMe(acct) {
       this.me = acct;
-      this.renderMe();
+      this.renderBanner();
+      this.renderTree();
     }
-    renderMe() {
-      const box = this.meBox;
-      if (!box) return;
+    setConnected(on) {
+      this.connected = !!on;
+      if (this.connEl) {
+        this.connEl.textContent = on ? "Connected" : "Offline";
+        this.connEl.classList.toggle("off", !on);
+      }
+      this.renderBanner();
+    }
+    renderBanner() {
+      if (!this.banner) return;
       const me = this.me;
-      box.innerHTML = me ? `${avatar(me)}<span class="nm">${esc(me.display_name || me.username)}</span><button class="btn sm" type="button" data-act="myprofile" title="Edit my profile">${icon("card", 12)}Profile</button>` : "";
+      this.banner.innerHTML = me ? `${avatar(me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>` : "";
     }
     setContacts(list) {
       this.contacts = /* @__PURE__ */ new Map();
       for (const c of list || []) this.contacts.set(c.username, { ...c });
-      this.renderGroups();
+      this.renderTree();
     }
     setPresence(user, state, lastSeen) {
       const c = this.contacts.get(user);
       if (!c) return false;
       c.state = state;
       if (lastSeen !== void 0) c.last_seen_at = lastSeen;
-      this.renderGroups();
+      this.renderTree();
       return true;
     }
     get(user) {
       return this.contacts.get(user);
     }
-    renderGroups() {
-      const box = this.groupsBox;
+    select(user) {
+      this.selected = user;
+      for (const r of this.tree.querySelectorAll("[data-user]")) r.classList.toggle("sel", r.dataset.user === user);
+    }
+    /** Everyone but me, grouped for the Online tab: buddies (people present), bots present, offline. */
+    groups() {
+      const mine = this.me?.username;
+      const all = [...this.contacts.values()].filter((c) => c.username !== mine);
+      const byName = (a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username);
+      const people = all.filter((c) => !c.is_bot), bots = all.filter((c) => c.is_bot);
+      const g = [
+        { key: "buddies", label: "Buddies", rows: people.filter((c) => present(c.state)).sort(byName), total: people.length }
+      ];
+      if (bots.length) g.push({ key: "bots", label: "Bots", rows: bots.filter((c) => present(c.state)).sort(byName), total: bots.length });
+      g.push({ key: "offline", label: "Offline", rows: all.filter((c) => !present(c.state)).sort(byName), total: all.length, off: true });
+      return g;
+    }
+    row(c, { flat = false } = {}) {
+      const state = c.state || "offline";
+      const row = h("div", {
+        className: `contact ${state}${c.username === this.selected ? " sel" : ""}`,
+        dataset: { user: c.username },
+        role: "treeitem",
+        tabindex: "0",
+        title: state === "nopass" ? "Hasn't set a password yet" : c.is_bot ? "Bot" : ""
+      });
+      row.style.setProperty("--c", c.color || "#9a9a9a");
+      row.append(
+        h("span", { className: "fig", html: icon("buddy", 16, { g: STATE_TINT[state] || STATE_TINT.offline }) }),
+        h("span", { className: "nm", text: c.display_name || c.username })
+      );
+      if (state === "away" || state === "nopass" || flat && state !== "online") row.append(h("span", { className: "st", text: `(${STATE_LABEL[state]})` }));
+      return row;
+    }
+    renderTree() {
+      const box = this.tree;
       if (!box) return;
       box.replaceChildren();
       const mine = this.me?.username;
-      for (const [key, label] of GROUPS) {
-        const rows = [...this.contacts.values()].filter((c) => c.username !== mine && groupOf(c.state) === key);
-        const grp = h("div", { className: "grp", dataset: { group: key } }, h("span", { text: label }), h("span", { className: "n", text: String(rows.length) }));
-        box.append(grp);
-        for (const c of rows) {
-          const row = h("div", { className: "contact", dataset: { user: c.username }, role: "button", tabindex: "0", title: c.state === "nopass" ? "Hasn't set a password yet" : "" });
-          row.style.setProperty("--c", c.color || "#9a9a9a");
-          row.append(
-            h("i", { className: "dot " + c.state }),
-            h("span", { className: "nm", text: c.display_name || c.username }),
-            h("button", { type: "button", className: "pf", title: "Profile", dataset: { profile: "1" }, html: icon("card", 12) })
-          );
-          row.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") this.emit("chat", { user: c.username });
-          });
-          box.append(row);
+      if (this.tab === "list") {
+        const all = [...this.contacts.values()].filter((c) => c.username !== mine).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
+        for (const c of all) box.append(this.row(c, { flat: true }));
+        if (this.countEl) this.countEl.textContent = `${all.length} buddies`;
+        return;
+      }
+      let online = 0, total = 0;
+      for (const g of this.groups()) {
+        const open = !this.collapsed.has(g.key);
+        const shown = g.off ? `${g.rows.length}/${g.total}` : `${g.rows.length}/${g.total}`;
+        box.append(h(
+          "div",
+          { className: `grp${g.off ? " off" : ""}${open ? "" : " closed"}`, dataset: { group: g.key } },
+          h("span", { className: "tri", text: open ? "\u25BC" : "\u25B6" }),
+          h("span", { className: "lbl", text: `${g.label} (${shown})` })
+        ));
+        if (open) for (const c of g.rows) box.append(this.row(c));
+        if (!g.off) {
+          online += g.rows.filter((c) => c.state === "online").length;
+          total += g.total;
         }
       }
+      if (this.countEl) this.countEl.textContent = `${online} of ${total} online`;
     }
   };
 
@@ -2975,7 +3138,7 @@ var HxH = (() => {
   var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
   var MAX_LOG = 500;
   var ChatWindow = class extends Window {
-    /** props: room, title, icon, me, nameOf(user), colorOf(user), now() */
+    /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), info (bool: show the Info button) */
     constructor(props) {
       super({
         id: "win-chat-" + roomSlug(props.room),
@@ -2984,29 +3147,27 @@ var HxH = (() => {
         width: 470,
         cls: "chat room",
         content: `
-        <div class="log" role="log"></div>
-        <div class="typing"></div>
+        <div class="log sunken" role="log"></div>
         <div class="compose">
-          <textarea class="field" rows="2" aria-label="Message"></textarea>
+          <textarea class="field" rows="3" aria-label="Message"></textarea>
           <div class="cbtns">
-            <button class="btn sm" type="button" data-act="unsend" title="Take back your last message" hidden>Unsend</button>
+            ${props.info === false ? "" : `<button class="btn sm" type="button" data-act="info" title="Profile">${icon("card", 12)}Info</button>`}
             <button class="btn sm primary" type="button" data-act="send">Send</button>
           </div>
-        </div>`,
+        </div>
+        <div class="status"><span class="typing"></span></div>`,
         ...props
       });
       this.room = props.room;
       this.ids = /* @__PURE__ */ new Set();
-      this.lastMine = null;
     }
     render() {
       const el = super.render();
       this.log = el.querySelector(".log");
       this.typingEl = el.querySelector(".typing");
       this.input = el.querySelector("textarea");
-      this.unsendBtn = el.querySelector('[data-act="unsend"]');
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
-      this.unsendBtn.addEventListener("click", () => this.emit("unsend"));
+      el.querySelector('[data-act="info"]')?.addEventListener("click", () => this.emit("info"));
       this.input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -3028,7 +3189,6 @@ var HxH = (() => {
     setMessages(list) {
       this.log.replaceChildren();
       this.ids.clear();
-      this.lastMine = null;
       for (const m of list || []) this.addMessage(m, { scroll: false });
       this.scrollDown();
     }
@@ -3038,41 +3198,24 @@ var HxH = (() => {
       const p = this.props;
       const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : ""), dataset: { id: String(m.id), sender: m.sender } });
       row.append(
-        h("span", { className: "ts", text: this.time(m.created_at) }),
-        h("b", { className: "who", text: (p.nameOf?.(m.sender) || m.sender) + ":", style: { color: p.colorOf?.(m.sender) || "" } }),
+        h("b", { className: "who", text: p.nameOf?.(m.sender) || m.sender, style: { color: p.colorOf?.(m.sender) || "" } }),
+        h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` }),
         " ",
         h("span", { className: "txt", text: m.body })
       );
       this.log.append(row);
       while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
-      if (m.sender === p.me) this.lastMine = m.id;
-      this.refreshUnsend();
       if (scroll) this.scrollDown();
       return row;
-    }
-    removeMessage(id) {
-      const row = this.log.querySelector(`[data-id="${id}"]`);
-      row?.remove();
-      this.ids.delete(id);
-      if (this.lastMine === id) {
-        const mine = [...this.log.querySelectorAll(".m.mine")];
-        this.lastMine = mine.length ? +mine[mine.length - 1].dataset.id : null;
-      }
-      this.refreshUnsend();
-      return !!row;
     }
     /** Re-apply names and colours (contacts may arrive after history did). */
     refreshNames() {
       const p = this.props;
       for (const row of this.log.querySelectorAll(".m")) {
         const who = row.querySelector(".who"), u = row.dataset.sender;
-        who.textContent = (p.nameOf?.(u) || u) + ":";
+        who.textContent = p.nameOf?.(u) || u;
         who.style.color = p.colorOf?.(u) || "";
       }
-    }
-    /** Unsend only offers your own most recent message, and only while it is the last thing you said. */
-    refreshUnsend() {
-      this.unsendBtn.hidden = this.lastMine == null;
     }
     showTyping(name, ms = 3e3) {
       this.typingEl.textContent = `${name} is typing\u2026`;
@@ -3273,7 +3416,7 @@ var HxH = (() => {
   // html/hxh/apps/chat/profile.js
   var ProfileWindow = class extends Window {
     constructor({ user, name }) {
-      super({ id: "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-"), title: `${name} \u2014 Profile`, icon: "card", width: 440, cls: "chat profile-view", popup: true, content: `<div class="pbody"></div>` });
+      super({ id: "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-"), title: `${name} \u2014 Profile`, icon: "card", width: 440, cls: "chat profile-view", popup: true, content: `<div class="pbody sunken"></div>` });
       this.user = user;
     }
     setRuns(runs) {
@@ -3302,7 +3445,7 @@ var HxH = (() => {
           <button class="btn sm" type="button" data-cmd="italic" title="Italic"><i>I</i></button>
           <button class="btn sm" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
         </div>
-        <div class="ed field" contenteditable="true" spellcheck="false"></div>
+        <div class="ed field sunken" contenteditable="true" spellcheck="false"></div>
         <div class="foot">
           <span class="count">0 / ${LIMIT2}</span>
           <span class="actions"><button class="btn sm" type="button" data-act="cancel">Cancel</button><button class="btn sm primary" type="button" data-act="save">Save</button></span>
@@ -3388,6 +3531,8 @@ var HxH = (() => {
   var ROOM_GLOBAL = "global";
   var dmRoom = (a, b) => "dm:" + [a, b].sort().join(":");
   var NEW_TRAY_ID = "chat-new";
+  var SETTING_TRAY = "chat.trayNew";
+  var SETTING_FLASH = "chat.flash";
   var ChatApp = class extends App {
     static id = "chat";
     static name = "Beetle";
@@ -3445,9 +3590,11 @@ var HxH = (() => {
       c.on("hello", ({ contacts }) => this.setContacts(contacts));
       c.on("msg", (m) => this.onMessage(m));
       c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
-      c.on("unsend", ({ room, id }) => this.windows.get(room)?.removeMessage(id));
       c.on("presence", (p) => this.onPresence(p));
-      c.on("state", () => os.bus.emit("tray:refresh", { id: this.id }));
+      c.on("state", ({ connected }) => {
+        os.bus.emit("tray:refresh", { id: this.id });
+        this.contactsWin?.setConnected(connected);
+      });
       c.on("error", (e) => {
         if (e.code === "rate") os.toast.show("Slow down.");
       });
@@ -3476,6 +3623,38 @@ var HxH = (() => {
         else if (prev === "online") this.os.sounds.play("doorclose");
       }
     }
+    /* ---------- menus ---------- */
+    /** The Settings menu shared by every Beetle window. */
+    settingsItems() {
+      const os = this.os;
+      return [
+        os.settings.item({ key: SETTING_TRAY, label: "New message icon", icon: "comment", onChange: () => this.syncNewIcon() }),
+        os.settings.item({ key: SETTING_FLASH, label: "Flash taskbar", icon: "crt" }),
+        { label: "Sounds", icon: "comment", check: () => os.sounds.on, onclick: () => os.sounds.toggle() }
+      ];
+    }
+    get traySetting() {
+      return this.os.settings.get(SETTING_TRAY, true);
+    }
+    get flashSetting() {
+      return this.os.settings.get(SETTING_FLASH, true);
+    }
+    contactsMenus(win) {
+      return this.os.appMenus(win, {
+        edit: () => [{ label: "Profile", icon: "card", onclick: () => this.editProfile() }],
+        settings: () => this.settingsItems()
+      });
+    }
+    roomMenus(win, room) {
+      const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
+      return this.os.appMenus(win, {
+        edit: () => [
+          ...other ? [{ label: `${this.nameOf(other)}'s profile`, icon: "card", onclick: () => this.viewProfile(other) }] : [],
+          { label: "My profile", icon: "card", onclick: () => this.editProfile() }
+        ],
+        settings: () => this.settingsItems()
+      });
+    }
     /* ---------- windows ---------- */
     launch({ autostart = false } = {}) {
       this.connect();
@@ -3487,13 +3666,13 @@ var HxH = (() => {
     openContacts() {
       const os = this.os;
       if (!this.contactsWin) {
-        const w = this.contactsWin = new ContactsWindow({ me: os.user });
+        const w = this.contactsWin = new ContactsWindow({ me: os.user, menus: (win) => this.contactsMenus(win) });
         os.wm.add(w);
         w.on("chat", ({ user }) => this.openChat(user));
-        w.on("profile", ({ user }) => this.viewProfile(user));
+        w.on("profile", ({ user }) => user === this.me ? this.editProfile() : this.viewProfile(user));
         w.on("global", () => this.openRoom(ROOM_GLOBAL));
-        w.on("myprofile", () => this.editProfile());
         w.setContacts([...this.contacts.values()]);
+        w.setConnected(this.connected);
       }
       const at = this.contactsWin.state.placed ? null : os.env.floating() ? { x: Math.max(16, os.env.width - 300 - 30), y: 24 } : null;
       os.wm.open(this.contactsWin.id, at);
@@ -3507,12 +3686,21 @@ var HxH = (() => {
       const os = this.os;
       let w = this.windows.get(room);
       if (!w) {
-        w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: (u) => this.nameOf(u), colorOf: (u) => this.colorOf(u) });
+        const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
+        w = new ChatWindow({
+          room,
+          title: this.roomTitle(room),
+          me: this.me,
+          nameOf: (u) => this.nameOf(u),
+          colorOf: (u) => this.colorOf(u),
+          menus: (win) => this.roomMenus(win, room),
+          info: !!other
+        });
         os.wm.add(w);
         this.windows.set(room, w);
         w.on("send", ({ body }) => this.send(room, body));
         w.on("typing", () => this.client?.typing(room));
-        w.on("unsend", () => this.client?.unsend(room));
+        w.on("info", () => other && this.viewProfile(other));
         w.on("close", () => {
           this.markRead(room);
         });
@@ -3558,7 +3746,7 @@ var HxH = (() => {
       if (m.sender === this.me) return;
       const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized;
       if (!seen) {
-        w.requestAttention();
+        if (this.flashSetting) w.requestAttention();
         if (!this.unread.includes(m.room)) this.unread.push(m.room);
         this.syncNewIcon();
       }
@@ -3574,13 +3762,14 @@ var HxH = (() => {
         this.syncNewIcon();
       }
     }
-    /** The "new message" tray bubble: present while anything is unread; a click focuses the oldest. */
+    /** The "new message" tray bubble: present while anything is unread (and the setting is on); a click focuses the oldest. */
     syncNewIcon() {
       const os = this.os;
       const has = os.taskbar?.tray.has(NEW_TRAY_ID);
-      if (this.unread.length && !has) {
+      const want = this.unread.length && this.traySetting;
+      if (want && !has) {
         os.bus.emit("tray:add", { id: NEW_TRAY_ID, icon: "comment", title: "New message", on: true, onClick: () => this.focusOldestUnread() });
-      } else if (!this.unread.length && has) {
+      } else if (!want && has) {
         os.bus.emit("tray:remove", { id: NEW_TRAY_ID });
       }
     }

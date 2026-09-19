@@ -249,8 +249,8 @@ component architecture (many windows, tray icons + menus, the bus).
   (behind the contacts, not focused). `window.js` `ChatWindow` — one
   per room (`win-chat-<room>`): the log (names in the sender's avatar
   colour, HH:MM, last 100 from history), the "<name> is typing…" line,
-  the compose box (Enter sends, Shift+Enter breaks, Unsend appears
-  while your last message is the last thing you said). `client.js`
+  the compose box (Enter sends, Shift+Enter breaks; no unsend — Andrew
+  dropped it as anachronistic). `client.js`
   `ChatClient` — the socket: ping every 25 s, drop after two missed
   pongs, reconnect with backoff (1/2/5/10/30 s), queue while offline,
   ≤ 10 messages/s, typing at most every 2 s per room; `ChatAPI` for

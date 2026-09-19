@@ -34,7 +34,7 @@ function make(opts = {}) {
   const c = clock();
   const client = new ChatClient({ url: "ws://x/ws", WebSocket: WS, now: c.now, setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, pingMs: 1000, backoff: [100, 200, 500], ...opts });
   const got = [];
-  for (const ev of ["open", "close", "hello", "msg", "typing", "unsend", "presence", "error", "state"]) client.on(ev, p => got.push([ev, p]));
+  for (const ev of ["open", "close", "hello", "msg", "typing", "presence", "error", "state"]) client.on(ev, p => got.push([ev, p]));
   return { client, sockets, c, got };
 }
 
@@ -53,23 +53,22 @@ test("connect, hello and routed frames", () => {
   ws.push({ t: "hello", me: "andrew", contacts: [] });
   ws.push({ t: "msg", msg: { id: 1, room: "global", sender: "abi", body: "hi" } });
   ws.push({ t: "typing", room: "global", user: "abi" });
-  ws.push({ t: "unsend", room: "global", id: 1 });
   ws.push({ t: "presence", user: "abi", state: "away", last_seen_at: null });
   ws.push({ t: "error", code: "rate", room: "global" });
   ws.push({ t: "weird" });
   ws.onmessage({ data: "not json" });
-  assert.deepEqual(got.map(g => g[0]), ["open", "state", "hello", "msg", "typing", "unsend", "presence", "error"]);
+  assert.deepEqual(got.map(g => g[0]), ["open", "state", "hello", "msg", "typing", "presence", "error"]);
   assert.equal(got[3][1].body, "hi");
-  assert.equal(got[6][1].state, "away");
+  assert.equal(got[5][1].state, "away");
 });
 
 test("queues while offline, flushes on open; typing only when connected", () => {
   const { client, sockets } = make();
   client.connect();
-  assert.equal(client.send({ t: "unsend", room: "global" }), false);
+  assert.equal(client.send({ t: "ping" }), false);
   assert.equal(client.typing("global"), false);
   sockets[0].open();
-  assert.deepEqual(sockets[0].sent, [{ t: "unsend", room: "global" }]);
+  assert.deepEqual(sockets[0].sent, [{ t: "ping" }]);
   assert.equal(client.typing("global"), true);
   assert.equal(client.typing("global"), false);   // throttled for 2 s
   assert.equal(client.typing("dm:a:b"), true);    // per room

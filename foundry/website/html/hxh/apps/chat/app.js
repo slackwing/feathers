@@ -4,7 +4,9 @@
    opens a chat window; messages arrive live over the hub. Attention
    the Windows way: an unread window flashes its taskbar button and a
    "new message" bubble sits in the tray until the last unread chat has
-   been focused. Door sounds for presence, a blip for messages. */
+   been focused (both switchable in the Settings menu). Door sounds for
+   presence, a blip for messages. Every window carries the OS-standard
+   File / Edit / Settings menus (OS.appMenus). */
 import { App } from "../../os/apps.js";
 import { ChatClient, ChatAPI, wsURL } from "./client.js";
 import { ContactsWindow } from "./contacts.js";
@@ -15,6 +17,8 @@ import "./chat.css";
 export const ROOM_GLOBAL = "global";
 export const dmRoom = (a, b) => "dm:" + [a, b].sort().join(":");
 export const NEW_TRAY_ID = "chat-new";
+export const SETTING_TRAY = "chat.trayNew";   // the new-message tray bubble
+export const SETTING_FLASH = "chat.flash";    // flashing taskbar buttons
 
 export class ChatApp extends App {
   static id = "chat";
@@ -68,9 +72,8 @@ export class ChatApp extends App {
     c.on("hello", ({ contacts }) => this.setContacts(contacts));
     c.on("msg", m => this.onMessage(m));
     c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
-    c.on("unsend", ({ room, id }) => this.windows.get(room)?.removeMessage(id));
     c.on("presence", p => this.onPresence(p));
-    c.on("state", () => os.bus.emit("tray:refresh", { id: this.id }));
+    c.on("state", ({ connected }) => { os.bus.emit("tray:refresh", { id: this.id }); this.contactsWin?.setConnected(connected); });
     c.on("error", e => { if (e.code === "rate") os.toast.show("Slow down."); });
     this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
     c.connect();
@@ -94,6 +97,37 @@ export class ChatApp extends App {
     }
   }
 
+  /* ---------- menus ---------- */
+  /** The Settings menu shared by every Beetle window. */
+  settingsItems() {
+    const os = this.os;
+    return [
+      os.settings.item({ key: SETTING_TRAY, label: "New message icon", icon: "comment", onChange: () => this.syncNewIcon() }),
+      os.settings.item({ key: SETTING_FLASH, label: "Flash taskbar", icon: "crt" }),
+      { label: "Sounds", icon: "comment", check: () => os.sounds.on, onclick: () => os.sounds.toggle() },
+    ];
+  }
+  get traySetting() { return this.os.settings.get(SETTING_TRAY, true); }
+  get flashSetting() { return this.os.settings.get(SETTING_FLASH, true); }
+
+  contactsMenus(win) {
+    return this.os.appMenus(win, {
+      edit: () => [{ label: "Profile", icon: "card", onclick: () => this.editProfile() }],
+      settings: () => this.settingsItems(),
+    });
+  }
+
+  roomMenus(win, room) {
+    const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find(u => u !== this.me);
+    return this.os.appMenus(win, {
+      edit: () => [
+        ...(other ? [{ label: `${this.nameOf(other)}'s profile`, icon: "card", onclick: () => this.viewProfile(other) }] : []),
+        { label: "My profile", icon: "card", onclick: () => this.editProfile() },
+      ],
+      settings: () => this.settingsItems(),
+    });
+  }
+
   /* ---------- windows ---------- */
   launch({ autostart = false } = {}) {
     this.connect();
@@ -106,13 +140,13 @@ export class ChatApp extends App {
   openContacts() {
     const os = this.os;
     if (!this.contactsWin) {
-      const w = this.contactsWin = new ContactsWindow({ me: os.user });
+      const w = this.contactsWin = new ContactsWindow({ me: os.user, menus: win => this.contactsMenus(win) });
       os.wm.add(w);
       w.on("chat", ({ user }) => this.openChat(user));
-      w.on("profile", ({ user }) => this.viewProfile(user));
+      w.on("profile", ({ user }) => (user === this.me ? this.editProfile() : this.viewProfile(user)));
       w.on("global", () => this.openRoom(ROOM_GLOBAL));
-      w.on("myprofile", () => this.editProfile());
       w.setContacts([...this.contacts.values()]);
+      w.setConnected(this.connected);
     }
     const at = this.contactsWin.state.placed ? null : (os.env.floating() ? { x: Math.max(16, os.env.width - 300 - 30), y: 24 } : null);
     os.wm.open(this.contactsWin.id, at);
@@ -126,12 +160,14 @@ export class ChatApp extends App {
     const os = this.os;
     let w = this.windows.get(room);
     if (!w) {
-      w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u) });
+      const other = room === ROOM_GLOBAL ? null : room.slice(3).split(":").find(u => u !== this.me);
+      w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u),
+        menus: win => this.roomMenus(win, room), info: !!other });
       os.wm.add(w);
       this.windows.set(room, w);
       w.on("send", ({ body }) => this.send(room, body));
       w.on("typing", () => this.client?.typing(room));
-      w.on("unsend", () => this.client?.unsend(room));
+      w.on("info", () => other && this.viewProfile(other));
       w.on("close", () => { this.markRead(room); });
       this.loadHistory(room, w);
     }
@@ -174,7 +210,7 @@ export class ChatApp extends App {
     if (m.sender === this.me) return;
     const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized;
     if (!seen) {
-      w.requestAttention();
+      if (this.flashSetting) w.requestAttention();
       if (!this.unread.includes(m.room)) this.unread.push(m.room);
       this.syncNewIcon();
     }
@@ -190,13 +226,14 @@ export class ChatApp extends App {
     if (i >= 0) { this.unread.splice(i, 1); this.syncNewIcon(); }
   }
 
-  /** The "new message" tray bubble: present while anything is unread; a click focuses the oldest. */
+  /** The "new message" tray bubble: present while anything is unread (and the setting is on); a click focuses the oldest. */
   syncNewIcon() {
     const os = this.os;
     const has = os.taskbar?.tray.has(NEW_TRAY_ID);
-    if (this.unread.length && !has) {
+    const want = this.unread.length && this.traySetting;
+    if (want && !has) {
       os.bus.emit("tray:add", { id: NEW_TRAY_ID, icon: "comment", title: "New message", on: true, onClick: () => this.focusOldestUnread() });
-    } else if (!this.unread.length && has) {
+    } else if (!want && has) {
       os.bus.emit("tray:remove", { id: NEW_TRAY_ID });
     }
   }

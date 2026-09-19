@@ -79,7 +79,6 @@ export class ChatClient {
       case "hello": this.emit("hello", f); break;
       case "msg": this.emit("msg", f.msg); break;
       case "typing": this.emit("typing", { room: f.room, user: f.user }); break;
-      case "unsend": this.emit("unsend", { room: f.room, id: f.id }); break;
       case "presence": this.emit("presence", { user: f.user, state: f.state, last_seen_at: f.last_seen_at }); break;
       case "error": this.emit("error", { code: f.code, room: f.room }); break;
       default: break;
@@ -116,8 +115,6 @@ export class ChatClient {
     this.raw({ t: "typing", room });
     return true;
   }
-
-  unsend(room) { return this.send({ t: "unsend", room }); }
 
   close() {
     this.stopped = true;

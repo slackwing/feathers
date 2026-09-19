@@ -29,13 +29,14 @@ export class SummonsApp extends App {
   static icon = "envelope";
   static order = 10;
 
-  menus() {
+  menus(win) {
     const os = this.os;
-    return [
-      { label: "File", key: "F", items: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }] },
-      { label: "View", key: "V", items: () => [...os.appItems("apps", { except: this.id, long: true }), "sep", ...os.systemItems()] },
-      { label: "Help", key: "H", items: () => os.appItems("system", { long: true }) },
-    ];
+    return os.appMenus(win, {
+      file: () => [{ label: "Log out", icon: "door", onclick: () => os.logout() }],
+      view: () => os.appItems("apps", { except: this.id, long: true }),
+      settings: () => os.systemItems(),
+      help: () => os.appItems("system", { long: true }),
+    });
   }
 
   window() {
@@ -43,7 +44,7 @@ export class SummonsApp extends App {
     const os = this.os;
     this.win = new Window({
       id: "win-summons", title: "Hunter × Halloween", icon: "x", width: 750, cls: "summons",
-      menus: this.menus(), content: CONTENT,
+      menus: w => this.menus(w), content: CONTENT,
     });
     os.wm.add(this.win);
     this.vn = this.win.$("#vn");

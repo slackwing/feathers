@@ -54,7 +54,8 @@ export class Window extends Component {
    *        closable = true, minimizable = true, maximizable = true,
    *        task = true (taskbar button), popup = false (Escape closes),
    *        cls = "", buttons (chromeless float buttons, e.g. ["min", "close"]),
-   *        menus (a MenuBar spec), content (html | element | fn(body, win)), onClose
+   *        menus (a MenuBar spec, or win => spec — see OS.appMenus),
+   *        content (html | element | fn(body, win)), onClose
    */
   constructor(props = {}) {
     if (!props.id) throw new Error("Window needs an id");
@@ -92,7 +93,7 @@ export class Window extends Component {
       for (const kind of this.buttonKinds()) this.adopt(new ChromeButton({ kind }), f).on("press", k => this.emit("chrome", k));
       el.append(f);
     }
-    if (p.menus) this.menuBar = this.adopt(new MenuBar({ menus: p.menus }), el);
+    if (p.menus) this.menuBar = this.adopt(new MenuBar({ menus: typeof p.menus === "function" ? p.menus(this) : p.menus }), el);
     this.body = h("div", { className: "body" });
     el.append(this.body);
     this.setContent(p.content);

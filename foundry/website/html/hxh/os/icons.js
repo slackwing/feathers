@@ -149,6 +149,17 @@ export const ICONS = {
     ".kNNNNNNNNNNNk..",
     ".kkkkkkkkkkkkk..",
   ],
+  // a buddy-list figure; the "g" tint is overridden per presence state
+  buddy: [
+    "...kk...",
+    "..kggk..",
+    "..kggk..",
+    "...kk...",
+    ".kkggkk.",
+    "kggggggk",
+    "kggggggk",
+    "kkkkkkkk",
+  ],
   // the Beetle messenger's app icon: a green beetle, elytra split
   beetle: [
     "..k........k..",

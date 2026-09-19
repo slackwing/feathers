@@ -21,6 +21,7 @@ export { Session, Nav, WARM_KEY } from "./session.js";
 export { LogonDialog } from "./logon.js";
 export { CRT, CRT_KEY } from "./crt.js";
 export { Sounds, SOUND_KEY, CUES } from "./sound.js";
+export { Settings } from "./settings.js";
 export { wallpaper, cloudSprite, Wallpaper } from "./wallpaper.js";
 export { OS } from "./os.js";
 import { OS } from "./os.js";

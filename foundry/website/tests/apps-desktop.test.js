@@ -40,21 +40,26 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
   assert.match(text, /Oct 31, 2026/);
   assert.equal(w.$("#vn-text b").textContent, NOTICE[1].t);
   assert.ok(w.$("#vn").classList.contains("done"));   // reduced motion: typed instantly
-  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View", "Help"]);
+  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View", "Settings", "Help"]);
 });
 
 test("summons menus are derived from the registry", async () => {
   await os.start({ apps: [SummonsApp, BinderApp, RegisterApp, AboutApp], autostart: ["summons"], boot: false });
   const w = os.wm.get("win-summons");
-  const [file, view, help] = w.menuBar.menus;
+  const [file, view, settings, help] = w.menuBar.menus;
   view.open();
-  assert.deepEqual([...view.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Binder", "Registration", "-", "Scanlines", "Sounds"]);
+  assert.deepEqual([...view.el.children].map(c => c.textContent), ["Binder", "Registration"]);
+  settings.open();
+  assert.deepEqual([...settings.el.children].map(c => c.textContent), ["Scanlines", "Sounds"]);
   help.open();
   assert.deepEqual([...help.el.children].map(c => c.textContent), ["About Hunter Website"]);
   d.click(help.el.querySelector("button"));
   assert.equal(os.wm.get("win-about").state.open, true);
   file.open();
-  assert.equal(file.el.textContent, "Log out");
+  assert.deepEqual([...file.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Log out", "-", "Exit"]);
+  d.click(file.el.querySelectorAll("button")[1]);   // Exit closes the window
+  assert.equal(w.state.open, false);
+  await os.launch("summons");
   view.open();
   d.click(view.el.querySelector("button"));   // Binder
   assert.equal(os.wm.get("win-binder").state.open, true);

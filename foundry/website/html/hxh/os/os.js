@@ -24,6 +24,7 @@ import { LogonDialog } from "./logon.js";
 import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
+import { Settings } from "./settings.js";
 
 export class OS {
   constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
@@ -36,6 +37,7 @@ export class OS {
     this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
     this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
     this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
+    this.settings = new Settings({ storage: win.localStorage });
     this.registry = new AppRegistry(this);
     this.user = null;
     this.ready = false;
@@ -85,6 +87,23 @@ export class OS {
       { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
       { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
     ];
+  }
+
+  /**
+   * The standard menu bar every app window shares (Andrew: "File menu
+   * etc. should be a standard part of the OS"): File always ends with
+   * Exit (closes the window); Edit / View / Settings / Help appear when
+   * the app supplies them. Sections are arrays or functions returning
+   * arrays, evaluated when the menu opens.
+   */
+  appMenus(win, { file, edit, view, settings, help } = {}) {
+    const call = x => (typeof x === "function" ? x() : x) || [];
+    const menus = [{ label: "File", key: "F", items: () => { const f = call(file); return [...f, ...(f.length ? ["sep"] : []), { label: "Exit", onclick: () => win.close() }]; } }];
+    if (edit) menus.push({ label: "Edit", key: "E", items: () => call(edit) });
+    if (view) menus.push({ label: "View", key: "V", items: () => call(view) });
+    if (settings) menus.push({ label: "Settings", key: "S", items: () => call(settings) });
+    if (help) menus.push({ label: "Help", key: "H", items: () => call(help) });
+    return menus;
   }
 
   /** Apps by group: [{ label, icon, onclick }] for menus. */

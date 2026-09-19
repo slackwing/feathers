@@ -8,7 +8,7 @@ import { renderRuns, runsFromNode, textLength, normalizeRuns, LIMIT, FONTS, FONT
 
 export class ProfileWindow extends Window {
   constructor({ user, name }) {
-    super({ id: "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-"), title: `${name} — Profile`, icon: "card", width: 440, cls: "chat profile-view", popup: true, content: `<div class="pbody"></div>` });
+    super({ id: "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-"), title: `${name} — Profile`, icon: "card", width: 440, cls: "chat profile-view", popup: true, content: `<div class="pbody sunken"></div>` });
     this.user = user;
   }
   setRuns(runs) {
@@ -34,7 +34,7 @@ export class ProfileEditor extends Window {
           <button class="btn sm" type="button" data-cmd="italic" title="Italic"><i>I</i></button>
           <button class="btn sm" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
         </div>
-        <div class="ed field" contenteditable="true" spellcheck="false"></div>
+        <div class="ed field sunken" contenteditable="true" spellcheck="false"></div>
         <div class="foot">
           <span class="count">0 / ${LIMIT}</span>
           <span class="actions"><button class="btn sm" type="button" data-act="cancel">Cancel</button><button class="btn sm primary" type="button" data-act="save">Save</button></span>
