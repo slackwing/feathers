@@ -18,9 +18,11 @@ pending` to resubmit.
 
 Tools (feathers `foundry/website/hxh-roster/`):
 - `roster.py` — the Roster DB API. Access is mine to arrange (Andrew:
-  "you already know how to access everything"): `~/.claude/hxh-roster.env`
-  holds `HXH_ROSTER_BASE` and an hxh-admin login; for prod, mint one the
-  way the roster push did (throwaway admin via psql on the VM).
+  "you already know how to access everything"): `./prod_access.sh start`
+  mints a throwaway hxh admin on the VM and writes
+  `~/.claude/hxh-roster.env` (base + login) for PRODUCTION;
+  `./prod_access.sh stop` removes it when the job is done. For the
+  local stack, write the env file by hand.
 - `wiki.py` — the Fandom wiki through its MediaWiki API (page fetches
   are blocked with 402; the API works).
 - The previous attempt, `html/hxh/roster.json` (198 entries, 2026-09-17,
