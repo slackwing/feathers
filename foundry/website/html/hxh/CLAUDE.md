@@ -634,30 +634,39 @@ The curated character base, rebuilt from scratch one character at a
 time (Andrew: the 2026-09-17 automated roster lost too much quality;
 `roster.json` is now only a cross-check). Two halves:
 
-- **`roster/`** — the admin page at `/hxh/roster/`, deliberately in the
-  PLAIN administrative base style (`/admin/assets/style.css`, like
-  `_email/`), not the OS theme, and NOT part of the esbuild bundle:
-  `index.html` + `roster.js` + `roster.css` (list with status tabs and
-  a new-character row; a profile with avatar 1:1 and card 2:3 slots,
-  in-place fields that PATCH on change, and a gallery by type — raw,
-  cropped, pixel art, upscaled, transparent — newest first; click a
-  tile to select and act via the bottom bar: Avatar, Card, Crop, Open,
-  Reject (raws only, remembered so the skill never refetches), Delete;
-  double-click opens the crop tool; drop files on the raw section to
-  upload) and `crop.html` + `crop.js` (the picture at native size or
-  Fit, one crop box, freeform or 1:1 · 2:3 · 3:2 · 4:5 · 5:4 · 16:9 ·
-  9:16, arrows nudge, Enter saves; the SERVER cuts the exact source
-  pixels; a BroadcastChannel refreshes the profile tab). Backend:
-  hobby-server `internal/hxh/rosterdb.go`, tables `hxh_char` +
-  `hxh_char_image` (changeset 006), API `/hxh/api/db/*` — writes need
-  hxh admin, picture reads any hxh role.
+- **The app** `apps/roster/` — a desktop app for hxh admins only
+  (Andrew: Abi will do a lot of the cropping, so it must be in theme
+  and fun, not a plain admin page). `app.js` (RosterApp, icon `db`)
+  opens the list (`list.js`: 90s details view — header buttons, sunken
+  list, View filters Pending / Accepted / Rejected / All, Enter or
+  double-click opens), one window per character (`character.js`:
+  avatar 1:1 + card 2:3 slots, a Review group box — verdict, version,
+  reason, log, Accept / Reject… / Pending — the profile as a dialog
+  form saved on change, and Pictures: a toolbar on the selected tile —
+  Avatar, Card, Crop, Open, Reject (raws only; remembered so the skill
+  never refetches), Delete, Upload… — over a sunken gallery by type,
+  newest first; drop files to upload; double-click a tile to crop),
+  one window per picture being cropped (`crop.js`: the picture fitted
+  to the desktop or at 1:1, ratio buttons Free · 1:1 · 2:3 · 3:2 · 4:5 ·
+  5:4 · 16:9 · 9:16, a marching-ants box with eight handles, a Paint
+  status bar, arrows nudge, Enter saves; the SERVER cuts the exact
+  source pixels; `geometry.js` is the pure maths, tested), and the 90s
+  message boxes (`dialogs.js`: confirm, prompt, rejection reason).
+  Every change bumps the character's version; a verdict is logged
+  against the version it judged (a rejection needs a reason).
+  Backend: hobby-server `internal/hxh/rosterdb.go`, tables `hxh_char`,
+  `hxh_char_image`, `hxh_char_review` (changeset 006), API
+  `/hxh/api/db/*` — writes need hxh admin, picture reads any hxh role.
+  Tests: `tests/roster-app.test.js`, `tests/roster-geometry.test.js`.
 - **The skill** `.claude/skills/hxh-character/SKILL.md` (repo root)
   is the process for adding ONE character as pending, with tools in
-  `foundry/website/hxh-roster/`: `roster.py` (the API; credentials in
-  `~/.claude/hxh-roster.env`) and `wiki.py` (Fandom via the MediaWiki
-  API). Andrew's reviews feed back into the skill text — that is the
-  point. `CHARACTER.md` there is the superseded roster.json checklist.
+  `foundry/website/hxh-roster/`: `roster.py` (the API; login in
+  `~/.claude/hxh-roster.env`, arranged by Claude) and `wiki.py`
+  (Fandom via the MediaWiki API, incl. a numbered contact sheet — LOOK
+  before choosing pictures). Reviews feed back into the skill text —
+  that is the point. `CHARACTER.md` there is the superseded
+  roster.json checklist.
 
-Pictures are anime stills from the wiki (and Andrew's own uploads),
-so the "no copyrighted art" line under Design direction no longer
-holds for character pictures; the site chrome stays original.
+Pictures are anime stills from the wiki (and Andrew's / Abi's own
+uploads), so the "no copyrighted art" line under Design direction no
+longer holds for character pictures; the site chrome stays original.

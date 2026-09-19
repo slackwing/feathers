@@ -237,8 +237,8 @@ var HxH = (() => {
   function whale(vw = 1366, vh = 900) {
     vw = Math.max(1, vw);
     vh = Math.max(1, vh);
-    const cap = WHALE.maxShare * vw / WHALE.span;
-    const scale = Math.min(WHALE.scale, cap);
+    const cap3 = WHALE.maxShare * vw / WHALE.span;
+    const scale = Math.min(WHALE.scale, cap3);
     return { scale, zoom: scale / WHALE.scale, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
   }
   var Env = class {
@@ -488,6 +488,20 @@ var HxH = (() => {
       "......kwwwk...",
       "......kwwk....",
       "......kkk....."
+    ],
+    crop: [
+      "..k......k..",
+      "..k......k..",
+      "kkkkkkkkkkkk",
+      "..kppppppk..",
+      "..kppppppk..",
+      "..kpprrppk..",
+      "..kpprrppk..",
+      "..kppppppk..",
+      "..kppppppk..",
+      "kkkkkkkkkkkk",
+      "..k......k..",
+      "..k......k.."
     ],
     door: [
       "kkkkkkk...",
@@ -1416,7 +1430,7 @@ var HxH = (() => {
 
   // html/hxh/os/typewriter.js
   function type(el, runs, { speed = 16, onDone, instant = false, reduced = false } = {}) {
-    const seq = runs.map((r) => typeof r === "string" ? { t: r } : r);
+    const seq2 = runs.map((r) => typeof r === "string" ? { t: r } : r);
     const node = (r, text) => {
       const n = document.createElement(r.tag || "span");
       if (r.cls) n.className = r.cls;
@@ -1430,7 +1444,7 @@ var HxH = (() => {
       done = true;
       clearInterval(timer);
       el.innerHTML = "";
-      seq.forEach((r) => el.append(node(r, r.t)));
+      seq2.forEach((r) => el.append(node(r, r.t)));
       el.classList.remove("cur");
       onDone?.();
     };
@@ -1443,11 +1457,11 @@ var HxH = (() => {
     }
     el.classList.add("cur");
     timer = setInterval(() => {
-      if (ri >= seq.length) {
+      if (ri >= seq2.length) {
         finish();
         return;
       }
-      const r = seq[ri];
+      const r = seq2[ri];
       if (!span) {
         span = node(r, "");
         el.append(span);
@@ -2452,6 +2466,7 @@ var HxH = (() => {
     Chat: () => ChatApp,
     NOTICE: () => NOTICE,
     Register: () => RegisterApp,
+    Roster: () => RosterApp,
     SetPassword: () => SetPasswordApp,
     Summons: () => SummonsApp
   });
@@ -4176,6 +4191,1136 @@ var HxH = (() => {
       await os.wm.open(win.id, null, { scroll: false, jank: true });
       if (st.state === "ok") win.$('[data-pw="password"]').focus();
       return win;
+    }
+  };
+
+  // html/hxh/apps/roster/api.js
+  var RosterAPI = class {
+    constructor({ fetch, base = "/hxh/api/db" } = {}) {
+      this.fetch = fetch || globalThis.fetch?.bind(globalThis);
+      this.base = base;
+    }
+    imageURL(id) {
+      return `${this.base}/images/${id}`;
+    }
+    thumbURL(id) {
+      return `${this.base}/images/${id}/thumb`;
+    }
+    async call(method, path, body, ctype) {
+      const init = { method, credentials: "same-origin", headers: {} };
+      if (body !== void 0) {
+        if (ctype) {
+          init.headers["Content-Type"] = ctype;
+          init.body = body;
+        } else if (typeof FormData !== "undefined" && body instanceof FormData) init.body = body;
+        else {
+          init.headers["Content-Type"] = "application/json";
+          init.body = JSON.stringify(body);
+        }
+      }
+      const r = await this.fetch(this.base + path, init);
+      if (r.status === 204) return null;
+      let data = null;
+      try {
+        data = await r.json();
+      } catch {
+        data = null;
+      }
+      if (!r.ok) throw Object.assign(new Error(data?.error || `HTTP ${r.status}`), { status: r.status });
+      return data;
+    }
+    list(status = "") {
+      return this.call("GET", "/chars" + (status ? `?status=${encodeURIComponent(status)}` : ""));
+    }
+    get(id) {
+      return this.call("GET", `/chars/${id}`);
+    }
+    create(fields) {
+      return this.call("POST", "/chars", fields);
+    }
+    patch(id, fields) {
+      return this.call("PATCH", `/chars/${id}`, fields);
+    }
+    review(id, status, reason = "") {
+      return this.call("POST", `/chars/${id}/review`, { status, reason });
+    }
+    remove(id) {
+      return this.call("DELETE", `/chars/${id}`);
+    }
+    upload(id, file, { type: type2 = "raw", caption = "" } = {}) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", type2);
+      fd.append("caption", caption);
+      return this.call("POST", `/chars/${id}/images`, fd);
+    }
+    imageMeta(id) {
+      return this.call("GET", `/images/${id}/meta`);
+    }
+    patchImage(id, fields) {
+      return this.call("PATCH", `/images/${id}`, fields);
+    }
+    deleteImage(id) {
+      return this.call("DELETE", `/images/${id}`);
+    }
+    crop(id, rect) {
+      return this.call("POST", `/images/${id}/crop`, rect);
+    }
+  };
+
+  // html/hxh/apps/roster/list.js
+  var FILTERS = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["", "All"]];
+  var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
+  var RosterWindow = class extends Window {
+    /** props: menus (win => spec), thumbURL(id) */
+    constructor(props = {}) {
+      super({
+        id: "win-roster",
+        title: "Roster DB",
+        icon: "db",
+        width: 900,
+        cls: "roster rlist",
+        content: `
+        <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
+        <div class="status"><span class="msg"></span><span class="count"></span></div>`,
+        ...props
+      });
+      this.chars = [];
+      this.filter = "pending";
+      this.selected = null;
+    }
+    render() {
+      const el = super.render();
+      this.rows = h("div", { className: "rows", role: "listbox", tabindex: "0" });
+      this.pane = this.adopt(new ScrollPane({ content: this.rows }), el.querySelector(".body"), { before: el.querySelector(".status") });
+      this.pane.el.classList.add("sunken", "listbox");
+      this.msgEl = el.querySelector(".msg");
+      this.countEl = el.querySelector(".count");
+      this.rows.addEventListener("click", (e) => {
+        const r = e.target.closest(".row");
+        if (r) this.select(+r.dataset.id);
+      });
+      this.rows.addEventListener("dblclick", (e) => {
+        const r = e.target.closest(".row");
+        if (r) this.emit("open", { id: +r.dataset.id });
+      });
+      this.rows.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && this.selected) {
+          e.preventDefault();
+          this.emit("open", { id: this.selected });
+        }
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          const list = this.shown(), i = list.findIndex((c) => c.id === this.selected);
+          const next = list[Math.max(0, Math.min(list.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
+          if (next) this.select(next.id);
+        }
+      });
+      return el;
+    }
+    setChars(list) {
+      this.chars = list || [];
+      this.renderRows();
+    }
+    setFilter(f) {
+      this.filter = f;
+      this.renderRows();
+    }
+    say(msg, err = false) {
+      this.msgEl.textContent = msg;
+      this.msgEl.classList.toggle("err", !!err);
+    }
+    shown() {
+      return this.chars.filter((c) => !this.filter || c.review_status === this.filter);
+    }
+    renderRows() {
+      const list = this.shown();
+      this.rows.replaceChildren(...list.map((c) => this.row(c)));
+      if (!list.length) this.rows.append(h("div", { className: "empty", text: "None." }));
+      this.markSel();
+      const pending = this.chars.filter((c) => c.review_status === "pending").length;
+      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending`;
+      this.pane.update();
+    }
+    row(c) {
+      const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
+      return h(
+        "div",
+        { className: "row", dataset: { id: String(c.id) }, role: "option" },
+        h("span", { className: "c-no", text: String(c.id) }),
+        h("span", { className: "c-av" }, av),
+        h("span", { className: "c-name", text: c.name }),
+        h("span", { className: "c-ja", text: c.name_ja || "" }),
+        h("span", { className: "c-rank", text: c.rank || "" }),
+        h("span", { className: "c-nen", text: (c.nen_types || []).map(cap).join(", ") }),
+        h("span", { className: "c-aff", text: c.affiliation || "" }),
+        h("span", { className: "c-pics", text: String(c.image_count ?? "") }),
+        h("span", { className: "c-ver", text: "v" + (c.version || 1) }),
+        h("span", { className: "c-st" }, h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) }))
+      );
+    }
+    select(id) {
+      this.selected = id;
+      this.markSel();
+    }
+    markSel() {
+      for (const r of this.rows.querySelectorAll(".row")) r.classList.toggle("sel", +r.dataset.id === this.selected);
+    }
+    /** Replace one character's row in place (after an edit elsewhere). */
+    update(c) {
+      const i = this.chars.findIndex((x) => x.id === c.id);
+      if (i < 0) this.chars.push(c);
+      else this.chars[i] = { ...this.chars[i], ...c };
+      this.renderRows();
+    }
+    drop(id) {
+      this.chars = this.chars.filter((c) => c.id !== id);
+      this.renderRows();
+    }
+  };
+
+  // html/hxh/apps/roster/character.js
+  var NEN = ["enhancement", "transmutation", "conjuration", "emission", "manipulation", "specialization"];
+  var ARCS2 = [
+    ["hunter-exam", "Hunter Exam"],
+    ["zoldyck-family", "Zoldyck Family"],
+    ["heavens-arena", "Heavens Arena"],
+    ["yorknew-city", "Yorknew City"],
+    ["greed-island", "Greed Island"],
+    ["chimera-ant", "Chimera Ant"],
+    ["chairman-election", "Chairman Election"]
+  ];
+  var RANKS = ["S", "A", "B", "C"];
+  var TYPES2 = [["raw", "Raw"], ["cropped", "Cropped"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
+  var cap2 = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
+  var slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  var words = (s) => (String(s || "").trim().match(/\S+/g) || []).length;
+  var winId = (id) => "win-roster-c-" + id;
+  var FORM = `
+  <div class="frow">
+    <div class="f"><label class="lbl">Name</label><input class="field" data-f="name" maxlength="100"></div>
+    <div class="f"><label class="lbl">Japanese</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
+  </div>
+  <div class="frow four">
+    <div class="f"><label class="lbl">Short</label><input class="field" data-f="first" maxlength="20"></div>
+    <div class="f"><label class="lbl">Rank</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
+    <div class="f"><label class="lbl">Nen</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
+    <div class="f"><label class="lbl">Affiliation</label><input class="field" data-f="affiliation" maxlength="60"></div>
+  </div>
+  <div class="frow">
+    <div class="f"><label class="lbl">Arcs</label><div class="checks">${ARCS2.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
+    <div class="f"><label class="lbl">Arms</label><input class="field" data-f="arms"></div>
+  </div>
+  <div class="f"><label class="lbl">Description <span class="count" data-count></span></label><textarea class="field" data-f="description" rows="4"></textarea></div>
+  <div class="f"><label class="lbl">Notes</label><textarea class="field" data-f="notes" rows="3"></textarea></div>`;
+  var CharacterWindow = class extends Window {
+    /** props: id, name, menus (win => spec), thumbURL(id) */
+    constructor(props) {
+      const { id, name, ...rest } = props;
+      super({
+        id: winId(id),
+        title: `#${id} ${name || ""}`.trim(),
+        icon: "card",
+        width: 980,
+        cls: "roster rchar",
+        content: `
+        <div class="top">
+          <div class="slots">
+            <div class="slot av" data-slot="avatar_image_id" title="Avatar"><i class="lab">Avatar</i></div>
+            <div class="slot cd" data-slot="card_image_id" title="Card"><i class="lab">Card</i></div>
+          </div>
+          <fieldset class="group review">
+            <legend>Review</legend>
+            <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span></div>
+            <div class="reason"></div>
+            <div class="rbtns">
+              <button class="btn" type="button" data-review="accepted">Accept</button>
+              <button class="btn" type="button" data-review="rejected">Reject\u2026</button>
+              <button class="btn" type="button" data-review="pending">Pending</button>
+            </div>
+            <div class="log"></div>
+          </fieldset>
+        </div>
+        <fieldset class="group profile"><legend>Profile</legend><div class="form">${FORM}</div></fieldset>
+        <fieldset class="group pics"><legend>Pictures</legend>
+          <div class="gtools">
+            <button class="btn sm" type="button" data-img="avatar" disabled>Avatar</button>
+            <button class="btn sm" type="button" data-img="card" disabled>Card</button>
+            <button class="btn sm" type="button" data-img="crop" disabled>Crop</button>
+            <button class="btn sm" type="button" data-img="open" disabled>Open</button>
+            <button class="btn sm" type="button" data-img="reject" disabled>Reject</button>
+            <button class="btn sm" type="button" data-img="delete" disabled>Delete</button>
+            <span class="grow"></span>
+            <label class="chk"><input type="checkbox" data-show-rejected><span>Rejected</span></label>
+            <button class="btn sm" type="button" data-img="upload">Upload\u2026</button>
+          </div>
+        </fieldset>
+        <div class="status"><span class="msg"></span><span class="sel"></span></div>
+        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>`,
+        ...rest
+      });
+      this.charId = id;
+      this.char = null;
+      this.selected = null;
+      this.showRejected = false;
+    }
+    render() {
+      const el = super.render();
+      const body = el.querySelector(".body");
+      this.gallery = h("div", { className: "gallery" });
+      this.pane = this.adopt(new ScrollPane({ content: this.gallery }), el.querySelector(".pics"));
+      this.pane.el.classList.add("sunken", "gbox");
+      this.msgEl = el.querySelector(".status .msg");
+      this.selEl = el.querySelector(".status .sel");
+      this.file = el.querySelector('input[type="file"]');
+      for (const s of el.querySelectorAll("[data-nen]")) s.innerHTML = `<option value="">\u2014</option>` + NEN.map((n) => `<option value="${n}">${cap2(n)}</option>`).join("");
+      el.querySelector(".slots").addEventListener("click", (e) => {
+        const x = e.target.closest(".clear");
+        if (x) this.emit("slot", { slot: x.closest(".slot").dataset.slot, id: null });
+      });
+      el.querySelector(".rbtns").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-review]");
+        if (b && !b.disabled) this.emit("review", { status: b.dataset.review });
+      });
+      const form = el.querySelector(".form");
+      form.addEventListener("input", (e) => {
+        if (e.target.dataset.f === "description") this.updateCount();
+      });
+      form.addEventListener("change", (e) => {
+        const t = e.target;
+        if (t.dataset.f) {
+          let v = t.value;
+          if (t.dataset.f === "arms") v = v.split(",").map(slugify).filter(Boolean);
+          else if (t.tagName !== "TEXTAREA") v = v.trim();
+          this.emit("patch", { fields: { [t.dataset.f]: v } });
+        } else if (t.dataset.nen !== void 0) {
+          const vals = [...form.querySelectorAll("[data-nen]")].map((s) => s.value).filter(Boolean);
+          this.emit("patch", { fields: { nen_types: [...new Set(vals)] } });
+        } else if (t.dataset.arc) {
+          const arcs = ARCS2.map(([s]) => s).filter((s) => form.querySelector(`[data-arc="${s}"]`).checked);
+          this.emit("patch", { fields: { arcs } });
+        }
+      });
+      this.gallery.addEventListener("click", (e) => {
+        const t = e.target.closest(".tile");
+        if (t) this.select(+t.dataset.id === this.selected ? null : +t.dataset.id);
+      });
+      this.gallery.addEventListener("dblclick", (e) => {
+        const t = e.target.closest(".tile");
+        if (t) this.emit("crop", { id: +t.dataset.id });
+      });
+      el.querySelector(".gtools").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-img]");
+        if (!b || b.disabled) return;
+        if (b.dataset.img === "upload") {
+          this.file.click();
+          return;
+        }
+        this.emit("image", { act: b.dataset.img, id: this.selected });
+      });
+      el.querySelector("[data-show-rejected]").addEventListener("change", (e) => {
+        this.showRejected = e.target.checked;
+        this.renderGallery();
+      });
+      this.file.addEventListener("change", () => {
+        if (this.file.files.length) this.emit("upload", { files: [...this.file.files] });
+        this.file.value = "";
+      });
+      const gbox = this.pane.el;
+      gbox.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        gbox.classList.add("drop");
+      });
+      gbox.addEventListener("dragleave", () => gbox.classList.remove("drop"));
+      gbox.addEventListener("drop", (e) => {
+        e.preventDefault();
+        gbox.classList.remove("drop");
+        const files = [...e.dataTransfer?.files || []];
+        if (files.length) this.emit("upload", { files });
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && this.selected) {
+          e.stopPropagation();
+          this.select(null);
+        }
+      });
+      void body;
+      return el;
+    }
+    say(msg, err = false) {
+      this.msgEl.textContent = msg;
+      this.msgEl.classList.toggle("err", !!err);
+    }
+    /** Everything from the character: title, slots, review, form (unless a field has focus), gallery. */
+    setChar(c, { form = true } = {}) {
+      this.char = c;
+      this.setTitle(`#${c.id} ${c.name}`);
+      this.renderSlots();
+      this.renderReview();
+      if (form) this.fillForm();
+      this.renderGallery();
+    }
+    renderSlots() {
+      const c = this.char;
+      for (const slot of this.el.querySelectorAll(".slot")) {
+        const id = c[slot.dataset.slot];
+        slot.classList.toggle("set", !!id);
+        slot.replaceChildren(h("i", { className: "lab", text: slot.dataset.slot === "avatar_image_id" ? "Avatar" : "Card" }));
+        if (id) slot.append(h("img", { alt: "", src: this.props.thumbURL?.(id) || "" }), h("button", { className: "tbtn clear", type: "button", title: "Clear", text: "\xD7" }));
+      }
+    }
+    renderReview() {
+      const c = this.char, el = this.el;
+      const st = el.querySelector(".verdict .st");
+      st.textContent = cap2(c.review_status);
+      st.className = "st " + c.review_status;
+      el.querySelector(".verdict .ver").textContent = "v" + c.version;
+      const last = (c.reviews || [])[0];
+      el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.reviewer}` : "";
+      el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
+      for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
+      const log = el.querySelector(".log");
+      log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
+        "div",
+        { className: "lrow" },
+        h("b", { text: `v${r.version} ${r.status}` }),
+        ` ${r.reviewer}`,
+        r.reason ? h("span", { className: "why", text: " \u2014 " + r.reason }) : null,
+        h("span", { className: "when", text: this.when(r.created_at) })
+      )));
+    }
+    when(iso) {
+      const d = new Date(iso);
+      return isNaN(d) ? "" : d.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+    fillForm() {
+      const c = this.char, f = this.el.querySelector(".form");
+      for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
+      f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
+      f.querySelectorAll("[data-nen]").forEach((s, i) => {
+        s.value = (c.nen_types || [])[i] || "";
+      });
+      for (const [s] of ARCS2) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);
+      this.updateCount();
+    }
+    updateCount() {
+      const n = words(this.el.querySelector('[data-f="description"]').value), el = this.el.querySelector("[data-count]");
+      el.textContent = n ? `${n} words` : "";
+      el.classList.toggle("bad", n > 0 && (n < 45 || n > 75));
+    }
+    renderGallery() {
+      const c = this.char, byType = {};
+      for (const im of c.images || []) (byType[im.type] ||= []).push(im);
+      this.gallery.replaceChildren(...TYPES2.flatMap(([t, label]) => {
+        const all = byType[t] || [];
+        const shown = all.filter((i) => this.showRejected || i.status !== "rejected");
+        if (!all.length && t !== "raw") return [];
+        const sec = h(
+          "div",
+          { className: "sec", dataset: { type: t } },
+          h("div", { className: "sech" }, h("b", { text: label }), h("span", { className: "n", text: String(all.filter((i) => i.status !== "rejected").length) })),
+          h("div", { className: "tiles" }, shown.length ? shown.map((im) => this.tile(im)) : h("div", { className: "empty", text: t === "raw" ? "Drop pictures here." : "" }))
+        );
+        return [sec];
+      }));
+      if (this.selected && !(c.images || []).some((i) => i.id === this.selected)) this.selected = null;
+      this.markSel();
+      this.pane.update();
+    }
+    tile(im) {
+      const c = this.char;
+      const roles = [c.avatar_image_id === im.id && "avatar", c.card_image_id === im.id && "card"].filter(Boolean).join(" \xB7 ");
+      const from = im.source_image_id ? `from #${im.source_image_id}` : "";
+      return h(
+        "figure",
+        { className: `tile ${im.status}${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
+        h("div", { className: "pic" }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+        h(
+          "figcaption",
+          {},
+          h("div", { className: "l1" }, h("b", { text: "#" + im.id }), h("span", { text: `${im.width}\xD7${im.height}` }), h("span", { className: "role", text: roles })),
+          h("div", { className: "l2", text: [from, im.caption].filter(Boolean).join(" \xB7 ") })
+        )
+      );
+    }
+    select(id) {
+      this.selected = id;
+      this.markSel();
+      const im = id && (this.char.images || []).find((i) => i.id === id);
+      const tools = this.el.querySelector(".gtools");
+      for (const b of tools.querySelectorAll("[data-img]")) if (b.dataset.img !== "upload") b.disabled = !im;
+      if (im) {
+        tools.querySelector('[data-img="reject"]').textContent = im.status === "rejected" ? "Restore" : "Reject";
+        tools.querySelector('[data-img="reject"]').disabled = im.type !== "raw";
+        tools.querySelector('[data-img="avatar"]').classList.toggle("pressed", this.char.avatar_image_id === id);
+        tools.querySelector('[data-img="card"]').classList.toggle("pressed", this.char.card_image_id === id);
+        this.selEl.textContent = `#${im.id} \xB7 ${im.type} \xB7 ${im.width}\xD7${im.height} \xB7 ${Math.round(im.bytes / 1024)} KB`;
+      } else {
+        this.selEl.textContent = "";
+        for (const b of tools.querySelectorAll(".pressed")) b.classList.remove("pressed");
+      }
+    }
+    markSel() {
+      for (const t of this.gallery.querySelectorAll(".tile")) t.classList.toggle("sel", +t.dataset.id === this.selected);
+    }
+  };
+
+  // html/hxh/apps/roster/geometry.js
+  var RATIOS = [["Free", 0], ["1:1", 1], ["2:3", 2 / 3], ["3:2", 3 / 2], ["4:5", 4 / 5], ["5:4", 5 / 4], ["16:9", 16 / 9], ["9:16", 9 / 16]];
+  var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  var roundBox = (b) => b && { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.w), h: Math.round(b.h) };
+  function fromAnchor(W, H, ratio, ax, ay, px, py) {
+    const dx = px - ax, dy = py - ay;
+    const sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+    let w = Math.abs(dx), h2 = Math.abs(dy);
+    const maxW = sx > 0 ? W - ax : ax, maxH = sy > 0 ? H - ay : ay;
+    if (ratio) {
+      if (w / ratio >= h2) h2 = w / ratio;
+      else w = h2 * ratio;
+      if (w > maxW) {
+        w = maxW;
+        h2 = w / ratio;
+      }
+      if (h2 > maxH) {
+        h2 = maxH;
+        w = h2 * ratio;
+      }
+    } else {
+      w = Math.min(w, maxW);
+      h2 = Math.min(h2, maxH);
+    }
+    return { x: sx > 0 ? ax : ax - w, y: sy > 0 ? ay : ay - h2, w, h: h2 };
+  }
+  function fitAround(W, H, ratio, cx, cy, w, h2) {
+    w = Math.min(w, W);
+    h2 = Math.min(h2, H);
+    if (ratio) {
+      if (w / h2 > ratio) w = h2 * ratio;
+      else h2 = w / ratio;
+    }
+    return { x: clamp(cx - w / 2, 0, W - w), y: clamp(cy - h2 / 2, 0, H - h2), w, h: h2 };
+  }
+  function refit(W, H, ratio, box) {
+    if (!box || !ratio) return box;
+    let w = box.w, h2 = w / ratio;
+    if (h2 > box.h) {
+      h2 = box.h;
+      w = h2 * ratio;
+    }
+    return fitAround(W, H, ratio, box.x + box.w / 2, box.y + box.h / 2, w, h2);
+  }
+  function moveTo(W, H, box, x, y) {
+    return { ...box, x: clamp(x, 0, W - box.w), y: clamp(y, 0, H - box.h) };
+  }
+  function resize(W, H, ratio, start2, dir, px, py) {
+    const ax = dir.includes("w") ? start2.x + start2.w : start2.x;
+    const ay = dir.includes("n") ? start2.y + start2.h : start2.y;
+    if (dir.length === 2) return fromAnchor(W, H, ratio, ax, ay, px, py);
+    if (dir === "e" || dir === "w") {
+      let w = Math.abs(px - ax);
+      if (ratio) {
+        const cy = start2.y + start2.h / 2;
+        let h3 = Math.min(w / ratio, H, 2 * cy, 2 * (H - cy));
+        w = Math.min(h3 * ratio, dir === "e" ? W - ax : ax);
+        h3 = w / ratio;
+        return { x: dir === "e" ? ax : ax - w, y: cy - h3 / 2, w, h: h3 };
+      }
+      w = Math.min(w, dir === "e" ? W - ax : ax);
+      return { ...start2, x: dir === "e" ? ax : ax - w, w };
+    }
+    let h2 = Math.abs(py - ay);
+    if (ratio) {
+      const cx = start2.x + start2.w / 2;
+      let w = Math.min(h2 * ratio, W, 2 * cx, 2 * (W - cx));
+      h2 = Math.min(w / ratio, dir === "s" ? H - ay : ay);
+      w = h2 * ratio;
+      return { x: cx - w / 2, y: dir === "s" ? ay : ay - h2, w, h: h2 };
+    }
+    h2 = Math.min(h2, dir === "s" ? H - ay : ay);
+    return { ...start2, y: dir === "s" ? ay : ay - h2, h: h2 };
+  }
+  var fitZoom = (W, H, cw, ch) => Math.min(1, cw / W, ch / H);
+  function cropCanvas(W, H, vw, vh) {
+    const cw = Math.max(320, Math.min(W, vw - 90)), ch = Math.max(240, Math.min(H, vh - 280));
+    return { cw, ch };
+  }
+
+  // html/hxh/apps/roster/crop.js
+  var cropId = (imageId) => "win-crop-" + imageId;
+  var CropWindow = class extends Window {
+    /** props: image {id,width,height,type}, char {id,name}, src (url), canvas {cw,ch}, ratio, fit */
+    constructor(props) {
+      const { image, char } = props;
+      super({
+        id: cropId(image.id),
+        title: `Crop #${image.id} \u2014 ${char.name}`,
+        icon: "crop",
+        cls: "roster rcrop",
+        task: true,
+        content: `
+        <div class="ctools">
+          <div class="ratios">${RATIOS.map(([l, r]) => `<button class="btn sm" type="button" data-r="${r}">${l}</button>`).join("")}</div>
+          <span class="grow"></span>
+          <button class="btn sm" type="button" data-act="fit">Fit</button>
+        </div>
+        <div class="canvas sunken"><div class="wrap"><img alt="" draggable="false"><div class="box" hidden><i class="ants"></i>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<b class="hd ${d}" data-h="${d}"></b>`).join("")}</div></div></div>
+        <div class="foot">
+          <span class="status"><span class="pos"></span><span class="saved"></span></span>
+          <button class="btn primary" type="button" data-act="save" disabled>Crop and save</button>
+        </div>`,
+        ...props
+      });
+      this.W = image.width;
+      this.H = image.height;
+      this.z = 1;
+      this.fit = !!props.fit;
+      this.ratio = props.ratio || 0;
+      this.box = null;
+      this.drag = null;
+    }
+    render() {
+      const el = super.render();
+      this.canvas = el.querySelector(".canvas");
+      this.wrap = el.querySelector(".wrap");
+      this.img = el.querySelector("img");
+      this.boxEl = el.querySelector(".box");
+      this.posEl = el.querySelector(".pos");
+      this.savedEl = el.querySelector(".saved");
+      this.saveBtn = el.querySelector('[data-act="save"]');
+      this.wrap.classList.toggle("pixel", ["pixelated", "transparent"].includes(this.props.image.type));
+      this.img.src = this.props.src || "";
+      el.querySelector(".ratios").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-r]");
+        if (b) this.setRatio(+b.dataset.r);
+      });
+      el.querySelector('[data-act="fit"]').addEventListener("click", () => this.setFit(!this.fit));
+      this.saveBtn.addEventListener("click", () => this.save());
+      this.wrap.addEventListener("pointerdown", (e) => this.down(e));
+      this.wrap.addEventListener("pointermove", (e) => this.move(e));
+      this.wrap.addEventListener("pointerup", () => this.up());
+      this.wrap.addEventListener("pointercancel", () => this.up());
+      el.addEventListener("keydown", (e) => this.key(e));
+      el.tabIndex = -1;
+      return el;
+    }
+    /** The element exists only after render, so sizing waits for the mount. */
+    onMount() {
+      this.layout();
+      this.markRatio();
+    }
+    /** Size the canvas to what the desktop affords and pick the zoom. */
+    layout() {
+      const { cw, ch } = this.props.canvas || cropCanvas(this.W, this.H, 1366, 900);
+      this.z = this.fit ? fitZoom(this.W, this.H, cw, ch) : 1;
+      const ww = Math.round(this.W * this.z), wh = Math.round(this.H * this.z);
+      this.canvas.style.width = Math.min(cw, ww) + "px";
+      this.canvas.style.height = Math.min(ch, wh) + "px";
+      this.wrap.style.width = ww + "px";
+      this.wrap.style.height = wh + "px";
+      this.el.style.width = Math.min(cw, ww) + 44 + "px";
+      const fitBtn = this.el.querySelector('[data-act="fit"]');
+      fitBtn.classList.toggle("pressed", this.fit);
+      fitBtn.textContent = this.fit ? `Fit ${Math.round(this.z * 100)}%` : "Fit";
+      this.draw();
+    }
+    setFit(on) {
+      this.fit = on;
+      this.emit("fit", { fit: on });
+      this.layout();
+    }
+    setRatio(r) {
+      this.ratio = r;
+      this.emit("ratio", { ratio: r });
+      this.markRatio();
+      if (this.box && r) {
+        this.box = refit(this.W, this.H, r, this.box);
+        this.draw();
+      }
+    }
+    markRatio() {
+      for (const b of this.el.querySelectorAll("[data-r]")) b.classList.toggle("pressed", +b.dataset.r === this.ratio);
+    }
+    pt(e) {
+      const r = this.wrap.getBoundingClientRect();
+      return { x: clamp((e.clientX - r.left) / this.z, 0, this.W), y: clamp((e.clientY - r.top) / this.z, 0, this.H) };
+    }
+    down(e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      this.wrap.setPointerCapture?.(e.pointerId);
+      const p = this.pt(e), hd = e.target.closest?.(".hd");
+      if (hd && this.box) this.drag = { kind: "resize", dir: hd.dataset.h, start: { ...this.box } };
+      else if (this.box && e.target.closest?.(".box")) this.drag = { kind: "move", ox: p.x - this.box.x, oy: p.y - this.box.y };
+      else {
+        this.drag = { kind: "draw", ax: p.x, ay: p.y };
+        this.box = null;
+        this.draw();
+      }
+    }
+    move(e) {
+      if (!this.drag) return;
+      const p = this.pt(e), d = this.drag;
+      if (d.kind === "draw") this.box = fromAnchor(this.W, this.H, this.ratio, d.ax, d.ay, p.x, p.y);
+      else if (d.kind === "move") this.box = moveTo(this.W, this.H, this.box, p.x - d.ox, p.y - d.oy);
+      else this.box = resize(this.W, this.H, this.ratio, d.start, d.dir, p.x, p.y);
+      this.draw();
+    }
+    up() {
+      if (!this.drag) return;
+      this.drag = null;
+      if (this.box && (this.box.w < 1 || this.box.h < 1)) this.box = null;
+      if (this.box) this.box = roundBox(this.box);
+      this.draw();
+    }
+    key(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "Escape" && this.box) {
+        e.stopPropagation();
+        this.box = null;
+        this.draw();
+        return;
+      }
+      if (e.key === "Enter" && this.box) {
+        e.preventDefault();
+        this.save();
+        return;
+      }
+      if (!this.box || !/^Arrow/.test(e.key)) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 1, b = this.box;
+      const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+      const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+      this.box = moveTo(this.W, this.H, b, b.x + dx, b.y + dy);
+      this.draw();
+    }
+    /** Set the box from outside (tests, presets). */
+    setBox(b) {
+      this.box = b ? roundBox(b) : null;
+      this.draw();
+    }
+    draw() {
+      const b = this.box && roundBox(this.box);
+      this.boxEl.hidden = !b;
+      this.saveBtn.disabled = !b || b.w < 1 || b.h < 1;
+      if (!b) {
+        this.posEl.textContent = "";
+        return;
+      }
+      const z = this.z;
+      Object.assign(this.boxEl.style, { left: b.x * z + "px", top: b.y * z + "px", width: b.w * z + "px", height: b.h * z + "px" });
+      this.posEl.textContent = `${b.x}, ${b.y}  \xB7  ${b.w} \xD7 ${b.h}`;
+    }
+    save() {
+      if (!this.box) return;
+      this.saveBtn.disabled = true;
+      this.savedEl.textContent = "";
+      this.emit("save", { rect: roundBox(this.box) });
+    }
+    /** Called by the app with the server's answer. */
+    saved(image, created = true) {
+      this.saveBtn.disabled = !this.box;
+      this.savedEl.textContent = `${created ? "Saved" : "Already"} #${image.id} ${image.width}\xD7${image.height}`;
+      this.savedEl.classList.remove("err");
+    }
+    failed(msg) {
+      this.saveBtn.disabled = !this.box;
+      this.savedEl.textContent = msg;
+      this.savedEl.classList.add("err");
+    }
+  };
+
+  // html/hxh/apps/roster/dialogs.js
+  var seq = 0;
+  var Dialog = class extends Window {
+    /** props: title, body (html), buttons [{act, label, primary}], width, focus (selector) */
+    constructor({ title, body, buttons = [{ act: "ok", label: "OK", primary: true }, { act: "cancel", label: "Cancel" }], width = 420, focus = null, icon: icon2 = "question", cls = "" } = {}) {
+      super({
+        id: "win-dlg-" + ++seq,
+        title,
+        icon: icon2,
+        width,
+        popup: true,
+        task: false,
+        minimizable: false,
+        cls: "roster dlg " + cls,
+        content: `<div class="dbody">${body}</div>
+        <div class="actions right">${buttons.map((b) => `<button class="btn ${b.primary ? "primary" : ""}" type="button" data-act="${b.act}">${esc(b.label)}</button>`).join("")}</div>`
+      });
+      this.focusSel = focus;
+      this.result = null;
+    }
+    render() {
+      const el = super.render();
+      el.querySelector(".actions").addEventListener("click", (e) => {
+        const act = e.target.closest("[data-act]")?.dataset.act;
+        if (act) this.finish(act);
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          if (this.canOK()) this.finish("ok");
+        }
+      });
+      return el;
+    }
+    canOK() {
+      return !this.$('[data-act="ok"]')?.disabled;
+    }
+    finish(act) {
+      if (act === "ok" && !this.canOK()) return;
+      this.result = act === "ok" ? this.value() : null;
+      this.emit(act === "ok" ? "ok" : "cancel", this.result);
+      this.close();
+    }
+    /** What OK resolves with; subclasses override. */
+    value() {
+      return true;
+    }
+    /** Show on the window manager and resolve with the value, or null on cancel / close. */
+    ask(os) {
+      os.wm.add(this);
+      return new Promise((res) => {
+        let done = false;
+        const settle = (v) => {
+          if (!done) {
+            done = true;
+            res(v);
+            os.wm.remove(this.id);
+          }
+        };
+        this.on("ok", (v) => settle(v));
+        this.on("cancel", () => settle(null));
+        this.on("close", () => settle(null));
+        os.wm.open(this.id, this.centre(os)).then(() => this.$(this.focusSel || ".btn")?.focus());
+      });
+    }
+    centre(os) {
+      if (!os.env.floating()) return null;
+      const w = this.props.width || 420;
+      return { x: Math.max(16, (os.env.width - w) / 2), y: Math.max(40, os.env.height * 0.3) };
+    }
+  };
+  var ConfirmDialog = class extends Dialog {
+    constructor({ title = "Roster DB", message, ok = "OK" } = {}) {
+      super({ title, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }] });
+    }
+  };
+  var PromptDialog = class extends Dialog {
+    constructor({ title, label, value = "", ok = "OK" } = {}) {
+      super({
+        title,
+        body: `<label class="lbl" for="dlg-in">${esc(label)}</label><input class="field" id="dlg-in" value="${esc(value)}" autocomplete="off">`,
+        buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "input"
+      });
+    }
+    render() {
+      const el = super.render();
+      const input = el.querySelector("input"), ok = el.querySelector('[data-act="ok"]');
+      const sync = () => {
+        ok.disabled = !input.value.trim();
+      };
+      input.addEventListener("input", sync);
+      sync();
+      return el;
+    }
+    value() {
+      return this.$("input").value.trim();
+    }
+  };
+  var ReasonDialog = class extends Dialog {
+    constructor({ name } = {}) {
+      super({
+        title: "Reject",
+        body: `<p class="q">Why is <b>${esc(name)}</b> rejected?</p><textarea class="field" rows="4"></textarea>`,
+        buttons: [{ act: "ok", label: "Reject", primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "textarea",
+        width: 460
+      });
+    }
+    render() {
+      const el = super.render();
+      const ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]');
+      const sync = () => {
+        ok.disabled = !ta.value.trim();
+      };
+      ta.addEventListener("input", sync);
+      sync();
+      ta.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          this.finish("ok");
+        }
+      });
+      return el;
+    }
+    value() {
+      return this.$("textarea").value.trim();
+    }
+  };
+
+  // html/hxh/apps/roster/app.js
+  var SETTING_FIT = "roster.fit";
+  var SETTING_RATIO = "roster.ratio";
+  var RosterApp = class extends App {
+    static id = "roster";
+    static name = "Roster DB";
+    static longName = "Roster DB";
+    static icon = "db";
+    static order = 25;
+    constructor(os, options = {}) {
+      super(os, options);
+      this.api = new RosterAPI({ fetch: options.fetch || os.fetch, base: options.base });
+      this.chars = /* @__PURE__ */ new Map();
+      this.crops = /* @__PURE__ */ new Map();
+    }
+    visible(user) {
+      return !!user && (user.roles || []).some((r) => r.website === "hxh" && r.role === "admin");
+    }
+    /* ---------- the list ---------- */
+    launch() {
+      const win = this.list();
+      this.os.wm.open(win.id, win.state.placed ? null : this.os.env.floating() ? { x: 120, y: 40 } : null);
+      this.refreshList();
+      return win;
+    }
+    list() {
+      if (this.listWin) return this.listWin;
+      const os = this.os;
+      const w = this.listWin = new RosterWindow({ thumbURL: (id) => this.api.thumbURL(id), menus: (win) => this.listMenus(win) });
+      os.wm.add(w);
+      w.on("open", ({ id }) => this.openChar(id));
+      return w;
+    }
+    listMenus(win) {
+      const os = this.os;
+      return os.appMenus(win, {
+        file: () => [{ label: "New character\u2026", onclick: () => this.newCharacter() }],
+        view: () => [
+          ...FILTERS.map(([f, label]) => ({ label, check: () => this.listWin.filter === f, onclick: () => this.listWin.setFilter(f) })),
+          "sep",
+          { label: "Refresh", onclick: () => this.refreshList() }
+        ],
+        help: () => os.appItems("system", { long: true, icons: false })
+      });
+    }
+    async refreshList() {
+      const w = this.list();
+      try {
+        w.setChars(await this.api.list());
+        w.say("");
+      } catch (err) {
+        w.say(err.message, true);
+      }
+    }
+    async newCharacter() {
+      const name = await new PromptDialog({ title: "New character", label: "Name", ok: "Create" }).ask(this.os);
+      if (!name) return;
+      try {
+        const c = await this.api.create({ name });
+        this.listWin?.update(c);
+        this.openChar(c.id);
+      } catch (err) {
+        this.os.toast.show(err.message);
+      }
+    }
+    /* ---------- a character ---------- */
+    async openChar(id) {
+      const os = this.os;
+      let w = this.chars.get(id);
+      if (!w) {
+        w = new CharacterWindow({ id, thumbURL: (i) => this.api.thumbURL(i), menus: (win) => this.charMenus(win, id) });
+        os.wm.add(w);
+        this.chars.set(id, w);
+        w.on("patch", ({ fields }) => this.patch(id, fields));
+        w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
+        w.on("review", ({ status }) => this.review(id, status));
+        w.on("upload", ({ files }) => this.upload(id, files));
+        w.on("crop", ({ id: imageId }) => this.openCrop(imageId));
+        w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
+        w.on("close", () => {
+          this.chars.delete(id);
+          os.wm.remove(w.id);
+        });
+      }
+      const at = w.state.placed ? null : os.env.floating() ? { x: 180 + this.chars.size % 4 * 24, y: 60 + this.chars.size % 4 * 24 } : null;
+      os.wm.open(w.id, at);
+      await this.reload(id);
+      return w;
+    }
+    charMenus(win, id) {
+      return this.os.appMenus(win, {
+        file: () => [
+          { label: "Upload picture\u2026", onclick: () => win.file.click() },
+          { label: "Refresh", onclick: () => this.reload(id) },
+          "sep",
+          { label: "Delete character\u2026", onclick: () => this.deleteChar(id) }
+        ]
+      });
+    }
+    /** Fetch the character and repaint its window (and its list row). */
+    async reload(id, { form = true } = {}) {
+      const w = this.chars.get(id);
+      try {
+        const c = await this.api.get(id);
+        w?.setChar(c, { form });
+        w?.say("");
+        this.listWin?.update(c);
+        return c;
+      } catch (err) {
+        w?.say(err.status === 404 ? "No such character." : err.message, true);
+        return null;
+      }
+    }
+    async patch(id, fields) {
+      const w = this.chars.get(id);
+      try {
+        const c = await this.api.patch(id, fields);
+        w?.setChar(c, { form: false });
+        w?.say("Saved");
+        this.listWin?.update(c);
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    async review(id, status) {
+      const w = this.chars.get(id);
+      let reason = "";
+      if (status === "rejected") {
+        reason = await new ReasonDialog({ name: w?.char?.name || "#" + id }).ask(this.os);
+        if (!reason) return;
+      }
+      try {
+        const c = await this.api.review(id, status, reason);
+        w?.setChar(c, { form: false });
+        w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
+        this.listWin?.update(c);
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    async upload(id, files) {
+      const w = this.chars.get(id);
+      let n = 0, dup = 0;
+      for (const f of files) {
+        if (!/^image\//.test(f.type)) continue;
+        try {
+          const r = await this.api.upload(id, f, { caption: (f.name || "").replace(/\.[a-z0-9]+$/i, "") });
+          r.created ? n++ : dup++;
+        } catch (err) {
+          w?.say(`${f.name}: ${err.message}`, true);
+        }
+      }
+      await this.reload(id, { form: false });
+      if (n || dup) w?.say(`${n} added${dup ? `, ${dup} already there` : ""}`);
+    }
+    async imageAct(id, act, imageId) {
+      const w = this.chars.get(id);
+      if (!imageId) return;
+      const im = (w?.char?.images || []).find((i) => i.id === imageId);
+      try {
+        switch (act) {
+          case "avatar":
+            await this.patch(id, { avatar_image_id: w.char.avatar_image_id === imageId ? null : imageId });
+            w.select(imageId);
+            break;
+          case "card":
+            await this.patch(id, { card_image_id: w.char.card_image_id === imageId ? null : imageId });
+            w.select(imageId);
+            break;
+          case "crop":
+            this.openCrop(imageId);
+            break;
+          case "open":
+            this.os.win.open?.(this.api.imageURL(imageId), "_blank");
+            break;
+          case "reject":
+            await this.api.patchImage(imageId, { status: im?.status === "rejected" ? "kept" : "rejected" });
+            await this.reload(id, { form: false });
+            w.select(imageId);
+            break;
+          case "delete":
+            if (!await new ConfirmDialog({ message: `Delete picture #${imageId}?`, ok: "Delete" }).ask(this.os)) return;
+            await this.api.deleteImage(imageId);
+            w.select(null);
+            await this.reload(id, { form: false });
+            break;
+        }
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    async deleteChar(id) {
+      const w = this.chars.get(id);
+      const name = w?.char?.name || "#" + id;
+      if (!await new ConfirmDialog({ message: `Delete ${name} and all its pictures?`, ok: "Delete" }).ask(this.os)) return;
+      try {
+        await this.api.remove(id);
+        w?.close();
+        this.listWin?.drop(id);
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    /* ---------- cropping ---------- */
+    async openCrop(imageId) {
+      const os = this.os;
+      let w = this.crops.get(imageId);
+      if (!w) {
+        let meta;
+        try {
+          meta = await this.api.imageMeta(imageId);
+        } catch (err) {
+          os.toast.show(err.message);
+          return null;
+        }
+        const canvas = cropCanvas(meta.image.width, meta.image.height, os.env.width, os.env.height);
+        w = new CropWindow({
+          image: meta.image,
+          char: meta.char,
+          src: this.api.imageURL(imageId),
+          canvas,
+          fit: os.settings.get(SETTING_FIT, true),
+          ratio: this.savedRatio(),
+          menus: (win) => os.appMenus(win, {})
+        });
+        os.wm.add(w);
+        this.crops.set(imageId, w);
+        w.on("fit", ({ fit }) => os.settings.set(SETTING_FIT, fit));
+        w.on("ratio", ({ ratio }) => {
+          try {
+            os.win.localStorage?.setItem(SETTING_RATIO, String(ratio));
+          } catch {
+          }
+        });
+        w.on("save", ({ rect }) => this.crop(imageId, meta.char.id, rect));
+        w.on("close", () => {
+          this.crops.delete(imageId);
+          os.wm.remove(w.id);
+        });
+      }
+      const scrollY = (os.win.scrollY || 0) / (os.env.zoom?.() || 1);
+      const at = w.state.placed ? null : os.env.floating() ? { x: 40, y: Math.round(scrollY) + 24 } : null;
+      os.wm.open(w.id, at);
+      w.el.focus?.();
+      return w;
+    }
+    savedRatio() {
+      try {
+        return +this.os.win.localStorage?.getItem(SETTING_RATIO) || 0;
+      } catch {
+        return 0;
+      }
+    }
+    async crop(imageId, charId, rect) {
+      const w = this.crops.get(imageId);
+      try {
+        const r = await this.api.crop(imageId, rect);
+        w?.saved(r.image, r.created);
+        await this.reload(charId, { form: false });
+      } catch (err) {
+        w?.failed(err.message);
+      }
     }
   };
 

@@ -1,0 +1,152 @@
+/* Roster DB — the curation app in the OS chrome. Fonts come from the OS
+   type system (os.css --t-*). THEME: part of the site chrome, see the
+   note at the top of os/os.css. */
+.roster .sunken {
+  background: var(--paper-hi);
+  border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  box-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.3);
+}
+.roster .status {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px;
+  padding: 4px 8px 3px; min-height: 24px;
+  border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  font: var(--t-small); color: var(--ink-4);
+}
+.roster .status .err { color: var(--blood); }
+.roster .btn.sm { padding: 6px 10px 5px; font: var(--t-ui); }
+.roster .grow { flex: 1; }
+.roster .verdict, .roster .st { font: var(--t-ui-bold); }
+.roster i.verdict, .roster .st { font-style: normal; display: inline-block; padding: 2px 8px 1px; border: 1px solid var(--ink); background: var(--paper-hi); }
+.roster .pending { background: var(--emitter); }
+.roster .accepted { background: var(--nen); }
+.roster .rejected { background: var(--blood); color: var(--paper-hi); }
+
+/* group boxes, the 90s fieldset */
+.roster .group {
+  margin: 0 0 10px; padding: 8px 12px 12px; min-width: 0;
+  border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+}
+.roster .group > legend { font: var(--t-ui-bold); padding: 0 6px; color: var(--ink); }
+
+/* check boxes: a sunken square with a plain ✓ */
+.roster .chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: var(--t-ui); user-select: none; }
+.roster .chk input { appearance: none; margin: 0; width: 15px; height: 15px; flex: none; cursor: pointer;
+  background: var(--paper-hi); border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  box-shadow: inset 1px 1px 0 rgba(11,10,8,.3); display: grid; place-items: center; }
+.roster .chk input:checked::after { content: "✓"; font: 700 12px/1 var(--font-ui); color: var(--ink); }
+.roster .chk input:focus-visible { outline: 1px dotted var(--ink); }
+
+/* ---------- the list ---------- */
+.rlist .body { padding: 8px 10px 10px; }
+.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 44px 40px 1.4fr 1.2fr 50px 1fr 1.1fr 46px 42px 96px; align-items: center; gap: 6px; }
+.rlist .lhead > span {
+  padding: 4px 6px 3px; font: var(--t-ui); color: var(--ink); white-space: nowrap; overflow: hidden;
+  background: var(--paper); border: var(--px) solid var(--ink);
+  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+}
+.rlist .listbox { height: 480px; max-height: 62vh; margin-top: 4px; }
+.rlist .rows { font: var(--t-ui); }
+.rlist .row { padding: 3px 6px; cursor: default; }
+.rlist .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+.rlist .row.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
+.rlist .row.sel .verdict { border-color: var(--paper-hi); }
+.rlist .row:hover:not(.sel) { background: var(--paper); }
+.rlist .c-no, .rlist .c-pics, .rlist .c-ver { color: var(--ink-4); text-align: right; }
+.rlist .row.sel .c-no, .rlist .row.sel .c-pics, .rlist .row.sel .c-ver { color: var(--paper-hi); }
+.rlist .c-name { font: var(--t-ui-bold); }
+.rlist .av { width: 30px; height: 30px; object-fit: cover; display: block; border: 1px solid var(--ink); background: var(--paper-lo); }
+.rlist i.av.none { display: block; border: 1px dashed var(--paper-dim); }
+.rlist .empty { padding: 12px; color: var(--ink-4); }
+
+/* ---------- a character ---------- */
+.rchar .body { padding: 8px 12px 12px; }
+.rchar .top { display: flex; gap: 12px; align-items: stretch; margin-bottom: 10px; }
+.rchar .slots { display: flex; gap: 8px; align-items: flex-start; }
+.rchar .slot { position: relative; width: 108px; height: 108px; display: grid; place-items: center;
+  background: var(--paper-hi); border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  box-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.3); overflow: hidden; }
+.rchar .slot.cd { width: 108px; height: 162px; }
+.rchar .slot .lab { font: var(--t-small); color: var(--paper-dim); font-style: normal; text-transform: uppercase; letter-spacing: .06em; }
+.rchar .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.rchar .slot .clear { position: absolute; top: 4px; right: 4px; width: 20px; height: 18px; display: none; }
+.rchar .slot.set:hover .clear { display: grid; }
+.rchar .review { flex: 1; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.rchar .review .verdict { display: flex; align-items: center; gap: 10px; font: var(--t-ui); }
+.rchar .review .ver { color: var(--ink-4); }
+.rchar .review .by { color: var(--ink-4); font: var(--t-small); }
+.rchar .review .reason { font: var(--t-body); min-height: 0; white-space: pre-wrap; }
+.rchar .review .reason:empty { display: none; }
+.rchar .review .rbtns { display: flex; gap: 6px; }
+.rchar .review .log { font: var(--t-small); color: var(--ink-4); display: flex; flex-direction: column; gap: 2px; }
+.rchar .review .log .lrow b { color: var(--ink); font-weight: 700; }
+.rchar .review .log .when { margin-left: 8px; }
+.rchar .profile .form { display: flex; flex-direction: column; gap: 6px; }
+.rchar .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.rchar .frow.four { grid-template-columns: 1fr 90px 1.6fr 1.4fr; }
+.rchar .f { min-width: 0; }
+.rchar .f .lbl { margin: 4px 0 3px; display: flex; justify-content: space-between; }
+.rchar .lbl .count { text-transform: none; letter-spacing: 0; color: var(--ink-4); }
+.rchar .lbl .count.bad { color: var(--blood); }
+.rchar .field { padding: 6px 8px 4px; font: var(--t-body); }
+.rchar select.field { padding: 5px 6px 3px; }
+.rchar textarea.field { resize: vertical; line-height: 1.45; }
+.rchar .pair { display: flex; gap: 6px; }
+.rchar .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0 0; }
+.rchar .pics { padding-bottom: 8px; }
+.rchar .gtools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rchar .gbox { height: 380px; max-height: 48vh; }
+.rchar .gbox.drop { outline: var(--px) dashed var(--blood); outline-offset: -4px; }
+.rchar .gallery { padding: 6px 8px 10px; }
+.rchar .sec + .sec { margin-top: 8px; border-top: var(--px) dashed var(--paper-lo); padding-top: 6px; }
+.rchar .sech { display: flex; align-items: baseline; gap: 8px; font: var(--t-ui-bold); margin: 2px 0 6px; }
+.rchar .sech .n { color: var(--ink-4); font: var(--t-small); }
+.rchar .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.rchar .tiles .empty { grid-column: 1 / -1; color: var(--ink-4); font: var(--t-ui); padding: 6px 2px; }
+.rchar .tile { margin: 0; padding: 4px; cursor: default; user-select: none; border: 1px solid transparent; }
+.rchar .tile.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
+.rchar .tile.rejected { opacity: .45; }
+.rchar .tile .pic { height: 104px; display: grid; place-items: center; overflow: hidden;
+  background: var(--paper-lo); background-image: var(--dither); border: 1px solid var(--ink); }
+.rchar .tile .pic img { max-width: 100%; max-height: 100%; display: block; }
+.rchar .tile.pixel .pic img { image-rendering: pixelated; }
+.rchar .tile figcaption { font: var(--t-small); margin-top: 3px; white-space: nowrap; overflow: hidden; }
+.rchar .tile .l1 { display: flex; gap: 6px; }
+.rchar .tile .l1 b { font-weight: 700; }
+.rchar .tile .l1 .role { margin-left: auto; text-transform: uppercase; letter-spacing: .04em; color: var(--blood); }
+.rchar .tile.sel .l1 .role { color: var(--paper-hi); }
+.rchar .tile .l2 { overflow: hidden; text-overflow: ellipsis; color: var(--ink-4); min-height: 1.2em; }
+.rchar .tile.sel .l2 { color: var(--paper-hi); }
+
+/* ---------- cropping ---------- */
+.rcrop .body { padding: 8px 10px 10px; }
+.rcrop .ctools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rcrop .ratios { display: flex; gap: 2px; }
+.rcrop .canvas { overflow: auto; position: relative; }
+.rcrop .wrap { position: relative; touch-action: none; cursor: crosshair; }
+.rcrop .wrap img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.rcrop .wrap.pixel img { image-rendering: pixelated; }
+.rcrop .box { position: absolute; box-sizing: border-box; cursor: move; box-shadow: 0 0 0 200vmax rgba(11,10,8,.45); }
+.rcrop .ants { position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(90deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(90deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(0deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(0deg, var(--ink) 50%, var(--paper-hi) 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 8px 1px, 8px 1px, 1px 8px, 1px 8px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  animation: ants .6s linear infinite; }
+.rcrop .hd { position: absolute; width: 9px; height: 9px; background: var(--paper-hi); border: 1px solid var(--ink); box-sizing: border-box; }
+.rcrop .hd.n { top: -5px; left: calc(50% - 4px); cursor: ns-resize; } .rcrop .hd.s { bottom: -5px; left: calc(50% - 4px); cursor: ns-resize; }
+.rcrop .hd.e { right: -5px; top: calc(50% - 4px); cursor: ew-resize; } .rcrop .hd.w { left: -5px; top: calc(50% - 4px); cursor: ew-resize; }
+.rcrop .hd.ne { top: -5px; right: -5px; cursor: nesw-resize; } .rcrop .hd.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.rcrop .hd.nw { top: -5px; left: -5px; cursor: nwse-resize; } .rcrop .hd.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.rcrop .foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.rcrop .foot .status { flex: 1; margin: 0; justify-content: flex-start; gap: 14px; font-variant-numeric: tabular-nums; }
+.rcrop .saved { color: var(--nen-deep); }
+.rcrop .saved.err { color: var(--blood); }
+@keyframes ants { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; } }
+
+/* ---------- dialogs ---------- */
+.dlg .body { padding: 14px 16px 14px; }
+.dlg .dbody .q { margin: 0 0 10px; font: var(--t-body); }
+.dlg .dbody .lbl { margin-top: 0; }
+.dlg .dbody textarea.field { resize: vertical; }
+.dlg .actions.right { justify-content: flex-end; margin-top: 14px; gap: 8px; }

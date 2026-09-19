@@ -9,12 +9,14 @@ Config: ~/.claude/hxh-roster.env with
 Environment variables of the same names override the file. The session
 cookie is kept next to it (hxh-roster.cookie) and refreshed on 401.
 
-    roster.py find <slug>                 → the character as JSON, or nothing (exit 1)
+    roster.py find <name>                 → the character as JSON (case-insensitive name), or nothing (exit 1)
     roster.py list [--status pending]
     roster.py get <id>                    → profile + image metadata
     roster.py delete <id>                 → the character and all its pictures
     roster.py create <json-file|->        → new pending character
-    roster.py patch <id> <json-file|->    → partial update
+    roster.py patch <id> <json-file|->    → partial update (every change bumps the version)
+    roster.py review <id> pending|accepted|rejected [--reason "…"]
+                                          → the verdict on the current version (pending = resubmit)
     roster.py upload <id> <file> [--type raw] [--source-image N] [--url U] [--caption C]
     roster.py fetch <id> <url> [--caption C]        download a picture and store it as a raw
     roster.py download <image-id> <out-file>
@@ -171,12 +173,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("login")
-    p = sub.add_parser("find"); p.add_argument("slug")
+    p = sub.add_parser("find"); p.add_argument("name")
     p = sub.add_parser("list"); p.add_argument("--status", default="")
     p = sub.add_parser("get"); p.add_argument("id", type=int)
     p = sub.add_parser("delete"); p.add_argument("id", type=int)
     p = sub.add_parser("create"); p.add_argument("json")
     p = sub.add_parser("patch"); p.add_argument("id", type=int); p.add_argument("json")
+    p = sub.add_parser("review"); p.add_argument("id", type=int); p.add_argument("status", choices=["pending", "accepted", "rejected"]); p.add_argument("--reason", default="")
     p = sub.add_parser("upload"); p.add_argument("id", type=int); p.add_argument("file")
     p.add_argument("--type", default="raw"); p.add_argument("--source-image", type=int); p.add_argument("--url", default=""); p.add_argument("--caption", default="")
     p = sub.add_parser("fetch"); p.add_argument("id", type=int); p.add_argument("url"); p.add_argument("--caption", default="")
@@ -192,13 +195,13 @@ def main():
     if a.cmd == "login":
         c.login(); print("ok")
     elif a.cmd == "find":
-        rows = c.db("GET", "/chars?slug=" + urllib.parse.quote(a.slug))
+        rows = c.db("GET", "/chars?name=" + urllib.parse.quote(a.name))
         if not rows:
             sys.exit(1)
         out(rows[0])
     elif a.cmd == "list":
         for r in c.db("GET", "/chars?status=" + a.status):
-            print(f"{r['id']:>4}  {r['status']:<9} {r['rank']}  {r['name']}  ({r['slug']}, {r['image_count']} images)")
+            print(f"{r['id']:>4}  v{r['version']:<3} {r['review_status']:<9} {r['rank']}  {r['name']}  ({r['image_count']} pictures)")
     elif a.cmd == "get":
         out(c.db("GET", f"/chars/{a.id}"))
     elif a.cmd == "delete":
@@ -207,6 +210,8 @@ def main():
         out(c.db("POST", "/chars", read_json_arg(a.json)))
     elif a.cmd == "patch":
         out(c.db("PATCH", f"/chars/{a.id}", read_json_arg(a.json)))
+    elif a.cmd == "review":
+        out(c.db("POST", f"/chars/{a.id}/review", {"status": a.status, "reason": a.reason}))
     elif a.cmd == "upload":
         upload_bytes(c, a.id, open(a.file, "rb").read(), a.type, a.source_image, a.url, a.caption)
     elif a.cmd == "fetch":

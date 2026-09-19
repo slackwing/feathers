@@ -5,3 +5,4 @@ export { RegisterApp as Register } from "./register.js";
 export { AboutApp as About } from "./about.js";
 export { ChatApp as Chat } from "./chat/app.js";
 export { SetPasswordApp as SetPassword } from "./setpw.js";
+export { RosterApp as Roster } from "./roster/app.js";

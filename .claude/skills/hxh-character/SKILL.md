@@ -1,18 +1,26 @@
 ---
 name: hxh-character
-description: Add or redo ONE Hunter × Hunter character in the hxh Roster DB — verified profile fields plus at least six high-resolution raw pictures — as a pending entry for Andrew to review at /hxh/roster/. Use for "add <character> to the roster", "we're missing <character>", or "redo <character>".
+description: Add or redo ONE Hunter × Hunter character in the hxh Roster DB — verified profile fields plus at least six high-resolution raw pictures — as a pending entry for Andrew and Abi to review in the Roster DB app on the Hunter Website desktop. Use for "add <character> to the roster", "we're missing <character>", "redo <character>", or "fix <character>" after a rejection.
 ---
 
 # hxh-character — one character, start to finish
 
 The Roster DB is built one character at a time, by hand-review. This
-skill is the process; the process is the product. Every time Andrew's
-review finds something wrong, fix the character AND fix the step here
-that let it through, in the same commit.
+skill is the process; the process is the product. Every time a review
+finds something wrong, fix the character AND fix the step here that
+let it through, in the same commit.
+
+Review model: every change to a character or its pictures bumps its
+`version`; the reviewer's verdict (`pending`, `accepted`, `rejected`
+with a reason) is passed on a version and logged. A rejected character
+comes back here: fix what the reason says, then `roster.py review <id>
+pending` to resubmit.
 
 Tools (feathers `foundry/website/hxh-roster/`):
-- `roster.py` — the Roster DB API (needs `~/.claude/hxh-roster.env`:
-  `HXH_ROSTER_BASE`, `HXH_ROSTER_USER`, `HXH_ROSTER_PASS`; an hxh admin).
+- `roster.py` — the Roster DB API. Access is mine to arrange (Andrew:
+  "you already know how to access everything"): `~/.claude/hxh-roster.env`
+  holds `HXH_ROSTER_BASE` and an hxh-admin login; for prod, mint one the
+  way the roster push did (throwaway admin via psql on the VM).
 - `wiki.py` — the Fandom wiki through its MediaWiki API (page fetches
   are blocked with 402; the API works).
 - The previous attempt, `html/hxh/roster.json` (198 entries, 2026-09-17,
@@ -24,15 +32,16 @@ plus "Kurapika's Memories". No manga-only facts, no Dark Continent.
 ## 0. Start
 
 Input: a character name. Run
-`python3 roster.py find <slug>` first; if the character exists, say so
-and ask whether to redo (delete + recreate) or add pictures only.
+`python3 roster.py find "<name>"` first (case-insensitive exact name;
+try the short and the full name); if the character exists, say so and
+ask whether to redo (delete + recreate), fix (patch the fields the
+reason names, resubmit), or add pictures only. Characters have no slug:
+the id is the number, the name is the handle.
 Then `python3 wiki.py search "<name>"` to get the exact page title, and
 `python3 wiki.py infobox "<Page>"`.
 
 ## 1. Identify
 
-- `slug` — lowercase kebab-case, the most-used single name: `gon`,
-  `neferpitou`, `zetsk-bellam`. Never renamed after shipping.
 - `name` — the English name as Viz / the 2011 anime uses it: `Gon
   Freecss`, `Melody` (not Senritsu), `Biscuit Krueger`, `Isaac Netero`.
 - `name_ja` — the infobox `kana` exactly (`ゴン＝フリークス`), with the
@@ -79,8 +88,8 @@ ambiguous affiliation), and anything you could not verify.
 
 ## 5. Create
 
-Write the JSON (all fields above, `status` omitted → pending) and run
-`python3 roster.py create entry.json`. Note the returned `id`.
+Write the JSON (all fields above; it is created pending at version 1)
+and run `python3 roster.py create entry.json`. Note the returned `id`.
 
 ## 6. Pictures — at least six raws
 
@@ -117,29 +126,36 @@ rather than padding with weak ones.
 
 ## 7. Report
 
-Print: the Roster DB link `<base>/hxh/roster/#/c/<id>`, the fields in a
-short table, the six-plus pictures with captions, and your doubts.
-Then stop — Andrew reviews, crops, and asks for derived versions.
+Print: the character number, the fields in a short table, the six-plus
+pictures with captions, and your doubts. Then stop — Andrew and Abi
+open Roster DB on the Hunter Website desktop (admins only), check the
+profile, crop the avatar and card, and pass a verdict.
 
 ## 8. Derived pictures (on request only)
 
+- transparent — background removal with an anime-trained model (rembg
+  `isnet-anime`; Andrew: "must be done using AI tools"). Not installed
+  yet — install into `hxh-roster/.venv` when first needed, say so.
+  Store with `--type transparent --source-image <id>`.
 - `python3 roster.py pixelate <image-id> [--size 96] [--colors 32]` —
-  pixel art of a CROPPED image, stored at its true pixel size (the
-  site scales it with `image-rendering: pixelated`). Only from crops
-  Andrew made, never from raws.
-- transparent — background removal (rembg; not installed yet — ask
-  before installing, it downloads a model). Store with
-  `--type transparent --source-image <id>`.
+  pixel art of a CROPPED image at its true pixel size. Deprioritised
+  (Abi: use the quality pictures); only on request.
 - upscaled — Real-ESRGAN / waifu2x (not installed yet — ask). Store
   with `--type upscaled --source-image <id>`.
 Every derived picture carries `source_image_id` so lineage is visible.
 
 ## 9. Feedback loop
 
-When Andrew's review changes something: apply it with `roster.py
-patch`, then edit THIS file so the same mistake cannot recur, then
+When a review rejects something: read the reason (`roster.py get <id>`
+shows `review_reason` and the log), apply the fix with `roster.py
+patch` / `fetch` / `reject`, resubmit with `roster.py review <id>
+pending`, then edit THIS file so the same mistake cannot recur, and
 commit both. Keep a dated line in the log below.
 
 ### Log
 
 - 2026-09-19 — first version, written before any character was reviewed.
+- 2026-09-19 — picking pictures by file name was wrong; the contact
+  sheet step (look first) was added after Gon.
+- 2026-09-19 — no slug; review verdicts with versions and reasons;
+  the review happens in the OS app, not a separate admin page.
