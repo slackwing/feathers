@@ -11,10 +11,10 @@ export const roomSlug = room => room.replace(/[^a-z0-9]+/gi, "-");
 export const MAX_LOG = 500;
 
 export class ChatWindow extends Window {
-  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button) */
+  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 1.5× both ways) */
   constructor(props) {
     super({
-      id: "win-chat-" + roomSlug(props.room), title: props.title, icon: props.icon || "comment", width: 470, cls: "chat room",
+      id: "win-chat-" + roomSlug(props.room), title: props.title, icon: props.icon || "comment", width: props.large ? 705 : 470, cls: "chat room" + (props.large ? " large" : ""),
       content: `
         <div class="compose">
           <textarea class="field" rows="3" aria-label="Message"></textarea>

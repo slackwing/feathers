@@ -192,7 +192,8 @@ the OS.
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + registry-derived menus + typewriter notice + CTA),
-  `Binder`, `Chat` (Beetle, `apps/chat/`), `Register`, `About` (group
+  `Binder`, `Chat` (Beetle, `apps/chat/`; the global room's window is
+  1.5× a buddy chat in both dimensions — `large`), `Register`, `About` (group
   "system"), `SetPassword` (desktop/menuable false; its words come in
   as options). `apps/index.js` exports them as `HxH.apps.*`.
 
@@ -499,11 +500,12 @@ over the sky.
   `os/os.css` and used everywhere as `font: var(--t-*)`:
   `--t-ui` 13 px / `--t-ui-bold` (Pixelify Sans, a proportional pixel
   face — title bars are NOT monospace), `--t-title` 13 px bold,
-  `--t-body` DotGothic16 at its native 16 px (bitmap; blurs at any
-  other size; renders the kana), `--t-small` 11 px (status bars, time
-  stamps), `--t-caption` 12 px (desktop icons), `--t-kicker` /
-  `--t-heading` (Press Start 2P, display only: logotype, stamps,
-  kickers). App stylesheets never write font sizes or families; the
+  `--t-body` DotGothic16 (bitmap, native 16 px; renders the kana),
+  `--t-chat` (chat messages and the compose box, at DotGothic's native
+  16 px — a notch under body, Andrew), `--t-small` (status bars, time
+  stamps), `--t-caption` (desktop icons), `--t-kicker` / `--t-heading`
+  (Press Start 2P, display only: logotype, stamps, kickers). Current
+  numbers are in the `--fs-*` variables. App stylesheets never write font sizes or families; the
   binder's device art (its own fonts) is the one exception. "Realistic
   but if too shitty, a little modernized" — Andrew.
 - **No maximize anywhere** (2026-09-19): windows are a set size; title

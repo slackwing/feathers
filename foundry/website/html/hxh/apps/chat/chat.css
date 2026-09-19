@@ -78,7 +78,10 @@
 
 /* ---------- a chat window ---------- */
 .room .logbox { height: 250px; }
-.room .log { padding: 8px 10px; font: var(--t-body); }
+.room.large .logbox { height: 375px; }   /* the global room: 1.5× both ways */
+.room.large .compose textarea { min-height: 108px; }
+.room .log { padding: 8px 10px; font: var(--t-chat); }
+.room .compose textarea { font: var(--t-chat); }
 .room .m { margin: 0 0 2px; }
 .room .m .who { color: var(--c, var(--ink)); }
 .room .m .ts { color: var(--ink-4); font: var(--t-small); }

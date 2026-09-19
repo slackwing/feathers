@@ -70,6 +70,8 @@ test("launch connects, opens contacts (right side) and the global chat with hist
   assert.equal(contacts.el.style.left, (1366 - 330) + "px");
   assert.equal(contacts.title, "Beetle");
   assert.equal(global.title, "Global chat");
+  assert.equal(global.el.style.width, "705px");   // the global room is 1.5× a buddy chat
+  assert.ok(global.el.classList.contains("large"));
   assert.equal(os.wm.activeId, "win-chat-contacts");   // global opened without stealing focus
   await tick();
   assert.equal(global.messageCount, 1);
@@ -183,6 +185,7 @@ test("menus: Beetle File/Edit/Settings as specified, chats File(+View), no icons
   assert.deepEqual([...g.menuBar.menus[0].el.children].map(c => c.textContent), ["Exit"]);
   assert.equal(g.el.querySelector('[data-act="profile"]'), null);
   const dm = app().openChat("abi");
+  assert.equal(dm.el.style.width, "470px");
   assert.deepEqual([...dm.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View"]);
   dm.menuBar.menus[1].open();
   assert.deepEqual([...dm.menuBar.menus[1].el.children].map(c => c.textContent), ["Profile"]);

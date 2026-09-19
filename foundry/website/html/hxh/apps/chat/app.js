@@ -164,7 +164,7 @@ export class ChatApp extends App {
     if (!w) {
       const other = this.otherOf(room);
       w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u),
-        menus: win => this.roomMenus(win, room), profile: !!other });
+        menus: win => this.roomMenus(win, room), profile: !!other, large: room === ROOM_GLOBAL });
       os.wm.add(w);
       this.windows.set(room, w);
       w.on("send", ({ body }) => this.send(room, body));
