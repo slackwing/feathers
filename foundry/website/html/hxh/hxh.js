@@ -31,6 +31,7 @@ var HxH = (() => {
     CHROME: () => CHROME,
     CRT: () => CRT,
     CRT_KEY: () => CRT_KEY,
+    CUES: () => CUES,
     ChromeButton: () => ChromeButton,
     Clock: () => Clock,
     Component: () => Component,
@@ -46,7 +47,9 @@ var HxH = (() => {
     Nav: () => Nav,
     OS: () => OS,
     PAL: () => PAL,
+    SOUND_KEY: () => SOUND_KEY,
     Session: () => Session,
+    Sounds: () => Sounds,
     StartButton: () => StartButton,
     StartMenu: () => StartMenu,
     TaskButton: () => TaskButton,
@@ -420,6 +423,21 @@ var HxH = (() => {
       ".kNNNNNNNNNNNkG.",
       ".kNNNNNNNNNNNk..",
       ".kkkkkkkkkkkkk.."
+    ],
+    // the Beetle messenger's app icon: a green beetle, elytra split
+    beetle: [
+      "..k........k..",
+      "...k......k...",
+      "..kkkkkkkkkk..",
+      ".kkggggggggkk.",
+      "kkggggkkggggkk",
+      "kgggkgkkgkgggk",
+      "kgggggkkgggggk",
+      "kkgkggkkggkgkk",
+      ".kkggggggggkk.",
+      "..kkkkkkkkkk..",
+      "...k..kk..k...",
+      "..k........k.."
     ],
     // a speech bubble (tray "new message" icon, chat app)
     comment: [
@@ -1656,6 +1674,75 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/sound.js
+  var SOUND_KEY = "hxh.sound";
+  var CUES = {
+    message: [[880, 0, 0.07, null, "sine"], [1320, 0.09, 0.09, null, "sine"]],
+    sent: [[1e3, 0, 0.04, null, "sine"]],
+    dooropen: [[220, 0, 0.28, 520, "triangle"]],
+    doorclose: [[520, 0, 0.28, 220, "triangle"]]
+  };
+  var Sounds = class {
+    constructor({ storage = globalThis.localStorage, AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext } = {}) {
+      this.storage = storage;
+      this.AC = AudioContext;
+      this.context = null;
+      this.played = [];
+    }
+    get on() {
+      try {
+        return this.storage?.getItem(SOUND_KEY) !== "0";
+      } catch {
+        return true;
+      }
+    }
+    set(on) {
+      try {
+        this.storage?.setItem(SOUND_KEY, on ? "1" : "0");
+      } catch {
+      }
+      return !!on;
+    }
+    toggle() {
+      return this.set(!this.on);
+    }
+    ctx() {
+      if (!this.AC) return null;
+      if (!this.context) {
+        try {
+          this.context = new this.AC();
+        } catch {
+          return null;
+        }
+      }
+      if (this.context.state === "suspended") this.context.resume?.();
+      return this.context;
+    }
+    /** Play a cue; returns false when muted or audio is unavailable. */
+    play(name) {
+      const cue = CUES[name];
+      if (!cue || !this.on) return false;
+      const ctx = this.ctx();
+      if (!ctx) return false;
+      const t0 = ctx.currentTime;
+      for (const [freq, at, dur, glide, type2] of cue) {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = type2 || "sine";
+        osc.frequency.setValueAtTime(freq, t0 + at);
+        if (glide) osc.frequency.linearRampToValueAtTime(glide, t0 + at + dur);
+        gain.gain.setValueAtTime(1e-4, t0 + at);
+        gain.gain.linearRampToValueAtTime(0.18, t0 + at + 0.01);
+        gain.gain.exponentialRampToValueAtTime(1e-4, t0 + at + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0 + at);
+        osc.stop(t0 + at + dur + 0.02);
+      }
+      this.played.push(name);
+      return true;
+    }
+  };
+
   // html/hxh/os/wallpaper.js
   var W = 320;
   var H = 180;
@@ -1924,9 +2011,11 @@ var HxH = (() => {
       this.doc = win.document;
       this.bus = new EventBus();
       this.env = env || new Env(win);
-      this.session = session || new Session({ fetch });
+      this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
+      this.session = session || new Session({ fetch: this.fetch });
       this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
       this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
+      this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
       this.registry = new AppRegistry(this);
       this.user = null;
       this.ready = false;
@@ -1971,7 +2060,10 @@ var HxH = (() => {
     }
     /** Scanlines etc. — the system entries shared by the Start and View menus. */
     systemItems() {
-      return [{ label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() }];
+      return [
+        { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
+        { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
+      ];
     }
     /** Apps by group: [{ label, icon, onclick }] for menus. */
     appItems(group = "apps", { except = null, long = false } = {}) {
@@ -2077,6 +2169,7 @@ var HxH = (() => {
   __export(apps_exports, {
     About: () => AboutApp,
     Binder: () => BinderApp,
+    Chat: () => ChatApp,
     NOTICE: () => NOTICE,
     Register: () => RegisterApp,
     SetPassword: () => SetPasswordApp,
@@ -2574,6 +2667,972 @@ var HxH = (() => {
     }
     launch() {
       return this.os.wm.open(this.window().id);
+    }
+  };
+
+  // html/hxh/apps/chat/client.js
+  var DEFAULT_BACKOFF = [1e3, 2e3, 5e3, 1e4, 3e4];
+  function wsURL(location) {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${location.host}/hxh/api/chat/ws`;
+  }
+  var ChatClient = class {
+    constructor({
+      url,
+      WebSocket: WS,
+      pingMs = 25e3,
+      backoff = DEFAULT_BACKOFF,
+      now = () => Date.now(),
+      setTimeout: st = (f, ms) => globalThis.setTimeout(f, ms),
+      clearTimeout: ct = (id) => globalThis.clearTimeout(id),
+      typingEvery = 2e3,
+      rate = 10
+    } = {}) {
+      this.url = url;
+      this.WS = WS;
+      this.pingMs = pingMs;
+      this.backoff = backoff;
+      this.now = now;
+      this.st = st;
+      this.ct = ct;
+      this.typingEvery = typingEvery;
+      this.rate = rate;
+      this.events = new EventBus();
+      this.ws = null;
+      this.connected = false;
+      this.stopped = false;
+      this.attempts = 0;
+      this.queue = [];
+      this.sent = [];
+      this.lastTyping = /* @__PURE__ */ new Map();
+      this.lastPong = 0;
+      this.pingTimer = null;
+      this.reconnectTimer = null;
+    }
+    on(ev, fn) {
+      return this.events.on(ev, fn);
+    }
+    emit(ev, p) {
+      return this.events.emit(ev, p);
+    }
+    connect() {
+      if (this.ws || this.stopped || !this.WS) return this;
+      let ws;
+      try {
+        ws = new this.WS(this.url);
+      } catch (err) {
+        this.emit("error", { code: "connect", err });
+        this.scheduleReconnect();
+        return this;
+      }
+      this.ws = ws;
+      ws.onopen = () => {
+        this.connected = true;
+        this.attempts = 0;
+        this.lastPong = this.now();
+        this.emit("open");
+        this.emit("state", { connected: true });
+        for (const f of this.queue.splice(0)) this.raw(f);
+        this.startPing();
+      };
+      ws.onmessage = (e) => this.receive(e.data);
+      ws.onerror = () => {
+      };
+      ws.onclose = () => {
+        const was = this.connected;
+        this.ws = null;
+        this.connected = false;
+        this.stopPing();
+        if (was) {
+          this.emit("close");
+          this.emit("state", { connected: false });
+        }
+        if (!this.stopped) this.scheduleReconnect();
+      };
+      return this;
+    }
+    scheduleReconnect() {
+      if (this.reconnectTimer || this.stopped) return;
+      const delay = this.backoff[Math.min(this.attempts, this.backoff.length - 1)];
+      this.attempts++;
+      this.reconnectTimer = this.st(() => {
+        this.reconnectTimer = null;
+        this.connect();
+      }, delay);
+    }
+    startPing() {
+      this.stopPing();
+      this.pingTimer = this.st(() => this.tick(), this.pingMs);
+      this.pingTimer?.unref?.();
+    }
+    stopPing() {
+      if (this.pingTimer) {
+        this.ct(this.pingTimer);
+        this.pingTimer = null;
+      }
+    }
+    /** Ping, and give up on a socket whose pong is two intervals late. */
+    tick() {
+      if (!this.connected) return;
+      if (this.now() - this.lastPong > this.pingMs * 2) {
+        this.ws?.close();
+        return;
+      }
+      this.raw({ t: "ping" });
+      this.startPing();
+    }
+    receive(data) {
+      let f;
+      try {
+        f = JSON.parse(data);
+      } catch {
+        return;
+      }
+      switch (f.t) {
+        case "pong":
+          this.lastPong = this.now();
+          break;
+        case "hello":
+          this.emit("hello", f);
+          break;
+        case "msg":
+          this.emit("msg", f.msg);
+          break;
+        case "typing":
+          this.emit("typing", { room: f.room, user: f.user });
+          break;
+        case "unsend":
+          this.emit("unsend", { room: f.room, id: f.id });
+          break;
+        case "presence":
+          this.emit("presence", { user: f.user, state: f.state, last_seen_at: f.last_seen_at });
+          break;
+        case "error":
+          this.emit("error", { code: f.code, room: f.room });
+          break;
+        default:
+          break;
+      }
+    }
+    raw(frame) {
+      try {
+        this.ws.send(JSON.stringify(frame));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    /** Send now, or queue until the socket is back (bounded). */
+    send(frame) {
+      if (this.connected && this.ws) return this.raw(frame);
+      if (this.queue.length < 100) this.queue.push(frame);
+      return false;
+    }
+    /** Rate-limited: at most `rate` messages per second. Returns false when refused. */
+    sendMessage(room, body) {
+      const t = this.now();
+      this.sent = this.sent.filter((x) => t - x < 1e3);
+      if (this.sent.length >= this.rate) return false;
+      this.sent.push(t);
+      this.send({ t: "msg", room, body });
+      return true;
+    }
+    /** "Is typing" — throttled per room; only while connected. */
+    typing(room) {
+      if (!this.connected) return false;
+      const t = this.now(), last = this.lastTyping.get(room);
+      if (last !== void 0 && t - last < this.typingEvery) return false;
+      this.lastTyping.set(room, t);
+      this.raw({ t: "typing", room });
+      return true;
+    }
+    unsend(room) {
+      return this.send({ t: "unsend", room });
+    }
+    close() {
+      this.stopped = true;
+      this.stopPing();
+      if (this.reconnectTimer) {
+        this.ct(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      this.ws?.close();
+    }
+  };
+  var ChatAPI = class {
+    constructor({ fetch = globalThis.fetch?.bind(globalThis), base = "/hxh/api/chat" } = {}) {
+      this.fetch = fetch;
+      this.base = base;
+    }
+    async get(path) {
+      const r = await this.fetch(this.base + path, { cache: "no-store" });
+      if (!r.ok) throw new Error(`${path}: ${r.status}`);
+      return r.json();
+    }
+    contacts() {
+      return this.get("/contacts");
+    }
+    history(room) {
+      return this.get("/history?room=" + encodeURIComponent(room));
+    }
+    profile(username) {
+      return this.get("/profile/" + encodeURIComponent(username));
+    }
+    async saveProfile(runs) {
+      const r = await this.fetch(this.base + "/profile", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runs }) });
+      if (!r.ok) throw new Error(await r.text().catch(() => r.status));
+      return r.json();
+    }
+  };
+
+  // html/hxh/apps/chat/contacts.js
+  var GROUPS = [["online", "Online"], ["away", "Away"], ["offline", "Offline"]];
+  var groupOf = (state) => state === "online" || state === "away" ? state : "offline";
+  var ContactsWindow = class extends Window {
+    constructor({ me } = {}) {
+      super({
+        id: "win-chat-contacts",
+        title: "Beetle \u2014 Contacts",
+        icon: "beetle",
+        width: 300,
+        cls: "chat contacts",
+        maximizable: false,
+        content: `<div class="me"></div><div class="tools"><button class="btn sm" type="button" data-act="global">${icon("comment", 12)}Global chat</button></div><div class="groups"></div>`
+      });
+      this.me = me;
+      this.contacts = /* @__PURE__ */ new Map();
+    }
+    render() {
+      const el = super.render();
+      this.meBox = el.querySelector(".me");
+      this.groupsBox = el.querySelector(".groups");
+      this.meBox.addEventListener("click", (e) => {
+        if (e.target.closest("[data-act=myprofile]")) this.emit("myprofile");
+      });
+      el.querySelector('[data-act="global"]').addEventListener("click", () => this.emit("global"));
+      this.groupsBox.addEventListener("click", (e) => {
+        const row = e.target.closest("[data-user]");
+        if (!row) return;
+        if (e.target.closest("[data-profile]")) this.emit("profile", { user: row.dataset.user });
+        else this.emit("chat", { user: row.dataset.user });
+      });
+      this.renderMe();
+      return el;
+    }
+    setMe(acct) {
+      this.me = acct;
+      this.renderMe();
+    }
+    renderMe() {
+      const box = this.meBox;
+      if (!box) return;
+      const me = this.me;
+      box.innerHTML = me ? `${avatar(me)}<span class="nm">${esc(me.display_name || me.username)}</span><button class="btn sm" type="button" data-act="myprofile" title="Edit my profile">${icon("card", 12)}Profile</button>` : "";
+    }
+    setContacts(list) {
+      this.contacts = /* @__PURE__ */ new Map();
+      for (const c of list || []) this.contacts.set(c.username, { ...c });
+      this.renderGroups();
+    }
+    setPresence(user, state, lastSeen) {
+      const c = this.contacts.get(user);
+      if (!c) return false;
+      c.state = state;
+      if (lastSeen !== void 0) c.last_seen_at = lastSeen;
+      this.renderGroups();
+      return true;
+    }
+    get(user) {
+      return this.contacts.get(user);
+    }
+    renderGroups() {
+      const box = this.groupsBox;
+      if (!box) return;
+      box.replaceChildren();
+      const mine = this.me?.username;
+      for (const [key, label] of GROUPS) {
+        const rows = [...this.contacts.values()].filter((c) => c.username !== mine && groupOf(c.state) === key);
+        const grp = h("div", { className: "grp", dataset: { group: key } }, h("span", { text: label }), h("span", { className: "n", text: String(rows.length) }));
+        box.append(grp);
+        for (const c of rows) {
+          const row = h("div", { className: "contact", dataset: { user: c.username }, role: "button", tabindex: "0", title: c.state === "nopass" ? "Hasn't set a password yet" : "" });
+          row.style.setProperty("--c", c.color || "#9a9a9a");
+          row.append(
+            h("i", { className: "dot " + c.state }),
+            h("span", { className: "nm", text: c.display_name || c.username }),
+            h("button", { type: "button", className: "pf", title: "Profile", dataset: { profile: "1" }, html: icon("card", 12) })
+          );
+          row.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") this.emit("chat", { user: c.username });
+          });
+          box.append(row);
+        }
+      }
+    }
+  };
+
+  // html/hxh/apps/chat/window.js
+  var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
+  var MAX_LOG = 500;
+  var ChatWindow = class extends Window {
+    /** props: room, title, icon, me, nameOf(user), colorOf(user), now() */
+    constructor(props) {
+      super({
+        id: "win-chat-" + roomSlug(props.room),
+        title: props.title,
+        icon: props.icon || "comment",
+        width: 470,
+        cls: "chat room",
+        content: `
+        <div class="log" role="log"></div>
+        <div class="typing"></div>
+        <div class="compose">
+          <textarea class="field" rows="2" aria-label="Message"></textarea>
+          <div class="cbtns">
+            <button class="btn sm" type="button" data-act="unsend" title="Take back your last message" hidden>Unsend</button>
+            <button class="btn sm primary" type="button" data-act="send">Send</button>
+          </div>
+        </div>`,
+        ...props
+      });
+      this.room = props.room;
+      this.ids = /* @__PURE__ */ new Set();
+      this.lastMine = null;
+    }
+    render() {
+      const el = super.render();
+      this.log = el.querySelector(".log");
+      this.typingEl = el.querySelector(".typing");
+      this.input = el.querySelector("textarea");
+      this.unsendBtn = el.querySelector('[data-act="unsend"]');
+      el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
+      this.unsendBtn.addEventListener("click", () => this.emit("unsend"));
+      this.input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          this.submit();
+        } else if (e.key.length === 1 || e.key === "Backspace") this.emit("typing");
+      });
+      return el;
+    }
+    submit() {
+      const body = this.input.value.trim();
+      if (!body) return false;
+      this.emit("send", { body });
+      this.input.value = "";
+      return true;
+    }
+    focusInput() {
+      this.input?.focus();
+    }
+    setMessages(list) {
+      this.log.replaceChildren();
+      this.ids.clear();
+      this.lastMine = null;
+      for (const m of list || []) this.addMessage(m, { scroll: false });
+      this.scrollDown();
+    }
+    addMessage(m, { scroll = true } = {}) {
+      if (this.ids.has(m.id)) return null;
+      this.ids.add(m.id);
+      const p = this.props;
+      const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : ""), dataset: { id: String(m.id), sender: m.sender } });
+      row.append(
+        h("span", { className: "ts", text: this.time(m.created_at) }),
+        h("b", { className: "who", text: (p.nameOf?.(m.sender) || m.sender) + ":", style: { color: p.colorOf?.(m.sender) || "" } }),
+        " ",
+        h("span", { className: "txt", text: m.body })
+      );
+      this.log.append(row);
+      while (this.log.childElementCount > MAX_LOG) this.log.firstElementChild.remove();
+      if (m.sender === p.me) this.lastMine = m.id;
+      this.refreshUnsend();
+      if (scroll) this.scrollDown();
+      return row;
+    }
+    removeMessage(id) {
+      const row = this.log.querySelector(`[data-id="${id}"]`);
+      row?.remove();
+      this.ids.delete(id);
+      if (this.lastMine === id) {
+        const mine = [...this.log.querySelectorAll(".m.mine")];
+        this.lastMine = mine.length ? +mine[mine.length - 1].dataset.id : null;
+      }
+      this.refreshUnsend();
+      return !!row;
+    }
+    /** Re-apply names and colours (contacts may arrive after history did). */
+    refreshNames() {
+      const p = this.props;
+      for (const row of this.log.querySelectorAll(".m")) {
+        const who = row.querySelector(".who"), u = row.dataset.sender;
+        who.textContent = (p.nameOf?.(u) || u) + ":";
+        who.style.color = p.colorOf?.(u) || "";
+      }
+    }
+    /** Unsend only offers your own most recent message, and only while it is the last thing you said. */
+    refreshUnsend() {
+      this.unsendBtn.hidden = this.lastMine == null;
+    }
+    showTyping(name, ms = 3e3) {
+      this.typingEl.textContent = `${name} is typing\u2026`;
+      clearTimeout(this.typingTimer);
+      this.typingTimer = setTimeout(() => this.clearTyping(), ms);
+      this.typingTimer.unref?.();
+    }
+    clearTyping() {
+      this.typingEl.textContent = "";
+    }
+    time(iso) {
+      const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
+      return isNaN(d) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    scrollDown() {
+      this.log.scrollTop = this.log.scrollHeight;
+    }
+    get messageCount() {
+      return this.ids.size;
+    }
+  };
+
+  // html/hxh/apps/chat/runs.js
+  var LIMIT2 = 1024;
+  var FONTS = {
+    dot: '"DotGothic16", "Courier New", monospace',
+    px: '"Press Start 2P", "Courier New", monospace',
+    serif: 'Georgia, "Times New Roman", serif',
+    sans: "Verdana, Arial, sans-serif",
+    mono: '"Courier New", Courier, monospace',
+    cursive: '"Comic Sans MS", "Brush Script MT", cursive'
+  };
+  var FONT_LABELS = { dot: "Dot", px: "Pixel", serif: "Serif", sans: "Sans", mono: "Mono", cursive: "Cursive" };
+  var SIZES = [null, 10, 13, 16, 18, 24, 32, 48];
+  var HEX = /^#[0-9a-f]{6}$/i;
+  var MAX_RUNS = 500;
+  var fmtOf = (r) => `${r.b ? 1 : 0}${r.i ? 1 : 0}${r.u ? 1 : 0}|${r.font || ""}|${r.size || 0}|${r.color || ""}|${r.bg || ""}`;
+  function normalizeRuns(input) {
+    if (!Array.isArray(input)) return { runs: [], length: 0, error: "runs must be an array" };
+    if (input.length > MAX_RUNS) return { runs: [], length: 0, error: `too many runs (max ${MAX_RUNS})` };
+    const runs = [];
+    let length = 0;
+    for (const r of input) {
+      if (!r || typeof r.t !== "string" || !r.t) continue;
+      const out = { t: r.t };
+      if (r.b) out.b = true;
+      if (r.i) out.i = true;
+      if (r.u) out.u = true;
+      if (FONTS[r.font]) out.font = r.font;
+      const size = Number(r.size) | 0;
+      if (size >= 1 && size <= 7) out.size = size;
+      if (HEX.test(r.color || "")) out.color = r.color.toLowerCase();
+      if (HEX.test(r.bg || "")) out.bg = r.bg.toLowerCase();
+      length += [...r.t].length;
+      runs.push(out);
+    }
+    const error = length > LIMIT2 ? `profile is ${length} characters; the limit is ${LIMIT2}` : null;
+    return { runs: mergeRuns(runs), length, error };
+  }
+  var textLength = (runs) => (runs || []).reduce((n, r) => n + [...r.t || ""].length, 0);
+  function mergeRuns(runs) {
+    const out = [];
+    for (const r of runs) {
+      const last = out[out.length - 1];
+      if (last && fmtOf(last) === fmtOf(r)) last.t += r.t;
+      else out.push({ ...r });
+    }
+    return out;
+  }
+  function applyRunStyle(el, r) {
+    if (r.b) el.style.fontWeight = "bold";
+    if (r.i) el.style.fontStyle = "italic";
+    if (r.u) el.style.textDecoration = "underline";
+    if (r.font && FONTS[r.font]) el.style.fontFamily = FONTS[r.font];
+    if (r.size && SIZES[r.size]) el.style.fontSize = SIZES[r.size] + "px";
+    if (r.color) el.style.color = r.color;
+    if (r.bg) el.style.backgroundColor = r.bg;
+  }
+  function renderRuns(runs, doc = document) {
+    const frag = doc.createDocumentFragment();
+    for (const r of runs || []) {
+      const span = doc.createElement("span");
+      applyRunStyle(span, r);
+      const lines = String(r.t).split("\n");
+      lines.forEach((line, i) => {
+        if (i) span.append(doc.createElement("br"));
+        if (line) span.append(doc.createTextNode(line));
+      });
+      frag.append(span);
+    }
+    return frag;
+  }
+  var BLOCKS = /* @__PURE__ */ new Set(["DIV", "P", "LI", "H1", "H2", "H3", "H4", "BLOCKQUOTE", "PRE"]);
+  function rgbToHex(s) {
+    if (!s) return "";
+    if (HEX.test(s)) return s.toLowerCase();
+    const m = String(s).match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (!m) return "";
+    return "#" + [m[1], m[2], m[3]].map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+  }
+  function fontKey(family) {
+    const first = String(family || "").split(",")[0].replace(/["']/g, "").trim().toLowerCase();
+    if (!first) return "";
+    for (const [key, list] of Object.entries(FONTS)) {
+      if (list.split(",")[0].replace(/["']/g, "").trim().toLowerCase() === first) return key;
+    }
+    return "";
+  }
+  function sizeKey(v) {
+    if (v == null || v === "") return 0;
+    const s = String(v).trim();
+    if (/^\d$/.test(s)) return Math.min(7, Math.max(1, +s));
+    const px = parseFloat(s);
+    if (!px) return 0;
+    let best = 0, dist = Infinity;
+    for (let i = 1; i < SIZES.length; i++) {
+      const d = Math.abs(SIZES[i] - px);
+      if (d < dist) {
+        dist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+  function formatFor(el, inherited) {
+    const f = { ...inherited };
+    const tag = el.tagName;
+    const st = el.style || {};
+    if (tag === "B" || tag === "STRONG" || /^(bold|[6-9]00)$/.test(st.fontWeight || "")) f.b = true;
+    if (tag === "I" || tag === "EM" || st.fontStyle === "italic") f.i = true;
+    if (tag === "U" || /underline/.test(st.textDecoration || st.textDecorationLine || "")) f.u = true;
+    if (tag === "FONT") {
+      const face = el.getAttribute("face"), size = el.getAttribute("size"), color = el.getAttribute("color");
+      if (face) {
+        const k = fontKey(face);
+        if (k) f.font = k;
+      }
+      if (size) {
+        const k = sizeKey(size);
+        if (k) f.size = k;
+      }
+      if (color) {
+        const h2 = rgbToHex(color);
+        if (h2) f.color = h2;
+      }
+    }
+    if (st.fontFamily) {
+      const k = fontKey(st.fontFamily);
+      if (k) f.font = k;
+    }
+    if (st.fontSize) {
+      const k = sizeKey(st.fontSize);
+      if (k) f.size = k;
+    }
+    if (st.color) {
+      const h2 = rgbToHex(st.color);
+      if (h2) f.color = h2;
+    }
+    if (st.backgroundColor) {
+      const h2 = rgbToHex(st.backgroundColor);
+      if (h2) f.bg = h2;
+    }
+    return f;
+  }
+  function runsFromNode(root) {
+    const runs = [];
+    const push = (t, f) => {
+      if (t) runs.push({ t, ...f });
+    };
+    const walk = (node, f) => {
+      for (const child of node.childNodes) {
+        if (child.nodeType === 3) {
+          push(child.nodeValue.replace(/ /g, " "), f);
+          continue;
+        }
+        if (child.nodeType !== 1) continue;
+        if (child.tagName === "BR") {
+          push("\n", f);
+          continue;
+        }
+        const cf = formatFor(child, f);
+        const block = BLOCKS.has(child.tagName);
+        if (block && runs.length && !runs[runs.length - 1].t.endsWith("\n")) push("\n", f);
+        walk(child, cf);
+        if (block && runs.length && !runs[runs.length - 1].t.endsWith("\n")) push("\n", f);
+      }
+    };
+    walk(root, {});
+    const merged = mergeRuns(runs);
+    const last = merged[merged.length - 1];
+    if (last && last.t.endsWith("\n")) {
+      last.t = last.t.replace(/\n+$/, "");
+      if (!last.t) merged.pop();
+    }
+    return normalizeRuns(merged).runs;
+  }
+
+  // html/hxh/apps/chat/profile.js
+  var ProfileWindow = class extends Window {
+    constructor({ user, name }) {
+      super({ id: "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-"), title: `${name} \u2014 Profile`, icon: "card", width: 440, cls: "chat profile-view", popup: true, content: `<div class="pbody"></div>` });
+      this.user = user;
+    }
+    setRuns(runs) {
+      const box = this.$(".pbody");
+      box.replaceChildren();
+      if (!runs || !runs.length) box.append(h("i", { className: "empty", text: "No profile yet." }));
+      else box.append(renderRuns(runs, box.ownerDocument));
+    }
+  };
+  var ProfileEditor = class extends Window {
+    /** props: exec (cmd, value) → runs document.execCommand by default */
+    constructor(props = {}) {
+      super({
+        id: "win-chat-profile-edit",
+        title: "My profile",
+        icon: "card",
+        width: 540,
+        cls: "chat profile-edit",
+        content: `
+        <div class="tb">
+          <select class="field" data-cmd="fontName" title="Font">${Object.keys(FONTS).map((k) => `<option value="${k}">${esc(FONT_LABELS[k])}</option>`).join("")}</select>
+          <select class="field" data-cmd="fontSize" title="Size">${SIZES.map((px, i) => i ? `<option value="${i}"${i === 3 ? " selected" : ""}>${px}</option>` : "").join("")}</select>
+          <label class="swatch" title="Colour"><input type="color" data-cmd="foreColor" value="#0b0a08"></label>
+          <label class="swatch hl" title="Highlight"><input type="color" data-cmd="hiliteColor" value="#ffd166"></label>
+          <button class="btn sm" type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+          <button class="btn sm" type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+          <button class="btn sm" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+        </div>
+        <div class="ed field" contenteditable="true" spellcheck="false"></div>
+        <div class="foot">
+          <span class="count">0 / ${LIMIT2}</span>
+          <span class="actions"><button class="btn sm" type="button" data-act="cancel">Cancel</button><button class="btn sm primary" type="button" data-act="save">Save</button></span>
+        </div>`,
+        ...props
+      });
+    }
+    render() {
+      const el = super.render();
+      this.editor = el.querySelector(".ed");
+      this.countEl = el.querySelector(".count");
+      const exec = this.props.exec || ((cmd, value) => {
+        try {
+          el.ownerDocument.execCommand("styleWithCSS", false, cmd === "fontName" || cmd === "hiliteColor");
+          return el.ownerDocument.execCommand(cmd, false, value);
+        } catch {
+          return false;
+        }
+      });
+      el.querySelector(".tb").addEventListener("mousedown", (e) => {
+        if (e.target.closest("button")) e.preventDefault();
+      });
+      el.querySelector(".tb").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-cmd]");
+        if (b) {
+          this.editor.focus();
+          exec(b.dataset.cmd);
+          this.update();
+        }
+      });
+      for (const sel of el.querySelectorAll("select[data-cmd]")) {
+        sel.addEventListener("change", () => {
+          this.editor.focus();
+          exec(sel.dataset.cmd, sel.dataset.cmd === "fontName" ? FONTS[sel.value] : sel.value);
+          this.update();
+        });
+      }
+      for (const inp of el.querySelectorAll("input[type=color][data-cmd]")) {
+        inp.addEventListener("input", () => {
+          this.editor.focus();
+          exec(inp.dataset.cmd, inp.value);
+          this.update();
+        });
+      }
+      this.editor.addEventListener("input", () => this.update());
+      el.querySelector('[data-act="cancel"]').addEventListener("click", () => this.emit("cancel"));
+      el.querySelector('[data-act="save"]').addEventListener("click", () => this.save());
+      return el;
+    }
+    setRuns(runs) {
+      this.editor.replaceChildren();
+      this.editor.append(renderRuns(runs || [], this.editor.ownerDocument));
+      this.update();
+    }
+    runs() {
+      return runsFromNode(this.editor);
+    }
+    get length() {
+      return textLength(this.runs());
+    }
+    update() {
+      const n = this.length;
+      this.countEl.textContent = `${n} / ${LIMIT2}`;
+      this.countEl.classList.toggle("over", n > LIMIT2);
+      return n;
+    }
+    save() {
+      const { runs, error } = normalizeRuns(this.runs());
+      if (error) {
+        this.countEl.classList.add("over");
+        this.emit("error", { error });
+        return false;
+      }
+      this.emit("save", { runs });
+      return true;
+    }
+    focusEditor() {
+      this.editor?.focus();
+    }
+  };
+
+  // html/hxh/apps/chat/app.js
+  var ROOM_GLOBAL = "global";
+  var dmRoom = (a, b) => "dm:" + [a, b].sort().join(":");
+  var NEW_TRAY_ID = "chat-new";
+  var ChatApp = class extends App {
+    static id = "chat";
+    static name = "Beetle";
+    static longName = "Beetle Messenger";
+    static icon = "beetle";
+    static order = 15;
+    constructor(os, options = {}) {
+      super(os, options);
+      this.contacts = /* @__PURE__ */ new Map();
+      this.windows = /* @__PURE__ */ new Map();
+      this.loaded = /* @__PURE__ */ new Set();
+      this.unread = [];
+      this.client = null;
+      this.api = new ChatAPI({ fetch: options.fetch || os.fetch, base: options.base });
+    }
+    get me() {
+      return this.os.user?.username || null;
+    }
+    get connected() {
+      return !!this.client?.connected;
+    }
+    visible(user) {
+      return !!user;
+    }
+    tray() {
+      return {
+        title: "Beetle",
+        on: () => this.connected,
+        menu: () => [
+          { label: "Contacts", icon: "beetle", onclick: () => this.openContacts() },
+          { label: "Global chat", icon: "comment", onclick: () => this.openRoom(ROOM_GLOBAL) },
+          { label: "My profile", icon: "card", onclick: () => this.editProfile() },
+          "sep",
+          { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() }
+        ]
+      };
+    }
+    /* ---------- names, colours, rooms ---------- */
+    nameOf(user) {
+      return this.contacts.get(user)?.display_name || (user === this.me ? this.os.user?.display_name : null) || user;
+    }
+    colorOf(user) {
+      return this.contacts.get(user)?.color || (user === this.me ? this.os.user?.color : null) || "#9a9a9a";
+    }
+    roomTitle(room) {
+      if (room === ROOM_GLOBAL) return "Global chat";
+      const other = room.slice(3).split(":").find((u) => u !== this.me) || room;
+      return this.nameOf(other);
+    }
+    /* ---------- connection ---------- */
+    connect() {
+      if (this.client) return this.client;
+      const os = this.os;
+      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, ...this.options.client || {} });
+      c.on("hello", ({ contacts }) => this.setContacts(contacts));
+      c.on("msg", (m) => this.onMessage(m));
+      c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
+      c.on("unsend", ({ room, id }) => this.windows.get(room)?.removeMessage(id));
+      c.on("presence", (p) => this.onPresence(p));
+      c.on("state", () => os.bus.emit("tray:refresh", { id: this.id }));
+      c.on("error", (e) => {
+        if (e.code === "rate") os.toast.show("Slow down.");
+      });
+      this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
+      c.connect();
+      return c;
+    }
+    setContacts(list) {
+      this.contacts = new Map((list || []).map((c) => [c.username, { ...c }]));
+      this.contactsWin?.setContacts(list);
+      for (const [room, w] of this.windows) {
+        w.setTitle(this.roomTitle(room));
+        w.refreshNames();
+      }
+    }
+    onPresence({ user, state, last_seen_at }) {
+      const c = this.contacts.get(user);
+      const prev = c?.state;
+      if (c) {
+        c.state = state;
+        c.last_seen_at = last_seen_at;
+      }
+      this.contactsWin?.setPresence(user, state, last_seen_at);
+      if (user !== this.me && prev && prev !== state) {
+        if (state === "online") this.os.sounds.play("dooropen");
+        else if (prev === "online") this.os.sounds.play("doorclose");
+      }
+    }
+    /* ---------- windows ---------- */
+    launch({ autostart = false } = {}) {
+      this.connect();
+      const contacts = this.openContacts();
+      this.openRoom(ROOM_GLOBAL, { focus: false });
+      void autostart;
+      return contacts;
+    }
+    openContacts() {
+      const os = this.os;
+      if (!this.contactsWin) {
+        const w = this.contactsWin = new ContactsWindow({ me: os.user });
+        os.wm.add(w);
+        w.on("chat", ({ user }) => this.openChat(user));
+        w.on("profile", ({ user }) => this.viewProfile(user));
+        w.on("global", () => this.openRoom(ROOM_GLOBAL));
+        w.on("myprofile", () => this.editProfile());
+        w.setContacts([...this.contacts.values()]);
+      }
+      const at = this.contactsWin.state.placed ? null : os.env.floating() ? { x: Math.max(16, os.env.width - 300 - 30), y: 24 } : null;
+      os.wm.open(this.contactsWin.id, at);
+      return this.contactsWin;
+    }
+    openChat(user) {
+      return this.openRoom(dmRoom(this.me, user));
+    }
+    /** The window for a room, created on demand; focus=false keeps the current window active (an incoming message). */
+    openRoom(room, { focus = true } = {}) {
+      const os = this.os;
+      let w = this.windows.get(room);
+      if (!w) {
+        w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: (u) => this.nameOf(u), colorOf: (u) => this.colorOf(u) });
+        os.wm.add(w);
+        this.windows.set(room, w);
+        w.on("send", ({ body }) => this.send(room, body));
+        w.on("typing", () => this.client?.typing(room));
+        w.on("unsend", () => this.client?.unsend(room));
+        w.on("close", () => {
+          this.markRead(room);
+        });
+        this.loadHistory(room, w);
+      }
+      if (w.state.open && !w.state.minimized && !focus) return w;
+      const active = os.wm.activeId;
+      const at = w.state.placed ? null : this.cascade();
+      os.wm.open(w.id, at, { scroll: focus });
+      if (!focus && active && active !== w.id) os.wm.focus(active);
+      if (focus) w.focusInput();
+      return w;
+    }
+    cascade() {
+      const os = this.os;
+      if (!os.env.floating()) return null;
+      const n = this.windows.size;
+      return { x: Math.max(16, Math.min(os.env.width - 500, 430 + n % 5 * 30)), y: 120 + n % 5 * 30 };
+    }
+    async loadHistory(room, w) {
+      if (this.loaded.has(room)) return;
+      this.loaded.add(room);
+      try {
+        const { messages } = await this.api.history(room);
+        w.setMessages(messages);
+      } catch {
+        this.loaded.delete(room);
+      }
+    }
+    send(room, body) {
+      if (!this.client?.sendMessage(room, body)) {
+        this.os.toast.show("Slow down.");
+        return false;
+      }
+      this.os.sounds.play("sent");
+      return true;
+    }
+    /* ---------- incoming ---------- */
+    onMessage(m) {
+      const os = this.os;
+      const w = this.openRoom(m.room, { focus: false });
+      w.addMessage(m);
+      if (m.sender === this.me) return;
+      const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized;
+      if (!seen) {
+        w.requestAttention();
+        if (!this.unread.includes(m.room)) this.unread.push(m.room);
+        this.syncNewIcon();
+      }
+      os.sounds.play("message");
+    }
+    onFocus(id) {
+      for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
+    }
+    markRead(room) {
+      const i = this.unread.indexOf(room);
+      if (i >= 0) {
+        this.unread.splice(i, 1);
+        this.syncNewIcon();
+      }
+    }
+    /** The "new message" tray bubble: present while anything is unread; a click focuses the oldest. */
+    syncNewIcon() {
+      const os = this.os;
+      const has = os.taskbar?.tray.has(NEW_TRAY_ID);
+      if (this.unread.length && !has) {
+        os.bus.emit("tray:add", { id: NEW_TRAY_ID, icon: "comment", title: "New message", on: true, onClick: () => this.focusOldestUnread() });
+      } else if (!this.unread.length && has) {
+        os.bus.emit("tray:remove", { id: NEW_TRAY_ID });
+      }
+    }
+    focusOldestUnread() {
+      const room = this.unread[0];
+      if (room) this.openRoom(room, { focus: true });
+    }
+    /* ---------- profiles ---------- */
+    async viewProfile(user) {
+      const os = this.os;
+      const id = "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-");
+      let w = os.wm.get(id);
+      if (!w) {
+        w = new ProfileWindow({ user, name: this.nameOf(user) });
+        os.wm.add(w);
+      }
+      w.setRuns([]);
+      os.wm.open(id);
+      try {
+        const { runs } = await this.api.profile(user);
+        w.setRuns(runs);
+      } catch {
+      }
+      return w;
+    }
+    async editProfile() {
+      const os = this.os;
+      let w = os.wm.get("win-chat-profile-edit");
+      if (!w) {
+        w = new ProfileEditor(this.options.editor || {});
+        os.wm.add(w);
+        w.on("cancel", () => w.close());
+        w.on("save", async ({ runs }) => {
+          try {
+            await this.api.saveProfile(runs);
+            os.toast.show("Profile saved.");
+            w.close();
+          } catch (err) {
+            os.toast.show(String(err.message || err));
+          }
+        });
+        w.on("error", ({ error }) => os.toast.show(error));
+      }
+      os.wm.open(w.id);
+      try {
+        const { runs } = await this.api.profile(this.me);
+        w.setRuns(runs);
+      } catch {
+        w.setRuns([]);
+      }
+      w.focusEditor();
+      return w;
     }
   };
 

@@ -3,4 +3,5 @@ export { SummonsApp as Summons, NOTICE } from "./summons.js";
 export { BinderApp as Binder } from "./binder.js";
 export { RegisterApp as Register } from "./register.js";
 export { AboutApp as About } from "./about.js";
+export { ChatApp as Chat } from "./chat/app.js";
 export { SetPasswordApp as SetPassword } from "./setpw.js";

@@ -23,6 +23,7 @@ import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
 import { LogonDialog } from "./logon.js";
 import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
+import { Sounds } from "./sound.js";
 
 export class OS {
   constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
@@ -30,9 +31,11 @@ export class OS {
     this.doc = win.document;
     this.bus = new EventBus();
     this.env = env || new Env(win);
-    this.session = session || new Session({ fetch });
+    this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
+    this.session = session || new Session({ fetch: this.fetch });
     this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
     this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
+    this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
     this.registry = new AppRegistry(this);
     this.user = null;
     this.ready = false;
@@ -78,7 +81,10 @@ export class OS {
 
   /** Scanlines etc. — the system entries shared by the Start and View menus. */
   systemItems() {
-    return [{ label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() }];
+    return [
+      { label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() },
+      { label: "Sounds", icon: "comment", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
+    ];
   }
 
   /** Apps by group: [{ label, icon, onclick }] for menus. */

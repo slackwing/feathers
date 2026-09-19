@@ -1,4 +1,20 @@
-# hxh chat — spec notes (Andrew, 2026-09-18; NOT started)
+# hxh chat — spec notes (Andrew, 2026-09-18)
+
+> **Status: built and deployed 2026-09-18** as **Beetle** (after the
+> Beetle 07 phone). Transport: option A, the WebSocket hub — Andrew's
+> pick when asked. Backend: hobby-server `internal/hxh/chat.go` +
+> `hub.go` (+ `hub_test.go`), changesets admin 006 / hxh 005. Frontend:
+> feathers `html/hxh/apps/chat/` (app, client, contacts, window,
+> profile, runs) + `os/sound.js`, tests in `tests/chat-*.test.js` and
+> `tests/sound.test.js`. What differs from the notes below: sounds are
+> synthesised with WebAudio (no samples); profiles are stored as a JSON
+> "runs" format rather than sanitised HTML (safe by construction);
+> the server-side rate limit is a token bucket (10/s) — trivial, so
+> it is in; "typing" is throttled to one frame per 2 s per room on
+> the client. Presence: a live socket or activity < 1 min = online,
+> < 1 h = away, else offline, no password = red. History and fan-out
+> apply the activation rule server-side. `html/hxh/CLAUDE.md` ("Beetle")
+> is the living reference.
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,

@@ -54,6 +54,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
   style, deliberately not the site theme; inert frame, no metadata
   beyond template / subject / to; `?template=&user=` for the console's
   Preview; "send test to me".
+- **Beetle** (2026-09-18) — the instant messenger, see its section
+  below. Desktop icon, Start menu, tray icon with a menu.
 - **roster.html / Roster DB app — REMOVED 2026-09-18** (Andrew: it
   didn't work — opening it cleared the other apps — and it isn't
   needed). The `/hxh/api/roster` endpoints stay for the push script.
@@ -176,6 +178,7 @@ the OS.
   (`boot.js`), `type()` (`typewriter.js`), `Session` / `Nav`
   (`session.js`, fetch/storage injectable), `LogonDialog` (`logon.js`,
   a Window subclass), `CRT` (`crt.js`, `localStorage hxh.crt`),
+  `Sounds` (`sound.js`, WebAudio cues, `localStorage hxh.sound`),
   `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
   `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
   `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
@@ -183,9 +186,9 @@ the OS.
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + registry-derived menus + typewriter notice + CTA),
-  `Binder`, `Register`, `About` (group "system"), `SetPassword`
-  (desktop/menuable false; its words come in as options). `apps/index.js`
-  exports them as `HxH.apps.*`.
+  `Binder`, `Chat` (Beetle, `apps/chat/`), `Register`, `About` (group
+  "system"), `SetPassword` (desktop/menuable false; its words come in
+  as options). `apps/index.js` exports them as `HxH.apps.*`.
 
 Adding an app = one class in `apps/` (statics + `launch`), export it
 from `apps/index.js`, list it in the page's `apps`. It gets its icon,
@@ -205,8 +208,8 @@ Never call `boot`, build a login form, or list apps in a page.
   crt, logon, os (the whole start flow: cold/warm boot, gate, splash,
   logout), binder (pagination, layout maths, the window, cards, D-pad,
   claim), apps-desktop (summons/register/about), setpw, wallpaper (pure
-  maths), and `bundle.test.js`, which FAILS when the committed bundle
-  is stale. `tests/dom.js` is the harness (`setupDom({floating,
+  maths), sound, chat-client / chat-app / chat-runs (Beetle), and
+  `bundle.test.js`, which FAILS when the committed bundle is stale. `tests/dom.js` is the harness (`setupDom({floating,
   reduced, width})`, `fakeFetch`); `tests/loader.mjs` makes `.css`
   imports empty modules under Node.
 - **`npm run check` = build + test. Run it before every `ws_prod`**,
@@ -215,6 +218,67 @@ Never call `boot`, build a login form, or list apps in a page.
   end-to-end tests are a later step; the screenshot harness below
   stays the visual check.
 - `node_modules/` is git-ignored; `npm install` once per machine.
+
+## Beetle — the chat app (`apps/chat/`)
+
+Andrew's spec (items 1–19, 2026-09-18) is `foundry/website/docs/HXH_CHAT.md`;
+the name is the Beetle 07 phone from the show. An AIM/MSN-era
+messenger on the desktop, and the first app to exercise the whole
+component architecture (many windows, tray icons + menus, the bus).
+
+- **Backend** (hobby-server, `internal/hxh/chat.go` + `hub.go`): REST
+  under `/hxh/api/chat/` — `contacts`, `history?room=`,
+  `profile/{user}` (GET) / `profile` (PUT) — and the WebSocket hub at
+  `/hxh/api/chat/ws` (Apache `mod_proxy_wstunnel`). Frames: in `msg`,
+  `typing`, `unsend`, `ping`; out `hello {me, contacts}`, `msg`,
+  `typing`, `unsend`, `presence`, `pong`, `error`. Any role on hxh may
+  chat. Messages are kept forever (`hxh_chat_message`; unsend =
+  `deleted_at`); rooms are `global` and `dm:<a>:<b>` (sorted). A user
+  only sees messages written after `activated_at` (first password),
+  enforced in the history query. Presence from the shared
+  `last_seen_at` (every authed request, throttled) + live sockets:
+  online < 1 min, away < 1 h, offline, `nopass` (red) = no password.
+  Server rate limit 10 msg/s per connection.
+- **Frontend**: `apps/chat/app.js` `ChatApp` (id `chat`, name
+  "Beetle", icon `beetle`, order 15; `tray()` → the app's tray icon,
+  lit while connected, with a menu: Contacts, Global chat, My profile,
+  Sounds). `launch()` connects and opens the **contacts list**
+  (`contacts.js`, tall/narrow at the right edge: you on top, then
+  Online / Away / Offline groups; one click on a name opens a chat,
+  the little card opens their profile) and the **global chat**
+  (behind the contacts, not focused). `window.js` `ChatWindow` — one
+  per room (`win-chat-<room>`): the log (names in the sender's avatar
+  colour, HH:MM, last 100 from history), the "<name> is typing…" line,
+  the compose box (Enter sends, Shift+Enter breaks, Unsend appears
+  while your last message is the last thing you said). `client.js`
+  `ChatClient` — the socket: ping every 25 s, drop after two missed
+  pongs, reconnect with backoff (1/2/5/10/30 s), queue while offline,
+  ≤ 10 messages/s, typing at most every 2 s per room; `ChatAPI` for
+  the REST calls. `profile.js` — `ProfileWindow` (view) and
+  `ProfileEditor` (WYSIWYG via `execCommand`: font, size, colour,
+  highlight, B/I/U, live count vs 1024). `runs.js` — the profile
+  format `{t, b, i, u, font, size, color, bg}[]`, normalised
+  identically on both ends and rendered with textContent — never HTML.
+- **Attention, the Windows way**: a message into a window that is not
+  active calls `win.requestAttention()` → the taskbar button flashes
+  until focused (`window:attention` → `TaskButton.flash`), and a
+  "new message" bubble (`tray:add {id: "chat-new", icon: "comment"}`)
+  sits in the tray until the last unread room has been focused; a
+  click on it focuses the oldest unread. An incoming DM opens its
+  window WITHOUT stealing focus. Sounds (`os/sound.js`, WebAudio
+  synthesis, `localStorage hxh.sound`, toggle in Start / View / tray
+  menus): `message`, `sent`, `dooropen` (someone comes online),
+  `doorclose` (online → away/offline); never for yourself.
+- Tests: `tests/chat-client.test.js` (fake socket + manual clock),
+  `tests/chat-app.test.js` (the whole app under the OS with a fake
+  socket and fetch), `tests/chat-runs.test.js`, `tests/sound.test.js`;
+  Go: `internal/hxh/hub_test.go`. End-to-end: the scratchpad
+  Playwright script drives Andrew in Chrome and Abi over a raw socket
+  against the LOCAL stack (Postgres in docker + `go run` hobby-server
+  + the harness proxying `/*/api/` incl. the WebSocket) — the way to
+  screenshot a conversation.
+- Cross-repo (hobby-server AGENTS.md N5): the wire format lives in
+  `hub.go`'s header comment and `client.js`; change both.
 
 ## The Binder (`apps/binder.js` + `apps/binder.css`)
 

@@ -61,10 +61,13 @@ test("the Start menu lists apps, system items, system apps and Log out", async (
   const { os } = make();
   await os.start({ apps: [Hello, Sys, Tray, AdminOnly], start: true });
   const items = os.startItems();
-  assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Scanlines", "Sys", "-", "Log out"]);
+  assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Scanlines", "Sounds", "Sys", "-", "Log out"]);
   assert.equal(items[3].check(), true);
   items[3].onclick();
   assert.equal(os.crt.on, false);
+  assert.equal(items[4].check(), true);   // sounds default on
+  items[4].onclick();
+  assert.equal(os.sounds.on, false);
   assert.ok(!document.body.classList.contains("crt"));
   os.startMenu.open();
   assert.equal(os.startMenu.el.querySelector(".user .name").textContent, "Andrew");

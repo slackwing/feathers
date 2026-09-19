@@ -48,7 +48,7 @@ test("summons menus are derived from the registry", async () => {
   const w = os.wm.get("win-summons");
   const [file, view, help] = w.menuBar.menus;
   view.open();
-  assert.deepEqual([...view.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Binder", "Registration", "-", "Scanlines"]);
+  assert.deepEqual([...view.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Binder", "Registration", "-", "Scanlines", "Sounds"]);
   help.open();
   assert.deepEqual([...help.el.children].map(c => c.textContent), ["About Hunter Website"]);
   d.click(help.el.querySelector("button"));

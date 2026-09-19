@@ -149,6 +149,21 @@ export const ICONS = {
     ".kNNNNNNNNNNNk..",
     ".kkkkkkkkkkkkk..",
   ],
+  // the Beetle messenger's app icon: a green beetle, elytra split
+  beetle: [
+    "..k........k..",
+    "...k......k...",
+    "..kkkkkkkkkk..",
+    ".kkggggggggkk.",
+    "kkggggkkggggkk",
+    "kgggkgkkgkgggk",
+    "kgggggkkgggggk",
+    "kkgkggkkggkgkk",
+    ".kkggggggggkk.",
+    "..kkkkkkkkkk..",
+    "...k..kk..k...",
+    "..k........k..",
+  ],
   // a speech bubble (tray "new message" icon, chat app)
   comment: [
     ".kkkkkkkkkkkk.",
