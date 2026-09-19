@@ -82,6 +82,11 @@ test("attention flashes an unfocused window's button until it is focused", async
   await wm.open("a"); await wm.open("b");
   a.requestAttention();
   assert.equal(tb.button("a").flashing, true);
+  a.calm();   // seen elsewhere (another tab): flash off without a focus
+  assert.equal(tb.button("a").flashing, false);
+  assert.equal(a.flashing, false);
+  a.requestAttention();
+  assert.equal(tb.button("a").flashing, true);
   b.requestAttention();   // active: no flash
   assert.equal(tb.button("b").flashing, false);
   wm.focus("a");

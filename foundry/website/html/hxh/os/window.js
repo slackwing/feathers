@@ -121,6 +121,8 @@ export class Window extends Component {
 
   /** Ask for the user's eye: the title bar blinks (until focused) and the taskbar button flashes. */
   requestAttention() { this.el?.classList.add("flash"); this.emit("attention"); }
+  /** Never mind: stop blinking without being focused (the thing was seen elsewhere — another tab). */
+  calm() { if (!this.flashing) return; this.el?.classList.remove("flash"); this.emit("calm"); }
   get flashing() { return !!this.el?.classList.contains("flash"); }
 
   /** Convenience passthroughs when managed. */

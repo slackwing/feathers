@@ -128,6 +128,7 @@ export class Taskbar extends Component {
       const b = this.buttons.get(id);
       if (b && this.props.wm.activeId !== id) b.flash(true);
     });
+    this.listen(bus, "window:calm", ({ id }) => this.buttons.get(id)?.flash(false));
     this.listen(bus, "tray:add", spec => { if (!this.tray.has(spec.id)) this.tray.add(spec); });
     this.listen(bus, "tray:remove", ({ id }) => this.tray.remove(id));
     this.listen(bus, "tray:refresh", ({ id }) => (id ? this.tray.get(id)?.refresh() : this.tray.icons.forEach(t => t.refresh())));

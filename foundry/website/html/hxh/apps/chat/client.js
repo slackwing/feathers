@@ -126,6 +126,7 @@ export class ChatClient {
     try { f = JSON.parse(data); } catch { return; }
     switch (f.t) {
       case "pong": this.lastPong = this.now(); this.awaiting = false; break;
+      case "read": this.emit("read", { room: f.room, id: f.id }); break;
       case "hello": this.emit("hello", f); break;
       case "msg": this.emit("msg", f.msg); break;
       case "typing": this.emit("typing", { room: f.room, user: f.user }); break;
@@ -145,6 +146,9 @@ export class ChatClient {
     if (this.queue.length < 100) this.queue.push(frame);
     return false;
   }
+
+  /** The focused tab's active window showed `room` up to message `id` (the server tells our other tabs). */
+  read(room, id) { return this.send({ t: "read", room, id }); }
 
   /** Rate-limited: at most `rate` messages per second. Returns false when refused. */
   sendMessage(room, body) {

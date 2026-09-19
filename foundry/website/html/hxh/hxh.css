@@ -1948,6 +1948,10 @@ body.stacked .pageno {
 .chat .status .conn.off::before {
   background: var(--none);
 }
+.chat .status .note {
+  color: var(--ink-4);
+  margin-left: auto;
+}
 .dot {
   flex: none;
   display: inline-block;

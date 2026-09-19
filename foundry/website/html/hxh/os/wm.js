@@ -3,7 +3,7 @@
    "chrome" / "pointerdown" events; it talks to everyone else through the OS
    bus: window:add, window:remove, window:open, window:close,
    window:minimize, window:focus, window:title,
-   window:attention (each payload carries the window id). */
+   window:attention, window:calm (each payload carries the window id). */
 export class WindowManager {
   constructor({ bus, env, desktop }) {
     this.bus = bus;
@@ -32,6 +32,7 @@ export class WindowManager {
     win.on("pointerdown", () => this.focus(win.id));
     win.on("title", title => this.bus.emit("window:title", { id: win.id, title }));
     win.on("attention", () => this.bus.emit("window:attention", { id: win.id }));
+    win.on("calm", () => this.bus.emit("window:calm", { id: win.id }));
     if (!win.static && win.titleBar) this.drag(win, win.titleBar.el);
     this.wins.set(win.id, win);
     this.bus.emit("window:add", { id: win.id });

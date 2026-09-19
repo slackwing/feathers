@@ -308,13 +308,39 @@ component architecture (many windows, tray icons + menus, the bus).
   highlight, B/I/U, live count vs 1024). `runs.js` — the profile
   format `{t, b, i, u, font, size, color, bg}[]`, normalised
   identically on both ends and rendered with textContent — never HTML.
+- **Read = explicit focus (Andrew, 2026-09-19; NOT how AIM worked).**
+  "The most explicit focus is what makes something read": a message
+  is read only when it was shown in the ACTIVE window of the TAB THE
+  USER IS LOOKING AT (`document.hasFocus()` and visible — injectable
+  as `options.hasFocus`). A forgotten browser window behind the others
+  never reads anything, even if a chat is its active window. Read
+  markers live on the server (`hxh_chat_read`, changeset 008): the
+  client sends `{t:"read", room, id}` from `ChatApp.markRead()` (OS
+  window focus, tab focus/visibility, a message landing in the active
+  window of a focused tab); the server echoes `read` to the user's
+  OTHER tabs, which `calm()` the window (flash off without focus,
+  `window:calm`) and drop the bubble when nothing newer is showing.
+  Every `hello` carries `unread: [{room, count, last_id}]`: each
+  unread DM opens BEHIND the active window, flashing; on launch the
+  global chat comes to the front LAST (`launching` flag in
+  `onUnread`), so being focused it is read at once — global nearly
+  always has news after a while and should flash the least. The
+  `launch` test asserts this order.
+- **You can message the online and the away, not the offline** (nor
+  the password-less): the buddy list's IM button and context item are
+  disabled for them, a DM window still opens (history is readable) but
+  its compose is off with a status note ("Killua is offline";
+  `ChatWindow.setCanSend`), and the hub refuses anyway with error code
+  `offline` (toast). Bots follow the same rule (`reachable()` in
+  `internal/bots/chatbots.go`), so while you are logged out nobody DMs
+  you — global is where the news accumulates.
 - **Attention, the Windows way**: a message into a window that is not
-  active calls `win.requestAttention()` → the taskbar button flashes
-  until focused (`window:attention` → `TaskButton.flash`), and a
-  "new message" bubble (`tray:add {id: "chat-new", icon: "comment"}`)
-  sits in the tray until the last unread room has been focused; a
-  click on it focuses the oldest unread. An incoming DM opens its
-  window WITHOUT stealing focus. Sounds (`os/sound.js`, WebAudio
+  active (or into an unfocused tab) calls `win.requestAttention()` →
+  the taskbar button flashes until focused (`window:attention` →
+  `TaskButton.flash`), and a "new message" bubble (`tray:add {id:
+  "chat-new", icon: "comment"}`) sits in the tray until the last unread
+  room has been read; a click on it focuses the oldest unread. An
+  incoming DM opens its window WITHOUT stealing focus. Sounds (`os/sound.js`, WebAudio
   synthesis, `localStorage hxh.sound`, toggle in Start / View / tray
   menus): `message`, `sent`, `dooropen` (someone comes online),
   `doorclose` (online → away/offline); never for yourself.

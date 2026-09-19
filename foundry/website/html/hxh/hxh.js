@@ -1016,6 +1016,12 @@ var HxH = (() => {
       this.el?.classList.add("flash");
       this.emit("attention");
     }
+    /** Never mind: stop blinking without being focused (the thing was seen elsewhere — another tab). */
+    calm() {
+      if (!this.flashing) return;
+      this.el?.classList.remove("flash");
+      this.emit("calm");
+    }
     get flashing() {
       return !!this.el?.classList.contains("flash");
     }
@@ -1072,6 +1078,7 @@ var HxH = (() => {
       win.on("pointerdown", () => this.focus(win.id));
       win.on("title", (title) => this.bus.emit("window:title", { id: win.id, title }));
       win.on("attention", () => this.bus.emit("window:attention", { id: win.id }));
+      win.on("calm", () => this.bus.emit("window:calm", { id: win.id }));
       if (!win.static && win.titleBar) this.drag(win, win.titleBar.el);
       this.wins.set(win.id, win);
       this.bus.emit("window:add", { id: win.id });
@@ -1398,6 +1405,7 @@ var HxH = (() => {
         const b = this.buttons.get(id);
         if (b && this.props.wm.activeId !== id) b.flash(true);
       });
+      this.listen(bus, "window:calm", ({ id }) => this.buttons.get(id)?.flash(false));
       this.listen(bus, "tray:add", (spec) => {
         if (!this.tray.has(spec.id)) this.tray.add(spec);
       });
@@ -3454,6 +3462,9 @@ var HxH = (() => {
           this.lastPong = this.now();
           this.awaiting = false;
           break;
+        case "read":
+          this.emit("read", { room: f.room, id: f.id });
+          break;
         case "hello":
           this.emit("hello", f);
           break;
@@ -3486,6 +3497,10 @@ var HxH = (() => {
       if (this.connected && this.ws) return this.raw(frame);
       if (this.queue.length < 100) this.queue.push(frame);
       return false;
+    }
+    /** The focused tab's active window showed `room` up to message `id` (the server tells our other tabs). */
+    read(room, id) {
+      return this.send({ t: "read", room, id });
     }
     /** Rate-limited: at most `rate` messages per second. Returns false when refused. */
     sendMessage(room, body) {
@@ -3615,11 +3630,11 @@ var HxH = (() => {
       el.querySelector(".tools").addEventListener("click", (e) => {
         const act = e.target.closest("[data-act]")?.dataset.act;
         if (act === "global") this.emit("global");
-        else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
+        else if (act === "im" && this.selected && this.canMessage(this.selected)) this.emit("chat", { user: this.selected });
         else if (act === "profile") this.emit("profile", { user: this.selected || this.me?.username });
       });
       this.menu = this.adopt(new Menu({ items: () => this.selected ? [
-        { label: "Send Message", onclick: () => this.emit("chat", { user: this.selected }) },
+        { label: "Send Message", disabled: !this.canMessage(this.selected), onclick: () => this.emit("chat", { user: this.selected }) },
         { label: "Profile", onclick: () => this.emit("profile", { user: this.selected }) }
       ] : [] }), el.querySelector(".body"));
       this.menu.el.classList.add("ctx");
@@ -3655,6 +3670,7 @@ var HxH = (() => {
       this.contacts = /* @__PURE__ */ new Map();
       for (const c of list || []) this.contacts.set(c.username, { ...c });
       this.renderTree();
+      this.syncTools();
     }
     setPresence(user, state, lastSeen) {
       const c = this.contacts.get(user);
@@ -3662,6 +3678,7 @@ var HxH = (() => {
       c.state = state;
       if (lastSeen !== void 0) c.last_seen_at = lastSeen;
       this.renderTree();
+      this.syncTools();
       return true;
     }
     get(user) {
@@ -3670,6 +3687,15 @@ var HxH = (() => {
     select(user) {
       this.selected = user;
       for (const r of this.tree.querySelectorAll("[data-user]")) r.classList.toggle("sel", r.dataset.user === user);
+      this.syncTools();
+    }
+    /** IM only reaches the online and the away (Andrew, 2026-09-19: not the offline). */
+    canMessage(user) {
+      return present(this.contacts.get(user)?.state);
+    }
+    syncTools() {
+      const im = this.el?.querySelector('[data-act="im"]');
+      if (im) im.disabled = !this.selected || !this.canMessage(this.selected);
     }
     /** Everyone but me: the present under Buddies, the rest under Offline. */
     groups() {
@@ -3747,7 +3773,7 @@ var HxH = (() => {
             <button class="btn primary" type="button" data-act="send">Send</button>
           </div>
         </div>
-        <div class="status"><span class="typing"></span></div>`,
+        <div class="status"><span class="typing"></span><span class="note"></span></div>`,
         ...props
       });
       this.room = props.room;
@@ -3760,6 +3786,7 @@ var HxH = (() => {
       this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
       this.pane.el.classList.add("sunken", "logbox");
       this.typingEl = el.querySelector(".typing");
+      this.noteEl = el.querySelector(".note");
       this.input = el.querySelector("textarea");
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
       el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
@@ -3773,13 +3800,25 @@ var HxH = (() => {
     }
     submit() {
       const body = this.input.value.trim();
-      if (!body) return false;
+      if (!body || this.canSend === false) return false;
       this.emit("send", { body });
       this.input.value = "";
       return true;
     }
     focusInput() {
       this.input?.focus();
+    }
+    /** The newest message shown (what a read marker points at). */
+    get lastId() {
+      return this.messages.length ? this.messages[this.messages.length - 1].id : 0;
+    }
+    /** Compose on or off — off with a note in the status line (a buddy who is offline cannot be messaged). */
+    setCanSend(on, note = "") {
+      this.canSend = !!on;
+      if (this.input) this.input.disabled = !on;
+      const send = this.el?.querySelector('[data-act="send"]');
+      if (send) send.disabled = !on;
+      if (this.noteEl) this.noteEl.textContent = on ? "" : note;
     }
     setMessages(list) {
       this.log.replaceChildren();
@@ -4227,8 +4266,18 @@ var HxH = (() => {
       this.windows = /* @__PURE__ */ new Map();
       this.loaded = /* @__PURE__ */ new Set();
       this.unread = [];
+      this.lastIds = /* @__PURE__ */ new Map();
       this.client = null;
       this.api = new ChatAPI({ fetch: options.fetch || os.fetch, base: options.base });
+      this.hasFocus = options.hasFocus || (() => {
+        const d = os.doc;
+        return !!(d?.hasFocus ? d.hasFocus() : true) && d?.visibilityState !== "hidden";
+      });
+    }
+    /** May this user be messaged? Online or away, not offline, not without a password. */
+    reachable(user) {
+      const s = this.contacts.get(user)?.state;
+      return s === "online" || s === "away";
     }
     get me() {
       return this.os.user?.username || null;
@@ -4269,8 +4318,12 @@ var HxH = (() => {
       if (this.client) return this.client;
       const os = this.os;
       const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, ...this.options.client || {} });
-      c.on("hello", ({ contacts }) => this.setContacts(contacts));
+      c.on("hello", ({ contacts, unread }) => {
+        this.setContacts(contacts);
+        this.onUnread(unread || []);
+      });
       c.on("msg", (m) => this.onMessage(m));
+      c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
       c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
       c.on("presence", (p) => this.onPresence(p));
       c.on("state", ({ connected }) => {
@@ -4281,8 +4334,12 @@ var HxH = (() => {
       this.stopWake = os.bus.on("wake", ({ reason }) => this.onWake(reason));
       c.on("error", (e) => {
         if (e.code === "rate") os.toast.show("Slow down.");
+        else if (e.code === "offline") os.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
       });
       this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
+      this._onTabFocus = () => this.onTabFocus();
+      os.win?.addEventListener("focus", this._onTabFocus);
+      os.doc?.addEventListener("visibilitychange", this._onTabFocus);
       c.connect();
       return c;
     }
@@ -4292,7 +4349,14 @@ var HxH = (() => {
       for (const [room, w] of this.windows) {
         w.setTitle(this.roomTitle(room));
         w.refreshNames();
+        this.syncCanSend(room, w);
       }
+    }
+    /** A DM's compose follows the buddy's reachability. */
+    syncCanSend(room, w = this.windows.get(room)) {
+      const other = this.otherOf(room);
+      if (!w || !other) return;
+      w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline`);
     }
     onPresence({ user, state, last_seen_at }) {
       const c = this.contacts.get(user);
@@ -4302,6 +4366,7 @@ var HxH = (() => {
         c.last_seen_at = last_seen_at;
       }
       this.contactsWin?.setPresence(user, state, last_seen_at);
+      if (this.me) this.syncCanSend(dmRoom(this.me, user));
       if (user !== this.me && prev && prev !== state) {
         if (state === "online") this.os.sounds.play("dooropen");
         else if (prev === "online") this.os.sounds.play("doorclose");
@@ -4342,12 +4407,47 @@ var HxH = (() => {
       return room === ROOM_GLOBAL ? null : room.slice(3).split(":").find((u) => u !== this.me);
     }
     /* ---------- windows ---------- */
+    /**
+     * Launch: contacts and the global chat, as always. Then the hello
+     * tells us what is unread: every such DM opens behind (flashing) and
+     * the global chat comes to the front LAST, so being focused it is
+     * read at once — Andrew wants global, which nearly always has news,
+     * to flash the least.
+     */
     launch({ autostart = false } = {}) {
+      this.launching = true;
       this.connect();
       const contacts = this.openContacts();
       this.openRoom(ROOM_GLOBAL, { focus: false });
       void autostart;
       return contacts;
+    }
+    /** hello.unread (every connect): surface the rooms with news. */
+    onUnread(list) {
+      const rooms = list.filter((u) => u.count > 0).map((u) => u.room);
+      for (const u of list) if (u.last_id) this.lastIds.set(u.room, Math.max(u.last_id, this.lastIds.get(u.room) || 0));
+      for (const room of rooms) if (room !== ROOM_GLOBAL) this.surface(room);
+      const global = rooms.includes(ROOM_GLOBAL);
+      if (this.launching) {
+        this.launching = false;
+        if (global && !this.unread.includes(ROOM_GLOBAL)) this.unread.push(ROOM_GLOBAL);
+        this.openRoom(ROOM_GLOBAL, { focus: true });
+        if (this.unread.includes(ROOM_GLOBAL)) this.flag(ROOM_GLOBAL);
+      } else if (global) {
+        this.surface(ROOM_GLOBAL);
+      }
+    }
+    /** An unread room: its window open behind the active one, flashing, in the tray bubble. */
+    surface(room) {
+      const w = this.openRoom(room, { focus: false });
+      const seen = this.os.wm.activeId === w.id && w.state.open && !w.state.minimized && this.hasFocus();
+      if (seen) this.markRead(room);
+      else this.flag(room, w);
+    }
+    flag(room, w = this.windows.get(room)) {
+      if (this.flashSetting) w?.requestAttention();
+      if (!this.unread.includes(room)) this.unread.push(room);
+      this.syncNewIcon();
     }
     openContacts() {
       const os = this.os;
@@ -4391,6 +4491,7 @@ var HxH = (() => {
         w.on("close", () => {
           this.markRead(room);
         });
+        this.syncCanSend(room, w);
         this.loadHistory(room, w);
       }
       if (w.state.open && !w.state.minimized && !focus) return w;
@@ -4454,24 +4555,49 @@ var HxH = (() => {
       const os = this.os;
       const w = this.openRoom(m.room, { focus: false });
       w.addMessage(m);
+      this.lastIds.set(m.room, Math.max(m.id, this.lastIds.get(m.room) || 0));
       if (m.sender === this.me) return;
-      const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized;
-      if (!seen) {
-        if (this.flashSetting) w.requestAttention();
-        if (!this.unread.includes(m.room)) this.unread.push(m.room);
-        this.syncNewIcon();
-      }
+      const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized && this.hasFocus();
+      if (seen) this.client?.read(m.room, m.id);
+      else this.flag(m.room, w);
       os.sounds.play("message");
     }
+    /** An OS window came to the front: if it is a chat and this tab is being looked at, it is read. */
     onFocus(id) {
       for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
     }
+    /** The tab itself came to the front: whatever chat is active is now read. */
+    onTabFocus() {
+      if (!this.hasFocus()) return;
+      const id = this.os.wm.activeId;
+      for (const [room, w] of this.windows) if (w.id === id && w.state.open && !w.state.minimized) this.markRead(room);
+    }
+    /**
+     * Read = shown in the active window of the tab the user is looking at.
+     * Tells the server (which tells our other tabs) and clears the flash
+     * and the tray bubble. An unfocused tab never reads.
+     */
     markRead(room) {
+      if (!this.hasFocus()) return false;
+      const w = this.windows.get(room);
+      const id = Math.max(w?.lastId || 0, this.lastIds.get(room) || 0);
+      if (id && this.unread.includes(room)) this.client?.read(room, id);
+      this.clearUnread(room);
+      return true;
+    }
+    /** Another tab of ours read `room` up to `id`: nothing newer here means we are calm too. */
+    onReadElsewhere(room, id) {
+      const w = this.windows.get(room);
+      const newest = Math.max(w?.lastId || 0, this.lastIds.get(room) || 0);
+      if (newest <= id) this.clearUnread(room);
+    }
+    clearUnread(room) {
       const i = this.unread.indexOf(room);
       if (i >= 0) {
         this.unread.splice(i, 1);
         this.syncNewIcon();
       }
+      this.windows.get(room)?.calm();
     }
     /** The "new message" tray bubble: present while anything is unread (and the setting is on); a click focuses the oldest. */
     syncNewIcon() {

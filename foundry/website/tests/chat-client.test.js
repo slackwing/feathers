@@ -36,7 +36,7 @@ function make(opts = {}) {
   const c = clock();
   const client = new ChatClient({ url: "ws://x/ws", WebSocket: WS, now: c.now, setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, pingMs: 1000, backoff: [100, 200, 500], ...opts });
   const got = [];
-  for (const ev of ["open", "close", "reconnect", "hello", "msg", "typing", "presence", "error", "state"]) client.on(ev, p => got.push([ev, p]));
+  for (const ev of ["open", "close", "reconnect", "hello", "msg", "typing", "presence", "error", "state", "read"]) client.on(ev, p => got.push([ev, p]));
   return { client, sockets, c, got };
 }
 
@@ -57,9 +57,13 @@ test("connect, hello and routed frames", () => {
   ws.push({ t: "typing", room: "global", user: "abi" });
   ws.push({ t: "presence", user: "abi", state: "away", last_seen_at: null });
   ws.push({ t: "error", code: "rate", room: "global" });
+  ws.push({ t: "read", room: "global", id: 7 });
   ws.push({ t: "weird" });
   ws.onmessage({ data: "not json" });
-  assert.deepEqual(got.map(g => g[0]), ["open", "state", "hello", "msg", "typing", "presence", "error"]);
+  assert.deepEqual(got.map(g => g[0]), ["open", "state", "hello", "msg", "typing", "presence", "error", "read"]);
+  assert.deepEqual(got.at(-1)[1], { room: "global", id: 7 });
+  assert.equal(client.read("global", 7), true);
+  assert.deepEqual(ws.sent.at(-1), { t: "read", room: "global", id: 7 });
   assert.equal(got[3][1].body, "hi");
   assert.equal(got[5][1].state, "away");
 });

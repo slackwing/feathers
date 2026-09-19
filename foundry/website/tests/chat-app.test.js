@@ -31,9 +31,10 @@ function fakeWS() {
   return { WS, sockets };
 }
 
-let d, os, sockets, log, api;
+let d, os, sockets, log, api, tabFocused;
 beforeEach(async () => {
   d = setupDom();
+  tabFocused = true;
   const ws = fakeWS(); sockets = ws.sockets; log = [];
   api = {
     "GET /admin/api/me": [200, ME],
@@ -45,8 +46,9 @@ beforeEach(async () => {
   };
   os = new OS({ win: d.win, fetch: fakeFetch(api, log), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   os.sounds.AC = class { constructor() { this.currentTime = 0; this.state = "running"; this.destination = {}; } createOscillator() { return { frequency: { setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {}, start() {}, stop() {} }; } createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {} }; } };
-  await os.start({ apps: [[ChatApp, { WebSocket: ws.WS, url: "ws://test/ws", client: { setTimeout: () => 0, clearTimeout: () => {} } }]], boot: false, start: true });
+  await os.start({ apps: [[ChatApp, { WebSocket: ws.WS, url: "ws://test/ws", hasFocus: () => tabFocused, client: { setTimeout: () => 0, clearTimeout: () => {} } }]], boot: false, start: true });
 });
+const reads = (i = 0) => sockets[i].sent.filter(f => f.t === "read");
 
 const app = () => os.registry.get("chat");
 const hello = () => { sockets[0].open(); sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS }); };
@@ -72,11 +74,12 @@ test("launch connects, opens contacts (right side) and the global chat with hist
   assert.equal(global.title, "Global chat");
   assert.equal(global.el.style.width, "705px");   // the global room is 1.5× a buddy chat
   assert.ok(global.el.classList.contains("large"));
-  assert.equal(os.wm.activeId, "win-chat-contacts");   // global opened without stealing focus
+  assert.equal(os.wm.activeId, "win-chat-contacts");   // global opened behind the contacts, for now
   await tick();
   assert.equal(global.messageCount, 1);
   assert.equal(global.el.querySelector(".m .txt").textContent, "hello all");
   hello();
+  assert.equal(os.wm.activeId, "win-chat-global");   // the hello brings global to the front, last
   assert.ok(os.taskbar.tray.get("chat").btn.classList.contains("on"));
   assert.equal(contacts.connEl.textContent, "Connected");
   assert.equal(global.el.querySelector(".m .who").style.color, "rgb(52, 157, 178)");   // abi's colour, applied once contacts are known
@@ -318,6 +321,97 @@ test("merging a history: new ids slot in by id, known ones stay, the log is capp
   assert.equal(w.messageCount, 5);
   w.addMessage({ id: 7, sender: "a", body: "seven" });
   assert.deepEqual(w.messages.map(m => m.id), [1, 2, 3, 5, 6, 7]);
+});
+
+test("launch with news: unread DMs open behind and flash, global comes last and is read because it is focused", async () => {
+  api["GET /hxh/api/chat/history?room=dm%3Aandrew%3Agon"] = [200, { room: "dm:andrew:gon", messages: [{ id: 3, room: "dm:andrew:gon", sender: "gon", body: "you there?", created_at: "2026-10-31T21:00:00Z" }] }];
+  await os.launch("chat");
+  sockets[0].open();
+  sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS, unread: [
+    { room: "dm:andrew:gon", count: 1, last_id: 3 }, { room: "dm:abi:andrew", count: 2, last_id: 4 }, { room: "global", count: 5, last_id: 9 },
+  ] });
+  await tick();
+  const gon = os.wm.get("win-chat-dm-andrew-gon"), abi = os.wm.get("win-chat-dm-abi-andrew"), global = os.wm.get("win-chat-global");
+  assert.ok(gon.state.open && abi.state.open && global.state.open);
+  assert.equal(os.wm.activeId, global.id);
+  assert.equal(gon.flashing, true); assert.equal(abi.flashing, true); assert.equal(global.flashing, false);
+  assert.equal(os.taskbar.button(gon.id).flashing, true);
+  assert.deepEqual(app().unread, ["dm:andrew:gon", "dm:abi:andrew"]);
+  assert.ok(os.taskbar.tray.has(NEW_TRAY_ID));
+  assert.deepEqual(reads(), [{ t: "read", room: "global", id: 9 }]);   // read up to what the server said, before history even loaded
+  assert.equal(gon.messageCount, 1);
+  // focusing a flashing DM reads it (this tab is being looked at)
+  os.wm.focus(gon.id);
+  assert.equal(gon.flashing, false);
+  assert.deepEqual(reads().at(-1), { t: "read", room: "dm:andrew:gon", id: 3 });
+  assert.deepEqual(app().unread, ["dm:abi:andrew"]);
+  // the same hello again (a reconnect) surfaces only what is still unread and never re-reads
+  sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS, unread: [{ room: "dm:abi:andrew", count: 2, last_id: 4 }] });
+  await tick();
+  assert.equal(os.wm.activeId, gon.id);
+  assert.equal(reads().length, 2);
+  assert.deepEqual(app().unread, ["dm:abi:andrew"]);
+});
+
+test("an unfocused tab never reads: not on launch, not for a message in its active window; focus turns shown into read; other tabs' reads calm it", async () => {
+  tabFocused = false;
+  await os.launch("chat");
+  sockets[0].open();
+  sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS, unread: [{ room: "global", count: 2, last_id: 9 }] });
+  await tick();
+  const global = os.wm.get("win-chat-global");
+  assert.equal(os.wm.activeId, global.id);
+  assert.equal(global.flashing, true);   // focused window, but nobody is looking at this tab
+  assert.deepEqual(reads(), []);
+  assert.deepEqual(app().unread, ["global"]);
+  sockets[0].push({ t: "msg", msg: { id: 10, room: "global", sender: "gon", body: "hey", created_at: "2026-10-31T20:03:00Z" } });
+  assert.deepEqual(reads(), []);
+  assert.deepEqual(app().unread, ["global"]);
+  // another tab of mine read global up to 9: not enough, 10 is newer here
+  sockets[0].push({ t: "read", room: "global", id: 9 });
+  assert.equal(global.flashing, true);
+  // …up to 10: calm, bubble gone, and this tab still never sent a read
+  sockets[0].push({ t: "read", room: "global", id: 10 });
+  assert.equal(global.flashing, false);
+  assert.equal(os.taskbar.button(global.id).flashing, false);
+  assert.deepEqual(app().unread, []);
+  assert.ok(!os.taskbar.tray.has(NEW_TRAY_ID));
+  assert.deepEqual(reads(), []);
+  // a new message, then the user comes back to this tab: read on focus
+  sockets[0].push({ t: "msg", msg: { id: 11, room: "global", sender: "gon", body: "again", created_at: "2026-10-31T20:04:00Z" } });
+  assert.deepEqual(app().unread, ["global"]);
+  tabFocused = true;
+  d.fire(d.win, "focus");
+  assert.deepEqual(reads(), [{ t: "read", room: "global", id: 11 }]);
+  assert.deepEqual(app().unread, []);
+  assert.equal(global.flashing, false);
+});
+
+test("you can message the online and the away, not the offline: IM button, compose, and the server's word", async () => {
+  await os.launch("chat"); hello();
+  const contacts = os.wm.get("win-chat-contacts");
+  const im = contacts.el.querySelector('[data-act="im"]');
+  assert.equal(im.disabled, true);   // nobody selected
+  d.click(contacts.el.querySelector('.contact[data-user="gon"]'));   // away: fine
+  assert.equal(im.disabled, false);
+  d.click(contacts.el.querySelector(".ltab:nth-child(2)"));   // the List tab shows everyone
+  d.click(contacts.el.querySelector('.contact[data-user="killua"]'));   // offline
+  assert.equal(im.disabled, true);
+  const dm = os.wm.get("win-chat-dm-andrew-killua");
+  assert.ok(dm.state.open);   // the window still opens (history is readable)
+  assert.equal(dm.input.disabled, true);
+  assert.equal(dm.el.querySelector('[data-act="send"]').disabled, true);
+  assert.equal(dm.el.querySelector(".status .note").textContent, "Killua is offline");
+  dm.input.value = "hello?"; assert.equal(dm.submit(), false);
+  sockets[0].push({ t: "presence", user: "killua", state: "online", last_seen_at: null });
+  assert.equal(dm.input.disabled, false);
+  assert.equal(dm.el.querySelector(".status .note").textContent, "");
+  assert.equal(im.disabled, false);
+  sockets[0].push({ t: "presence", user: "killua", state: "offline", last_seen_at: null });
+  assert.equal(dm.input.disabled, true);
+  // the server has the last word
+  sockets[0].push({ t: "error", code: "offline", room: "dm:andrew:killua" });
+  assert.match(os.toast.el.textContent, /Killua is offline/);
 });
 
 test("presence updates regroup contacts and play the door sounds", async () => {

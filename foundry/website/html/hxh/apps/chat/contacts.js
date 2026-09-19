@@ -73,11 +73,11 @@ export class ContactsWindow extends Window {
     el.querySelector(".tools").addEventListener("click", e => {
       const act = e.target.closest("[data-act]")?.dataset.act;
       if (act === "global") this.emit("global");
-      else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
+      else if (act === "im" && this.selected && this.canMessage(this.selected)) this.emit("chat", { user: this.selected });
       else if (act === "profile") this.emit("profile", { user: this.selected || this.me?.username });
     });
     this.menu = this.adopt(new Menu({ items: () => this.selected ? [
-      { label: "Send Message", onclick: () => this.emit("chat", { user: this.selected }) },
+      { label: "Send Message", disabled: !this.canMessage(this.selected), onclick: () => this.emit("chat", { user: this.selected }) },
       { label: "Profile", onclick: () => this.emit("profile", { user: this.selected }) },
     ] : [] }), el.querySelector(".body"));
     this.menu.el.classList.add("ctx");
@@ -112,6 +112,7 @@ export class ContactsWindow extends Window {
     this.contacts = new Map();
     for (const c of list || []) this.contacts.set(c.username, { ...c });
     this.renderTree();
+    this.syncTools();
   }
 
   setPresence(user, state, lastSeen) {
@@ -120,6 +121,7 @@ export class ContactsWindow extends Window {
     c.state = state;
     if (lastSeen !== undefined) c.last_seen_at = lastSeen;
     this.renderTree();
+    this.syncTools();
     return true;
   }
 
@@ -128,6 +130,14 @@ export class ContactsWindow extends Window {
   select(user) {
     this.selected = user;
     for (const r of this.tree.querySelectorAll("[data-user]")) r.classList.toggle("sel", r.dataset.user === user);
+    this.syncTools();
+  }
+
+  /** IM only reaches the online and the away (Andrew, 2026-09-19: not the offline). */
+  canMessage(user) { return present(this.contacts.get(user)?.state); }
+  syncTools() {
+    const im = this.el?.querySelector('[data-act="im"]');
+    if (im) im.disabled = !this.selected || !this.canMessage(this.selected);
   }
 
   /** Everyone but me: the present under Buddies, the rest under Offline. */

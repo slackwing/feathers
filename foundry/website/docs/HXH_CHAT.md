@@ -23,6 +23,12 @@
 > a night's sleep the reconnected socket showed new messages but not the
 > missed ones — fixed with the OS `wake` event + `ChatClient.nudge()` +
 > `ChatApp.resync()` (history refetch and merge on every reconnect).
+> Later that day: read markers on the server (`hxh_chat_read`) with
+> Andrew's "explicit focus" rule — only the focused tab's active window
+> reads; unread rooms open on launch (DMs flashing, global last and
+> focused); DMs only to the online and away, never the offline — see
+> "Read = explicit focus" in `html/hxh/CLAUDE.md`. Item 14 below is
+> superseded accordingly.
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,
