@@ -47,7 +47,7 @@ test("one TaskButton per open window, kept in step with the manager", async () =
   assert.equal(tb.buttons.size, 1);
   const b = tb.button("a");
   assert.ok(b instanceof TaskButton);
-  assert.equal(b.el.querySelector(".lbl").textContent, "Aye");
+  assert.equal(b.el.querySelector(".tlbl").textContent, "Aye");
   assert.ok(b.el.classList.contains("pressed"));
   await wm.open("s");
   assert.equal(tb.buttons.size, 1);   // static windows have no task

@@ -23,10 +23,10 @@ export class TaskButton extends Component {
     const w = this.props.win;
     const b = h("button", {
       type: "button", className: "btn task", title: w.title,
-      html: `${icon(w.icon, 16)}<span class="lbl"></span>`,
+      html: `${icon(w.icon, 16)}<span class="tlbl"></span>`,   // .tlbl, not .lbl (the OS form label: uppercase, grey, margins)
       onclick: () => this.emit("press"),
     });
-    this.lbl = b.querySelector(".lbl");
+    this.lbl = b.querySelector(".tlbl");
     this.lbl.textContent = w.title;
     return b;
   }
@@ -57,7 +57,7 @@ export class TrayIcon extends Component {
     const p = this.props;
     const wrap = h("span", { className: "trayicon", dataset: { tray: p.id } });
     this.btn = h("button", {
-      type: "button", title: p.title || p.id, html: icon(p.icon, 12),
+      type: "button", title: p.title || p.id, html: icon(p.icon, 16),
       onclick: e => { e.stopPropagation(); this.press(); },
     });
     wrap.append(this.btn);

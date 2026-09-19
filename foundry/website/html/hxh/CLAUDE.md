@@ -191,7 +191,7 @@ the OS.
   (`playTune` / `stopTune`, `TUNES`, `noteFreq`),
   `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
   `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
-  `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
+  `ICONS` incl. `comment` for chat — see "Icon sizes"), `dom.js` (`h()`, `esc`),
   `wallpaper.js` (below), `os.js` (`OS`), `index.js` (the bundle entry
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
@@ -492,6 +492,31 @@ island silhouette but drawn procedurally — no copyrighted image is
 used. The pure parts (`islandHeight`, `cloudBounds`, `glints`, the
 `SHAPES`) are exported and characterised in `tests/wallpaper.test.js`. Desktop icon labels carry a 1px ink outline to stay readable
 over the sky.
+
+## Icon sizes — one grid, three scales (2026-09-19)
+
+Andrew's rule after seeing 3, 4 and 6 px pixels side by side on the
+desktop: pixelation is a system property, like the type scale.
+
+- **Every icon in `ICONS` is a 16×16 grid.** `tests/icons.test.js`
+  enforces it. Draw with detail — at the small size every art pixel is
+  one screen pixel.
+- **Small icons draw at 16 px** (1×, "full resolution", unrealistically
+  crisp on purpose): taskbar buttons, tray icons, Start menu and menu
+  items, window title bars. `icon(name, 16)`.
+- **Desktop icons draw at 48 px** (3×): about half the wallpaper's 5 px
+  whale scale; text (Pixelify Sans at 13–15 px, ~1.3 px cells) sits
+  between the two. `Desktop` uses `icon(a.icon, 48)` in a 48 px `.ib`.
+- **Two exceptions, on purpose**: the Start button's pumpkin (12×12 at
+  2× = 24 px — "the pumpkin is unique") and the boot badge's tee (18×14
+  at 4×). Don't reuse them elsewhere.
+- The `x` is the show's bold red × (ink-edged); title bars recolour it
+  cream via the palette override in `window.js`.
+- Taskbar button labels are `.tlbl`, NOT `.lbl` — `.lbl` is the OS form
+  label (uppercase, grey, `margin: 16px 0 6px`) and once styled the
+  taskbar by accident, which is why those labels sat 5 px low. Same
+  trap as `.ltab`/`.glbl` in the buddy list: check `os.css` before
+  reusing a short class name.
 
 ## Retro chrome (CSS vocabulary)
 
