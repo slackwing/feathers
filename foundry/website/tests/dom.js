@@ -15,6 +15,7 @@ export function setupDom({ floating = true, reduced = false, width = 1366, heigh
   });
   Object.defineProperty(win, "innerWidth", { value: width, configurable: true, writable: true });
   Object.defineProperty(win, "innerHeight", { value: height, configurable: true, writable: true });
+  if (!floating) win.document.body.classList.add("stacked");
   win.scrollTo = () => {};
   win.HTMLElement.prototype.scrollIntoView = function () { this.dataset.scrolled = "1"; };
   win.HTMLElement.prototype.setPointerCapture = () => {};

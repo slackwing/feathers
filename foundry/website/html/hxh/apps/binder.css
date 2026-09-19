@@ -262,33 +262,34 @@
   box-shadow: 0 0 0 var(--px) var(--ink), 2px 2px 0 var(--ink);
 }
 
-/* ---------- phone: pages stack ---------- */
-@media (max-width: 899px) {
-  .binder { --bw: 100%; --bh: auto; --pw: 100%; }
-  .book { width: 100%; }
-  .book { perspective: none; }
-  .flap { position: static; width: auto; height: auto; transform: none !important; transition: none !important; }
-  .face { position: static; }
-  .face.back { display: none; }
-  .cover { width: 100%; height: 575px; padding-left: 0; }
-  .cover::before { display: none; }
-  .cover .rivet.tl, .cover .rivet.bl { left: 15px; }
-  .book.closed .inside { display: none; }
-  .book.opening .inside, .book.closing .inside { display: flex; }
-  .shade { display: none; }
-  .leaf { flex: none; width: 100%; }
-  .inside { flex-direction: column; }
-  .page, .panel { flex: none; width: 100%; height: auto; }
-  .page { border-right: var(--px) solid var(--ink); }
-  .panel { border-left: var(--px) solid var(--ink); border-top: 0; }
-  .cards { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: 188px; }
-  .card .art canvas { width: 48px; height: 48px; }
-  .spine { width: 100%; flex: 0 0 30px; flex-direction: row; border: var(--px) solid var(--ink); border-top: 0; border-bottom: 0; box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2); }
-  .spine .clasp { width: 70px; height: 20px; }
-  .spine .clasp::after { left: 10px; right: 10px; top: 50%; bottom: auto; width: auto; height: var(--px); margin: -1px 0 0; }
-  .tabs { flex-wrap: nowrap; }       /* one shrinking row on phones */
-  .tab { font-size: 0; flex: 1 1 0; min-width: 0; }             /* colour only… */
-  .tab.on { font-size: 10px; padding: 2px 8px 0; flex: 0 0 auto; }   /* …except the open page */
-  .screen { flex: none; height: 300px; }
-  .pageno { position: static; text-align: right; margin-top: 8px; }
-}
+/* stacked mode only (see os.css) */
+body.stacked .binder {--bw: 100%; --bh: auto; --pw: 100%; }
+body.stacked .book {width: 100%; }
+body.stacked .book {perspective: none; }
+body.stacked .flap {position: static; width: auto; height: auto; transform: none !important; transition: none !important; }
+body.stacked .face {position: static; }
+body.stacked .face.back {display: none; }
+body.stacked .cover {width: 100%; height: 575px; padding-left: 0; }
+body.stacked .cover::before {display: none; }
+body.stacked .cover .rivet.tl, body.stacked .cover .rivet.bl {left: 15px; }
+body.stacked .book.closed .inside {display: none; }
+body.stacked .book.opening .inside, body.stacked .book.closing .inside {display: flex; }
+body.stacked .shade {display: none; }
+body.stacked .leaf {flex: none; width: 100%; }
+body.stacked .inside {flex-direction: column; }
+body.stacked .page, body.stacked .panel {flex: none; width: 100%; height: auto; }
+body.stacked .page {border-right: var(--px) solid var(--ink); }
+body.stacked .panel {border-left: var(--px) solid var(--ink); border-top: 0; }
+body.stacked .cards {grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: 188px; }
+body.stacked .card .art canvas {width: 48px; height: 48px; }
+body.stacked .spine {width: 100%; flex: 0 0 30px; flex-direction: row; border: var(--px) solid var(--ink); border-top: 0; border-bottom: 0; box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2); }
+body.stacked .spine .clasp {width: 70px; height: 20px; }
+body.stacked .spine .clasp::after {left: 10px; right: 10px; top: 50%; bottom: auto; width: auto; height: var(--px); margin: -1px 0 0; }
+body.stacked .tabs {flex-wrap: nowrap; }
+body.stacked /* one shrinking row on phones */
+  .tab {font-size: 0; flex: 1 1 0; min-width: 0; }
+body.stacked /* colour only… */
+  .tab.on {font-size: 10px; padding: 2px 8px 0; flex: 0 0 auto; }
+body.stacked /* …except the open page */
+  .screen {flex: none; height: 300px; }
+body.stacked .pageno {position: static; text-align: right; margin-top: 8px; }

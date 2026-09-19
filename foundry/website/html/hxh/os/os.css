@@ -51,28 +51,35 @@
   --font-display: "Press Start 2P", "Courier New", monospace;
   --font-px: var(--font-display);   /* legacy names, still used by the binder's device art */
   --font-dot: var(--font-body);
-  --fs-ui: 13px;        /* 8 pt chrome ×1.2 */
-  --fs-title: 13px;     /* XP's 10 pt bold title */
-  --fs-body: 16px;      /* DotGothic16 native */
-  --fs-small: 11px;     /* status bars, time stamps, captions */
-  --fs-caption: 12px;   /* desktop icon labels */
+  --fs-ui: 15px;        /* 8 pt chrome, scaled up a notch (Andrew: the 13 px round was a touch small) */
+  --fs-title: 15px;     /* XP's 10 pt bold title */
+  --fs-body: 18px;      /* DotGothic16 (native 16; 18 keeps it readable at zoom 1) */
+  --fs-small: 13px;     /* status bars, time stamps */
+  --fs-caption: 14px;   /* desktop icon labels */
   --t-ui: 500 var(--fs-ui)/1.25 var(--font-ui);
   --t-ui-bold: 700 var(--fs-ui)/1.25 var(--font-ui);
   --t-title: 700 var(--fs-title)/1 var(--font-ui);
   --t-body: 400 var(--fs-body)/1.5 var(--font-body);
   --t-small: 500 var(--fs-small)/1.3 var(--font-ui);
   --t-caption: 500 var(--fs-caption)/1.2 var(--font-ui);
-  --t-kicker: 400 10px/1.6 var(--font-display);
-  --t-heading: 400 18px/1.5 var(--font-display);
+  --t-kicker: 400 11px/1.6 var(--font-display);
+  --t-heading: 400 20px/1.5 var(--font-display);
   --taskbar-h: 45px;
   --dither: repeating-conic-gradient(var(--paper-hi) 0 25%, var(--paper) 0 50%) 0 0 / 4px 4px;
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* THE WHALE RULE (Andrew, 2026-09-19): the island is always the middle
+   half of the view, and the whole desktop zooms with it — --zoom is
+   vw / 1366, set by OS.applyZoom. Everything below is laid out in
+   design pixels; the browser scales it. Phones get the same desktop,
+   smaller; what turns out unreadable there is overridden case by case. */
+html { --zoom: 1; }
 body {
+  zoom: var(--zoom);
   margin: 0;
-  min-height: 100svh;
+  min-height: calc(100svh / var(--zoom));
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='%23e8dcc3' fill-opacity='.07'%3E%3Crect x='9' y='9' width='2' height='2'/%3E%3Crect x='13' y='9' width='2' height='2'/%3E%3Crect x='11' y='11' width='2' height='2'/%3E%3Crect x='9' y='13' width='2' height='2'/%3E%3Crect x='13' y='13' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E")
     var(--ink);
@@ -107,7 +114,7 @@ body.crt::after {
 /* ---------- wallpaper canvas (pixel-art Whale Island) ---------- */
 .wall {
   position: fixed; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; image-rendering: pixelated;
+  object-fit: fill; image-rendering: pixelated;   /* the canvas is cut to the view's aspect, so fill = no crop */
   z-index: 0; pointer-events: none;
 }
 
@@ -117,7 +124,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 /* ---------- desktop ---------- */
 .desktop {
   position: relative;
-  min-height: calc(100svh - var(--taskbar-h));
+  min-height: calc(100svh / var(--zoom) - var(--taskbar-h));
   padding-bottom: calc(var(--taskbar-h) + 15px);
 }
 .desktop.center {
@@ -444,23 +451,21 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 @keyframes xblink { 0%, 100% { color: var(--blood); } 50% { color: var(--blood-hot); } }
 
-/* ---------- phone: windows stack in flow ---------- */
-@media (max-width: 899px) {
-  .desktop { padding: 15px 15px calc(var(--taskbar-h) + 15px); }
-  .desktop.center { padding-top: 30px; }
-  .icons { display: none; }
-  .win { position: static; width: auto !important; max-width: none; margin-bottom: 15px; }
-  .win.chromeless { position: relative; }
-  .win.profile {
-    position: fixed; left: 15px; right: 15px; top: 50%; transform: translateY(-50%);
-    z-index: 45; margin: 0; max-height: 82svh; overflow: auto;
-  }
-  .tbtn.min { display: none; }
-  .tbar { touch-action: auto; }
-  .taskbar .task span { display: none; }
-  .assoc { font-size: 8px; }
-  .taskbar .task { padding: 0 8px; }
-}
+/* ---------- stacked mode (body.stacked): windows in flow, one column ----------
+   Not applied by default any more — the whale rule zooms the desktop
+   instead (Andrew, 2026-09-19); kept for an explicit stacked layout. */
+body.stacked .desktop {padding: 15px 15px calc(var(--taskbar-h) + 15px); }
+body.stacked .desktop.center {padding-top: 30px; }
+body.stacked .icons {display: none; }
+body.stacked .win {position: static; width: auto !important; max-width: none; margin-bottom: 15px; }
+body.stacked .win.chromeless {position: relative; }
+body.stacked .win.profile {position: fixed; left: 15px; right: 15px; top: 50%; transform: translateY(-50%);
+    z-index: 45; margin: 0; max-height: 82svh; overflow: auto; }
+body.stacked .tbtn.min {display: none; }
+body.stacked .tbar {touch-action: auto; }
+body.stacked .taskbar .task span {display: none; }
+body.stacked .assoc {font-size: 8px; }
+body.stacked .taskbar .task {padding: 0 8px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

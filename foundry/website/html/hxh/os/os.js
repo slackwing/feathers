@@ -74,11 +74,19 @@ export class OS {
     }
 
     this.doc.addEventListener("keydown", e => { if (e.key === "Escape") this.wm.handleEscape(); });
+    this.applyZoom();
     let rt;
     this.win.addEventListener("resize", () => {
       clearTimeout(rt);
-      rt = setTimeout(() => { this.wm.relayout(); this.bus.emit("resize"); }, 120);
+      rt = setTimeout(() => { this.applyZoom(); this.wm.relayout(); this.bus.emit("resize"); }, 120);
     });
+  }
+
+  /** The whale rule: zoom the whole desktop so the island is the middle half of the view. */
+  applyZoom() {
+    const z = this.env.wantedZoom?.() ?? 1;
+    this.doc.documentElement.style.setProperty("--zoom", String(z));
+    return z;
   }
 
   /** Scanlines etc. — the system entries shared by the Start and Settings menus. Window menus carry no icons (90s menus didn't). */
@@ -153,7 +161,7 @@ export class OS {
   startWallpaper() {
     if (this.wallpaper) return;
     const body = this.doc.body;
-    this.wallpaper = new Wallpaper({ env: this.env }).mount(body, { before: body.firstChild });
+    this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus }).mount(body, { before: body.firstChild });
   }
 
   /** The logon dialog, alone on the bare desktop. Resolves with the account. */

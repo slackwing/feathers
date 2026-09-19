@@ -160,20 +160,24 @@ export const ICONS = {
     "kggggggk",
     "kkkkkkkk",
   ],
-  // the Beetle messenger's app icon: a green beetle, elytra split
+  // the Beetle messenger's app icon, after the Beetle 07 phone from the
+  // show: a red beetle-shaped flip phone — black head with two antennae,
+  // rounded red shell split down the middle, a cream highlight
   beetle: [
     "..k........k..",
     "...k......k...",
-    "..kkkkkkkkkk..",
-    ".kkggggggggkk.",
-    "kkggggkkggggkk",
-    "kgggkgkkgkgggk",
-    "kgggggkkgggggk",
-    "kkgkggkkggkgkk",
-    ".kkggggggggkk.",
-    "..kkkkkkkkkk..",
-    "...k..kk..k...",
-    "..k........k..",
+    "....kkkkkk....",
+    "...kkkkkkkk...",
+    "..khrrrkrrrhk.",
+    ".kwhrrrkrrrhk.",
+    ".kwrrrrkrrrrk.",
+    ".khrrrrkrrrrk.",
+    ".khrrrrkrrrrk.",
+    "..krrrrkrrrk..",
+    "..kkrrrkrrkk..",
+    "...kkkkkkkk...",
+    "..k..k..k..k..",
+    ".k...k..k...k.",
   ],
   // a speech bubble (tray "new message" icon, chat app)
   comment: [

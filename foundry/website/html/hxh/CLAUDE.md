@@ -248,7 +248,9 @@ component architecture (many windows, tray icons + menus, the bus).
 - **Frontend**: `apps/chat/app.js` `ChatApp` (id `chat`, name
   "Beetle", icon `beetle`, order 15; `tray()` → the app's tray icon,
   lit while connected, with a menu: Contacts, Global chat, My profile,
-  Sounds). `launch()` connects and opens the **buddy list**
+  Sounds; the icon is the Beetle 07 phone from the show — a red beetle-
+  shaped flip phone with a black head and two antennae). `launch()`
+  connects and opens the **buddy list**
   (`contacts.js`, window title just "Beetle", tall/narrow at the right
   edge, drawn after AIM 4.x / MSN 4.x from screenshots Andrew asked me
   to study, then toned down at his request ("modeling this on real
@@ -386,12 +388,39 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 - Pure and tested: `paginate`, `binderLayout`, `TYPES`, `ARCS`,
   `LIMIT`, `PER_PAGE` are exports; the window is built on first launch.
 
+## The whale rule — one zoom for the whole site (2026-09-19)
+
+Andrew: "scale the site always dynamically, such that for narrower
+views everything is shrunk so the whale takes the middle 50% of the
+view, so we always see ocean on either side, even for mobile … the
+entire site scaled to this directive." So:
+
+- The wallpaper canvas is 304 columns wide — the island art (drawn in
+  its own 320-column space, columns 88–240) is placed centred, i.e.
+  25 %–75 % of the view — and as many rows as the viewport's aspect
+  needs (`geometry(vw, vh)`: horizon at 62 %, extra sky above, extra
+  sea below, clouds spread with the sky, glitter hangs from the
+  horizon). It repaints on the OS `resize` event.
+- `OS.applyZoom()` sets `--zoom = vw / 1366` (`Env.DESIGN_WIDTH`) on
+  `<html>`; `body { zoom: var(--zoom) }` scales every window, icon,
+  menu and the taskbar with it. `Env.width/height` are in design
+  pixels (always 1366 wide), so layout code never sees the zoom.
+- There is NO phone breakpoint any more: `Env.floating()` is true
+  everywhere (opt out with `body.nofloat` / `body.stacked`); the old
+  stacking rules live on as `body.stacked …` selectors in os.css,
+  binder.css and chat.css, unused. A phone shows the desktop at ≈0.29×
+  — Andrew's intent ("for things that are unreadable we'll override
+  the style as needed for mobile. but start with that rule").
+- Type scale after his second look ("a little too small"): --fs-ui 15,
+  --fs-title 15, --fs-body 18, --fs-small 13, --fs-caption 14, kicker
+  11, heading 20 — all at zoom 1.
+
 ## Wallpaper
 
-`os/wallpaper.js` (`Wallpaper` component → `wallpaper(canvas)`) paints an
-ORIGINAL pixel-art Whale Island on a 320×180 canvas (`<canvas
-class="wall">`, fixed, `object-fit: cover`, `image-rendering:
-pixelated`), created by the shell once logged in
+`os/wallpaper.js` (`Wallpaper` component → `wallpaper(canvas, {vw, vh})`)
+paints an ORIGINAL pixel-art Whale Island on a 304 × (aspect) canvas
+(`<canvas class="wall">`, fixed, `object-fit: fill`, `image-rendering:
+pixelated`; see the whale rule above), created by the shell once logged in
 (never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
 a low back with the harbour houses and pier — just above the
 rooftops, held level right into the tail so there is no dip before

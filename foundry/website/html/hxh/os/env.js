@@ -1,6 +1,10 @@
 /* Env — everything the OS needs to know about the host: whether windows
    float (desktop) or stack (phone), the page zoom, reduced-motion, and a
    promise-based wait. Takes the window object so tests can hand in jsdom. */
+/** The width (CSS px) the desktop was designed at: zoom 1 makes the
+    island exactly half the view there. */
+export const DESIGN_WIDTH = 1366;
+
 export class Env {
   constructor(win = globalThis.window) {
     this.win = win;
@@ -16,9 +20,18 @@ export class Env {
     return this.match("(prefers-reduced-motion: reduce)");
   }
 
-  /** Desktop layout: windows float and drag. Phones stack them in flow. */
+  /** Desktop layout: windows float and drag. The whole site zooms with the
+      viewport instead of stacking on phones (Andrew, 2026-09-19); a page
+      can still opt out with body.nofloat / body.stacked. */
   floating() {
-    return this.match("(min-width: 900px)") && !this.win.document?.body?.classList.contains("nofloat");
+    const cl = this.win.document?.body?.classList;
+    return !(cl?.contains("nofloat") || cl?.contains("stacked"));
+  }
+
+  /** The zoom the whale rule wants: the island is the middle half of the
+      view at every width, i.e. everything scales with vw / DESIGN_WIDTH. */
+  wantedZoom() {
+    return (this.win.innerWidth || DESIGN_WIDTH) / DESIGN_WIDTH;
   }
 
   /** CSS zoom on <body>, if any — pointer/viewport pixels must be divided by it. */

@@ -184,7 +184,8 @@ test("drag moves a window with 4px snapping, only from the title bar and only wh
   assert.equal(a.el.style.top, "152px");    // snap(100 + 50) = 152
   down(0, 0, { button: 2 }); move(500, 500); up();   // right button: no drag
   assert.equal(a.el.style.left, "132px");
-  d.media.floating = false;                           // phones: no drag
+  document.body.classList.add("stacked");             // the stacked layout: no drag
   down(0, 0); move(500, 500); up();
   assert.equal(a.el.style.left, "132px");
+  document.body.classList.remove("stacked");
 });

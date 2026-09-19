@@ -130,7 +130,6 @@
 .profile-edit .count { font: var(--t-small); color: var(--ink-3); }
 .profile-edit .count.over { color: var(--blood); }
 
-@media (max-width: 899px) {
-  .contacts .listbox { height: 320px; max-height: none; }
-  .room .logbox { height: 220px; }
-}
+/* stacked mode only (see os.css) */
+body.stacked .contacts .listbox {height: 320px; max-height: none; }
+body.stacked .room .logbox {height: 220px; }

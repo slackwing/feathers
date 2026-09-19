@@ -43,6 +43,7 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(os.startMenu && os.taskbar.startButton);
   assert.ok(os.toast && os.boot && os.backdrop);
   assert.equal(document.querySelector("canvas.wall"), os.wallpaper.el);
+  assert.equal(document.documentElement.style.getPropertyValue("--zoom"), "1");   // 1366 wide → zoom 1
   assert.equal(document.querySelector(".os-badge"), null);
   assert.equal(os.desktop.iconBox.hidden, false);
   assert.deepEqual([...os.desktop.iconBox.children].map(b => b.dataset.act), ["hello", "sys", "adm"]);

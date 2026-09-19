@@ -39,19 +39,19 @@
     monospace;
   --font-px: var(--font-display);
   --font-dot: var(--font-body);
-  --fs-ui: 13px;
-  --fs-title: 13px;
-  --fs-body: 16px;
-  --fs-small: 11px;
-  --fs-caption: 12px;
+  --fs-ui: 15px;
+  --fs-title: 15px;
+  --fs-body: 18px;
+  --fs-small: 13px;
+  --fs-caption: 14px;
   --t-ui: 500 var(--fs-ui)/1.25 var(--font-ui);
   --t-ui-bold: 700 var(--fs-ui)/1.25 var(--font-ui);
   --t-title: 700 var(--fs-title)/1 var(--font-ui);
   --t-body: 400 var(--fs-body)/1.5 var(--font-body);
   --t-small: 500 var(--fs-small)/1.3 var(--font-ui);
   --t-caption: 500 var(--fs-caption)/1.2 var(--font-ui);
-  --t-kicker: 400 10px/1.6 var(--font-display);
-  --t-heading: 400 18px/1.5 var(--font-display);
+  --t-kicker: 400 11px/1.6 var(--font-display);
+  --t-heading: 400 20px/1.5 var(--font-display);
   --taskbar-h: 45px;
   --dither: repeating-conic-gradient(var(--paper-hi) 0 25%, var(--paper) 0 50%) 0 0 / 4px 4px;
 }
@@ -61,9 +61,13 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+html {
+  --zoom: 1;
+}
 body {
+  zoom: var(--zoom);
   margin: 0;
-  min-height: 100svh;
+  min-height: calc(100svh / var(--zoom));
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='%23e8dcc3' fill-opacity='.07'%3E%3Crect x='9' y='9' width='2' height='2'/%3E%3Crect x='13' y='9' width='2' height='2'/%3E%3Crect x='11' y='11' width='2' height='2'/%3E%3Crect x='9' y='13' width='2' height='2'/%3E%3Crect x='13' y='13' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E") var(--ink);
   color: var(--paper);
   font: var(--t-body);
@@ -130,7 +134,7 @@ body.crt::after {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
   image-rendering: pixelated;
   z-index: 0;
   pointer-events: none;
@@ -141,7 +145,7 @@ body.logon .icons {
 }
 .desktop {
   position: relative;
-  min-height: calc(100svh - var(--taskbar-h));
+  min-height: calc(100svh / var(--zoom) - var(--taskbar-h));
   padding-bottom: calc(var(--taskbar-h) + 15px);
 }
 .desktop.center {
@@ -924,51 +928,49 @@ body.logon .icons {
     color: var(--blood-hot);
   }
 }
-@media (max-width: 899px) {
-  .desktop {
-    padding: 15px 15px calc(var(--taskbar-h) + 15px);
-  }
-  .desktop.center {
-    padding-top: 30px;
-  }
-  .icons {
-    display: none;
-  }
-  .win {
-    position: static;
-    width: auto !important;
-    max-width: none;
-    margin-bottom: 15px;
-  }
-  .win.chromeless {
-    position: relative;
-  }
-  .win.profile {
-    position: fixed;
-    left: 15px;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 45;
-    margin: 0;
-    max-height: 82svh;
-    overflow: auto;
-  }
-  .tbtn.min {
-    display: none;
-  }
-  .tbar {
-    touch-action: auto;
-  }
-  .taskbar .task span {
-    display: none;
-  }
-  .assoc {
-    font-size: 8px;
-  }
-  .taskbar .task {
-    padding: 0 8px;
-  }
+body.stacked .desktop {
+  padding: 15px 15px calc(var(--taskbar-h) + 15px);
+}
+body.stacked .desktop.center {
+  padding-top: 30px;
+}
+body.stacked .icons {
+  display: none;
+}
+body.stacked .win {
+  position: static;
+  width: auto !important;
+  max-width: none;
+  margin-bottom: 15px;
+}
+body.stacked .win.chromeless {
+  position: relative;
+}
+body.stacked .win.profile {
+  position: fixed;
+  left: 15px;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  margin: 0;
+  max-height: 82svh;
+  overflow: auto;
+}
+body.stacked .tbtn.min {
+  display: none;
+}
+body.stacked .tbar {
+  touch-action: auto;
+}
+body.stacked .taskbar .task span {
+  display: none;
+}
+body.stacked .assoc {
+  font-size: 8px;
+}
+body.stacked .taskbar .task {
+  padding: 0 8px;
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1754,126 +1756,124 @@ body.logon .icons {
       var(--blood) 60%);
   box-shadow: 0 0 0 var(--px) var(--ink), 2px 2px 0 var(--ink);
 }
-@media (max-width: 899px) {
-  .binder {
-    --bw: 100%;
-    --bh: auto;
-    --pw: 100%;
-  }
-  .book {
-    width: 100%;
-  }
-  .book {
-    perspective: none;
-  }
-  .flap {
-    position: static;
-    width: auto;
-    height: auto;
-    transform: none !important;
-    transition: none !important;
-  }
-  .face {
-    position: static;
-  }
-  .face.back {
-    display: none;
-  }
-  .cover {
-    width: 100%;
-    height: 575px;
-    padding-left: 0;
-  }
-  .cover::before {
-    display: none;
-  }
-  .cover .rivet.tl,
-  .cover .rivet.bl {
-    left: 15px;
-  }
-  .book.closed .inside {
-    display: none;
-  }
-  .book.opening .inside,
-  .book.closing .inside {
-    display: flex;
-  }
-  .shade {
-    display: none;
-  }
-  .leaf {
-    flex: none;
-    width: 100%;
-  }
-  .inside {
-    flex-direction: column;
-  }
-  .page,
-  .panel {
-    flex: none;
-    width: 100%;
-    height: auto;
-  }
-  .page {
-    border-right: var(--px) solid var(--ink);
-  }
-  .panel {
-    border-left: var(--px) solid var(--ink);
-    border-top: 0;
-  }
-  .cards {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: none;
-    grid-auto-rows: 188px;
-  }
-  .card .art canvas {
-    width: 48px;
-    height: 48px;
-  }
-  .spine {
-    width: 100%;
-    flex: 0 0 30px;
-    flex-direction: row;
-    border: var(--px) solid var(--ink);
-    border-top: 0;
-    border-bottom: 0;
-    box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2);
-  }
-  .spine .clasp {
-    width: 70px;
-    height: 20px;
-  }
-  .spine .clasp::after {
-    left: 10px;
-    right: 10px;
-    top: 50%;
-    bottom: auto;
-    width: auto;
-    height: var(--px);
-    margin: -1px 0 0;
-  }
-  .tabs {
-    flex-wrap: nowrap;
-  }
-  .tab {
-    font-size: 0;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  .tab.on {
-    font-size: 10px;
-    padding: 2px 8px 0;
-    flex: 0 0 auto;
-  }
-  .screen {
-    flex: none;
-    height: 300px;
-  }
-  .pageno {
-    position: static;
-    text-align: right;
-    margin-top: 8px;
-  }
+body.stacked .binder {
+  --bw: 100%;
+  --bh: auto;
+  --pw: 100%;
+}
+body.stacked .book {
+  width: 100%;
+}
+body.stacked .book {
+  perspective: none;
+}
+body.stacked .flap {
+  position: static;
+  width: auto;
+  height: auto;
+  transform: none !important;
+  transition: none !important;
+}
+body.stacked .face {
+  position: static;
+}
+body.stacked .face.back {
+  display: none;
+}
+body.stacked .cover {
+  width: 100%;
+  height: 575px;
+  padding-left: 0;
+}
+body.stacked .cover::before {
+  display: none;
+}
+body.stacked .cover .rivet.tl,
+body.stacked .cover .rivet.bl {
+  left: 15px;
+}
+body.stacked .book.closed .inside {
+  display: none;
+}
+body.stacked .book.opening .inside,
+body.stacked .book.closing .inside {
+  display: flex;
+}
+body.stacked .shade {
+  display: none;
+}
+body.stacked .leaf {
+  flex: none;
+  width: 100%;
+}
+body.stacked .inside {
+  flex-direction: column;
+}
+body.stacked .page,
+body.stacked .panel {
+  flex: none;
+  width: 100%;
+  height: auto;
+}
+body.stacked .page {
+  border-right: var(--px) solid var(--ink);
+}
+body.stacked .panel {
+  border-left: var(--px) solid var(--ink);
+  border-top: 0;
+}
+body.stacked .cards {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: none;
+  grid-auto-rows: 188px;
+}
+body.stacked .card .art canvas {
+  width: 48px;
+  height: 48px;
+}
+body.stacked .spine {
+  width: 100%;
+  flex: 0 0 30px;
+  flex-direction: row;
+  border: var(--px) solid var(--ink);
+  border-top: 0;
+  border-bottom: 0;
+  box-shadow: inset 0 8px 0 var(--navy-2), inset 0 -6px 0 var(--navy-2);
+}
+body.stacked .spine .clasp {
+  width: 70px;
+  height: 20px;
+}
+body.stacked .spine .clasp::after {
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: var(--px);
+  margin: -1px 0 0;
+}
+body.stacked .tabs {
+  flex-wrap: nowrap;
+}
+body.stacked .tab {
+  font-size: 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+body.stacked .tab.on {
+  font-size: 10px;
+  padding: 2px 8px 0;
+  flex: 0 0 auto;
+}
+body.stacked .screen {
+  flex: none;
+  height: 300px;
+}
+body.stacked .pageno {
+  position: static;
+  text-align: right;
+  margin-top: 8px;
 }
 
 /* html/hxh/apps/register.css */
@@ -2310,13 +2310,11 @@ body.logon .icons {
 .profile-edit .count.over {
   color: var(--blood);
 }
-@media (max-width: 899px) {
-  .contacts .listbox {
-    height: 320px;
-    max-height: none;
-  }
-  .room .logbox {
-    height: 220px;
-  }
+body.stacked .contacts .listbox {
+  height: 320px;
+  max-height: none;
+}
+body.stacked .room .logbox {
+  height: 220px;
 }
 /*# sourceMappingURL=hxh.css.map */
