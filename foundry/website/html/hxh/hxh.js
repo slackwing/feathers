@@ -3068,24 +3068,28 @@ var HxH = (() => {
   }
   var CARD_W = 150;
   var CARD_RATIO = 2072 / 1475;
-  var BINDER_ZOOM = 1.1;
+  var FILL = 0.85;
   var GAP = 12;
   var PAD = 20;
   var PAGENO = 30;
   var SPINE = 50;
   var TASKBAR = 45;
   var TABS = 46;
-  function binderLayout(vw, vh, { card = CARD_W, zoom = BINDER_ZOOM } = {}) {
-    const size = (cw2) => {
-      const ch = cw2 * CARD_RATIO, pw = 3 * cw2 + 2 * GAP + 2 * PAD;
-      return { cw: cw2, ch, pw, bw: 2 * pw + SPINE, bh: 3 * ch + 2 * GAP + 2 * PAD + PAGENO };
-    };
-    const availW = (vw - 32) / zoom, availH = (vh - TASKBAR - TABS - 16) / zoom;
-    const cw = Math.max(40, Math.min(card, (availW - 4 * GAP - 4 * PAD - SPINE) / 6, (availH - 2 * GAP - 2 * PAD - PAGENO) / (3 * CARD_RATIO)));
-    let l = size(cw);
+  function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
+    const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
+    const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
+    const zoom = Math.round(Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS)) * 1e3) / 1e3;
     const r = (o) => Math.round(o * 100) / 100;
-    l = { cw: r(l.cw), ch: r(l.ch), pw: r(l.pw), bw: r(l.bw), bh: r(l.bh) };
-    return { ...l, zoom, x: Math.max(16, Math.round((vw - l.bw * zoom) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - l.bh * zoom) / 2)) };
+    return {
+      cw,
+      ch: r(ch),
+      pw,
+      bw,
+      bh: r(bh),
+      zoom,
+      x: Math.max(16, Math.round((vw - bw * zoom) / 2)),
+      y: Math.max(Math.round(TABS * zoom), Math.round((vh - TASKBAR - bh * zoom) / 2))
+    };
   }
   var BOOK = `
   <div class="book closed">

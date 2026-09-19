@@ -427,8 +427,9 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   names that shrink to fit; `card_description` in the box, else the
   profile's first sentence; the 16:9 card picture, else the avatar).
   The card is the ANCHOR: `binderLayout` builds the page as exactly
-  3 × 3 cards and the book as two pages + spine, then shows it all at
-  `BINDER_ZOOM` 1.1 (CSS zoom, once); the band's foil is marbled in
+  3 × 3 cards and the book as two pages + spine in BOOK pixels, then
+  shows it all at one CSS zoom that fills 85 % of the desktop (Andrew:
+  "the binder is tiny!" on his big monitor); the band's foil is marbled in
   the picture's own saturated hues (skin, white, black discounted).
   Tabs come from `groupCards` (one per group that has cards — one
   character, one tab; Andrew has "a better idea for the tabs" to come).

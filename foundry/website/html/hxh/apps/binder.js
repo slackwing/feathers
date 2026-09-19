@@ -81,28 +81,25 @@ export function paginate(chars) {
 }
 
 /* The card is the anchor (Andrew, 2026-09-19: "i like the card size, so
-   make that the anchor to compute the binder size around"): a page is
-   exactly a 3 × 3 grid of cards plus its gaps, padding and the page
-   number; the book is two pages and the spine; the right panel mirrors
-   the page. The whole book is then shown at BINDER_ZOOM (CSS zoom —
-   not a transform, not per-value maths). When the desktop is too small
-   the card shrinks to fit, never grows. Tabs hang above the page. */
-export const CARD_W = 150;                 // a card's width in book pixels, before the zoom
+   make that the anchor to compute the binder size around"): in BOOK
+   pixels a card is CARD_W wide, a page is exactly a 3 × 3 grid of cards
+   plus its gaps, padding and the page number, the book is two pages and
+   the spine, and the right panel mirrors the page. The book is then
+   shown at ONE CSS zoom (never a transform, never per-value maths) that
+   makes it fill FILL of the desktop — width or height, whichever binds
+   (Andrew: "the binder is tiny! … fill like 85% of the screen"). Tabs
+   hang above the page. */
+export const CARD_W = 150;                 // a card's width in book pixels
 export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
-export const BINDER_ZOOM = 1.1;
+export const FILL = 0.85;                   // of the desktop above the taskbar
 export const GAP = 12, PAD = 20, PAGENO = 30, SPINE = 50, TASKBAR = 45, TABS = 46;
-export function binderLayout(vw, vh, { card = CARD_W, zoom = BINDER_ZOOM } = {}) {
-  const size = cw => {
-    const ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
-    return { cw, ch, pw, bw: 2 * pw + SPINE, bh: 3 * ch + 2 * GAP + 2 * PAD + PAGENO };
-  };
-  // the largest card that keeps the book inside the desktop at this zoom — the gaps, padding, spine and page number are fixed
-  const availW = (vw - 32) / zoom, availH = (vh - TASKBAR - TABS - 16) / zoom;
-  const cw = Math.max(40, Math.min(card, (availW - 4 * GAP - 4 * PAD - SPINE) / 6, (availH - 2 * GAP - 2 * PAD - PAGENO) / (3 * CARD_RATIO)));
-  let l = size(cw);
+export function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
+  const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
+  const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
+  const zoom = Math.round(Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS)) * 1000) / 1000;
   const r = o => Math.round(o * 100) / 100;
-  l = { cw: r(l.cw), ch: r(l.ch), pw: r(l.pw), bw: r(l.bw), bh: r(l.bh) };
-  return { ...l, zoom, x: Math.max(16, Math.round((vw - l.bw * zoom) / 2)), y: Math.max(TABS, Math.round((vh - TASKBAR - l.bh * zoom) / 2)) };
+  return { cw, ch: r(ch), pw, bw, bh: r(bh), zoom,
+    x: Math.max(16, Math.round((vw - bw * zoom) / 2)), y: Math.max(Math.round(TABS * zoom), Math.round((vh - TASKBAR - bh * zoom) / 2)) };
 }
 
 const BOOK = `

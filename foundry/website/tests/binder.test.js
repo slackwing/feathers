@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, groupCards, binderLayout, TYPES, ARCS, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, BINDER_ZOOM, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
+import { paginate, groupCards, binderLayout, TYPES, ARCS, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RegisterApp } from "../html/hxh/apps/register.js";
 
@@ -43,22 +43,24 @@ test("helpers: typeOf, rankBox, cardNo, firstSentence, cardText", () => {
   assert.equal(SOURCE, "/hxh/api/db/binder");
 });
 
-test("layout maths: the card is the anchor — a page is exactly 3 × 3 cards; the book is two pages and a spine, shown at the binder zoom; small desktops shrink the card", () => {
-  const big = binderLayout(3000, 2000);
-  assert.equal(big.cw, CARD_W);
-  assert.equal(big.ch, Math.round(CARD_W * CARD_RATIO * 100) / 100);
-  assert.equal(big.pw, 3 * CARD_W + 2 * GAP + 2 * PAD);
-  assert.equal(big.bw, 2 * big.pw + SPINE);
-  assert.ok(Math.abs(big.bh - (3 * big.ch + 2 * GAP + 2 * PAD + PAGENO)) < 0.05);
-  assert.equal(big.zoom, BINDER_ZOOM);
-  assert.equal(big.x, Math.round((3000 - big.bw * BINDER_ZOOM) / 2));
-  const l = binderLayout(1366, 900);
-  assert.ok(l.cw < CARD_W && l.cw > CARD_W * 0.95, "a 900-tall desktop shrinks the card a touch: " + l.cw);
-  assert.ok(l.bh * l.zoom <= 900 - TASKBAR - TABS - 16 + 1);
-  assert.equal(l.y, Math.max(TABS, Math.round((900 - TASKBAR - l.bh * l.zoom) / 2)));
-  const small = binderLayout(800, 600);
-  assert.ok(small.bw * small.zoom <= 800 - 32 + 1 && small.bh * small.zoom <= 600 - TASKBAR - TABS - 16 + 1);
-  assert.ok(small.cw < l.cw);
+test("layout maths: the card is the anchor in book pixels — a page is exactly 3 × 3 cards, the book two pages and a spine — and one zoom makes the book fill 85% of the desktop", () => {
+  const l = binderLayout(2560, 1440);
+  assert.equal(l.cw, CARD_W);
+  assert.equal(l.ch, Math.round(CARD_W * CARD_RATIO * 100) / 100);
+  assert.equal(l.pw, 3 * CARD_W + 2 * GAP + 2 * PAD);
+  assert.equal(l.bw, 2 * l.pw + SPINE);
+  assert.ok(Math.abs(l.bh - (3 * l.ch + 2 * GAP + 2 * PAD + PAGENO)) < 0.05);
+  const byH = FILL * (1440 - TASKBAR) / (l.bh + TABS), byW = FILL * 2560 / l.bw;
+  assert.equal(l.zoom, Math.round(Math.min(byH, byW) * 1000) / 1000);
+  assert.ok(l.zoom > 1.4, "a 1440-tall desktop shows the book at about 1.5×: " + l.zoom);
+  assert.ok(Math.abs((l.bh + TABS) * l.zoom - FILL * (1440 - TASKBAR)) < 2, "height-bound: the book plus its tabs is 85% of the desktop above the taskbar");
+  assert.equal(l.x, Math.round((2560 - l.bw * l.zoom) / 2));
+  assert.equal(l.y, Math.max(Math.round(TABS * l.zoom), Math.round((1440 - TASKBAR - l.bh * l.zoom) / 2)));
+  const small = binderLayout(1366, 900);
+  assert.ok(small.zoom < 1 && small.zoom > 0.9, "a 900-tall desktop shrinks the book a little: " + small.zoom);
+  assert.equal(small.cw, CARD_W);   // the book's own pixels never change, only the zoom
+  const wide = binderLayout(1200, 3000);
+  assert.ok(Math.abs(wide.bw * wide.zoom - FILL * 1200) < 2, "width-bound on a narrow tall screen");
 });
 
 let d, os, fetched;
@@ -84,7 +86,7 @@ test("the Binder window is chromeless with minimize + close, popup, on the taskb
   assert.deepEqual([...w.el.querySelectorAll(".fbtns .tbtn")].map(x => x.title), ["Minimize", "Close"]);
   assert.equal(w.el.style.getPropertyValue("--bw"), binderLayout(1366, 900).bw + "px");
   assert.equal(w.el.style.getPropertyValue("--cardw"), binderLayout(1366, 900).cw + "px");
-  assert.equal(w.el.style.zoom, String(BINDER_ZOOM));
+  assert.equal(w.el.style.zoom, String(binderLayout(1366, 900).zoom));
   assert.ok(fetched.some(f => f.url === SOURCE && f.init?.credentials === "same-origin"), "loads /hxh/api/db/binder with the session cookie");
   assert.ok(!fetched.some(f => f.url.includes("roster.json")));
   d.click(w.el.querySelector(".fbtns .min"));

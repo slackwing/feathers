@@ -68,9 +68,10 @@ exactly 16:9 (the print is 1.76:1).
 
 The card is the anchor: `CARD_W` = 150 book pixels; a page is exactly
 3 × 3 cards (+ 12 gaps, 20 padding, a 30 page-number strip), the book is
-two pages and a 50 spine, and the whole book is shown at `BINDER_ZOOM`
-1.1 (CSS zoom, applied once — never a transform, never per-value
-maths). A small desktop shrinks the card to fit; it never grows.
+two pages and a 50 spine. The whole book is then shown at ONE CSS zoom
+(never a transform, never per-value maths) that makes it fill 85 % of
+the desktop above the taskbar — height or width, whichever binds
+(`binderLayout`). Small desktops shrink it the same way.
 
 ## What a character card prints
 
