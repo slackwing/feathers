@@ -2386,14 +2386,20 @@ body.stacked .room .logbox {
   padding: 2px 8px 1px;
   border: 1px solid var(--ink);
   background: var(--paper-hi);
+  color: var(--ink);
 }
-.roster .pending {
+.roster i.verdict.pending,
+.roster .st.pending {
   background: var(--emitter);
+  color: var(--ink);
 }
-.roster .accepted {
+.roster i.verdict.accepted,
+.roster .st.accepted {
   background: var(--nen);
+  color: var(--ink);
 }
-.roster .rejected {
+.roster i.verdict.rejected,
+.roster .st.rejected {
   background: var(--blood);
   color: var(--paper-hi);
 }
@@ -2507,9 +2513,6 @@ body.stacked .room .logbox {
   background: var(--blood);
   color: var(--paper-hi);
   outline: 1px dotted var(--paper-hi);
-}
-.rlist .row.sel .verdict {
-  border-color: var(--paper-hi);
 }
 .rlist .row:hover:not(.sel) {
   background: var(--paper);
