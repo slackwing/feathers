@@ -1,6 +1,6 @@
 # hxh chat — spec notes (Andrew, 2026-09-18)
 
-> **Status: built and deployed 2026-09-18** as **Beetle** (after the
+> **Status: built and deployed 2026-09-18** as **BeetleChat** (after the
 > Beetle 07 phone). Transport: option A, the WebSocket hub — Andrew's
 > pick when asked. Backend: hobby-server `internal/hxh/chat.go` +
 > `hub.go` (+ `hub_test.go`), changesets admin 006 / hxh 005. Frontend:
@@ -13,7 +13,7 @@
 > it is in; "typing" is throttled to one frame per 2 s per room on
 > the client. Presence: a live socket or activity < 1 min = online,
 > < 1 h = away, else offline, no password = red. History and fan-out
-> apply the activation rule server-side. `html/hxh/CLAUDE.md` ("Beetle")
+> apply the activation rule server-side. `html/hxh/CLAUDE.md` ("BeetleChat")
 > is the living reference. Later the same day Andrew dropped unsend
 > ("anachronistic"), had the buddy list redrawn after AIM/MSN and then
 > toned down, fixed the menus (File About/Update/Exit, Edit Profile…,
@@ -34,7 +34,7 @@ An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,
 don't be over-AOL). Themed to the show: the in-universe tech is the
 Hunter Association's network / the **Hunter Website**, and the Beetle 07
-phone Gon and Killua carry — "Beetle" is a good name for the app, or
+phone Gon and Killua carry — "BeetleChat" is a good name for the app, or
 "Hunter Messenger". Built on the component/app architecture from
 `HXH_REFACTOR.md`; it is the first real test of that architecture
 (tray icons, notifications, many windows, the bus).

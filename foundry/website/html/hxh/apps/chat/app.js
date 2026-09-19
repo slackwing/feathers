@@ -1,4 +1,4 @@
-/* Beetle — the Hunter Website's instant messenger (spec: docs/HXH_CHAT.md).
+/* BeetleChat — the Hunter Website's instant messenger (spec: docs/HXH_CHAT.md).
    Named for the Beetle 07, the phone Gon and Killua carry. Launching
    opens the contacts list and the global chat; a click on a contact
    opens a chat window; messages arrive live over the hub. Attention
@@ -23,8 +23,8 @@ export const SETTING_FLASH = "chat.flash";    // flashing taskbar buttons
 
 export class ChatApp extends App {
   static id = "chat";
-  static name = "Beetle";
-  static longName = "Beetle Messenger";
+  static name = "BeetleChat";
+  static longName = "BeetleChat";
   static icon = "beetle";
   static order = 15;
 
@@ -57,7 +57,7 @@ export class ChatApp extends App {
 
   tray() {
     return {
-      title: "Beetle", on: () => this.connected,
+      title: "BeetleChat", on: () => this.connected,
       menu: () => [
         { label: "Contacts", icon: "beetle", onclick: () => this.openContacts() },
         { label: "Global chat", icon: "comment", onclick: () => this.openRoom(ROOM_GLOBAL) },
@@ -129,7 +129,7 @@ export class ChatApp extends App {
   }
 
   /* ---------- menus (Andrew's layout, 2026-09-19; no icons — 90s menus had none) ---------- */
-  /** Beetle's Settings: checkable, remembered per browser. */
+  /** BeetleChat's Settings: checkable, remembered per browser. */
   settingsItems() {
     const os = this.os;
     return [
@@ -141,7 +141,7 @@ export class ChatApp extends App {
   get traySetting() { return this.os.settings.get(SETTING_TRAY, true); }
   get flashSetting() { return this.os.settings.get(SETTING_FLASH, true); }
 
-  /** The Beetle window: File (About, Update, Exit), Edit (Profile…), Settings. */
+  /** The BeetleChat window: File (About, Update, Exit), Edit (Profile…), Settings. */
   contactsMenus(win) {
     return this.os.appMenus(win, {
       file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],

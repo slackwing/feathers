@@ -3,7 +3,7 @@
 > **Status: built and deployed 2026-09-19.** Backend in hobby-server
 > (`internal/bots`, admin changeset 007, `cmd/seed-sentences`); the
 > console shows bots after real users and a "Bots" programs table; the
-> Beetle buddy list groups them under "Bots".
+> BeetleChat buddy list groups them under "Bots".
 
 ## Andrew's spec
 
@@ -63,7 +63,7 @@
   talkativity-0 bot initiates 30 % as often as a talkativity-1 bot).
 - The global room weighs as much as three people when a bot picks a
   target (Andrew, after seeing nobody type in global).
-- Beetle's buddy list does NOT mark bots (Andrew: "they should be
+- BeetleChat's buddy list does NOT mark bots (Andrew: "they should be
   indistinguishable"); `is_bot` is in the contacts payload but unused
   there.
 - Presence bug found by Andrew ("Katerina replied but never went

@@ -19,7 +19,7 @@ export class ContactsWindow extends Window {
   /** props: me, menus (win => spec) */
   constructor({ me, menus } = {}) {
     super({
-      id: "win-chat-contacts", title: "Beetle", icon: "beetle", width: 300, cls: "chat contacts", menus,
+      id: "win-chat-contacts", title: "BeetleChat", icon: "beetle", width: 300, cls: "chat contacts", menus,
       content: `
         <div class="banner"></div>
         <div class="ltabs"><button class="ltab on" type="button" data-tab="online">Online</button><button class="ltab" type="button" data-tab="list">List</button></div>

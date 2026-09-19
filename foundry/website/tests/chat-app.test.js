@@ -54,7 +54,7 @@ const app = () => os.registry.get("chat");
 const hello = () => { sockets[0].open(); sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS }); };
 
 test("the app is on the desktop and in the tray with a menu", () => {
-  assert.equal(app().name, "Beetle");
+  assert.equal(app().name, "BeetleChat");
   assert.ok(os.desktop.icons.get("chat"));
   const tray = os.taskbar.tray.get("chat");
   assert.ok(tray);
@@ -70,7 +70,7 @@ test("launch connects, opens contacts (right side) and the global chat with hist
   assert.ok(contacts instanceof ContactsWindow && contacts.state.open);
   assert.ok(global instanceof ChatWindow && global.state.open);
   assert.equal(contacts.el.style.left, (1366 - 330) + "px");
-  assert.equal(contacts.title, "Beetle");
+  assert.equal(contacts.title, "BeetleChat");
   assert.equal(global.title, "Global chat");
   assert.equal(global.el.style.width, "705px");   // the global room is 1.5× a buddy chat
   assert.ok(global.el.classList.contains("large"));
@@ -140,7 +140,7 @@ test("buddy list: banner, tabs, two groups (bots are just buddies), dots, click 
   assert.equal(os.wm.get("win-chat-global").state.open, true);
 });
 
-test("menus: Beetle File/Edit/Settings as specified, chats File(+View), no icons, check marks", async () => {
+test("menus: BeetleChat File/Edit/Settings as specified, chats File(+View), no icons, check marks", async () => {
   await os.launch("chat"); hello();
   const w = os.wm.get("win-chat-contacts");
   assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "Edit", "Settings"]);

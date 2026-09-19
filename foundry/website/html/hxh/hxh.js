@@ -3565,7 +3565,7 @@ var HxH = (() => {
     constructor({ me, menus } = {}) {
       super({
         id: "win-chat-contacts",
-        title: "Beetle",
+        title: "BeetleChat",
         icon: "beetle",
         width: 300,
         cls: "chat contacts",
@@ -4199,7 +4199,7 @@ var HxH = (() => {
     constructor(props = {}) {
       super({
         id: "win-chat-about",
-        title: "About Beetle",
+        title: "About BeetleChat",
         icon: "beetle",
         width: 560,
         cls: "chat cracktro",
@@ -4256,8 +4256,8 @@ var HxH = (() => {
   var SETTING_FLASH = "chat.flash";
   var ChatApp = class extends App {
     static id = "chat";
-    static name = "Beetle";
-    static longName = "Beetle Messenger";
+    static name = "BeetleChat";
+    static longName = "BeetleChat";
     static icon = "beetle";
     static order = 15;
     constructor(os, options = {}) {
@@ -4290,7 +4290,7 @@ var HxH = (() => {
     }
     tray() {
       return {
-        title: "Beetle",
+        title: "BeetleChat",
         on: () => this.connected,
         menu: () => [
           { label: "Contacts", icon: "beetle", onclick: () => this.openContacts() },
@@ -4373,7 +4373,7 @@ var HxH = (() => {
       }
     }
     /* ---------- menus (Andrew's layout, 2026-09-19; no icons — 90s menus had none) ---------- */
-    /** Beetle's Settings: checkable, remembered per browser. */
+    /** BeetleChat's Settings: checkable, remembered per browser. */
     settingsItems() {
       const os = this.os;
       return [
@@ -4388,7 +4388,7 @@ var HxH = (() => {
     get flashSetting() {
       return this.os.settings.get(SETTING_FLASH, true);
     }
-    /** The Beetle window: File (About, Update, Exit), Edit (Profile…), Settings. */
+    /** The BeetleChat window: File (About, Update, Exit), Edit (Profile…), Settings. */
     contactsMenus(win) {
       return this.os.appMenus(win, {
         file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],

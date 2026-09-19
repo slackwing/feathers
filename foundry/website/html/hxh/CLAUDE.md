@@ -54,7 +54,7 @@ license-only site from the show — rendered as a late-90s OS desktop.
   style, deliberately not the site theme; inert frame, no metadata
   beyond template / subject / to; `?template=&user=` for the console's
   Preview; "send test to me".
-- **Beetle** (2026-09-18) — the instant messenger, see its section
+- **BeetleChat** (2026-09-18) — the instant messenger, see its section
   below. Desktop icon, Start menu, tray icon with a menu.
 - **roster.html / Roster DB app — REMOVED 2026-09-18** (Andrew: it
   didn't work — opening it cleared the other apps — and it isn't
@@ -196,7 +196,7 @@ the OS.
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + registry-derived menus + typewriter notice + CTA),
-  `Binder`, `Chat` (Beetle, `apps/chat/`; the global room's window is
+  `Binder`, `Chat` (BeetleChat, `apps/chat/`; the global room's window is
   1.5× a buddy chat in both dimensions — `large`), `Register`, `About` (group
   "system"), `SetPassword` (desktop/menuable false; its words come in
   as options). `apps/index.js` exports them as `HxH.apps.*`.
@@ -219,7 +219,7 @@ Never call `boot`, build a login form, or list apps in a page.
   crt, logon, os (the whole start flow: cold/warm boot, gate, splash,
   logout), binder (pagination, layout maths, the window, cards, D-pad,
   claim), apps-desktop (summons/register/about), setpw, wallpaper (pure
-  maths), sound, chat-client / chat-app / chat-runs (Beetle), and
+  maths), sound, chat-client / chat-app / chat-runs (BeetleChat), and
   `bundle.test.js`, which FAILS when the committed bundle is stale. `tests/dom.js` is the harness (`setupDom({floating,
   reduced, width})`, `fakeFetch`); `tests/loader.mjs` makes `.css`
   imports empty modules under Node.
@@ -230,7 +230,7 @@ Never call `boot`, build a login form, or list apps in a page.
   stays the visual check.
 - `node_modules/` is git-ignored; `npm install` once per machine.
 
-## Beetle — the chat app (`apps/chat/`)
+## BeetleChat — the chat app (`apps/chat/`)
 
 Andrew's spec (items 1–19, 2026-09-18) is `foundry/website/docs/HXH_CHAT.md`;
 the name is the Beetle 07 phone from the show. An AIM/MSN-era
@@ -251,12 +251,12 @@ component architecture (many windows, tray icons + menus, the bus).
   online < 1 min, away < 1 h, offline, `nopass` (red) = no password.
   Server rate limit 10 msg/s per connection.
 - **Frontend**: `apps/chat/app.js` `ChatApp` (id `chat`, name
-  "Beetle", icon `beetle`, order 15; `tray()` → the app's tray icon,
+  "BeetleChat", icon `beetle`, order 15; `tray()` → the app's tray icon,
   lit while connected, with a menu: Contacts, Global chat, My profile,
   Sounds; the icon is the Beetle 07 phone from the show — a red beetle-
   shaped flip phone with a black head and two antennae). `launch()`
   connects and opens the **buddy list**
-  (`contacts.js`, window title just "Beetle", tall/narrow at the right
+  (`contacts.js`, window title just "BeetleChat", tall/narrow at the right
   edge, drawn after AIM 4.x / MSN 4.x from screenshots Andrew asked me
   to study, then toned down at his request ("modeling this on real
   UIs back then just looks too shitty for modern day"): a status
@@ -270,7 +270,7 @@ component architecture (many windows, tray icons + menus, the bus).
   indistinguishable from people here (Andrew). One click on a name
   selects it AND opens a chat; right-click gives Send Message /
   Profile) and the **global chat** (behind the contacts, not focused).
-  Menus (Andrew's layout): Beetle — File (About, Update greyed, —,
+  Menus (Andrew's layout): BeetleChat — File (About, Update greyed, —,
   Exit), Edit (Profile…), Settings (✓ Flash on new, ✓ Systray alert,
   ✓ Sounds — `os.settings`, localStorage `hxh.set.*`); global chat —
   File (Exit); a buddy's chat — File (Exit), View (Profile), and a

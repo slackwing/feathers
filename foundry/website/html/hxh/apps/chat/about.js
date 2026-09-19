@@ -1,4 +1,4 @@
-/* About Beetle — a cracktro: ASCII beetle, a scrolling greetz line,
+/* About BeetleChat — a cracktro: ASCII beetle, a scrolling greetz line,
    credits to purple square, and an original chiptune ("Beetle 07",
    os/sound.js TUNES) that starts when the window opens and stops when it
    closes. In the spirit of the keygen splash screens of the era. */
@@ -26,7 +26,7 @@ export class AboutWindow extends Window {
   /** props: sounds (os.sounds) */
   constructor(props = {}) {
     super({
-      id: "win-chat-about", title: "About Beetle", icon: "beetle", width: 560, cls: "chat cracktro", popup: true,
+      id: "win-chat-about", title: "About BeetleChat", icon: "beetle", width: 560, cls: "chat cracktro", popup: true,
       content: `
         <div class="ct">
           <pre class="art">${esc(ART)}</pre>
