@@ -70,13 +70,13 @@
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-/* THE WHALE RULE (Andrew, 2026-09-19): the wallpaper scales as it
-   naturally wants, but the island may never take more than 85 % of the
-   width; when that cap bites (portrait views, phones) the whole desktop
-   zooms down with it — --zoom is set by OS.applyZoom from Env.whale, 1
-   otherwise. Everything below is laid out in design pixels; the browser
-   scales it. What turns out unreadable on phones is overridden case by
-   case. */
+/* THE WHALE RULE (Andrew, 2026-09-19): the wallpaper is drawn at one
+   fixed scale (a big screen gets more ocean, not a bigger whale), but
+   the island may never take more than 85 % of the width; when that cap
+   bites (narrow views, phones) the whole desktop zooms down with it —
+   --zoom is set by OS.applyZoom from Env.whale, 1 otherwise. Everything
+   below is laid out in design pixels; the browser scales it. What turns
+   out unreadable on phones is overridden case by case. */
 html { --zoom: 1; }
 body {
   zoom: var(--zoom);

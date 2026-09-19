@@ -233,14 +233,13 @@ var HxH = (() => {
 
   // html/hxh/os/env.js
   var DESIGN_WIDTH = 1366;
-  var WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62 };
+  var WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62, scale: 5 };
   function whale(vw = 1366, vh = 900) {
     vw = Math.max(1, vw);
     vh = Math.max(1, vh);
-    const natural = Math.max(vw / WHALE.artW, vh / WHALE.artH);
     const cap = WHALE.maxShare * vw / WHALE.span;
-    const scale = Math.min(natural, cap);
-    return { scale, zoom: scale / natural, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
+    const scale = Math.min(WHALE.scale, cap);
+    return { scale, zoom: scale / WHALE.scale, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
   }
   var Env = class {
     constructor(win = globalThis.window) {

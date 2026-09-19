@@ -4,22 +4,22 @@
 /** The width (CSS px) the desktop was designed at. */
 export const DESIGN_WIDTH = 1366;
 
-/* THE WHALE RULE (Andrew, 2026-09-19, second wording): the wallpaper
-   scales as it naturally wants — the 320×180 art covering the view —
-   but the island may never take more than 85 % of the width, so a phone
-   still shows ocean on both sides. When the cap bites, the whole site
-   shrinks by the same factor; otherwise the site is at its natural
-   zoom of 1. */
-export const WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62 };
+/* THE WHALE RULE (Andrew, 2026-09-19, third wording): the art is drawn
+   at ONE fixed scale — 5 screen px per art px, what a 1366×900 screen
+   showed (island 760 px wide) — so a big monitor feels like a big
+   desktop: same-sized windows and whale, more ocean and sky around
+   them. The island may never take more than 85 % of the width, so on
+   narrow views the scale is capped and the whole site shrinks by the
+   same factor; it never grows. */
+export const WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62, scale: 5 };
 
 /** Scale (screen px per art px), site zoom, and the canvas columns/rows
     that cover a vw × vh view. */
 export function whale(vw = 1366, vh = 900) {
   vw = Math.max(1, vw); vh = Math.max(1, vh);
-  const natural = Math.max(vw / WHALE.artW, vh / WHALE.artH);   // object-fit: cover
   const cap = WHALE.maxShare * vw / WHALE.span;
-  const scale = Math.min(natural, cap);
-  return { scale, zoom: scale / natural, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
+  const scale = Math.min(WHALE.scale, cap);
+  return { scale, zoom: scale / WHALE.scale, W: Math.ceil(vw / scale), H: Math.min(1400, Math.ceil(vh / scale)) };
 }
 
 export class Env {

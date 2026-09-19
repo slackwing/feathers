@@ -5,13 +5,13 @@
    slowly, a flock of birds crosses now and then. 8 fps; one static frame
    under prefers-reduced-motion.
 
-   Geometry (Andrew, 2026-09-19): the art (320×180, island in columns
-   88–240) covers the view as it naturally would, except that the island
-   may never exceed 85 % of the width — then the scale is capped and the
-   whole desktop zooms down with it (Env.whale, OS.applyZoom). The
-   canvas is exactly the columns and rows the view needs at that scale,
-   island centred, horizon at 62 %, extra sky above and sea below on
-   tall views.
+   Geometry (Andrew, 2026-09-19): the art (island in columns 88–240 of
+   a 320-wide space) is drawn at a fixed 5 screen px per art px — a big
+   monitor gets more ocean and sky, not a bigger whale — except that the
+   island may never exceed 85 % of the width; then the scale is capped
+   and the whole desktop zooms down with it (Env.whale, OS.applyZoom).
+   The canvas is exactly the columns and rows the view needs at that
+   scale, island centred, horizon at 62 %.
    The pure pieces (geometry, cloudBounds, the height profile, glints)
    are exported for tests; drawing needs a 2-D canvas. */
 import { Component } from "./component.js";

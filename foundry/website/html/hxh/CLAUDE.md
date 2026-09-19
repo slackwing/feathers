@@ -395,13 +395,14 @@ Andrew's final wording: "don't let the whale ever take any more than
 when there is enough real estate naturally that the whale is under
 that limit, i want it to scale whatever its natural intent was." So:
 
-- `Env.whale(vw, vh)`: the natural scale is the 320×180 art covering
-  the view (`max(vw/320, vh/180)` px per art px — the island is then
-  56 % of a 1366×900 screen, 47.5 % of 1920×1080); the cap is
-  `0.85·vw/152`; scale = min of the two; `zoom = scale / natural` (1
-  whenever the cap doesn't bite — every landscape or square view;
-  ≈ vw/vh on portrait views: 0.46 on a 390×844 phone, 0.75 on a
-  1024×1366 tablet).
+- `Env.whale(vw, vh)`: the art is drawn at ONE fixed scale, 5 screen px
+  per art px (what a 1366×900 screen showed: island 760 px wide), so a
+  big monitor gets the same-sized whale and windows with more ocean and
+  sky around them ("when resolution is large, i want it to feel like a
+  large resolution desktop" — 40 % of 1920, 30 % of 2560); the cap is
+  `0.85·vw/152`; scale = min of the two; `zoom = scale / 5` (1 unless
+  the cap bites: 0.44 on a 390×844 phone, 0.75 on a 1024-wide tablet,
+  0.89 at 800 px).
 - The canvas is exactly the columns and rows the view needs at that
   scale (`geometry(vw, vh)`: island art centred, horizon at 62 %, extra
   sky above and sea below on tall views, clouds spread with the sky,

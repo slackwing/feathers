@@ -34,7 +34,8 @@ test("cloudSprite degrades to an empty canvas without 2-D context", () => {
 
 test("geometry: the canvas covers the view at the whale scale, island centred, horizon at 62%", () => {
   const g = geometry(1366, 900);
-  assert.deepEqual([g.W, g.H, g.zoom], [274, 180, 1]);   // natural: 5 px per art px
+  assert.deepEqual([g.W, g.H, g.zoom], [274, 180, 1]);   // 5 px per art px
+  assert.deepEqual([geometry(2560, 1440).W, geometry(2560, 1440).H], [512, 288]);   // a big screen: more columns and rows, same whale
   assert.equal(g.HZ, Math.round(180 * 0.62));
   assert.equal(g.OX, Math.round(274 / 2 - 164));          // the island's midpoint lands on the canvas centre
   assert.ok(Math.abs(152 / g.W - 0.555) < 0.01);          // 56 % of the view, as it naturally was
