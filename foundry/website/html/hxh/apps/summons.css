@@ -1,0 +1,31 @@
+/* Summons app — the official notice. THEME: part of the site chrome, see
+   the note at the top of os/os.css. */
+.summons .body { text-align: center; }
+
+/* visual-novel dialog box */
+.vn { text-align: left; }
+.vn p { margin: 0; white-space: pre-line; }
+.vn {
+  position: relative; margin-top: 22px; padding: 20px 38px 22px 18px;
+  background: var(--paper-hi);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), var(--px) var(--px) 0 var(--ink);
+  cursor: pointer; min-height: 5.5em;
+}
+.vn .tag {
+  position: absolute; top: -12px; left: 12px;
+  background: var(--blood); color: var(--paper-hi);
+  font: 10px/1 var(--font-px); padding: 8px 10px 5px;
+  border: var(--px) solid var(--ink);
+}
+.vn .more {
+  position: absolute; right: 12px; bottom: 8px;
+  color: var(--blood); font: 12px/1 var(--font-px);
+  visibility: hidden; animation: bob 1s steps(2) infinite;
+}
+.vn.done .more { visibility: visible; }
+.vn .cur::after { content: "▌"; color: var(--ink); animation: blink .8s steps(2) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vn .more { visibility: visible; }
+}

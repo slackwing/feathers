@@ -9,7 +9,7 @@ site to register, claim the character they'll dress up as, and (eventually)
 more fun stuff. Framed in-universe as the **Hunter Website** — the
 license-only site from the show — rendered as a late-90s OS desktop.
 
-## Current state (as of 2026-09-17)
+## Current state (as of 2026-09-18)
 
 - **Retro "Hunter Website" theme** (2026-09-17, requested by Abi from a
   Pinterest board of 90s pixel-art UI: Win98 desktops, PostPet, GBA/Famicom
@@ -28,8 +28,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
   The gate is client-side UX only; static HTML remains fetchable.
 - **_invite/** and **_reset/** — the invite and password-reset pages at
   the standard cross-project paths, as hxh SKINS over the shared
-  machinery `/admin/assets/setpw.js`: `pwpage.js` builds one
-  Windows-logon-style dialog (title "Hunter × Halloween", heading
+  machinery `/admin/assets/setpw.js`: the `SetPassword` app
+  (`apps/setpw.js`) builds one Windows-logon-style dialog (title "Hunter × Halloween", heading
   "Choose a password" / "Reset your password", Applicant + Password,
   button "Accept summons" / "Reset password"; "password" never
   "passphrase"; no lede, no hints) on the bare desktop after the OS
@@ -54,57 +54,169 @@ license-only site from the show — rendered as a late-90s OS desktop.
   style, deliberately not the site theme; inert frame, no metadata
   beyond template / subject / to; `?template=&user=` for the console's
   Preview; "send test to me".
-- **roster.html** — admin-only Roster DB view (see below), one static
-  full-width window.
+- **roster.html / Roster DB app — REMOVED 2026-09-18** (Andrew: it
+  didn't work — opening it cleared the other apps — and it isn't
+  needed). The `/hxh/api/roster` endpoints stay for the push script.
 - **Boot**: owned by the OS shell, every cold load (see below):
   HunterOS 99 BIOS lines with the "a purple square production" badge
   (bare blocky violet tee, `tee` icon) in the lower right; click skips.
   After logon the desktop comes up EMPTY (icons + taskbar only); ~0.4s later
   the summons window paints in jankily — frame first, menu bar ~90ms
-  later, body ~200ms in (`Retro.open(..., {jank: true})`) — and the
+  later, body ~200ms in (`wm.open(id, at, {jank: true})`) — and the
   notice types. Roster and Registration are pre-positioned but closed
   until opened (CTA, icons, Start menu). The Start menu has a Windows
   style user header (initials avatar from shared-auth `initial` +
   `color`, plus display name); nothing user-related in the tray.
 
-## The OS shell (`Retro.os`) — pages are apps
+## The OS (`os/`) — everything is a Component, pages register apps
 
-Andrew's rule (2026-09-17): cross-page behaviour lives in ONE shell, never
-re-added per page. Every retro page starts with
-`const me = await Retro.os({ wallpaper, taskbar, start, gate, boot })`:
+Andrew's rules (2026-09-17/18): cross-page behaviour lives in ONE shell,
+never re-added per page; and "everything is component-ized … an
+extremely pedantic object-oriented component-driven architecture so we
+are maximally DRY", event-driven, with test coverage as part of normal
+development. So since 2026-09-18 the source is ES modules under
+`os/` (the shell) and `apps/` (what runs on it), bundled by esbuild into
+ONE served file per page (`hxh.js`, global `HxH`, plus `hxh.css`) — see
+"Build, tests, dev loop" below. The old retro.js / binder.js /
+pwpage.js / retro.css / binder.css are gone; the plan and code review
+that led here is `foundry/website/docs/HXH_REFACTOR.md`.
 
-1. `init()` — chrome, registers the page's `.win[data-title]` windows.
-2. **Boot on every cold load** — refresh, typed URL, logout — HunterOS
-   lines + the purple-square badge, ~2.5 s, skippable. The ONLY loads
-   that skip it are navigations started from inside the OS via
-   `Retro.go(url)`, which leaves a one-shot `sessionStorage hxh.warm`
-   flag the next page consumes (desktop → Roster DB, roster → site,
-   invite "Enter the exam site"). Logging in happens in-page, so it never
-   reboots; `Retro.logout()` does a cold load of `/hxh/`, which boots and
-   shows the logon — like a real machine. Use `Retro.go`, never a bare
-   link, for links between OS pages.
-3. **Session** — `GET /admin/api/me`.
-4. **Logon** (when `gate: true` and logged out) — the shared dialog
-   (`Retro.logon()`: title "Hunter × Halloween — Log in", logotype, one
-   line, Applicant + Password, "Forgot password?" → `POST
-   /admin/api/forgot`, no "restricted site" line) alone on the
-   bare ink desktop with the purple-square badge in the lower right
-   (`.os-badge`, also kept on the invite splash, removed once the
-   desktop is up); the page's own windows/icons are hidden meanwhile
-   (`body.logon`). Resolves with the account.
-5. **Wallpaper** starts only now, i.e. only once logged in (`wallpaper:
-   true`); logon and invite splashes stay on the ink × tiles.
-6. Taskbar shown (`taskbar: true`), Start menu user header set.
+A page is now three lines:
 
-- index: `os({ wallpaper, start, gate })` then the empty-desktop → janky
-  summons sequence. roster.html: same, then loads data. `_invite/`:
-  `os({ wallpaper: false, taskbar: false, gate: false, boot: !preview })`
-  — it is itself a logon-style splash. Plain admin pages (`_email/`,
-  `_invite/preview.html`) are outside the OS.
-- Adding a page = call `os()`, then open windows. Never call `Retro.boot`
-  or build a login form in a page.
+```html
+<link rel="stylesheet" href="hxh.css?v=N">
+<script src="hxh.js?v=N"></script>
+<script>HxH.start({ apps: [HxH.apps.Summons, HxH.apps.Binder, HxH.apps.Register, HxH.apps.About],
+                    autostart: ["summons"], wallpaper: true, start: true, gate: true });</script>
+```
 
-## The Binder (`binder.js` + `binder.css`)
+`HxH.start(opts)` = `new OS().start(opts)`, which:
+
+1. registers the apps (`AppRegistry`; an entry may be `[AppClass,
+   options]`), builds the chrome (`setup()`: Desktop, WindowManager,
+   Toast, Boot, Backdrop, and — unless `taskbar: false` — the Taskbar
+   with its Start button, StartMenu and the scanlines TrayIcon), hides
+   the taskbar while booting;
+2. **boots on every cold load** — refresh, typed URL, logout — HunterOS
+   99 lines + the purple-square badge, ~2.5 s, click skips. The ONLY
+   loads that skip it are navigations started from inside the OS via
+   `os.go(url)` (`Nav`), which leaves a one-shot `sessionStorage
+   hxh.warm` flag the next page consumes. Logging in happens in-page,
+   so it never reboots; `os.logout()` cold-loads `/hxh/`, which boots
+   and shows the logon — like a real machine. Use `os.go`, never a bare
+   link, between OS pages;
+3. looks up the session (`Session.me()` → `GET /admin/api/me`);
+4. when `gate: true` and logged out, shows the `LogonDialog` (a static
+   Window: "Hunter × Halloween — Log in", logotype, one line, Applicant
+   + Password, "Forgot password?" → `POST /admin/api/forgot`) alone on
+   the bare ink desktop with the badge (`Badge`, kept on the invite
+   splash too, removed once the desktop is up; `body.logon` hides
+   everything else meanwhile);
+5. `setUser(me)` → `session:user` on the bus, desktop icons and tray
+   icons rebuilt from the registry for that user;
+6. `Wallpaper` only now, i.e. only once logged in (`wallpaper: true`);
+   taskbar shown; desktop icons shown (`icons`, defaults to `taskbar`);
+7. emits `os:ready`, then launches each `autostart` app with
+   `{ autostart: true }`.
+
+Options: `apps, autostart, gate, taskbar, wallpaper, boot, start
+(Start button + menu), icons, bootLines`. index: `{wallpaper, start,
+gate}` + autostart summons; `_invite/` / `_reset/`: `{taskbar: false,
+wallpaper: false, gate: false}` + autostart `setpw` — the page is
+itself a logon-style splash. Plain admin pages (`_email/`) are outside
+the OS.
+
+### The pieces (one class each, `os/*.js`)
+
+- `Component` (`component.js`) — base of everything drawn: `render()`
+  returns the root `el`; `mount(parent, {before})`, `unmount()` (tears
+  down `listen()` bus subscriptions and `adopt()`ed children), a private
+  `events` bus (`on/once/emit`), `onMount/onUnmount` hooks.
+- `EventBus` (`bus.js`) — `on` returns an unsubscribe; handlers are
+  isolated (one throwing never stops the rest). The OS bus carries:
+  `window:add/remove/open/close/minimize/maximize/focus/title/attention
+  {id}`, `tray:add {spec} / tray:remove {id} / tray:refresh`,
+  `app:register / app:launch {id}`, `session:user {user}`, `crt {on}`,
+  `resize`, `os:ready`. Components never call each other across the
+  taskbar/app boundary — they emit and listen.
+- `Window` (`window.js`) — THE window class. `chrome: "full"` (title
+  bar + identical min/max/close `ChromeButton`s, draggable), `"static"`
+  (in-flow dialog, no taskbar entry), `"none"` (chromeless; `buttons:
+  ["min", "close"]` float at the top right — the binder). Options:
+  `id, title, icon, width, closable, minimizable, maximizable, task,
+  popup` (Escape closes), `cls, menus` (a `MenuBar` spec), `content`
+  (html | element | fn(body, win)), `onClose`. It only emits
+  (`chrome`, `pointerdown`, `title`, `attention`); the manager acts.
+- `WindowManager` (`wm.js`) — `add/remove/get/all/active`, `open(id,
+  at, {scroll, jank})` (jank = frame → menu bar → body, 90/110 ms;
+  default cascade `150+35n, 30+35n`; phones scroll it into view),
+  `close/minimize/toggleMax/focus/focusTop/place/drag` (4 px snap,
+  zoom-divided, desktop only), `fit/relayout`, `handleEscape` (active
+  popup). Every change is announced on the bus.
+- `Taskbar` (`taskbar.js`) = `StartButton` + one `TaskButton` per open
+  window (kept in step from the bus: press = minimize if active else
+  restore; `flash()` on `window:attention` until focused — the chat
+  app's cue) + `Tray` (`TrayIcon`s — `{id, icon, title, on, onClick,
+  menu}`; a `menu` pops a `Menu` upward — then `Clock` last).
+- `StartMenu` (`startmenu.js`) — user header (initials `avatar` +
+  name), the vertical band, items from `os.startItems()`: apps, sep,
+  Scanlines + system-group apps, sep, Log out.
+- `Menus` / `Menu` / `MenuBar` / `renderItems` (`menu.js`) — ONE menu
+  implementation for window menu bars, the Start menu and tray menus.
+  Items: `{label, icon, check, onclick, disabled, hidden, attrs}` or
+  `"sep"`; one open at a time; document click / Escape close all.
+- `App` / `AppRegistry` (`apps.js`) — an app declares statics `id,
+  name, icon, desktop, menuable, group ("apps" | "system"), order,
+  longName`, implements `launch(opts)`, optionally `visible(user)` and
+  `tray()`. Desktop icons, the Start menu, the summons View / Help
+  menus and tray icons are all DERIVED from the registry — nothing
+  lists apps by hand. `os.launch(id)`, `os.appItems(group)`.
+- `Desktop` / `DesktopIcon` / `Backdrop` (`desktop.js`), `Toast`
+  (`toast.js`, `os.toast.show(msg)`), `Boot` / `Badge` / `bootLines`
+  (`boot.js`), `type()` (`typewriter.js`), `Session` / `Nav`
+  (`session.js`, fetch/storage injectable), `LogonDialog` (`logon.js`,
+  a Window subclass), `CRT` (`crt.js`, `localStorage hxh.crt`),
+  `Env` (`env.js`: `floating()`, `reduced`, `zoom()`, `width/height`,
+  `wait`), `icons.js` (`icon`, `sprite`, `avatar`, `textColorFor`,
+  `ICONS` incl. `comment` for chat), `dom.js` (`h()`, `esc`),
+  `wallpaper.js` (below), `os.js` (`OS`), `index.js` (the bundle entry
+  and `HxH.*` exports), `os.css` (the chrome).
+- Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
+  (window + registry-derived menus + typewriter notice + CTA),
+  `Binder`, `Register`, `About` (group "system"), `SetPassword`
+  (desktop/menuable false; its words come in as options). `apps/index.js`
+  exports them as `HxH.apps.*`.
+
+Adding an app = one class in `apps/` (statics + `launch`), export it
+from `apps/index.js`, list it in the page's `apps`. It gets its icon,
+Start / View menu entries and (if `tray()`) its tray icon for free.
+Never call `boot`, build a login form, or list apps in a page.
+
+## Build, tests, dev loop (`foundry/website/`)
+
+- `npm run build` (esbuild, `scripts/build.mjs`) bundles
+  `html/hxh/os/index.js` + everything it imports (JS and the `.css`
+  imports) into `html/hxh/hxh.js` (IIFE, global `HxH`) + `hxh.css` +
+  source maps. Unminified, deterministic, COMMITTED — the server is a
+  static mirror. Never edit `hxh.js` / `hxh.css` by hand.
+- `npm test` runs `node --test tests/` (jsdom, no browser) — one test
+  file per module: bus, component, dom, env, icons, menu, window, wm,
+  taskbar, startmenu, apps, desktop, toast, typewriter, boot, session,
+  crt, logon, os (the whole start flow: cold/warm boot, gate, splash,
+  logout), binder (pagination, layout maths, the window, cards, D-pad,
+  claim), apps-desktop (summons/register/about), setpw, wallpaper (pure
+  maths), and `bundle.test.js`, which FAILS when the committed bundle
+  is stale. `tests/dom.js` is the harness (`setupDom({floating,
+  reduced, width})`, `fakeFetch`); `tests/loader.mjs` makes `.css`
+  imports empty modules under Node.
+- **`npm run check` = build + test. Run it before every `ws_prod`**,
+  and add/extend a test with every infrastructure change (Andrew:
+  "test coverage as part of normal development"). Playwright
+  end-to-end tests are a later step; the screenshot harness below
+  stays the visual check.
+- `node_modules/` is git-ignored; `npm install` once per machine.
+
+## The Binder (`apps/binder.js` + `apps/binder.css`)
 
 The roster as a Greed Island card binder, modelled on Andrew's
 screenshots from the show (E66/E67): navy boards with gold clasps; the
@@ -113,11 +225,12 @@ black display screen on top, two mint keys, a big dial, a square touch
 pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 
 - Opens from the "Binder" icon / Start / View menu / the summons CTA as a
-  **chromeless window** (`data-chromeless`: registered, in the taskbar,
-  Escape closes, but no title bar or frame). A window-style ✕ sits at
-  the book's top-right anyway ("that's where people would look" —
-  Andrew). Starts CLOSED — front cover only (ring emblem, title,
-  BINDER) — click to open.
+  **chromeless window** (`chrome: "none"`: managed, in the taskbar,
+  Escape closes, but no title bar or frame). The window's minimize +
+  close buttons — the same `ChromeButton`s every title bar has — float
+  at the book's top-right ("that's where people would look" — Andrew;
+  2026-09-18: minimize added with the refactor). Starts CLOSED — front
+  cover only (ring emblem, title, BINDER) — click to open.
 - **The page turn (2026-09-18):** the cover is the front face of a
   `.flap` hinged at the spine's centre (`transform-origin: left`,
   `perspective: 1800px` on `.book`, `preserve-3d`). Opening rotates it
@@ -126,7 +239,7 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   the whole time (a `.shade` over the panel fades out as the cover
   lifts), and past 90° the flap's BACK face — the actual card `.page`,
   with a half-spine strip — comes into view and lands on the left. On
-  `transitionend` binder.js moves `.page` into `.leaf` so the open book
+  `transitionend` the app moves `.page` into `.leaf` so the open book
   is plain flow layout; `shut()` puts it back on the flap and swings it
   home. Phones and reduced-motion skip the 3-D and just switch. Freeze
   any angle for screenshots with the harness `?demo=binderfreeze&deg=N`.
@@ -148,7 +261,7 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   cursor). Idle = the ring emblem. Keys: CLAIM (toast + opens
   Registration), CLOSE (back to the cover). D-pad: ◀ ▶ page, ▲ ▼ card.
   Dial and pad are decoration.
-- Size: fills the screen with slim margins — `Binder.layout()` sets
+- Size: fills the screen with slim margins — `binderLayout(vw, vh)` sets
   `--bw/--bh` to the midpoint between the first sizing (≤1180×780) and
   the full desktop above the taskbar (Andrew: "fill halfway the
   margins"; ~1273×815 at 1366×900, leaving room for the tab row) and
@@ -180,14 +293,15 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   `foundry/website/hxh-roster/CHARACTER.md`; `validate.py` checks a
   file, `build.py` orders it and assigns `no`. Follow the checklist for
   EVERY character (Andrew's ask: one consistent procedure).
-- `Binder.mount({ desktop, claim })` must run BEFORE `Retro.os()` so the
-  shell registers the window.
+- Pure and tested: `paginate`, `binderLayout`, `TYPES`, `ARCS`,
+  `LIMIT`, `PER_PAGE` are exports; the window is built on first launch.
 
 ## Wallpaper
 
-`Retro.wallpaper(canvas)` paints an ORIGINAL pixel-art Whale Island on a
-320×180 canvas (`<canvas class="wall">`, fixed, `object-fit: cover`,
-`image-rendering: pixelated`), created by the shell once logged in
+`os/wallpaper.js` (`Wallpaper` component → `wallpaper(canvas)`) paints an
+ORIGINAL pixel-art Whale Island on a 320×180 canvas (`<canvas
+class="wall">`, fixed, `object-fit: cover`, `image-rendering:
+pixelated`), created by the shell once logged in
 (never on the logon or invite splash): banded dithered sky, a broad forested hump left of centre,
 a low back with the harbour houses and pier — just above the
 rooftops, held level right into the tail so there is no dip before
@@ -208,7 +322,7 @@ frame clock, brightest and clumpy at the top and centre, easing off
 with depth (peak 0.55, (1−t)^1.4 — a pixel-art density lower than the
 gif's 17%, which "looks like too much"), plus stragglers scattered past
 the curve that thin with distance so the edge isn't perfect; clouds
-(after his pixel-sky jpg) via `Retro.cloudSprite(lobes, {scale})` —
+(after his pixel-sky jpg) via `cloudSprite(lobes, {scale})` —
 the sprite sizes its own canvas from the lobes, because a lobe clipped
 by the canvas edge reads as "a piece missing"; six hand-written
 shapes after the reference (`SHAPES`: wide cumulus, tall stacked,
@@ -229,33 +343,25 @@ compare on a scratch test page rendering the sprites beside the
 reference crop before changing tones or lobes), drifting very slowly; a flock of birds every 12–40 s; one
 static frame under prefers-reduced-motion. Inspired by the anime's
 island silhouette but drawn procedurally — no copyrighted image is
-used. Desktop icon labels carry a 1px ink outline to stay readable
+used. The pure parts (`islandHeight`, `cloudBounds`, `glints`, the
+`SHAPES`) are exported and characterised in `tests/wallpaper.test.js`. Desktop icon labels carry a 1px ink outline to stay readable
 over the sky.
 
-## Retro chrome (shared files)
+## Retro chrome (CSS vocabulary)
 
-- `retro.css` — tokens (same five colours as before, plus `--ink-4` for
-  muted text on cream), window/bevel/button/field styles, taskbar, Start
-  menu, menus, toast, boot overlay, scanlines, phone stacking rules.
-- `binder.js` / `binder.css` — the Binder app (see above).
-- `retro.js` — `Retro` module: the OS shell (`os`, `go`, `session`,
-  `login`, `logout`, `logon`, `wallpaper`), window manager (`register`, `spawn`,
-  `open`, `close`, `minimize`, `focus`, `toggleMax`, `fit`), drag (desktop
-  only, 4px snap), taskbar + clock, `startMenu(items|fn)`, menu bars,
-  `type(el, runs, {speed, onDone, instant})` typewriter,
-  `boot({badge, splash, lines, speed, tail})`, `place(id, at)`,
-  `open(id, at, {scroll, jank})`, `toast(msg)`, `setCRT(on)`
-  (persisted in `localStorage hxh.crt`), `avatar(acct)` + `setUser(acct)`
-  (Start menu user header), `icon(name, size)` (ASCII-grid pixel icons → SVG,
-  integer-scaled), and
-  `sprite(emoji)` (emoji drawn on a 16px canvas, alpha-thresholded and
-  snapped to the web-safe palette, upscaled with `image-rendering:
-  pixelated` — our copyright-free "pixel art").
-- Windows are `.win[data-title][data-icon][data-width]` with an optional
-  `.mbar` and a `.body`; `Retro.init()` builds the title bar. `data-static`
-  = in-flow, no taskbar entry (dialogs); `.popup` = Escape closes it;
-  `.profile` = fixed modal on phones. Buttons/menu items use `data-act`
-  handled by an `ACT` map per page; `[data-crt]` toggles scanlines.
+- `os/os.css` — tokens (same five colours as before, plus `--ink-4` for
+  muted text on cream), window/bevel/button/field styles, taskbar,
+  Start menu, menus (`.dd.open`, `.dd.up` for tray menus), toast, boot
+  overlay, scanlines, `.task.flash`, phone stacking rules. App-specific
+  rules live with the app: `apps/summons.css` (the `.vn` visual-novel
+  box), `apps/register.css` (stamp + progress), `apps/binder.css`.
+- Class vocabulary: `.win[.static|.chromeless|.popup|.max|.inactive]
+  > .tbar (.ico .ttl .tbtn.min/.maxb/.close) + .mbar (.menu > button +
+  .dd) + .body`; chromeless windows get `.fbtns` instead of `.tbar`;
+  `.taskbar > #startbtn + .tasks (.btn.task) + .tray (.trayicon >
+  button + .dd.up, .clock)`; `.startmenu (.user .band .items)`;
+  `.icons > .icon (.ib .cap)`; `.boot`, `.badge.os-badge`, `.win.toast`,
+  `.backdrop`. `.profile` = fixed modal on phones.
 - Breakpoint: `>= 900px` windows float and drag; below, they stack in DOM
   order, min/max buttons hide, desktop icons hide, Start menu is the nav.
 - Fonts: **Press Start 2P** (logotype, title bars, buttons, small caps
@@ -263,6 +369,9 @@ over the sky.
   16px bitmap font and blurs at other sizes; it also renders the kana).
   Logotype sizes via container-query units and breaks onto two lines in
   windows narrower than 440px.
+- Icons are hand-drawn ASCII grids in `os/icons.js` (→ integer-scaled
+  SVG); sprites are emoji drawn on a 16px canvas, alpha-thresholded and
+  snapped to the web-safe palette — our copyright-free "pixel art".
 
 ## Previewing / screenshots
 
@@ -270,13 +379,15 @@ There is no local backend. To screenshot the logged-in state, run a stub
 server that serves `html/` and fakes `GET /admin/api/me` (200 with
 `roles:[{website:"hxh",role:"admin"}]`, or 401 for the gate),
 `POST /admin/api/login|logout`, `GET /admin/api/token-info`,
-`POST /admin/api/set-password`, and `GET /hxh/api/roster` (wrap
-`roster.json` as `{arcs, characters}`). Then
+`POST /admin/api/set-password`. Then
 `google-chrome-stable --headless=new --screenshot=... --window-size=1366,900
 --virtual-time-budget=20000 URL` (virtual time fast-forwards the
 typewriter). Inject a `<script>` that clicks tiles / the Start button to
-capture interactive states. Check 1366 (side-by-side), 1100 (cascade) and
-390@2x (phone).
+capture interactive states — but the OS builds the whole DOM after
+boot + logon, so poll until `#win-summons` exists and has painted
+before clicking anything. Check 1366 (side-by-side), 1100 (cascade) and
+390@2x (phone). Unit tests (`npm test`) cover behaviour; screenshots
+cover looks — do both before shipping.
 
 ## Auth: the SHARED system (as of 2026-09-05)
 
@@ -293,10 +404,9 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 
 ## Roster (character database, 2026-09-05)
 
-- **roster.html** — admin-only view (role `admin` on `hxh`) reached
-  via the Roster DB desktop icon / Start menu / View menu on index.
-  Renders `GET /hxh/api/roster`: per character an image strip, Nen-type
-  chips (double types supported), weapon slugs, arc chips, description.
+- The admin-only Roster DB page (`roster.html`) was removed 2026-09-18;
+  `GET /hxh/api/roster` and the PUT below still exist for the push
+  script.
 - Data: `hxh_characters` (slug PK; nen_types/weapons/arcs are
   comma-separated slug strings; images JSONB array of Fandom-wiki
   URLs, hotlinked; since changeset 004 also card_no, name_ja, first,
@@ -333,8 +443,8 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 
 ## Keep these three in sync
 
-The site chrome (`retro.css`/`retro.js` + pages), the set-password
-pages (`_invite/`, `_reset/` via `pwpage.js`), and the emails
+The site chrome (`os/os.css` + `os/*.js` + `apps/*`), the set-password
+pages (`_invite/`, `_reset/` via `apps/setpw.js`), and the emails
 (`_email/_layout.html` + bodies) are one look (the `_email/index.html`
 preview page is the exception — keep it plain). A theme
 change is not done until all three match — change them in the same
@@ -353,7 +463,7 @@ hard shadow, and the user's avatar circle.
   `#ff7518` for Halloween accents; the `×` from the logo as the app icon.
 - Nen-type hues colour the roster tiles (dithered aura behind each sprite).
 - No copyrighted art: sprites are pixelated emoji, icons are hand-drawn
-  ASCII grids in `retro.js`.
+  ASCII grids in `os/icons.js`.
 - Must work well on phones — guests will register from their phones.
 - UI copy stays terse (see the hub CLAUDE.md UI-writing rule); the retro
   chrome is allowed to be decorative (menu bars, fake progress bar, clock).
@@ -362,6 +472,7 @@ hard shadow, and the user's avatar circle.
 
 See `../CLAUDE.md` for the `ws_prod` deploy alias (must be run from the
 `html/` directory, master branch only); `ws_stag` publishes the same tree
-under `/.staging/` for previews. Bump the `?v=` on `retro.css`/`retro.js`
-when they change. Don't deploy prod without Andrew's say-so while the page
-still has TBD placeholders.
+under `/.staging/` for previews. Before deploying: `cd
+foundry/website && npm run check` (rebuilds `hxh.js`/`hxh.css` and
+runs the tests), then bump the `?v=` on `hxh.js`/`hxh.css` in
+`index.html`, `_invite/index.html` and `_reset/index.html`.

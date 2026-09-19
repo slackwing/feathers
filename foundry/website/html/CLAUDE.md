@@ -18,6 +18,22 @@ Protected paths (not deleted/overwritten on the remote): `.staging/`, `shared/as
 
 Exit code 23 with `Permission denied` on `.well-known/ssl-manager/*` is normal — those files are owned by the SSL manager on the VM and rsync's `--delete` can't remove them. Site content still uploads successfully. Only worry if the errors involve other paths.
 
+## Built sites: hxh
+
+`hxh/` is not hand-written JS any more: its source is ES modules in
+`hxh/os/` + `hxh/apps/`, bundled by esbuild into the committed
+`hxh/hxh.js` + `hxh/hxh.css`. From `foundry/website/`:
+
+```
+npm install        # once per machine (node_modules/ is git-ignored)
+npm run check      # = npm run build && npm test — REQUIRED before ws_prod
+```
+
+`npm test` (node --test + jsdom) includes a bundle-staleness test, so
+a forgotten build fails the check. Never edit `hxh.js`/`hxh.css` by
+hand; bump their `?v=` in the three hxh pages when they change. Details
+in `hxh/CLAUDE.md`.
+
 ## Cross-project standard paths (underscore convention)
 
 Some files live in the SAME place in every website because the shared
@@ -30,7 +46,8 @@ from a site's own pages:
 - `<site>/_reset/index.html` — the site's password-reset page. Reset
   links point at `/<site>/_reset/?code=`.
   Both are SKINS: markup + styling only, tagged with `data-pw` hooks,
-  over the shared machinery `/admin/assets/setpw.js`. A site with no
+  over the shared machinery `/admin/assets/setpw.js` (hxh's skin is
+  the `SetPassword` app in `hxh/apps/setpw.js`). A site with no
   skin gets the default pages `/admin/_invite/` and `/admin/_reset/`
   automatically. Without a code either page renders disabled.
 - `<site>/_email/` — the site's email templates: `templates.json`

@@ -1,11 +1,13 @@
 /* THEME: part of the site chrome — see the "theme changes travel
-   together" note at the top of retro.css.
+   together" note at the top of os/os.css.
    The Binder — a Greed Island style card binder drawn from Andrew's
    screenshots of the show (E66/E67): navy boards with gold clasps; the
    left page holds sleeved cards under Nen-type tabs; the right side is a
    teal control panel — black display screen, two mint keys, a dial, a
    square touch pad with tick marks, a red D-pad. Opens chromeless and
-   fills most of the screen (binder.js sets --bw/--bh from the viewport). */
+   fills most of the screen (apps/binder.js sets --bw/--bh from the viewport).
+   The window's minimize / close float buttons (.fbtns, os.css) sit at the
+   book's top-right corner — where people look for "close" (Andrew). */
 
 .binder {
   --navy: #1d3557; --navy-2: #16243d; --navy-3: #0f1a2c; --navy-hi: #2a4a78;
@@ -20,9 +22,6 @@
   user-select: none;
 }
 .book { position: relative; width: var(--bw); max-width: 100%; perspective: 1800px; perspective-origin: 50% 50%; }
-/* a window-style ✕ at the book's top-right — not how a binder works, but
-   it is where people look for "close" (Andrew) */
-.bookx { position: absolute; right: 8px; top: 8px; z-index: 6; }
 
 /* ---------- the flap: front cover + its back, the card page ----------
    The cover is the front face of a leaf hinged at the CENTRE of the spine

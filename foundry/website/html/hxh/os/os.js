@@ -1,0 +1,185 @@
+/* OS — the shell every hxh page runs inside. It owns what must never be
+   re-added per page (Andrew's rule): the boot sequence on every cold load,
+   the session lookup, the logon dialog, the wallpaper (only once logged
+   in), the taskbar / Start menu / tray, and logout. Pages register apps
+   and call start(); everything on screen after that is a Component, and
+   everything they say to each other goes over `bus`.
+
+   Bus events: window:add/remove/open/close/minimize/maximize/focus/title/
+   attention {id}, tray:add {spec} / tray:remove {id} / tray:refresh,
+   app:register / app:launch {id}, session:user {user}, crt {on}, resize,
+   os:ready. */
+import { EventBus } from "./bus.js";
+import { Env } from "./env.js";
+import { Session, Nav } from "./session.js";
+import { CRT } from "./crt.js";
+import { AppRegistry } from "./apps.js";
+import { Desktop, Backdrop } from "./desktop.js";
+import { WindowManager } from "./wm.js";
+import { Taskbar } from "./taskbar.js";
+import { StartMenu } from "./startmenu.js";
+import { Toast } from "./toast.js";
+import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
+import { LogonDialog } from "./logon.js";
+import { Wallpaper } from "./wallpaper.js";
+import { Menus } from "./menu.js";
+
+export class OS {
+  constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
+    this.win = win;
+    this.doc = win.document;
+    this.bus = new EventBus();
+    this.env = env || new Env(win);
+    this.session = session || new Session({ fetch });
+    this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
+    this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
+    this.registry = new AppRegistry(this);
+    this.user = null;
+    this.ready = false;
+  }
+
+  /** Build the chrome. Idempotent. */
+  setup({ start = false, taskbar = true } = {}) {
+    if (this.wm) return;
+    const body = this.doc.body;
+    Menus.install(this.doc);
+    this.crt.apply();
+
+    const existing = this.doc.getElementById("desktop");
+    this.desktop = new Desktop({ registry: this.registry, user: () => this.user, el: existing });
+    this.desktop.mount(existing ? null : body);
+    this.desktop.on("launch", id => this.launch(id));
+    this.wm = new WindowManager({ bus: this.bus, env: this.env, desktop: this.desktop.el });
+
+    this.toast = new Toast().mount(body);
+    this.boot = new Boot({ env: this.env }).mount(body);
+    this.backdrop = new Backdrop().mount(body);
+
+    if (taskbar) {
+      this.taskbar = new Taskbar({ bus: this.bus, wm: this.wm, start }).mount(body);
+      this.taskbar.el.hidden = true;   // nothing else on screen while booting / logging on
+      if (start) {
+        this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user }).mount(body);
+        this.taskbar.on("start", () => this.startMenu.toggle());
+        this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
+        this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
+      }
+      this.taskbar.tray.add({ id: "crt", icon: "crt", title: "Scanlines", on: () => this.crt.on, onClick: () => this.crt.toggle() });
+      this.bus.on("crt", () => this.bus.emit("tray:refresh", { id: "crt" }));
+    }
+
+    this.doc.addEventListener("keydown", e => { if (e.key === "Escape") this.wm.handleEscape(); });
+    let rt;
+    this.win.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => { this.wm.relayout(); this.bus.emit("resize"); }, 120);
+    });
+  }
+
+  /** Scanlines etc. — the system entries shared by the Start and View menus. */
+  systemItems() {
+    return [{ label: "Scanlines", icon: "crt", check: () => this.crt.on, onclick: () => this.crt.toggle() }];
+  }
+
+  /** Apps by group: [{ label, icon, onclick }] for menus. */
+  appItems(group = "apps", { except = null, long = false } = {}) {
+    return this.registry.visible(this.user, { desktop: false, menuable: true })
+      .filter(a => (a.constructor.group || "apps") === group && a.id !== except)
+      .map(a => ({ label: long ? (a.constructor.longName || a.name) : a.name, icon: a.icon, onclick: () => this.launch(a.id) }));
+  }
+
+  startItems() {
+    return [
+      ...this.appItems("apps"),
+      "sep",
+      ...this.systemItems(),
+      ...this.appItems("system"),
+      "sep",
+      { label: "Log out", icon: "door", onclick: () => this.logout() },
+    ];
+  }
+
+  setUser(user) {
+    this.user = user || null;
+    this.bus.emit("session:user", { user: this.user });
+    this.desktop?.refreshIcons();
+    this.syncTray();
+  }
+
+  /** Give every visible app that asks for one a tray icon. */
+  syncTray() {
+    if (!this.taskbar) return;
+    for (const app of this.registry.all()) {
+      const spec = app.visible(this.user) ? app.tray() : null;
+      const has = this.taskbar.tray.has(app.id);
+      if (spec && !has) this.bus.emit("tray:add", { id: app.id, icon: app.icon, title: app.name, ...spec });
+      else if (!spec && has) this.bus.emit("tray:remove", { id: app.id });
+    }
+  }
+
+  isAdmin(site = "hxh") {
+    return (this.user?.roles || []).some(r => r.website === site && r.role === "admin");
+  }
+
+  showBadge() { if (!this.badge) this.badge = new Badge().mount(this.doc.body); }
+  hideBadge() { this.badge?.unmount(); this.badge = null; }
+
+  startWallpaper() {
+    if (this.wallpaper) return;
+    const body = this.doc.body;
+    this.wallpaper = new Wallpaper({ env: this.env }).mount(body, { before: body.firstChild });
+  }
+
+  /** The logon dialog, alone on the bare desktop. Resolves with the account. */
+  logon() {
+    return new Promise(res => {
+      this.desktop.center(true);
+      this.doc.body.classList.add("logon");
+      const dlg = new LogonDialog({ session: this.session });
+      this.wm.add(dlg);
+      dlg.on("login", me => {
+        this.wm.remove(dlg.id);
+        this.desktop.center(false);
+        this.doc.body.classList.remove("logon");
+        res(me);
+      });
+      this.wm.open(dlg.id, null, { scroll: false, jank: true }).then(() => dlg.focusUser());
+    });
+  }
+
+  /**
+   * start({ apps, autostart, gate, taskbar, wallpaper, boot, start, icons,
+   *         bootLines }) — register apps, build the chrome, boot (cold loads
+   * only), look up the session, log on if gated, then bring up the desktop
+   * and launch the autostart apps. Resolves with the OS once ready.
+   */
+  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
+    for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
+    this.setup({ start, taskbar });
+    const warm = this.nav.consumeWarm();
+    const pending = this.session.me();
+    if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
+    let me = await pending;
+    if ((!me && gate) || !taskbar) this.showBadge();   // splash screens keep the badge
+    if (!me && gate) me = await this.logon();
+    if (taskbar) this.hideBadge();
+    this.setUser(me);
+    if (me && wallpaper) this.startWallpaper();       // Whale Island only once you're in
+    if (this.taskbar) this.taskbar.el.hidden = false;
+    if (icons) this.desktop.showIcons(true);
+    this.ready = true;
+    this.bus.emit("os:ready", { user: me });
+    for (const id of autostart) await this.launch(id, { autostart: true });
+    return this;
+  }
+
+  launch(id, opts = {}) { return this.registry.launch(id, opts); }
+
+  /** Navigate to another OS page without rebooting. */
+  go(url) { this.nav.go(url); }
+
+  async logout() {
+    await this.session.logout();
+    this.nav.cold();   // cold load: boots, then the logon screen
+  }
+}

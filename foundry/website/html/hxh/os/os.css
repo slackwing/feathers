@@ -1,11 +1,11 @@
-/* Hunter Website — retro OS chrome shared by the hxh pages.
+/* Hunter Website — retro OS chrome (bundled into hxh.css by `npm run build`).
    Dark ink desktop, cream bevelled windows, crimson title bars.
    Pixel fonts: Press Start 2P (display) + DotGothic16 (body, kana).
 
    THEME CHANGES TRAVEL TOGETHER. The site's look lives in three places
    that must change in the same commit:
-     1. this chrome (retro.css / retro.js / binder.css) — the site,
-     2. the set-password skins (_invite/, _reset/ via pwpage.js) — the
+     1. this chrome (os/os.css + os/*.js, apps/*.css) — the site,
+     2. the set-password skins (_invite/, _reset/ via apps/setpw.js) — the
         dialogs guests see before they are in,
      3. the email templates (_email/_layout.html + bodies) — the same
         palette and "window" hand-mirrored in inline styles, since mail
@@ -108,6 +108,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   color: var(--paper); font: 20px/1.2 var(--font-dot); text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
+.icon .ib { width: 48px; height: 48px; display: grid; place-items: center; }
 .icon .cap { padding: 1px 3px; text-shadow: 1px 0 var(--ink), -1px 0 var(--ink), 0 1px var(--ink), 0 -1px var(--ink), 1px 1px var(--ink); }
 .icon:hover .cap, .icon:focus-visible .cap { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
 .icon:focus-visible { outline: none; }
@@ -128,6 +129,8 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .win.static { position: relative; z-index: auto; }
 .win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; }
 .win.chromeless.inactive { filter: none; }
+.win.chromeless .body { padding: 0; container-type: normal; }
+.win.chromeless .fbtns { position: absolute; right: 8px; top: 8px; z-index: 6; display: flex; gap: 2px; }
 .win.max { left: 0 !important; top: 0 !important; width: 100% !important; max-width: none; }
 .tbar {
   display: flex; align-items: center; gap: 8px;
@@ -174,7 +177,8 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
     inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
     5px 5px 0 rgba(0,0,0,.5);
 }
-.menu.open .dd { display: block; }
+.menu.open .dd, .dd.open { display: block; }
+.dd.up { top: auto; bottom: 100%; left: auto; right: 0; }
 .dd button, .startmenu .items button {
   display: flex; align-items: center; gap: 10px; width: 100%;
   background: none; border: 0; cursor: pointer; text-align: left;
@@ -269,46 +273,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .tbd { color: var(--nen-deep); border-bottom: var(--px) dashed var(--nen-deep); cursor: help; }
 
 .dialog-h { font: 20px/1.5 var(--font-px); text-align: center; margin: 10px 0 8px; }
+.win.logon .body { text-align: center; }
+.win.logon .logon-form { text-align: left; }
 .forgot { margin: 10px 0 0; text-align: center; }
 .forgot a { color: var(--ink-4); }
-
-/* visual-novel dialog box */
-.vn {
-  position: relative; margin-top: 22px; padding: 20px 38px 22px 18px;
-  background: var(--paper-hi);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), var(--px) var(--px) 0 var(--ink);
-  cursor: pointer; min-height: 5.5em;
-}
-.vn .tag {
-  position: absolute; top: -12px; left: 12px;
-  background: var(--blood); color: var(--paper-hi);
-  font: 10px/1 var(--font-px); padding: 8px 10px 5px;
-  border: var(--px) solid var(--ink);
-}
-.vn .more {
-  position: absolute; right: 12px; bottom: 8px;
-  color: var(--blood); font: 12px/1 var(--font-px);
-  visibility: hidden; animation: bob 1s steps(2) infinite;
-}
-.vn.done .more { visibility: visible; }
-.vn .cur::after { content: "▌"; color: var(--ink); animation: blink .8s steps(2) infinite; }
-
-/* stamp + progress */
-.stamp {
-  display: inline-block; transform: rotate(-4deg);
-  font: 18px/1 var(--font-px); color: var(--blood);
-  border: 3px solid var(--blood); padding: 10px 15px 8px; margin: 5px 0 18px;
-  box-shadow: 2px 2px 0 var(--ink);
-}
-.prog {
-  display: flex; gap: 3px; height: 25px; padding: 3px; margin-top: 18px;
-  background: var(--paper-hi);
-  border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.25);
-}
-.prog i { flex: 1; background: var(--paper); }
-.prog i.on { background: var(--blood); }
 
 /* ---------- taskbar ---------- */
 .taskbar {
@@ -331,8 +299,11 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   font: 20px/1 var(--font-dot);
   border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
 }
-.taskbar .tray button { background: none; border: 0; padding: 0; cursor: pointer; display: block; opacity: .55; }
-.taskbar .tray button.on { opacity: 1; }
+.taskbar .tray .trayicon { position: relative; display: block; }
+.taskbar .tray .trayicon > button { background: none; border: 0; padding: 0; cursor: pointer; display: block; opacity: .55; }
+.taskbar .tray .trayicon > button.on { opacity: 1; }
+/* a window asking for attention (window:attention) blinks its task button until focused */
+.taskbar .task.flash { animation: taskflash 1s steps(2) infinite; }
 .taskbar .clock { padding-top: 2px; white-space: nowrap; }
 
 .startmenu {
@@ -413,6 +384,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }
 
+@keyframes taskflash { 0%, 100% { background: var(--paper); } 50% { background: var(--blood); color: var(--paper-hi); } }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 @keyframes xblink { 0%, 100% { color: var(--blood); } 50% { color: var(--blood-hot); } }
@@ -424,6 +396,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   .icons { display: none; }
   .win { position: static; width: auto !important; max-width: none; margin-bottom: 15px; }
   .win.max { width: auto !important; }
+  .win.chromeless { position: relative; }
   .win.profile {
     position: fixed; left: 15px; right: 15px; top: 50%; transform: translateY(-50%);
     z-index: 45; margin: 0; max-height: 82svh; overflow: auto;
@@ -436,5 +409,4 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .vn .more { visibility: visible; }
 }
