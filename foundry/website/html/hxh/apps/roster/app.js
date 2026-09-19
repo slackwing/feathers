@@ -217,7 +217,7 @@ export class RosterApp extends App {
       this.crops.set(imageId, w);
       w.on("fit", ({ fit }) => os.settings.set(SETTING_FIT, fit));
       w.on("ratio", ({ ratio }) => { try { os.win.localStorage?.setItem(SETTING_RATIO, String(ratio)); } catch {} });
-      w.on("save", ({ rect }) => this.crop(imageId, meta.char.id, rect));
+      w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
       w.on("close", () => { this.crops.delete(imageId); os.wm.remove(w.id); });
     }
     // open where the reviewer is looking: the character window can be taller than the screen
@@ -230,12 +230,15 @@ export class RosterApp extends App {
 
   savedRatio() { try { return +this.os.win.localStorage?.getItem(SETTING_RATIO) || 0; } catch { return 0; } }
 
-  async crop(imageId, charId, rect) {
+  /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped" picture. */
+  async crop(imageId, meta, rect, blob = null) {
     const w = this.crops.get(imageId);
     try {
-      const r = await this.api.crop(imageId, rect);
+      const r = blob
+        ? await this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` })
+        : await this.api.crop(imageId, rect);
       w?.saved(r.image, r.created);
-      await this.reload(charId, { form: false });
+      await this.reload(meta.char.id, { form: false });
     } catch (err) { w?.failed(err.message); }
   }
 }

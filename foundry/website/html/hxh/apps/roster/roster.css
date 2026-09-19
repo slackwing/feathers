@@ -39,13 +39,13 @@
 
 /* ---------- the list ---------- */
 .rlist .body { padding: 8px 10px 10px; }
-.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 44px 40px 1.4fr 1.2fr 50px 1fr 1.1fr 46px 42px 96px; align-items: center; gap: 6px; }
+.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 62px 1.5fr 1.3fr 54px 54px 112px; align-items: center; gap: 6px; }
 .rlist .lhead > span {
   padding: 4px 6px 3px; font: var(--t-ui); color: var(--ink); white-space: nowrap; overflow: hidden;
   background: var(--paper); border: var(--px) solid var(--ink);
   box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
 }
-.rlist .listbox { height: 480px; max-height: 62vh; margin-top: 4px; }
+.rlist .listbox { height: 560px; max-height: 66vh; margin-top: 4px; }
 .rlist .rows { font: var(--t-ui); }
 .rlist .row { padding: 3px 6px; cursor: default; }
 .rlist .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
@@ -91,6 +91,9 @@
 .rchar .field { padding: 6px 8px 4px; font: var(--t-body); }
 .rchar select.field { padding: 5px 6px 3px; }
 .rchar textarea.field { resize: vertical; line-height: 1.45; }
+/* arms, description and notes: smaller type (DotGothic at its native 16), the two prose boxes tall and equal */
+.rchar .field.prose { font: var(--t-chat); }
+.rchar textarea.field.prose { height: 170px; min-height: 96px; }
 .rchar .pair { display: flex; gap: 6px; }
 .rchar .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0 0; }
 .rchar .pics { padding-bottom: 8px; }
@@ -106,9 +109,17 @@
 .rchar .tile { margin: 0; padding: 4px; cursor: default; user-select: none; border: 1px solid transparent; }
 .rchar .tile.sel { background: var(--blood); color: var(--paper-hi); outline: 1px dotted var(--paper-hi); }
 .rchar .tile.rejected { opacity: .45; }
-.rchar .tile .pic { height: 104px; display: grid; place-items: center; overflow: hidden;
-  background: var(--paper-lo); background-image: var(--dither); border: 1px solid var(--ink); }
-.rchar .tile .pic img { max-width: 100%; max-height: 100%; display: block; }
+.rchar .tile .pic { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--paper-lo); border: 1px solid var(--ink); }
+.rchar .tile .pic img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+/* chevrons on the edges that were cut (the whole picture shows when opened) */
+.rchar .tile .pic::before, .rchar .tile .pic::after {
+  position: absolute; z-index: 1; padding: 1px 3px 0; pointer-events: none;
+  background: rgba(11,10,8,.62); color: var(--paper-hi); font: var(--t-small); font-weight: 700; letter-spacing: -1px; line-height: 1.1;
+}
+.rchar .tile .pic.cut-x::before { content: "<<"; left: 2px; top: 50%; transform: translateY(-50%); }
+.rchar .tile .pic.cut-x::after { content: ">>"; right: 2px; top: 50%; transform: translateY(-50%); }
+.rchar .tile .pic.cut-y::before { content: "<<"; top: 2px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+.rchar .tile .pic.cut-y::after { content: ">>"; bottom: 2px; left: 50%; transform: translateX(-50%) rotate(90deg); }
 .rchar .tile.pixel .pic img { image-rendering: pixelated; }
 .rchar .tile figcaption { font: var(--t-small); margin-top: 3px; white-space: nowrap; overflow: hidden; }
 .rchar .tile .l1 { display: flex; gap: 6px; }
@@ -121,11 +132,40 @@
 /* ---------- cropping ---------- */
 .rcrop .body { padding: 8px 10px 10px; }
 .rcrop .ctools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.rcrop .ratios { display: flex; gap: 2px; }
+.rcrop .ratios, .rcrop .seg { display: flex; gap: 2px; }
+.rcrop .btn.ic { padding: 4px 6px 3px; display: inline-grid; place-items: center; }
+.rcrop .btn.ic svg { display: block; }
+.rcrop .btn:disabled { color: var(--ink-4); cursor: default; }
+.rcrop .btn:disabled svg { opacity: .35; }
+.rcrop .btn:disabled:hover { background: var(--paper); }
+/* brush size: a sunken slider with its number */
+.rcrop .radius { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; font: var(--t-small); color: var(--ink-4); }
+.rcrop .radius input { width: 110px; margin: 0; accent-color: var(--blood); }
+.rcrop .radius .rv { min-width: 2ch; text-align: right; color: var(--ink); font: var(--t-ui); }
+/* the current colour: a raised well around the browser's own picker */
+.rcrop .swatch { --c: #000; display: inline-grid; place-items: center; width: 34px; height: 30px; margin-left: 6px; cursor: pointer;
+  background: var(--paper); border: var(--px) solid var(--ink);
+  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo); }
+.rcrop .swatch input { width: 22px; height: 18px; padding: 0; border: 1px solid var(--ink); background: var(--c); cursor: pointer; }
+.rcrop .swatch input::-webkit-color-swatch-wrapper { padding: 0; }
+.rcrop .swatch input::-webkit-color-swatch { border: 0; }
+/* the Paint box of colours */
+.rcrop .palette { display: grid; grid-template-columns: repeat(8, 16px); gap: 2px; padding: 3px; margin-left: 4px;
+  background: var(--paper-hi); border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo); }
+.rcrop .palette button { width: 16px; height: 14px; padding: 0; border: 1px solid var(--ink); cursor: pointer; box-shadow: inset 1px 1px 0 rgba(255,255,255,.35); }
+.rcrop .palette button.pressed { outline: 2px solid var(--blood); outline-offset: 0; }
 .rcrop .canvas { overflow: auto; position: relative; }
 .rcrop .wrap { position: relative; touch-action: none; cursor: crosshair; }
-.rcrop .wrap img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
-.rcrop .wrap.pixel img { image-rendering: pixelated; }
+.rcrop .wrap[data-tool="brush"] { cursor: none; }
+.rcrop .wrap[data-tool="dropper"] { cursor: cell; }
+.rcrop .wrap canvas.pic { display: block; width: 100%; height: 100%; user-select: none; pointer-events: none; }
+.rcrop .wrap.pixel canvas.pic { image-rendering: pixelated; }
+/* the brush outline following the pointer */
+.rcrop .cursor { position: absolute; pointer-events: none; transform: translate(-50%, -50%); border-radius: 50%; box-sizing: border-box;
+  border: 1px solid var(--paper-hi); box-shadow: 0 0 0 1px var(--ink), inset 0 0 0 1px var(--ink); }
+/* painting or picking ignores the box */
+.rcrop .wrap:not([data-tool="marquee"]) .box { pointer-events: none; }
+.rcrop .wrap:not([data-tool="marquee"]) .hd { display: none; }
 .rcrop .box { position: absolute; box-sizing: border-box; cursor: move; box-shadow: 0 0 0 200vmax rgba(11,10,8,.45); }
 .rcrop .ants { position: absolute; inset: 0; pointer-events: none;
   background-image: linear-gradient(90deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(90deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(0deg, var(--ink) 50%, var(--paper-hi) 50%), linear-gradient(0deg, var(--ink) 50%, var(--paper-hi) 50%);

@@ -30,11 +30,12 @@ export class RosterAPI {
   patch(id, fields) { return this.call("PATCH", `/chars/${id}`, fields); }
   review(id, status, reason = "") { return this.call("POST", `/chars/${id}/review`, { status, reason }); }
   remove(id) { return this.call("DELETE", `/chars/${id}`); }
-  upload(id, file, { type = "raw", caption = "" } = {}) {
+  upload(id, file, { type = "raw", caption = "", source_image_id = null, name = "" } = {}) {
     const fd = new FormData();
-    fd.append("file", file);
+    if (name) fd.append("file", file, name); else fd.append("file", file);
     fd.append("type", type);
     fd.append("caption", caption);
+    if (source_image_id) fd.append("source_image_id", String(source_image_id));
     return this.call("POST", `/chars/${id}/images`, fd);
   }
   imageMeta(id) { return this.call("GET", `/images/${id}/meta`); }

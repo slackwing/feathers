@@ -164,9 +164,11 @@ test("double-clicking a tile opens a crop window sized to the desktop; a drawn b
   assert.ok(c instanceof CropWindow && c.state.open);
   assert.equal(c.title, "Crop #10 — Gon Freecss");
   assert.equal(c.fit, true);
-  assert.equal(c.canvas.style.width, "1102px");   // 1920×1080 fitted into 1276×620 → 620/1080 zoom
-  assert.equal(c.canvas.style.height, "620px");
+  assert.equal(c.canvas.style.width, "1049px");   // 1920×1080 fitted into 1276×590 → 590/1080 zoom
+  assert.equal(c.canvas.style.height, "590px");
+  assert.equal(c.pic.width, 1920);   // the picture lives on a canvas at native size
   assert.equal(c.saveBtn.disabled, true);
+  assert.equal(c.tool, "marquee");
   c.setRatio(1);
   c.setBox({ x: 100, y: 100, w: 400, h: 400 });
   assert.equal(c.posEl.textContent, "100, 100  ·  400 × 400");
@@ -181,6 +183,81 @@ test("double-clicking a tile opens a crop window sized to the desktop; a drawn b
   assert.deepEqual(log.find(l => l.method === "POST" && l.path === "/hxh/api/db/images/10/crop").body, { x: 167, y: 100, w: 267, h: 400 });
   assert.equal(c.savedEl.textContent, "Saved #12 267×400");
   assert.equal(w.el.querySelectorAll('.sec[data-type="cropped"] .tile').length, 2);
+});
+
+/* a 2D context jsdom does not have: records strokes, answers a fixed pixel */
+function fakeCtx() {
+  const calls = [];
+  return { calls,
+    drawImage: (...a) => calls.push(["drawImage", a.length]), getImageData: () => ({ data: new Uint8ClampedArray([200, 16, 46, 255]), width: 1, height: 1 }),
+    putImageData: () => calls.push(["putImageData"]), clearRect: () => calls.push(["clearRect"]),
+    beginPath: () => {}, arc: () => calls.push(["arc"]), fill: () => {}, moveTo: () => {}, lineTo: (x, y) => calls.push(["lineTo", x, y]), stroke: () => {} };
+}
+
+test("paint: brush strokes mark the picture painted with undo / redo / revert; the eyedropper picks a colour; a painted save uploads the pixels", async () => {
+  await boot();
+  const ctx = fakeCtx();
+  d.win.HTMLCanvasElement.prototype.getContext = () => ctx;
+  await app().openChar(3);
+  await tick();
+  await app().openCrop(10);
+  await tick();
+  const c = os.wm.get(cropId(10));
+  c.source = {};   // as if the picture had loaded
+  const el = c.el;
+  assert.deepEqual([...el.querySelectorAll("button[data-tool]")].map(b => b.dataset.tool), ["marquee", "brush", "dropper"]);
+  assert.equal(el.querySelectorAll(".palette [data-color]").length, 16);
+  d.click(el.querySelector('[data-tool="brush"]'));
+  assert.equal(c.tool, "brush");
+  assert.equal(c.wrap.dataset.tool, "brush");
+  d.click(el.querySelector('.palette [data-color="#ff0000"]'));
+  assert.equal(c.color, "#ff0000");
+  assert.equal(el.querySelector(".swatch input").value, "#ff0000");
+  c.setRadius(20);
+  assert.equal(el.querySelector(".rv").textContent, "20");
+  assert.equal(c.cursorEl.style.width, (40 * c.z) + "px");
+  // a stroke: down, move, up — in wrap coordinates (zoomed), so pointer 100,100 is picture 100/z
+  const ev = (type, x, y) => c.wrap.dispatchEvent(new d.win.PointerEvent(type, { bubbles: true, clientX: x, clientY: y, button: 0 }));
+  c.wrap.getBoundingClientRect = () => ({ left: 0, top: 0 });
+  ev("pointerdown", 100, 100); ev("pointermove", 200, 150); ev("pointerup", 200, 150);
+  assert.equal(c.dirty, true);
+  assert.equal(c.undoStack.length, 1);
+  assert.ok(ctx.calls.some(k => k[0] === "arc"), "a dot at the start");
+  const line = ctx.calls.find(k => k[0] === "lineTo");
+  assert.ok(line && Math.abs(line[1] - 200 / c.z) < 0.01, `line in picture pixels: ${JSON.stringify(line)}`);
+  assert.equal(el.querySelector('[data-act="undo"]').disabled, false);
+  assert.equal(el.querySelector('[data-act="revert"]').disabled, false);
+  assert.equal(c.saveBtn.disabled, false);   // painted: the whole picture can be saved without a box
+  assert.equal(c.posEl.textContent, "painted");
+  c.undo();
+  assert.equal(c.dirty, false);
+  assert.equal(c.redoStack.length, 1);
+  assert.equal(el.querySelector('[data-act="redo"]').disabled, false);
+  c.redo();
+  assert.equal(c.dirty, true);
+  c.revert();
+  assert.equal(c.dirty, false);
+  assert.equal(c.undoStack.length, 2);   // the revert itself can be undone
+  assert.ok(ctx.calls.some(k => k[0] === "clearRect"));
+  // eyedropper: picks the pixel's colour, then hands back to the brush
+  d.click(el.querySelector('[data-tool="dropper"]'));
+  ev("pointerdown", 10, 10); ev("pointerup", 10, 10);
+  assert.equal(c.color, "#c8102e");
+  assert.equal(c.tool, "brush");
+  // paint again, box it, save: the pixels go up as a cropped picture, not through the server crop
+  ev("pointerdown", 50, 50); ev("pointerup", 50, 50);
+  c.setTool("marquee");
+  c.setBox({ x: 10, y: 20, w: 300, h: 200 });
+  const uploads = [];
+  app().api.upload = async (id, blob, opts) => { uploads.push({ id, blob, opts }); return { image: IMG(13, "cropped", { source_image_id: 10, width: 300, height: 200 }), created: true }; };
+  c.exportPNG = async rect => ({ rect, type: "image/png" });
+  d.click(c.saveBtn);
+  await tick(); await tick(); await tick();
+  assert.equal(uploads.length, 1);
+  assert.deepEqual(uploads[0].blob.rect, { x: 10, y: 20, w: 300, h: 200 });
+  assert.deepEqual(uploads[0].opts, { type: "cropped", source_image_id: 10, caption: "cap 10", name: "paint-10.png" });
+  assert.equal(log.some(l => l.path.endsWith("/crop")), false);
+  assert.equal(c.savedEl.textContent, "Saved #13 300×200");
 });
 
 test("File › New character… prompts for a name, creates and opens it; delete asks first", async () => {

@@ -70,9 +70,9 @@ export function resize(W, H, ratio, start, dir, px, py) {
 export const fitZoom = (W, H, cw, ch) => Math.min(1, cw / W, ch / H);
 
 /** The canvas the crop window can afford on a vw×vh desktop, for a W×H
-    picture: the window's chrome, toolbar and foot take ~200 px, the
-    taskbar 45, and the window sits 24 px down. */
+    picture: the window's chrome, two tool rows and foot take ~265 px,
+    the taskbar 45, and the window sits 24 px down. */
 export function cropCanvas(W, H, vw, vh) {
-  const cw = Math.max(320, Math.min(W, vw - 90)), ch = Math.max(240, Math.min(H, vh - 280));
+  const cw = Math.max(320, Math.min(W, vw - 90)), ch = Math.max(240, Math.min(H, vh - 310));
   return { cw, ch };
 }

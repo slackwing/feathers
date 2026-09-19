@@ -47,9 +47,9 @@ test("resizing by edges and corners, free and ratio-locked", () => {
 });
 
 test("zoom never exceeds 1; the canvas fits the desktop", () => {
-  assert.equal(fitZoom(1920, 1080, 1276, 620), 620 / 1080);
+  assert.equal(fitZoom(1920, 1080, 1276, 590), 590 / 1080);
   assert.equal(fitZoom(400, 600, 1276, 665), 1);
-  assert.deepEqual(cropCanvas(1920, 1080, 1366, 900), { cw: 1276, ch: 620 });
+  assert.deepEqual(cropCanvas(1920, 1080, 1366, 900), { cw: 1276, ch: 590 });
   assert.deepEqual(cropCanvas(400, 300, 1366, 900), { cw: 400, ch: 300 });
   assert.deepEqual(cropCanvas(100, 100, 300, 300), { cw: 320, ch: 240 });
   assert.deepEqual(roundBox({ x: 1.4, y: 2.6, w: 3.5, h: 4.49 }), { x: 1, y: 3, w: 4, h: 4 });

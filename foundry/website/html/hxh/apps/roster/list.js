@@ -14,7 +14,7 @@ export class RosterWindow extends Window {
   /** props: menus (win => spec), thumbURL(id) */
   constructor(props = {}) {
     super({
-      id: "win-roster", title: "Roster DB", icon: "db", width: 900, cls: "roster rlist",
+      id: "win-roster", title: "Roster DB", icon: "db", width: 1280, cls: "roster rlist",
       content: `
         <div class="lhead"><span class="c-no">#</span><span class="c-av"></span><span class="c-name">Name</span><span class="c-ja">Japanese</span><span class="c-rank">Rank</span><span class="c-nen">Nen</span><span class="c-aff">Affiliation</span><span class="c-pics">Pics</span><span class="c-ver">v</span><span class="c-st">Review</span></div>
         <div class="status"><span class="msg"></span><span class="count"></span></div>`,
@@ -73,7 +73,7 @@ export class RosterWindow extends Window {
       h("span", { className: "c-name", text: c.name }),
       h("span", { className: "c-ja", text: c.name_ja || "" }),
       h("span", { className: "c-rank", text: c.rank || "" }),
-      h("span", { className: "c-nen", text: (c.nen_types || []).map(cap).join(", ") }),
+      h("span", { className: "c-nen", text: (c.nen_types || []).map(cap).join(" / ") }),
       h("span", { className: "c-aff", text: c.affiliation || "" }),
       h("span", { className: "c-pics", text: String(c.image_count ?? "") }),
       h("span", { className: "c-ver", text: "v" + (c.version || 1) }),

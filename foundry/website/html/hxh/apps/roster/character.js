@@ -18,6 +18,7 @@ const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 export const slugify = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 export const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
 export const winId = id => "win-roster-c-" + id;
+export const TILE_RATIO = 3 / 2;   // the thumbnail box
 
 const FORM = `
   <div class="frow">
@@ -32,10 +33,10 @@ const FORM = `
   </div>
   <div class="frow">
     <div class="f"><label class="lbl">Arcs</label><div class="checks">${ARCS.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
-    <div class="f"><label class="lbl">Arms</label><input class="field" data-f="arms"></div>
+    <div class="f"><label class="lbl">Arms</label><input class="field prose" data-f="arms"></div>
   </div>
-  <div class="f"><label class="lbl">Description <span class="count" data-count></span></label><textarea class="field" data-f="description" rows="4"></textarea></div>
-  <div class="f"><label class="lbl">Notes</label><textarea class="field" data-f="notes" rows="3"></textarea></div>`;
+  <div class="f"><label class="lbl">Description <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
+  <div class="f"><label class="lbl">Notes</label><textarea class="field prose" data-f="notes"></textarea></div>`;
 
 export class CharacterWindow extends Window {
   /** props: id, name, menus (win => spec), thumbURL(id) */
@@ -223,8 +224,10 @@ export class CharacterWindow extends Window {
     const c = this.char;
     const roles = [c.avatar_image_id === im.id && "avatar", c.card_image_id === im.id && "card"].filter(Boolean).join(" · ");
     const from = im.source_image_id ? `from #${im.source_image_id}` : "";
+    // the thumbnail fills its 3:2 box; whichever edge is longer is cut equally on both sides, and chevrons say so
+    const cut = im.width / im.height > TILE_RATIO + 0.01 ? " cut-x" : im.width / im.height < TILE_RATIO - 0.01 ? " cut-y" : "";
     return h("figure", { className: `tile ${im.status}${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-      h("div", { className: "pic" }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+      h("div", { className: "pic" + cut }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
       h("figcaption", {},
         h("div", { className: "l1" }, h("b", { text: "#" + im.id }), h("span", { text: `${im.width}×${im.height}` }), h("span", { className: "role", text: roles })),
         h("div", { className: "l2", text: [from, im.caption].filter(Boolean).join(" · ") })));
