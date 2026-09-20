@@ -111,8 +111,9 @@ Never choose by file name or caption alone — LOOK. Run
 keeps most of a character's stills on that subpage, the main page has
 only a handful — and `python3 wiki.py sheet "<Page>" sheet2.png` for
 the rest (a numbered contact sheet, largest first, junk filtered; add
-`--only <name>` on a busy page), then read the sheets. Fandom serves
-its "png" URLs as WebP; the server stores and crops WebP fine. Also check
+`--only <name>` on a busy page), then read the sheets. Fandom's plain
+file URLs answer with a lossy WebP; `roster.py fetch` asks for
+`?format=original` itself, so what lands is the true PNG or JPEG. Also check
 the infobox portrait (`|image =` in the wikitext) and `wiki.py images
 --all` for files the filter dropped that are still worth it (a
 character design sheet at 700 px is fine; a 1999 still is not).

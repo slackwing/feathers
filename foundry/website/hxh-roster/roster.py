@@ -136,6 +136,9 @@ def upload_bytes(c, char_id, data, typ="raw", source_image=None, url="", caption
 
 
 def http_get(url):
+    # Fandom's plain file URLs answer with a lossy WebP; ?format=original is the true file (found on Buhara, 2026-09-20)
+    if "static.wikia.nocookie.net" in url and "?" not in url:
+        url += "?format=original"
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) " + UA})
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
