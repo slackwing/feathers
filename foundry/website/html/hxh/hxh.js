@@ -3075,6 +3075,7 @@ var HxH = (() => {
   var SPINE = 50;
   var TASKBAR = 45;
   var TABS = 46;
+  var DESIGN_PW = 514;
   function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
     const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
     const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
@@ -3224,6 +3225,7 @@ var HxH = (() => {
       el.style.setProperty("--pw", l.pw + "px");
       el.style.setProperty("--cardw", l.cw + "px");
       el.style.setProperty("--cardh", l.ch + "px");
+      el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1e3) / 1e3));
       el.style.zoom = String(l.zoom);
       for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };

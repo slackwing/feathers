@@ -93,6 +93,7 @@ export const CARD_W = 150;                 // a card's width in book pixels
 export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
 export const FILL = 0.85;                   // of the desktop above the taskbar
 export const GAP = 12, PAD = 20, PAGENO = 30, SPINE = 50, TASKBAR = 45, TABS = 46;
+export const DESIGN_PW = 514;               // the page width the panel's controls were drawn for (binder.css --u)
 export function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
   const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
   const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
@@ -222,6 +223,7 @@ export class BinderApp extends App {
     el.style.setProperty("--pw", l.pw + "px");
     el.style.setProperty("--cardw", l.cw + "px");
     el.style.setProperty("--cardh", l.ch + "px");
+    el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1000) / 1000));   // the panel's controls scale with the page
     el.style.zoom = String(l.zoom);
     for (const c of this.cards.values()) c.fit();
     return { x: l.x, y: l.y };

@@ -1619,8 +1619,8 @@ body.stacked .taskbar .task {
   gap: 18px;
 }
 .screen .idle .emblem {
-  width: 188px;
-  height: 188px;
+  width: calc(150px * var(--u, 1));
+  height: calc(150px * var(--u, 1));
   box-shadow: none;
   border-color: var(--scr);
 }
@@ -1665,7 +1665,7 @@ body.stacked .taskbar .task {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: auto 1fr;
-  gap: 15px;
+  gap: calc(15px * var(--u, 1));
   align-items: center;
   justify-items: center;
 }
@@ -1673,12 +1673,12 @@ body.stacked .taskbar .task {
   grid-column: 1;
   grid-row: 1;
   display: flex;
-  gap: 12px;
+  gap: calc(10px * var(--u, 1));
   justify-self: start;
 }
 .key {
-  width: 72px;
-  height: 32px;
+  width: calc(64px * var(--u, 1));
+  height: calc(30px * var(--u, 1));
   border-radius: 3px;
   background: linear-gradient(var(--mint-hi), var(--mint) 40%);
   color: var(--ink);
@@ -1700,8 +1700,8 @@ body.stacked .taskbar .task {
   grid-row: 2;
   justify-self: start;
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: calc(128px * var(--u, 1));
+  height: calc(128px * var(--u, 1));
   border-radius: 50%;
   background:
     radial-gradient(
@@ -1729,8 +1729,8 @@ body.stacked .taskbar .task {
 .pad {
   grid-column: 2;
   grid-row: 1 / span 2;
-  width: 150px;
-  height: 188px;
+  width: calc(128px * var(--u, 1));
+  height: calc(160px * var(--u, 1));
   background: var(--scr);
   border: var(--px) solid var(--ink);
   border-radius: 3px;
@@ -1758,15 +1758,15 @@ body.stacked .taskbar .task {
 .dpad {
   grid-column: 3;
   grid-row: 1 / span 2;
-  justify-self: end;
+  justify-self: center;
   position: relative;
-  width: 162px;
-  height: 162px;
+  width: calc(140px * var(--u, 1));
+  height: calc(140px * var(--u, 1));
 }
 .dpad button {
   position: absolute;
-  width: 48px;
-  height: 48px;
+  width: 30%;
+  height: 30%;
   padding: 0;
   border: 0;
   cursor: pointer;
@@ -1780,31 +1780,31 @@ body.stacked .taskbar .task {
   transform: translate(1px, 1px);
 }
 .dpad [data-dir=up] {
-  left: 57px;
+  left: 35%;
   top: 0;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 .dpad [data-dir=down] {
-  left: 57px;
-  top: 114px;
+  left: 35%;
+  top: 70%;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 .dpad [data-dir=left] {
   left: 0;
-  top: 57px;
+  top: 35%;
   clip-path: polygon(100% 0, 100% 100%, 0 50%);
 }
 .dpad [data-dir=right] {
-  left: 114px;
-  top: 57px;
+  left: 70%;
+  top: 35%;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 .dpad .c {
   position: absolute;
-  left: 55px;
-  top: 55px;
-  width: 52px;
-  height: 52px;
+  left: 34%;
+  top: 34%;
+  width: 32%;
+  height: 32%;
   border-radius: 50%;
   background:
     radial-gradient(

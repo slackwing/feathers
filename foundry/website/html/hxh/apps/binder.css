@@ -177,7 +177,7 @@
 .screen::-webkit-scrollbar-track { background: var(--scr); }
 .screen::-webkit-scrollbar-thumb { background: var(--teal-3); border: 0; box-shadow: none; }
 .screen .idle { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; }
-.screen .idle .emblem { width: 188px; height: 188px; box-shadow: none; border-color: var(--scr); }
+.screen .idle .emblem { width: calc(150px * var(--u, 1)); height: calc(150px * var(--u, 1)); box-shadow: none; border-color: var(--scr); }
 .screen .idle .ja { color: var(--scr-dim); letter-spacing: .2em; }
 .screen .top { font: 22px/1.4 var(--font-dot); color: var(--paper-hi); text-shadow: 0 0 8px rgba(223,243,255,.6); }
 .screen .name { font: 15px/1.6 var(--font-px); color: var(--paper-hi); margin-bottom: 8px; }
@@ -187,10 +187,12 @@
 .screen .status { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--teal-3); color: var(--scr-green); }
 .screen .cur::after { content: "█"; animation: blink .8s steps(2) infinite; color: var(--scr-green); }
 
-.controls { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: 15px; align-items: center; justify-items: center; }
-.keys { grid-column: 1; grid-row: 1; display: flex; gap: 12px; justify-self: start; }
+/* the controls are sized from the page width: --u is 1 at the design page (514 book px, apps/binder.js sets it) —
+   dial 128 + pad 128 + D-pad 140 + two 15 gaps fit the panel's 464 inner pixels with room to spare */
+.controls { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: calc(15px * var(--u, 1)); align-items: center; justify-items: center; }
+.keys { grid-column: 1; grid-row: 1; display: flex; gap: calc(10px * var(--u, 1)); justify-self: start; }
 .key {
-  width: 72px; height: 32px; border-radius: 3px;
+  width: calc(64px * var(--u, 1)); height: calc(30px * var(--u, 1)); border-radius: 3px;
   background: linear-gradient(var(--mint-hi), var(--mint) 40%); color: var(--ink);
   border: var(--px) solid var(--ink); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--mint-2), 2px 2px 0 var(--teal-3);
   font: 10px/1 var(--font-px); cursor: pointer; padding-top: 2px;
@@ -198,7 +200,7 @@
 .key:active { box-shadow: inset 1px 1px 0 var(--mint-2); transform: translate(1px, 1px); }
 .dial {
   grid-column: 1; grid-row: 2; justify-self: start; position: relative;
-  width: 150px; height: 150px; border-radius: 50%;
+  width: calc(128px * var(--u, 1)); height: calc(128px * var(--u, 1)); border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #2a4468, var(--navy-2) 60%);
   border: var(--px) solid var(--ink);
   box-shadow: inset 0 0 0 6px var(--navy), inset 0 0 0 9px var(--ink), inset 0 0 0 11px var(--navy-hi), 2px 2px 0 var(--teal-3);
@@ -206,7 +208,7 @@
 .dial::after { content: ""; position: absolute; left: 50%; top: 15px; width: 5px; height: 12px; margin-left: -2px; background: var(--gold); border: 1px solid var(--ink); }
 .pad {
   grid-column: 2; grid-row: 1 / span 2;
-  width: 150px; height: 188px; background: var(--scr); border: var(--px) solid var(--ink); border-radius: 3px;
+  width: calc(128px * var(--u, 1)); height: calc(160px * var(--u, 1)); background: var(--scr); border: var(--px) solid var(--ink); border-radius: 3px;
   box-shadow: inset 0 0 0 var(--px) var(--teal-3), inset 0 0 0 5px #0b1420, 2px 2px 0 var(--teal-3);
   background-image:
     linear-gradient(#cfe6ef, #cfe6ef), linear-gradient(#cfe6ef, #cfe6ef),
@@ -214,22 +216,22 @@
   background-repeat: no-repeat; background-size: 2px 20px, 2px 20px, 20px 2px, 20px 2px;
   background-position: 50% 12px, 50% calc(100% - 12px), 12px 50%, calc(100% - 12px) 50%;
 }
-.dpad {
-  grid-column: 3; grid-row: 1 / span 2; justify-self: end;
-  position: relative; width: 162px; height: 162px;
+.dpad {   /* arrows and hub placed as fractions of the box, so the box alone sets the size */
+  grid-column: 3; grid-row: 1 / span 2; justify-self: center;
+  position: relative; width: calc(140px * var(--u, 1)); height: calc(140px * var(--u, 1));
 }
 .dpad button {
-  position: absolute; width: 48px; height: 48px; padding: 0; border: 0; cursor: pointer;
+  position: absolute; width: 30%; height: 30%; padding: 0; border: 0; cursor: pointer;
   background: linear-gradient(var(--blood-hot), var(--blood) 55%); filter: drop-shadow(2px 2px 0 var(--ink));
 }
 .dpad button:hover { background: var(--blood-hot); }
 .dpad button:active { transform: translate(1px, 1px); }
-.dpad [data-dir="up"]    { left: 57px; top: 0;     clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-.dpad [data-dir="down"]  { left: 57px; top: 114px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
-.dpad [data-dir="left"]  { left: 0;    top: 57px;  clip-path: polygon(100% 0, 100% 100%, 0 50%); }
-.dpad [data-dir="right"] { left: 114px; top: 57px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.dpad [data-dir="up"]    { left: 35%; top: 0;    clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.dpad [data-dir="down"]  { left: 35%; top: 70%;  clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.dpad [data-dir="left"]  { left: 0;   top: 35%;  clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+.dpad [data-dir="right"] { left: 70%; top: 35%;  clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .dpad .c {
-  position: absolute; left: 55px; top: 55px; width: 52px; height: 52px; border-radius: 50%;
+  position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, var(--blood-hot), var(--blood) 60%);
   box-shadow: 0 0 0 var(--px) var(--ink), 2px 2px 0 var(--ink);
 }
