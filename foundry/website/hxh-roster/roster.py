@@ -172,6 +172,38 @@ def pixelate(data, size=96, colors=32):
     return buf.getvalue()
 
 
+def refetch(c, char_id, dry_run=False):
+    """Swap raw pictures that were saved as Fandom's lossy WebP for the
+    original file (the first two batches ran before http_get asked for
+    ?format=original). Caption and source URL carry over; a WebP that an
+    avatar, card or derived picture still points at is kept, so lineage
+    never breaks — those are listed for a human to clean up."""
+    ch = c.db("GET", f"/chars/{char_id}")
+    images = ch["images"]
+    referenced = {im["source_image_id"] for im in images if im.get("source_image_id")}
+    referenced |= {ch.get("avatar_image_id"), ch.get("card_image_id")}
+    swapped, kept, same = [], [], []
+    for im in images:
+        url = im.get("source_url") or ""
+        if im["type"] != "raw" or im["mime"] != "image/webp" or "static.wikia.nocookie.net" not in url:
+            continue
+        data = http_get(url)
+        if sniff(data) == "image/webp":
+            same.append(im["id"])
+            continue
+        if dry_run:
+            print(f"#{im['id']} {im['width']}x{im['height']} webp → {sniff(data)} {len(data)} bytes", file=sys.stderr)
+            continue
+        res = upload_bytes(c, char_id, data, "raw", None, url, im.get("caption") or "")
+        new = res["image"]
+        if im["id"] in referenced:
+            kept.append((im["id"], new["id"]))
+        else:
+            c.db("DELETE", f"/images/{im['id']}")
+            swapped.append((im["id"], new["id"]))
+    return {"swapped": swapped, "kept_with_original_added": kept, "already_original": same}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -188,6 +220,7 @@ def main():
     p = sub.add_parser("fetch"); p.add_argument("id", type=int); p.add_argument("url"); p.add_argument("--caption", default="")
     p = sub.add_parser("download"); p.add_argument("image", type=int); p.add_argument("out")
     p = sub.add_parser("image"); p.add_argument("image", type=int)
+    p = sub.add_parser("refetch"); p.add_argument("id", type=int); p.add_argument("--dry-run", action="store_true")
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
     p = sub.add_parser("crop"); p.add_argument("image", type=int); [p.add_argument(k, type=int) for k in ("x", "y", "w", "h")]
@@ -225,6 +258,8 @@ def main():
         open(a.out, "wb").write(data); print(f"{len(data)} bytes → {a.out}", file=sys.stderr)
     elif a.cmd == "image":
         out(c.db("GET", f"/images/{a.image}/meta"))
+    elif a.cmd == "refetch":
+        out(refetch(c, a.id, a.dry_run))
     elif a.cmd in ("reject", "keep"):
         out(c.db("PATCH", f"/images/{a.image}", {"status": "rejected" if a.cmd == "reject" else "kept"}))
     elif a.cmd == "crop":

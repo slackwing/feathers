@@ -188,3 +188,12 @@ commit both. Keep a dated line in the log below.
   WebP, leads comfortably reach 10–11 clean pictures, and a rank-A
   villain like Chrollo gets only the arcs he is on screen in (mentions
   and manga-only cameos do not count).
+- 2026-09-20 — batches two and three (Satotz, Tonpa, Menchi, Buhara,
+  Lippo; Hanzo, Pokkle, Ponzu, Bodoro, Johness): Hunter-Exam
+  supporting cast yields 5–9 clean stills, so "fewer than six, said
+  so in notes" is normal there. The WebP problem was worse than
+  quality: the server decoded WebP at the wrong luma range, so every
+  thumb and crop made from one was washed out (fixed server-side the
+  same day). `roster.py refetch <id>` swaps a character's WebP raws
+  for Fandom's originals, keeping captions and any raw a crop or slot
+  still points at; the first ten characters were refetched that way.
