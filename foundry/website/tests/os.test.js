@@ -43,6 +43,12 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(os.startMenu && os.taskbar.startButton);
   assert.ok(os.toast && os.boot && os.backdrop);
   assert.equal(document.querySelector("canvas.wall"), os.wallpaper.el);
+  assert.equal(os.wallpaper.el.nextSibling, os.blimp.el);   // the blimp flies above the wallpaper, below everything else
+  assert.equal(os.wallpaper.props.sky(), "original");
+  const repaints = []; os.bus.on("sky", p => repaints.push(p.name));
+  os.applySky("gradual");
+  assert.equal(os.wallpaper.props.sky(), "gradual");   // the wallpaper asks the OS which sky to paint, on every `sky` event
+  assert.deepEqual(repaints, ["gradual"]);
   assert.equal(document.documentElement.style.getPropertyValue("--zoom"), "1");   // 1366 wide → zoom 1
   assert.equal(document.querySelector(".os-badge"), null);
   assert.equal(os.desktop.iconBox.hidden, false);

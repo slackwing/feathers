@@ -25,8 +25,10 @@ var HxH = (() => {
     $$: () => $$,
     App: () => App,
     AppRegistry: () => AppRegistry,
+    BLIMP: () => BLIMP,
     Backdrop: () => Backdrop,
     Badge: () => Badge,
+    Blimp: () => Blimp,
     Boot: () => Boot,
     CHROME: () => CHROME,
     CRT: () => CRT,
@@ -40,6 +42,7 @@ var HxH = (() => {
     DesktopIcon: () => DesktopIcon,
     Env: () => Env,
     EventBus: () => EventBus,
+    FLYER_TEXT: () => FLYER_TEXT,
     ICONS: () => ICONS,
     LogonDialog: () => LogonDialog,
     Menu: () => Menu,
@@ -76,6 +79,7 @@ var HxH = (() => {
     geometry: () => geometry,
     h: () => h,
     icon: () => icon,
+    os: () => os,
     renderItems: () => renderItems,
     sprite: () => sprite,
     start: () => start,
@@ -775,16 +779,18 @@ var HxH = (() => {
       "kkkkkkkkkk......"
     ]
   };
-  function icon(name, size = 16, pal = null) {
-    const rows = ICONS[name] || ICONS.x;
+  function gridSVG(rows, k = 1, pal = null, cls = "px") {
     const h2 = rows.length, w = rows[0].length;
-    const k = Math.max(1, Math.floor(size / w));
     const colors = pal ? { ...PAL, ...pal } : PAL;
     let rects = "";
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
     }));
-    return `<svg class="px" viewBox="0 0 ${w} ${h2}" width="${w * k}" height="${h2 * k}" aria-hidden="true">${rects}</svg>`;
+    return `<svg class="${cls}" viewBox="0 0 ${w} ${h2}" width="${w * k}" height="${h2 * k}" aria-hidden="true">${rects}</svg>`;
+  }
+  function icon(name, size = 16, pal = null) {
+    const rows = ICONS[name] || ICONS.x;
+    return gridSVG(rows, Math.max(1, Math.floor(size / rows[0].length)), pal);
   }
   function hasIconPair(name) {
     const rows = ICONS[name];
@@ -1588,8 +1594,8 @@ var HxH = (() => {
     // listed in Start / View menus
     static order = 100;
     // sort key for icons and menus
-    constructor(os, options = {}) {
-      this.os = os;
+    constructor(os2, options = {}) {
+      this.os = os2;
       this.options = options;
     }
     get id() {
@@ -1619,8 +1625,8 @@ var HxH = (() => {
     }
   };
   var AppRegistry = class {
-    constructor(os) {
-      this.os = os;
+    constructor(os2) {
+      this.os = os2;
       this.apps = /* @__PURE__ */ new Map();
       this.seq = 0;
     }
@@ -2385,6 +2391,66 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/blimp.js
+  var BLIMP = [
+    "..........kkkkkkkkkkkkkkkkkkkkkkk...........",
+    "......kkkkwwwwwwwwwwwwwwwwwwwwwwwkkkk.......",
+    "kk..kkwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwkk.....",
+    "kwkkwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwkk...",
+    "kwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwk..",
+    "kwwwwwwwwrrrrrrrrrrrrrrrrrrrrrrrrrrrrwwwwwk.",
+    "kwwwwwwwwrrrrrrrrrrrrrrrrrrrrrrrrrrrrwwwwwwk",
+    "kwdddddddddddddddddddddddddddddddddddddddwk.",
+    "kwkkdddddddddddddddddddddddddddddddddddkk...",
+    "kk..kkdddddddddddddddddddddddddddddddkk.....",
+    "......kkkkdddddddddddddddddddddddkkkk.......",
+    "..........kkkkkkkkkkkkkkkkkkkkkkk...........",
+    "...................kkkkkkkkkkkk.............",
+    "...................knbnbnbnbnbk.............",
+    "...................kkkkkkkkkkkk............."
+  ];
+  var FLYER_TEXT = "HUNTER \xD7 HALLOWEEN";
+  var Blimp = class extends Component {
+    /** props: reduced, random, minWait / maxWait (ms), duration (ms), setTimeout/clearTimeout (tests) */
+    render() {
+      return h("div", { className: "blimps", id: "blimps" });
+    }
+    onMount() {
+      this.schedule();
+    }
+    onUnmount() {
+      this.props.clearTimeout?.(this.timer) ?? clearTimeout(this.timer);
+    }
+    schedule() {
+      if (this.props.reduced) return;
+      const { minWait = 4 * 6e4, maxWait = 9 * 6e4, random = Math.random } = this.props;
+      const st = this.props.setTimeout || ((f, ms) => setTimeout(f, ms));
+      const wait = minWait + random() * (maxWait - minWait);
+      this.timer = st(() => {
+        this.launch();
+        this.schedule();
+      }, wait);
+      this.timer?.unref?.();
+      return wait;
+    }
+    /** Fly one across now. Returns the element. */
+    launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
+      const { random = Math.random, duration = 9e4 } = this.props;
+      const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east") });
+      el.style.top = (top ?? 6 + random() * 18) + "%";
+      el.style.animationDuration = duration + "ms";
+      el.append(
+        h("span", { className: "ship", html: gridSVG(BLIMP, 3) }),
+        h("span", { className: "rope" }),
+        h("span", { className: "flyer", text: FLYER_TEXT })
+      );
+      el.addEventListener("animationend", () => el.remove());
+      this.el.append(el);
+      this.flights = (this.flights || 0) + 1;
+      return el;
+    }
+  };
+
   // html/hxh/os/wallpaper.js
   var ISLAND_W = WHALE.artW;
   var ISLAND_CENTER = WHALE.center;
@@ -2393,6 +2459,62 @@ var HxH = (() => {
     const { W, H, scale, zoom } = whale(vw, vh);
     const HZ = Math.round(H * HORIZON);
     return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2, scale, zoom };
+  }
+  var SKY_KEYS = ["#2456a4", "#2f6cc0", "#3f86d6", "#5aa2e6", "#86c0f0"];
+  var SKY_GAMMA = 1.6;
+  var SKY_VARIANTS = ["original", "gradual", "noisy-gradual", "hypergradient", "gradient", "noisy-gradient"];
+  var hex2 = (n) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
+  var rgb = (hx) => [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)];
+  function skyColor(t) {
+    t = Math.max(0, Math.min(1, t));
+    const f = t * (SKY_KEYS.length - 1), i = Math.min(SKY_KEYS.length - 2, Math.floor(f)), u = f - i;
+    const a = rgb(SKY_KEYS[i]), b = rgb(SKY_KEYS[i + 1]);
+    return "#" + hex2(a[0] + (b[0] - a[0]) * u) + hex2(a[1] + (b[1] - a[1]) * u) + hex2(a[2] + (b[2] - a[2]) * u);
+  }
+  var curve = (y, HZ) => Math.pow(y / HZ, SKY_GAMMA);
+  function clumpNoise(x, y, sx = 5, sy = 3) {
+    const gx = x / sx, gy = y / sy, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = smooth(gx - x0), fy = smooth(gy - y0);
+    const n = (a, b) => hash(a + 1013, b + 7);
+    const top = n(x0, y0) + (n(x0 + 1, y0) - n(x0, y0)) * fx, bot = n(x0, y0 + 1) + (n(x0 + 1, y0 + 1) - n(x0, y0 + 1)) * fx;
+    return top + (bot - top) * fy;
+  }
+  var GRADUAL_BANDS = 8;
+  function skyPixel(variant, x, y, HZ) {
+    switch (variant) {
+      case "gradual": {
+        const i = Math.min(GRADUAL_BANDS - 1, Math.floor(curve(y, HZ) * GRADUAL_BANDS));
+        return skyColor(i / (GRADUAL_BANDS - 1));
+      }
+      case "noisy-gradual": {
+        const f = curve(y, HZ) * GRADUAL_BANDS, i = Math.min(GRADUAL_BANDS - 1, Math.floor(f)), frac = f - i;
+        const clump = Math.pow(clumpNoise(x, y), 1.6);
+        let j = i;
+        if (frac > 0.5 && i < GRADUAL_BANDS - 1 && hash(x, y) < (frac - 0.5) * 1.3 * clump) j = i + 1;
+        else if (frac < 0.5 && i > 0 && hash(x + 77, y) < (0.5 - frac) * 1.3 * clump) j = i - 1;
+        return skyColor(j / (GRADUAL_BANDS - 1));
+      }
+      case "hypergradient":
+        return null;
+      case "gradient":
+        return skyColor(curve(y, HZ));
+      case "noisy-gradient": {
+        const jitter = (clumpNoise(x, y, 4, 3) - 0.5) * 0.1 + (hash(x, y + 999) - 0.5) * 0.03;
+        return skyColor(curve(y, HZ) + jitter);
+      }
+      default: {
+        const f = y / HZ * SKY_KEYS.length, i = Math.min(SKY_KEYS.length - 1, Math.floor(f)), frac = f - i;
+        const dither = frac > 0.8 && i < SKY_KEYS.length - 1 && (x + y) % 2 === 0;
+        return SKY_KEYS[dither ? i + 1 : i];
+      }
+    }
+  }
+  function skyGradientCSS(HZ, H, stops = 12) {
+    const parts = [];
+    for (let k = 0; k <= stops; k++) {
+      const u = k / stops;
+      parts.push(`${skyColor(Math.pow(u, SKY_GAMMA))} ${(u * HZ / H * 100).toFixed(2)}%`);
+    }
+    return `linear-gradient(to bottom, ${parts.join(", ")})`;
   }
   var hash = (x, y = 0) => {
     let h2 = x * 374761393 + y * 668265263 ^ 1540483477;
@@ -2490,7 +2612,7 @@ var HxH = (() => {
     }
     return out;
   }
-  function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = document, interval = 125, random = Math.random } = {}) {
+  function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = document, interval = 125, random = Math.random, sky: variant = "original" } = {}) {
     if (!canvas) return null;
     const g = geometry(vw, vh);
     const { W, H, HZ, OX } = g;
@@ -2509,14 +2631,12 @@ var HxH = (() => {
       gg.fillRect(x, y, 1, 1);
     };
     const sky = layer(), sg = sky.getContext("2d");
-    const SKY = ["#2456a4", "#2f6cc0", "#3f86d6", "#5aa2e6", "#86c0f0"];
-    for (let y = 0; y < HZ; y++) {
-      const f = y / HZ * SKY.length, i = Math.min(SKY.length - 1, Math.floor(f)), frac = f - i;
-      for (let x = 0; x < W; x++) {
-        const dither = frac > 0.8 && i < SKY.length - 1 && (x + y) % 2 === 0;
-        px(sg, x, y, SKY[dither ? i + 1 : i]);
-      }
+    if (!SKY_VARIANTS.includes(variant)) variant = "original";
+    for (let y = 0; y < HZ; y++) for (let x = 0; x < W; x++) {
+      const c = skyPixel(variant, x, y, HZ);
+      if (c) px(sg, x, y, c);
     }
+    if (canvas.style) canvas.style.background = variant === "hypergradient" ? skyGradientCSS(HZ, H) : "";
     const sea = layer(), eg = sea.getContext("2d");
     const SEA = ["#2c73b5", "#245f9c", "#1c4b80", "#163b66"];
     const seaBand = (y) => y < HZ + 8 ? 0 : y < HZ + 22 ? 1 : y < HZ + 44 ? 2 : 3;
@@ -2637,23 +2757,26 @@ var HxH = (() => {
     timer?.unref?.();
     return { stop() {
       clearInterval(timer);
-    }, frame, geometry: g, get tick() {
+    }, frame, geometry: g, sky: variant, get tick() {
       return tick;
     } };
   }
   var Wallpaper = class extends Component {
-    /** props: env, bus */
+    /** props: env, bus, sky: () => variant (Settings › Display › Sky; repaints on the bus's `sky`) */
     render() {
       return h("canvas", { className: "wall", width: 320, height: 180 });
     }
     onMount() {
       this.paint();
-      if (this.props.bus) this.listen(this.props.bus, "resize", () => this.paint());
+      if (this.props.bus) {
+        this.listen(this.props.bus, "resize", () => this.paint());
+        this.listen(this.props.bus, "sky", () => this.paint());
+      }
     }
     paint() {
       this.anim?.stop();
       const w = this.props.env?.win || globalThis.window;
-      this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced });
+      this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "original" });
     }
     onUnmount() {
       this.anim?.stop();
@@ -2772,14 +2895,17 @@ var HxH = (() => {
     get sky() {
       return this.settings.getStr(SKY_KEY, SKY_DEFAULT);
     }
+    /** Choose (persist) and apply; unknown names fall back to the default. */
     applyTheme(name = this.theme) {
       if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
+      this.settings.setStr(THEME_KEY, name);
       this.doc.documentElement.dataset.theme = name;
       this.bus.emit("theme", { name });
       return name;
     }
     applySky(name = this.sky) {
       if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
+      this.settings.setStr(SKY_KEY, name);
       this.bus.emit("sky", { name });
       return name;
     }
@@ -2846,7 +2972,8 @@ var HxH = (() => {
     startWallpaper() {
       if (this.wallpaper) return;
       const body = this.doc.body;
-      this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus }).mount(body, { before: body.firstChild });
+      this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus, sky: () => this.sky }).mount(body, { before: body.firstChild });
+      this.blimp = new Blimp({ reduced: !!this.env.reduced }).mount(body, { before: this.wallpaper.el.nextSibling });
     }
     /** The logon dialog, alone on the bare desktop. Resolves with the account. */
     logon() {
@@ -2937,16 +3064,16 @@ var HxH = (() => {
     static icon = "envelope";
     static order = 10;
     menus(win) {
-      const os = this.os;
-      return os.appMenus(win, {
-        file: () => [{ label: "Log out", onclick: () => os.logout() }],
-        view: () => os.appItems("apps", { except: this.id, long: true, icons: false }),
-        settings: () => os.settingsItems({ icons: false })
+      const os2 = this.os;
+      return os2.appMenus(win, {
+        file: () => [{ label: "Log out", onclick: () => os2.logout() }],
+        view: () => os2.appItems("apps", { except: this.id, long: true, icons: false }),
+        settings: () => os2.settingsItems({ icons: false })
       });
     }
     window() {
       if (this.win) return this.win;
-      const os = this.os;
+      const os2 = this.os;
       this.win = new Window({
         id: "win-summons",
         title: "Hunter \xD7 Halloween",
@@ -2956,13 +3083,13 @@ var HxH = (() => {
         menus: (w) => this.menus(w),
         content: CONTENT
       });
-      os.wm.add(this.win);
+      os2.wm.add(this.win);
       this.vn = this.win.$("#vn");
       this.text = this.win.$("#vn-text");
       this.vn.addEventListener("click", () => this.notice?.skip());
       this.win.body.addEventListener("click", (e) => {
         const act = e.target.closest("[data-act]")?.dataset.act;
-        if (act && os.registry.has(act)) os.launch(act);
+        if (act && os2.registry.has(act)) os2.launch(act);
       });
       return this.win;
     }
@@ -2980,16 +3107,16 @@ var HxH = (() => {
       return this.notice;
     }
     async launch({ autostart = false } = {}) {
-      const os = this.os, win = this.window();
-      if (!autostart) return os.wm.open(win.id, win.state.placed ? null : this.position());
+      const os2 = this.os, win = this.window();
+      if (!autostart) return os2.wm.open(win.id, win.state.placed ? null : this.position());
       try {
-        await os.doc.fonts?.ready;
+        await os2.doc.fonts?.ready;
       } catch {
       }
       this.prepNotice();
-      if (!os.env.floating()) os.win.scrollTo?.(0, 0);
-      await os.env.wait(420);
-      await os.wm.open(win.id, this.position(), { scroll: false, jank: true });
+      if (!os2.env.floating()) os2.win.scrollTo?.(0, 0);
+      await os2.env.wait(420);
+      await os2.wm.open(win.id, this.position(), { scroll: false, jank: true });
       this.typeNotice();
       return win;
     }
@@ -3299,8 +3426,8 @@ var HxH = (() => {
     static name = "Binder";
     static icon = "book";
     static order = 20;
-    constructor(os, options = {}) {
-      super(os, options);
+    constructor(os2, options = {}) {
+      super(os2, options);
       this.pages = [];
       this.page = 0;
       this.sel = null;
@@ -3312,7 +3439,7 @@ var HxH = (() => {
     /** The chromeless window with the book inside. Built once. */
     window() {
       if (this.win) return this.win;
-      const os = this.os;
+      const os2 = this.os;
       this.win = new Window({
         id: "win-binder",
         title: "Binder",
@@ -3323,7 +3450,7 @@ var HxH = (() => {
         cls: "binder",
         content: BOOK
       });
-      os.wm.add(this.win);
+      os2.wm.add(this.win);
       const el = this.win.el;
       this.book = el.querySelector(".book");
       this.$ = (sel) => el.querySelector(sel);
@@ -3345,12 +3472,12 @@ var HxH = (() => {
         if (dir === "right") this.showPage(this.page + 1);
         if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
       });
-      os.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
-      os.bus.on("resize", () => {
+      os2.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
+      os2.bus.on("resize", () => {
         if (this.win.state.open) {
           const at = this.layout();
-          if (at) os.wm.place(this.win.id, at);
-          os.wm.fit();
+          if (at) os2.wm.place(this.win.id, at);
+          os2.wm.fit();
         }
       });
       this.load();
@@ -3372,9 +3499,9 @@ var HxH = (() => {
     }
     /** Size the book to the viewport and return where to put the window. */
     layout() {
-      const os = this.os;
-      if (!this.win || !os.env.floating()) return null;
-      const l = binderLayout(os.env.width, os.env.height);
+      const os2 = this.os;
+      if (!this.win || !os2.env.floating()) return null;
+      const l = binderLayout(os2.env.width, os2.env.height);
       const el = this.win.el;
       el.style.setProperty("--bw", l.bw + "px");
       el.style.setProperty("--bh", l.bh + "px");
@@ -3547,14 +3674,14 @@ var HxH = (() => {
       this.select(cards[n]);
     }
     claimSel() {
-      const os = this.os;
+      const os2 = this.os;
       if (!this.sel) {
-        os.toast.show("Pick a card first.");
+        os2.toast.show("Pick a card first.");
         return;
       }
       const c = this.sel;
-      os.toast.show(`${c.first || c.name} is a fine choice \u2014 registration opens soon.`);
-      if (os.registry.has("register")) os.launch("register");
+      os2.toast.show(`${c.first || c.name} is a fine choice \u2014 registration opens soon.`);
+      if (os2.registry.has("register")) os2.launch("register");
     }
   };
 
@@ -3587,10 +3714,10 @@ var HxH = (() => {
     }
     /** Beside the summons when there is room (145 + 750 + 30 + 450 + 30), else under it. */
     position() {
-      const os = this.os;
-      if (!os.env.floating()) return null;
-      const vw = os.desktop.el.clientWidth || os.env.width;
-      const s = os.wm.get("win-summons")?.el;
+      const os2 = this.os;
+      if (!os2.env.floating()) return null;
+      const vw = os2.desktop.el.clientWidth || os2.env.width;
+      const s = os2.wm.get("win-summons")?.el;
       if (vw >= 145 + 750 + 30 + 450 + 30 || !s) return { x: 925, y: 24 };
       return { x: 200, y: s.offsetTop + s.offsetHeight + 12 };
     }
@@ -4611,17 +4738,17 @@ var HxH = (() => {
     static longName = "BeetleChat";
     static icon = "beetle";
     static order = 15;
-    constructor(os, options = {}) {
-      super(os, options);
+    constructor(os2, options = {}) {
+      super(os2, options);
       this.contacts = /* @__PURE__ */ new Map();
       this.windows = /* @__PURE__ */ new Map();
       this.loaded = /* @__PURE__ */ new Set();
       this.unread = [];
       this.lastIds = /* @__PURE__ */ new Map();
       this.client = null;
-      this.api = new ChatAPI({ fetch: options.fetch || os.fetch, base: options.base });
+      this.api = new ChatAPI({ fetch: options.fetch || os2.fetch, base: options.base });
       this.hasFocus = options.hasFocus || (() => {
-        const d = os.doc;
+        const d = os2.doc;
         return !!(d?.hasFocus ? d.hasFocus() : true) && d?.visibilityState !== "hidden";
       });
     }
@@ -4667,8 +4794,8 @@ var HxH = (() => {
     /* ---------- connection ---------- */
     connect() {
       if (this.client) return this.client;
-      const os = this.os;
-      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, ...this.options.client || {} });
+      const os2 = this.os;
+      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, ...this.options.client || {} });
       c.on("hello", ({ contacts, unread }) => {
         this.setContacts(contacts);
         this.onUnread(unread || []);
@@ -4678,19 +4805,19 @@ var HxH = (() => {
       c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
       c.on("presence", (p) => this.onPresence(p));
       c.on("state", ({ connected }) => {
-        os.bus.emit("tray:refresh", { id: this.id });
+        os2.bus.emit("tray:refresh", { id: this.id });
         this.contactsWin?.setConnected(connected);
       });
       c.on("reconnect", () => this.resync("reconnect"));
-      this.stopWake = os.bus.on("wake", ({ reason }) => this.onWake(reason));
+      this.stopWake = os2.bus.on("wake", ({ reason }) => this.onWake(reason));
       c.on("error", (e) => {
-        if (e.code === "rate") os.toast.show("Slow down.");
-        else if (e.code === "offline") os.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
+        if (e.code === "rate") os2.toast.show("Slow down.");
+        else if (e.code === "offline") os2.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
       });
-      this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
+      this.stopFocus = os2.bus.on("window:focus", ({ id }) => this.onFocus(id));
       this._onTabFocus = () => this.onTabFocus();
-      os.win?.addEventListener("focus", this._onTabFocus);
-      os.doc?.addEventListener("visibilitychange", this._onTabFocus);
+      os2.win?.addEventListener("focus", this._onTabFocus);
+      os2.doc?.addEventListener("visibilitychange", this._onTabFocus);
       c.connect();
       return c;
     }
@@ -4726,11 +4853,11 @@ var HxH = (() => {
     /* ---------- menus (Andrew's layout, 2026-09-19; no icons — 90s menus had none) ---------- */
     /** BeetleChat's Settings: checkable, remembered per browser. */
     settingsItems() {
-      const os = this.os;
+      const os2 = this.os;
       return [
-        os.settings.item({ key: SETTING_FLASH, label: "Flash on new" }),
-        os.settings.item({ key: SETTING_TRAY, label: "Systray alert", onChange: () => this.syncNewIcon() }),
-        { label: "Sounds", check: () => os.sounds.on, onclick: () => os.sounds.toggle() }
+        os2.settings.item({ key: SETTING_FLASH, label: "Flash on new" }),
+        os2.settings.item({ key: SETTING_TRAY, label: "Systray alert", onChange: () => this.syncNewIcon() }),
+        { label: "Sounds", check: () => os2.sounds.on, onclick: () => os2.sounds.toggle() }
       ];
     }
     get traySetting() {
@@ -4801,18 +4928,18 @@ var HxH = (() => {
       this.syncNewIcon();
     }
     openContacts() {
-      const os = this.os;
+      const os2 = this.os;
       if (!this.contactsWin) {
-        const w = this.contactsWin = new ContactsWindow({ me: os.user, menus: (win) => this.contactsMenus(win) });
-        os.wm.add(w);
+        const w = this.contactsWin = new ContactsWindow({ me: os2.user, menus: (win) => this.contactsMenus(win) });
+        os2.wm.add(w);
         w.on("chat", ({ user }) => this.openChat(user));
         w.on("profile", ({ user }) => user === this.me ? this.editProfile() : this.viewProfile(user));
         w.on("global", () => this.openRoom(ROOM_GLOBAL));
         w.setContacts([...this.contacts.values()]);
         w.setConnected(this.connected);
       }
-      const at = this.contactsWin.state.placed ? null : os.env.floating() ? { x: Math.max(16, os.env.width - 300 - 30), y: 24 } : null;
-      os.wm.open(this.contactsWin.id, at);
+      const at = this.contactsWin.state.placed ? null : os2.env.floating() ? { x: Math.max(16, os2.env.width - 300 - 30), y: 24 } : null;
+      os2.wm.open(this.contactsWin.id, at);
       return this.contactsWin;
     }
     openChat(user) {
@@ -4820,7 +4947,7 @@ var HxH = (() => {
     }
     /** The window for a room, created on demand; focus=false keeps the current window active (an incoming message). */
     openRoom(room, { focus = true } = {}) {
-      const os = this.os;
+      const os2 = this.os;
       let w = this.windows.get(room);
       if (!w) {
         const other = this.otherOf(room);
@@ -4834,7 +4961,7 @@ var HxH = (() => {
           profile: !!other,
           large: room === ROOM_GLOBAL
         });
-        os.wm.add(w);
+        os2.wm.add(w);
         this.windows.set(room, w);
         w.on("send", ({ body }) => this.send(room, body));
         w.on("typing", () => this.client?.typing(room));
@@ -4846,18 +4973,18 @@ var HxH = (() => {
         this.loadHistory(room, w);
       }
       if (w.state.open && !w.state.minimized && !focus) return w;
-      const active = os.wm.activeId;
+      const active = os2.wm.activeId;
       const at = w.state.placed ? null : this.cascade();
-      os.wm.open(w.id, at, { scroll: focus });
-      if (!focus && active && active !== w.id) os.wm.focus(active);
+      os2.wm.open(w.id, at, { scroll: focus });
+      if (!focus && active && active !== w.id) os2.wm.focus(active);
       if (focus) w.focusInput();
       return w;
     }
     cascade() {
-      const os = this.os;
-      if (!os.env.floating()) return null;
+      const os2 = this.os;
+      if (!os2.env.floating()) return null;
       const n = this.windows.size;
-      return { x: Math.max(16, Math.min(os.env.width - 500, 430 + n % 5 * 30)), y: 120 + n % 5 * 30 };
+      return { x: Math.max(16, Math.min(os2.env.width - 500, 430 + n % 5 * 30)), y: 120 + n % 5 * 30 };
     }
     /** The laptop woke, the tab came back or the network returned (OS `wake`):
         the client replaces a dead socket now — its hello and "reconnect" then
@@ -4903,15 +5030,15 @@ var HxH = (() => {
     }
     /* ---------- incoming ---------- */
     onMessage(m) {
-      const os = this.os;
+      const os2 = this.os;
       const w = this.openRoom(m.room, { focus: false });
       w.addMessage(m);
       this.lastIds.set(m.room, Math.max(m.id, this.lastIds.get(m.room) || 0));
       if (m.sender === this.me) return;
-      const seen = os.wm.activeId === w.id && w.state.open && !w.state.minimized && this.hasFocus();
+      const seen = os2.wm.activeId === w.id && w.state.open && !w.state.minimized && this.hasFocus();
       if (seen) this.client?.read(m.room, m.id);
       else this.flag(m.room, w);
-      os.sounds.play("message");
+      os2.sounds.play("message");
     }
     /** An OS window came to the front: if it is a chat and this tab is being looked at, it is read. */
     onFocus(id) {
@@ -4952,13 +5079,13 @@ var HxH = (() => {
     }
     /** The "new message" tray bubble: present while anything is unread (and the setting is on); a click focuses the oldest. */
     syncNewIcon() {
-      const os = this.os;
-      const has = os.taskbar?.tray.has(NEW_TRAY_ID);
+      const os2 = this.os;
+      const has = os2.taskbar?.tray.has(NEW_TRAY_ID);
       const want = this.unread.length && this.traySetting;
       if (want && !has) {
-        os.bus.emit("tray:add", { id: NEW_TRAY_ID, icon: "comment", title: "New message", on: true, onClick: () => this.focusOldestUnread() });
+        os2.bus.emit("tray:add", { id: NEW_TRAY_ID, icon: "comment", title: "New message", on: true, onClick: () => this.focusOldestUnread() });
       } else if (!want && has) {
-        os.bus.emit("tray:remove", { id: NEW_TRAY_ID });
+        os2.bus.emit("tray:remove", { id: NEW_TRAY_ID });
       }
     }
     focusOldestUnread() {
@@ -4967,27 +5094,27 @@ var HxH = (() => {
     }
     /* ---------- about ---------- */
     about() {
-      const os = this.os;
-      let w = os.wm.get("win-chat-about");
+      const os2 = this.os;
+      let w = os2.wm.get("win-chat-about");
       if (!w) {
-        w = new AboutWindow({ sounds: os.sounds });
-        os.wm.add(w);
+        w = new AboutWindow({ sounds: os2.sounds });
+        os2.wm.add(w);
       }
-      os.wm.open(w.id);
+      os2.wm.open(w.id);
       w.startMusic();
       return w;
     }
     /* ---------- profiles ---------- */
     async viewProfile(user) {
-      const os = this.os;
+      const os2 = this.os;
       const id = "win-chat-profile-" + user.replace(/[^a-z0-9]+/gi, "-");
-      let w = os.wm.get(id);
+      let w = os2.wm.get(id);
       if (!w) {
         w = new ProfileWindow({ user, name: this.nameOf(user) });
-        os.wm.add(w);
+        os2.wm.add(w);
       }
       w.setRuns([]);
-      os.wm.open(id);
+      os2.wm.open(id);
       try {
         const { runs } = await this.api.profile(user);
         w.setRuns(runs);
@@ -4996,24 +5123,24 @@ var HxH = (() => {
       return w;
     }
     async editProfile() {
-      const os = this.os;
-      let w = os.wm.get("win-chat-profile-edit");
+      const os2 = this.os;
+      let w = os2.wm.get("win-chat-profile-edit");
       if (!w) {
         w = new ProfileEditor(this.options.editor || {});
-        os.wm.add(w);
+        os2.wm.add(w);
         w.on("cancel", () => w.close());
         w.on("save", async ({ runs }) => {
           try {
             await this.api.saveProfile(runs);
-            os.toast.show("Profile saved.");
+            os2.toast.show("Profile saved.");
             w.close();
           } catch (err) {
-            os.toast.show(String(err.message || err));
+            os2.toast.show(String(err.message || err));
           }
         });
-        w.on("error", ({ error }) => os.toast.show(error));
+        w.on("error", ({ error }) => os2.toast.show(error));
       }
-      os.wm.open(w.id);
+      os2.wm.open(w.id);
       try {
         const { runs } = await this.api.profile(this.me);
         w.setRuns(runs);
@@ -5065,16 +5192,16 @@ var HxH = (() => {
       return this.win;
     }
     async launch() {
-      const os = this.os, win = this.window();
+      const os2 = this.os, win = this.window();
       const machinery = this.options.machinery || (typeof SetPassword !== "undefined" ? SetPassword : null);
-      os.desktop.center(true);
+      os2.desktop.center(true);
       const st = machinery ? await machinery.mount(win.el) : { state: "nocode" };
       this.state = st;
       win.$('[data-pw="enter"]').addEventListener("click", (e) => {
         e.preventDefault();
-        os.go(e.currentTarget.getAttribute("href"));
+        os2.go(e.currentTarget.getAttribute("href"));
       });
-      await os.wm.open(win.id, null, { scroll: false, jank: true });
+      await os2.wm.open(win.id, null, { scroll: false, jank: true });
       if (st.state === "ok") win.$('[data-pw="password"]').focus();
       return win;
     }
@@ -6266,27 +6393,27 @@ var HxH = (() => {
       return true;
     }
     /** Show on the window manager and resolve with the value, or null on cancel / close. */
-    ask(os) {
-      os.wm.add(this);
+    ask(os2) {
+      os2.wm.add(this);
       return new Promise((res) => {
         let done = false;
         const settle = (v) => {
           if (!done) {
             done = true;
             res(v);
-            os.wm.remove(this.id);
+            os2.wm.remove(this.id);
           }
         };
         this.on("ok", (v) => settle(v));
         this.on("cancel", () => settle(null));
         this.on("close", () => settle(null));
-        os.wm.open(this.id, this.centre(os)).then(() => this.$(this.focusSel || ".btn")?.focus());
+        os2.wm.open(this.id, this.centre(os2)).then(() => this.$(this.focusSel || ".btn")?.focus());
       });
     }
-    centre(os) {
-      if (!os.env.floating()) return null;
+    centre(os2) {
+      if (!os2.env.floating()) return null;
       const w = this.props.width || 420;
-      return { x: Math.max(16, (os.env.width - w) / 2), y: Math.max(40, os.env.height * 0.3) };
+      return { x: Math.max(16, (os2.env.width - w) / 2), y: Math.max(40, os2.env.height * 0.3) };
     }
   };
   var ConfirmDialog = class extends Dialog {
@@ -6380,9 +6507,9 @@ var HxH = (() => {
     static longName = "Roster DB";
     static icon = "db";
     static order = 25;
-    constructor(os, options = {}) {
-      super(os, options);
-      this.api = new RosterAPI({ fetch: options.fetch || os.fetch, base: options.base });
+    constructor(os2, options = {}) {
+      super(os2, options);
+      this.api = new RosterAPI({ fetch: options.fetch || os2.fetch, base: options.base });
       this.chars = /* @__PURE__ */ new Map();
       this.crops = /* @__PURE__ */ new Map();
     }
@@ -6398,22 +6525,22 @@ var HxH = (() => {
     }
     list() {
       if (this.listWin) return this.listWin;
-      const os = this.os;
+      const os2 = this.os;
       const w = this.listWin = new RosterWindow({ thumbURL: (id) => this.api.thumbURL(id), menus: (win) => this.listMenus(win) });
-      os.wm.add(w);
+      os2.wm.add(w);
       w.on("open", ({ id }) => this.openChar(id));
       return w;
     }
     listMenus(win) {
-      const os = this.os;
-      return os.appMenus(win, {
+      const os2 = this.os;
+      return os2.appMenus(win, {
         file: () => [{ label: "New character\u2026", onclick: () => this.newCharacter() }],
         view: () => [
           ...FILTERS.map(([f, label]) => ({ label, check: () => this.listWin.filter === f, onclick: () => this.listWin.setFilter(f) })),
           "sep",
           { label: "Refresh", onclick: () => this.refreshList() }
         ],
-        help: () => os.appItems("system", { long: true, icons: false })
+        help: () => os2.appItems("system", { long: true, icons: false })
       });
     }
     async refreshList() {
@@ -6438,11 +6565,11 @@ var HxH = (() => {
     }
     /* ---------- a character ---------- */
     async openChar(id) {
-      const os = this.os;
+      const os2 = this.os;
       let w = this.chars.get(id);
       if (!w) {
         w = new CharacterWindow({ id, thumbURL: (i) => this.api.thumbURL(i), menus: (win) => this.charMenus(win, id) });
-        os.wm.add(w);
+        os2.wm.add(w);
         this.chars.set(id, w);
         w.on("patch", ({ fields }) => this.patch(id, fields));
         w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
@@ -6452,11 +6579,11 @@ var HxH = (() => {
         w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
         w.on("close", () => {
           this.chars.delete(id);
-          os.wm.remove(w.id);
+          os2.wm.remove(w.id);
         });
       }
-      const at = w.state.placed ? null : os.env.floating() ? { x: 180 + this.chars.size % 4 * 24, y: 60 + this.chars.size % 4 * 24 } : null;
-      os.wm.open(w.id, at);
+      const at = w.state.placed ? null : os2.env.floating() ? { x: 180 + this.chars.size % 4 * 24, y: 60 + this.chars.size % 4 * 24 } : null;
+      os2.wm.open(w.id, at);
       await this.reload(id);
       return w;
     }
@@ -6575,37 +6702,37 @@ var HxH = (() => {
     }
     /* ---------- cropping ---------- */
     async openCrop(imageId) {
-      const os = this.os;
+      const os2 = this.os;
       let w = this.crops.get(imageId);
       if (!w) {
         let meta;
         try {
           meta = await this.api.imageMeta(imageId);
         } catch (err) {
-          os.toast.show(err.message);
+          os2.toast.show(err.message);
           return null;
         }
         w = new CropWindow({
           image: meta.image,
           char: meta.char,
           src: this.api.imageURL(imageId),
-          desktop: { vw: os.env.width, vh: os.env.height },
-          menus: (win) => os.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] })
+          desktop: { vw: os2.env.width, vh: os2.env.height },
+          menus: (win) => os2.appMenus(win, { file: () => [{ label: "Save", onclick: () => win.save() }] })
         });
-        os.wm.add(w);
+        os2.wm.add(w);
         this.crops.set(imageId, w);
         w.on("save", ({ rect, blob }) => this.crop(imageId, meta, rect, blob));
         w.on("revert", async () => {
-          if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os)) w.doRevert();
+          if (await new ConfirmDialog({ message: "All changes will be lost.", ok: "Revert" }).ask(os2)) w.doRevert();
         });
         w.on("close", () => {
           this.crops.delete(imageId);
-          os.wm.remove(w.id);
+          os2.wm.remove(w.id);
         });
       }
-      const scrollY = (os.win.scrollY || 0) / (os.env.zoom?.() || 1);
-      const at = w.state.placed ? null : os.env.floating() ? { x: 40, y: Math.round(scrollY) + 24 } : null;
-      os.wm.open(w.id, at);
+      const scrollY = (os2.win.scrollY || 0) / (os2.env.zoom?.() || 1);
+      const at = w.state.placed ? null : os2.env.floating() ? { x: 40, y: Math.round(scrollY) + 24 } : null;
+      os2.wm.open(w.id, at);
       w.el.focus?.();
       return w;
     }
@@ -6625,8 +6752,9 @@ var HxH = (() => {
   };
 
   // html/hxh/os/index.js
+  var os = null;
   function start(opts = {}) {
-    const os = new OS();
+    os = new OS();
     return os.start(opts);
   }
   return __toCommonJS(index_exports);

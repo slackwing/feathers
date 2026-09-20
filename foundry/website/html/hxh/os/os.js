@@ -26,6 +26,7 @@ import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { WakeWatch } from "./wake.js";
+import { Blimp } from "./blimp.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
 export const THEME_KEY = "theme", THEME_DEFAULT = "win98";
@@ -137,14 +138,17 @@ export class OS {
   /** The current theme / sky (Settings › Display), applied to the page. */
   get theme() { return this.settings.getStr(THEME_KEY, THEME_DEFAULT); }
   get sky() { return this.settings.getStr(SKY_KEY, SKY_DEFAULT); }
+  /** Choose (persist) and apply; unknown names fall back to the default. */
   applyTheme(name = this.theme) {
     if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
+    this.settings.setStr(THEME_KEY, name);
     this.doc.documentElement.dataset.theme = name;
     this.bus.emit("theme", { name });
     return name;
   }
   applySky(name = this.sky) {
     if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
+    this.settings.setStr(SKY_KEY, name);
     this.bus.emit("sky", { name });
     return name;
   }
@@ -213,7 +217,9 @@ export class OS {
   startWallpaper() {
     if (this.wallpaper) return;
     const body = this.doc.body;
-    this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus }).mount(body, { before: body.firstChild });
+    this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus, sky: () => this.sky }).mount(body, { before: body.firstChild });
+    // Netero's blimp crosses the sky now and then: above the wallpaper, below icons and windows
+    this.blimp = new Blimp({ reduced: !!this.env.reduced }).mount(body, { before: this.wallpaper.el.nextSibling });
   }
 
   /** The logon dialog, alone on the bare desktop. Resolves with the account. */

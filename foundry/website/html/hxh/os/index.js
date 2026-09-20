@@ -24,6 +24,7 @@ export { Sounds, SOUND_KEY, CUES } from "./sound.js";
 export { Settings } from "./settings.js";
 export { ScrollPane } from "./scrollpane.js";
 export { WakeWatch } from "./wake.js";
+export { Blimp, BLIMP, FLYER_TEXT } from "./blimp.js";
 export { wallpaper, cloudSprite, Wallpaper, geometry } from "./wallpaper.js";
 export { OS } from "./os.js";
 import { OS } from "./os.js";
@@ -31,7 +32,10 @@ import * as apps from "../apps/index.js";
 export { apps };
 
 /** Boot the OS on this page. Resolves with the OS once the desktop is up. */
+/** The running OS, once a page has called start() — for demos, screenshots and the console (HxH.os). */
+export let os = null;
+
 export function start(opts = {}) {
-  const os = new OS();
+  os = new OS();
   return os.start(opts);
 }

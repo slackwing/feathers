@@ -122,6 +122,21 @@ body.crt::after {
   z-index: 0; pointer-events: none;
 }
 
+/* Netero's blimp (os/blimp.js): a sprite towing a flyer, drifting across the sky in ~90 s */
+.blimps { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 90s linear forwards; }
+.blimp.east { left: 0; flex-direction: row-reverse; animation-name: blimp-east; }
+.blimp .ship { display: block; }
+.blimp.west .ship { transform: scaleX(-1); }   /* the sprite's nose points east; flip it to fly west */
+.blimp .rope { display: block; width: 30px; height: 2px; background: var(--ink); margin-top: 24px; }
+.blimp .flyer {
+  display: block; margin-top: 15px; padding: 6px 10px; white-space: nowrap;
+  font: var(--t-kicker); color: var(--ink); background: var(--paper-hi); border: 2px solid var(--ink);
+}
+@keyframes blimp-west { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100%)); } }
+@keyframes blimp-east { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
+@media (prefers-reduced-motion: reduce) { .blimp { display: none; } }
+
 /* while the OS logon dialog is up, a page's own windows and icons wait */
 body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !important; }
 

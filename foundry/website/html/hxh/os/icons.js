@@ -480,17 +480,21 @@ export const ICONS = {
   ],
 };
 
-/** Integer-scaled so pixels stay crisp: a 16-wide grid at size 16 is 1×, at 48 is 3×. */
-export function icon(name, size = 16, pal = null) {
-  const rows = ICONS[name] || ICONS.x;
+/** Any ASCII grid → crisp SVG at an integer scale k (sprites that are not icons: the blimp). */
+export function gridSVG(rows, k = 1, pal = null, cls = "px") {
   const h = rows.length, w = rows[0].length;
-  const k = Math.max(1, Math.floor(size / w));
   const colors = pal ? { ...PAL, ...pal } : PAL;
   let rects = "";
   rows.forEach((row, y) => [...row].forEach((c, x) => {
     if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
   }));
-  return `<svg class="px" viewBox="0 0 ${w} ${h}" width="${w * k}" height="${h * k}" aria-hidden="true">${rects}</svg>`;
+  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" width="${w * k}" height="${h * k}" aria-hidden="true">${rects}</svg>`;
+}
+
+/** Integer-scaled so pixels stay crisp: a 16-wide grid at size 16 is 1×, at 48 is 3×. */
+export function icon(name, size = 16, pal = null) {
+  const rows = ICONS[name] || ICONS.x;
+  return gridSVG(rows, Math.max(1, Math.floor(size / rows[0].length)), pal);
 }
 
 /** Does `name` exist as a 16×16 grid — i.e. can it draw both the 16 px

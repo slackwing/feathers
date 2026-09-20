@@ -29,6 +29,85 @@ export function geometry(vw = 1366, vh = 900) {
   return { W, H, HZ, OX: Math.round(W / 2 - ISLAND_CENTER), GX: W / 2, scale, zoom };
 }
 
+/* ---------- the sky (Settings › Display › Sky, 2026-09-19) ----------
+   Six ways to shade the same five key blues from zenith to horizon. The
+   ORIGINAL is the launch look: five equal bands, checker-dithered at
+   their boundaries — which Andrew now finds odd next to the sea, which
+   does not cross-stitch. Every other variant follows the curve a real sky
+   has: darkest overhead, brightening slowly, then faster near the
+   horizon (t = (y/HZ)^SKY_GAMMA), not a straight line.
+     gradual         8 bands (half again as many), solid shade to solid shade
+     noisy-gradual   gradual, but each boundary frays: pixels near it take the
+                     neighbouring shade with a chance that fades with distance and
+                     clumps (low-frequency value noise, like the sea's glints) —
+                     what Abi asked for
+     hypergradient   no pixels at all: the canvas leaves the sky transparent and
+                     a CSS linear-gradient (same curve) shows through at screen
+                     resolution
+     gradient        a shade every pixel row, still pixelated
+     noisy-gradient  the same, with grainy clumpy jitter on every pixel */
+export const SKY_KEYS = ["#2456a4", "#2f6cc0", "#3f86d6", "#5aa2e6", "#86c0f0"];
+export const SKY_GAMMA = 1.6;
+export const SKY_VARIANTS = ["original", "gradual", "noisy-gradual", "hypergradient", "gradient", "noisy-gradient"];
+const hex2 = n => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
+const rgb = hx => [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)];
+/** The sky's colour at t ∈ [0, 1] (0 = zenith, 1 = horizon), interpolated through the keys. */
+export function skyColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  const f = t * (SKY_KEYS.length - 1), i = Math.min(SKY_KEYS.length - 2, Math.floor(f)), u = f - i;
+  const a = rgb(SKY_KEYS[i]), b = rgb(SKY_KEYS[i + 1]);
+  return "#" + hex2(a[0] + (b[0] - a[0]) * u) + hex2(a[1] + (b[1] - a[1]) * u) + hex2(a[2] + (b[2] - a[2]) * u);
+}
+const curve = (y, HZ) => Math.pow(y / HZ, SKY_GAMMA);
+/** Low-frequency value noise in [0, 1]: hashes on a coarse lattice, smoothly blended — clumps, not grain. */
+export function clumpNoise(x, y, sx = 5, sy = 3) {
+  const gx = x / sx, gy = y / sy, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = smooth(gx - x0), fy = smooth(gy - y0);
+  const n = (a, b) => hash(a + 1013, b + 7);
+  const top = n(x0, y0) + (n(x0 + 1, y0) - n(x0, y0)) * fx, bot = n(x0, y0 + 1) + (n(x0 + 1, y0 + 1) - n(x0, y0 + 1)) * fx;
+  return top + (bot - top) * fy;
+}
+export const GRADUAL_BANDS = 8;
+/**
+ * The colour of sky pixel (x, y) under `variant`, or null when the variant
+ * paints no pixels (hypergradient). Pure, so the variants are testable.
+ */
+export function skyPixel(variant, x, y, HZ) {
+  switch (variant) {
+    case "gradual": {
+      const i = Math.min(GRADUAL_BANDS - 1, Math.floor(curve(y, HZ) * GRADUAL_BANDS));
+      return skyColor(i / (GRADUAL_BANDS - 1));
+    }
+    case "noisy-gradual": {
+      const f = curve(y, HZ) * GRADUAL_BANDS, i = Math.min(GRADUAL_BANDS - 1, Math.floor(f)), frac = f - i;
+      const clump = Math.pow(clumpNoise(x, y), 1.6);
+      let j = i;
+      if (frac > 0.5 && i < GRADUAL_BANDS - 1 && hash(x, y) < (frac - 0.5) * 1.3 * clump) j = i + 1;        // fray into the band below
+      else if (frac < 0.5 && i > 0 && hash(x + 77, y) < (0.5 - frac) * 1.3 * clump) j = i - 1;              // and into the band above
+      return skyColor(j / (GRADUAL_BANDS - 1));
+    }
+    case "hypergradient": return null;
+    case "gradient": return skyColor(curve(y, HZ));
+    case "noisy-gradient": {
+      const jitter = (clumpNoise(x, y, 4, 3) - 0.5) * 0.10 + (hash(x, y + 999) - 0.5) * 0.03;
+      return skyColor(curve(y, HZ) + jitter);
+    }
+    default: {   // original: five linear bands, checker-dithered at the boundaries
+      const f = y / HZ * SKY_KEYS.length, i = Math.min(SKY_KEYS.length - 1, Math.floor(f)), frac = f - i;
+      const dither = frac > 0.8 && i < SKY_KEYS.length - 1 && (x + y) % 2 === 0;
+      return SKY_KEYS[dither ? i + 1 : i];
+    }
+  }
+}
+/** The hypergradient's CSS: the same curve as gradient stops over the sky rows; the sea paints the rest. */
+export function skyGradientCSS(HZ, H, stops = 12) {
+  const parts = [];
+  for (let k = 0; k <= stops; k++) {
+    const u = k / stops;
+    parts.push(`${skyColor(Math.pow(u, SKY_GAMMA))} ${(u * HZ / H * 100).toFixed(2)}%`);
+  }
+  return `linear-gradient(to bottom, ${parts.join(", ")})`;
+}
+
 /* deterministic hash so the island is the same every visit */
 export const hash = (x, y = 0) => { let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
@@ -152,7 +231,7 @@ export function glints(g) {
 
 /** Paint and animate the wallpaper on `canvas` for a viewport of vw × vh.
     Returns { stop } or null when the host has no 2-D canvas. */
-export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = document, interval = 125, random = Math.random } = {}) {
+export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = document, interval = 125, random = Math.random, sky: variant = "original" } = {}) {
   if (!canvas) return null;
   const g = geometry(vw, vh);
   const { W, H, HZ, OX } = g;
@@ -162,16 +241,14 @@ export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = 
   const layer = (w = W, hh = H) => { const c = doc.createElement("canvas"); c.width = w; c.height = hh; return c; };
   const px = (gg, x, y, col) => { gg.fillStyle = col; gg.fillRect(x, y, 1, 1); };
 
-  // sky: five bands dithered at their boundaries, stretched over the horizon rows
+  // sky: one of the variants (see skyPixel); the hypergradient paints nothing and lets CSS through
   const sky = layer(), sg = sky.getContext("2d");
-  const SKY = ["#2456a4", "#2f6cc0", "#3f86d6", "#5aa2e6", "#86c0f0"];
-  for (let y = 0; y < HZ; y++) {
-    const f = y / HZ * SKY.length, i = Math.min(SKY.length - 1, Math.floor(f)), frac = f - i;
-    for (let x = 0; x < W; x++) {
-      const dither = frac > 0.8 && i < SKY.length - 1 && (x + y) % 2 === 0;
-      px(sg, x, y, SKY[dither ? i + 1 : i]);
-    }
+  if (!SKY_VARIANTS.includes(variant)) variant = "original";
+  for (let y = 0; y < HZ; y++) for (let x = 0; x < W; x++) {
+    const c = skyPixel(variant, x, y, HZ);
+    if (c) px(sg, x, y, c);
   }
+  if (canvas.style) canvas.style.background = variant === "hypergradient" ? skyGradientCSS(HZ, H) : "";
 
   // sea: bands hang from the horizon, the deepest colour fills the rest;
   // the island's dark reflection sits under its footprint
@@ -277,22 +354,25 @@ export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = 
   frame();
   const timer = reduced ? null : setInterval(() => { if (!doc.hidden) frame(); }, interval);
   timer?.unref?.();
-  return { stop() { clearInterval(timer); }, frame, geometry: g, get tick() { return tick; } };
+  return { stop() { clearInterval(timer); }, frame, geometry: g, sky: variant, get tick() { return tick; } };
 }
 
 /** The fixed full-screen canvas behind the desktop; repainted for the
     viewport's aspect whenever the OS announces a resize. */
 export class Wallpaper extends Component {
-  /** props: env, bus */
+  /** props: env, bus, sky: () => variant (Settings › Display › Sky; repaints on the bus's `sky`) */
   render() { return h("canvas", { className: "wall", width: 320, height: 180 }); }
   onMount() {
     this.paint();
-    if (this.props.bus) this.listen(this.props.bus, "resize", () => this.paint());
+    if (this.props.bus) {
+      this.listen(this.props.bus, "resize", () => this.paint());
+      this.listen(this.props.bus, "sky", () => this.paint());
+    }
   }
   paint() {
     this.anim?.stop();
     const w = this.props.env?.win || globalThis.window;
-    this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced });
+    this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "original" });
   }
   onUnmount() { this.anim?.stop(); }
 }
