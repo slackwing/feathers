@@ -150,15 +150,26 @@ body.crt::after {
 
 /* Netero's blimp (os/blimp.js): a sprite towing a flyer, drifting across the sky in ~90 s */
 .blimps { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 90s linear forwards; }
+.blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 100s linear forwards; }
 .blimp.east { left: 0; flex-direction: row-reverse; animation-name: blimp-east; }
-.blimp .ship { display: block; }
-.blimp.west .ship { transform: scaleX(-1); }   /* the sprite's nose points east; flip it to fly west */
-.blimp .rope { display: block; width: 30px; height: 2px; background: var(--ink); margin-top: 24px; }
-.blimp .flyer {
-  display: block; margin-top: 15px; padding: 6px 10px; white-space: nowrap;
-  font: var(--t-kicker); color: var(--ink); background: var(--paper-hi); border: 2px solid var(--ink);
-}
+.blimp .ship, .blimp .flyer { display: block; }
+.blimp svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }   /* the one smooth thing on the desktop */
+.blimp.west .ship { transform: scaleX(-1); }   /* the ship's nose points east; flip it to fly west (the banner is built for either side, so its letters never mirror) */
+.blimp .flyer { margin-top: 30px; }   /* the rope's start (banner y 12) meets the tail (ship y 42) */
+/* theme dress: hull = window surface, stripe = active title bar, cabin = inactive title bar, windows = field, lines = window border */
+.airship .hull { fill: var(--win-bg); stroke: var(--win-border); stroke-width: 2.5; }
+.airship .stripe { fill: var(--tb-bg); stroke: var(--win-border); stroke-width: 1.5; }
+.airship .sheen { fill: none; stroke: var(--field-bg); stroke-width: 3; stroke-linecap: round; opacity: .9; }
+.airship .fins path { fill: var(--tb-bg-off); stroke: var(--win-border); stroke-width: 2; stroke-linejoin: round; }
+.airship .prop .blade { fill: var(--win-border); opacity: .55; }
+.airship .prop circle { fill: var(--tb-bg); stroke: var(--win-border); stroke-width: 1.5; }
+.airship .struts line { stroke: var(--win-border); stroke-width: 2; }
+.airship .cabin { fill: var(--tb-bg-off); stroke: var(--win-border); stroke-width: 2; }
+.airship .windows rect { fill: var(--field-bg); stroke: var(--win-border); stroke-width: 1; }
+.banner .rope { fill: none; stroke: var(--win-border); stroke-width: 2; }
+.banner .cloth { fill: var(--win-bg); stroke: var(--win-border); stroke-width: 2; stroke-linejoin: round; }
+.banner .hem { fill: none; stroke: var(--tb-bg); stroke-width: 3; }
+.banner .lettering { font: 13px/1 var(--font-display); fill: var(--win-fg); letter-spacing: .04em; }
 @keyframes blimp-west { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100%)); } }
 @keyframes blimp-east { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
 @media (prefers-reduced-motion: reduce) { .blimp { display: none; } }

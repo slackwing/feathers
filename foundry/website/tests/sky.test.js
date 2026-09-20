@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { setupDom } from "./dom.js";
 import { skyPixel, skyColor, skyGradientCSS, clumpNoise, SKY_KEYS, SKY_VARIANTS, GRADUAL_BANDS } from "../html/hxh/os/wallpaper.js";
+
+setupDom();   // cloud sprites reach for the global document (their canvases degrade to empty under jsdom)
 
 const HZ = 112, W = 273;
 const shades = variant => { const s = new Set(); for (let y = 0; y < HZ; y++) for (let x = 0; x < W; x++) s.add(skyPixel(variant, x, y, HZ)); return s; };
@@ -65,6 +68,21 @@ test("gradient: a shade every row; noisy gradient jitters it in clumps; hypergra
   assert.match(css, /^linear-gradient\(to bottom, #2456a4 0\.00%, /);
   assert.match(css, /#86c0f0 62\.22%\)$/);   // the horizon row, then the sea covers the rest
   assert.equal((css.match(/#[0-9a-f]{6}/g) || []).length, 13);
+});
+
+test("every frame starts from a cleared canvas (the hypergradient sky paints nothing, so clouds and birds would otherwise leave trails)", async () => {
+  const { wallpaper } = await import("../html/hxh/os/wallpaper.js");
+  const calls = [];
+  const ctx2d = () => new Proxy({}, { get: (_, k) => (k === "canvas" ? null : (...a) => { calls.push(k); if (k === "getImageData") return { data: new Uint8ClampedArray(4) }; return undefined; }) });
+  const canvas = { style: {}, width: 0, height: 0, getContext: () => ctx2d() };
+  const doc = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d() }), hidden: false };
+  const anim = wallpaper(canvas, { vw: 1366, vh: 900, reduced: true, doc, sky: "hypergradient" });
+  assert.ok(anim);
+  assert.match(canvas.style.background, /^linear-gradient/);
+  const before = calls.length;
+  anim.frame();
+  assert.equal(calls[before], "clearRect");
+  anim.stop();
 });
 
 test("clump noise is smooth and bounded; every variant is listed", () => {

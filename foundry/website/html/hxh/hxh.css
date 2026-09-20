@@ -213,35 +213,94 @@ body.crt::after {
   left: 100%;
   display: flex;
   align-items: flex-start;
-  animation: blimp-west 90s linear forwards;
+  animation: blimp-west 100s linear forwards;
 }
 .blimp.east {
   left: 0;
   flex-direction: row-reverse;
   animation-name: blimp-east;
 }
-.blimp .ship {
+.blimp .ship,
+.blimp .flyer {
   display: block;
+}
+.blimp svg {
+  display: block;
+  overflow: visible;
+  shape-rendering: geometricPrecision;
 }
 .blimp.west .ship {
   transform: scaleX(-1);
 }
-.blimp .rope {
-  display: block;
-  width: 30px;
-  height: 2px;
-  background: var(--ink);
-  margin-top: 24px;
-}
 .blimp .flyer {
-  display: block;
-  margin-top: 15px;
-  padding: 6px 10px;
-  white-space: nowrap;
-  font: var(--t-kicker);
-  color: var(--ink);
-  background: var(--paper-hi);
-  border: 2px solid var(--ink);
+  margin-top: 30px;
+}
+.airship .hull {
+  fill: var(--win-bg);
+  stroke: var(--win-border);
+  stroke-width: 2.5;
+}
+.airship .stripe {
+  fill: var(--tb-bg);
+  stroke: var(--win-border);
+  stroke-width: 1.5;
+}
+.airship .sheen {
+  fill: none;
+  stroke: var(--field-bg);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: .9;
+}
+.airship .fins path {
+  fill: var(--tb-bg-off);
+  stroke: var(--win-border);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.airship .prop .blade {
+  fill: var(--win-border);
+  opacity: .55;
+}
+.airship .prop circle {
+  fill: var(--tb-bg);
+  stroke: var(--win-border);
+  stroke-width: 1.5;
+}
+.airship .struts line {
+  stroke: var(--win-border);
+  stroke-width: 2;
+}
+.airship .cabin {
+  fill: var(--tb-bg-off);
+  stroke: var(--win-border);
+  stroke-width: 2;
+}
+.airship .windows rect {
+  fill: var(--field-bg);
+  stroke: var(--win-border);
+  stroke-width: 1;
+}
+.banner .rope {
+  fill: none;
+  stroke: var(--win-border);
+  stroke-width: 2;
+}
+.banner .cloth {
+  fill: var(--win-bg);
+  stroke: var(--win-border);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.banner .hem {
+  fill: none;
+  stroke: var(--tb-bg);
+  stroke-width: 3;
+}
+.banner .lettering {
+  font: 13px/1 var(--font-display);
+  fill: var(--win-fg);
+  letter-spacing: .04em;
 }
 @keyframes blimp-west {
   from {

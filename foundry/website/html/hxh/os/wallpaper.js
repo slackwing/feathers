@@ -333,6 +333,7 @@ export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = 
 
   const frame = () => {
     tick++;
+    ctx.clearRect(0, 0, W, H);   // the hypergradient sky is transparent: without this, clouds and birds leave trails
     ctx.drawImage(sky, 0, 0);
     for (const c of clouds) {
       if (!reduced) { c.x += c.v; if (c.x > W + 4) c.x = -c.img.width - 4; }

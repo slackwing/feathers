@@ -25,7 +25,6 @@ var HxH = (() => {
     $$: () => $$,
     App: () => App,
     AppRegistry: () => AppRegistry,
-    BLIMP: () => BLIMP,
     Backdrop: () => Backdrop,
     Badge: () => Badge,
     Blimp: () => Blimp,
@@ -70,9 +69,11 @@ var HxH = (() => {
     Wallpaper: () => Wallpaper,
     Window: () => Window,
     WindowManager: () => WindowManager,
+    airshipSVG: () => airshipSVG,
     apps: () => apps_exports,
     avatar: () => avatar,
     badgeHTML: () => badgeHTML,
+    bannerSVG: () => bannerSVG,
     bootLines: () => bootLines,
     cloudSprite: () => cloudSprite,
     esc: () => esc,
@@ -1808,7 +1809,7 @@ var HxH = (() => {
 
   // html/hxh/os/typewriter.js
   function type(el, runs, { speed = 16, onDone, instant = false, reduced = false } = {}) {
-    const seq2 = runs.map((r) => typeof r === "string" ? { t: r } : r);
+    const seq3 = runs.map((r) => typeof r === "string" ? { t: r } : r);
     const node = (r, text) => {
       const n = document.createElement(r.tag || "span");
       if (r.cls) n.className = r.cls;
@@ -1822,7 +1823,7 @@ var HxH = (() => {
       done = true;
       clearInterval(timer);
       el.innerHTML = "";
-      seq2.forEach((r) => el.append(node(r, r.t)));
+      seq3.forEach((r) => el.append(node(r, r.t)));
       el.classList.remove("cur");
       onDone?.();
     };
@@ -1835,11 +1836,11 @@ var HxH = (() => {
     }
     el.classList.add("cur");
     timer = setInterval(() => {
-      if (ri >= seq2.length) {
+      if (ri >= seq3.length) {
         finish();
         return;
       }
-      const r = seq2[ri];
+      const r = seq3[ri];
       if (!span) {
         span = node(r, "");
         el.append(span);
@@ -2449,24 +2450,49 @@ var HxH = (() => {
   };
 
   // html/hxh/os/blimp.js
-  var BLIMP = [
-    "..........kkkkkkkkkkkkkkkkkkkkkkk...........",
-    "......kkkkwwwwwwwwwwwwwwwwwwwwwwwkkkk.......",
-    "kk..kkwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwkk.....",
-    "kwkkwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwkk...",
-    "kwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwk..",
-    "kwwwwwwwwrrrrrrrrrrrrrrrrrrrrrrrrrrrrwwwwwk.",
-    "kwwwwwwwwrrrrrrrrrrrrrrrrrrrrrrrrrrrrwwwwwwk",
-    "kwdddddddddddddddddddddddddddddddddddddddwk.",
-    "kwkkdddddddddddddddddddddddddddddddddddkk...",
-    "kk..kkdddddddddddddddddddddddddddddddkk.....",
-    "......kkkkdddddddddddddddddddddddkkkk.......",
-    "..........kkkkkkkkkkkkkkkkkkkkkkk...........",
-    "...................kkkkkkkkkkkk.............",
-    "...................knbnbnbnbnbk.............",
-    "...................kkkkkkkkkkkk............."
-  ];
   var FLYER_TEXT = "HUNTER \xD7 HALLOWEEN";
+  var SHIP_W = 260;
+  var SHIP_H = 104;
+  var BANNER_W = 300;
+  var BANNER_H = 64;
+  var ROPE = 40;
+  var seq = 0;
+  function airshipSVG() {
+    return `<svg class="airship" viewBox="0 0 ${SHIP_W} ${SHIP_H}" width="${SHIP_W}" height="${SHIP_H}" aria-hidden="true">
+  <g class="fins"><path d="M 34 30 L 10 6 L 52 18 Z"/><path d="M 34 54 L 10 78 L 52 66 Z"/><path d="M 30 39 L 8 39 L 8 45 L 30 45 Z"/></g>
+  <g class="prop"><line x1="10" y1="42" x2="10" y2="42"/><ellipse class="blade" cx="10" cy="42" rx="2.5" ry="13"><animateTransform attributeName="transform" type="rotate" from="0 10 42" to="360 10 42" dur="0.5s" repeatCount="indefinite"/></ellipse><circle cx="10" cy="42" r="3"/></g>
+  <path class="hull" d="M 22 42 C 22 16, 96 8, 158 8 C 214 8, 250 24, 252 42 C 250 60, 214 76, 158 76 C 96 76, 22 68, 22 42 Z"/>
+  <path class="stripe" d="M 44 50 C 110 66, 200 66, 244 50 L 243 56 C 200 72, 110 72, 46 56 Z"/>
+  <path class="sheen" d="M 60 22 C 110 14, 180 14, 226 26"/>
+  <g class="struts"><line x1="100" y1="74" x2="104" y2="84"/><line x1="172" y1="74" x2="168" y2="84"/><line x1="136" y1="76" x2="136" y2="84"/></g>
+  <rect class="cabin" x="82" y="82" width="112" height="18" rx="5"/>
+  <g class="windows">${[92, 108, 124, 140, 156, 172].map((x) => `<rect x="${x}" y="87" width="9" height="8" rx="1.5"/>`).join("")}</g>
+</svg>`;
+  }
+  function ripple(x0, x1, base, amp, phase, step = 10) {
+    const pts = [];
+    for (let x = x0; x <= x1; x += step) pts.push([x, base + amp * Math.sin(phase + (x - x0) / 46)]);
+    return pts;
+  }
+  var poly = (pts, start2 = "M") => start2 + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L ");
+  function bannerSVG(text = FLYER_TEXT, rope = "left") {
+    const id = "bwave" + ++seq;
+    const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
+    const top = 18, hgt = 30, amp = 3.5;
+    const phases = [0, 2.1, 4.2, 0];
+    const cloth = phases.map((p) => poly(ripple(x0, x1, top, amp, p)) + " " + poly(ripple(x0, x1, top + hgt, amp, p).reverse(), "L") + " Z").join(";");
+    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt * 0.62, amp, p))).join(";");
+    const hem = phases.map((p) => poly(ripple(x0, x1, top + 3, amp, p))).join(";");
+    const ropeD = rope === "left" ? `M 0 ${top - 6} L ${ROPE} ${top + 2}` : `M ${BANNER_W} ${top - 6} L ${BANNER_W - ROPE} ${top + 2}`;
+    const dur = "1.5s";
+    return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">
+  <path class="rope" d="${ropeD}"/>
+  <path class="cloth" d="${cloth.split(";")[0]}"><animate attributeName="d" values="${cloth}" dur="${dur}" repeatCount="indefinite"/></path>
+  <path class="hem" d="${hem.split(";")[0]}"><animate attributeName="d" values="${hem}" dur="${dur}" repeatCount="indefinite"/></path>
+  <defs><path id="${id}" d="${line.split(";")[0]}"><animate attributeName="d" values="${line}" dur="${dur}" repeatCount="indefinite"/></path></defs>
+  <text class="lettering"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${text}</textPath></text>
+</svg>`;
+  }
   var Blimp = class extends Component {
     /** props: reduced, random, minWait / maxWait (ms), duration (ms), setTimeout/clearTimeout (tests) */
     render() {
@@ -2492,14 +2518,13 @@ var HxH = (() => {
     }
     /** Fly one across now. Returns the element. */
     launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
-      const { random = Math.random, duration = 9e4 } = this.props;
+      const { random = Math.random, duration = 1e5 } = this.props;
       const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east") });
-      el.style.top = (top ?? 6 + random() * 18) + "%";
+      el.style.top = (top ?? 5 + random() * 16) + "%";
       el.style.animationDuration = duration + "ms";
       el.append(
-        h("span", { className: "ship", html: gridSVG(BLIMP, 3) }),
-        h("span", { className: "rope" }),
-        h("span", { className: "flyer", text: FLYER_TEXT })
+        h("span", { className: "ship", html: airshipSVG() }),
+        h("span", { className: "flyer", html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
       );
       el.addEventListener("animationend", () => el.remove());
       this.el.append(el);
@@ -2783,6 +2808,7 @@ var HxH = (() => {
     };
     const frame = () => {
       tick++;
+      ctx.clearRect(0, 0, W, H);
       ctx.drawImage(sky, 0, 0);
       for (const c of clouds) {
         if (!reduced) {
@@ -6685,12 +6711,12 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/roster/dialogs.js
-  var seq = 0;
+  var seq2 = 0;
   var Dialog = class extends Window {
     /** props: title, body (html), buttons [{act, label, primary}], width, focus (selector) */
     constructor({ title, body, buttons = [{ act: "ok", label: "OK", primary: true }, { act: "cancel", label: "Cancel" }], width = 420, focus = null, icon: icon2 = "question", cls = "" } = {}) {
       super({
-        id: "win-dlg-" + ++seq,
+        id: "win-dlg-" + ++seq2,
         title,
         icon: icon2,
         width,

@@ -584,8 +584,17 @@ over the sky.
   (a shade per row), noisy gradient. All but the original follow
   t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
 - **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
-  HALLOWEEN flyer, every 4–9 min, 90 s across, `HxH.os.blimp.launch()`
-  on demand; z-order above the wallpaper, below icons and windows.
+  HALLOWEEN banner, every 4–9 min, 100 s across, `HxH.os.blimp.launch()`
+  on demand; z-order above the wallpaper, below icons and windows. It is
+  smooth vector SVG on purpose (Andrew: "you may even make the blimp
+  full resolution"), dressed in THEME tokens (hull = `--win-bg`, stripe =
+  `--tb-bg`, fins/cabin = `--tb-bg-off`, windows = `--field-bg`, lines =
+  `--win-border`), with a turning propeller and a banner whose cloth,
+  hem and lettering ripple via SMIL `<animate>` on path `d` (three
+  phases, looping) — `bannerSVG(text, rope)` builds it with the rope on
+  the trailing side so the letters never mirror. The wallpaper's frame
+  loop must `clearRect` first: the hypergradient sky paints nothing, and
+  without the clear clouds and birds left trails (2026-09-20).
 - **About is gone** (app, Start entry, Summons' Help). `HxH.os` exposes
   the running OS for demos and screenshots.
 
