@@ -812,7 +812,8 @@ time (Andrew: the 2026-09-17 automated roster lost too much quality;
   buttons 1:1 Avatar, 2:3 Card, … start a centred selection; status
   bar reads the box or the picture size; Save (also File › Save)
   sends the box to the server untouched or uploads the painted pixels,
-  then the window closes), 90s message boxes (`dialogs.js`), and
+  then the window closes, and a 1:1 or 16:9 result fills an EMPTY
+  avatar or card slot by itself), 90s message boxes (`dialogs.js`), and
   `busy.js` — every database call freezes its window under an
   hourglass. `fields.js` is the ONE place field labels (Name … Card
   Rank … Notes) and picture categories (Random, Uploaded, Edited, …)
