@@ -7102,19 +7102,31 @@ var HxH = (() => {
       return w;
     }
     /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
-        picture. Once the database has answered, the crop window closes. */
+        picture. Once the database has answered, the crop window closes — and a crop of the avatar's or the
+        card's proportion fills that slot when it is still empty (Andrew, 2026-09-20). */
     async crop(imageId, meta, rect, blob = null) {
       const w = this.crops.get(imageId);
       try {
         const r = await this.hold(w, blob ? this.api.upload(meta.char.id, blob, { type: "cropped", source_image_id: imageId, caption: meta.image.caption || "", name: `paint-${imageId}.png` }) : this.api.crop(imageId, rect), "Saving\u2026");
         w?.saved(r.image, r.created);
         w?.close();
-        await this.reload(meta.char.id, { form: false });
+        const c = await this.reload(meta.char.id, { form: false });
+        const slot = c && slotFor(r.image, c);
+        if (slot) {
+          await this.patch(c.id, { [slot]: r.image.id });
+          this.chars.get(c.id)?.say(`Saved \xB7 set as ${slot === "avatar_image_id" ? "avatar" : "card"}`);
+        }
       } catch (err) {
         w?.failed(err.message);
       }
     }
   };
+  function slotFor(image, c, tol = 0.02) {
+    const r = image.width / image.height;
+    if (!c.avatar_image_id && Math.abs(r - AVATAR_RATIO) <= tol) return "avatar_image_id";
+    if (!c.card_image_id && Math.abs(r - CARD_RATIO2) <= tol) return "card_image_id";
+    return null;
+  }
 
   // html/hxh/os/index.js
   var os = null;
