@@ -110,9 +110,10 @@ test("setTitle updates the bar and emits; requestAttention emits; pointerdown em
   w.unmount();
 });
 
-test("the × app icon is drawn cream on the crimson bar", () => {
+test("the × app icon takes the title bar's own text colour (cream on crimson, ink on a pastel theme)", () => {
   const tb = new TitleBar({ title: "x", icon: "x", buttons: ["close"] }).mount(document.body);
-  assert.match(tb.el.querySelector(".ico").innerHTML, /#fff6e0/);
+  assert.match(tb.el.querySelector(".ico").innerHTML, /fill="currentColor"/);
+  assert.doesNotMatch(tb.el.querySelector(".ico").innerHTML, /#c8102e/);
   tb.unmount();
   assert.throws(() => new ChromeButton({ kind: "nope" }).mount(document.body), /unknown chrome button/);
 });

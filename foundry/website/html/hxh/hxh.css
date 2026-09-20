@@ -56,6 +56,59 @@
   --t-heading: 400 20px/1.5 var(--font-display);
   --taskbar-h: 45px;
   --dither: repeating-conic-gradient(var(--paper-hi) 0 25%, var(--paper) 0 50%) 0 0 / 4px 4px;
+  --win-bg: var(--paper);
+  --win-fg: var(--ink);
+  --win-border: var(--ink);
+  --win-hi: var(--paper-hi);
+  --win-lo: var(--paper-lo);
+  --win-shadow: 8px 8px 0 rgba(0,0,0,.55);
+  --win-pad: 5px;
+  --tb-bg: var(--blood);
+  --tb-fg: var(--paper-hi);
+  --tb-bg-off: var(--ink-3);
+  --tb-fg-off: var(--paper-dim);
+  --tbtn-bg: var(--paper);
+  --tbtn-fg: var(--ink);
+  --tbtn-border: var(--ink);
+  --tbtn-hi: var(--paper-hi);
+  --tbtn-lo: var(--paper-lo);
+  --btn-bg: var(--paper);
+  --btn-fg: var(--ink);
+  --btn-border: var(--ink);
+  --btn-hi: var(--paper-hi);
+  --btn-lo: var(--paper-lo);
+  --btn-hover: var(--paper-hi);
+  --btn-shadow: var(--px) var(--px) 0 var(--ink);
+  --strong-bg: var(--blood);
+  --strong-fg: var(--paper-hi);
+  --strong-hi: var(--blood-hot);
+  --strong-lo: var(--blood-deep);
+  --strong-hover: var(--blood-hot);
+  --menu-bg: var(--paper);
+  --menu-fg: var(--ink);
+  --menu-border: var(--ink);
+  --menu-hi: var(--paper-hi);
+  --menu-lo: var(--paper-lo);
+  --menu-shadow: 5px 5px 0 rgba(0,0,0,.5);
+  --sel-bg: var(--blood);
+  --sel-fg: var(--paper-hi);
+  --tk-bg: var(--paper);
+  --tk-fg: var(--ink);
+  --tk-top: var(--paper-hi);
+  --tk-line: var(--ink);
+  --tk-btn-bg: var(--paper);
+  --tk-btn-fg: var(--ink);
+  --tk-btn-border: var(--ink);
+  --tk-btn-hi: var(--paper-hi);
+  --tk-btn-lo: var(--paper-lo);
+  --tk-btn-pressed: var(--dither);
+  --field-bg: var(--paper-hi);
+  --field-fg: var(--ink);
+  --field-border: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  --field-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.35);
+  --field-focus: var(--nen);
+  --field-off-bg: var(--paper-lo);
+  --dim-fg: var(--ink-4);
 }
 * {
   box-sizing: border-box;
@@ -77,8 +130,8 @@ body {
   scrollbar-color: var(--paper) var(--paper-lo);
 }
 ::selection {
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--sel-bg);
+  color: var(--sel-fg);
 }
 ::-webkit-scrollbar {
   width: 20px;
@@ -88,9 +141,9 @@ body {
   background: var(--dither);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--paper);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo);
+  background: var(--tbtn-bg);
+  border: var(--px) solid var(--tbtn-border);
+  box-shadow: inset var(--px) var(--px) 0 var(--tbtn-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--tbtn-lo);
 }
 [hidden] {
   display: none !important;
@@ -259,9 +312,9 @@ body.logon .icons {
 }
 .icon:hover .cap,
 .icon:focus-visible .cap {
-  background: var(--blood);
-  color: var(--paper-hi);
-  outline: 1px dotted var(--paper-hi);
+  background: var(--sel-bg);
+  color: var(--sel-fg);
+  outline: 1px dotted var(--sel-fg);
 }
 .icon:focus-visible {
   outline: none;
@@ -271,14 +324,14 @@ body.logon .icons {
   z-index: 10;
   width: 700px;
   max-width: calc(100vw - 40px);
-  padding: 5px;
-  background: var(--paper);
-  color: var(--ink);
-  border: var(--px) solid var(--ink);
+  padding: var(--win-pad);
+  background: var(--win-bg);
+  color: var(--win-fg);
+  border: var(--px) solid var(--win-border);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--paper-hi),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-    8px 8px 0 rgba(0, 0, 0, .55);
+    inset var(--px) var(--px) 0 var(--win-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--win-lo),
+    var(--win-shadow);
   font: var(--t-body);
 }
 .win.static {
@@ -311,8 +364,8 @@ body.logon .icons {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--tb-bg);
+  color: var(--tb-fg);
   padding: 5px 5px 5px 8px;
   min-height: 30px;
   font: var(--t-title);
@@ -330,8 +383,8 @@ body.logon .icons {
   animation: tbarflash 1s steps(2) infinite;
 }
 .win.inactive .tbar {
-  background: var(--ink-3);
-  color: var(--paper-dim);
+  background: var(--tb-bg-off);
+  color: var(--tb-fg-off);
 }
 .tbar .ttl {
   flex: 1;
@@ -351,17 +404,17 @@ body.logon .icons {
   width: 25px;
   height: 22px;
   padding: 0 0 2px;
-  background: var(--paper);
-  color: var(--ink);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+  background: var(--tbtn-bg);
+  color: var(--tbtn-fg);
+  border: var(--px) solid var(--tbtn-border);
+  box-shadow: inset 1px 1px 0 var(--tbtn-hi), inset -1px -1px 0 var(--tbtn-lo);
   font: var(--t-ui-bold);
   cursor: pointer;
   display: grid;
   place-items: center;
 }
 .tbtn:active {
-  box-shadow: inset 1px 1px 0 var(--paper-lo);
+  box-shadow: inset 1px 1px 0 var(--tbtn-lo);
 }
 .mbar {
   display: flex;
@@ -369,8 +422,8 @@ body.logon .icons {
   position: relative;
   padding: 5px 2px 2px;
   margin-bottom: 5px;
-  border-bottom: var(--px) solid var(--paper-lo);
-  box-shadow: 0 var(--px) 0 var(--paper-hi);
+  border-bottom: var(--px) solid var(--win-lo);
+  box-shadow: 0 var(--px) 0 var(--win-hi);
   font: var(--t-ui);
 }
 .menu {
@@ -381,15 +434,15 @@ body.logon .icons {
   border: var(--px) solid transparent;
   cursor: pointer;
   font: inherit;
-  color: var(--ink);
+  color: var(--win-fg);
   padding: 4px 9px 3px;
 }
 .menu > button u {
   text-decoration: underline;
 }
 .menu.open > button {
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--sel-bg);
+  color: var(--sel-fg);
 }
 .dd {
   position: absolute;
@@ -399,12 +452,12 @@ body.logon .icons {
   display: none;
   min-width: 212px;
   padding: 5px;
-  background: var(--paper);
-  border: var(--px) solid var(--ink);
+  background: var(--menu-bg);
+  border: var(--px) solid var(--menu-border);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--paper-hi),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-    5px 5px 0 rgba(0, 0, 0, .5);
+    inset var(--px) var(--px) 0 var(--menu-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--menu-lo),
+    var(--menu-shadow);
 }
 .menu.open > .dd,
 .dd.open {
@@ -447,8 +500,8 @@ body.logon .icons {
   padding-left: 12px;
 }
 .menu.sub.open > button {
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--sel-bg);
+  color: var(--sel-fg);
 }
 .dd button,
 .startmenu .items button {
@@ -461,31 +514,31 @@ body.logon .icons {
   cursor: pointer;
   text-align: left;
   font: var(--t-ui);
-  color: var(--ink);
+  color: var(--menu-fg);
   padding: 6px 12px 5px;
 }
 .dd button:disabled,
 .startmenu .items button:disabled {
-  color: var(--ink-4);
+  color: var(--dim-fg);
   cursor: default;
 }
 .dd button:disabled:hover {
   background: none;
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .dd button:hover,
 .dd button:focus-visible,
 .startmenu .items button:hover,
 .startmenu .items button:focus-visible {
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--sel-bg);
+  color: var(--sel-fg);
   outline: none;
 }
 .dd hr,
 .startmenu hr {
   border: 0;
-  border-top: var(--px) solid var(--paper-lo);
-  box-shadow: 0 var(--px) 0 var(--paper-hi);
+  border-top: var(--px) solid var(--menu-lo);
+  box-shadow: 0 var(--px) 0 var(--menu-hi);
   margin: 5px 2px;
 }
 .dd .chk::before,
@@ -511,48 +564,52 @@ body.logon .icons {
 }
 .btn {
   font: var(--t-ui-bold);
-  color: var(--ink);
-  background: var(--paper);
-  border: var(--px) solid var(--ink);
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  border: var(--px) solid var(--btn-border);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--paper-hi),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-    var(--px) var(--px) 0 var(--ink);
+    inset var(--px) var(--px) 0 var(--btn-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--btn-lo),
+    var(--btn-shadow);
   padding: 10px 16px 9px;
   cursor: pointer;
   transition: none;
 }
 .btn:hover {
-  background: var(--paper-hi);
+  background: var(--btn-hover);
 }
 .btn:active,
 .btn.pressed {
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-hi);
+  box-shadow: inset var(--px) var(--px) 0 var(--btn-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--btn-hi);
   transform: translate(var(--px), var(--px));
 }
+.btn:disabled {
+  color: var(--dim-fg);
+  cursor: default;
+}
 .btn.primary {
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--strong-bg);
+  color: var(--strong-fg);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--blood-hot),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--blood-deep),
-    var(--px) var(--px) 0 var(--ink);
+    inset var(--px) var(--px) 0 var(--strong-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--strong-lo),
+    var(--btn-shadow);
 }
 .btn.primary:hover {
-  background: var(--blood-hot);
+  background: var(--strong-hover);
 }
 .btn.primary:active {
-  box-shadow: inset var(--px) var(--px) 0 var(--blood-deep), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--blood-hot);
+  box-shadow: inset var(--px) var(--px) 0 var(--strong-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--strong-hi);
 }
 .btn.wide {
   width: 100%;
 }
 .btn:focus-visible {
-  outline: 2px dotted var(--ink);
+  outline: 2px dotted var(--btn-fg);
   outline-offset: -6px;
 }
 .btn.primary:focus-visible {
-  outline-color: var(--paper-hi);
+  outline-color: var(--strong-fg);
 }
 .actions {
   display: flex;
@@ -573,27 +630,27 @@ body.logon .icons {
   display: block;
   width: 100%;
   font: var(--t-body);
-  color: var(--ink);
-  background: var(--paper-hi);
+  color: var(--field-fg);
+  background: var(--field-bg);
   border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .35);
+  border-color: var(--field-border);
+  box-shadow: var(--field-shadow);
   padding: 9px 10px 6px;
   border-radius: 0;
 }
 .field:focus {
-  outline: var(--px) solid var(--nen);
+  outline: var(--px) solid var(--field-focus);
   outline-offset: 0;
 }
 .field[readonly] {
-  color: var(--ink-4);
-  background: var(--paper);
+  color: var(--dim-fg);
+  background: var(--win-bg);
 }
 .panel {
-  background: var(--paper-hi);
+  background: var(--field-bg);
   border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .25);
+  border-color: var(--field-border);
+  box-shadow: var(--field-shadow);
   padding: 15px 18px;
 }
 .msg {
@@ -688,23 +745,29 @@ body.logon .icons {
   align-items: stretch;
   gap: 5px;
   padding: 5px 5px 3px;
-  background: var(--paper);
-  color: var(--ink);
-  border-top: var(--px) solid var(--paper-hi);
-  box-shadow: 0 calc(-1 * var(--px)) 0 var(--ink);
+  background: var(--tk-bg);
+  color: var(--tk-fg);
+  border-top: var(--px) solid var(--tk-top);
+  box-shadow: 0 calc(-1 * var(--px)) 0 var(--tk-line);
 }
 .taskbar .btn {
   padding: 0 10px;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo);
+  color: var(--tk-btn-fg);
+  background: var(--tk-btn-bg);
+  border-color: var(--tk-btn-border);
+  box-shadow: inset var(--px) var(--px) 0 var(--tk-btn-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--tk-btn-lo);
+}
+.taskbar .btn:hover {
+  background: var(--tk-btn-bg);
 }
 .taskbar .btn:active,
 .taskbar .btn.pressed {
   transform: none;
-  background: var(--dither);
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-hi);
+  background: var(--tk-btn-pressed);
+  box-shadow: inset var(--px) var(--px) 0 var(--tk-btn-lo), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--tk-btn-hi);
 }
 .taskbar .start {
   padding-right: 12px;
@@ -740,7 +803,7 @@ body.logon .icons {
   padding: 0 10px;
   font: var(--t-ui);
   border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
+  border-color: var(--tk-btn-lo) var(--tk-btn-hi) var(--tk-btn-hi) var(--tk-btn-lo);
 }
 .taskbar .tray .trayicon {
   position: relative;
@@ -772,13 +835,13 @@ body.logon .icons {
   display: none;
   padding: 5px;
   min-width: 288px;
-  background: var(--paper);
-  color: var(--ink);
-  border: var(--px) solid var(--ink);
+  background: var(--menu-bg);
+  color: var(--menu-fg);
+  border: var(--px) solid var(--menu-border);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--paper-hi),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-    5px 5px 0 rgba(0, 0, 0, .5);
+    inset var(--px) var(--px) 0 var(--menu-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--menu-lo),
+    var(--menu-shadow);
 }
 .startmenu.open {
   display: flex;
@@ -792,12 +855,12 @@ body.logon .icons {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--paper-lo);
-  color: var(--ink);
+  background: var(--menu-lo);
+  color: var(--menu-fg);
   padding: 10px 12px;
   margin-bottom: 5px;
   border: var(--px) solid;
-  border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  border-color: var(--menu-border) var(--menu-hi) var(--menu-hi) var(--menu-border);
   font: var(--t-ui-bold);
 }
 .startmenu .user .name {
@@ -805,14 +868,14 @@ body.logon .icons {
 }
 .startmenu .band {
   flex: 0 0 32px;
-  background: var(--blood);
-  color: var(--paper-hi);
+  background: var(--tb-bg);
+  color: var(--tb-fg);
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   font: 12px/32px var(--font-px);
   padding: 12px 0;
   text-align: left;
-  border: var(--px) solid var(--ink);
+  border: var(--px) solid var(--menu-border);
 }
 .startmenu .items {
   flex: 1;
@@ -922,21 +985,21 @@ body.logon .icons {
   flex-direction: column;
   user-select: none;
   background: var(--dither);
-  border-left: 1px solid var(--paper-lo);
+  border-left: 1px solid var(--win-lo);
 }
 .scrollpane > .sp-bar .sp-btn {
   flex: none;
   height: 18px;
   padding: 0;
   cursor: pointer;
-  background: var(--paper);
-  color: var(--ink);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+  background: var(--tbtn-bg);
+  color: var(--tbtn-fg);
+  border: var(--px) solid var(--tbtn-border);
+  box-shadow: inset 1px 1px 0 var(--tbtn-hi), inset -1px -1px 0 var(--tbtn-lo);
   font: 700 9px/1 var(--font-ui);
 }
 .scrollpane > .sp-bar .sp-btn:active {
-  box-shadow: inset 1px 1px 0 var(--paper-lo);
+  box-shadow: inset 1px 1px 0 var(--tbtn-lo);
 }
 .scrollpane > .sp-bar .sp-track {
   flex: 1;
@@ -948,9 +1011,9 @@ body.logon .icons {
   right: 0;
   min-height: 20px;
   cursor: pointer;
-  background: var(--paper);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
+  background: var(--tbtn-bg);
+  border: var(--px) solid var(--tbtn-border);
+  box-shadow: inset 1px 1px 0 var(--tbtn-hi), inset -1px -1px 0 var(--tbtn-lo);
 }
 .scrollpane.sp-none > .sp-bar .sp-thumb {
   display: none;
@@ -986,21 +1049,21 @@ body.logon .icons {
 }
 @keyframes tbarflash {
   0%, 100% {
-    background: var(--blood);
-    color: var(--paper-hi);
+    background: var(--tb-bg);
+    color: var(--tb-fg);
   }
   50% {
-    background: var(--ink-3);
-    color: var(--paper-dim);
+    background: var(--tb-bg-off);
+    color: var(--tb-fg-off);
   }
 }
 @keyframes taskflash {
   0%, 100% {
-    background: var(--paper);
+    background: var(--tk-btn-bg);
   }
   50% {
-    background: var(--blood);
-    color: var(--paper-hi);
+    background: var(--sel-bg);
+    color: var(--sel-fg);
   }
 }
 @keyframes blink {
@@ -1078,6 +1141,128 @@ body.stacked .taskbar .task {
     animation: none !important;
     transition: none !important;
   }
+}
+html[data-theme=tropical],
+html[data-theme=seapumpkin],
+html[data-theme=seapumpkin-pastel] {
+  --font-ui:
+    "DotGothic16",
+    "Courier New",
+    monospace;
+  --win-hi: transparent;
+  --win-lo: transparent;
+  --win-shadow: 4px 4px 0 var(--wi-ink);
+  --win-pad: 4px;
+  --win-fg: var(--wi-ink);
+  --win-border: var(--wi-ink);
+  --tbtn-fg: var(--wi-ink);
+  --tbtn-border: var(--wi-ink);
+  --tbtn-hi: transparent;
+  --tbtn-lo: transparent;
+  --btn-fg: var(--wi-ink);
+  --btn-border: var(--wi-ink);
+  --btn-hi: transparent;
+  --btn-lo: transparent;
+  --btn-shadow: 3px 3px 0 var(--wi-ink);
+  --strong-hi: transparent;
+  --strong-lo: transparent;
+  --menu-fg: var(--wi-ink);
+  --menu-border: var(--wi-ink);
+  --menu-hi: transparent;
+  --menu-shadow: 4px 4px 0 var(--wi-ink);
+  --tk-fg: var(--wi-ink);
+  --tk-top: var(--wi-ink);
+  --tk-line: var(--wi-ink);
+  --tk-btn-fg: var(--wi-ink);
+  --tk-btn-border: var(--wi-ink);
+  --tk-btn-hi: transparent;
+  --tk-btn-lo: transparent;
+  --field-fg: var(--wi-ink);
+  --field-border: var(--wi-ink);
+  --field-shadow: none;
+}
+html[data-theme=tropical] {
+  --wi-ink: #1f2a2a;
+  --wi-mint: #bfe8d3;
+  --wi-pink: #f6b6cf;
+  --win-bg: #ffffff;
+  --tb-bg: var(--wi-pink);
+  --tb-fg: var(--wi-ink);
+  --tb-bg-off: var(--wi-mint);
+  --tb-fg-off: var(--wi-ink);
+  --tbtn-bg: #ffffff;
+  --btn-bg: var(--wi-mint);
+  --btn-hover: #d9f3e6;
+  --strong-bg: var(--wi-pink);
+  --strong-fg: var(--wi-ink);
+  --strong-hover: #fbcbdd;
+  --menu-bg: #ffffff;
+  --menu-lo: #d5e6df;
+  --sel-bg: var(--wi-pink);
+  --sel-fg: var(--wi-ink);
+  --tk-bg: var(--wi-mint);
+  --tk-btn-bg: #ffffff;
+  --tk-btn-pressed: var(--wi-pink);
+  --field-bg: #ffffff;
+  --field-focus: #ee9dbb;
+  --field-off-bg: #eef3f1;
+  --dim-fg: #7f8f8b;
+}
+html[data-theme=seapumpkin] {
+  --wi-ink: #2a1d10;
+  --sp-orange: #f5a25a;
+  --sp-blue: #2f6cc0;
+  --sp-cream: #fff1dc;
+  --win-bg: var(--sp-cream);
+  --tb-bg: var(--sp-blue);
+  --tb-fg: #fff6e0;
+  --tb-bg-off: var(--sp-orange);
+  --tb-fg-off: var(--wi-ink);
+  --tbtn-bg: var(--sp-cream);
+  --btn-bg: var(--sp-orange);
+  --btn-hover: #ffb877;
+  --strong-bg: var(--sp-blue);
+  --strong-fg: #fff6e0;
+  --strong-hover: #3f86d6;
+  --menu-bg: var(--sp-cream);
+  --menu-lo: #ecd6b8;
+  --sel-bg: var(--sp-blue);
+  --sel-fg: #fff6e0;
+  --tk-bg: #ffd9ad;
+  --tk-btn-bg: var(--sp-cream);
+  --tk-btn-pressed: var(--sp-orange);
+  --field-bg: #fff8ec;
+  --field-focus: var(--sp-blue);
+  --field-off-bg: #f3e3cb;
+  --dim-fg: #8a7458;
+}
+html[data-theme=seapumpkin-pastel] {
+  --wi-ink: #2a1d10;
+  --sp-orange: #ffd6b0;
+  --sp-blue: #a9cdf2;
+  --sp-cream: #fff6ea;
+  --win-bg: var(--sp-cream);
+  --tb-bg: var(--sp-blue);
+  --tb-fg: var(--wi-ink);
+  --tb-bg-off: var(--sp-orange);
+  --tb-fg-off: var(--wi-ink);
+  --tbtn-bg: var(--sp-cream);
+  --btn-bg: #ffe0c2;
+  --btn-hover: #fff0de;
+  --strong-bg: #b9d7f5;
+  --strong-fg: var(--wi-ink);
+  --strong-hover: #d0e5f9;
+  --menu-bg: var(--sp-cream);
+  --menu-lo: #f0dfc9;
+  --sel-bg: #b9d7f5;
+  --sel-fg: var(--wi-ink);
+  --tk-bg: #ffe9d2;
+  --tk-btn-bg: var(--sp-cream);
+  --tk-btn-pressed: var(--sp-orange);
+  --field-bg: #fffaf3;
+  --field-focus: #8ab8e8;
+  --field-off-bg: #f7ecdf;
+  --dim-fg: #8a7458;
 }
 
 /* html/hxh/apps/summons.css */
@@ -2080,7 +2265,7 @@ body.stacked .pageno {
   border: var(--px) solid;
   border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
   font: var(--t-small);
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .chat .status .conn::before {
   content: "";
@@ -2097,12 +2282,12 @@ body.stacked .pageno {
   background: var(--none);
 }
 .room .compose textarea:disabled {
-  background: var(--paper-lo);
-  color: var(--ink-4);
+  background: var(--field-off-bg);
+  color: var(--dim-fg);
 }
 .room .compose textarea:disabled::placeholder {
   font-style: italic;
-  color: var(--ink-4);
+  color: var(--dim-fg);
   opacity: 1;
 }
 .dot {
@@ -2131,10 +2316,10 @@ body.stacked .pageno {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: var(--paper-lo);
+  background: var(--menu-lo);
   color: var(--ink);
   border: var(--px) solid;
-  border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  border-color: var(--menu-border) var(--menu-hi) var(--menu-hi) var(--menu-border);
   font: var(--t-ui);
 }
 .contacts .banner .who {
@@ -2151,7 +2336,7 @@ body.stacked .pageno {
 }
 .contacts .banner .who .st {
   font: var(--t-small);
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .contacts .ltabs {
   display: flex;
@@ -2163,16 +2348,16 @@ body.stacked .pageno {
 .contacts .ltab {
   padding: 5px 12px 3px;
   cursor: pointer;
-  background: var(--paper);
-  color: var(--ink-4);
-  border: var(--px) solid var(--ink);
+  background: var(--btn-bg);
+  color: var(--dim-fg);
+  border: var(--px) solid var(--btn-border);
   border-bottom: 0;
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) 0 0 var(--paper-lo);
+  box-shadow: inset var(--px) var(--px) 0 var(--btn-hi), inset calc(-1 * var(--px)) 0 0 var(--btn-lo);
   font: var(--t-ui);
 }
 .contacts .ltab.on {
-  color: var(--ink);
-  background: var(--paper-hi);
+  color: var(--win-fg);
+  background: var(--field-bg);
   padding-bottom: 5px;
   margin-bottom: -2px;
   position: relative;
@@ -2203,7 +2388,7 @@ body.stacked .pageno {
   color: var(--ink-3);
 }
 .contacts .grp.off {
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .contacts .grp:hover .glbl {
   background: var(--emitter);
@@ -2223,11 +2408,11 @@ body.stacked .pageno {
 }
 .contacts .contact .st {
   font: var(--t-small);
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .contacts .contact.away .nm,
 .contacts .contact.offline .nm {
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .contacts .contact.nopass .nm {
   color: var(--blood);
@@ -2241,7 +2426,7 @@ body.stacked .pageno {
   color: var(--ink);
 }
 .contacts .contact:hover:not(.sel) {
-  background: var(--paper);
+  background: var(--menu-lo);
 }
 .contacts .contact:focus-visible {
   outline: 1px dotted var(--ink);
@@ -2259,21 +2444,24 @@ body.stacked .pageno {
   flex: 1;
   padding: 7px 4px 6px;
   cursor: pointer;
-  background: var(--paper);
-  color: var(--ink);
-  border: var(--px) solid var(--ink);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: var(--px) solid var(--btn-border);
   box-shadow:
-    inset var(--px) var(--px) 0 var(--paper-hi),
-    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo),
-    var(--px) var(--px) 0 var(--ink);
+    inset var(--px) var(--px) 0 var(--btn-hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--btn-lo),
+    var(--btn-shadow);
   font: var(--t-ui-bold);
 }
 .contacts .tool:hover {
-  background: var(--paper-hi);
+  background: var(--btn-hover);
 }
 .contacts .tool:active {
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-lo);
+  box-shadow: inset var(--px) var(--px) 0 var(--btn-lo);
   transform: translate(var(--px), var(--px));
+}
+.contacts .tool:disabled {
+  color: var(--dim-fg);
 }
 .room .logbox {
   height: 250px;
@@ -2298,7 +2486,7 @@ body.stacked .pageno {
   color: var(--c, var(--ink));
 }
 .room .m .ts {
-  color: var(--ink-4);
+  color: var(--dim-fg);
   font: var(--t-small);
 }
 .room .m .txt {
@@ -2417,7 +2605,7 @@ body.stacked .pageno {
   overflow-wrap: anywhere;
 }
 .profile-view .empty {
-  color: var(--ink-4);
+  color: var(--dim-fg);
 }
 .profile-edit .tb {
   display: flex;

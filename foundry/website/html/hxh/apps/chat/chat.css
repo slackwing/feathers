@@ -13,12 +13,12 @@
   display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px;
   padding: 4px 8px 3px; min-height: 24px;
   border: var(--px) solid; border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  font: var(--t-small); color: var(--ink-4);
+  font: var(--t-small); color: var(--dim-fg);
 }
 .chat .status .conn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--nen); border: 1px solid var(--ink); vertical-align: -1px; }
 .chat .status .conn.off::before { background: var(--none); }
-.room .compose textarea:disabled { background: var(--paper-lo); color: var(--ink-4); }
-.room .compose textarea:disabled::placeholder { font-style: italic; color: var(--ink-4); opacity: 1; }
+.room .compose textarea:disabled { background: var(--field-off-bg); color: var(--dim-fg); }
+.room .compose textarea:disabled::placeholder { font-style: italic; color: var(--dim-fg); opacity: 1; }
 /* presence dots: green online, yellow away, grey offline, red = no password yet */
 .dot { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); background: var(--none); }
 .dot.online { background: var(--nen); }
@@ -30,22 +30,22 @@
    (.ltabs/.ltab, not .tabs/.tab: the binder's stylesheet owns those names unscoped) */
 .contacts .banner {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-  background: var(--paper-lo); color: var(--ink);
-  border: var(--px) solid; border-color: var(--paper-dim) var(--paper-hi) var(--paper-hi) var(--paper-dim);
+  background: var(--menu-lo); color: var(--ink);
+  border: var(--px) solid; border-color: var(--menu-border) var(--menu-hi) var(--menu-hi) var(--menu-border);
   font: var(--t-ui);
 }
 .contacts .banner .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .contacts .banner .who b { font: var(--t-ui-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contacts .banner .who .st { font: var(--t-small); color: var(--ink-4); }
+.contacts .banner .who .st { font: var(--t-small); color: var(--dim-fg); }
 .contacts .ltabs { display: flex; align-items: flex-end; gap: 2px; margin-top: 10px; padding: 0 4px; }
 .contacts .ltab {
   padding: 5px 12px 3px; cursor: pointer;
-  background: var(--paper); color: var(--ink-4);
-  border: var(--px) solid var(--ink); border-bottom: 0;
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) 0 0 var(--paper-lo);
+  background: var(--btn-bg); color: var(--dim-fg);
+  border: var(--px) solid var(--btn-border); border-bottom: 0;
+  box-shadow: inset var(--px) var(--px) 0 var(--btn-hi), inset calc(-1 * var(--px)) 0 0 var(--btn-lo);
   font: var(--t-ui);
 }
-.contacts .ltab.on { color: var(--ink); background: var(--paper-hi); padding-bottom: 5px; margin-bottom: -2px; position: relative; z-index: 1; }
+.contacts .ltab.on { color: var(--win-fg); background: var(--field-bg); padding-bottom: 5px; margin-bottom: -2px; position: relative; z-index: 1; }
 .contacts .listbox { height: 440px; max-height: 60vh; position: relative; }
 .contacts .tree { padding: 4px 4px 8px; font: var(--t-ui); }
 .contacts .grp {
@@ -53,30 +53,31 @@
   color: var(--ink); font: var(--t-ui-bold);
 }
 .contacts .grp .tri { font-size: 9px; width: 12px; color: var(--ink-3); }
-.contacts .grp.off { color: var(--ink-4); }
+.contacts .grp.off { color: var(--dim-fg); }
 .contacts .grp:hover .glbl { background: var(--emitter); }
 .contacts .contact {
   display: flex; align-items: center; gap: 8px; padding: 4px 6px 3px 22px; cursor: pointer;
   color: var(--c, var(--ink));
 }
 .contacts .contact .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contacts .contact .st { font: var(--t-small); color: var(--ink-4); }
-.contacts .contact.away .nm, .contacts .contact.offline .nm { color: var(--ink-4); }
+.contacts .contact .st { font: var(--t-small); color: var(--dim-fg); }
+.contacts .contact.away .nm, .contacts .contact.offline .nm { color: var(--dim-fg); }
 .contacts .contact.nopass .nm { color: var(--blood); }
 .contacts .contact.sel { background: var(--emitter); color: var(--ink); outline: 1px dotted var(--ink); }
 .contacts .contact.sel .nm { color: var(--ink); }
-.contacts .contact:hover:not(.sel) { background: var(--paper); }
+.contacts .contact:hover:not(.sel) { background: var(--menu-lo); }
 .contacts .contact:focus-visible { outline: 1px dotted var(--ink); }
 .contacts .dd.ctx { position: absolute; z-index: 7; }
 .contacts .tools { display: flex; gap: 6px; margin-top: 8px; }
 .contacts .tool {
   flex: 1; padding: 7px 4px 6px; cursor: pointer;
-  background: var(--paper); color: var(--ink); border: var(--px) solid var(--ink);
-  box-shadow: inset var(--px) var(--px) 0 var(--paper-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--paper-lo), var(--px) var(--px) 0 var(--ink);
+  background: var(--btn-bg); color: var(--btn-fg); border: var(--px) solid var(--btn-border);
+  box-shadow: inset var(--px) var(--px) 0 var(--btn-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--btn-lo), var(--btn-shadow);
   font: var(--t-ui-bold);
 }
-.contacts .tool:hover { background: var(--paper-hi); }
-.contacts .tool:active { box-shadow: inset var(--px) var(--px) 0 var(--paper-lo); transform: translate(var(--px), var(--px)); }
+.contacts .tool:hover { background: var(--btn-hover); }
+.contacts .tool:active { box-shadow: inset var(--px) var(--px) 0 var(--btn-lo); transform: translate(var(--px), var(--px)); }
+.contacts .tool:disabled { color: var(--dim-fg); }
 
 /* ---------- a chat window ---------- */
 .room .logbox { height: 250px; }
@@ -86,7 +87,7 @@
 .room .compose textarea { font: var(--t-chat); }
 .room .m { margin: 0 0 2px; }
 .room .m .who { color: var(--c, var(--ink)); }
-.room .m .ts { color: var(--ink-4); font: var(--t-small); }
+.room .m .ts { color: var(--dim-fg); font: var(--t-small); }
 .room .m .txt { white-space: pre-wrap; overflow-wrap: anywhere; }
 .room .compose { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .room .compose textarea { resize: none; min-height: 72px; }
@@ -116,7 +117,7 @@
   min-height: 140px; max-height: 60vh; overflow-y: auto; padding: 12px 14px;
   font: var(--t-body); white-space: pre-wrap; overflow-wrap: anywhere;
 }
-.profile-view .empty { color: var(--ink-4); }
+.profile-view .empty { color: var(--dim-fg); }
 .profile-edit .tb { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .profile-edit .tb select.field { width: auto; padding: 6px 8px 4px; }
 .profile-edit .tb .swatch {

@@ -35,9 +35,9 @@ export class TitleBar extends Component {
   render() {
     const { title = "", icon: ic = "x", buttons = [] } = this.props;
     const tb = h("div", { className: "tbar" });
-    // The crimson × app icon would vanish on the crimson title bar, so it
-    // is drawn in cream there.
-    tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "#fff6e0" } : null) }));
+    // The crimson × app icon would vanish on a crimson title bar, so on a
+    // title bar it takes the title's own colour, whatever the theme.
+    tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "currentColor", k: "currentColor" } : null) }));
     this.ttl = h("span", { className: "ttl", text: title });
     tb.append(this.ttl);
     if (buttons.length) {

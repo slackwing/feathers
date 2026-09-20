@@ -1007,7 +1007,7 @@ var HxH = (() => {
     render() {
       const { title = "", icon: ic = "x", buttons = [] } = this.props;
       const tb = h("div", { className: "tbar" });
-      tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "#fff6e0" } : null) }));
+      tb.append(h("span", { className: "ico", html: icon(ic, 16, ic === "x" ? { r: "currentColor", k: "currentColor" } : null) }));
       this.ttl = h("span", { className: "ttl", text: title });
       tb.append(this.ttl);
       if (buttons.length) {
