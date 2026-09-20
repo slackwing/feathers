@@ -14,6 +14,7 @@ import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
 import { ConfirmDialog, PromptDialog, ReasonDialog } from "./dialogs.js";
 import { busy } from "./busy.js";
+import { AVATAR_RATIO, CARD_RATIO } from "./fields.js";
 import "./roster.css";
 
 
@@ -225,7 +226,8 @@ export class RosterApp extends App {
   }
 
   /** Untouched: the server cuts the exact source pixels. Painted: the canvas pixels go up as a new "cropped"
-      picture. Once the database has answered, the crop window closes. */
+      picture. Once the database has answered, the crop window closes — and a crop of the avatar's or the
+      card's proportion fills that slot when it is still empty (Andrew, 2026-09-20). */
   async crop(imageId, meta, rect, blob = null) {
     const w = this.crops.get(imageId);
     try {
@@ -234,9 +236,22 @@ export class RosterApp extends App {
         : this.api.crop(imageId, rect), "Saving…");
       w?.saved(r.image, r.created);
       w?.close();
-      await this.reload(meta.char.id, { form: false });
+      const c = await this.reload(meta.char.id, { form: false });
+      const slot = c && slotFor(r.image, c);
+      if (slot) {
+        await this.patch(c.id, { [slot]: r.image.id });
+        this.chars.get(c.id)?.say(`Saved · set as ${slot === "avatar_image_id" ? "avatar" : "card"}`);
+      }
     } catch (err) { w?.failed(err.message); }
   }
+}
+
+/** The empty slot a picture of this proportion should fill, if any: avatar (1:1) or card (16:9). */
+export function slotFor(image, c, tol = 0.02) {
+  const r = image.width / image.height;
+  if (!c.avatar_image_id && Math.abs(r - AVATAR_RATIO) <= tol) return "avatar_image_id";
+  if (!c.card_image_id && Math.abs(r - CARD_RATIO) <= tol) return "card_image_id";
+  return null;
 }
 
 export { RosterWindow, CharacterWindow, CropWindow, winId, cropId };

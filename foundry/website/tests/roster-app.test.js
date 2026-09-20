@@ -2,7 +2,7 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { RosterApp, RosterWindow, CharacterWindow, CropWindow, winId, cropId } from "../html/hxh/apps/roster/app.js";
+import { RosterApp, RosterWindow, CharacterWindow, CropWindow, winId, cropId, slotFor } from "../html/hxh/apps/roster/app.js";
 import { Dialog } from "../html/hxh/apps/roster/dialogs.js";
 import { PaintDoc, packRGBA } from "../html/hxh/apps/roster/paint.js";
 
@@ -232,6 +232,28 @@ test("crop window: sized to show the whole picture; a ratio button starts a cent
   assert.deepEqual(log.find(l => l.method === "POST" && l.path === "/hxh/api/db/images/10/crop").body, { x: 744, y: 216, w: 432, h: 648 });
   assert.ok(!os.wm.has(cropId(10)), "closed once the database answered");
   assert.equal(w.el.querySelectorAll('.sec[data-type="cropped"] .tile').length, 3);
+  assert.equal(log.filter(l => l.method === "PATCH").length, 0, "a 2:3 crop fills no slot");
+  // a 16:9 crop fills the empty card slot by itself; a 1:1 crop the empty avatar slot
+  await app().openCrop(10);
+  await tick();
+  const c2 = os.wm.get(cropId(10));
+  c2.setBox({ x: 0, y: 0, w: 1600, h: 900 });
+  d.click(c2.saveBtn);
+  await tick(); await tick(); await tick();
+  assert.deepEqual(log.filter(l => l.method === "PATCH").at(-1).body, { card_image_id: 13 });
+  assert.equal(w.msgEl.textContent, "Saved · set as card");
+  await app().openCrop(10);
+  await tick();
+  const c3 = os.wm.get(cropId(10));
+  c3.setBox({ x: 0, y: 0, w: 900, h: 900 });
+  d.click(c3.saveBtn);
+  await tick(); await tick(); await tick();
+  assert.deepEqual(log.filter(l => l.method === "PATCH").at(-1).body, { avatar_image_id: 13 });
+  // slots already set stay as they are
+  assert.equal(slotFor({ width: 800, height: 450 }, { avatar_image_id: 1, card_image_id: 2 }), null);
+  assert.equal(slotFor({ width: 800, height: 450 }, { avatar_image_id: 1, card_image_id: null }), "card_image_id");
+  assert.equal(slotFor({ width: 500, height: 500 }, { avatar_image_id: null, card_image_id: null }), "avatar_image_id");
+  assert.equal(slotFor({ width: 500, height: 700 }, { avatar_image_id: null, card_image_id: null }), null);
 });
 
 test("paint: strokes, bucket fill, expand canvas and revert all go through one undo / redo history; a painted save uploads the pixels", async () => {
