@@ -722,6 +722,63 @@ var HxH = (() => {
       ".......kk.......",
       "................"
     ],
+    // Beetle compose tools: paste what the clipboard holds
+    clipboard: [
+      "......kkkk......",
+      ".....kkppkk.....",
+      "..kkkkkppkkkkk..",
+      "..kwwkkkkkkwwk..",
+      "..kwwwwwwwwwwk..",
+      "..kwkkkkkkkkwk..",
+      "..kwwwwwwwwwwk..",
+      "..kwkkkkkkkwwk..",
+      "..kwwwwwwwwwwk..",
+      "..kwkkkkkkkkwk..",
+      "..kwwwwwwwwwwk..",
+      "..kwkkkkkwwwwk..",
+      "..kwwwwwwwwwwk..",
+      "..kkkkkkkkkkkk..",
+      "................",
+      "................"
+    ],
+    // Beetle compose tools: a picture
+    picture: [
+      "................",
+      ".kkkkkkkkkkkkkk.",
+      ".kbbbbbbbbbbbbk.",
+      ".kbbbbbbbbyybbk.",
+      ".kbbbbbbbbyybbk.",
+      ".kbbbbbbbbbbbbk.",
+      ".kbbbbgbbbbbbbk.",
+      ".kbbbgggbbbbbbk.",
+      ".kbbgggggbbggbk.",
+      ".kbgggggggggggk.",
+      ".kggggggggggggk.",
+      ".kggggggggggggk.",
+      ".kkkkkkkkkkkkkk.",
+      "................",
+      "................",
+      "................"
+    ],
+    // Beetle compose tools: emoji
+    smile: [
+      "................",
+      ".....kkkkkk.....",
+      "...kkyyyyyykk...",
+      "..kyyyyyyyyyyk..",
+      ".kyyyyyyyyyyyyk.",
+      ".kyykkyyyykkyyk.",
+      ".kyyyyyyyyyyyyk.",
+      ".kyyyyyyyyyyyyk.",
+      ".kyyyyyyyyyyyyk.",
+      ".kykyyyyyyyykyk.",
+      ".kyykyyyyyykyyk.",
+      ".kyyykkkkkkyyyk.",
+      "..kyyyyyyyyyyk..",
+      "...kkyyyyyykk...",
+      ".....kkkkkk.....",
+      "................"
+    ],
     // Settings: a gear (generated: ring, eight teeth, a hole, ink edge)
     gear: [
       "................",
@@ -3980,12 +4037,12 @@ var HxH = (() => {
       return this.send({ t: "read", room, id });
     }
     /** Rate-limited: at most `rate` messages per second. Returns false when refused. */
-    sendMessage(room, body) {
+    sendMessage(room, body, imageId = 0) {
       const t = this.now();
       this.sent = this.sent.filter((x) => t - x < 1e3);
       if (this.sent.length >= this.rate) return false;
       this.sent.push(t);
-      this.send({ t: "msg", room, body });
+      this.send({ t: "msg", room, body, ...imageId ? { image_id: imageId } : {} });
       return true;
     }
     /** "Is typing" — throttled per room; only while connected. */
@@ -4026,6 +4083,15 @@ var HxH = (() => {
     }
     profile(username) {
       return this.get("/profile/" + encodeURIComponent(username));
+    }
+    /** A picture, as its raw bytes; the server re-encodes and answers {id, width, height}. */
+    async uploadImage(blob) {
+      const r = await this.fetch(this.base + "/image", { method: "POST", headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob });
+      if (!r.ok) throw new Error(await r.text().catch(() => r.status));
+      return r.json();
+    }
+    imageURL(id) {
+      return `${this.base}/image/${id}`;
     }
     async saveProfile(runs) {
       const r = await this.fetch(this.base + "/profile", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runs }) });
@@ -4230,7 +4296,94 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/chat/emoji.js
+  var EMOJI = [
+    "\u{1F600}",
+    "\u{1F604}",
+    "\u{1F602}",
+    "\u{1F923}",
+    "\u{1F60A}",
+    "\u{1F60D}",
+    "\u{1F618}",
+    "\u{1F60E}",
+    "\u{1F914}",
+    "\u{1F644}",
+    "\u{1F60F}",
+    "\u{1F62C}",
+    "\u{1F92F}",
+    "\u{1F631}",
+    "\u{1F62D}",
+    "\u{1F973}",
+    "\u{1F97A}",
+    "\u{1F624}",
+    "\u{1FAE0}",
+    "\u{1FAF6}",
+    "\u{1FAE1}",
+    "\u{1F91D}",
+    "\u{1F440}",
+    "\u{1F921}",
+    "\u{1F44D}",
+    "\u{1F44E}",
+    "\u{1F44F}",
+    "\u{1F64C}",
+    "\u{1F64F}",
+    "\u{1F4AA}",
+    "\u{1F525}",
+    "\u2728",
+    "\u{1F4AF}",
+    "\u2764\uFE0F",
+    "\u{1F494}",
+    "\u{1F480}",
+    "\u{1F47B}",
+    "\u{1F383}",
+    "\u{1F987}",
+    "\u{1F577}\uFE0F",
+    "\u{1F578}\uFE0F",
+    "\u{1F9DF}",
+    "\u{1F9DB}",
+    "\u{1F9D9}",
+    "\u{1F36C}",
+    "\u{1F36D}",
+    "\u{1F389}",
+    "\u{1F388}",
+    "\u{1F381}",
+    "\u{1F41E}",
+    "\u{1F40B}",
+    "\u{1F41F}",
+    "\u{1F30A}",
+    "\u{1F3DD}\uFE0F",
+    "\u26F5",
+    "\u2708\uFE0F",
+    "\u{1F0CF}",
+    "\u26A1",
+    "\u{1F319}",
+    "\u2B50",
+    "\u{1F355}",
+    "\u{1F37A}",
+    "\u2615",
+    "\u{1F32E}",
+    "\u{1F3AE}",
+    "\u{1F3B5}",
+    "\u{1F4F8}",
+    "\u{1F5FA}\uFE0F",
+    "\u{1F511}",
+    "\u{1F4A4}",
+    "\u{1F680}",
+    "\u{1F3C6}"
+  ];
+  var EmojiMenu = class extends Menu {
+    constructor({ onPick, parent = null } = {}) {
+      super({ cls: "emoji", parent, items: () => EMOJI.map((e) => ({ label: e, attrs: { "data-emoji": e, title: e }, onclick: () => onPick?.(e) })) });
+    }
+  };
+
   // html/hxh/apps/chat/window.js
+  var blobText = (blob) => typeof blob.text === "function" ? blob.text() : new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsText(blob);
+  });
   var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
   var MAX_LOG = 500;
   var ChatWindow = class extends Window {
@@ -4244,7 +4397,13 @@ var HxH = (() => {
         cls: "chat room" + (props.large ? " large" : ""),
         content: `
         <div class="compose">
+          <div class="ctools">
+            <button class="ctool" type="button" data-act="clip" title="Paste">${icon("clipboard", 16)}</button>
+            <button class="ctool" type="button" data-act="pic" title="Image">${icon("picture", 16)}</button>
+            <div class="menu"><button class="ctool" type="button" data-act="emoji" title="Emoji">${icon("smile", 16)}</button></div>
+          </div>
           <textarea class="field" rows="3" aria-label="Message"></textarea>
+          <div class="attach" hidden><img alt=""><button class="tbtn x" type="button" data-act="detach" title="Remove">\xD7</button></div>
           <div class="cbtns">
             ${props.profile ? `<button class="btn" type="button" data-act="profile">Profile</button>` : ""}
             <button class="btn primary" type="button" data-act="send">Send</button>
@@ -4264,21 +4423,94 @@ var HxH = (() => {
       this.pane.el.classList.add("sunken", "logbox");
       this.typingEl = el.querySelector(".typing");
       this.input = el.querySelector("textarea");
+      this.attachEl = el.querySelector(".attach");
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
       el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
+      el.querySelector('[data-act="detach"]').addEventListener("click", () => {
+        this.clearAttachment();
+        this.focusInput();
+      });
+      el.querySelector('[data-act="clip"]').addEventListener("click", () => this.pasteFromClipboard());
+      el.querySelector('[data-act="pic"]').addEventListener("click", () => this.emit("image-dialog"));
+      const emojiBtn = el.querySelector('[data-act="emoji"]');
+      this.emoji = this.adopt(new EmojiMenu({ onPick: (e) => {
+        this.insertText(e);
+        this.emoji.close();
+      } }), emojiBtn.parentElement);
+      emojiBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.emoji.toggle();
+      });
       this.input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           this.submit();
         } else if (e.key.length === 1 || e.key === "Backspace") this.emit("typing");
       });
+      this.input.addEventListener("paste", (e) => {
+        const file = [...e.clipboardData?.files || []].find((f) => f.type.startsWith("image/")) || [...e.clipboardData?.items || []].filter((i) => i.kind === "file" && i.type.startsWith("image/")).map((i) => i.getAsFile())[0];
+        if (file) {
+          e.preventDefault();
+          this.emit("image-file", { file });
+        }
+      });
       return el;
+    }
+    /** The clipboard button: a picture attaches, text goes in at the caret. Needs the async Clipboard API (a user gesture). */
+    async pasteFromClipboard() {
+      const cb = this.props.clipboard || globalThis.navigator?.clipboard;
+      try {
+        if (cb?.read) {
+          for (const item of await cb.read()) {
+            const type2 = item.types.find((t) => t.startsWith("image/"));
+            if (type2) {
+              this.emit("image-file", { file: await item.getType(type2) });
+              return true;
+            }
+            if (item.types.includes("text/plain")) {
+              this.insertText(await blobText(await item.getType("text/plain")));
+              return true;
+            }
+          }
+        }
+        if (cb?.readText) {
+          this.insertText(await cb.readText());
+          return true;
+        }
+      } catch {
+      }
+      this.emit("clip-fail");
+      return false;
+    }
+    /** Type `text` where the caret is. */
+    insertText(text) {
+      const el = this.input, s = el.selectionStart ?? el.value.length, e = el.selectionEnd ?? s;
+      el.value = el.value.slice(0, s) + text + el.value.slice(e);
+      el.selectionStart = el.selectionEnd = s + text.length;
+      el.focus();
+      this.emit("typing");
+    }
+    /** One picture per message: it shows below the text you typed; you keep typing above it. */
+    attachImage(ref) {
+      this.image = ref;
+      const img = this.attachEl.querySelector("img");
+      img.src = ref.url;
+      img.width = ref.width;
+      img.height = ref.height;
+      this.attachEl.hidden = false;
+      this.focusInput();
+    }
+    clearAttachment() {
+      this.image = null;
+      this.attachEl.hidden = true;
+      this.attachEl.querySelector("img").removeAttribute("src");
     }
     submit() {
       const body = this.input.value.trim();
-      if (!body || this.canSend === false) return false;
-      this.emit("send", { body });
+      if (!body && !this.image || this.canSend === false) return false;
+      this.emit("send", { body, image: this.image || null });
       this.input.value = "";
+      this.clearAttachment();
       return true;
     }
     focusInput() {
@@ -4324,8 +4556,11 @@ var HxH = (() => {
         h("b", { className: "who", text: p.nameOf?.(m.sender) || m.sender, style: { color: p.colorOf?.(m.sender) || "" } }),
         h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` }),
         " ",
-        h("span", { className: "txt", text: m.body })
+        m.body ? h("span", { className: "txt", text: m.body }) : null
       );
+      if (m.image) {
+        row.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+      }
       this.log.append(row);
       this.messages.push(m);
       while (this.log.childElementCount > MAX_LOG) {
@@ -4726,6 +4961,67 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/chat/picture.js
+  var PictureDialog = class extends Window {
+    constructor(props = {}) {
+      super({
+        id: "win-chat-picture",
+        title: "Insert Image",
+        icon: "picture",
+        width: 460,
+        popup: true,
+        minimizable: false,
+        content: `
+        <div class="pbox"><img alt="" hidden></div>
+        <div class="actions">
+          <label class="btn upload">Upload\u2026<input type="file" accept="image/*" hidden></label>
+          <button class="btn primary" type="button" data-act="insert" disabled>Insert from Clipboard</button>
+        </div>`,
+        ...props
+      });
+      this.blob = null;
+    }
+    render() {
+      const el = super.render();
+      el.classList.add("picture");
+      this.img = el.querySelector(".pbox img");
+      this.insertBtn = el.querySelector('[data-act="insert"]');
+      this.fileInput = el.querySelector('input[type="file"]');
+      this.insertBtn.addEventListener("click", () => {
+        if (this.blob) {
+          this.emit("insert", { file: this.blob });
+          this.close();
+        }
+      });
+      this.fileInput.addEventListener("change", () => {
+        const f = this.fileInput.files?.[0];
+        this.fileInput.value = "";
+        if (f) {
+          this.emit("insert", { file: f });
+          this.close();
+        }
+      });
+      return el;
+    }
+    /** Show what the clipboard holds (a Blob) or nothing. */
+    setClipboard(blob) {
+      if (this.url) {
+        this.props.revoke?.(this.url);
+        this.url = null;
+      }
+      this.blob = blob || null;
+      if (this.blob) {
+        this.url = this.props.objectURL ? this.props.objectURL(this.blob) : URL.createObjectURL(this.blob);
+        this.img.src = this.url;
+        this.img.hidden = false;
+      } else {
+        this.img.removeAttribute("src");
+        this.img.hidden = true;
+      }
+      this.insertBtn.disabled = !this.blob;
+    }
+  };
+
   // html/hxh/apps/chat/app.js
   var ROOM_GLOBAL = "global";
   var dmRoom = (a, b) => "dm:" + [a, b].sort().join(":");
@@ -4813,6 +5109,7 @@ var HxH = (() => {
       c.on("error", (e) => {
         if (e.code === "rate") os2.toast.show("Slow down.");
         else if (e.code === "offline") os2.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
+        else if (e.code === "image") os2.toast.show("That picture can't be sent.");
       });
       this.stopFocus = os2.bus.on("window:focus", ({ id }) => this.onFocus(id));
       this._onTabFocus = () => this.onTabFocus();
@@ -4959,11 +5256,16 @@ var HxH = (() => {
           colorOf: (u) => this.colorOf(u),
           menus: (win) => this.roomMenus(win, room),
           profile: !!other,
-          large: room === ROOM_GLOBAL
+          large: room === ROOM_GLOBAL,
+          imageURL: (id) => this.api.imageURL(id),
+          clipboard: this.options.clipboard
         });
         os2.wm.add(w);
         this.windows.set(room, w);
-        w.on("send", ({ body }) => this.send(room, body));
+        w.on("send", ({ body, image }) => this.send(room, body, image));
+        w.on("image-file", ({ file }) => this.attachFile(w, file));
+        w.on("image-dialog", () => this.pictureDialog(w));
+        w.on("clip-fail", () => os2.toast.show("Nothing to paste."));
         w.on("typing", () => this.client?.typing(room));
         w.on("profile", () => other && this.viewProfile(other));
         w.on("close", () => {
@@ -5020,13 +5322,50 @@ var HxH = (() => {
         this.loaded.delete(room);
       }
     }
-    send(room, body) {
-      if (!this.client?.sendMessage(room, body)) {
+    send(room, body, image = null) {
+      if (!this.client?.sendMessage(room, body, image?.id || 0)) {
         this.os.toast.show("Slow down.");
         return false;
       }
       this.os.sounds.play("sent");
       return true;
+    }
+    /* ---------- pictures ---------- */
+    /** Upload a picture (any Blob) and hang it on the window's next message. */
+    async attachFile(w, file) {
+      try {
+        const ref = await this.api.uploadImage(file);
+        w.attachImage({ ...ref, url: this.api.imageURL(ref.id) });
+        return ref;
+      } catch (err) {
+        this.os.toast.show("That picture didn't take.");
+        return null;
+      }
+    }
+    /** What picture, if any, the clipboard holds (needs the async Clipboard API and a user gesture). */
+    async clipboardImage() {
+      const cb = this.options.clipboard || this.os.win?.navigator?.clipboard;
+      try {
+        for (const item of await cb.read()) {
+          const type2 = item.types.find((t) => t.startsWith("image/"));
+          if (type2) return await item.getType(type2);
+        }
+      } catch {
+      }
+      return null;
+    }
+    /** The Insert Image window for a chat: previews the clipboard's picture, offers an upload. */
+    async pictureDialog(w) {
+      const os2 = this.os;
+      if (!this.pictureWin) {
+        this.pictureWin = new PictureDialog({ objectURL: this.options.objectURL, revoke: this.options.revokeURL });
+        os2.wm.add(this.pictureWin);
+        this.pictureWin.on("insert", ({ file }) => this.attachFile(this.pictureFor || w, file));
+      }
+      this.pictureFor = w;
+      this.pictureWin.setClipboard(await this.clipboardImage());
+      os2.wm.open(this.pictureWin.id);
+      return this.pictureWin;
     }
     /* ---------- incoming ---------- */
     onMessage(m) {

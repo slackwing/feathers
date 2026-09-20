@@ -23,14 +23,21 @@
   --specialist: #58e05c;
   --none: #9a9a9a;
   --px: 2px;
+  --font-emoji:
+    "Noto Color Emoji",
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Twemoji Mozilla";
   --font-ui:
     "Pixelify Sans",
+    var(--font-emoji),
     Tahoma,
     Verdana,
     "DejaVu Sans",
     sans-serif;
   --font-body:
     "DotGothic16",
+    var(--font-emoji),
     "Courier New",
     monospace;
   --font-display:
@@ -1147,6 +1154,7 @@ html[data-theme=seapumpkin],
 html[data-theme=seapumpkin-pastel] {
   --font-ui:
     "DotGothic16",
+    var(--font-emoji),
     "Courier New",
     monospace;
   --win-hi: transparent;
@@ -2498,6 +2506,95 @@ body.stacked .pageno {
   flex-direction: column;
   gap: 6px;
   margin-top: 8px;
+}
+.room .ctools {
+  display: flex;
+  gap: 4px;
+}
+.room .ctools .menu {
+  position: relative;
+}
+.room .ctool {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: var(--px) solid var(--btn-border);
+  box-shadow: inset 1px 1px 0 var(--btn-hi), inset -1px -1px 0 var(--btn-lo);
+}
+.room .ctool:hover {
+  background: var(--btn-hover);
+}
+.room .ctool:active {
+  box-shadow: inset 1px 1px 0 var(--btn-lo);
+}
+.room .attach {
+  position: relative;
+  align-self: flex-start;
+  max-width: 100%;
+}
+.room .attach img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 120px;
+  border: var(--px) solid var(--win-border);
+}
+.room .attach .x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+.room .m .pic img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 300px;
+  margin: 4px 0 6px;
+  border: var(--px) solid var(--win-border);
+  image-rendering: auto;
+}
+.dd.emoji {
+  min-width: 0;
+  width: 304px;
+  padding: 6px;
+}
+.dd.emoji.open {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+.dd.emoji button {
+  width: auto;
+  padding: 4px 0 2px;
+  justify-content: center;
+  font: 20px/1.2 var(--font-emoji), var(--font-body);
+}
+.picture .pbox {
+  height: 260px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--field-off-bg);
+  border: var(--px) solid var(--win-border);
+}
+.picture .pbox img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+.picture .actions {
+  justify-content: flex-end;
+}
+.picture .upload {
+  display: inline-block;
 }
 .room .compose textarea {
   resize: none;

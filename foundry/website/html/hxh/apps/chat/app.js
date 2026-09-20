@@ -13,6 +13,7 @@ import { ContactsWindow } from "./contacts.js";
 import { ChatWindow } from "./window.js";
 import { ProfileWindow, ProfileEditor } from "./profile.js";
 import { AboutWindow } from "./about.js";
+import { PictureDialog } from "./picture.js";
 import "./chat.css";
 
 export const ROOM_GLOBAL = "global";
@@ -93,6 +94,7 @@ export class ChatApp extends App {
     c.on("error", e => {
       if (e.code === "rate") os.toast.show("Slow down.");
       else if (e.code === "offline") os.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
+      else if (e.code === "image") os.toast.show("That picture can't be sent.");
     });
     this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
     // the tab itself regaining focus is what turns "shown" into "read"
@@ -231,10 +233,13 @@ export class ChatApp extends App {
     if (!w) {
       const other = this.otherOf(room);
       w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u),
-        menus: win => this.roomMenus(win, room), profile: !!other, large: room === ROOM_GLOBAL });
+        menus: win => this.roomMenus(win, room), profile: !!other, large: room === ROOM_GLOBAL, imageURL: id => this.api.imageURL(id), clipboard: this.options.clipboard });
       os.wm.add(w);
       this.windows.set(room, w);
-      w.on("send", ({ body }) => this.send(room, body));
+      w.on("send", ({ body, image }) => this.send(room, body, image));
+      w.on("image-file", ({ file }) => this.attachFile(w, file));
+      w.on("image-dialog", () => this.pictureDialog(w));
+      w.on("clip-fail", () => os.toast.show("Nothing to paste."));
       w.on("typing", () => this.client?.typing(room));
       w.on("profile", () => other && this.viewProfile(other));
       w.on("close", () => { this.markRead(room); });
@@ -288,10 +293,49 @@ export class ChatApp extends App {
     } catch { this.loaded.delete(room); }
   }
 
-  send(room, body) {
-    if (!this.client?.sendMessage(room, body)) { this.os.toast.show("Slow down."); return false; }
+  send(room, body, image = null) {
+    if (!this.client?.sendMessage(room, body, image?.id || 0)) { this.os.toast.show("Slow down."); return false; }
     this.os.sounds.play("sent");
     return true;
+  }
+
+  /* ---------- pictures ---------- */
+  /** Upload a picture (any Blob) and hang it on the window's next message. */
+  async attachFile(w, file) {
+    try {
+      const ref = await this.api.uploadImage(file);
+      w.attachImage({ ...ref, url: this.api.imageURL(ref.id) });
+      return ref;
+    } catch (err) {
+      this.os.toast.show("That picture didn't take.");
+      return null;
+    }
+  }
+
+  /** What picture, if any, the clipboard holds (needs the async Clipboard API and a user gesture). */
+  async clipboardImage() {
+    const cb = this.options.clipboard || this.os.win?.navigator?.clipboard;
+    try {
+      for (const item of await cb.read()) {
+        const type = item.types.find(t => t.startsWith("image/"));
+        if (type) return await item.getType(type);
+      }
+    } catch {}
+    return null;
+  }
+
+  /** The Insert Image window for a chat: previews the clipboard's picture, offers an upload. */
+  async pictureDialog(w) {
+    const os = this.os;
+    if (!this.pictureWin) {
+      this.pictureWin = new PictureDialog({ objectURL: this.options.objectURL, revoke: this.options.revokeURL });
+      os.wm.add(this.pictureWin);
+      this.pictureWin.on("insert", ({ file }) => this.attachFile(this.pictureFor || w, file));
+    }
+    this.pictureFor = w;
+    this.pictureWin.setClipboard(await this.clipboardImage());
+    os.wm.open(this.pictureWin.id);
+    return this.pictureWin;
   }
 
   /* ---------- incoming ---------- */

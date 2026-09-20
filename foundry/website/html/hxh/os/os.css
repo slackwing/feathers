@@ -46,8 +46,9 @@
      blurs at any other size), and Press Start 2P only for display
      pieces (logotype, stamps, kickers). Apps use the --t-* shorthands,
      never their own numbers. */
-  --font-ui: "Pixelify Sans", Tahoma, Verdana, "DejaVu Sans", sans-serif;
-  --font-body: "DotGothic16", "Courier New", monospace;
+  --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Twemoji Mozilla";   /* per-glyph fallback: every modern emoji renders in the OS's colour font */
+  --font-ui: "Pixelify Sans", var(--font-emoji), Tahoma, Verdana, "DejaVu Sans", sans-serif;
+  --font-body: "DotGothic16", var(--font-emoji), "Courier New", monospace;
   --font-display: "Press Start 2P", "Courier New", monospace;
   --font-px: var(--font-display);   /* legacy names, still used by the binder's device art */
   --font-dot: var(--font-body);
@@ -534,7 +535,7 @@ body.stacked .taskbar .task {padding: 0 8px; }
    buttons, a monospace pixel face for the chrome. Only the chrome changes;
    the brand palette (the logo, the summons stamp, the Beetle) stays. */
 html[data-theme="tropical"], html[data-theme="seapumpkin"], html[data-theme="seapumpkin-pastel"] {
-  --font-ui: "DotGothic16", "Courier New", monospace;
+  --font-ui: "DotGothic16", var(--font-emoji), "Courier New", monospace;
   --win-hi: transparent; --win-lo: transparent; --win-shadow: 4px 4px 0 var(--wi-ink); --win-pad: 4px;
   --win-fg: var(--wi-ink); --win-border: var(--wi-ink);
   --tbtn-fg: var(--wi-ink); --tbtn-border: var(--wi-ink); --tbtn-hi: transparent; --tbtn-lo: transparent;

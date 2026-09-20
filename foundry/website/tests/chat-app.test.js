@@ -7,6 +7,8 @@ import { ContactsWindow, present } from "../html/hxh/apps/chat/contacts.js";
 import { AboutWindow } from "../html/hxh/apps/chat/about.js";
 import { ChatWindow } from "../html/hxh/apps/chat/window.js";
 import { ProfileWindow, ProfileEditor } from "../html/hxh/apps/chat/profile.js";
+import { PictureDialog } from "../html/hxh/apps/chat/picture.js";
+import { EMOJI } from "../html/hxh/apps/chat/emoji.js";
 import { Window } from "../html/hxh/os/window.js";
 
 const ME = { username: "andrew", display_name: "Andrew", initial: "AC", color: "#d914e3", roles: [{ website: "hxh", role: "admin" }] };
@@ -31,10 +33,12 @@ function fakeWS() {
   return { WS, sockets };
 }
 
-let d, os, sockets, log, api, tabFocused;
+let d, os, sockets, log, api, tabFocused, clipboard;
+const png = () => new d.win.File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "shot.png", { type: "image/png" });
 beforeEach(async () => {
   d = setupDom();
   tabFocused = true;
+  clipboard = { items: [], read: async () => clipboard.items, readText: async () => clipboard.text ?? "" };
   const ws = fakeWS(); sockets = ws.sockets; log = [];
   api = {
     "GET /admin/api/me": [200, ME],
@@ -43,10 +47,11 @@ beforeEach(async () => {
     "GET /hxh/api/chat/profile/abi": [200, { username: "abi", runs: [{ t: "lyrics", b: true }] }],
     "GET /hxh/api/chat/profile/andrew": [200, { username: "andrew", runs: [] }],
     "PUT /hxh/api/chat/profile": [200, { username: "andrew", runs: [{ t: "me" }] }],
+    "POST /hxh/api/chat/image": init => [200, { id: 9, width: 300, height: 200 }],
   };
   os = new OS({ win: d.win, fetch: fakeFetch(api, log), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   os.sounds.AC = class { constructor() { this.currentTime = 0; this.state = "running"; this.destination = {}; } createOscillator() { return { frequency: { setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {}, start() {}, stop() {} }; } createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {} }; } };
-  await os.start({ apps: [[ChatApp, { WebSocket: ws.WS, url: "ws://test/ws", hasFocus: () => tabFocused, client: { setTimeout: () => 0, clearTimeout: () => {} } }]], boot: false, start: true });
+  await os.start({ apps: [[ChatApp, { WebSocket: ws.WS, url: "ws://test/ws", hasFocus: () => tabFocused, clipboard, objectURL: () => "blob:fake", revokeURL: () => {}, client: { setTimeout: () => 0, clearTimeout: () => {} } }]], boot: false, start: true });
 });
 const reads = (i = 0) => sockets[i].sent.filter(f => f.t === "read");
 
@@ -412,6 +417,103 @@ test("you can message the online and the away, not the offline: IM button, compo
   // the server has the last word
   sockets[0].push({ t: "error", code: "offline", room: "dm:andrew:killua" });
   assert.match(os.toast.el.textContent, /Killua is offline/);
+});
+
+test("pictures: a pasted picture uploads and rides the next message as a block; incoming pictures render scaled", async () => {
+  await os.launch("chat"); hello();
+  const global = os.wm.get("win-chat-global");
+  assert.deepEqual([...global.el.querySelectorAll(".ctool")].map(b => b.dataset.act), ["clip", "pic", "emoji"]);   // clipboard, image, emoji — left-aligned above the box
+  // Ctrl+V with a picture on the clipboard
+  const ev = new d.win.Event("paste", { bubbles: true, cancelable: true });
+  Object.defineProperty(ev, "clipboardData", { value: { files: [png()], items: [] } });
+  global.input.value = "look at this";
+  global.input.dispatchEvent(ev);
+  assert.equal(ev.defaultPrevented, true);
+  await tick();
+  assert.equal(log.at(-1).path, "/hxh/api/chat/image");
+  assert.equal(global.attachEl.hidden, false);
+  assert.match(global.attachEl.querySelector("img").getAttribute("src"), /\/hxh\/api\/chat\/image\/9$/);
+  assert.equal(global.input.value, "look at this");   // the text stays above the picture
+  assert.equal(global.submit(), true);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "msg", room: "global", body: "look at this", image_id: 9 });
+  assert.equal(global.attachEl.hidden, true);   // one picture per message; it went with this one
+  // a picture alone is a message too; nothing at all is not
+  global.attachImage({ id: 10, width: 10, height: 10, url: "/hxh/api/chat/image/10" });
+  assert.equal(global.submit(), true);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "msg", room: "global", body: "", image_id: 10 });
+  assert.equal(global.submit(), false);
+  // the × removes an attachment
+  global.attachImage({ id: 11, width: 10, height: 10, url: "x" });
+  d.click(global.el.querySelector('[data-act="detach"]'));
+  assert.equal(global.attachEl.hidden, true);
+  assert.equal(global.submit(), false);
+  // incoming: the picture is a block under the text with its real size (CSS scales it to fit)
+  sockets[0].push({ t: "msg", msg: { id: 20, room: "global", sender: "gon", body: "mine", created_at: "2026-10-31T20:03:00Z", image: { id: 9, width: 300, height: 200 } } });
+  const row = global.el.querySelector('.m[data-id="20"]');
+  assert.equal(row.querySelector(".txt").textContent, "mine");
+  const img = row.querySelector(".pic img");
+  assert.equal(img.getAttribute("src"), "/hxh/api/chat/image/9");
+  assert.equal(img.getAttribute("width"), "300");
+  sockets[0].push({ t: "msg", msg: { id: 21, room: "global", sender: "gon", body: "", created_at: "2026-10-31T20:03:00Z", image: { id: 12, width: 30, height: 20 } } });
+  assert.equal(global.el.querySelector('.m[data-id="21"] .txt'), null);   // no empty text span
+  assert.ok(global.el.querySelector('.m[data-id="21"] .pic img'));
+  sockets[0].push({ t: "error", code: "image", room: "global" });
+  assert.match(os.toast.el.textContent, /picture/);
+});
+
+test("the clipboard button pastes text at the caret or attaches a picture; the emoji palette inserts at the caret", async () => {
+  await os.launch("chat"); hello();
+  const global = os.wm.get("win-chat-global");
+  global.input.value = "ab"; global.input.selectionStart = global.input.selectionEnd = 1;
+  clipboard.items = [{ types: ["text/plain"], getType: async () => new d.win.Blob(["XY"], { type: "text/plain" }) }];
+  assert.equal(await global.pasteFromClipboard(), true);
+  assert.equal(global.input.value, "aXYb");
+  clipboard.items = [{ types: ["image/png"], getType: async () => png() }];
+  await global.pasteFromClipboard(); await tick();
+  assert.equal(global.attachEl.hidden, false);
+  clipboard.read = async () => { throw new Error("denied"); }; clipboard.readText = async () => { throw new Error("denied"); };
+  assert.equal(await global.pasteFromClipboard(), false);
+  assert.match(os.toast.el.textContent, /Nothing to paste/);
+  // emoji
+  global.input.value = ""; 
+  d.click(global.el.querySelector('[data-act="emoji"]'));
+  assert.ok(global.emoji.isOpen);
+  const cells = [...global.emoji.el.querySelectorAll("button")];
+  assert.equal(cells.length, EMOJI.length);
+  assert.equal(cells[0].dataset.emoji, EMOJI[0]);
+  d.click(cells[5]);
+  assert.equal(global.input.value, EMOJI[5]);
+  assert.equal(global.emoji.isOpen, false);
+});
+
+test("Insert Image: previews the clipboard's picture with Insert enabled, or an empty pane with only Upload; either way the picture attaches", async () => {
+  await os.launch("chat"); hello();
+  const global = os.wm.get("win-chat-global");
+  clipboard.items = [{ types: ["image/png"], getType: async () => png() }];
+  d.click(global.el.querySelector('[data-act="pic"]'));
+  await tick(); await tick();
+  const dlg = os.wm.get("win-chat-picture");
+  assert.ok(dlg instanceof PictureDialog && dlg.state.open);
+  assert.equal(dlg.title, "Insert Image");
+  assert.equal(dlg.img.hidden, false);
+  assert.equal(dlg.insertBtn.disabled, false);
+  const actions = [...dlg.el.querySelectorAll(".actions > *")].map(e => e.textContent.trim());
+  assert.deepEqual(actions, ["Upload…", "Insert from Clipboard"]);   // upload left of the strong action
+  d.click(dlg.insertBtn);
+  await tick();
+  assert.equal(dlg.state.open, false);
+  assert.equal(global.attachEl.hidden, false);
+  // nothing on the clipboard: an empty pane, Insert disabled, Upload still works
+  global.clearAttachment();
+  clipboard.items = [];
+  await app().pictureDialog(global);
+  assert.equal(dlg.img.hidden, true);
+  assert.equal(dlg.insertBtn.disabled, true);
+  Object.defineProperty(dlg.fileInput, "files", { value: [png()], configurable: true });
+  d.fire(dlg.fileInput, "change");
+  await tick();
+  assert.equal(dlg.state.open, false);
+  assert.equal(global.attachEl.hidden, false);
 });
 
 test("presence updates regroup contacts and play the door sounds", async () => {

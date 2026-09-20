@@ -151,12 +151,12 @@ export class ChatClient {
   read(room, id) { return this.send({ t: "read", room, id }); }
 
   /** Rate-limited: at most `rate` messages per second. Returns false when refused. */
-  sendMessage(room, body) {
+  sendMessage(room, body, imageId = 0) {
     const t = this.now();
     this.sent = this.sent.filter(x => t - x < 1000);
     if (this.sent.length >= this.rate) return false;
     this.sent.push(t);
-    this.send({ t: "msg", room, body });
+    this.send({ t: "msg", room, body, ...(imageId ? { image_id: imageId } : {}) });
     return true;
   }
 
@@ -191,6 +191,13 @@ export class ChatAPI {
   contacts() { return this.get("/contacts"); }
   history(room) { return this.get("/history?room=" + encodeURIComponent(room)); }
   profile(username) { return this.get("/profile/" + encodeURIComponent(username)); }
+  /** A picture, as its raw bytes; the server re-encodes and answers {id, width, height}. */
+  async uploadImage(blob) {
+    const r = await this.fetch(this.base + "/image", { method: "POST", headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob });
+    if (!r.ok) throw new Error(await r.text().catch(() => r.status));
+    return r.json();
+  }
+  imageURL(id) { return `${this.base}/image/${id}`; }
   async saveProfile(runs) {
     const r = await this.fetch(this.base + "/profile", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runs }) });
     if (!r.ok) throw new Error(await r.text().catch(() => r.status));

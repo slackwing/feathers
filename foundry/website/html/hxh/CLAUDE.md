@@ -334,6 +334,22 @@ component architecture (many windows, tray icons + menus, the bus).
   `offline` (toast). Bots follow the same rule (`reachable()` in
   `internal/bots/chatbots.go`), so while you are logged out nobody DMs
   you — global is where the news accumulates.
+- **Pictures and emoji (2026-09-19)**: compose tools above the box —
+  clipboard (pastes text at the caret or attaches a picture via the
+  async Clipboard API; Ctrl+V with a picture attaches too), image (the
+  Insert Image window: clipboard preview + Insert from Clipboard, or
+  Upload…), emoji (a palette, `apps/chat/emoji.js`; any emoji works
+  regardless — `--font-emoji` falls back per glyph to the system's
+  colour emoji face). ONE picture per message, shown as a block under
+  the text, scaled to fit (`.m .pic img`). Bytes live in the DATABASE
+  (`hxh_chat_image`, changeset 009), never on disk: `POST
+  /chat/image` decodes, scales to ≤ 1600 px and re-encodes (JPEG when
+  opaque, else PNG) so what is served is always the server's own
+  encoding; `GET /chat/image/{id}` serves it only to its uploader or to
+  someone who may read the room it hangs on; the `msg` frame carries
+  `image_id`, refused unless it is yours and unsent (`error image`).
+  An offline buddy's compose is greyed and says "Abi is offline." in
+  italics inside the field.
 - **Attention, the Windows way**: a message into a window that is not
   active (or into an unfocused tab) calls `win.requestAttention()` →
   the taskbar button flashes until focused (`window:attention` →
@@ -533,6 +549,45 @@ island silhouette but drawn procedurally — no copyrighted image is
 used. The pure parts (`islandHeight`, `cloudBounds`, `glints`, the
 `SHAPES`) are exported and characterised in `tests/wallpaper.test.js`. Desktop icon labels carry a 1px ink outline to stay readable
 over the sky.
+
+## Settings, themes, skies, the blimp (2026-09-19, Andrew's batch)
+
+- **One Settings tree** — `OS.settingsItems({icons})` — is rendered by
+  the Start menu (Settings ▸), the tray gear (`icon: "gear"`, replaced
+  the scanlines icon) and any app window's Settings menu (Summons passes
+  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines) and Sounds ▸
+  (Sounds). Andrew: "keep all our experiments in the UI as settings
+  people can toggle". Add a knob there, nowhere else. Scanlines is OFF
+  by default (`hxh.crt` in localStorage remembers an override).
+- **Submenus** are a menu-item feature: `{ label, items }` cascades to
+  the right (Windows style: hover or click, one sibling open at a
+  time, ancestors stay open, a leaf pick closes the chain; up-menus
+  like the tray's cascade LEFT and bottom-aligned). `Settings.radio()`
+  makes a one-check group; string settings via `getStr/setStr`.
+- **Themes** (`os.css`, "THEME TOKENS" + "THEMES"): the chrome uses only
+  `--win-*`, `--tb-*` (title bar), `--tbtn-*`, `--btn-*` / `--strong-*`
+  (default vs the window's one STRONG action, `.btn.primary`),
+  `--menu-*`, `--sel-*`, `--tk-*` (taskbar — a separate control from
+  the title bar), `--field-*`, `--dim-fg`. `:root` holds the Win98
+  values; a theme is one `html[data-theme="…"]` block (`OS.applyTheme`
+  sets it, `Settings › Display › Theme` picks it, remembered per
+  browser). Whale Island Tropical / Sea Pumpkin / Sea Pumpkin Pastel
+  share a flat construction (thin ink outlines, hard offset shadow,
+  DotGothic16 chrome) after the pastel OS Abi found. Brand pieces (logo,
+  summons stamp, the Beetle) stay on the brand palette on purpose. To
+  add a theme: a block of overrides + an entry in `THEME_OPTIONS`.
+  App CSS must use the tokens for anything chrome-like (buttons, tabs,
+  banners) — the buddy list does.
+- **Sky** (`os/wallpaper.js`, `skyPixel`): original (five linear bands
+  + checker dither), gradual (8 bands), noisy gradual (clumpy fray),
+  hypergradient (CSS gradient through a transparent canvas), gradient
+  (a shade per row), noisy gradient. All but the original follow
+  t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
+- **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
+  HALLOWEEN flyer, every 4–9 min, 90 s across, `HxH.os.blimp.launch()`
+  on demand; z-order above the wallpaper, below icons and windows.
+- **About is gone** (app, Start entry, Summons' Help). `HxH.os` exposes
+  the running OS for demos and screenshots.
 
 ## Icon sizes — one grid, three scales (2026-09-19)
 

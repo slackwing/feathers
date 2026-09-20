@@ -28,7 +28,10 @@
 > reads; unread rooms open on launch (DMs flashing, global last and
 > focused); DMs only to the online and away, never the offline — see
 > "Read = explicit focus" in `html/hxh/CLAUDE.md`. Item 14 below is
-> superseded accordingly.
+> superseded accordingly. Also 2026-09-19: pictures (one per message,
+> stored in the DB and re-encoded by the server), a compose toolbar
+> (clipboard / image / emoji), emoji everywhere via a per-glyph font
+> fallback — see "Pictures and emoji" in `html/hxh/CLAUDE.md`.
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,

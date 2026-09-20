@@ -196,6 +196,23 @@ test("nudge after a sleep: a stale socket is replaced now, a backoff is skipped,
   assert.equal(sockets.length, 4);
 });
 
+test("a message can carry a picture id; pictures upload as raw bytes and are addressed by id", async () => {
+  const { client, sockets } = make();
+  client.connect(); sockets[0].open();
+  assert.equal(client.sendMessage("global", "look", 9), true);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "msg", room: "global", body: "look", image_id: 9 });
+  client.sendMessage("global", "plain");
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "msg", room: "global", body: "plain" });   // no image_id key when there is none
+  const log = [];
+  const api = new ChatAPI({ fetch: fakeFetch({ "POST /hxh/api/chat/image": init => [200, { id: 9, width: 300, height: 200 }] }, log) });
+  const blob = new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" });
+  assert.deepEqual(await api.uploadImage(blob), { id: 9, width: 300, height: 200 });
+  assert.equal(log[0].method, "POST");
+  assert.equal(log[0].headers["Content-Type"], "image/png");
+  assert.equal(log[0].body, blob);   // the bytes themselves, not JSON
+  assert.equal(api.imageURL(9), "/hxh/api/chat/image/9");
+});
+
 test("a host without WebSocket stays quiet", () => {
   const client = new ChatClient({ url: "ws://x", WebSocket: undefined });
   client.connect();

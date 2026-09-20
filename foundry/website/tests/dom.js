@@ -20,7 +20,7 @@ export function setupDom({ floating = true, reduced = false, width = 1366, heigh
   win.HTMLElement.prototype.scrollIntoView = function () { this.dataset.scrolled = "1"; };
   win.HTMLElement.prototype.setPointerCapture = () => {};
   win.HTMLCanvasElement.prototype.getContext = () => null;   // no canvas in jsdom: sprites/wallpaper degrade
-  for (const k of ["window", "document", "HTMLElement", "Element", "Node", "Event", "CustomEvent", "KeyboardEvent", "MouseEvent", "getComputedStyle", "localStorage", "sessionStorage", "navigator"]) {
+  for (const k of ["window", "document", "HTMLElement", "Element", "Node", "Event", "CustomEvent", "KeyboardEvent", "MouseEvent", "getComputedStyle", "localStorage", "sessionStorage", "navigator", "FileReader", "Blob", "File"]) {
     try { globalThis[k] = win[k]; } catch {}
   }
   const cleanup = () => { dom.window.close(); };
@@ -37,7 +37,9 @@ export function fakeFetch(routes, log = []) {
   return async (url, init = {}) => {
     const method = (init.method || "GET").toUpperCase();
     const path = String(url).replace(/^https?:\/\/[^/]+/, "");
-    log.push({ method, path, body: init.body ? JSON.parse(init.body) : null });
+    let sent = null;
+    if (init.body) { try { sent = JSON.parse(init.body); } catch { sent = init.body; } }   // a Blob upload stays a Blob
+    log.push({ method, path, body: sent, headers: init.headers || {} });
     const r = routes[`${method} ${path}`];
     if (!r) return { ok: false, status: 404, json: async () => ({}) };
     const [status, body] = typeof r === "function" ? r(init) : r;
