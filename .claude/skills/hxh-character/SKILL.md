@@ -107,9 +107,12 @@ and run `python3 roster.py create entry.json`. Note the returned `id`.
 ## 6. Pictures — at least six (they show under "Random" in the app: found by me, not uploaded by a person)
 
 Never choose by file name or caption alone — LOOK. Run
-`python3 wiki.py sheet "<Page>" sheet.png --only <name>` (a numbered
-contact sheet of the page's pictures, largest first, junk filtered;
-drop `--only` if that leaves too few) and read `sheet.png`. Also check
+`python3 wiki.py sheet "<Page>/Image Gallery" sheet.png` — the wiki
+keeps most of a character's stills on that subpage, the main page has
+only a handful — and `python3 wiki.py sheet "<Page>" sheet2.png` for
+the rest (a numbered contact sheet, largest first, junk filtered; add
+`--only <name>` on a busy page), then read the sheets. Fandom serves
+its "png" URLs as WebP; the server stores and crops WebP fine. Also check
 the infobox portrait (`|image =` in the wikitext) and `wiki.py images
 --all` for files the filter dropped that are still worth it (a
 character design sheet at 700 px is fine; a 1999 still is not).
@@ -178,3 +181,9 @@ commit both. Keep a dated line in the log below.
 - 2026-09-19 — the skill acts as the bot user "claude" (owner of what
   it finds); pictures it finds are the "Random" category, people's
   uploads are "Uploaded"; picture-level rejection is gone.
+- 2026-09-20 — first batch run as five parallel agents (Killua, Leorio,
+  Kurapika, Hisoka, Chrollo): the process held; lessons — the
+  `<Page>/Image Gallery` subpage is where the stills are, Fandom serves
+  WebP, leads comfortably reach 10–11 clean pictures, and a rank-A
+  villain like Chrollo gets only the arcs he is on screen in (mentions
+  and manga-only cameos do not count).
