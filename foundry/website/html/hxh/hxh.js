@@ -2500,9 +2500,24 @@ var HxH = (() => {
     }
     onMount() {
       this.schedule();
+      const doc = this.doc;
+      this._onVis = () => {
+        if (!doc.hidden) this.purge();
+      };
+      doc?.addEventListener?.("visibilitychange", this._onVis);
     }
     onUnmount() {
       this.props.clearTimeout?.(this.timer) ?? clearTimeout(this.timer);
+      this.doc?.removeEventListener?.("visibilitychange", this._onVis);
+    }
+    get doc() {
+      return this.props.doc || globalThis.document;
+    }
+    get now() {
+      return (this.props.now || Date.now)();
+    }
+    get hidden() {
+      return !!this.doc?.hidden;
     }
     schedule() {
       if (this.props.reduced) return;
@@ -2510,16 +2525,26 @@ var HxH = (() => {
       const st = this.props.setTimeout || ((f, ms) => setTimeout(f, ms));
       const wait = minWait + random() * (maxWait - minWait);
       this.timer = st(() => {
-        this.launch();
+        if (!this.hidden) this.launch();
         this.schedule();
       }, wait);
       this.timer?.unref?.();
       return wait;
     }
-    /** Fly one across now. Returns the element. */
+    /** Remove flights that should have ended by now (a hidden tab's animations stand still). */
+    purge() {
+      let n = 0;
+      for (const old of this.el.querySelectorAll(".blimp")) if (+old.dataset.until <= this.now) {
+        old.remove();
+        n++;
+      }
+      return n;
+    }
+    /** Fly one across now — the previous one, if still up, lands. Returns the element. */
     launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
       const { random = Math.random, duration = 1e5 } = this.props;
-      const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east") });
+      for (const old of this.el.querySelectorAll(".blimp")) old.remove();
+      const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
       el.style.top = (top ?? 5 + random() * 16) + "%";
       el.style.animationDuration = duration + "ms";
       el.append(

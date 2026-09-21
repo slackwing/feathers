@@ -10,7 +10,14 @@
    whose edges and lettering ripple (SMIL, no script) on a rope from the
    tail. CSS animates the flight from one edge to the other, behind every
    window and icon, above the wallpaper. Spawns at a random interval (4–9
-   min by default), never under reduced motion; `launch()` flies one now. */
+   min by default), never under reduced motion; `launch()` flies one now.
+
+   ONE flight at a time, and none while the page is hidden (Andrew came
+   home to fifty of them, 2026-09-20: a background tab keeps its timers
+   but not its animations, so nothing ever ended and every booked flight
+   piled up at the edges). A new launch removes the previous ship; a
+   flight that should long have ended is purged when the page is looked
+   at again. */
 import { Component } from "./component.js";
 import { h } from "./dom.js";
 
@@ -70,23 +77,43 @@ export function bannerSVG(text = FLYER_TEXT, rope = "left") {
 export class Blimp extends Component {
   /** props: reduced, random, minWait / maxWait (ms), duration (ms), setTimeout/clearTimeout (tests) */
   render() { return h("div", { className: "blimps", id: "blimps" }); }
-  onMount() { this.schedule(); }
-  onUnmount() { this.props.clearTimeout?.(this.timer) ?? clearTimeout(this.timer); }
+  onMount() {
+    this.schedule();
+    const doc = this.doc;
+    this._onVis = () => { if (!doc.hidden) this.purge(); };
+    doc?.addEventListener?.("visibilitychange", this._onVis);
+  }
+  onUnmount() {
+    this.props.clearTimeout?.(this.timer) ?? clearTimeout(this.timer);
+    this.doc?.removeEventListener?.("visibilitychange", this._onVis);
+  }
+
+  get doc() { return this.props.doc || globalThis.document; }
+  get now() { return (this.props.now || Date.now)(); }
+  get hidden() { return !!this.doc?.hidden; }
 
   schedule() {
     if (this.props.reduced) return;
     const { minWait = 4 * 60000, maxWait = 9 * 60000, random = Math.random } = this.props;
     const st = this.props.setTimeout || ((f, ms) => setTimeout(f, ms));
     const wait = minWait + random() * (maxWait - minWait);
-    this.timer = st(() => { this.launch(); this.schedule(); }, wait);
+    this.timer = st(() => { if (!this.hidden) this.launch(); this.schedule(); }, wait);   // a hidden page gets no ship, just the next booking
     this.timer?.unref?.();
     return wait;
   }
 
-  /** Fly one across now. Returns the element. */
+  /** Remove flights that should have ended by now (a hidden tab's animations stand still). */
+  purge() {
+    let n = 0;
+    for (const old of this.el.querySelectorAll(".blimp")) if (+old.dataset.until <= this.now) { old.remove(); n++; }
+    return n;
+  }
+
+  /** Fly one across now — the previous one, if still up, lands. Returns the element. */
   launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
     const { random = Math.random, duration = 100000 } = this.props;
-    const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east") });
+    for (const old of this.el.querySelectorAll(".blimp")) old.remove();
+    const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
     el.style.top = (top ?? 5 + random() * 16) + "%";
     el.style.animationDuration = duration + "ms";
     el.append(

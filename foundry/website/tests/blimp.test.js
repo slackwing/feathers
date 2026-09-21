@@ -45,6 +45,36 @@ test("a flight is a ship and a banner, west or east, gone when its animation end
   b.unmount();
 });
 
+test("one flight at a time, none while the page is hidden, overdue flights purged on return (fifty blimps after a night, 2026-09-20)", () => {
+  const timers = [];
+  const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
+  let now = 1_000_000, hidden = false;
+  const doc = { get hidden() { return hidden; }, listeners: {}, addEventListener(t, f) { this.listeners[t] = f; }, removeEventListener() {} };
+  const b = new Blimp({ minWait: 1000, maxWait: 1000, random: () => 0.5, duration: 100000, setTimeout: st, clearTimeout: () => {}, doc, now: () => now }).mount(document.body);
+  const flights = () => b.el.querySelectorAll(".blimp").length;
+  timers[0].fn();
+  assert.equal(flights(), 1);
+  timers[1].fn();
+  assert.equal(flights(), 1, "a second launch lands the first");
+  assert.equal(b.flights, 2);
+  // the tab goes to the background for a night: bookings keep coming, ships do not
+  hidden = true;
+  for (let i = 2; i < 40; i++) { now += 1000; timers[i].fn(); }
+  assert.equal(b.flights, 2);
+  assert.equal(flights(), 1);
+  assert.equal(timers.length, 41, "the next flight stays booked");
+  // the one left up is long overdue; looking at the page again clears it
+  now += 200000;
+  doc.listeners.visibilitychange();
+  assert.equal(flights(), 1, "still hidden: nothing purged yet");
+  hidden = false;
+  doc.listeners.visibilitychange();
+  assert.equal(flights(), 0);
+  timers.at(-1).fn();
+  assert.equal(flights(), 1);
+  b.unmount();
+});
+
 test("flights are scheduled at random intervals; never under reduced motion", () => {
   const timers = [];
   const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
