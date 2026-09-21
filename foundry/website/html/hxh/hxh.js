@@ -5692,8 +5692,8 @@ var HxH = (() => {
     requestKinds() {
       return this.call("GET", "/request-kinds");
     }
-    request(id, kind, text = "") {
-      return this.call("POST", `/chars/${id}/request`, { kind, text });
+    request(id, kind, text = "", image_id = null) {
+      return this.call("POST", `/chars/${id}/request`, { kind, text, image_id });
     }
     requests(status = "open") {
       return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : ""));
@@ -5748,11 +5748,11 @@ var HxH = (() => {
   var LABEL = Object.fromEntries(FIELDS);
   var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
   var TYPE_LABEL = Object.fromEntries(TYPES2);
-  var STATUSES = [["pending", "Pending"], ["requested", "Requested"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+  var STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
   var STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));
 
   // html/hxh/apps/roster/list.js
-  var FILTERS = [["", "All"], ...STATUSES];
+  var FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var PICS_TITLE = TYPES2.map(([, l]) => l).join(" \xB7 ");
   var number = (c) => c.card_number ?? c.id;
@@ -5845,7 +5845,7 @@ var HxH = (() => {
     }
     /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
     shown() {
-      return this.chars.filter((c) => !this.filter || c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
+      return this.chars.filter((c) => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
     }
     /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
     dragStart(e) {
@@ -5892,8 +5892,8 @@ var HxH = (() => {
       if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
       this.markSel();
       const pending = this.chars.filter((c) => c.review_status === "pending").length;
-      const requested = this.chars.filter((c) => c.review_status === "requested").length;
-      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending` + (requested ? ` \xB7 ${requested} requested` : "");
+      const asked = this.chars.filter((c) => c.open_requests > 0).length;
+      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending` + (asked ? ` \xB7 ${asked} with requests` : "");
       this.pane.update();
     }
     row(c) {
@@ -5911,7 +5911,12 @@ var HxH = (() => {
         h("span", { className: "c-aff", text: c.affiliation || "" }),
         h("span", { className: "c-pics", title: PICS_TITLE }, ...counts.map((n, i) => h("i", { className: n ? "" : "zero", text: String(n), title: TYPES2[i][1] }))),
         h("span", { className: "c-ver", text: String(c.version || 1) }),
-        h("span", { className: "c-st" }, h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) }))
+        h(
+          "span",
+          { className: "c-st" },
+          h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) }),
+          c.open_requests > 0 ? h("i", { className: "reqs", text: String(c.open_requests), title: `${c.open_requests} open request${c.open_requests === 1 ? "" : "s"}` }) : null
+        )
       );
     }
     select(id) {
@@ -6001,7 +6006,7 @@ var HxH = (() => {
           </div>
           <fieldset class="group review">
             <legend>Review</legend>
-            <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span></div>
+            <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span><i class="reqs"></i></div>
             <div class="changes"></div>
             <div class="reason"></div>
             <div class="rbtns">
@@ -6023,6 +6028,8 @@ var HxH = (() => {
             <button class="btn sm" type="button" data-img="crop" disabled>Crop</button>
             <button class="btn sm" type="button" data-img="open" disabled>Open in New Tab</button>
             <button class="btn sm" type="button" data-img="delete" disabled>Delete</button>
+            <span class="gap"></span>
+            <button class="btn sm" type="button" data-img="request" disabled>Request\u2026</button>
             <span class="grow"></span>
             <button class="btn sm" type="button" data-img="upload">Upload\u2026</button>
           </div>
@@ -6172,10 +6179,15 @@ var HxH = (() => {
       st.className = "st " + c.review_status;
       el.querySelector(".verdict .ver").textContent = "v" + c.version;
       const last = (c.reviews || [])[0];
-      const asked = c.review_status === "requested" ? (c.requests || []).find((q) => q.status === "open") : null;
-      el.querySelector(".verdict .by").textContent = asked ? `by ${asked.owner}` : last && last.status === c.review_status ? `by ${last.owner}` : "";
+      el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
+      const open = (c.requests || []).filter((q) => q.status === "open").length;
+      const reqs = el.querySelector(".verdict .reqs");
+      reqs.textContent = open ? `${open} request${open === 1 ? "" : "s"} open` : "";
+      reqs.hidden = !open;
       this.renderChanges();
-      el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
+      const reason = el.querySelector(".reason");
+      reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason : "";
+      reason.classList.toggle("rejected", c.review_status === "rejected");
       for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
       const log = el.querySelector(".log");
       log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
@@ -6235,7 +6247,13 @@ var HxH = (() => {
       return h(
         "figure",
         { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-        h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }), this.fresh?.images.has(im.id) ? wedge() : null),
+        h(
+          "div",
+          { className: "pic " + fit },
+          h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }),
+          this.fresh?.images.has(im.id) ? wedge() : null,
+          (c.requests || []).some((q) => q.status === "open" && q.image_id === im.id) ? h("i", { className: "asked", text: "Request made", title: "An open request is on this picture" }) : null
+        ),
         h(
           "figcaption",
           {},
@@ -6991,19 +7009,29 @@ var HxH = (() => {
     }
   };
   var RequestDialog = class extends Dialog {
-    constructor({ kinds = [] } = {}) {
+    constructor({ kinds = [], image = null } = {}) {
       super({
-        title: "Request",
-        body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map((k) => `<option value="${esc(k.slug)}">${esc(k.label)}</option>`).join("")}</select>
+        title: image ? `Request \xB7 #${image}` : "Request",
+        body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map((k) => `<option value="${esc(k.slug)}"${k.needs_text ? ' data-needs="1"' : ""}>${esc(k.label)}</option>`).join("")}</select>
       <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
         buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }],
         focus: "select",
         width: 460
       });
+      this.image = image;
     }
     render() {
       const el = super.render();
-      el.querySelector("textarea").addEventListener("keydown", (e) => {
+      const sel = el.querySelector("select"), ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]'), lbl = el.querySelector('label[for="dlg-req"]');
+      const sync = () => {
+        const needs = !!sel.selectedOptions[0]?.dataset.needs;
+        lbl.textContent = needs ? "Details:" : "Details (optional):";
+        ok.disabled = needs && !ta.value.trim();
+      };
+      sel.addEventListener("change", sync);
+      ta.addEventListener("input", sync);
+      sync();
+      ta.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
           this.finish("ok");
@@ -7012,7 +7040,7 @@ var HxH = (() => {
       return el;
     }
     value() {
-      return { kind: this.$("select").value, text: this.$("textarea").value.trim() };
+      return { kind: this.$("select").value, text: this.$("textarea").value.trim(), image_id: this.image };
     }
   };
   var ReasonDialog = class extends Dialog {
@@ -7048,7 +7076,7 @@ var HxH = (() => {
   var RequestsWindow = class extends Window {
     /** props: id (character), name, char (() => the character as last loaded) */
     constructor({ id, name, char, ...rest } = {}) {
-      super({ id: requestsId(id), title: `Requests \xB7 ${name || "#" + id}`, icon: "db", width: 760, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
+      super({ id: requestsId(id), title: `Requests \xB7 ${name || "#" + id}`, icon: "db", width: 860, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
       this.charId = id;
       this.char = char;
     }
@@ -7060,6 +7088,7 @@ var HxH = (() => {
         { className: "lhead" },
         h("span", { className: "q-no", text: "#" }),
         h("span", { className: "q-kind", text: "Request" }),
+        h("span", { className: "q-pic", text: "Picture" }),
         h("span", { className: "q-text", text: "Details" }),
         h("span", { className: "q-st", text: "Status" }),
         h("span", { className: "q-by", text: "By" }),
@@ -7087,6 +7116,7 @@ var HxH = (() => {
         { className: "row " + q.status, dataset: { id: String(q.id) } },
         h("span", { className: "q-no", text: String(q.id) }),
         h("span", { className: "q-kind", text: q.label || q.kind }),
+        h("span", { className: "q-pic", text: q.image_id ? `#${q.image_id}${(c.images || []).some((im) => im.id === q.image_id) ? "" : " (deleted)"}` : "" }),
         h("span", { className: "q-text", text: q.text || "", title: q.text || "" }),
         h("span", { className: "q-st" }, h("i", { className: "verdict rq-" + q.status, text: REQUEST_STATUS[q.status] || q.status })),
         h("span", { className: "q-by", text: q.owner || "" }),
@@ -7306,7 +7336,7 @@ var HxH = (() => {
       }
     }
     /** Request…: a kind from the server's list plus optional details; the character reads "requested" until the bot resolves it. */
-    async request(id) {
+    async request(id, imageId = null) {
       const w = this.chars.get(id);
       try {
         this.kinds ||= await this.hold(w, this.api.requestKinds());
@@ -7314,10 +7344,11 @@ var HxH = (() => {
         w?.say(err.message, true);
         return;
       }
-      const r = await new RequestDialog({ kinds: this.kinds }).ask(this.os);
+      const scope = imageId ? "image" : "character";
+      const r = await new RequestDialog({ kinds: this.kinds.filter((k) => k.scope === "any" || k.scope === scope), image: imageId }).ask(this.os);
       if (!r) return;
       try {
-        const c = await this.hold(w, this.api.request(id, r.kind, r.text));
+        const c = await this.hold(w, this.api.request(id, r.kind, r.text, r.image_id));
         w?.setChar(c, { form: false });
         w?.say("Requested");
         this.changed(c);
@@ -7362,6 +7393,8 @@ var HxH = (() => {
           case "crop":
             this.openCrop(imageId);
             break;
+          case "request":
+            return this.request(id, imageId);
           case "open":
             this.os.win.open?.(this.api.imageURL(imageId), "_blank");
             break;

@@ -2998,10 +2998,21 @@ body.stacked .room .logbox {
   background: var(--blood);
   color: var(--paper-hi);
 }
-.roster i.verdict.requested,
-.roster .st.requested {
-  background: var(--conjurer);
+.roster i.reqs {
+  font: var(--t-small);
+  font-style: normal;
+  font-weight: 700;
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px 0;
+  line-height: 14px;
+  background: var(--emitter);
   color: var(--ink);
+  border: 1px solid var(--ink);
+  vertical-align: middle;
+}
+.rlist .row.sel .reqs {
+  border-color: var(--paper-hi);
 }
 .roster .group {
   margin: 0 0 10px;
@@ -3052,7 +3063,7 @@ body.stacked .room .logbox {
 .rlist .lhead,
 .rlist .row {
   display: grid;
-  grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 112px;
+  grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 136px;
   align-items: center;
   gap: 6px;
   padding: 0 6px;
@@ -3278,7 +3289,7 @@ body.stacked .room .logbox {
 .rreq .lhead,
 .rreq .row {
   display: grid;
-  grid-template-columns: 36px 130px 1fr 108px 70px 96px 110px;
+  grid-template-columns: 36px 150px 92px 1fr 108px 70px 96px 110px;
   align-items: center;
   gap: 6px;
   padding: 0 6px;
@@ -3373,6 +3384,28 @@ body.stacked .room .logbox {
   top: 0;
   right: 0;
   z-index: 2;
+}
+.rchar .tile .pic .asked {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  font: var(--t-small);
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  line-height: 14px;
+  background: var(--emitter);
+  color: var(--ink);
+  padding: 1px 5px 0;
+  border: 1px solid var(--ink);
+  border-top: 0;
+  border-left: 0;
+  pointer-events: none;
+}
+.rchar .review .reason.rejected {
+  color: var(--blood);
 }
 .rchar .review .changes {
   font: var(--t-small);
