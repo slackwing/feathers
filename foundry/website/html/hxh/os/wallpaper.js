@@ -373,7 +373,7 @@ export class Wallpaper extends Component {
   paint() {
     this.anim?.stop();
     const w = this.props.env?.win || globalThis.window;
-    this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "original" });
+    this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "hypergradient" });
   }
   onUnmount() { this.anim?.stop(); }
 }

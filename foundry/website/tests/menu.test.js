@@ -86,6 +86,25 @@ test("submenus cascade: open on click or hover, keep ancestors open, one sibling
   assert.equal(Menus.openCount, 0);
 });
 
+test("a submenu that would run off the bottom of the viewport is shifted up to stay on screen", () => {
+  const wrap = document.createElement("div"); wrap.className = "menu"; document.body.append(wrap);
+  const m = new Menu({ items: [{ label: "Sky", items: [{ label: "a" }, { label: "b" }] }] }).mount(wrap);
+  m.open();
+  const sub = m.subs[0];
+  // pretend the sub renders 120 px tall with its top 40 px above the bottom of a 768 px viewport
+  sub.el.getBoundingClientRect = () => ({ top: 728, bottom: 848, left: 300, right: 500, height: 120, width: 200 });
+  Object.defineProperty(window, "innerHeight", { value: 768, configurable: true });
+  sub.open();
+  assert.ok(sub.shifted > 0, "shifted up");
+  assert.match(sub.el.style.top, /^-\d+(\.\d+)?px$/);
+  assert.ok(parseFloat(sub.el.style.top) <= -(848 - 762), `top ${sub.el.style.top} clears the bottom`);
+  // plenty of room: no shift
+  sub.el.getBoundingClientRect = () => ({ top: 100, bottom: 220, left: 300, right: 500, height: 120, width: 200 });
+  sub.close(); sub.open();
+  assert.equal(sub.el.style.top, "");
+  m.close(); m.unmount(); wrap.remove();
+});
+
 test("only one menu is open at a time; document click and Escape close everything", () => {
   const a = new Menu({ items: [{ label: "a" }] }).mount(document.body);
   const b = new Menu({ items: [{ label: "b" }] }).mount(document.body);

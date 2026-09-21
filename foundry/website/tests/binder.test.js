@@ -21,6 +21,19 @@ test("paginate: PER_PAGE cards a page in card-number order (a duplicate number k
   assert.equal(TYPES.length, 7);
 });
 
+test("a card's plaque prints the short name; the full name stays on the screen", async () => {
+  const { setupDom } = await import("./dom.js"); const { OS } = await import("../html/hxh/os/os.js");
+  const d = setupDom();
+  const os = new OS({ win: d.win, fetch: async () => ({ ok: true, json: async () => ({ username: "andrew", roles: [{ website: "hxh", role: "admin" }] }) }), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  const gon = mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon" });
+  await os.start({ apps: [[BinderApp, { fetch: async () => ({ ok: true, json: async () => [gon] }) }]], boot: false });
+  await os.launch("binder");
+  await new Promise(r => setTimeout(r, 20));
+  const w = os.wm.get("win-binder");
+  assert.equal(w.el.querySelector(".card").title, "Gon Freecss");
+  assert.equal(w.el.querySelector(".gi-panel.name .gi-txt").textContent, "Gon");
+});
+
 test("helpers: typeOf, rankBox, cardNo, firstSentence, cardText", () => {
   assert.equal(typeOf(mk("x")).code, "--");
   assert.equal(typeOf(mk("x", ["specialization"])).code, "SP");
@@ -131,7 +144,7 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   const card = cards.querySelector(".card .gicard");
   assert.ok(card, "the sleeve holds a printed GICard");
   assert.equal(card.querySelector(".gi-panel.no .gi-txt").textContent, "001");
-  assert.equal(card.querySelector(".gi-panel.name .gi-txt").textContent, "Gon Freecss");
+  assert.equal(card.querySelector(".gi-panel.name .gi-txt").textContent, "Gon");   // the plaque prints the short name
   assert.equal(card.querySelector(".gi-panel.rank .gi-txt").textContent, "S-1");
   assert.equal(card.querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/18");
   assert.equal(card.querySelector(".gi-desc").textContent, "A cheerful boy.");

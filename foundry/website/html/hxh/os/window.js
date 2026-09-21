@@ -14,7 +14,7 @@ import { MenuBar } from "./menu.js";
 /* Windows are a set size — no maximize anywhere (Andrew, 2026-09-19:
    "maximize adds too many headaches"). */
 export const CHROME = {
-  min:   { cls: "min",   glyph: "_", title: "Minimize" },
+  min:   { cls: "min",   glyph: "", title: "Minimize" },   // drawn by CSS (.tbtn.min::before): a bar with clearance, not an underscore on the edge
   close: { cls: "close", glyph: "×", title: "Close" },
 };
 

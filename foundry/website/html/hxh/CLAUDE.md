@@ -386,6 +386,12 @@ component architecture (many windows, tray icons + menus, the bus).
 
 ## The Binder (`apps/binder.js` + `apps/binder.css`)
 
+- 2026-09-21: page tabs are smooth (not pixel art) in the binder's own
+  blues — `--navy-2` at rest, the open page's tab taller in `--navy-hi`
+  with a lit top edge and a glow; Zen Kaku Gothic New 12 px. A card's
+  plaque prints the SHORT name (`first`, e.g. "Gon"); the full name
+  stays on the screen's info line.
+
 The roster as a Greed Island card binder, modelled on Andrew's
 screenshots from the show (E66/E67): navy boards with gold clasps; the
 left page holds sleeved cards; the right side is a teal control panel —
@@ -608,8 +614,28 @@ over the sky.
   the trailing side so the letters never mirror. The wallpaper's frame
   loop must `clearRect` first: the hypergradient sky paints nothing, and
   without the clear clouds and birds left trails (2026-09-20).
+  2026-09-21: redrawn after the show's ship (Andrew's reference is a
+  night shot; colours are its daylight ones, FIXED, not theme tokens —
+  this is the Hunter Association's airship): blue gradient hull, nose
+  painted black as a grinning shark (sawtooth teeth, angry eye), the
+  ✕✕ plate, four propeller masts along the spine, a long cabin with
+  eleven lit windows, an engine pod astern, cross fins, stern prop.
+  Nose points WEST in the art; `.blimp.east .ship` flips it. The banner
+  is theme-dressed, its lettering a bold smooth sans centred on the
+  cloth's midline (`dominant-baseline: central`).
 - **About is gone** (app, Start entry, Summons' Help). `HxH.os` exposes
   the running OS for demos and screenshots.
+- **Defaults (2026-09-21): theme Whale Island Sea Pumpkin, sky
+  Hypergradient** (`THEME_DEFAULT`, `SKY_DEFAULT`). Win98 is a choice.
+- **Submenus stay on screen**: `Menu.fit()` shifts a cascade up (or
+  flips it left) when it would leave the viewport — the Start menu's
+  Settings sit at the bottom, so its third level used to vanish under
+  the taskbar. Offsets are divided by `--zoom`.
+- **The active window's taskbar button is sunken and darker** in every
+  theme (`--tk-btn-pressed` = the button colour mixed toward dark), never
+  the accent colour. The minimize glyph is a CSS bar (`.tbtn.min::before`)
+  with clearance under it, not an underscore on the edge; chromeless
+  windows' float buttons (the Binder) are 20×17 in the very corner.
 
 ## Icon sizes — one grid, three scales (2026-09-19)
 
@@ -628,6 +654,15 @@ desktop: pixelation is a system property, like the type scale.
 - **Two exceptions, on purpose**: the Start button's pumpkin (12×12 at
   2× = 24 px — "the pumpkin is unique") and the boot badge's tee (18×14
   at 4×). Don't reuse them elsewhere.
+- **Digits (2026-09-21).** Pixelify Sans's own 2 and 5 read as S and Ƨ
+  at 13–16 px, worst on a Mac (no hinting). The Win98 chrome stack is
+  `"HxH Digits", "Pixelify Sans", …`: a self-hosted, digits-only subset
+  of Jersey 15 (`fonts/jersey15-digits.ttf`, OFL, `unicode-range`
+  U+0030–0039, native at 15 px) draws every digit, Pixelify the rest.
+  The Whale Island themes use DotGothic16, a 16 px bitmap face, so
+  their chrome sizes are ALL 16 px (`--fs-ui/title/small/caption`) —
+  any other size lands the dots between pixels. Fonts are external to
+  the CSS bundle (`scripts/build.mjs`, `external: ["*.ttf"]`).
 - The `x` is the show's bold red × (ink-edged); title bars recolour it
   cream via the palette override in `window.js`.
 - Taskbar button labels are `.tlbl`, NOT `.lbl` — `.lbl` is the OS form

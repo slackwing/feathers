@@ -275,7 +275,7 @@ export class BinderApp extends App {
   /** A sleeve holding one printed card. */
   cardEl(c) {
     const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
-    const card = new GICard({ no: c.no, name: c.name, rank: c.rank, description: cardText(c), alt: c.name,
+    const card = new GICard({ no: c.no, name: c.first || c.name, rank: c.rank, description: cardText(c), alt: c.name,   // the plaque prints the SHORT name (Gon, not Gon Freecss)
       image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : (c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null) });
     card.mount(b);
     this.cards.set(c.id, card);

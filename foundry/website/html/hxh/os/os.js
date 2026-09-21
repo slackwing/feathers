@@ -29,14 +29,14 @@ import { WakeWatch } from "./wake.js";
 import { Blimp } from "./blimp.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
-export const THEME_KEY = "theme", THEME_DEFAULT = "win98";
+export const THEME_KEY = "theme", THEME_DEFAULT = "seapumpkin";   // Andrew, 2026-09-21
 export const THEME_OPTIONS = [
   ["win98", "Win98"],
   ["tropical", "Whale Island Tropical"],
   ["seapumpkin", "Whale Island Sea Pumpkin"],
   ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"],
 ];
-export const SKY_KEY = "sky", SKY_DEFAULT = "original";
+export const SKY_KEY = "sky", SKY_DEFAULT = "hypergradient";   // Andrew, 2026-09-21
 export const SKY_OPTIONS = [
   ["original", "Original"],
   ["gradual", "Gradual"],

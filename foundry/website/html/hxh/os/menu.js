@@ -103,7 +103,33 @@ export class Menu extends Component {
     this.el.classList.add("open");
     this.el.parentElement?.classList.contains("menu") && this.el.parentElement.classList.add("open");
     Menus.track(this);
+    this.fit();
     this.emit("open");
+  }
+
+  /**
+   * A submenu that would run off the bottom (or right) of the viewport is
+   * shifted up (or flipped left) — the Start menu's Settings sit at the
+   * bottom of the screen, so its cascades used to vanish below the
+   * taskbar (Andrew, 2026-09-21). Measured in viewport px; the desktop
+   * may be zoomed (the whale rule), so offsets are divided by --zoom.
+   */
+  fit() {
+    if (!this.props.parent || !this.el.getBoundingClientRect) return;
+    const el = this.el;
+    el.style.top = ""; el.style.bottom = ""; el.style.left = ""; el.style.right = "";
+    const win = el.ownerDocument.defaultView, doc = el.ownerDocument.documentElement;
+    const zoom = parseFloat(win.getComputedStyle(doc).getPropertyValue("--zoom")) || 1;
+    const vh = win.innerHeight, vw = win.innerWidth, pad = 6;
+    const r = el.getBoundingClientRect();
+    if (!r.height) return;
+    if (r.bottom > vh - pad) {
+      const base = parseFloat(win.getComputedStyle(el).top) || 0;   // the CSS offset (−7px when top-aligned)
+      const dy = Math.min(r.bottom - (vh - pad), r.top - pad) / zoom;
+      el.style.top = `${base - dy}px`;
+      this.shifted = dy;
+    }
+    if (r.right > vw - pad) { el.style.left = "auto"; el.style.right = "calc(100% + 2px)"; }
   }
 
   close() {

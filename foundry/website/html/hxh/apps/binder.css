@@ -131,16 +131,22 @@
   position: absolute; left: 20px; right: 20px; bottom: 100%;
   display: flex; flex-wrap: wrap-reverse; align-content: flex-end; align-items: flex-end; gap: 2px;
 }
+/* page tabs: smooth (not pixel art), in the binder's own blues; the open page's tab is taller,
+   lit, and joined to the page — Andrew, 2026-09-21 */
 .tab {
-  flex: 0 0 auto; min-width: 34px; height: 22px; padding: 2px 3px 0;
-  background: var(--hue, var(--paper)); color: var(--t, var(--ink));
-  border: var(--px) solid var(--ink); border-bottom: 0;
-  font: 10px/1 var(--font-px); text-transform: uppercase; overflow: hidden; white-space: nowrap;
-  cursor: pointer; display: grid; place-items: center;
-  filter: brightness(.7);
+  flex: 0 0 auto; min-width: 40px; height: 24px; padding: 4px 10px 0;
+  background: var(--navy-2); color: rgba(255,255,255,.55);
+  border: 2px solid var(--navy-3); border-bottom: 0; border-radius: 7px 7px 0 0;
+  font: 700 12px/1 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em;
+  overflow: hidden; white-space: nowrap; cursor: pointer; display: grid; place-items: center;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.06);
+  transition: none;
 }
-.tab.on { height: 28px; filter: none; box-shadow: inset 0 var(--px) 0 rgba(255,255,255,.4); }
-.tab:hover { filter: brightness(.95); }
+.tab:hover { background: var(--navy); color: rgba(255,255,255,.85); }
+.tab.on {
+  height: 31px; padding-top: 5px; background: var(--navy-hi); color: #fff; border-color: var(--navy-hi);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.35), 0 -3px 12px rgba(120,180,255,.25);
+}
 /* exactly three by three cards — the cells ARE the cards (--cardw/--cardh from binderLayout) */
 .cards { display: grid; grid-template-columns: repeat(3, var(--cardw, 150px)); grid-template-rows: repeat(3, var(--cardh, 210px)); gap: 12px; justify-content: center; align-content: start; }
 .slot {   /* empty sleeve */

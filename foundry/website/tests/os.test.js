@@ -44,7 +44,7 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(os.toast && os.boot && os.backdrop);
   assert.equal(document.querySelector("canvas.wall"), os.wallpaper.el);
   assert.equal(os.wallpaper.el.nextSibling, os.blimp.el);   // the blimp flies above the wallpaper, below everything else
-  assert.equal(os.wallpaper.props.sky(), "original");
+  assert.equal(os.wallpaper.props.sky(), "hypergradient");   // the default sky
   const repaints = []; os.bus.on("sky", p => repaints.push(p.name));
   os.applySky("gradual");
   assert.equal(os.wallpaper.props.sky(), "gradual");   // the wallpaper asks the OS which sky to paint, on every `sky` event
@@ -88,8 +88,8 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   const themes = display[0].items(), skies = display[1].items();
   assert.deepEqual(labels(themes), ["Win98", "Whale Island Tropical", "Whale Island Sea Pumpkin", "Whale Island Sea Pumpkin Pastel"]);
   assert.deepEqual(labels(skies), ["Original", "Gradual", "Noisy Gradual", "Hypergradient", "Gradient", "Noisy Gradient"]);
-  assert.deepEqual(themes.map(t => t.check()), [true, false, false, false]);
-  assert.equal(document.documentElement.dataset.theme, "win98");
+  assert.deepEqual(themes.map(t => t.check()), [false, false, true, false]);   // Sea Pumpkin by default (Andrew, 2026-09-21)
+  assert.equal(document.documentElement.dataset.theme, "seapumpkin");
   const seen = [];
   os.bus.on("theme", p => seen.push("theme:" + p.name)); os.bus.on("sky", p => seen.push("sky:" + p.name));
   themes[1].onclick(); skies[2].onclick();

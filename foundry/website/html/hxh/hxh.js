@@ -998,7 +998,38 @@ var HxH = (() => {
       this.el.classList.add("open");
       this.el.parentElement?.classList.contains("menu") && this.el.parentElement.classList.add("open");
       Menus.track(this);
+      this.fit();
       this.emit("open");
+    }
+    /**
+     * A submenu that would run off the bottom (or right) of the viewport is
+     * shifted up (or flipped left) — the Start menu's Settings sit at the
+     * bottom of the screen, so its cascades used to vanish below the
+     * taskbar (Andrew, 2026-09-21). Measured in viewport px; the desktop
+     * may be zoomed (the whale rule), so offsets are divided by --zoom.
+     */
+    fit() {
+      if (!this.props.parent || !this.el.getBoundingClientRect) return;
+      const el = this.el;
+      el.style.top = "";
+      el.style.bottom = "";
+      el.style.left = "";
+      el.style.right = "";
+      const win = el.ownerDocument.defaultView, doc = el.ownerDocument.documentElement;
+      const zoom = parseFloat(win.getComputedStyle(doc).getPropertyValue("--zoom")) || 1;
+      const vh = win.innerHeight, vw = win.innerWidth, pad = 6;
+      const r = el.getBoundingClientRect();
+      if (!r.height) return;
+      if (r.bottom > vh - pad) {
+        const base = parseFloat(win.getComputedStyle(el).top) || 0;
+        const dy = Math.min(r.bottom - (vh - pad), r.top - pad) / zoom;
+        el.style.top = `${base - dy}px`;
+        this.shifted = dy;
+      }
+      if (r.right > vw - pad) {
+        el.style.left = "auto";
+        el.style.right = "calc(100% + 2px)";
+      }
     }
     close() {
       if (!this.isOpen) return;
@@ -1040,7 +1071,8 @@ var HxH = (() => {
 
   // html/hxh/os/window.js
   var CHROME = {
-    min: { cls: "min", glyph: "_", title: "Minimize" },
+    min: { cls: "min", glyph: "", title: "Minimize" },
+    // drawn by CSS (.tbtn.min::before): a bar with clearance, not an underscore on the edge
     close: { cls: "close", glyph: "\xD7", title: "Close" }
   };
   var ChromeButton = class extends Component {
@@ -2451,22 +2483,50 @@ var HxH = (() => {
 
   // html/hxh/os/blimp.js
   var FLYER_TEXT = "HUNTER \xD7 HALLOWEEN";
-  var SHIP_W = 260;
-  var SHIP_H = 104;
-  var BANNER_W = 300;
-  var BANNER_H = 64;
-  var ROPE = 40;
+  var SHIP_W = 440;
+  var SHIP_H = 190;
+  var BANNER_W = 320;
+  var BANNER_H = 70;
+  var ROPE = 44;
   var seq = 0;
+  var HULL = "M 18 92 C 18 46, 78 22, 176 22 C 280 22, 368 44, 416 88 C 372 132, 280 156, 176 156 C 78 156, 18 136, 18 92 Z";
   function airshipSVG() {
+    const id = "ship" + ++seq;
+    const teeth = (x0, y, n, w, h2, up) => {
+      let d = `M ${x0} ${y}`;
+      for (let i = 0; i < n; i++) d += ` L ${x0 + w * (i + 0.5)} ${up ? y - h2 : y + h2} L ${x0 + w * (i + 1)} ${y}`;
+      return d + " Z";
+    };
+    const masts = [150, 205, 260, 315].map((x) => `<g class="mast"><line x1="${x}" y1="24" x2="${x}" y2="6"/><line x1="${x - 12}" y1="6" x2="${x + 12}" y2="6"/><circle cx="${x}" cy="6" r="2.4"/></g>`).join("");
+    const windows = Array.from({ length: 11 }, (_, i) => `<rect x="${118 + i * 12}" y="158" width="7" height="6" rx="1"/>`).join("");
     return `<svg class="airship" viewBox="0 0 ${SHIP_W} ${SHIP_H}" width="${SHIP_W}" height="${SHIP_H}" aria-hidden="true">
-  <g class="fins"><path d="M 34 30 L 10 6 L 52 18 Z"/><path d="M 34 54 L 10 78 L 52 66 Z"/><path d="M 30 39 L 8 39 L 8 45 L 30 45 Z"/></g>
-  <g class="prop"><line x1="10" y1="42" x2="10" y2="42"/><ellipse class="blade" cx="10" cy="42" rx="2.5" ry="13"><animateTransform attributeName="transform" type="rotate" from="0 10 42" to="360 10 42" dur="0.5s" repeatCount="indefinite"/></ellipse><circle cx="10" cy="42" r="3"/></g>
-  <path class="hull" d="M 22 42 C 22 16, 96 8, 158 8 C 214 8, 250 24, 252 42 C 250 60, 214 76, 158 76 C 96 76, 22 68, 22 42 Z"/>
-  <path class="stripe" d="M 44 50 C 110 66, 200 66, 244 50 L 243 56 C 200 72, 110 72, 46 56 Z"/>
-  <path class="sheen" d="M 60 22 C 110 14, 180 14, 226 26"/>
-  <g class="struts"><line x1="100" y1="74" x2="104" y2="84"/><line x1="172" y1="74" x2="168" y2="84"/><line x1="136" y1="76" x2="136" y2="84"/></g>
-  <rect class="cabin" x="82" y="82" width="112" height="18" rx="5"/>
-  <g class="windows">${[92, 108, 124, 140, 156, 172].map((x) => `<rect x="${x}" y="87" width="9" height="8" rx="1.5"/>`).join("")}</g>
+  <defs>
+    <linearGradient id="${id}-hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc0f2"/><stop offset=".35" stop-color="#3e8ed6"/><stop offset=".75" stop-color="#2a68ad"/><stop offset="1" stop-color="#173f6f"/></linearGradient>
+    <clipPath id="${id}-clip"><path d="${HULL}"/></clipPath>
+  </defs>
+  <g class="fins"><path d="M 352 40 L 404 4 L 412 74 Z"/><path d="M 352 138 L 404 174 L 412 104 Z"/><path d="M 372 84 L 436 78 L 436 96 L 372 100 Z"/></g>
+  <g class="masts">${masts}</g>
+  <path class="hull" d="${HULL}" fill="url(#${id}-hull)"/>
+  <g clip-path="url(#${id}-clip)">
+    <path class="nose" d="M -10 -10 H 128 C 110 40, 110 140, 128 200 H -10 Z"/>
+    <path class="teeth" d="${teeth(24, 98, 8, 12.5, 15, false)}"/>
+    <path class="teeth lower" d="${teeth(38, 128, 6, 12.5, 12, true)}"/>
+    <path class="gum" d="M 22 98 C 60 96, 100 92, 124 88"/>
+    <ellipse class="eye" cx="88" cy="58" rx="16" ry="9"/>
+    <circle class="pupil" cx="92" cy="60" r="5"/>
+    <path class="brow" d="M 66 50 L 104 46"/>
+    <path class="panel" d="M 140 40 C 220 30, 320 36, 400 70"/>
+    <path class="panel" d="M 136 132 C 220 146, 320 140, 400 106"/>
+    <path class="sheen" d="M 150 34 C 230 26, 320 30, 380 52"/>
+  </g>
+  <path class="outline" d="${HULL}"/>
+  <g class="plate"><rect x="150" y="50" width="58" height="40" rx="3"/><path d="M 158 58 L 174 82 M 174 58 L 158 82 M 184 58 L 200 82 M 200 58 L 184 82"/></g>
+  <g class="struts"><line x1="130" y1="150" x2="126" y2="166"/><line x1="185" y1="154" x2="185" y2="166"/><line x1="240" y1="150" x2="244" y2="166"/><line x1="322" y1="146" x2="326" y2="160"/></g>
+  <rect class="cabin" x="108" y="150" width="150" height="22" rx="6"/>
+  <g class="windows">${windows}</g>
+  <rect class="pod" x="308" y="152" width="40" height="18" rx="6"/>
+  <g class="prop pod-prop"><ellipse cx="352" cy="161" rx="2" ry="10"><animateTransform attributeName="transform" type="rotate" from="0 352 161" to="360 352 161" dur="0.45s" repeatCount="indefinite"/></ellipse><circle cx="352" cy="161" r="2.5"/></g>
+  <g class="prop stern"><ellipse cx="424" cy="88" rx="2.5" ry="16"><animateTransform attributeName="transform" type="rotate" from="0 424 88" to="360 424 88" dur="0.5s" repeatCount="indefinite"/></ellipse><circle cx="424" cy="88" r="3.5"/></g>
 </svg>`;
   }
   function ripple(x0, x1, base, amp, phase, step = 10) {
@@ -2478,10 +2538,10 @@ var HxH = (() => {
   function bannerSVG(text = FLYER_TEXT, rope = "left") {
     const id = "bwave" + ++seq;
     const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
-    const top = 18, hgt = 30, amp = 3.5;
+    const top = 16, hgt = 40, amp = 3.5;
     const phases = [0, 2.1, 4.2, 0];
     const cloth = phases.map((p) => poly(ripple(x0, x1, top, amp, p)) + " " + poly(ripple(x0, x1, top + hgt, amp, p).reverse(), "L") + " Z").join(";");
-    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt * 0.62, amp, p))).join(";");
+    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt / 2, amp, p))).join(";");
     const hem = phases.map((p) => poly(ripple(x0, x1, top + 3, amp, p))).join(";");
     const ropeD = rope === "left" ? `M 0 ${top - 6} L ${ROPE} ${top + 2}` : `M ${BANNER_W} ${top - 6} L ${BANNER_W - ROPE} ${top + 2}`;
     const dur = "1.5s";
@@ -2490,7 +2550,7 @@ var HxH = (() => {
   <path class="cloth" d="${cloth.split(";")[0]}"><animate attributeName="d" values="${cloth}" dur="${dur}" repeatCount="indefinite"/></path>
   <path class="hem" d="${hem.split(";")[0]}"><animate attributeName="d" values="${hem}" dur="${dur}" repeatCount="indefinite"/></path>
   <defs><path id="${id}" d="${line.split(";")[0]}"><animate attributeName="d" values="${line}" dur="${dur}" repeatCount="indefinite"/></path></defs>
-  <text class="lettering"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${text}</textPath></text>
+  <text class="lettering" dominant-baseline="central"><textPath href="#${id}" startOffset="50%" text-anchor="middle" dominant-baseline="central">${text}</textPath></text>
 </svg>`;
   }
   var Blimp = class extends Component {
@@ -2545,7 +2605,7 @@ var HxH = (() => {
       const { random = Math.random, duration = 1e5 } = this.props;
       for (const old of this.el.querySelectorAll(".blimp")) old.remove();
       const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
-      el.style.top = (top ?? 5 + random() * 16) + "%";
+      el.style.top = (top ?? 4 + random() * 14) + "%";
       el.style.animationDuration = duration + "ms";
       el.append(
         h("span", { className: "ship", html: airshipSVG() }),
@@ -2884,7 +2944,7 @@ var HxH = (() => {
     paint() {
       this.anim?.stop();
       const w = this.props.env?.win || globalThis.window;
-      this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "original" });
+      this.anim = wallpaper(this.el, { vw: w?.innerWidth || 1366, vh: w?.innerHeight || 900, reduced: !!this.props.env?.reduced, sky: this.props.sky?.() || "hypergradient" });
     }
     onUnmount() {
       this.anim?.stop();
@@ -2893,7 +2953,7 @@ var HxH = (() => {
 
   // html/hxh/os/os.js
   var THEME_KEY = "theme";
-  var THEME_DEFAULT = "win98";
+  var THEME_DEFAULT = "seapumpkin";
   var THEME_OPTIONS = [
     ["win98", "Win98"],
     ["tropical", "Whale Island Tropical"],
@@ -2901,7 +2961,7 @@ var HxH = (() => {
     ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"]
   ];
   var SKY_KEY = "sky";
-  var SKY_DEFAULT = "original";
+  var SKY_DEFAULT = "hypergradient";
   var SKY_OPTIONS = [
     ["original", "Original"],
     ["gradual", "Gradual"],
@@ -3694,10 +3754,11 @@ var HxH = (() => {
       const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
       const card = new GICard({
         no: c.no,
-        name: c.name,
+        name: c.first || c.name,
         rank: c.rank,
         description: cardText(c),
         alt: c.name,
+        // the plaque prints the SHORT name (Gon, not Gon Freecss)
         image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null
       });
       card.mount(b);

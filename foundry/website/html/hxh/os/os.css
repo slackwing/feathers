@@ -47,7 +47,10 @@
      pieces (logotype, stamps, kickers). Apps use the --t-* shorthands,
      never their own numbers. */
   --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Twemoji Mozilla";   /* per-glyph fallback: every modern emoji renders in the OS's colour font */
-  --font-ui: "Pixelify Sans", var(--font-emoji), Tahoma, Verdana, "DejaVu Sans", sans-serif;
+  /* Pixelify Sans's own 2 and 5 read as S and Ƨ at 13–16 px (Andrew, on a Mac, 2026-09-21): the
+     digits come from Jersey 15 instead (fonts/jersey15-digits.ttf, OFL, U+0030–0039 only, native
+     at 15 px), which sits well next to Pixelify; everything else stays Pixelify. */
+  --font-ui: "HxH Digits", "Pixelify Sans", var(--font-emoji), Tahoma, Verdana, "DejaVu Sans", sans-serif;
   --font-body: "DotGothic16", var(--font-emoji), "Courier New", monospace;
   --font-display: "Press Start 2P", "Courier New", monospace;
   --font-px: var(--font-display);   /* legacy names, still used by the binder's device art */
@@ -90,10 +93,18 @@
   --menu-bg: var(--paper); --menu-fg: var(--ink); --menu-border: var(--ink); --menu-hi: var(--paper-hi); --menu-lo: var(--paper-lo); --menu-shadow: 5px 5px 0 rgba(0,0,0,.5);
   --sel-bg: var(--blood); --sel-fg: var(--paper-hi);                 /* menu highlight, text selection, icon caption hover */
   --tk-bg: var(--paper); --tk-fg: var(--ink); --tk-top: var(--paper-hi); --tk-line: var(--ink);
-  --tk-btn-bg: var(--paper); --tk-btn-fg: var(--ink); --tk-btn-border: var(--ink); --tk-btn-hi: var(--paper-hi); --tk-btn-lo: var(--paper-lo); --tk-btn-pressed: var(--dither);
+  --tk-btn-bg: var(--paper); --tk-btn-fg: var(--ink); --tk-btn-border: var(--ink); --tk-btn-hi: var(--paper-hi); --tk-btn-lo: var(--paper-lo);
+  --tk-btn-pressed: color-mix(in srgb, var(--tk-btn-bg) 74%, #3a3a3a);   /* the active window's button: sunken and darker, never the accent colour (Andrew, 2026-09-21) */
   --field-bg: var(--paper-hi); --field-fg: var(--ink); --field-border: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
   --field-shadow: inset var(--px) var(--px) 0 rgba(11,10,8,.35); --field-focus: var(--nen); --field-off-bg: var(--paper-lo);
   --dim-fg: var(--ink-4);                                             /* disabled / secondary text on a window */
+}
+
+@font-face {
+  font-family: "HxH Digits";
+  src: url("fonts/jersey15-digits.ttf") format("truetype");
+  unicode-range: U+0030-0039;
+  font-display: swap;
 }
 
 * { box-sizing: border-box; }
@@ -148,28 +159,38 @@ body.crt::after {
   z-index: 0; pointer-events: none;
 }
 
-/* Netero's blimp (os/blimp.js): a sprite towing a flyer, drifting across the sky in ~90 s */
+/* Netero's blimp (os/blimp.js): the show's airship towing a banner, drifting across the sky in ~100 s */
 .blimps { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 100s linear forwards; }
 .blimp.east { left: 0; flex-direction: row-reverse; animation-name: blimp-east; }
 .blimp .ship, .blimp .flyer { display: block; }
 .blimp svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }   /* the one smooth thing on the desktop */
-.blimp.west .ship { transform: scaleX(-1); }   /* the ship's nose points east; flip it to fly west (the banner is built for either side, so its letters never mirror) */
-.blimp .flyer { margin-top: 30px; }   /* the rope's start (banner y 12) meets the tail (ship y 42) */
-/* theme dress: hull = window surface, stripe = active title bar, cabin = inactive title bar, windows = field, lines = window border */
-.airship .hull { fill: var(--win-bg); stroke: var(--win-border); stroke-width: 2.5; }
-.airship .stripe { fill: var(--tb-bg); stroke: var(--win-border); stroke-width: 1.5; }
-.airship .sheen { fill: none; stroke: var(--field-bg); stroke-width: 3; stroke-linecap: round; opacity: .9; }
-.airship .fins path { fill: var(--tb-bg-off); stroke: var(--win-border); stroke-width: 2; stroke-linejoin: round; }
-.airship .prop .blade { fill: var(--win-border); opacity: .55; }
-.airship .prop circle { fill: var(--tb-bg); stroke: var(--win-border); stroke-width: 1.5; }
-.airship .struts line { stroke: var(--win-border); stroke-width: 2; }
-.airship .cabin { fill: var(--tb-bg-off); stroke: var(--win-border); stroke-width: 2; }
-.airship .windows rect { fill: var(--field-bg); stroke: var(--win-border); stroke-width: 1; }
+.blimp.east .ship { transform: scaleX(-1); }   /* the art's nose points west; flip it to fly east (the banner is built for either side, so its letters never mirror) */
+.blimp .flyer { margin-top: 78px; }   /* the rope's start (banner y 10) meets the stern (ship y 88) */
+/* the ship's own colours — this is the Hunter Association's airship, not the theme's */
+.airship .outline { fill: none; stroke: #10243d; stroke-width: 2.5; }
+.airship .nose { fill: #14161c; }
+.airship .teeth { fill: #fffaf0; }
+.airship .gum { fill: none; stroke: #5a1a1a; stroke-width: 2; }
+.airship .eye { fill: #fffaf0; }
+.airship .pupil { fill: #14161c; }
+.airship .brow { fill: none; stroke: #fffaf0; stroke-width: 4; stroke-linecap: round; }
+.airship .panel { fill: none; stroke: rgba(10, 30, 60, .35); stroke-width: 1.5; }
+.airship .sheen { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 4; stroke-linecap: round; }
+.airship .fins path { fill: #9fc6e8; stroke: #10243d; stroke-width: 2; stroke-linejoin: round; }
+.airship .masts line { stroke: #22354d; stroke-width: 2.5; stroke-linecap: round; }
+.airship .masts circle { fill: #e8eef5; stroke: #22354d; stroke-width: 1.5; }
+.airship .plate rect { fill: #f4ecd8; stroke: #10243d; stroke-width: 2; }
+.airship .plate path { fill: none; stroke: #14161c; stroke-width: 4; stroke-linecap: round; }
+.airship .struts line { stroke: #22354d; stroke-width: 2.5; }
+.airship .cabin, .airship .pod { fill: #1b3252; stroke: #10243d; stroke-width: 2; }
+.airship .windows rect { fill: #ffd94a; stroke: #7a5a00; stroke-width: .8; }
+.airship .prop ellipse { fill: #e8eef5; stroke: #22354d; stroke-width: 1; }
+.airship .prop circle { fill: #22354d; }
 .banner .rope { fill: none; stroke: var(--win-border); stroke-width: 2; }
 .banner .cloth { fill: var(--win-bg); stroke: var(--win-border); stroke-width: 2; stroke-linejoin: round; }
 .banner .hem { fill: none; stroke: var(--tb-bg); stroke-width: 3; }
-.banner .lettering { font: 13px/1 var(--font-display); fill: var(--win-fg); letter-spacing: .04em; }
+.banner .lettering { font: 700 16px "Helvetica Neue", "Liberation Sans", Arial, sans-serif; fill: var(--win-fg); letter-spacing: .14em; }
 @keyframes blimp-west { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100%)); } }
 @keyframes blimp-east { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
 @media (prefers-reduced-motion: reduce) { .blimp { display: none; } }
@@ -219,7 +240,8 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; }
 .win.chromeless.inactive { filter: none; }
 .win.chromeless .body { padding: 0; container-type: normal; }
-.win.chromeless .fbtns { position: absolute; right: 8px; top: 8px; z-index: 6; display: flex; gap: 2px; }
+.win.chromeless .fbtns { position: absolute; right: 3px; top: 3px; z-index: 6; display: flex; gap: 2px; }
+.win.chromeless .fbtns .tbtn { width: 20px; height: 17px; }   /* the binder's: small, in the very corner, off the screen bezel */
 .tbar {
   display: flex; align-items: center; gap: 8px;
   background: var(--tb-bg); color: var(--tb-fg);
@@ -243,6 +265,8 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   display: grid; place-items: center;
 }
 .tbtn:active { box-shadow: inset 1px 1px 0 var(--tbtn-lo); }
+.tbtn.min::before { content: ""; display: block; width: 8px; height: 2px; background: currentColor; transform: translateY(4px); }   /* Windows' minimize: a short bar low in the button, clear of the edge */
+.win.chromeless .fbtns .tbtn.min::before { transform: translateY(3px); }
 .mbar {
   display: flex; gap: 2px; position: relative;
   padding: 5px 2px 2px; margin-bottom: 5px;
@@ -547,6 +571,9 @@ body.stacked .taskbar .task {padding: 0 8px; }
    the brand palette (the logo, the summons stamp, the Beetle) stays. */
 html[data-theme="tropical"], html[data-theme="seapumpkin"], html[data-theme="seapumpkin-pastel"] {
   --font-ui: "DotGothic16", var(--font-emoji), "Courier New", monospace;
+  /* DotGothic16 is a 16 px bitmap face: any other size lands its dots between pixels (mushy on a
+     Mac, which does not hint). Chrome text is 16 px throughout, like Windows' one 8 pt. */
+  --fs-ui: 16px; --fs-title: 16px; --fs-small: 16px; --fs-caption: 16px;
   --win-hi: transparent; --win-lo: transparent; --win-shadow: 4px 4px 0 var(--wi-ink); --win-pad: 4px;
   --win-fg: var(--wi-ink); --win-border: var(--wi-ink);
   --tbtn-fg: var(--wi-ink); --tbtn-border: var(--wi-ink); --tbtn-hi: transparent; --tbtn-lo: transparent;
@@ -567,7 +594,7 @@ html[data-theme="tropical"] {
   --strong-bg: var(--wi-pink); --strong-fg: var(--wi-ink); --strong-hover: #fbcbdd;
   --menu-bg: #ffffff; --menu-lo: #d5e6df;
   --sel-bg: var(--wi-pink); --sel-fg: var(--wi-ink);
-  --tk-bg: var(--wi-mint); --tk-btn-bg: #ffffff; --tk-btn-pressed: var(--wi-pink);
+  --tk-bg: var(--wi-mint); --tk-btn-bg: #ffffff;
   --field-bg: #ffffff; --field-focus: #ee9dbb; --field-off-bg: #eef3f1;
   --dim-fg: #7f8f8b;
 }
@@ -581,7 +608,7 @@ html[data-theme="seapumpkin"] {
   --strong-bg: var(--sp-blue); --strong-fg: #fff6e0; --strong-hover: #3f86d6;
   --menu-bg: var(--sp-cream); --menu-lo: #ecd6b8;
   --sel-bg: var(--sp-blue); --sel-fg: #fff6e0;
-  --tk-bg: #ffd9ad; --tk-btn-bg: var(--sp-cream); --tk-btn-pressed: var(--sp-orange);
+  --tk-bg: #ffd9ad; --tk-btn-bg: var(--sp-cream);
   --field-bg: #fff8ec; --field-focus: var(--sp-blue); --field-off-bg: #f3e3cb;
   --dim-fg: #8a7458;
 }
@@ -595,7 +622,7 @@ html[data-theme="seapumpkin-pastel"] {
   --strong-bg: #b9d7f5; --strong-fg: var(--wi-ink); --strong-hover: #d0e5f9;
   --menu-bg: var(--sp-cream); --menu-lo: #f0dfc9;
   --sel-bg: #b9d7f5; --sel-fg: var(--wi-ink);
-  --tk-bg: #ffe9d2; --tk-btn-bg: var(--sp-cream); --tk-btn-pressed: var(--sp-orange);
+  --tk-bg: #ffe9d2; --tk-btn-bg: var(--sp-cream);
   --field-bg: #fffaf3; --field-focus: #8ab8e8; --field-off-bg: #f7ecdf;
   --dim-fg: #8a7458;
 }

@@ -15,6 +15,7 @@ export function bundle({ write = true } = {}) {
     entryPoints: [entry],
     bundle: true,
     format: "iife",
+    external: ["*.ttf", "*.woff2"],   // self-hosted fonts stay url()s next to hxh.css
     globalName: "HxH",
     outfile,
     sourcemap: true,

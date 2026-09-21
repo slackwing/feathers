@@ -5,19 +5,22 @@ import { Blimp, FLYER_TEXT, airshipSVG, bannerSVG, SHIP_W, BANNER_W } from "../h
 
 const d = setupDom();
 
-test("the airship is smooth vector art dressed in theme tokens: hull, stripe, fins, propeller, cabin with six windows", () => {
+test("the airship is the show's: a shark-nosed blue hull, the ✕✕ plate, masts along the spine, a cabin with lit windows, an engine pod, fins and turning propellers", () => {
   const svg = airshipSVG();
   assert.match(svg, new RegExp(`viewBox="0 0 ${SHIP_W} `));
-  for (const cls of ["hull", "stripe", "fins", "prop", "cabin", "windows"]) assert.match(svg, new RegExp(`class="${cls}"`), cls);
-  assert.equal((svg.match(/<rect x="\d+" y="87"/g) || []).length, 6);
-  assert.match(svg, /animateTransform[^>]*rotate/);   // the propeller turns
+  for (const cls of ["hull", "nose", "teeth", "eye", "pupil", "brow", "plate", "masts", "cabin", "windows", "pod", "fins", "outline"]) assert.match(svg, new RegExp(`class="${cls}`), cls);
+  assert.equal((svg.match(/<rect x="\d+" y="158"/g) || []).length, 11);   // the cabin's windows
+  assert.equal((svg.match(/class="mast"/g) || []).length, 4);
+  assert.equal((svg.match(/animateTransform[^>]*rotate/g) || []).length, 2);   // stern and pod propellers turn
+  assert.match(svg, /linearGradient/);                 // a lit hull
   assert.doesNotMatch(svg, /class="px"/);             // not pixel art, on purpose
+  assert.notEqual(airshipSVG().match(/id="(ship\d+)-hull"/)[1], svg.match(/id="(ship\d+)-hull"/)[1], "each ship's gradient and clip have their own ids");
 });
 
 test("the banner ripples: cloth, hem and lettering paths animate through phases; the rope sits on the side that trails", () => {
   const left = bannerSVG(FLYER_TEXT, "left"), right = bannerSVG(FLYER_TEXT, "right");
   assert.equal((left.match(/<animate attributeName="d"/g) || []).length, 3);
-  assert.match(left, new RegExp(`<textPath[^>]*>${FLYER_TEXT}</textPath>`));
+  assert.match(left, new RegExp(`<textPath[^>]*dominant-baseline="central"[^>]*>${FLYER_TEXT}</textPath>`));   // centred in the cloth
   assert.match(left, /data-rope="left"/);
   assert.match(left, /class="rope" d="M 0 /);
   assert.match(right, new RegExp(`class="rope" d="M ${BANNER_W} `));
