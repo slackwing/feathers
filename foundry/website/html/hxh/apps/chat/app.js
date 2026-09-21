@@ -82,7 +82,7 @@ export class ChatApp extends App {
   connect() {
     if (this.client) return this.client;
     const os = this.os;
-    const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.hasFocus(), ...(this.options.client || {}) });
+    const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.presenceFocus(), ...(this.options.client || {}) });
     c.on("hello", ({ contacts, unread }) => { this.setContacts(contacts); this.onUnread(unread || []); });
     c.on("msg", m => this.onMessage(m));
     c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
@@ -101,6 +101,10 @@ export class ChatApp extends App {
     this._onTabFocus = () => this.onTabFocus();
     os.win?.addEventListener("focus", this._onTabFocus);
     os.doc?.addEventListener("visibilitychange", this._onTabFocus);
+    // any click or key is a person here, whatever document.hasFocus() claims (Abi read a message and never
+    // showed online, 2026-09-21): it makes the next heartbeats focused and sends one now if the last was a while ago
+    this._onInput = () => this.noteInput();
+    for (const ev of ["pointerdown", "keydown"]) os.doc?.addEventListener(ev, this._onInput, true);
     c.connect();
     return c;
   }
@@ -354,6 +358,15 @@ export class ChatApp extends App {
   onFocus(id) {
     for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
   }
+
+  /** A person touched the page: recent input counts as focus for presence; ping now unless a focused ping just went out. */
+  noteInput() {
+    const now = Date.now();
+    this.lastInput = now;
+    if (this.client?.connected && now - (this.lastFocusPing || 0) > 15000) { this.lastFocusPing = now; this.client.ping(); }
+  }
+  /** Focus for presence: the tab is being looked at, or someone acted within the last minute. */
+  presenceFocus() { return this.hasFocus() || Date.now() - (this.lastInput || 0) < 60000; }
 
   /** The tab itself came to the front (or went away): tell presence at once, and whatever chat is active is now read. */
   onTabFocus() {

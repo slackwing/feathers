@@ -537,6 +537,30 @@ export const ICONS = {
   ],
 };
 
+/* ---------- vector icons (smooth, standard) ----------
+   The Roster DB's crop / paint tools use ordinary editor icons, not
+   pixel art (Andrew, 2026-09-21: the paint bucket and friends looked
+   nothing like standard icons). Feather-style: 24×24, 2 px strokes in
+   currentColor. */
+export const VICONS = {
+  marquee: `<rect x="4" y="4" width="16" height="16" rx="1.5" stroke-dasharray="3.2 2.2"/>`,
+  brush: `<path d="M20.5 3.5 21 4l-8.6 8.6-1-1z" fill="currentColor" stroke="none"/><path d="M13.5 10.5 3.9 20.1M9.3 14.9c1.2 1.2 1.3 3 .3 4.1S6 20.3 4.5 19.5c1-1 1.2-2.4 2-3.4 1-1.2 1.6-1.6 2.8-1.2z" fill="currentColor"/>`,
+  bucket: `<path d="M11.5 3.5 20 12l-7.5 7.5a1 1 0 0 1-1.4 0L4.5 12.9a1 1 0 0 1 0-1.4z"/><path d="M5 12h14"/><path d="M11.5 3.5 8.5 6.5"/><path d="M20 15c0 0 2.5 2.7 2.5 4.3a2.5 2.5 0 0 1-5 0C17.5 17.7 20 15 20 15z" fill="currentColor"/>`,
+  dropper: `<path d="M17.5 3.5a2.1 2.1 0 0 1 3 3l-2 2-3-3z" fill="currentColor"/><path d="M15.5 5.5l3 3M14.5 6.5 5 16l-1 4 4-1 9.5-9.5"/>`,
+  undo: `<path d="M9 6 4 11l5 5"/><path d="M4 11h9.5a5.5 5.5 0 0 1 0 11H10"/>`,
+  redo: `<path d="m15 6 5 5-5 5"/><path d="M20 11h-9.5a5.5 5.5 0 0 0 0 11H14"/>`,
+  revert: `<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>`,
+  expand: `<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path d="M4 4l6 6M20 4l-6 6M20 20l-6-6M4 20l6-6"/>`,
+  crop: `<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M2 6h14a2 2 0 0 1 2 2v14"/>`,
+};
+
+/** A smooth 24-grid icon at `size` px, drawn in currentColor (no `.px` class: these are not pixel art). */
+export function vicon(name, size = 16) {
+  const body = VICONS[name];
+  if (!body) return icon(name, size);
+  return `<svg class="vi" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
 /** Any ASCII grid → crisp SVG at an integer scale k (sprites that are not icons: the blimp). */
 export function gridSVG(rows, k = 1, pal = null, cls = "px") {
   const h = rows.length, w = rows[0].length;

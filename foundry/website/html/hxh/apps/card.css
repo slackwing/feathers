@@ -51,6 +51,6 @@
 }
 .gicard .gi-desc {
   /* the rules-text face of a real trading card: a sturdy old-style serif, larger than the print's gothic */
-  margin: 0; font: 500 4.5cqw/1.28 "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;
+  margin: 0; font: 500 5.2cqw/1.28 "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;   /* card.js fitBlock steps this down only for a text that will not fit */
   color: #1e1e1e; letter-spacing: 0.002em; overflow-wrap: anywhere;
 }

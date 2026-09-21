@@ -333,19 +333,19 @@ body.crt::after {
 }
 .banner .rope {
   fill: none;
-  stroke: var(--win-border);
+  stroke: #2a1d10;
   stroke-width: 2;
 }
 .banner .cloth {
-  fill: var(--win-bg);
-  stroke: var(--win-border);
+  fill: #ffd6b0;
+  stroke: #2a1d10;
   stroke-width: 2;
   stroke-linejoin: round;
 }
 .banner .hem {
   fill: none;
-  stroke: var(--tb-bg);
-  stroke-width: 3;
+  stroke: #2f6cc0;
+  stroke-width: 4;
 }
 .banner .lettering {
   font:
@@ -353,7 +353,7 @@ body.crt::after {
     "Liberation Sans",
     Arial,
     sans-serif;
-  fill: var(--win-fg);
+  fill: #2a1d10;
   letter-spacing: .14em;
 }
 @keyframes blimp-west {
@@ -1605,7 +1605,7 @@ html[data-theme=seapumpkin-pastel] {
 .gicard .gi-desc {
   margin: 0;
   font:
-    500 4.5cqw/1.28 "Crimson Pro",
+    500 5.2cqw/1.28 "Crimson Pro",
     "Crimson Text",
     Georgia,
     "Times New Roman",
@@ -2075,15 +2075,18 @@ html[data-theme=seapumpkin-pastel] {
   color: var(--scr-dim);
   letter-spacing: .2em;
 }
+.screen {
+  font: 13px/1.5 var(--font-dot);
+}
 .screen .top {
-  font: 22px/1.4 var(--font-dot);
+  font: 15px/1.4 var(--font-dot);
   color: var(--paper-hi);
   text-shadow: 0 0 8px rgba(223, 243, 255, .6);
 }
 .screen .name {
-  font: 15px/1.6 var(--font-px);
+  font: 9px/1.8 var(--font-px);
   color: var(--paper-hi);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .screen .line {
   color: var(--scr-dim);
@@ -3647,6 +3650,9 @@ body.stacked .room .logbox {
 }
 .rcrop .btn.ic svg {
   display: block;
+}
+.rcrop .btn.ic svg.vi {
+  shape-rendering: geometricPrecision;
 }
 .rcrop .btn:disabled {
   color: var(--ink-4);

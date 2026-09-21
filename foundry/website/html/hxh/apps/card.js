@@ -22,6 +22,7 @@ export const KINDS = {
 };
 export const LIMIT = { SS: 1, S: 1, A: 2, B: 3, C: 4 };   // conversion limit printed after the rank
 export const NAME_MAX = 7.4, NAME_MIN = 3.2;              // name font size, in cqw, before and after shrinking
+export const DESC_MAX = 5.2, DESC_MIN = 4.2;              // description size, in cqw: "a little bigger" (Andrew, 2026-09-21), shrunk only when a text will not fit its box
 
 /* ---------- the foil's colour from the picture ----------
    Andrew (2026-09-19): marble the band in the picture's own interesting
@@ -187,7 +188,23 @@ export class GICard extends Component {
       svg.innerHTML = `<path d="${panelPath(w - 2 * inset, hh - 2 * inset, r)}" transform="translate(${inset} ${inset})" fill="none" stroke="currentColor" stroke-width="${stroke}"/>`;
     }
     fitText(this.nameEl, cw * NAME_MAX / 100, cw * NAME_MIN / 100);
+    this.descSize = fitBlock(this.band.querySelector(".gi-desc"), this.band.querySelector(".gi-inset"), cw * DESC_MAX / 100, cw * DESC_MIN / 100);
   }
+}
+
+/** Shrink a block of text until it fits its box's height (or the minimum). Returns the size used, in px. */
+export function fitBlock(el, box, maxPx, minPx) {
+  if (!el || !box) return 0;
+  let size = maxPx;
+  el.style.fontSize = size + "px";
+  const cs = box.ownerDocument.defaultView.getComputedStyle(box);
+  const avail = () => box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+  let guard = 24;
+  while (guard-- > 0 && size > minPx && el.scrollHeight > avail() + 0.5) {
+    size = Math.max(minPx, size * 0.95);
+    el.style.fontSize = size + "px";
+  }
+  return size;
 }
 
 /** Shrink el's font until its text fits its box (or the minimum). Returns the size used, in px. */

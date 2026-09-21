@@ -187,6 +187,7 @@
 .rcrop .ratios, .rcrop .seg { display: flex; gap: 2px; }
 .rcrop .btn.ic { padding: 4px 6px 3px; display: inline-grid; place-items: center; }
 .rcrop .btn.ic svg { display: block; }
+.rcrop .btn.ic svg.vi { shape-rendering: geometricPrecision; }   /* the tool icons are smooth, standard editor icons */
 .rcrop .btn:disabled { color: var(--ink-4); cursor: default; }
 .rcrop .btn:disabled svg { opacity: .35; }
 .rcrop .btn:disabled:hover { background: var(--paper); }

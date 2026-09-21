@@ -400,6 +400,13 @@ test("tab focus is reported to presence at once: a focused ping when the tab com
   tabFocused = false;
   d.fire(d.doc, "visibilitychange");
   assert.deepEqual(sockets[0].sent.at(-1), { t: "ping" });
+  // hasFocus() says no, but a click on the page is a person: a focused ping goes out at once, then heartbeats stay focused for a minute
+  const n = sockets[0].sent.length;
+  d.fire(d.doc.body, "pointerdown");
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "ping", focus: true });
+  d.fire(d.doc.body, "keydown");
+  assert.equal(sockets[0].sent.length, n + 1, "one immediate ping, then throttled");
+  assert.equal(app().presenceFocus(), true);
 });
 
 test("you can message the online and the away, not the offline: IM button, compose, and the server's word", async () => {
@@ -466,6 +473,7 @@ test("pictures: a pasted picture uploads and rides the next message as a block; 
   assert.equal(img.getAttribute("width"), "300");
   sockets[0].push({ t: "msg", msg: { id: 21, room: "global", sender: "gon", body: "", created_at: "2026-10-31T20:03:00Z", image: { id: 12, width: 30, height: 20 } } });
   assert.equal(global.el.querySelector('.m[data-id="21"] .txt'), null);   // no empty text span
+  assert.doesNotMatch(global.el.querySelector('.m[data-id="21"]').textContent, /null/);   // 2026-09-21: an image-only message once printed the word null (a null child handed to DOM append)
   assert.ok(global.el.querySelector('.m[data-id="21"] .pic img'));
   sockets[0].push({ t: "error", code: "image", room: "global" });
   assert.match(os.toast.el.textContent, /picture/);

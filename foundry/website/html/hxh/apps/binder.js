@@ -269,6 +269,7 @@ export class BinderApp extends App {
     const p = this.pages[this.page];
     this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
     p.cards.forEach(c => box.append(this.cardEl(c)));
+    for (const card of this.cards.values()) card.fit();   // a card mounts before its sleeve is in the page (no width yet): fit once the page holds it
     for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
     this.$(".pageno").textContent = `${this.page + 1} / ${this.pages.length}`;
     if (this.sel && !p.cards.includes(this.sel)) this.select(null);

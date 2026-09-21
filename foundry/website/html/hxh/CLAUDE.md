@@ -326,6 +326,14 @@ component architecture (many windows, tray icons + menus, the bus).
   `onUnread`), so being focused it is read at once — global nearly
   always has news after a while and should flash the least. The
   `launch` test asserts this order.
+- **Never hand `null` to the DOM's own `append()`** — it prints the word
+  "null" (an image-only message did, 2026-09-21). Use the `append()` /
+  `h()` helpers in `os/dom.js`, which skip null, or branch first.
+- **Presence: a click or key is a person.** `ChatApp.noteInput()`
+  (document-level pointerdown/keydown) makes the heartbeats focused for
+  a minute and pings at once (throttled 15 s), whatever
+  `document.hasFocus()` claims — Abi read a message and never showed
+  online (2026-09-21).
 - **Presence = focus + keepalive (2026-09-21).** Andrew: an instance
   open in a background tab must stay AWAY, never offline (bots would
   stop DMing), and must not look online either. Two signals on the
@@ -390,7 +398,16 @@ component architecture (many windows, tray icons + menus, the bus).
   blues — `--navy-2` at rest, the open page's tab taller in `--navy-hi`
   with a lit top edge and a glow; Zen Kaku Gothic New 12 px. A card's
   plaque prints the SHORT name (`first`, e.g. "Gon"); the full name
-  stays on the screen's info line.
+  stays on the screen's info line. The device screen is small type
+  (13 px DotGothic, 15 px top line, 9 px Press Start name). A card's
+  description is `DESC_MAX` 5.2cqw, and `fitBlock()` (apps/card.js)
+  steps it down to `DESC_MIN` only for a text that will not fit its
+  box — cards are fitted again after `showPage` (a card mounts before
+  its sleeve is in the page, so the mount-time fit sees no width). At
+  the Binder's 150 px card that is ~195 characters at full size; the
+  six longest descriptions were trimmed to fit (via `roster.py patch`,
+  versioned). Check every card with the scratchpad `cards_fit.mjs`
+  after changing the type.
 
 The roster as a Greed Island card binder, modelled on Andrew's
 screenshots from the show (E66/E67): navy boards with gold clasps; the
@@ -621,8 +638,9 @@ over the sky.
   ✕✕ plate, four propeller masts along the spine, a long cabin with
   eleven lit windows, an engine pod astern, cross fins, stern prop.
   Nose points WEST in the art; `.blimp.east .ship` flips it. The banner
-  is theme-dressed, its lettering a bold smooth sans centred on the
-  cloth's midline (`dominant-baseline: central`).
+  is a pastel orange cloth with a blue lip along its top (fixed colours,
+  like the ship — Andrew, 2026-09-21), its lettering a bold smooth sans
+  centred on the cloth's midline (`dominant-baseline: central`).
 - **About is gone** (app, Start entry, Summons' Help). `HxH.os` exposes
   the running OS for demos and screenshots.
 - **Defaults (2026-09-21): theme Whale Island Sea Pumpkin, sky
@@ -665,6 +683,11 @@ desktop: pixelation is a system property, like the type scale.
   the CSS bundle (`scripts/build.mjs`, `external: ["*.ttf"]`).
 - The `x` is the show's bold red × (ink-edged); title bars recolour it
   cream via the palette override in `window.js`.
+- **Vector icons** (`VICONS` / `vicon(name, size)` in `os/icons.js`):
+  smooth 24-grid, 2 px strokes in currentColor, for things that are
+  not part of the desktop's pixel world — the Roster DB's crop / paint
+  tools (marquee, brush, bucket, dropper, undo, redo, revert, expand,
+  crop). Andrew: those must look like standard editor icons.
 - Taskbar button labels are `.tlbl`, NOT `.lbl` — `.lbl` is the OS form
   label (uppercase, grey, `margin: 16px 0 6px`) and once styled the
   taskbar by accident, which is why those labels sat 5 px low. Same

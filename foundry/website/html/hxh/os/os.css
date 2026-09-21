@@ -187,10 +187,11 @@ body.crt::after {
 .airship .windows rect { fill: #ffd94a; stroke: #7a5a00; stroke-width: .8; }
 .airship .prop ellipse { fill: #e8eef5; stroke: #22354d; stroke-width: 1; }
 .airship .prop circle { fill: #22354d; }
-.banner .rope { fill: none; stroke: var(--win-border); stroke-width: 2; }
-.banner .cloth { fill: var(--win-bg); stroke: var(--win-border); stroke-width: 2; stroke-linejoin: round; }
-.banner .hem { fill: none; stroke: var(--tb-bg); stroke-width: 3; }
-.banner .lettering { font: 700 16px "Helvetica Neue", "Liberation Sans", Arial, sans-serif; fill: var(--win-fg); letter-spacing: .14em; }
+/* the banner: pastel orange cloth with a blue lip along the top (Andrew, 2026-09-21) — its own colours, like the ship */
+.banner .rope { fill: none; stroke: #2a1d10; stroke-width: 2; }
+.banner .cloth { fill: #ffd6b0; stroke: #2a1d10; stroke-width: 2; stroke-linejoin: round; }
+.banner .hem { fill: none; stroke: #2f6cc0; stroke-width: 4; }
+.banner .lettering { font: 700 16px "Helvetica Neue", "Liberation Sans", Arial, sans-serif; fill: #2a1d10; letter-spacing: .14em; }
 @keyframes blimp-west { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100%)); } }
 @keyframes blimp-east { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
 @media (prefers-reduced-motion: reduce) { .blimp { display: none; } }

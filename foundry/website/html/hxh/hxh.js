@@ -837,6 +837,22 @@ var HxH = (() => {
       "kkkkkkkkkk......"
     ]
   };
+  var VICONS = {
+    marquee: `<rect x="4" y="4" width="16" height="16" rx="1.5" stroke-dasharray="3.2 2.2"/>`,
+    brush: `<path d="M20.5 3.5 21 4l-8.6 8.6-1-1z" fill="currentColor" stroke="none"/><path d="M13.5 10.5 3.9 20.1M9.3 14.9c1.2 1.2 1.3 3 .3 4.1S6 20.3 4.5 19.5c1-1 1.2-2.4 2-3.4 1-1.2 1.6-1.6 2.8-1.2z" fill="currentColor"/>`,
+    bucket: `<path d="M11.5 3.5 20 12l-7.5 7.5a1 1 0 0 1-1.4 0L4.5 12.9a1 1 0 0 1 0-1.4z"/><path d="M5 12h14"/><path d="M11.5 3.5 8.5 6.5"/><path d="M20 15c0 0 2.5 2.7 2.5 4.3a2.5 2.5 0 0 1-5 0C17.5 17.7 20 15 20 15z" fill="currentColor"/>`,
+    dropper: `<path d="M17.5 3.5a2.1 2.1 0 0 1 3 3l-2 2-3-3z" fill="currentColor"/><path d="M15.5 5.5l3 3M14.5 6.5 5 16l-1 4 4-1 9.5-9.5"/>`,
+    undo: `<path d="M9 6 4 11l5 5"/><path d="M4 11h9.5a5.5 5.5 0 0 1 0 11H10"/>`,
+    redo: `<path d="m15 6 5 5-5 5"/><path d="M20 11h-9.5a5.5 5.5 0 0 0 0 11H14"/>`,
+    revert: `<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>`,
+    expand: `<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path d="M4 4l6 6M20 4l-6 6M20 20l-6-6M4 20l6-6"/>`,
+    crop: `<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M2 6h14a2 2 0 0 1 2 2v14"/>`
+  };
+  function vicon(name, size = 16) {
+    const body = VICONS[name];
+    if (!body) return icon(name, size);
+    return `<svg class="vi" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  }
   function gridSVG(rows, k = 1, pal = null, cls = "px") {
     const h2 = rows.length, w = rows[0].length;
     const colors = pal ? { ...PAL, ...pal } : PAL;
@@ -3344,6 +3360,8 @@ var HxH = (() => {
   var LIMIT = { SS: 1, S: 1, A: 2, B: 3, C: 4 };
   var NAME_MAX = 7.4;
   var NAME_MIN = 3.2;
+  var DESC_MAX = 5.2;
+  var DESC_MIN = 4.2;
   var rgbToHsl = (r, g, b) => {
     r /= 255;
     g /= 255;
@@ -3493,8 +3511,22 @@ var HxH = (() => {
         svg.innerHTML = `<path d="${panelPath(w - 2 * inset, hh - 2 * inset, r)}" transform="translate(${inset} ${inset})" fill="none" stroke="currentColor" stroke-width="${stroke}"/>`;
       }
       fitText(this.nameEl, cw * NAME_MAX / 100, cw * NAME_MIN / 100);
+      this.descSize = fitBlock(this.band.querySelector(".gi-desc"), this.band.querySelector(".gi-inset"), cw * DESC_MAX / 100, cw * DESC_MIN / 100);
     }
   };
+  function fitBlock(el, box, maxPx, minPx) {
+    if (!el || !box) return 0;
+    let size = maxPx;
+    el.style.fontSize = size + "px";
+    const cs = box.ownerDocument.defaultView.getComputedStyle(box);
+    const avail = () => box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+    let guard = 24;
+    while (guard-- > 0 && size > minPx && el.scrollHeight > avail() + 0.5) {
+      size = Math.max(minPx, size * 0.95);
+      el.style.fontSize = size + "px";
+    }
+    return size;
+  }
   function fitText(el, maxPx, minPx) {
     if (!el) return 0;
     let size = maxPx;
@@ -3787,6 +3819,7 @@ var HxH = (() => {
       const p = this.pages[this.page];
       this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
       p.cards.forEach((c) => box.append(this.cardEl(c)));
+      for (const card of this.cards.values()) card.fit();
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
       this.$(".pageno").textContent = `${this.page + 1} / ${this.pages.length}`;
       if (this.sel && !p.cards.includes(this.sel)) this.select(null);
@@ -4681,10 +4714,9 @@ var HxH = (() => {
       const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : ""), dataset: { id: String(m.id), sender: m.sender } });
       row.append(
         h("b", { className: "who", text: p.nameOf?.(m.sender) || m.sender, style: { color: p.colorOf?.(m.sender) || "" } }),
-        h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` }),
-        " ",
-        m.body ? h("span", { className: "txt", text: m.body }) : null
+        h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` })
       );
+      if (m.body) row.append(" ", h("span", { className: "txt", text: m.body }));
       if (m.image) {
         row.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
       }
@@ -5218,7 +5250,7 @@ var HxH = (() => {
     connect() {
       if (this.client) return this.client;
       const os2 = this.os;
-      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, focus: () => this.hasFocus(), ...this.options.client || {} });
+      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, focus: () => this.presenceFocus(), ...this.options.client || {} });
       c.on("hello", ({ contacts, unread }) => {
         this.setContacts(contacts);
         this.onUnread(unread || []);
@@ -5242,6 +5274,8 @@ var HxH = (() => {
       this._onTabFocus = () => this.onTabFocus();
       os2.win?.addEventListener("focus", this._onTabFocus);
       os2.doc?.addEventListener("visibilitychange", this._onTabFocus);
+      this._onInput = () => this.noteInput();
+      for (const ev of ["pointerdown", "keydown"]) os2.doc?.addEventListener(ev, this._onInput, true);
       c.connect();
       return c;
     }
@@ -5509,6 +5543,19 @@ var HxH = (() => {
     /** An OS window came to the front: if it is a chat and this tab is being looked at, it is read. */
     onFocus(id) {
       for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
+    }
+    /** A person touched the page: recent input counts as focus for presence; ping now unless a focused ping just went out. */
+    noteInput() {
+      const now = Date.now();
+      this.lastInput = now;
+      if (this.client?.connected && now - (this.lastFocusPing || 0) > 15e3) {
+        this.lastFocusPing = now;
+        this.client.ping();
+      }
+    }
+    /** Focus for presence: the tab is being looked at, or someone acted within the last minute. */
+    presenceFocus() {
+      return this.hasFocus() || Date.now() - (this.lastInput || 0) < 6e4;
     }
     /** The tab itself came to the front (or went away): tell presence at once, and whatever chat is active is now read. */
     onTabFocus() {
@@ -6617,19 +6664,19 @@ var HxH = (() => {
         task: true,
         content: `
         <div class="ctools">
-          <div class="seg">${TOOLS.map((t) => `<button class="btn sm ic" type="button" data-tool="${t}" title="${t[0].toUpperCase() + t.slice(1)}">${icon(t, 16)}</button>`).join("")}</div>
+          <div class="seg">${TOOLS.map((t) => `<button class="btn sm ic" type="button" data-tool="${t}" title="${t[0].toUpperCase() + t.slice(1)}">${vicon(t, 18)}</button>`).join("")}</div>
           <label class="radius" title="Brush size"><input type="range" min="1" max="64" value="8"><span class="rv">8</span></label>
           <span class="swatch" title="Colour"><input type="color" value="#000000"></span>
           <div class="palette">${PALETTE.map((c) => `<button type="button" data-color="${c}" style="background:${c}" title="${c}"></button>`).join("")}</div>
           <span class="grow"></span>
-          <button class="btn sm ic" type="button" data-act="undo" title="Undo" disabled>${icon("undo", 16)}</button>
-          <button class="btn sm ic" type="button" data-act="redo" title="Redo" disabled>${icon("redo", 16)}</button>
-          <button class="btn sm ic" type="button" data-act="revert" title="Revert" disabled>${icon("revert", 16)}</button>
+          <button class="btn sm ic" type="button" data-act="undo" title="Undo" disabled>${vicon("undo", 18)}</button>
+          <button class="btn sm ic" type="button" data-act="redo" title="Redo" disabled>${vicon("redo", 18)}</button>
+          <button class="btn sm ic" type="button" data-act="revert" title="Revert" disabled>${vicon("revert", 18)}</button>
         </div>
         <div class="ctools">
           <div class="ratios">${RATIOS.map(([l, r]) => `<button class="btn sm" type="button" data-r="${r}">${LABELS[r] || l}</button>`).join("")}</div>
           <span class="grow"></span>
-          <button class="btn sm ic" type="button" data-act="expand" title="Expand canvas">${icon("expand", 16)}</button>
+          <button class="btn sm ic" type="button" data-act="expand" title="Expand canvas">${vicon("expand", 18)}</button>
         </div>
         <div class="canvas sunken"><div class="wrap"><canvas class="pic"></canvas><i class="cursor" hidden></i><div class="box" hidden><i class="ants"></i>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<b class="hd ${d}" data-h="${d}"></b>`).join("")}</div></div></div>
         <div class="foot">

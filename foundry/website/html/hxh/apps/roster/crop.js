@@ -10,7 +10,7 @@
    painted pixels otherwise; the app closes the window once the
    database has answered. All edits go through PaintDoc's history. */
 import { Window } from "../../os/window.js";
-import { icon } from "../../os/icons.js";
+import { icon, vicon } from "../../os/icons.js";
 import { PaintDoc } from "./paint.js";
 import { AVATAR_RATIO, CARD_RATIO, CARD_RATIO_LABEL } from "./fields.js";
 import { RATIOS, clamp, roundBox, fromAnchor, refit, fitAround, moveTo, resize, fitZoom, cropCanvas } from "./geometry.js";
@@ -32,19 +32,19 @@ export class CropWindow extends Window {
       id: cropId(image.id), title: `Crop #${image.id} — ${char.name}`, icon: "crop", cls: "roster rcrop", task: true,
       content: `
         <div class="ctools">
-          <div class="seg">${TOOLS.map(t => `<button class="btn sm ic" type="button" data-tool="${t}" title="${t[0].toUpperCase() + t.slice(1)}">${icon(t, 16)}</button>`).join("")}</div>
+          <div class="seg">${TOOLS.map(t => `<button class="btn sm ic" type="button" data-tool="${t}" title="${t[0].toUpperCase() + t.slice(1)}">${vicon(t, 18)}</button>`).join("")}</div>
           <label class="radius" title="Brush size"><input type="range" min="1" max="64" value="8"><span class="rv">8</span></label>
           <span class="swatch" title="Colour"><input type="color" value="#000000"></span>
           <div class="palette">${PALETTE.map(c => `<button type="button" data-color="${c}" style="background:${c}" title="${c}"></button>`).join("")}</div>
           <span class="grow"></span>
-          <button class="btn sm ic" type="button" data-act="undo" title="Undo" disabled>${icon("undo", 16)}</button>
-          <button class="btn sm ic" type="button" data-act="redo" title="Redo" disabled>${icon("redo", 16)}</button>
-          <button class="btn sm ic" type="button" data-act="revert" title="Revert" disabled>${icon("revert", 16)}</button>
+          <button class="btn sm ic" type="button" data-act="undo" title="Undo" disabled>${vicon("undo", 18)}</button>
+          <button class="btn sm ic" type="button" data-act="redo" title="Redo" disabled>${vicon("redo", 18)}</button>
+          <button class="btn sm ic" type="button" data-act="revert" title="Revert" disabled>${vicon("revert", 18)}</button>
         </div>
         <div class="ctools">
           <div class="ratios">${RATIOS.map(([l, r]) => `<button class="btn sm" type="button" data-r="${r}">${LABELS[r] || l}</button>`).join("")}</div>
           <span class="grow"></span>
-          <button class="btn sm ic" type="button" data-act="expand" title="Expand canvas">${icon("expand", 16)}</button>
+          <button class="btn sm ic" type="button" data-act="expand" title="Expand canvas">${vicon("expand", 18)}</button>
         </div>
         <div class="canvas sunken"><div class="wrap"><canvas class="pic"></canvas><i class="cursor" hidden></i><div class="box" hidden><i class="ants"></i>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map(d => `<b class="hd ${d}" data-h="${d}"></b>`).join("")}</div></div></div>
         <div class="foot">

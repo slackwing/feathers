@@ -159,9 +159,8 @@ export class ChatWindow extends Window {
     row.append(
       h("b", { className: "who", text: (p.nameOf?.(m.sender) || m.sender), style: { color: p.colorOf?.(m.sender) || "" } }),
       h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` }),
-      " ",
-      m.body ? h("span", { className: "txt", text: m.body }) : null,
     );
+    if (m.body) row.append(" ", h("span", { className: "txt", text: m.body }));   // never hand null to DOM append(): it prints the word null
     if (m.image) {   // a picture is a block of its own under the text, scaled to fit the log
       row.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
     }
