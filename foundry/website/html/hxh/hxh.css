@@ -2999,17 +2999,15 @@ body.stacked .room .logbox {
   color: var(--paper-hi);
 }
 .roster i.reqs {
-  font: var(--t-small);
+  font: var(--t-ui-bold);
   font-style: normal;
-  font-weight: 700;
   display: inline-block;
   margin-left: 4px;
-  padding: 1px 5px 0;
-  line-height: 14px;
+  padding: 2px 8px 1px;
   background: var(--emitter);
   color: var(--ink);
   border: 1px solid var(--ink);
-  vertical-align: middle;
+  vertical-align: top;
 }
 .rlist .row.sel .reqs {
   border-color: var(--paper-hi);
@@ -3289,7 +3287,7 @@ body.stacked .room .logbox {
 .rreq .lhead,
 .rreq .row {
   display: grid;
-  grid-template-columns: 36px 150px 92px 1fr 108px 70px 96px 110px;
+  grid-template-columns: 36px 160px 100px 1fr 96px 84px 112px 130px;
   align-items: center;
   gap: 6px;
   padding: 0 6px;
@@ -3309,6 +3307,10 @@ body.stacked .room .logbox {
 .rreq .row .q-text {
   white-space: normal;
 }
+.rreq .row .q-res {
+  color: var(--ink-4);
+  font: var(--t-small);
+}
 .rreq .q-no {
   color: var(--ink-4);
   text-align: right;
@@ -3325,7 +3327,7 @@ body.stacked .room .logbox {
   background: var(--nen);
   color: var(--ink);
 }
-.roster i.verdict.rq-withdrawn {
+.roster i.verdict.rq-dropped {
   background: var(--paper-lo);
   color: var(--ink-4);
 }

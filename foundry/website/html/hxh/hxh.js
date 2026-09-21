@@ -2954,6 +2954,42 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/live.js
+  var Live = class {
+    constructor({ doc = null, setInterval: si = globalThis.setInterval.bind(globalThis), clearInterval: ci = globalThis.clearInterval.bind(globalThis) } = {}) {
+      this.doc = doc;
+      this.si = si;
+      this.ci = ci;
+      this.jobs = /* @__PURE__ */ new Set();
+      doc?.addEventListener?.("visibilitychange", () => {
+        if (!doc.hidden) this.wake();
+      });
+    }
+    /** Run fn every ms while win is open and the page visible. Returns a stop function. */
+    every(win, ms, fn) {
+      const job = { win, fn, timer: null };
+      job.timer = this.si(() => this.run(job), ms);
+      job.timer?.unref?.();
+      this.jobs.add(job);
+      return () => {
+        this.ci(job.timer);
+        this.jobs.delete(job);
+      };
+    }
+    run(job) {
+      if (!job.win?.state?.open || this.doc?.hidden) return;
+      try {
+        Promise.resolve(job.fn()).catch(() => {
+        });
+      } catch {
+      }
+    }
+    /** Every due job at once — the page came back, or a test wants a tick. */
+    wake() {
+      for (const job of this.jobs) this.run(job);
+    }
+  };
+
   // html/hxh/os/os.js
   var THEME_KEY = "theme";
   var THEME_DEFAULT = "seapumpkin";
@@ -2978,6 +3014,7 @@ var HxH = (() => {
       this.win = win;
       this.doc = win.document;
       this.bus = new EventBus();
+      this.live = new Live({ doc: win?.document });
       this.env = env || new Env(win);
       this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
       this.session = session || new Session({ fetch: this.fetch });
@@ -3483,6 +3520,7 @@ var HxH = (() => {
   ];
   var PER_PAGE = 9;
   var SOURCE = "/hxh/api/db/binder";
+  var LIVE_MS = 2e4;
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
   var titleCase = (s) => s.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
   var cardNo2 = (c) => cardNo(c.no ?? c.id);
@@ -3629,6 +3667,7 @@ var HxH = (() => {
       os2.bus.on("roster:changed", () => {
         if (this.win.state.open) this.load();
       });
+      os2.live?.every(this.win, LIVE_MS, () => this.load());
       return this.win;
     }
     load() {
@@ -5698,8 +5737,8 @@ var HxH = (() => {
     requests(status = "open") {
       return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : ""));
     }
-    resolveRequest(id) {
-      return this.call("POST", `/requests/${id}/resolve`);
+    resolveRequest(id, status = "done", note = "") {
+      return this.call("POST", `/requests/${id}/resolve`, { status, note });
     }
     remove(id) {
       return this.call("DELETE", `/chars/${id}`);
@@ -5755,8 +5794,9 @@ var HxH = (() => {
   var FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var PICS_TITLE = TYPES2.map(([, l]) => l).join(" \xB7 ");
-  var number = (c) => c.card_number ?? c.id;
+  var number = (c) => c.card_number == null ? null : c.card_number;
   function dropTarget(rows, y, id) {
+    rows = rows.filter((r) => r.dataset.no);
     const others = rows.filter((r) => +r.dataset.id !== id);
     const before = others.find((r) => {
       const b = r.getBoundingClientRect();
@@ -5845,13 +5885,13 @@ var HxH = (() => {
     }
     /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
     shown() {
-      return this.chars.filter((c) => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
+      return this.chars.filter((c) => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
     }
     /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
     dragStart(e) {
       if (e.button !== 0) return;
       const row = e.target.closest(".row");
-      if (!row) return;
+      if (!row || !row.dataset.no) return;
       const id = +row.dataset.id, doc = row.ownerDocument;
       const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
       const move = (ev) => {
@@ -5899,10 +5939,11 @@ var HxH = (() => {
     row(c) {
       const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
       const counts = TYPES2.map(([t]) => (c.image_counts || {})[t] || 0);
+      const no = number(c);
       return h(
         "div",
-        { className: "row", dataset: { id: String(c.id) }, role: "option" },
-        h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
+        { className: "row", dataset: { id: String(c.id), ...no == null ? {} : { no: String(no) } }, role: "option" },
+        h("span", { className: "c-no", text: no == null ? "" : String(no), title: "id " + c.id }),
         h("span", { className: "c-av" }, av),
         h("span", { className: "c-name", text: c.name }),
         h("span", { className: "c-ja", text: c.name_ja || "" }),
@@ -6121,6 +6162,9 @@ var HxH = (() => {
           this.select(null);
         }
       });
+      el.addEventListener("click", (e) => {
+        if (this.selected && !e.target.closest(".tile, .gtools, button, input, select, textarea, label, a")) this.select(null);
+      });
       void body;
       return el;
     }
@@ -6132,12 +6176,20 @@ var HxH = (() => {
     setChar(c, { form = true } = {}) {
       this.char = c;
       this.fresh = freshness(c);
-      this.setTitle(`No. ${c.card_number ?? c.id} \xB7 ${c.name} (id ${c.id})`);
+      this.setTitle((c.card_number == null ? "" : `No. ${c.card_number} \xB7 `) + `${c.name} (id ${c.id})`);
       this.renderSlots();
       this.renderReview();
       if (form) this.fillForm();
+      else this.syncNumber();
       this.renderWedges();
       this.renderGallery();
+    }
+    /** The No. field: blank and off until the card is first accepted, then its number. */
+    syncNumber() {
+      const c = this.char, no = this.el.querySelector('[data-f="card_number"]');
+      if (no === this.el.ownerDocument.activeElement) return;
+      no.value = c.card_number == null ? "" : String(c.card_number);
+      no.disabled = c.card_number == null;
     }
     /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
     renderWedges() {
@@ -6206,7 +6258,7 @@ var HxH = (() => {
     fillForm() {
       const c = this.char, f = this.el.querySelector(".form");
       for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
-      f.querySelector('[data-f="card_number"]').value = String(c.card_number ?? c.id);
+      this.syncNumber();
       f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
       f.querySelectorAll("[data-nen]").forEach((s, i) => {
         s.value = (c.nen_types || [])[i] || "";
@@ -7071,12 +7123,12 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/roster/requests.js
-  var REQUEST_STATUS = { open: "Pending", done: "Fulfilled", withdrawn: "Withdrawn" };
+  var REQUEST_STATUS = { open: "Open", done: "Done", dropped: "Dropped" };
   var requestsId = (id) => `win-roster-q-${id}`;
   var RequestsWindow = class extends Window {
     /** props: id (character), name, char (() => the character as last loaded) */
     constructor({ id, name, char, ...rest } = {}) {
-      super({ id: requestsId(id), title: `Requests \xB7 ${name || "#" + id}`, icon: "db", width: 860, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
+      super({ id: requestsId(id), title: `Requests \xB7 ${name || "#" + id}`, icon: "db", width: 1120, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
       this.charId = id;
       this.char = char;
     }
@@ -7100,6 +7152,10 @@ var HxH = (() => {
       this.pane = this.adopt(new ScrollPane({ content: this.rows }), el.querySelector(".body"), { before: el.querySelector(".status") });
       this.pane.el.classList.add("sunken", "listbox");
       this.countEl = el.querySelector(".count");
+      this.body.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-drop]");
+        if (b) this.emit("drop", { id: +b.dataset.drop });
+      });
       this.update();
       return el;
     }
@@ -7117,15 +7173,15 @@ var HxH = (() => {
         h("span", { className: "q-no", text: String(q.id) }),
         h("span", { className: "q-kind", text: q.label || q.kind }),
         h("span", { className: "q-pic", text: q.image_id ? `#${q.image_id}${(c.images || []).some((im) => im.id === q.image_id) ? "" : " (deleted)"}` : "" }),
-        h("span", { className: "q-text", text: q.text || "", title: q.text || "" }),
+        h("span", { className: "q-text" }, q.text || "", q.resolution ? h("div", { className: "q-res", text: `${q.resolved_by || ""}: ${q.resolution}` }) : null),
         h("span", { className: "q-st" }, h("i", { className: "verdict rq-" + q.status, text: REQUEST_STATUS[q.status] || q.status })),
         h("span", { className: "q-by", text: q.owner || "" }),
         h("span", { className: "q-when", text: `${this.when(q.created_at)} \xB7 v${q.version}` }),
-        h("span", { className: "q-done", text: q.resolved_at ? `${this.when(q.resolved_at)}${q.resolved_by ? " \xB7 " + q.resolved_by : ""}` : "" })
+        h("span", { className: "q-done" }, q.status === "open" ? h("button", { className: "link", type: "button", dataset: { drop: String(q.id) }, text: "Drop" }) : `${this.when(q.resolved_at)}${q.resolved_by ? " \xB7 " + q.resolved_by : ""}`)
       )));
       if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
       const open = list.filter((q) => q.status === "open").length;
-      this.countEl.textContent = `${list.length} request${list.length === 1 ? "" : "s"} \xB7 ${open} pending`;
+      this.countEl.textContent = `${list.length} request${list.length === 1 ? "" : "s"} \xB7 ${open} open`;
       this.pane.update();
     }
   };
@@ -7160,6 +7216,8 @@ var HxH = (() => {
   }
 
   // html/hxh/apps/roster/app.js
+  var LIVE_MS2 = 1e4;
+  var WATCH = ["version", "review_status", "card_number", "open_requests", "avatar_image_id", "card_image_id", "accepted_version"];
   var RosterApp = class extends App {
     static id = "roster";
     static name = "Roster DB";
@@ -7180,7 +7238,35 @@ var HxH = (() => {
       const win = this.list();
       this.os.wm.open(win.id, win.state.placed ? null : this.os.env.floating() ? { x: 120, y: 40 } : null);
       this.refreshList();
+      this.liveOff ||= this.os.live?.every(win, LIVE_MS2, () => this.poll());
       return win;
+    }
+    /** Live: re-read the list while it is open; a character window whose version moved is re-read too (a field with focus is left alone). */
+    async poll() {
+      const w = this.listWin;
+      if (!w) return;
+      let list;
+      try {
+        list = await this.api.list();
+      } catch {
+        return;
+      }
+      const before = new Map(w.chars.map((c) => [c.id, c]));
+      const moved = list.filter((c) => {
+        const o = before.get(c.id);
+        return !o || WATCH.some((k) => o[k] !== c[k]);
+      });
+      if (moved.length || list.length !== before.size) w.setChars(list);
+      for (const c of moved) {
+        const cw = this.chars.get(c.id);
+        if (cw?.char && WATCH.some((k) => cw.char[k] !== c[k])) {
+          try {
+            cw.setChar(await this.api.get(c.id), { form: !cw.el?.contains(this.os.win.document.activeElement) });
+          } catch {
+          }
+        }
+        this.os.bus?.emit("roster:changed", { id: c.id });
+      }
     }
     list() {
       if (this.listWin) return this.listWin;
@@ -7311,6 +7397,7 @@ var HxH = (() => {
       if (!w) {
         w = new RequestsWindow({ id, name: cw?.char?.name, char: () => this.chars.get(id)?.char });
         this.os.wm.add(w);
+        w.on("drop", ({ id: rq }) => this.dropRequest(id, rq));
         const off = this.os.bus?.on("roster:changed", (e) => {
           if (e?.id === id && w.state.open) w.update();
         });
@@ -7322,6 +7409,18 @@ var HxH = (() => {
       this.os.wm.open(w.id, w.state.placed ? null : this.os.env.floating() ? { x: 200, y: 120 } : null);
       w.update();
       return w;
+    }
+    /** Drop: the reviewer lets a request go; the character re-reads so the count and the tags follow. */
+    async dropRequest(id, rq) {
+      const cw = this.chars.get(id);
+      try {
+        await this.hold(cw, this.api.resolveRequest(rq, "dropped"));
+        const c = await this.hold(cw, this.api.get(id));
+        cw?.setChar(c, { form: false });
+        this.changed(c);
+      } catch (err) {
+        cw?.say(err.message, true);
+      }
     }
     /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */
     async move(id, after) {
