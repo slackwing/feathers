@@ -84,6 +84,23 @@ export class PromptDialog extends Dialog {
   value() { return this.$("input").value.trim(); }
 }
 
+/* A request to the bot (Andrew, 2026-09-21): a kind from the server's
+   list, then free text with the details — optional, since "Card
+   description" with no text means "work out what is wrong". */
+export class RequestDialog extends Dialog {
+  constructor({ kinds = [] } = {}) {
+    super({ title: "Request", body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map(k => `<option value="${esc(k.slug)}">${esc(k.label)}</option>`).join("")}</select>
+      <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
+      buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }], focus: "select", width: 460 });
+  }
+  render() {
+    const el = super.render();
+    el.querySelector("textarea").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.finish("ok"); } });
+    return el;
+  }
+  value() { return { kind: this.$("select").value, text: this.$("textarea").value.trim() }; }
+}
+
 export class ReasonDialog extends Dialog {
   constructor({ name } = {}) {
     void name;

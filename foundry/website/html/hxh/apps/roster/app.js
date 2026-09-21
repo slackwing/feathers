@@ -12,7 +12,7 @@ import { RosterAPI } from "./api.js";
 import { RosterWindow, FILTERS } from "./list.js";
 import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
-import { ConfirmDialog, PromptDialog, ReasonDialog } from "./dialogs.js";
+import { ConfirmDialog, PromptDialog, ReasonDialog, RequestDialog } from "./dialogs.js";
 import { busy } from "./busy.js";
 import { AVATAR_RATIO, CARD_RATIO } from "./fields.js";
 import "./roster.css";
@@ -75,7 +75,7 @@ export class RosterApp extends App {
     if (!name) return;
     try {
       const c = await this.api.create({ name });
-      this.listWin?.update(c);
+      this.changed(c);
       this.openChar(c.id);
     } catch (err) { this.os.toast.show(err.message); }
   }
@@ -91,6 +91,7 @@ export class RosterApp extends App {
       w.on("patch", ({ fields }) => this.patch(id, fields));
       w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
       w.on("review", ({ status }) => this.review(id, status));
+      w.on("request", () => this.request(id));
       w.on("upload", ({ files }) => this.upload(id, files));
       w.on("crop", ({ id: imageId }) => this.openCrop(imageId));
       w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
@@ -120,7 +121,7 @@ export class RosterApp extends App {
       const c = await this.hold(w, this.api.get(id));
       w?.setChar(c, { form });
       w?.say("");
-      this.listWin?.update(c);
+      this.changed(c);
       return c;
     } catch (err) {
       w?.say(err.status === 404 ? "No such character." : err.message, true);
@@ -137,7 +138,7 @@ export class RosterApp extends App {
       const c = await this.hold(w, this.api.patch(id, fields));
       w?.setChar(c, { form: false });
       w?.say("Saved");
-      this.listWin?.update(c);
+      this.changed(c);
     } catch (err) { w?.say(err.message, true); }
   }
 
@@ -152,8 +153,30 @@ export class RosterApp extends App {
       const c = await this.hold(w, this.api.review(id, status, reason));
       w?.setChar(c, { form: false });
       w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
-      this.listWin?.update(c);
+      this.changed(c);
     } catch (err) { w?.say(err.message, true); }
+  }
+
+  /** Request…: a kind from the server's list plus optional details; the character reads "requested" until the bot resolves it. */
+  async request(id) {
+    const w = this.chars.get(id);
+    try {
+      this.kinds ||= await this.hold(w, this.api.requestKinds());
+    } catch (err) { w?.say(err.message, true); return; }
+    const r = await new RequestDialog({ kinds: this.kinds }).ask(this.os);
+    if (!r) return;
+    try {
+      const c = await this.hold(w, this.api.request(id, r.kind, r.text));
+      w?.setChar(c, { form: false });
+      w?.say("Requested");
+      this.changed(c);
+    } catch (err) { w?.say(err.message, true); }
+  }
+
+  /** A character changed on the server: the list row follows, and anything showing the roster (the Binder) hears about it. */
+  changed(c) {
+    this.listWin?.update(c);
+    this.os.bus?.emit("roster:changed", { id: c.id });
   }
 
   async upload(id, files) {

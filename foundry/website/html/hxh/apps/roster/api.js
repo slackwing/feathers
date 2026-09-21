@@ -29,6 +29,10 @@ export class RosterAPI {
   create(fields) { return this.call("POST", "/chars", fields); }
   patch(id, fields) { return this.call("PATCH", `/chars/${id}`, fields); }
   review(id, status, reason = "") { return this.call("POST", `/chars/${id}/review`, { status, reason }); }
+  requestKinds() { return this.call("GET", "/request-kinds"); }
+  request(id, kind, text = "") { return this.call("POST", `/chars/${id}/request`, { kind, text }); }
+  requests(status = "open") { return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : "")); }
+  resolveRequest(id) { return this.call("POST", `/requests/${id}/resolve`); }
   remove(id) { return this.call("DELETE", `/chars/${id}`); }
   upload(id, file, { type = "raw", caption = "", source_image_id = null, name = "" } = {}) {
     const fd = new FormData();

@@ -221,6 +221,10 @@ def main():
     p = sub.add_parser("download"); p.add_argument("image", type=int); p.add_argument("out")
     p = sub.add_parser("image"); p.add_argument("image", type=int)
     p = sub.add_parser("refetch"); p.add_argument("id", type=int); p.add_argument("--dry-run", action="store_true")
+    sub.add_parser("kinds")
+    p = sub.add_parser("requests"); p.add_argument("--status", default="open", help="open (default), done, withdrawn, or '' for all")
+    p = sub.add_parser("request"); p.add_argument("id", type=int); p.add_argument("kind"); p.add_argument("text", nargs="?", default="")
+    p = sub.add_parser("resolve"); p.add_argument("request", type=int)
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
     p = sub.add_parser("crop"); p.add_argument("image", type=int); [p.add_argument(k, type=int) for k in ("x", "y", "w", "h")]
@@ -260,6 +264,21 @@ def main():
         out(c.db("GET", f"/images/{a.image}/meta"))
     elif a.cmd == "refetch":
         out(refetch(c, a.id, a.dry_run))
+    elif a.cmd == "kinds":
+        for k in c.db("GET", "/request-kinds"):
+            print(f"{k['slug']:<20} {k['label']}")
+    elif a.cmd == "requests":
+        rows = c.db("GET", "/requests?status=" + urllib.parse.quote(a.status))
+        if not rows:
+            print("none", file=sys.stderr)
+        for q in rows:
+            print(f"{q['id']:>4}  {q['status']:<9} #{q['char_id']} {q['char_name']}  v{q['version']}  {q['kind']}  by {q['owner']}  {q['created_at'][:16]}")
+            if q["text"]:
+                print(f"      {q['text']}")
+    elif a.cmd == "request":
+        out(c.db("POST", f"/chars/{a.id}/request", {"kind": a.kind, "text": a.text}))
+    elif a.cmd == "resolve":
+        out(c.db("POST", f"/requests/{a.request}/resolve", {}))
     elif a.cmd in ("reject", "keep"):
         out(c.db("PATCH", f"/images/{a.image}", {"status": "rejected" if a.cmd == "reject" else "kept"}))
     elif a.cmd == "crop":

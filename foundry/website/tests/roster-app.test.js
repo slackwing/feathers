@@ -4,6 +4,7 @@ import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RosterApp, RosterWindow, CharacterWindow, CropWindow, winId, cropId, slotFor } from "../html/hxh/apps/roster/app.js";
 import { Dialog } from "../html/hxh/apps/roster/dialogs.js";
+import { STATUSES } from "../html/hxh/apps/roster/fields.js";
 import { PaintDoc, packRGBA } from "../html/hxh/apps/roster/paint.js";
 
 const ADMIN = { username: "andrew", display_name: "Andrew", initial: "AC", color: "#d914e3", roles: [{ website: "hxh", role: "admin" }] };
@@ -28,6 +29,12 @@ async function boot(me = ADMIN) {
     "PATCH /hxh/api/db/chars/3": init => { const body = JSON.parse(init.body); state.gon = { ...state.gon, ...body, version: state.gon.version + 1 }; return [200, state.gon]; },
     "POST /hxh/api/db/chars/3/review": init => { const body = JSON.parse(init.body);
       state.gon = { ...state.gon, review_status: body.status, review_reason: body.reason, reviews: [{ id: 9, char_id: 3, version: state.gon.version, status: body.status, reason: body.reason, owner: "andrew", created_at: "2026-09-19T01:00:00Z" }, ...state.gon.reviews] }; return [200, state.gon]; },
+    "GET /hxh/api/db/request-kinds": [200, [{ slug: "extend-picture", label: "Extend picture", sort: 1 }, { slug: "card-description", label: "Card description", sort: 2 }]],
+    "POST /hxh/api/db/chars/3/request": init => { const body = JSON.parse(init.body); const label = body.kind === "extend-picture" ? "Extend picture" : "Card description";
+      state.gon = { ...state.gon, review_status: "requested", review_reason: "",
+        requests: [{ id: 1, char_id: 3, kind: body.kind, label, text: body.text, status: "open", version: state.gon.version, owner: "abi", created_at: "2026-09-21T01:00:00Z" }],
+        reviews: [{ id: 10, char_id: 3, version: state.gon.version, status: "requested", reason: label + (body.text ? ": " + body.text : ""), owner: "abi", created_at: "2026-09-21T01:00:00Z" }, ...state.gon.reviews] };
+      return [200, state.gon]; },
     "POST /hxh/api/db/chars": init => [201, { ...killua(), id: 5, name: JSON.parse(init.body).name }],
     "GET /hxh/api/db/chars/5": () => [200, { ...killua(), id: 5, name: "Leorio" }],
     "DELETE /hxh/api/db/chars/3": [204, null],
@@ -40,6 +47,7 @@ async function boot(me = ADMIN) {
 }
 const app = () => os.registry.get("roster");
 const charWin = () => os.wm.get(winId(3));
+const listWin = () => os.wm.get("win-roster");
 
 /* a 2D context jsdom does not have: a real little raster, so fills and expansions can be checked */
 function rasterCtx(canvas) {
@@ -95,7 +103,7 @@ test("launch opens the list: every verdict, pending first; headers inside the li
   assert.equal(w.body.querySelectorAll(".row").length, 1);
   w.setFilter("");
   const items = w.menuBar.menus[1].itemsNow();
-  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Accepted", "Rejected", "Refresh"]);
+  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Requested", "Accepted", "Rejected", "Refresh"]);
   assert.equal(items[0].check(), true);
   w.select(3);
   d.key(w.rows, "Enter");
@@ -194,6 +202,38 @@ test("Reject… asks for an optional reason and logs the verdict with its owner;
   await tick();
   assert.deepEqual(log.at(-1).body, { status: "accepted", reason: "" });
   assert.equal(w.el.querySelector(".verdict .st").textContent, "Accepted");
+});
+
+test("Request…: at the far right of the verdict buttons; asks for a kind (the server's list) and optional details; the character reads Requested with the ask under the verdict; the list sorts it after pending", async () => {
+  await boot();
+  await os.launch("roster");
+  await tick();
+  await app().openChar(3);
+  await tick();
+  const w = charWin();
+  const btn = w.el.querySelector(".rbtns [data-request]");
+  assert.equal(btn.textContent, "Request…");
+  assert.ok(btn.previousElementSibling.classList.contains("gap") && btn === w.el.querySelector(".rbtns").lastElementChild, "after a flexible gap, last in the row");
+  d.click(btn);
+  await tick(); await tick();
+  const dlg = os.wm.all().find(x => x instanceof Dialog);
+  assert.ok(dlg && dlg.state.open && dlg.title === "Request");
+  assert.deepEqual([...dlg.$("select").options].map(o => [o.value, o.textContent]), [["extend-picture", "Extend picture"], ["card-description", "Card description"]]);
+  assert.equal(dlg.$("textarea").previousElementSibling.textContent, "Details (optional):");
+  assert.equal(dlg.$('[data-act="ok"]').disabled, false);
+  dlg.$("textarea").value = "hair cut off at the top";
+  d.click(dlg.$('[data-act="ok"]'));
+  await tick(); await tick();
+  assert.deepEqual(log.at(-1).body, { kind: "extend-picture", text: "hair cut off at the top" });
+  assert.equal(w.el.querySelector(".verdict .st").textContent, "Requested");
+  assert.equal(w.el.querySelector(".verdict .by").textContent, "by abi");
+  assert.equal(w.el.querySelector(".reason").textContent, "Extend picture — hair cut off at the top");
+  assert.match(w.el.querySelector(".log").textContent, /v4 requested abi — Extend picture: hair cut off at the top/);
+  for (const b of w.el.querySelectorAll("[data-review]")) assert.equal(b.disabled, false, "a reviewer can still overrule with a verdict");
+  const list = listWin();
+  assert.equal(list.el.querySelector('.row[data-id="3"] .verdict').textContent, "Requested");
+  assert.match(list.el.querySelector(".status .count").textContent, /1 requested/);
+  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "requested", "accepted", "rejected"]);
 });
 
 test("crop window: sized to show the whole picture; a ratio button starts a centred selection; the status reads the picture size; save closes it", async () => {

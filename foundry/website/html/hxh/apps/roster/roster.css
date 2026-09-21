@@ -25,6 +25,7 @@
 .roster i.verdict.pending, .roster .st.pending { background: var(--emitter); color: var(--ink); }
 .roster i.verdict.accepted, .roster .st.accepted { background: var(--nen); color: var(--ink); }
 .roster i.verdict.rejected, .roster .st.rejected { background: var(--blood); color: var(--paper-hi); }
+.roster i.verdict.requested, .roster .st.requested { background: var(--conjurer); color: var(--ink); }
 
 /* group boxes, the 90s fieldset */
 .roster .group {
@@ -88,6 +89,8 @@
 .rchar .review .reason { font: var(--t-body); min-height: 0; white-space: pre-wrap; }
 .rchar .review .reason:empty { display: none; }
 .rchar .review .rbtns { display: flex; gap: 6px; }
+.rchar .review .rbtns .gap { flex: 1; }   /* Request… sits at the far right */
+.rchar .review .reason .req b { font-weight: 700; }
 .rchar .review .log { font: var(--t-small); color: var(--ink-4); display: flex; flex-direction: column; gap: 2px; }
 .rchar .review .log .lrow b { color: var(--ink); font-weight: 700; }
 .rchar .review .log .when { margin-left: 8px; }

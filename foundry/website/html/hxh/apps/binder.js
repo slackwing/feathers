@@ -192,7 +192,8 @@ export class BinderApp extends App {
     // drag the window by the book's margins (Andrew, 2026-09-19) — never by a card or a control
     os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS) });
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
-    this.load();
+    // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
+    os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
     return this.win;
   }
 
@@ -204,12 +205,12 @@ export class BinderApp extends App {
       .catch(() => { this.$(".cards").textContent = "The binder is empty."; });
   }
 
-  /** The cards, in the order the API gives them (by number). */
+  /** The cards, in the order the API gives them (by number). A reload keeps the page the reader is on. */
   setRoster(list) {
     this.roster = (list || []).map(c => ({ ...c, no: c.no ?? c.id }));
     this.pages = paginate(this.roster);
     this.renderTabs();
-    this.showPage(0);
+    this.showPage(Math.min(this.page || 0, Math.max(0, this.pages.length - 1)));
   }
 
   /** Size the book to the viewport and return where to put the window. */
@@ -229,8 +230,10 @@ export class BinderApp extends App {
     return { x: l.x, y: l.y };
   }
 
+  /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
   launch() {
     const win = this.window();
+    this.load();
     const p = this.os.wm.open(win.id, this.layout());
     for (const c of this.cards.values()) c.fit();
     return p;

@@ -97,6 +97,25 @@ test("the Binder window is chromeless with minimize + close, popup, on the taskb
   assert.ok(b.book.classList.contains("closed"));
 });
 
+test("every open re-reads the Roster DB; a roster change while the binder is open reloads it, a closed binder ignores it", async () => {
+  const reads = () => fetched.filter(f => f.url === SOURCE).length;
+  const before = reads();
+  await os.launch("binder");
+  await tick();
+  assert.ok(reads() > before, "launch reads the roster");
+  const afterLaunch = reads();
+  os.bus.emit("roster:changed", { id: 1 });
+  await tick();
+  assert.equal(reads(), afterLaunch + 1, "a change under an open binder reloads it");
+  d.click(os.wm.get("win-binder").el.querySelector(".fbtns .close"));
+  os.bus.emit("roster:changed", { id: 1 });
+  await tick();
+  assert.equal(reads(), afterLaunch + 1, "a closed binder stays quiet");
+  await os.launch("binder");
+  await tick();
+  assert.equal(reads(), afterLaunch + 2, "opening again reads again");
+});
+
 test("roster → tabs, pages, printed cards; selection drives the screen; D-pad steps", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");

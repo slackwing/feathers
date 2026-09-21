@@ -164,6 +164,36 @@ profile, crop the avatar and card, and pass a verdict.
   with `--type upscaled --source-image <id>`.
 Every derived picture carries `source_image_id` so lineage is visible.
 
+## 8b. Requests from the reviewers
+
+A reviewer can file a request on a character from the app's review box
+("Request…" — a kind plus optional details). The character then reads
+"requested" until every open request is resolved, when it goes back to
+"pending" for the reviewer to look again. A reviewer's own verdict on
+a requested character withdraws its open requests. When Andrew says to
+work the queue:
+
+    python3 roster.py requests            # open ones, oldest first
+    python3 roster.py kinds               # the categories (slugs live in hxh_request_kind)
+    ...do the work with patch / fetch / upload / crop...
+    python3 roster.py resolve <request-id>
+
+Report per request what was done. The kinds so far:
+
+- `extend-picture` — a crop wants more canvas than the picture has
+  (hair cut off at the top, background too tight for 16:9). This needs
+  generative outpainting, which is not something I can do on my own;
+  until an image API is configured (see the hub CLAUDE.md), only a flat
+  or gradient background can be extended honestly — with Pillow, by
+  stretching the edge colour — and the resolve report must say which
+  it was. Store the result with `--type uploaded --source-image <id>`
+  so lineage shows.
+- `card-description` — the card text is wrong. If the request says
+  what, fix that; if it says nothing (Andrew: "try to find out what is
+  wrong"), re-read the notes, the description and the wiki, find the
+  error or the weak beat, and rewrite within § 3b's rules. Say in the
+  resolve report what you changed and why.
+
 ## 9. Feedback loop
 
 When a review rejects something: read the reason (`roster.py get <id>`

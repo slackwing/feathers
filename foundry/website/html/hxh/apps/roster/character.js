@@ -63,6 +63,8 @@ export class CharacterWindow extends Window {
               <button class="btn" type="button" data-review="accepted">Accept</button>
               <button class="btn" type="button" data-review="rejected">Reject…</button>
               <button class="btn" type="button" data-review="pending">Pending</button>
+              <span class="gap"></span>
+              <button class="btn" type="button" data-request>Request…</button>
             </div>
             <div class="log"></div>
           </fieldset>
@@ -109,6 +111,7 @@ export class CharacterWindow extends Window {
     el.querySelector(".rbtns").addEventListener("click", e => {
       const b = e.target.closest("[data-review]");
       if (b && !b.disabled) this.emit("review", { status: b.dataset.review });
+      if (e.target.closest("[data-request]")) this.emit("request");
     });
     // form: save on change
     const form = el.querySelector(".form");
@@ -177,7 +180,11 @@ export class CharacterWindow extends Window {
     el.querySelector(".verdict .ver").textContent = "v" + c.version;
     const last = (c.reviews || [])[0];
     el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
-    el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
+    // under the verdict: the rejection reason, or what the bot has been asked for
+    const reason = el.querySelector(".reason");
+    if (c.review_status === "rejected") reason.textContent = c.review_reason;
+    else reason.replaceChildren(...(c.requests || []).filter(q => q.status === "open").map(q =>
+      h("div", { className: "req" }, h("b", { text: q.label || q.kind }), q.text ? ` — ${q.text}` : "")));
     for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },

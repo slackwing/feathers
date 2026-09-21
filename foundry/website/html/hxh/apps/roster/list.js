@@ -75,7 +75,8 @@ export class RosterWindow extends Window {
     if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
     this.markSel();
     const pending = this.chars.filter(c => c.review_status === "pending").length;
-    this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} · ${pending} pending`;
+    const requested = this.chars.filter(c => c.review_status === "requested").length;
+    this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} · ${pending} pending` + (requested ? ` · ${requested} requested` : "");
     this.pane.update();
   }
 
