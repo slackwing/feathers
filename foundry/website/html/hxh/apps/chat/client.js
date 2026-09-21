@@ -15,8 +15,8 @@ export function wsURL(location) {
 export class ChatClient {
   constructor({ url, WebSocket: WS, pingMs = 25000, grace = pingMs / 2, probeMs = 3000, backoff = DEFAULT_BACKOFF, now = () => Date.now(),
     setTimeout: st = (f, ms) => globalThis.setTimeout(f, ms), clearTimeout: ct = id => globalThis.clearTimeout(id),
-    typingEvery = 2000, rate = 10 } = {}) {
-    this.url = url; this.WS = WS; this.pingMs = pingMs; this.grace = grace; this.probeMs = probeMs; this.backoff = backoff; this.now = now;
+    typingEvery = 2000, rate = 10, focus = () => false } = {}) {   // focus: is this tab being looked at? unknown = no (never a false "online")
+    this.url = url; this.WS = WS; this.pingMs = pingMs; this.grace = grace; this.probeMs = probeMs; this.backoff = backoff; this.now = now; this.focus = focus;
     this.st = st; this.ct = ct; this.typingEvery = typingEvery; this.rate = rate;
     this.events = new EventBus();
     this.ws = null; this.connected = false; this.stopped = false; this.attempts = 0;
@@ -76,7 +76,8 @@ export class ChatClient {
     this.startPing();
   }
 
-  ping() { this.lastPing = this.now(); this.awaiting = true; return this.raw({ t: "ping" }); }
+  /** The heartbeat says whether this tab is the one being looked at: only a focused ping counts as a person (presence). */
+  ping() { this.lastPing = this.now(); this.awaiting = true; return this.raw({ t: "ping", ...(this.focus() ? { focus: true } : {}) }); }
 
   /** Dead by our reckoning: a ping has gone unanswered for longer than
       `grace`. Measured from the ping, not from the last pong, so a hidden

@@ -196,6 +196,18 @@ test("nudge after a sleep: a stale socket is replaced now, a backoff is skipped,
   assert.equal(sockets.length, 4);
 });
 
+test("a ping says whether this tab is focused — a background tab's heartbeat carries no focus", () => {
+  let focused = true;
+  const { client, sockets, c } = make({ focus: () => focused });
+  client.connect(); sockets[0].open();
+  c.run(1000);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "ping", focus: true });
+  sockets[0].push({ t: "pong" });
+  focused = false;
+  c.run(1000);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "ping" });
+});
+
 test("a message can carry a picture id; pictures upload as raw bytes and are addressed by id", async () => {
   const { client, sockets } = make();
   client.connect(); sockets[0].open();

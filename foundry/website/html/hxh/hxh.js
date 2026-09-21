@@ -3853,7 +3853,8 @@ var HxH = (() => {
       setTimeout: st = (f, ms) => globalThis.setTimeout(f, ms),
       clearTimeout: ct = (id) => globalThis.clearTimeout(id),
       typingEvery = 2e3,
-      rate = 10
+      rate = 10,
+      focus = () => false
     } = {}) {
       this.url = url;
       this.WS = WS;
@@ -3862,6 +3863,7 @@ var HxH = (() => {
       this.probeMs = probeMs;
       this.backoff = backoff;
       this.now = now;
+      this.focus = focus;
       this.st = st;
       this.ct = ct;
       this.typingEvery = typingEvery;
@@ -3959,10 +3961,11 @@ var HxH = (() => {
       this.ping();
       this.startPing();
     }
+    /** The heartbeat says whether this tab is the one being looked at: only a focused ping counts as a person (presence). */
     ping() {
       this.lastPing = this.now();
       this.awaiting = true;
-      return this.raw({ t: "ping" });
+      return this.raw({ t: "ping", ...this.focus() ? { focus: true } : {} });
     }
     /** Dead by our reckoning: a ping has gone unanswered for longer than
         `grace`. Measured from the ping, not from the last pong, so a hidden
@@ -5142,7 +5145,7 @@ var HxH = (() => {
     connect() {
       if (this.client) return this.client;
       const os2 = this.os;
-      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, ...this.options.client || {} });
+      const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, focus: () => this.hasFocus(), ...this.options.client || {} });
       c.on("hello", ({ contacts, unread }) => {
         this.setContacts(contacts);
         this.onUnread(unread || []);
@@ -5434,8 +5437,9 @@ var HxH = (() => {
     onFocus(id) {
       for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
     }
-    /** The tab itself came to the front: whatever chat is active is now read. */
+    /** The tab itself came to the front (or went away): tell presence at once, and whatever chat is active is now read. */
     onTabFocus() {
+      if (this.client?.connected) this.client.ping();
       if (!this.hasFocus()) return;
       const id = this.os.wm.activeId;
       for (const [room, w] of this.windows) if (w.id === id && w.state.open && !w.state.minimized) this.markRead(room);

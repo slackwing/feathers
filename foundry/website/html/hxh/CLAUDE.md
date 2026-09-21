@@ -326,6 +326,17 @@ component architecture (many windows, tray icons + menus, the bus).
   `onUnread`), so being focused it is read at once — global nearly
   always has news after a while and should flash the least. The
   `launch` test asserts this order.
+- **Presence = focus + keepalive (2026-09-21).** Andrew: an instance
+  open in a background tab must stay AWAY, never offline (bots would
+  stop DMing), and must not look online either. Two signals on the
+  server: FOCUS (a person there — a ping from a focused, visible tab,
+  a message, typing, a read marker, any authed page request touches
+  `last_seen_at`) and KEEPALIVE (an instance open — a live socket, or
+  one that dropped < 2 min ago, so reconnects don't flap). online =
+  focus < 1 min; away = focus < 1 h OR an instance open; offline
+  otherwise. The client's heartbeat carries `focus: true` only when
+  `hasFocus()` (`ChatClient({focus})`); a tab focus/visibility change
+  pings at once so the buddy list turns green without waiting.
 - **You can message the online and the away, not the offline** (nor
   the password-less): the buddy list's IM button and context item are
   disabled for them, a DM window still opens (history is readable) but

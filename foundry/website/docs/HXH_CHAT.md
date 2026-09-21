@@ -31,7 +31,10 @@
 > superseded accordingly. Also 2026-09-19: pictures (one per message,
 > stored in the DB and re-encoded by the server), a compose toolbar
 > (clipboard / image / emoji), emoji everywhere via a per-glyph font
-> fallback — see "Pictures and emoji" in `html/hxh/CLAUDE.md`.
+> fallback — see "Pictures and emoji" in `html/hxh/CLAUDE.md`. 2026-09-21:
+> presence reworked into focus + keepalive (a background instance is
+> away, never offline; only a focused tab's heartbeat makes you online) —
+> see "Presence = focus + keepalive" there; item 16 below is superseded.
 
 An instant-messenger app for the Hunter × Halloween desktop, in the
 spirit of late-90s messengers (AIM / MSN / ICQ — find the commonalities,

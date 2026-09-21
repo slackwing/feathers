@@ -82,7 +82,7 @@ export class ChatApp extends App {
   connect() {
     if (this.client) return this.client;
     const os = this.os;
-    const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, ...(this.options.client || {}) });
+    const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.hasFocus(), ...(this.options.client || {}) });
     c.on("hello", ({ contacts, unread }) => { this.setContacts(contacts); this.onUnread(unread || []); });
     c.on("msg", m => this.onMessage(m));
     c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
@@ -355,8 +355,9 @@ export class ChatApp extends App {
     for (const [room, w] of this.windows) if (w.id === id) this.markRead(room);
   }
 
-  /** The tab itself came to the front: whatever chat is active is now read. */
+  /** The tab itself came to the front (or went away): tell presence at once, and whatever chat is active is now read. */
   onTabFocus() {
+    if (this.client?.connected) this.client.ping();
     if (!this.hasFocus()) return;
     const id = this.os.wm.activeId;
     for (const [room, w] of this.windows) if (w.id === id && w.state.open && !w.state.minimized) this.markRead(room);

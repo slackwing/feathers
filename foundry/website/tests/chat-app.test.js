@@ -392,6 +392,16 @@ test("an unfocused tab never reads: not on launch, not for a message in its acti
   assert.equal(global.flashing, false);
 });
 
+test("tab focus is reported to presence at once: a focused ping when the tab comes back, a bare one when it goes", async () => {
+  await os.launch("chat"); hello();
+  const before = sockets[0].sent.length;
+  d.fire(d.win, "focus");
+  assert.deepEqual(sockets[0].sent[before], { t: "ping", focus: true });
+  tabFocused = false;
+  d.fire(d.doc, "visibilitychange");
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "ping" });
+});
+
 test("you can message the online and the away, not the offline: IM button, compose, and the server's word", async () => {
   await os.launch("chat"); hello();
   const contacts = os.wm.get("win-chat-contacts");
