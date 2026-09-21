@@ -109,7 +109,7 @@ test("launch opens the list: every verdict, pending first; headers inside the li
   assert.equal(w.body.querySelectorAll(".row").length, 1);
   w.setFilter("");
   const items = w.menuBar.menus[1].itemsNow();
-  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Accepted", "Rejected", "With requests", "Refresh"]);
+  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Accepted", "Rejected", "Skipped", "With requests", "Refresh"]);
   assert.equal(items[0].check(), true);
   w.select(3);
   d.key(w.rows, "Enter");
@@ -232,7 +232,37 @@ test("open requests show as a count beside the verdict in the list, and View nar
   w.setFilter("requests");
   assert.deepEqual([...w.body.querySelectorAll(".row")].map(r => +r.dataset.id), [3]);
   w.setFilter("");
-  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "accepted", "rejected"]);
+  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "accepted", "rejected", "skipped"]);
+});
+
+test("skipped stubs: hidden from the default view, listed under Skipped and counted apart; the window is frozen — no verdict, request, upload or edit — and says why", async () => {
+  await boot();
+  const mito = { ...killua(), id: 9, name: "Mito Freecss", review_status: "skipped", review_reason: "important but a plain look", card_number: null, images: [], reviews: [], requests: [] };
+  api["GET /hxh/api/db/chars"] = () => [200, [{ ...state.gon, images: undefined, reviews: undefined }, killua(), { ...mito, images: undefined }]];
+  api["GET /hxh/api/db/chars/9"] = () => [200, mito];
+  await os.launch("roster");
+  await tick();
+  const w = listWin();
+  const ids = () => [...w.body.querySelectorAll(".row")].map(r => +r.dataset.id);
+  assert.deepEqual(ids(), [3, 4], "All hides the skipped");
+  assert.match(w.el.querySelector(".status .count").textContent, /^2 characters · 1 pending · 1 skipped$/);
+  w.setFilter("skipped");
+  assert.deepEqual(ids(), [9]);
+  assert.equal(w.body.querySelector(".row .verdict").textContent, "Skipped");
+  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "accepted", "rejected", "skipped"]);
+  await app().openChar(9);
+  await tick();
+  const el = os.wm.get(winId(9)).el;
+  assert.equal(el.querySelector(".reason").textContent, "Skipped: important but a plain look");
+  assert.ok(el.querySelector(".reason").classList.contains("skipped"));
+  for (const b of el.querySelectorAll("[data-review], [data-request], [data-img=\"upload\"]")) assert.equal(b.disabled, true, b.outerHTML.slice(0, 60));
+  assert.equal(el.querySelector('[data-f="name"]').disabled, true, "the form is frozen");
+  assert.equal(el.querySelector('[data-f="card_number"]').disabled, true);
+  assert.ok(el.classList.contains("frozen-skipped"));
+  // a live character that is not skipped is not frozen
+  await app().openChar(3);
+  await tick();
+  assert.equal(charWin().el.querySelector('[data-f="name"]').disabled, false);
 });
 
 test("No. is the card number (the id in its tooltip); rows sort by status then number; dragging a row between two others posts one move and the list re-renders from the reply under the busy overlay", async () => {

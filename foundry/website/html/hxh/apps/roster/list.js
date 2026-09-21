@@ -88,7 +88,7 @@ export class RosterWindow extends Window {
 
   /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
   shown() {
-    return this.chars.filter(c => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter))
+    return this.chars.filter(c => !this.filter ? c.review_status !== "skipped" : this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)
       .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
   }
 
@@ -130,7 +130,9 @@ export class RosterWindow extends Window {
     this.markSel();
     const pending = this.chars.filter(c => c.review_status === "pending").length;
     const asked = this.chars.filter(c => c.open_requests > 0).length;
-    this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} · ${pending} pending` + (asked ? ` · ${asked} with requests` : "");
+    const skipped = this.chars.filter(c => c.review_status === "skipped").length;
+    const n = this.chars.length - skipped;
+    this.countEl.textContent = `${n} character${n === 1 ? "" : "s"} · ${pending} pending` + (asked ? ` · ${asked} with requests` : "") + (skipped ? ` · ${skipped} skipped` : "");
     this.pane.update();
   }
 

@@ -245,9 +245,17 @@ export class CharacterWindow extends Window {
     reqs.hidden = !open;
     this.renderChanges();
     const reason = el.querySelector(".reason");
-    reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason : "";
+    reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason
+      : c.review_status === "skipped" ? "Skipped" + (c.review_reason ? ": " + c.review_reason : "") : "";
     reason.classList.toggle("rejected", c.review_status === "rejected");
-    for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
+    reason.classList.toggle("skipped", c.review_status === "skipped");
+    // a skipped stub is frozen: no verdict, no request, no edit, no picture, until the bot resurrects it (Andrew, 2026-09-21)
+    const frozen = c.review_status === "skipped";
+    for (const b of el.querySelectorAll("[data-review]")) b.disabled = frozen || b.dataset.review === c.review_status;
+    el.querySelector("[data-request]").disabled = frozen;
+    el.querySelector('[data-img="upload"]').disabled = frozen;
+    for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) { if (f.dataset.f !== "card_number") f.disabled = frozen; }
+    el.classList.toggle("frozen-skipped", frozen);
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },
       h("b", { text: `v${r.version} ${r.status}` }), ` ${r.owner}`, r.reason ? h("span", { className: "why", text: " — " + r.reason }) : null,

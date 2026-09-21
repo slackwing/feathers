@@ -225,6 +225,8 @@ def main():
     p = sub.add_parser("requests"); p.add_argument("--status", default="open", help="open (default), done, withdrawn, or '' for all")
     p = sub.add_parser("request"); p.add_argument("id", type=int); p.add_argument("kind"); p.add_argument("text", nargs="?", default=""); p.add_argument("--image", type=int, default=None, help="the picture the request is about")
     p = sub.add_parser("resolve"); p.add_argument("request", type=int); p.add_argument("--dropped", action="store_true", help="nobody will do it (the bot could not, or it is moot)"); p.add_argument("--note", default="", help="how it ended, in your words")
+    p = sub.add_parser("skip"); p.add_argument("name"); p.add_argument("--arc", required=True, help="the arc slug they appear in"); p.add_argument("--why", required=True, help="one line: why no card"); p.add_argument("--first", default="")
+    p = sub.add_parser("resurrect"); p.add_argument("id", type=int)
     p = sub.add_parser("move"); p.add_argument("id", type=int); p.add_argument("--after", type=int, default=0, help="the character id it goes right after (0 = the front)")
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
@@ -284,6 +286,12 @@ def main():
         out(c.db("POST", f"/chars/{a.id}/request", {"kind": a.kind, "text": a.text, "image_id": a.image}))
     elif a.cmd == "resolve":
         out(c.db("POST", f"/requests/{a.request}/resolve", {"status": "dropped" if a.dropped else "done", "note": a.note}))
+    elif a.cmd == "skip":
+        first = a.first or a.name.split()[0][:10]
+        out(c.db("POST", "/chars", {"name": a.name, "first": first, "rank": "C", "nen_types": [], "affiliation": "", "arcs": [a.arc], "arms": [],
+                                     "description": "", "card_description": "", "notes": "Skipped: " + a.why, "review_status": "skipped", "review_reason": a.why}))
+    elif a.cmd == "resurrect":
+        out(c.db("POST", f"/chars/{a.id}/resurrect", {}))
     elif a.cmd == "move":
         for r in c.db("POST", f"/chars/{a.id}/move", {"after": a.after}):
             print(f"{r['id']:>4}  No.{r['card_number'] if r['card_number'] is not None else '—':<4} {r['name']}")

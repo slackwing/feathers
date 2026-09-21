@@ -25,6 +25,8 @@
 .roster i.verdict.pending, .roster .st.pending { background: var(--emitter); color: var(--ink); }
 .roster i.verdict.accepted, .roster .st.accepted { background: var(--nen); color: var(--ink); }
 .roster i.verdict.rejected, .roster .st.rejected { background: var(--blood); color: var(--paper-hi); }
+.roster i.verdict.skipped, .roster .st.skipped { background: var(--paper-lo); color: var(--ink-4); }
+.rchar .review .reason.skipped { color: var(--ink-4); }
 /* open requests ride beside the verdict as a count (the list) or a tag (the character window) */
 .roster i.reqs { font: var(--t-ui-bold); font-style: normal; display: inline-block; margin-left: 4px; padding: 2px 8px 1px; background: var(--emitter); color: var(--ink); border: 1px solid var(--ink); vertical-align: top; }
 .rlist .row.sel .reqs { border-color: var(--paper-hi); }

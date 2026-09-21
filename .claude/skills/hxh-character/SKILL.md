@@ -37,10 +37,27 @@ Input: a character name. Run
 `python3 roster.py find "<name>"` first (case-insensitive exact name;
 try the short and the full name); if the character exists, say so and
 ask whether to redo (delete + recreate), fix (patch the fields the
-reason names, resubmit), or add pictures only. Characters have no slug:
+reason names, resubmit), or add pictures only. If it exists as a
+SKIPPED stub (see § 0b), stop: it stays skipped unless Andrew asks to
+resurrect it — then `python3 roster.py resurrect <id>` and do the
+whole process on that id with `patch` instead of `create`. Characters have no slug:
 the id is the number, the name is the handle.
 Then `python3 wiki.py search "<name>"` to get the exact page title, and
 `python3 wiki.py infobox "<Page>"`.
+
+## 0b. Skipping a character on purpose
+
+When a character is considered and deliberately left out (minor, a
+plain look, an animal), file a stub so nobody re-analyses the name:
+
+    python3 roster.py skip "<Name>" --arc <arc-slug> --why "<one line>"
+
+It is created skipped — name, arc, the reason, NO pictures — hidden
+from the Roster DB's default view (the "Skipped" view lists them) and
+frozen: no verdict, edit, picture or request works on it. Only the
+bot resurrects one, on Andrew's word. Never skip a character Andrew
+named; skip only the ones you chose to leave out, and say so in the
+batch report.
 
 ## 1. Identify
 

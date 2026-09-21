@@ -15,5 +15,6 @@ export const TYPES = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "
 export const TYPE_LABEL = Object.fromEntries(TYPES);
 /* review states in the order the list sorts them. Requests are not a state (Andrew, 2026-09-21): a character
    keeps its verdict while requests are open; open_requests is a count shown beside the chip. */
-export const STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+export const STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["skipped", "Skipped"]];
+/* skipped: a stub the bot filed for a character deliberately left out — hidden from the default view, frozen in the window */
 export const STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));
