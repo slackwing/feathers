@@ -26,7 +26,7 @@
 .roster i.verdict.accepted, .roster .st.accepted { background: var(--nen); color: var(--ink); }
 .roster i.verdict.rejected, .roster .st.rejected { background: var(--blood); color: var(--paper-hi); }
 /* open requests ride beside the verdict as a count (the list) or a tag (the character window) */
-.roster i.reqs { font: var(--t-small); font-style: normal; font-weight: 700; display: inline-block; margin-left: 4px; padding: 1px 5px 0; line-height: 14px; background: var(--emitter); color: var(--ink); border: 1px solid var(--ink); vertical-align: middle; }
+.roster i.reqs { font: var(--t-ui-bold); font-style: normal; display: inline-block; margin-left: 4px; padding: 2px 8px 1px; background: var(--emitter); color: var(--ink); border: 1px solid var(--ink); vertical-align: top; }
 .rlist .row.sel .reqs { border-color: var(--paper-hi); }
 
 /* group boxes, the 90s fieldset */
@@ -101,16 +101,17 @@
 .roster button.link { background: none; border: 0; padding: 0; margin: 0; color: #0000ee; text-decoration: underline; cursor: pointer; font: var(--t-small); }
 .roster button.link:hover { color: var(--blood); }
 /* the requests window: a table like the list */
-.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 150px 92px 1fr 108px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
+.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 160px 100px 1fr 96px 84px 112px 130px; align-items: center; gap: 6px; padding: 0 6px; }
 .rreq .rows { font: var(--t-ui); }
 .rreq .row { padding: 3px 6px; }
 .rreq .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
 .rreq .row .q-text { white-space: normal; }
+.rreq .row .q-res { color: var(--ink-4); font: var(--t-small); }
 .rreq .q-no { color: var(--ink-4); text-align: right; }
 .rreq .empty { padding: 8px; color: var(--ink-4); }
 .roster i.verdict.rq-open { background: var(--emitter); color: var(--ink); }
 .roster i.verdict.rq-done { background: var(--nen); color: var(--ink); }
-.roster i.verdict.rq-withdrawn { background: var(--paper-lo); color: var(--ink-4); }
+.roster i.verdict.rq-dropped { background: var(--paper-lo); color: var(--ink-4); }
 .rchar .review .reason .req b { font-weight: 700; }
 .rchar .review .log { font: var(--t-small); color: var(--ink-4); display: flex; flex-direction: column; gap: 2px; }
 .rchar .review .log .lrow b { color: var(--ink); font-weight: 700; }

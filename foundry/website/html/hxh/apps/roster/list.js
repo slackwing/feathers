@@ -15,7 +15,8 @@ import { LABEL, TYPES, STATUSES, STATUS_ORDER } from "./fields.js";
 export const FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 const PICS_TITLE = TYPES.map(([, l]) => l).join(" · ");
-export const number = c => c.card_number ?? c.id;
+/* a card's number, or null until it is first accepted (Andrew, 2026-09-21: pending and rejected numbers were confusing) */
+export const number = c => (c.card_number == null ? null : c.card_number);
 
 /**
  * Where a dragged row would land: the row above the insertion point,
@@ -24,6 +25,7 @@ export const number = c => c.card_number ?? c.id;
  * elements in their visual order; y is the pointer's clientY.
  */
 export function dropTarget(rows, y, id) {
+  rows = rows.filter(r => r.dataset.no);   // only numbered cards take part
   const others = rows.filter(r => +r.dataset.id !== id);
   const before = others.find(r => { const b = r.getBoundingClientRect(); return y < b.top + b.height / 2; });
   const i = before ? others.indexOf(before) : others.length;
@@ -87,14 +89,14 @@ export class RosterWindow extends Window {
   /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
   shown() {
     return this.chars.filter(c => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter))
-      .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
+      .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
   }
 
   /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
   dragStart(e) {
     if (e.button !== 0) return;
     const row = e.target.closest(".row");
-    if (!row) return;
+    if (!row || !row.dataset.no) return;   // an unnumbered card has no place to drag to
     const id = +row.dataset.id, doc = row.ownerDocument;
     const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
     const move = ev => {
@@ -135,8 +137,9 @@ export class RosterWindow extends Window {
   row(c) {
     const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
     const counts = TYPES.map(([t]) => (c.image_counts || {})[t] || 0);
-    return h("div", { className: "row", dataset: { id: String(c.id) }, role: "option" },
-      h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
+    const no = number(c);
+    return h("div", { className: "row", dataset: { id: String(c.id), ...(no == null ? {} : { no: String(no) }) }, role: "option" },
+      h("span", { className: "c-no", text: no == null ? "" : String(no), title: "id " + c.id }),
       h("span", { className: "c-av" }, av),
       h("span", { className: "c-name", text: c.name }),
       h("span", { className: "c-ja", text: c.name_ja || "" }),

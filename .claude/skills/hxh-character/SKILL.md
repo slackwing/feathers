@@ -168,9 +168,10 @@ Every derived picture carries `source_image_id` so lineage is visible.
 
 `card_number` is the character's place in the binder (Andrew,
 2026-09-21) — separate from the id, which is the handle roster.py
-uses and never changes. A new character takes the next number after
-the highest; the reviewers renumber by dragging rows in the Roster
-DB, and `roster.py move <id> --after <id>` does the same from here.
+uses and never changes. A character has NO number until a reviewer
+first accepts it (Accept hands out the next one); the reviewers
+renumber by dragging rows in the Roster DB, and `roster.py move <id>
+--after <id>` does the same from here for numbered cards.
 Numbers are deliberately not unique: a duplicate is a thing to fix,
 not an error. `roster.py list` shows both.
 
@@ -204,7 +205,11 @@ When Andrew says to work the queue:
     python3 roster.py requests            # open ones, oldest first
     python3 roster.py kinds               # the categories (slugs live in hxh_request_kind)
     ...do the work with patch / fetch / upload / crop...
-    python3 roster.py resolve <request-id>
+    python3 roster.py resolve <request-id> [--dropped] [--note "how it ended"]
+
+A request ends done (you did it) or dropped (nobody will: you could
+not, or it is moot) — always with a note the reviewer can read in the
+requests window.
 
 Report per request what was done. A request is on the character or
 on ONE picture (`picture #n` in the listing; `--image` when filing

@@ -34,7 +34,7 @@ export class RosterAPI {
   requestKinds() { return this.call("GET", "/request-kinds"); }
   request(id, kind, text = "", image_id = null) { return this.call("POST", `/chars/${id}/request`, { kind, text, image_id }); }
   requests(status = "open") { return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : "")); }
-  resolveRequest(id) { return this.call("POST", `/requests/${id}/resolve`); }
+  resolveRequest(id, status = "done", note = "") { return this.call("POST", `/requests/${id}/resolve`, { status, note }); }
   remove(id) { return this.call("DELETE", `/chars/${id}`); }
   upload(id, file, { type = "raw", caption = "", source_image_id = null, name = "" } = {}) {
     const fd = new FormData();

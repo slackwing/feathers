@@ -28,6 +28,7 @@ export const TYPES = [
 export { LIMIT };
 export const PER_PAGE = 9;                         // 3 × 3 sleeves per page, like the show
 export const SOURCE = "/hxh/api/db/binder";        // the Roster DB's accepted characters
+export const LIVE_MS = 20000;                        // an open binder re-reads itself this often
 
 export const typeOf = c => TYPES.find(t => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
 const titleCase = s => s.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
@@ -160,6 +161,7 @@ export class BinderApp extends App {
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
     // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
     os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
+    os.live?.every(this.win, LIVE_MS, () => this.load());   // and on its own clock, for readers without the Roster app
     return this.win;
   }
 

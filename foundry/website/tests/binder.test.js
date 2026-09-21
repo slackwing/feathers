@@ -121,6 +121,9 @@ test("every open re-reads the Roster DB; a roster change while the binder is ope
   await os.launch("binder");
   await tick();
   assert.equal(reads(), afterLaunch + 2, "opening again reads again");
+  os.live.wake();
+  await tick();
+  assert.equal(reads(), afterLaunch + 3, "and it re-reads on its own clock while open");
 });
 
 test("roster → tabs, pages, printed cards; selection drives the screen; D-pad steps", async () => {

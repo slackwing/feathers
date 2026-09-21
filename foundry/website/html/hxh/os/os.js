@@ -10,6 +10,7 @@
    app:register / app:launch {id}, session:user {user}, crt {on}, resize,
    wake {reason} (the machine or the tab came back — see wake.js), os:ready. */
 import { EventBus } from "./bus.js";
+import { Live } from "./live.js";
 import { Env } from "./env.js";
 import { Session, Nav } from "./session.js";
 import { CRT } from "./crt.js";
@@ -51,6 +52,7 @@ export class OS {
     this.win = win;
     this.doc = win.document;
     this.bus = new EventBus();
+    this.live = new Live({ doc: win?.document });
     this.env = env || new Env(win);
     this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
     this.session = session || new Session({ fetch: this.fetch });

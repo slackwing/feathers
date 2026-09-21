@@ -14,6 +14,9 @@ import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
 import { ConfirmDialog, PromptDialog, ReasonDialog, RequestDialog } from "./dialogs.js";
 import { RequestsWindow, requestsId } from "./requests.js";
+
+export const LIVE_MS = 10000;   // the list re-reads itself this often while open
+const WATCH = ["version", "review_status", "card_number", "open_requests", "avatar_image_id", "card_image_id", "accepted_version"];
 import { busy } from "./busy.js";
 import { AVATAR_RATIO, CARD_RATIO } from "./fields.js";
 import "./roster.css";
@@ -40,7 +43,26 @@ export class RosterApp extends App {
     const win = this.list();
     this.os.wm.open(win.id, win.state.placed ? null : (this.os.env.floating() ? { x: 120, y: 40 } : null));
     this.refreshList();
+    this.liveOff ||= this.os.live?.every(win, LIVE_MS, () => this.poll());
     return win;
+  }
+
+  /** Live: re-read the list while it is open; a character window whose version moved is re-read too (a field with focus is left alone). */
+  async poll() {
+    const w = this.listWin;
+    if (!w) return;
+    let list;
+    try { list = await this.api.list(); } catch { return; }
+    const before = new Map(w.chars.map(c => [c.id, c]));
+    const moved = list.filter(c => { const o = before.get(c.id); return !o || WATCH.some(k => o[k] !== c[k]); });
+    if (moved.length || list.length !== before.size) w.setChars(list);
+    for (const c of moved) {
+      const cw = this.chars.get(c.id);
+      if (cw?.char && WATCH.some(k => cw.char[k] !== c[k])) {
+        try { cw.setChar(await this.api.get(c.id), { form: !cw.el?.contains(this.os.win.document.activeElement) }); } catch { /* next tick */ }
+      }
+      this.os.bus?.emit("roster:changed", { id: c.id });
+    }
   }
 
   list() {
@@ -167,12 +189,24 @@ export class RosterApp extends App {
     if (!w) {
       w = new RequestsWindow({ id, name: cw?.char?.name, char: () => this.chars.get(id)?.char });
       this.os.wm.add(w);
+      w.on("drop", ({ id: rq }) => this.dropRequest(id, rq));
       const off = this.os.bus?.on("roster:changed", e => { if (e?.id === id && w.state.open) w.update(); });
       w.on("close", () => { off?.(); this.os.wm.remove(w.id); });
     }
     this.os.wm.open(w.id, w.state.placed ? null : (this.os.env.floating() ? { x: 200, y: 120 } : null));
     w.update();
     return w;
+  }
+
+  /** Drop: the reviewer lets a request go; the character re-reads so the count and the tags follow. */
+  async dropRequest(id, rq) {
+    const cw = this.chars.get(id);
+    try {
+      await this.hold(cw, this.api.resolveRequest(rq, "dropped"));
+      const c = await this.hold(cw, this.api.get(id));
+      cw?.setChar(c, { form: false });
+      this.changed(c);
+    } catch (err) { cw?.say(err.message, true); }
   }
 
   /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */

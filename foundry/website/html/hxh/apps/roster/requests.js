@@ -7,13 +7,13 @@ import { Window } from "../../os/window.js";
 import { h } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
 
-export const REQUEST_STATUS = { open: "Pending", done: "Fulfilled", withdrawn: "Withdrawn" };
+export const REQUEST_STATUS = { open: "Open", done: "Done", dropped: "Dropped" };
 export const requestsId = id => `win-roster-q-${id}`;
 
 export class RequestsWindow extends Window {
   /** props: id (character), name, char (() => the character as last loaded) */
   constructor({ id, name, char, ...rest } = {}) {
-    super({ id: requestsId(id), title: `Requests · ${name || "#" + id}`, icon: "db", width: 860, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
+    super({ id: requestsId(id), title: `Requests · ${name || "#" + id}`, icon: "db", width: 1120, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
     this.charId = id;
     this.char = char;
   }
@@ -29,6 +29,7 @@ export class RequestsWindow extends Window {
     this.pane = this.adopt(new ScrollPane({ content: this.rows }), el.querySelector(".body"), { before: el.querySelector(".status") });
     this.pane.el.classList.add("sunken", "listbox");
     this.countEl = el.querySelector(".count");
+    this.body.addEventListener("click", e => { const b = e.target.closest("[data-drop]"); if (b) this.emit("drop", { id: +b.dataset.drop }); });
     this.update();
     return el;
   }
@@ -43,14 +44,16 @@ export class RequestsWindow extends Window {
       h("span", { className: "q-no", text: String(q.id) }),
       h("span", { className: "q-kind", text: q.label || q.kind }),
       h("span", { className: "q-pic", text: q.image_id ? `#${q.image_id}${(c.images || []).some(im => im.id === q.image_id) ? "" : " (deleted)"}` : "" }),
-      h("span", { className: "q-text", text: q.text || "", title: q.text || "" }),
+      h("span", { className: "q-text" }, q.text || "", q.resolution ? h("div", { className: "q-res", text: `${q.resolved_by || ""}: ${q.resolution}` }) : null),
       h("span", { className: "q-st" }, h("i", { className: "verdict rq-" + q.status, text: REQUEST_STATUS[q.status] || q.status })),
       h("span", { className: "q-by", text: q.owner || "" }),
       h("span", { className: "q-when", text: `${this.when(q.created_at)} · v${q.version}` }),
-      h("span", { className: "q-done", text: q.resolved_at ? `${this.when(q.resolved_at)}${q.resolved_by ? " · " + q.resolved_by : ""}` : "" }))));
+      h("span", { className: "q-done" }, q.status === "open"
+        ? h("button", { className: "link", type: "button", dataset: { drop: String(q.id) }, text: "Drop" })
+        : `${this.when(q.resolved_at)}${q.resolved_by ? " · " + q.resolved_by : ""}`))));
     if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
     const open = list.filter(q => q.status === "open").length;
-    this.countEl.textContent = `${list.length} request${list.length === 1 ? "" : "s"} · ${open} pending`;
+    this.countEl.textContent = `${list.length} request${list.length === 1 ? "" : "s"} · ${open} open`;
     this.pane.update();
   }
 }

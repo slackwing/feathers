@@ -170,6 +170,8 @@ export class CharacterWindow extends Window {
     gbox.addEventListener("dragleave", () => gbox.classList.remove("drop"));
     gbox.addEventListener("drop", e => { e.preventDefault(); gbox.classList.remove("drop"); const files = [...(e.dataTransfer?.files || [])]; if (files.length) this.emit("upload", { files }); });
     el.addEventListener("keydown", e => { if (e.key === "Escape" && this.selected) { e.stopPropagation(); this.select(null); } });
+    // a click on dead space anywhere in the window drops the picture selection (Andrew, 2026-09-21)
+    el.addEventListener("click", e => { if (this.selected && !e.target.closest(".tile, .gtools, button, input, select, textarea, label, a")) this.select(null); });
     void body;
     return el;
   }
@@ -180,12 +182,20 @@ export class CharacterWindow extends Window {
   setChar(c, { form = true } = {}) {
     this.char = c;
     this.fresh = freshness(c);
-    this.setTitle(`No. ${c.card_number ?? c.id} · ${c.name} (id ${c.id})`);
+    this.setTitle((c.card_number == null ? "" : `No. ${c.card_number} · `) + `${c.name} (id ${c.id})`);
     this.renderSlots();
     this.renderReview();
-    if (form) this.fillForm();
+    if (form) this.fillForm(); else this.syncNumber();   // the number arrives with the first Accept, whatever field has focus
     this.renderWedges();
     this.renderGallery();
+  }
+
+  /** The No. field: blank and off until the card is first accepted, then its number. */
+  syncNumber() {
+    const c = this.char, no = this.el.querySelector('[data-f="card_number"]');
+    if (no === this.el.ownerDocument.activeElement) return;
+    no.value = c.card_number == null ? "" : String(c.card_number);
+    no.disabled = c.card_number == null;
   }
 
   /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
@@ -252,7 +262,7 @@ export class CharacterWindow extends Window {
   fillForm() {
     const c = this.char, f = this.el.querySelector(".form");
     for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
-    f.querySelector('[data-f="card_number"]').value = String(c.card_number ?? c.id);
+    this.syncNumber();
     f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
     f.querySelectorAll("[data-nen]").forEach((s, i) => { s.value = (c.nen_types || [])[i] || ""; });
     for (const [s] of ARCS) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);
