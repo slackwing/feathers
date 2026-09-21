@@ -1853,7 +1853,7 @@ html[data-theme=seapumpkin-pastel] {
   min-width: 34px;
   height: 22px;
   padding: 2px 3px 0;
-  background: var(--hue, var(--none));
+  background: var(--hue, var(--paper));
   color: var(--t, var(--ink));
   border: var(--px) solid var(--ink);
   border-bottom: 0;
@@ -2989,6 +2989,25 @@ body.stacked .room .logbox {
   padding: 3px 6px;
   cursor: default;
 }
+.rlist .lbody {
+  position: relative;
+}
+.rlist .rows.dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+.rlist .row.dragging {
+  opacity: .45;
+}
+.rlist .drop-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 0;
+  border-top: 2px solid var(--blood);
+  pointer-events: none;
+  z-index: 3;
+}
 .rlist .c-pics {
   display: flex;
   gap: 0;
@@ -3166,6 +3185,9 @@ body.stacked .room .logbox {
 }
 .rchar .frow.four {
   grid-template-columns: 1fr 90px 1.6fr 1.4fr;
+}
+.rchar .frow.three {
+  grid-template-columns: 80px 1fr 1fr;
 }
 .rchar .f {
   min-width: 0;

@@ -3418,15 +3418,6 @@ var HxH = (() => {
     { slug: "specialization", code: "SP", name: "Specialist", ja: "\u7279\u8CEA\u7CFB", hue: "var(--specialist)", hex: "#58e05c" },
     { slug: "", code: "--", name: "Non-user", ja: "\u975E\u80FD\u529B\u8005", hue: "var(--none)", hex: "#9a9a9a" }
   ];
-  var ARCS = [
-    { slug: "hunter-exam", code: "EX", name: "Hunter Exam", ja: "\u30CF\u30F3\u30BF\u30FC\u8A66\u9A13\u7DE8", hex: "#b8ad97" },
-    { slug: "zoldyck-family", code: "ZO", name: "Zoldyck Family", ja: "\u30BE\u30EB\u30C7\u30A3\u30C3\u30AF\u5BB6\u7DE8", hex: "#a89bb8" },
-    { slug: "heavens-arena", code: "HA", name: "Heavens Arena", ja: "\u5929\u7A7A\u95D8\u6280\u5834\u7DE8", hex: "#9fb8b0" },
-    { slug: "yorknew-city", code: "YN", name: "Yorknew City", ja: "\u30E8\u30FC\u30AF\u30B7\u30F3\u7DE8", hex: "#b8a0a0" },
-    { slug: "greed-island", code: "GI", name: "Greed Island", ja: "\u30B0\u30EA\u30FC\u30C9\u30A2\u30A4\u30E9\u30F3\u30C9\u7DE8", hex: "#a3b89b" },
-    { slug: "chimera-ant", code: "CA", name: "Chimera Ant", ja: "\u30AD\u30E1\u30E9\u30A2\u30F3\u30C8\u7DE8", hex: "#b8b493" },
-    { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "\u4F1A\u9577\u9078\u6319\u7DE8", hex: "#a8aec0" }
-  ];
   var PER_PAGE = 9;
   var SOURCE = "/hxh/api/db/binder";
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
@@ -3434,27 +3425,11 @@ var HxH = (() => {
   var cardNo2 = (c) => cardNo(c.no ?? c.id);
   var firstSentence = (s) => (String(s || "").match(/^[^.!?]*[.!?]/) || [s || ""])[0].trim();
   var cardText = (c) => c.card_description || firstSentence(c.description);
-  function groupCards(chars) {
-    const out = [];
-    for (const t of TYPES.slice(0, -1)) {
-      const mine = chars.filter((c) => typeOf(c) === t);
-      if (mine.length) out.push({ ...t, cards: mine });
-    }
-    const untyped = chars.filter((c) => !(c.nen_types || []).length);
-    for (const a of ARCS) {
-      const mine = untyped.filter((c) => (c.arcs || [])[0] === a.slug);
-      if (mine.length) out.push({ ...a, hue: a.hex, cards: mine });
-    }
-    return out;
-  }
   function paginate(chars) {
+    const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
     const out = [];
-    for (const g of groupCards(chars)) {
-      const { cards, ...type2 } = g;
-      for (let i = 0; i < cards.length; i += PER_PAGE) {
-        out.push({ type: type2, cards: cards.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(cards.length / PER_PAGE) });
-      }
-    }
+    for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ cards: sorted.slice(i, i + PER_PAGE), n: out.length + 1 });
+    for (const p of out) p.of = out.length;
     return out;
   }
   var CARD_W = 150;
@@ -3602,7 +3577,7 @@ var HxH = (() => {
     }
     /** The cards, in the order the API gives them (by number). A reload keeps the page the reader is on. */
     setRoster(list) {
-      this.roster = (list || []).map((c) => ({ ...c, no: c.no ?? c.id }));
+      this.roster = (list || []).map((c) => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
       this.pages = paginate(this.roster);
       this.renderTabs();
       this.showPage(Math.min(this.page || 0, Math.max(0, this.pages.length - 1)));
@@ -3694,16 +3669,7 @@ var HxH = (() => {
       const tabs = this.$(".tabs");
       tabs.replaceChildren();
       this.pages.forEach((p, i) => {
-        const b = h("button", {
-          type: "button",
-          className: "tab",
-          text: p.type.code,
-          title: `${p.type.name} ${p.type.ja}` + (p.of > 1 ? ` \xB7 ${p.n}/${p.of}` : ""),
-          onclick: () => this.showPage(i)
-        });
-        b.style.setProperty("--hue", p.type.hue);
-        b.style.setProperty("--t", textColorFor(p.type.hex));
-        tabs.append(b);
+        tabs.append(h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.showPage(i) }));
       });
     }
     showPage(i) {
@@ -3720,7 +3686,7 @@ var HxH = (() => {
       this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
       p.cards.forEach((c) => box.append(this.cardEl(c)));
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
-      this.$(".pageno").innerHTML = `${this.page + 1} / ${this.pages.length}<span class="ja">${esc(p.type.ja)}</span>`;
+      this.$(".pageno").textContent = `${this.page + 1} / ${this.pages.length}`;
       if (this.sel && !p.cards.includes(this.sel)) this.select(null);
     }
     /** A sleeve holding one printed card. */
@@ -5652,6 +5618,10 @@ var HxH = (() => {
     patch(id, fields) {
       return this.call("PATCH", `/chars/${id}`, fields);
     }
+    /** Put a character right after another in the binder order (after = 0 → the front); the server renumbers atomically and answers with the whole list. */
+    move(id, after) {
+      return this.call("POST", `/chars/${id}/move`, { after });
+    }
     review(id, status, reason = "") {
       return this.call("POST", `/chars/${id}/review`, { status, reason });
     }
@@ -5695,6 +5665,7 @@ var HxH = (() => {
 
   // html/hxh/apps/roster/fields.js
   var FIELDS = [
+    ["card_number", "No."],
     ["name", "Name"],
     ["name_ja", "Japanese"],
     ["first", "Short"],
@@ -5720,6 +5691,20 @@ var HxH = (() => {
   var FILTERS = [["", "All"], ...STATUSES];
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var PICS_TITLE = TYPES2.map(([, l]) => l).join(" \xB7 ");
+  var number = (c) => c.card_number ?? c.id;
+  function dropTarget(rows, y, id) {
+    const others = rows.filter((r) => +r.dataset.id !== id);
+    const before = others.find((r) => {
+      const b = r.getBoundingClientRect();
+      return y < b.top + b.height / 2;
+    });
+    const i = before ? others.indexOf(before) : others.length;
+    const after = i === 0 ? 0 : +others[i - 1].dataset.id;
+    const cur = rows.findIndex((r) => +r.dataset.id === id);
+    if (after === (cur > 0 ? +rows[cur - 1].dataset.id : 0)) return null;
+    const last = others[others.length - 1];
+    return { after, y: before ? before.offsetTop : last ? last.offsetTop + last.offsetHeight : 0 };
+  }
   var RosterWindow = class extends Window {
     /** props: menus (win => spec), thumbURL(id) */
     constructor(props = {}) {
@@ -5742,7 +5727,7 @@ var HxH = (() => {
       this.head = h(
         "div",
         { className: "lhead" },
-        h("span", { className: "c-no", text: "#" }),
+        h("span", { className: "c-no", text: LABEL.card_number, title: "Card number" }),
         h("span", { className: "c-av" }),
         h("span", { className: "c-name", text: LABEL.name }),
         h("span", { className: "c-ja", text: LABEL.name_ja }),
@@ -5767,6 +5752,7 @@ var HxH = (() => {
         const r = e.target.closest(".row");
         if (r) this.emit("open", { id: +r.dataset.id });
       });
+      this.body.addEventListener("mousedown", (e) => this.dragStart(e));
       this.rows.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && this.selected) {
           e.preventDefault();
@@ -5793,9 +5779,48 @@ var HxH = (() => {
       this.msgEl.textContent = msg;
       this.msgEl.classList.toggle("err", !!err);
     }
-    /** Pending first, then accepted, then rejected; by number within. */
+    /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
     shown() {
-      return this.chars.filter((c) => !this.filter || c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || a.id - b.id);
+      return this.chars.filter((c) => !this.filter || c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
+    }
+    /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
+    dragStart(e) {
+      if (e.button !== 0) return;
+      const row = e.target.closest(".row");
+      if (!row) return;
+      const id = +row.dataset.id, doc = row.ownerDocument;
+      const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
+      const move = (ev) => {
+        if (!st.on) {
+          if (Math.abs(ev.clientX - st.x0) + Math.abs(ev.clientY - st.y0) < 4) return;
+          st.on = true;
+          row.classList.add("dragging");
+          this.rows.classList.add("dragging");
+          st.line = h("div", { className: "drop-line" });
+          this.body.append(st.line);
+        }
+        ev.preventDefault();
+        const t = dropTarget([...this.body.querySelectorAll(".row")], ev.clientY, id);
+        st.after = t ? t.after : null;
+        st.line.hidden = !t;
+        if (t) st.line.style.top = t.y + "px";
+      };
+      const end = (ev) => {
+        doc.removeEventListener("mousemove", move);
+        doc.removeEventListener("mouseup", end);
+        doc.removeEventListener("keydown", key);
+        if (!st.on) return;
+        row.classList.remove("dragging");
+        this.rows.classList.remove("dragging");
+        st.line.remove();
+        if (ev && st.after !== null) this.emit("move", { id, after: st.after });
+      };
+      const key = (ev) => {
+        if (ev.key === "Escape") end(null);
+      };
+      doc.addEventListener("mousemove", move);
+      doc.addEventListener("mouseup", end);
+      doc.addEventListener("keydown", key);
     }
     renderRows() {
       const list = this.shown();
@@ -5813,7 +5838,7 @@ var HxH = (() => {
       return h(
         "div",
         { className: "row", dataset: { id: String(c.id) }, role: "option" },
-        h("span", { className: "c-no", text: String(c.id) }),
+        h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
         h("span", { className: "c-av" }, av),
         h("span", { className: "c-name", text: c.name }),
         h("span", { className: "c-ja", text: c.name_ja || "" }),
@@ -5847,7 +5872,7 @@ var HxH = (() => {
 
   // html/hxh/apps/roster/character.js
   var NEN = ["enhancement", "transmutation", "conjuration", "emission", "manipulation", "specialization"];
-  var ARCS2 = [
+  var ARCS = [
     ["hunter-exam", "Hunter Exam"],
     ["zoldyck-family", "Zoldyck Family"],
     ["heavens-arena", "Heavens Arena"],
@@ -5866,7 +5891,8 @@ var HxH = (() => {
   var words = (s) => (String(s || "").trim().match(/\S+/g) || []).length;
   var winId = (id) => "win-roster-c-" + id;
   var FORM = `
-  <div class="frow">
+  <div class="frow three">
+    <div class="f"><label class="lbl">${LABEL.card_number}</label><input class="field" data-f="card_number" type="number" min="0" step="1"></div>
     <div class="f"><label class="lbl">${LABEL.name}</label><input class="field" data-f="name" maxlength="100"></div>
     <div class="f"><label class="lbl">${LABEL.name_ja}</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
   </div>
@@ -5877,7 +5903,7 @@ var HxH = (() => {
     <div class="f"><label class="lbl">${LABEL.affiliation}</label><input class="field" data-f="affiliation" maxlength="60"></div>
   </div>
   <div class="frow">
-    <div class="f"><label class="lbl">${LABEL.arcs}</label><div class="checks">${ARCS2.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
+    <div class="f"><label class="lbl">${LABEL.arcs}</label><div class="checks">${ARCS.map(([s, n]) => `<label class="chk"><input type="checkbox" data-arc="${s}"><span>${n}</span></label>`).join("")}</div></div>
     <div class="f"><label class="lbl">${LABEL.arms}</label><input class="field prose" data-f="arms"></div>
   </div>
   <div class="f"><label class="lbl">${LABEL.description} <span class="count" data-count></span></label><textarea class="field prose" data-f="description"></textarea></div>
@@ -5962,13 +5988,14 @@ var HxH = (() => {
         if (t.dataset.f) {
           let v = t.value;
           if (t.dataset.f === "arms") v = v.split(",").map(slugify).filter(Boolean);
+          else if (t.dataset.f === "card_number") v = Math.max(0, parseInt(v, 10) || 0);
           else if (t.tagName !== "TEXTAREA") v = v.trim();
           this.emit("patch", { fields: { [t.dataset.f]: v } });
         } else if (t.dataset.nen !== void 0) {
           const vals = [...form.querySelectorAll("[data-nen]")].map((s) => s.value).filter(Boolean);
           this.emit("patch", { fields: { nen_types: [...new Set(vals)] } });
         } else if (t.dataset.arc) {
-          const arcs = ARCS2.map(([s]) => s).filter((s) => form.querySelector(`[data-arc="${s}"]`).checked);
+          const arcs = ARCS.map(([s]) => s).filter((s) => form.querySelector(`[data-arc="${s}"]`).checked);
           this.emit("patch", { fields: { arcs } });
         }
       });
@@ -6021,7 +6048,7 @@ var HxH = (() => {
     /** Everything from the character: title, slots, review, form (unless a field has focus), gallery. */
     setChar(c, { form = true } = {}) {
       this.char = c;
-      this.setTitle(`#${c.id} ${c.name}`);
+      this.setTitle(`No. ${c.card_number ?? c.id} \xB7 ${c.name} (id ${c.id})`);
       this.renderSlots();
       this.renderReview();
       if (form) this.fillForm();
@@ -6065,11 +6092,12 @@ var HxH = (() => {
     fillForm() {
       const c = this.char, f = this.el.querySelector(".form");
       for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
+      f.querySelector('[data-f="card_number"]').value = String(c.card_number ?? c.id);
       f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
       f.querySelectorAll("[data-nen]").forEach((s, i) => {
         s.value = (c.nen_types || [])[i] || "";
       });
-      for (const [s] of ARCS2) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);
+      for (const [s] of ARCS) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);
       this.updateCount();
     }
     updateCount() {
@@ -6970,6 +6998,7 @@ var HxH = (() => {
       const w = this.listWin = new RosterWindow({ thumbURL: (id) => this.api.thumbURL(id), menus: (win) => this.listMenus(win) });
       os2.wm.add(w);
       w.on("open", ({ id }) => this.openChar(id));
+      w.on("move", ({ id, after }) => this.move(id, after));
       return w;
     }
     listMenus(win) {
@@ -7080,6 +7109,18 @@ var HxH = (() => {
         w?.setChar(c, { form: false });
         w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
         this.changed(c);
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */
+    async move(id, after) {
+      const w = this.listWin;
+      try {
+        const list = await this.hold(w, this.api.move(id, after), "Renumbering\u2026");
+        w?.setChars(list);
+        w?.select(id);
+        this.os.bus?.emit("roster:changed", { id });
       } catch (err) {
         w?.say(err.message, true);
       }
