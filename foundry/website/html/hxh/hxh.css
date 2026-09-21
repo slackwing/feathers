@@ -3001,6 +3001,14 @@ body.stacked .room .logbox {
   background: var(--blood);
   color: var(--paper-hi);
 }
+.roster i.verdict.skipped,
+.roster .st.skipped {
+  background: var(--paper-lo);
+  color: var(--ink-4);
+}
+.rchar .review .reason.skipped {
+  color: var(--ink-4);
+}
 .roster i.reqs {
   font: var(--t-ui-bold);
   font-style: normal;

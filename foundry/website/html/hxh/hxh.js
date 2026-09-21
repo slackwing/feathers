@@ -5834,7 +5834,7 @@ var HxH = (() => {
   var LABEL = Object.fromEntries(FIELDS);
   var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
   var TYPE_LABEL = Object.fromEntries(TYPES2);
-  var STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+  var STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["skipped", "Skipped"]];
   var STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));
 
   // html/hxh/apps/roster/list.js
@@ -5932,7 +5932,7 @@ var HxH = (() => {
     }
     /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
     shown() {
-      return this.chars.filter((c) => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
+      return this.chars.filter((c) => !this.filter ? c.review_status !== "skipped" : this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
     }
     /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
     dragStart(e) {
@@ -5980,7 +5980,9 @@ var HxH = (() => {
       this.markSel();
       const pending = this.chars.filter((c) => c.review_status === "pending").length;
       const asked = this.chars.filter((c) => c.open_requests > 0).length;
-      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending` + (asked ? ` \xB7 ${asked} with requests` : "");
+      const skipped = this.chars.filter((c) => c.review_status === "skipped").length;
+      const n = this.chars.length - skipped;
+      this.countEl.textContent = `${n} character${n === 1 ? "" : "s"} \xB7 ${pending} pending` + (asked ? ` \xB7 ${asked} with requests` : "") + (skipped ? ` \xB7 ${skipped} skipped` : "");
       this.pane.update();
     }
     row(c) {
@@ -6285,9 +6287,17 @@ var HxH = (() => {
       reqs.hidden = !open;
       this.renderChanges();
       const reason = el.querySelector(".reason");
-      reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason : "";
+      reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason : c.review_status === "skipped" ? "Skipped" + (c.review_reason ? ": " + c.review_reason : "") : "";
       reason.classList.toggle("rejected", c.review_status === "rejected");
-      for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
+      reason.classList.toggle("skipped", c.review_status === "skipped");
+      const frozen = c.review_status === "skipped";
+      for (const b of el.querySelectorAll("[data-review]")) b.disabled = frozen || b.dataset.review === c.review_status;
+      el.querySelector("[data-request]").disabled = frozen;
+      el.querySelector('[data-img="upload"]').disabled = frozen;
+      for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) {
+        if (f.dataset.f !== "card_number") f.disabled = frozen;
+      }
+      el.classList.toggle("frozen-skipped", frozen);
       const log = el.querySelector(".log");
       log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
         "div",
