@@ -2900,6 +2900,11 @@ body.stacked .room .logbox {
   background: var(--blood);
   color: var(--paper-hi);
 }
+.roster i.verdict.requested,
+.roster .st.requested {
+  background: var(--conjurer);
+  color: var(--ink);
+}
 .roster .group {
   margin: 0 0 10px;
   padding: 8px 12px 12px;
@@ -3128,6 +3133,12 @@ body.stacked .room .logbox {
 .rchar .review .rbtns {
   display: flex;
   gap: 6px;
+}
+.rchar .review .rbtns .gap {
+  flex: 1;
+}
+.rchar .review .reason .req b {
+  font-weight: 700;
 }
 .rchar .review .log {
   font: var(--t-small);

@@ -3588,7 +3588,9 @@ var HxH = (() => {
           os2.wm.fit();
         }
       });
-      this.load();
+      os2.bus.on("roster:changed", () => {
+        if (this.win.state.open) this.load();
+      });
       return this.win;
     }
     load() {
@@ -3598,12 +3600,12 @@ var HxH = (() => {
         this.$(".cards").textContent = "The binder is empty.";
       });
     }
-    /** The cards, in the order the API gives them (by number). */
+    /** The cards, in the order the API gives them (by number). A reload keeps the page the reader is on. */
     setRoster(list) {
       this.roster = (list || []).map((c) => ({ ...c, no: c.no ?? c.id }));
       this.pages = paginate(this.roster);
       this.renderTabs();
-      this.showPage(0);
+      this.showPage(Math.min(this.page || 0, Math.max(0, this.pages.length - 1)));
     }
     /** Size the book to the viewport and return where to put the window. */
     layout() {
@@ -3621,8 +3623,10 @@ var HxH = (() => {
       for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
+    /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
     launch() {
       const win = this.window();
+      this.load();
       const p = this.os.wm.open(win.id, this.layout());
       for (const c of this.cards.values()) c.fit();
       return p;
@@ -5651,6 +5655,18 @@ var HxH = (() => {
     review(id, status, reason = "") {
       return this.call("POST", `/chars/${id}/review`, { status, reason });
     }
+    requestKinds() {
+      return this.call("GET", "/request-kinds");
+    }
+    request(id, kind, text = "") {
+      return this.call("POST", `/chars/${id}/request`, { kind, text });
+    }
+    requests(status = "open") {
+      return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : ""));
+    }
+    resolveRequest(id) {
+      return this.call("POST", `/requests/${id}/resolve`);
+    }
     remove(id) {
       return this.call("DELETE", `/chars/${id}`);
     }
@@ -5697,7 +5713,7 @@ var HxH = (() => {
   var LABEL = Object.fromEntries(FIELDS);
   var TYPES2 = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
   var TYPE_LABEL = Object.fromEntries(TYPES2);
-  var STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+  var STATUSES = [["pending", "Pending"], ["requested", "Requested"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
   var STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));
 
   // html/hxh/apps/roster/list.js
@@ -5787,7 +5803,8 @@ var HxH = (() => {
       if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
       this.markSel();
       const pending = this.chars.filter((c) => c.review_status === "pending").length;
-      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending`;
+      const requested = this.chars.filter((c) => c.review_status === "requested").length;
+      this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} \xB7 ${pending} pending` + (requested ? ` \xB7 ${requested} requested` : "");
       this.pane.update();
     }
     row(c) {
@@ -5890,6 +5907,8 @@ var HxH = (() => {
               <button class="btn" type="button" data-review="accepted">Accept</button>
               <button class="btn" type="button" data-review="rejected">Reject\u2026</button>
               <button class="btn" type="button" data-review="pending">Pending</button>
+              <span class="gap"></span>
+              <button class="btn" type="button" data-request>Request\u2026</button>
             </div>
             <div class="log"></div>
           </fieldset>
@@ -5932,6 +5951,7 @@ var HxH = (() => {
       el.querySelector(".rbtns").addEventListener("click", (e) => {
         const b = e.target.closest("[data-review]");
         if (b && !b.disabled) this.emit("review", { status: b.dataset.review });
+        if (e.target.closest("[data-request]")) this.emit("request");
       });
       const form = el.querySelector(".form");
       form.addEventListener("input", (e) => {
@@ -6024,7 +6044,9 @@ var HxH = (() => {
       el.querySelector(".verdict .ver").textContent = "v" + c.version;
       const last = (c.reviews || [])[0];
       el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
-      el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
+      const reason = el.querySelector(".reason");
+      if (c.review_status === "rejected") reason.textContent = c.review_reason;
+      else reason.replaceChildren(...(c.requests || []).filter((q) => q.status === "open").map((q) => h("div", { className: "req" }, h("b", { text: q.label || q.kind }), q.text ? ` \u2014 ${q.text}` : "")));
       for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
       const log = el.querySelector(".log");
       log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
@@ -6838,6 +6860,31 @@ var HxH = (() => {
       return this.$("input").value.trim();
     }
   };
+  var RequestDialog = class extends Dialog {
+    constructor({ kinds = [] } = {}) {
+      super({
+        title: "Request",
+        body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map((k) => `<option value="${esc(k.slug)}">${esc(k.label)}</option>`).join("")}</select>
+      <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
+        buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "select",
+        width: 460
+      });
+    }
+    render() {
+      const el = super.render();
+      el.querySelector("textarea").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          this.finish("ok");
+        }
+      });
+      return el;
+    }
+    value() {
+      return { kind: this.$("select").value, text: this.$("textarea").value.trim() };
+    }
+  };
   var ReasonDialog = class extends Dialog {
     constructor({ name } = {}) {
       void name;
@@ -6951,7 +6998,7 @@ var HxH = (() => {
       if (!name) return;
       try {
         const c = await this.api.create({ name });
-        this.listWin?.update(c);
+        this.changed(c);
         this.openChar(c.id);
       } catch (err) {
         this.os.toast.show(err.message);
@@ -6968,6 +7015,7 @@ var HxH = (() => {
         w.on("patch", ({ fields }) => this.patch(id, fields));
         w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
         w.on("review", ({ status }) => this.review(id, status));
+        w.on("request", () => this.request(id));
         w.on("upload", ({ files }) => this.upload(id, files));
         w.on("crop", ({ id: imageId }) => this.openCrop(imageId));
         w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
@@ -6998,7 +7046,7 @@ var HxH = (() => {
         const c = await this.hold(w, this.api.get(id));
         w?.setChar(c, { form });
         w?.say("");
-        this.listWin?.update(c);
+        this.changed(c);
         return c;
       } catch (err) {
         w?.say(err.status === 404 ? "No such character." : err.message, true);
@@ -7015,7 +7063,7 @@ var HxH = (() => {
         const c = await this.hold(w, this.api.patch(id, fields));
         w?.setChar(c, { form: false });
         w?.say("Saved");
-        this.listWin?.update(c);
+        this.changed(c);
       } catch (err) {
         w?.say(err.message, true);
       }
@@ -7031,10 +7079,35 @@ var HxH = (() => {
         const c = await this.hold(w, this.api.review(id, status, reason));
         w?.setChar(c, { form: false });
         w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
-        this.listWin?.update(c);
+        this.changed(c);
       } catch (err) {
         w?.say(err.message, true);
       }
+    }
+    /** Request…: a kind from the server's list plus optional details; the character reads "requested" until the bot resolves it. */
+    async request(id) {
+      const w = this.chars.get(id);
+      try {
+        this.kinds ||= await this.hold(w, this.api.requestKinds());
+      } catch (err) {
+        w?.say(err.message, true);
+        return;
+      }
+      const r = await new RequestDialog({ kinds: this.kinds }).ask(this.os);
+      if (!r) return;
+      try {
+        const c = await this.hold(w, this.api.request(id, r.kind, r.text));
+        w?.setChar(c, { form: false });
+        w?.say("Requested");
+        this.changed(c);
+      } catch (err) {
+        w?.say(err.message, true);
+      }
+    }
+    /** A character changed on the server: the list row follows, and anything showing the roster (the Binder) hears about it. */
+    changed(c) {
+      this.listWin?.update(c);
+      this.os.bus?.emit("roster:changed", { id: c.id });
     }
     async upload(id, files) {
       const w = this.chars.get(id);
