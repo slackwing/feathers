@@ -330,8 +330,10 @@ component architecture (many windows, tray icons + menus, the bus).
   open in a background tab must stay AWAY, never offline (bots would
   stop DMing), and must not look online either. Two signals on the
   server: FOCUS (a person there — a ping from a focused, visible tab,
-  a message, typing, a read marker, any authed page request touches
-  `last_seen_at`) and KEEPALIVE (an instance open — a live socket, or
+  a message, typing, a read marker, a profile or picture save, a page
+  load via the shared `/admin/api/me`; NOT Beetle's own socket
+  handshake or history/contacts fetches, which use `PeekSession` and
+  touch nothing) and KEEPALIVE (an instance open — a live socket, or
   one that dropped < 2 min ago, so reconnects don't flap). online =
   focus < 1 min; away = focus < 1 h OR an instance open; offline
   otherwise. The client's heartbeat carries `focus: true` only when
