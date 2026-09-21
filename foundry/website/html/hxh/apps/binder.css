@@ -129,7 +129,8 @@
 }
 .tabs {   /* one tab per page; rows wrap UPWARD from the page's top edge */
   position: absolute; left: 20px; right: 20px; bottom: 100%;
-  display: flex; flex-wrap: wrap-reverse; align-content: flex-end; align-items: flex-end; gap: 2px;
+  /* wrap-reverse flips the cross axis, so flex-START is the bottom: every tab's foot on the page edge, the open one just taller (Andrew, 2026-09-21) */
+  display: flex; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-start; gap: 2px;
 }
 /* page tabs: smooth (not pixel art), in the binder's own blues; the open page's tab is taller,
    lit, and joined to the page — Andrew, 2026-09-21 */

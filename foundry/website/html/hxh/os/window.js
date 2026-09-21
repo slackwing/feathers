@@ -15,7 +15,7 @@ import { MenuBar } from "./menu.js";
    "maximize adds too many headaches"). */
 export const CHROME = {
   min:   { cls: "min",   glyph: "", title: "Minimize" },   // drawn by CSS (.tbtn.min::before): a bar with clearance, not an underscore on the edge
-  close: { cls: "close", glyph: "×", title: "Close" },
+  close: { cls: "close", glyph: "", title: "Close" },   // drawn as a tiny SVG cross that scales with the button (a text × overflowed the Binder's small ones)
 };
 
 export class ChromeButton extends Component {
@@ -23,10 +23,12 @@ export class ChromeButton extends Component {
   render() {
     const c = CHROME[this.props.kind];
     if (!c) throw new Error(`unknown chrome button "${this.props.kind}"`);
-    return h("button", {
+    const b = h("button", {
       type: "button", className: `tbtn ${c.cls}`, title: c.title, text: c.glyph,
       onclick: e => { e.stopPropagation(); this.emit("press", this.props.kind); },
     });
+    if (this.props.kind === "close") b.innerHTML = `<svg class="x" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5 L8.5 8.5 M8.5 1.5 L1.5 8.5"/></svg>`;
+    return b;
   }
 }
 
