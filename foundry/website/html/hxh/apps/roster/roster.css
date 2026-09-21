@@ -99,7 +99,7 @@
 .roster button.link { background: none; border: 0; padding: 0; margin: 0; color: #0000ee; text-decoration: underline; cursor: pointer; font: var(--t-small); }
 .roster button.link:hover { color: var(--blood); }
 /* the requests window: a table like the list */
-.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 130px 1fr 90px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
+.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 130px 1fr 108px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
 .rreq .rows { font: var(--t-ui); }
 .rreq .row { padding: 3px 6px; }
 .rreq .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
