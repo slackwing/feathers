@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RosterApp, RosterWindow, CharacterWindow, CropWindow, winId, cropId, slotFor } from "../html/hxh/apps/roster/app.js";
+import { freshness } from "../html/hxh/apps/roster/character.js";
 import { Dialog } from "../html/hxh/apps/roster/dialogs.js";
 import { STATUSES } from "../html/hxh/apps/roster/fields.js";
 import { PaintDoc, packRGBA } from "../html/hxh/apps/roster/paint.js";
@@ -32,8 +33,8 @@ async function boot(me = ADMIN) {
     "GET /hxh/api/db/request-kinds": [200, [{ slug: "extend-picture", label: "Extend picture", sort: 1 }, { slug: "card-description", label: "Card description", sort: 2 }]],
     "POST /hxh/api/db/chars/3/request": init => { const body = JSON.parse(init.body); const label = body.kind === "extend-picture" ? "Extend picture" : "Card description";
       state.gon = { ...state.gon, review_status: "requested", review_reason: "",
-        requests: [{ id: 1, char_id: 3, kind: body.kind, label, text: body.text, status: "open", version: state.gon.version, owner: "abi", created_at: "2026-09-21T01:00:00Z" }],
-        reviews: [{ id: 10, char_id: 3, version: state.gon.version, status: "requested", reason: label + (body.text ? ": " + body.text : ""), owner: "abi", created_at: "2026-09-21T01:00:00Z" }, ...state.gon.reviews] };
+        requests: [{ id: 2, char_id: 3, kind: body.kind, label, text: body.text, status: "open", version: state.gon.version, owner: "abi", created_at: "2026-09-21T01:00:00Z", resolved_by: "", resolved_at: null },
+          { id: 1, char_id: 3, kind: "card-description", label: "Card description", text: "", status: "done", version: 2, owner: "andrew", created_at: "2026-09-20T01:00:00Z", resolved_by: "claude", resolved_at: "2026-09-20T02:00:00Z" }] };
       return [200, state.gon]; },
     "POST /hxh/api/db/chars": init => [201, { ...killua(), id: 5, name: JSON.parse(init.body).name }],
     "GET /hxh/api/db/chars/5": () => [200, { ...killua(), id: 5, name: "Leorio" }],
@@ -263,6 +264,44 @@ test("No. is the card number (the id in its tooltip); rows sort by status then n
   assert.deepEqual(log.at(-1).body, { after: 3 }, "no second move");
 });
 
+test("New wedges: the bot's changes above the last human verdict mark their fields, slots and pictures, with one summary line; a human's changes and a never-judged character show nothing", async () => {
+  await boot();
+  const CH = (v, kind, extra) => ({ id: 1, char_id: 3, version: v, kind, action: "set", old: "", new: "", owner: "claude", bot: true, created_at: "2026-09-21T00:00:00Z", ...extra });
+  state.gon.baseline = { version: 2, status: "rejected", owner: "andrew", created_at: "2026-09-18T00:00:00Z" };
+  state.gon.avatar_image_id = 11;
+  state.gon.changes = [
+    CH(3, "field", { field: "description", old: "A kid.", new: "A boy." }),
+    CH(3, "field", { field: "nen_types", old: "", new: "enhancement" }),
+    CH(3, "field", { field: "notes", owner: "abi", bot: false }),             // a human's edit: self-approved
+    CH(4, "field", { field: "avatar_image_id", new: "11" }),
+    CH(4, "image", { action: "added", image_id: 12 }),
+    CH(4, "image", { action: "added", image_id: 10, owner: "abi", bot: false }),
+    CH(4, "image", { action: "removed", image_id: 99 }),
+  ];
+  const fr = freshness(state.gon);
+  assert.deepEqual([...fr.fields], ["description", "nen_types", "avatar_image_id"]);
+  assert.deepEqual([...fr.images], [12]);
+  await app().openChar(3);
+  await tick();
+  const el = charWin().el;
+  const wedged = sel => !!el.querySelector(sel)?.closest(".f")?.querySelector(".lbl .new");
+  assert.ok(wedged('[data-f="description"]') && wedged("[data-nen]"), "description and Nen carry the wedge");
+  assert.ok(!wedged('[data-f="notes"]') && !wedged('[data-f="name"]'), "a human's change and untouched fields do not");
+  assert.equal(el.querySelector(".new").textContent, "New");
+  assert.ok(el.querySelector('.slot[data-slot="avatar_image_id"] .new') && !el.querySelector('.slot[data-slot="card_image_id"] .new'));
+  assert.ok(el.querySelector('.tile[data-id="12"] .pic .new') && !el.querySelector('.tile[data-id="10"] .pic .new'));
+  assert.equal(el.querySelector(".review .changes").textContent, "Since v2 (rejected by andrew), claude: Description, Nen, Avatar · 1 picture added · 1 picture removed");
+  // a verdict moves the baseline: nothing above it → no wedges, no line
+  state.gon.baseline = { version: 4, status: "accepted", owner: "abi" };
+  charWin().setChar(state.gon);
+  assert.equal(el.querySelectorAll(".new").length, 0);
+  assert.equal(el.querySelector(".review .changes").textContent, "");
+  // never judged: no baseline → nothing, whatever the log says
+  state.gon.baseline = null;
+  charWin().setChar(state.gon);
+  assert.equal(el.querySelectorAll(".new").length, 0);
+});
+
 test("Request…: at the far right of the verdict buttons; asks for a kind (the server's list) and optional details; the character reads Requested with the ask under the verdict; the list sorts it after pending", async () => {
   await boot();
   await os.launch("roster");
@@ -272,7 +311,10 @@ test("Request…: at the far right of the verdict buttons; asks for a kind (the 
   const w = charWin();
   const btn = w.el.querySelector(".rbtns [data-request]");
   assert.equal(btn.textContent, "Request…");
-  assert.ok(btn.previousElementSibling.classList.contains("gap") && btn === w.el.querySelector(".rbtns").lastElementChild, "after a flexible gap, last in the row");
+  const rq = btn.parentElement;
+  assert.ok(rq.classList.contains("rq") && rq.previousElementSibling.classList.contains("gap") && rq === w.el.querySelector(".rbtns").lastElementChild, "after a flexible gap, last in the row");
+  const link = rq.querySelector("[data-requests]");
+  assert.ok(link && link.classList.contains("link") && link.textContent === "View Requests" && btn.nextElementSibling === link, "a text link under the button");
   d.click(btn);
   await tick(); await tick();
   const dlg = os.wm.all().find(x => x instanceof Dialog);
@@ -285,10 +327,26 @@ test("Request…: at the far right of the verdict buttons; asks for a kind (the 
   await tick(); await tick();
   assert.deepEqual(log.at(-1).body, { kind: "extend-picture", text: "hair cut off at the top" });
   assert.equal(w.el.querySelector(".verdict .st").textContent, "Requested");
-  assert.equal(w.el.querySelector(".verdict .by").textContent, "by abi");
-  assert.equal(w.el.querySelector(".reason").textContent, "Extend picture — hair cut off at the top");
-  assert.match(w.el.querySelector(".log").textContent, /v4 requested abi — Extend picture: hair cut off at the top/);
+  assert.equal(w.el.querySelector(".verdict .by").textContent, "by abi", "requested by whoever filed the open request");
+  assert.equal(w.el.querySelector(".reason").textContent, "", "the review box no longer lists the requests");
+  assert.doesNotMatch(w.el.querySelector(".log").textContent, /requested/, "the review log holds verdicts only");
   for (const b of w.el.querySelectorAll("[data-review]")) assert.equal(b.disabled, false, "a reviewer can still overrule with a verdict");
+  // View Requests → the table, newest first, with statuses; it follows the character
+  d.click(link);
+  await tick();
+  const rw = os.wm.get("win-roster-q-3");
+  assert.ok(rw && rw.state.open && rw.title === "Requests · Gon Freecss");
+  assert.deepEqual([...rw.head.children].map(e => e.textContent), ["#", "Request", "Details", "Status", "By", "Filed", "Resolved"]);
+  const cells = sel => [...rw.body.querySelectorAll(".row " + sel)].map(e => e.textContent);
+  assert.deepEqual(cells(".q-no"), ["2", "1"]);
+  assert.deepEqual(cells(".q-kind"), ["Extend picture", "Card description"]);
+  assert.deepEqual(cells(".q-st"), ["Pending", "Fulfilled"]);
+  assert.deepEqual(cells(".q-by"), ["abi", "andrew"]);
+  assert.match(cells(".q-done")[1], /claude$/);
+  assert.match(rw.el.querySelector(".status .count").textContent, /2 requests · 1 pending/);
+  state.gon.requests[0].status = "withdrawn";
+  os.bus.emit("roster:changed", { id: 3 });
+  assert.deepEqual(cells(".q-st"), ["Withdrawn", "Fulfilled"]);
   const list = listWin();
   assert.equal(list.el.querySelector('.row[data-id="3"] .verdict').textContent, "Requested");
   assert.match(list.el.querySelector(".status .count").textContent, /1 requested/);

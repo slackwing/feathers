@@ -24,6 +24,24 @@ export const slugify = s => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").r
 export const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
 export const winId = id => "win-roster-c-" + id;
 
+/**
+ * What the reviewer has not judged yet (Andrew, 2026-09-21): the bot's
+ * changes above the version of the last human verdict (the baseline).
+ * A human's own changes are self-approved and never marked; a character
+ * never judged has no baseline and shows nothing. Returns the field
+ * names and picture ids to mark, plus the rows for the summary line.
+ */
+export function freshness(c) {
+  const rows = c.baseline ? (c.changes || []).filter(x => x.bot && x.version > c.baseline.version) : [];
+  return {
+    rows,
+    fields: new Set(rows.filter(x => x.kind === "field").map(x => x.field)),
+    images: new Set(rows.filter(x => x.kind === "image" && x.image_id && x.action !== "removed").map(x => x.image_id)),
+  };
+}
+const wedge = () => h("i", { className: "new", text: "New", title: "Changed by the bot since the last verdict" });
+const fieldName = k => LABEL[k] || { avatar_image_id: "Avatar", card_image_id: "Card" }[k] || k;
+
 const FORM = `
   <div class="frow three">
     <div class="f"><label class="lbl">${LABEL.card_number}</label><input class="field" data-f="card_number" type="number" min="0" step="1"></div>
@@ -59,13 +77,14 @@ export class CharacterWindow extends Window {
           <fieldset class="group review">
             <legend>Review</legend>
             <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span></div>
+            <div class="changes"></div>
             <div class="reason"></div>
             <div class="rbtns">
               <button class="btn" type="button" data-review="accepted">Accept</button>
               <button class="btn" type="button" data-review="rejected">Reject…</button>
               <button class="btn" type="button" data-review="pending">Pending</button>
               <span class="gap"></span>
-              <button class="btn" type="button" data-request>Request…</button>
+              <span class="rq"><button class="btn" type="button" data-request>Request…</button><button class="link" type="button" data-requests>View Requests</button></span>
             </div>
             <div class="log"></div>
           </fieldset>
@@ -113,6 +132,7 @@ export class CharacterWindow extends Window {
       const b = e.target.closest("[data-review]");
       if (b && !b.disabled) this.emit("review", { status: b.dataset.review });
       if (e.target.closest("[data-request]")) this.emit("request");
+      if (e.target.closest("[data-requests]")) this.emit("requests");
     });
     // form: save on change
     const form = el.querySelector(".form");
@@ -157,11 +177,23 @@ export class CharacterWindow extends Window {
   /** Everything from the character: title, slots, review, form (unless a field has focus), gallery. */
   setChar(c, { form = true } = {}) {
     this.char = c;
+    this.fresh = freshness(c);
     this.setTitle(`No. ${c.card_number ?? c.id} · ${c.name} (id ${c.id})`);
     this.renderSlots();
     this.renderReview();
     if (form) this.fillForm();
+    this.renderWedges();
     this.renderGallery();
+  }
+
+  /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
+  renderWedges() {
+    const f = this.el.querySelector(".form");
+    for (const w of f.querySelectorAll(".new")) w.remove();
+    for (const k of this.fresh.fields) {
+      const ctl = f.querySelector(`[data-f="${k}"]`) || (k === "nen_types" ? f.querySelector("[data-nen]") : k === "arcs" ? f.querySelector("[data-arc]") : null);
+      ctl?.closest(".f")?.querySelector(".lbl")?.append(wedge());
+    }
   }
 
   renderSlots() {
@@ -171,7 +203,20 @@ export class CharacterWindow extends Window {
       slot.classList.toggle("set", !!id);
       slot.replaceChildren(h("i", { className: "lab", text: slot.dataset.slot === "avatar_image_id" ? "Avatar" : "Card" }));
       if (id) slot.append(h("img", { alt: "", src: this.props.thumbURL?.(id) || "" }), h("button", { className: "tbtn clear", type: "button", title: "Clear", text: "×" }));
+      if (this.fresh?.fields.has(slot.dataset.slot)) slot.append(wedge());
     }
+  }
+
+  /** One line under the verdict: what the bot changed since the last verdict, e.g. "Since v35 (accepted by abi), claude: Description, Notes · 3 pictures added". */
+  renderChanges() {
+    const c = this.char, box = this.el.querySelector(".changes"), rows = this.fresh.rows;
+    box.replaceChildren();
+    if (!rows.length) return;
+    const fields = [...new Set(rows.filter(x => x.kind === "field").map(x => x.field))].map(fieldName);
+    const count = (act, word) => { const n = rows.filter(x => x.kind === "image" && x.action === act).length; return n ? `${n} picture${n === 1 ? "" : "s"} ${word}` : ""; };
+    const parts = [fields.join(", "), count("added", "added"), count("removed", "removed"), count("edited", "edited")].filter(Boolean);
+    const who = [...new Set(rows.map(x => x.owner))].join(", ");
+    box.append(h("span", { className: "since", text: `Since v${c.baseline.version} (${c.baseline.status} by ${c.baseline.owner}), ${who}: ` }), h("span", { text: parts.join(" · ") }));
   }
 
   renderReview() {
@@ -181,12 +226,11 @@ export class CharacterWindow extends Window {
     st.className = "st " + c.review_status;
     el.querySelector(".verdict .ver").textContent = "v" + c.version;
     const last = (c.reviews || [])[0];
-    el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
-    // under the verdict: the rejection reason, or what the bot has been asked for
-    const reason = el.querySelector(".reason");
-    if (c.review_status === "rejected") reason.textContent = c.review_reason;
-    else reason.replaceChildren(...(c.requests || []).filter(q => q.status === "open").map(q =>
-      h("div", { className: "req" }, h("b", { text: q.label || q.kind }), q.text ? ` — ${q.text}` : "")));
+    // who put it in this state: the verdict's owner, or for "requested" whoever filed the open request
+    const asked = c.review_status === "requested" ? (c.requests || []).find(q => q.status === "open") : null;
+    el.querySelector(".verdict .by").textContent = asked ? `by ${asked.owner}` : last && last.status === c.review_status ? `by ${last.owner}` : "";
+    this.renderChanges();
+    el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
     for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },
@@ -242,7 +286,7 @@ export class CharacterWindow extends Window {
     const r = im.width / im.height;
     const fit = r > FIT_MAX ? "cut-x" : r < FIT_MIN ? "cut-y" : "fit";
     return h("figure", { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-      h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+      h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }), this.fresh?.images.has(im.id) ? wedge() : null),
       h("figcaption", {},
         h("div", { className: "l1" }, h("b", { text: "#" + im.id }), h("span", { text: `${im.width}×${im.height}` }), h("span", { className: "role", text: roles })),
         h("div", { className: "l2", text: [from, im.caption].filter(Boolean).join(" · ") })));

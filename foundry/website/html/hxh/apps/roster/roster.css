@@ -47,8 +47,8 @@
 .rlist .body { padding: 8px 10px 10px; }
 .rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 112px; align-items: center; gap: 6px; padding: 0 6px; }
 /* the header lives inside the list, above the rows it rules, and stays put when they scroll */
-.rlist .lhead { position: sticky; top: 0; z-index: 2; padding: 3px 6px; background: var(--paper); border-bottom: var(--px) solid var(--paper-lo); box-shadow: 0 var(--px) 0 var(--paper-hi); }
-.rlist .lhead > span {
+.rlist .lhead, .rreq .lhead { position: sticky; top: 0; z-index: 2; padding: 3px 6px; background: var(--paper); border-bottom: var(--px) solid var(--paper-lo); box-shadow: 0 var(--px) 0 var(--paper-hi); }
+.rlist .lhead > span, .rreq .lhead > span {
   padding: 4px 6px 3px; font: var(--t-ui); color: var(--ink); white-space: nowrap; overflow: hidden;
   background: var(--paper); border: var(--px) solid var(--ink);
   box-shadow: inset 1px 1px 0 var(--paper-hi), inset -1px -1px 0 var(--paper-lo);
@@ -94,7 +94,21 @@
 .rchar .review .reason { font: var(--t-body); min-height: 0; white-space: pre-wrap; }
 .rchar .review .reason:empty { display: none; }
 .rchar .review .rbtns { display: flex; gap: 6px; }
-.rchar .review .rbtns .gap { flex: 1; }   /* Request… sits at the far right */
+.rchar .review .rbtns .gap { flex: 1; }   /* Request… sits at the far right, View Requests under it */
+.rchar .review .rbtns .rq { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.roster button.link { background: none; border: 0; padding: 0; margin: 0; color: #0000ee; text-decoration: underline; cursor: pointer; font: var(--t-small); }
+.roster button.link:hover { color: var(--blood); }
+/* the requests window: a table like the list */
+.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 130px 1fr 90px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
+.rreq .rows { font: var(--t-ui); }
+.rreq .row { padding: 3px 6px; }
+.rreq .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+.rreq .row .q-text { white-space: normal; }
+.rreq .q-no { color: var(--ink-4); text-align: right; }
+.rreq .empty { padding: 8px; color: var(--ink-4); }
+.roster i.verdict.rq-open { background: var(--emitter); color: var(--ink); }
+.roster i.verdict.rq-done { background: var(--nen); color: var(--ink); }
+.roster i.verdict.rq-withdrawn { background: var(--paper-lo); color: var(--ink-4); }
 .rchar .review .reason .req b { font-weight: 700; }
 .rchar .review .log { font: var(--t-small); color: var(--ink-4); display: flex; flex-direction: column; gap: 2px; }
 .rchar .review .log .lrow b { color: var(--ink); font-weight: 700; }
@@ -104,6 +118,13 @@
 .rchar .frow.four { grid-template-columns: 1fr 90px 1.6fr 1.4fr; }
 .rchar .frow.three { grid-template-columns: 80px 1fr 1fr; }
 .rchar .f { min-width: 0; }
+/* the New wedge: the bot changed this since the reviewer's last verdict (Andrew, 2026-09-21) */
+.rchar .new { font: var(--t-small); font-style: normal; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; line-height: 14px;
+  background: var(--blood); color: var(--paper-hi); padding: 1px 5px 0 9px; clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%); pointer-events: none; }
+.rchar .slot .new, .rchar .tile .pic .new { position: absolute; top: 0; right: 0; z-index: 2; }
+.rchar .review .changes { font: var(--t-small); color: var(--ink); }
+.rchar .review .changes:empty { display: none; }
+.rchar .review .changes .since { color: var(--ink-4); }
 .rchar .f .lbl { margin: 4px 0 3px; display: flex; justify-content: space-between; }
 .rchar .lbl .count { text-transform: none; letter-spacing: 0; color: var(--ink-4); }
 .rchar .lbl .count.bad { color: var(--blood); }

@@ -174,6 +174,19 @@ DB, and `roster.py move <id> --after <id>` does the same from here.
 Numbers are deliberately not unique: a duplicate is a thing to fix,
 not an error. `roster.py list` shows both.
 
+## 8a½. Your changes are the ones that need review
+
+The server keeps a change log per version (what field or picture
+changed, by whom, bot or person). Andrew's rule (2026-09-21): a
+person's change is self-approved; YOURS are what the reviewers look
+at. So any change you make to an accepted or rejected character sends
+it back to pending, and the Roster DB marks every field and picture
+you touched since their last verdict with a red "New" wedge. Two
+consequences: never touch an accepted character casually (a batch of
+small edits is one review, a trickle is many), and a patch that
+changes nothing does not bump the version, so re-sending a field is
+harmless.
+
 ## 8b. Requests from the reviewers
 
 A reviewer can file a request on a character from the app's review box

@@ -13,6 +13,7 @@ import { RosterWindow, FILTERS } from "./list.js";
 import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
 import { ConfirmDialog, PromptDialog, ReasonDialog, RequestDialog } from "./dialogs.js";
+import { RequestsWindow, requestsId } from "./requests.js";
 import { busy } from "./busy.js";
 import { AVATAR_RATIO, CARD_RATIO } from "./fields.js";
 import "./roster.css";
@@ -93,6 +94,7 @@ export class RosterApp extends App {
       w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
       w.on("review", ({ status }) => this.review(id, status));
       w.on("request", () => this.request(id));
+      w.on("requests", () => this.openRequests(id));
       w.on("upload", ({ files }) => this.upload(id, files));
       w.on("crop", ({ id: imageId }) => this.openCrop(imageId));
       w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
@@ -156,6 +158,21 @@ export class RosterApp extends App {
       w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
       this.changed(c);
     } catch (err) { w?.say(err.message, true); }
+  }
+
+  /** View Requests: the character's request table in its own window, kept current from the character window's copy. */
+  openRequests(id) {
+    const cw = this.chars.get(id);
+    let w = this.os.wm.get(requestsId(id));
+    if (!w) {
+      w = new RequestsWindow({ id, name: cw?.char?.name, char: () => this.chars.get(id)?.char });
+      this.os.wm.add(w);
+      const off = this.os.bus?.on("roster:changed", e => { if (e?.id === id && w.state.open) w.update(); });
+      w.on("close", () => { off?.(); this.os.wm.remove(w.id); });
+    }
+    this.os.wm.open(w.id, w.state.placed ? null : (this.os.env.floating() ? { x: 200, y: 120 } : null));
+    w.update();
+    return w;
   }
 
   /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */
