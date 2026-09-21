@@ -2959,7 +2959,8 @@ body.stacked .room .logbox {
   gap: 6px;
   padding: 0 6px;
 }
-.rlist .lhead {
+.rlist .lhead,
+.rreq .lhead {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -2968,7 +2969,8 @@ body.stacked .room .logbox {
   border-bottom: var(--px) solid var(--paper-lo);
   box-shadow: 0 var(--px) 0 var(--paper-hi);
 }
-.rlist .lhead > span {
+.rlist .lhead > span,
+.rreq .lhead > span {
   padding: 4px 6px 3px;
   font: var(--t-ui);
   color: var(--ink);
@@ -3156,6 +3158,68 @@ body.stacked .room .logbox {
 .rchar .review .rbtns .gap {
   flex: 1;
 }
+.rchar .review .rbtns .rq {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.roster button.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+  font: var(--t-small);
+}
+.roster button.link:hover {
+  color: var(--blood);
+}
+.rreq .lhead,
+.rreq .row {
+  display: grid;
+  grid-template-columns: 36px 130px 1fr 108px 70px 96px 110px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.rreq .rows {
+  font: var(--t-ui);
+}
+.rreq .row {
+  padding: 3px 6px;
+}
+.rreq .row > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 1px;
+}
+.rreq .row .q-text {
+  white-space: normal;
+}
+.rreq .q-no {
+  color: var(--ink-4);
+  text-align: right;
+}
+.rreq .empty {
+  padding: 8px;
+  color: var(--ink-4);
+}
+.roster i.verdict.rq-open {
+  background: var(--emitter);
+  color: var(--ink);
+}
+.roster i.verdict.rq-done {
+  background: var(--nen);
+  color: var(--ink);
+}
+.roster i.verdict.rq-withdrawn {
+  background: var(--paper-lo);
+  color: var(--ink-4);
+}
 .rchar .review .reason .req b {
   font-weight: 700;
 }
@@ -3191,6 +3255,36 @@ body.stacked .room .logbox {
 }
 .rchar .f {
   min-width: 0;
+}
+.rchar .new {
+  font: var(--t-small);
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  line-height: 14px;
+  background: var(--blood);
+  color: var(--paper-hi);
+  padding: 1px 5px 0 9px;
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+  pointer-events: none;
+}
+.rchar .slot .new,
+.rchar .tile .pic .new {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+}
+.rchar .review .changes {
+  font: var(--t-small);
+  color: var(--ink);
+}
+.rchar .review .changes:empty {
+  display: none;
+}
+.rchar .review .changes .since {
+  color: var(--ink-4);
 }
 .rchar .f .lbl {
   margin: 4px 0 3px;

@@ -5890,6 +5890,16 @@ var HxH = (() => {
   var slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   var words = (s) => (String(s || "").trim().match(/\S+/g) || []).length;
   var winId = (id) => "win-roster-c-" + id;
+  function freshness(c) {
+    const rows = c.baseline ? (c.changes || []).filter((x) => x.bot && x.version > c.baseline.version) : [];
+    return {
+      rows,
+      fields: new Set(rows.filter((x) => x.kind === "field").map((x) => x.field)),
+      images: new Set(rows.filter((x) => x.kind === "image" && x.image_id && x.action !== "removed").map((x) => x.image_id))
+    };
+  }
+  var wedge = () => h("i", { className: "new", text: "New", title: "Changed by the bot since the last verdict" });
+  var fieldName = (k) => LABEL[k] || { avatar_image_id: "Avatar", card_image_id: "Card" }[k] || k;
   var FORM = `
   <div class="frow three">
     <div class="f"><label class="lbl">${LABEL.card_number}</label><input class="field" data-f="card_number" type="number" min="0" step="1"></div>
@@ -5928,13 +5938,14 @@ var HxH = (() => {
           <fieldset class="group review">
             <legend>Review</legend>
             <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span></div>
+            <div class="changes"></div>
             <div class="reason"></div>
             <div class="rbtns">
               <button class="btn" type="button" data-review="accepted">Accept</button>
               <button class="btn" type="button" data-review="rejected">Reject\u2026</button>
               <button class="btn" type="button" data-review="pending">Pending</button>
               <span class="gap"></span>
-              <button class="btn" type="button" data-request>Request\u2026</button>
+              <span class="rq"><button class="btn" type="button" data-request>Request\u2026</button><button class="link" type="button" data-requests>View Requests</button></span>
             </div>
             <div class="log"></div>
           </fieldset>
@@ -5978,6 +5989,7 @@ var HxH = (() => {
         const b = e.target.closest("[data-review]");
         if (b && !b.disabled) this.emit("review", { status: b.dataset.review });
         if (e.target.closest("[data-request]")) this.emit("request");
+        if (e.target.closest("[data-requests]")) this.emit("requests");
       });
       const form = el.querySelector(".form");
       form.addEventListener("input", (e) => {
@@ -6048,11 +6060,22 @@ var HxH = (() => {
     /** Everything from the character: title, slots, review, form (unless a field has focus), gallery. */
     setChar(c, { form = true } = {}) {
       this.char = c;
+      this.fresh = freshness(c);
       this.setTitle(`No. ${c.card_number ?? c.id} \xB7 ${c.name} (id ${c.id})`);
       this.renderSlots();
       this.renderReview();
       if (form) this.fillForm();
+      this.renderWedges();
       this.renderGallery();
+    }
+    /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
+    renderWedges() {
+      const f = this.el.querySelector(".form");
+      for (const w of f.querySelectorAll(".new")) w.remove();
+      for (const k of this.fresh.fields) {
+        const ctl = f.querySelector(`[data-f="${k}"]`) || (k === "nen_types" ? f.querySelector("[data-nen]") : k === "arcs" ? f.querySelector("[data-arc]") : null);
+        ctl?.closest(".f")?.querySelector(".lbl")?.append(wedge());
+      }
     }
     renderSlots() {
       const c = this.char;
@@ -6061,7 +6084,22 @@ var HxH = (() => {
         slot.classList.toggle("set", !!id);
         slot.replaceChildren(h("i", { className: "lab", text: slot.dataset.slot === "avatar_image_id" ? "Avatar" : "Card" }));
         if (id) slot.append(h("img", { alt: "", src: this.props.thumbURL?.(id) || "" }), h("button", { className: "tbtn clear", type: "button", title: "Clear", text: "\xD7" }));
+        if (this.fresh?.fields.has(slot.dataset.slot)) slot.append(wedge());
       }
+    }
+    /** One line under the verdict: what the bot changed since the last verdict, e.g. "Since v35 (accepted by abi), claude: Description, Notes · 3 pictures added". */
+    renderChanges() {
+      const c = this.char, box = this.el.querySelector(".changes"), rows = this.fresh.rows;
+      box.replaceChildren();
+      if (!rows.length) return;
+      const fields = [...new Set(rows.filter((x) => x.kind === "field").map((x) => x.field))].map(fieldName);
+      const count = (act, word) => {
+        const n = rows.filter((x) => x.kind === "image" && x.action === act).length;
+        return n ? `${n} picture${n === 1 ? "" : "s"} ${word}` : "";
+      };
+      const parts = [fields.join(", "), count("added", "added"), count("removed", "removed"), count("edited", "edited")].filter(Boolean);
+      const who = [...new Set(rows.map((x) => x.owner))].join(", ");
+      box.append(h("span", { className: "since", text: `Since v${c.baseline.version} (${c.baseline.status} by ${c.baseline.owner}), ${who}: ` }), h("span", { text: parts.join(" \xB7 ") }));
     }
     renderReview() {
       const c = this.char, el = this.el;
@@ -6070,10 +6108,10 @@ var HxH = (() => {
       st.className = "st " + c.review_status;
       el.querySelector(".verdict .ver").textContent = "v" + c.version;
       const last = (c.reviews || [])[0];
-      el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
-      const reason = el.querySelector(".reason");
-      if (c.review_status === "rejected") reason.textContent = c.review_reason;
-      else reason.replaceChildren(...(c.requests || []).filter((q) => q.status === "open").map((q) => h("div", { className: "req" }, h("b", { text: q.label || q.kind }), q.text ? ` \u2014 ${q.text}` : "")));
+      const asked = c.review_status === "requested" ? (c.requests || []).find((q) => q.status === "open") : null;
+      el.querySelector(".verdict .by").textContent = asked ? `by ${asked.owner}` : last && last.status === c.review_status ? `by ${last.owner}` : "";
+      this.renderChanges();
+      el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
       for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
       const log = el.querySelector(".log");
       log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
@@ -6133,7 +6171,7 @@ var HxH = (() => {
       return h(
         "figure",
         { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-        h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" })),
+        h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }), this.fresh?.images.has(im.id) ? wedge() : null),
         h(
           "figcaption",
           {},
@@ -6940,6 +6978,64 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/apps/roster/requests.js
+  var REQUEST_STATUS = { open: "Pending", done: "Fulfilled", withdrawn: "Withdrawn" };
+  var requestsId = (id) => `win-roster-q-${id}`;
+  var RequestsWindow = class extends Window {
+    /** props: id (character), name, char (() => the character as last loaded) */
+    constructor({ id, name, char, ...rest } = {}) {
+      super({ id: requestsId(id), title: `Requests \xB7 ${name || "#" + id}`, icon: "db", width: 760, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
+      this.charId = id;
+      this.char = char;
+    }
+    render() {
+      const el = super.render();
+      this.rows = h("div", { className: "rows" });
+      this.head = h(
+        "div",
+        { className: "lhead" },
+        h("span", { className: "q-no", text: "#" }),
+        h("span", { className: "q-kind", text: "Request" }),
+        h("span", { className: "q-text", text: "Details" }),
+        h("span", { className: "q-st", text: "Status" }),
+        h("span", { className: "q-by", text: "By" }),
+        h("span", { className: "q-when", text: "Filed" }),
+        h("span", { className: "q-done", text: "Resolved" })
+      );
+      this.body = h("div", { className: "lbody" });
+      this.rows.append(this.head, this.body);
+      this.pane = this.adopt(new ScrollPane({ content: this.rows }), el.querySelector(".body"), { before: el.querySelector(".status") });
+      this.pane.el.classList.add("sunken", "listbox");
+      this.countEl = el.querySelector(".count");
+      this.update();
+      return el;
+    }
+    when(iso) {
+      const d = new Date(iso);
+      return isNaN(d) ? "" : d.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+    /** Newest first. */
+    update() {
+      const c = this.char?.() || {};
+      const list = [...c.requests || []].sort((a, b) => b.id - a.id);
+      this.body.replaceChildren(...list.map((q) => h(
+        "div",
+        { className: "row " + q.status, dataset: { id: String(q.id) } },
+        h("span", { className: "q-no", text: String(q.id) }),
+        h("span", { className: "q-kind", text: q.label || q.kind }),
+        h("span", { className: "q-text", text: q.text || "", title: q.text || "" }),
+        h("span", { className: "q-st" }, h("i", { className: "verdict rq-" + q.status, text: REQUEST_STATUS[q.status] || q.status })),
+        h("span", { className: "q-by", text: q.owner || "" }),
+        h("span", { className: "q-when", text: `${this.when(q.created_at)} \xB7 v${q.version}` }),
+        h("span", { className: "q-done", text: q.resolved_at ? `${this.when(q.resolved_at)}${q.resolved_by ? " \xB7 " + q.resolved_by : ""}` : "" })
+      )));
+      if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
+      const open = list.filter((q) => q.status === "open").length;
+      this.countEl.textContent = `${list.length} request${list.length === 1 ? "" : "s"} \xB7 ${open} pending`;
+      this.pane.update();
+    }
+  };
+
   // html/hxh/apps/roster/busy.js
   function busy(win, promise, label = "Please wait\u2026") {
     const el = win.el;
@@ -7045,6 +7141,7 @@ var HxH = (() => {
         w.on("slot", ({ slot, id: imageId }) => this.patch(id, { [slot]: imageId }));
         w.on("review", ({ status }) => this.review(id, status));
         w.on("request", () => this.request(id));
+        w.on("requests", () => this.openRequests(id));
         w.on("upload", ({ files }) => this.upload(id, files));
         w.on("crop", ({ id: imageId }) => this.openCrop(imageId));
         w.on("image", ({ act, id: imageId }) => this.imageAct(id, act, imageId));
@@ -7112,6 +7209,25 @@ var HxH = (() => {
       } catch (err) {
         w?.say(err.message, true);
       }
+    }
+    /** View Requests: the character's request table in its own window, kept current from the character window's copy. */
+    openRequests(id) {
+      const cw = this.chars.get(id);
+      let w = this.os.wm.get(requestsId(id));
+      if (!w) {
+        w = new RequestsWindow({ id, name: cw?.char?.name, char: () => this.chars.get(id)?.char });
+        this.os.wm.add(w);
+        const off = this.os.bus?.on("roster:changed", (e) => {
+          if (e?.id === id && w.state.open) w.update();
+        });
+        w.on("close", () => {
+          off?.();
+          this.os.wm.remove(w.id);
+        });
+      }
+      this.os.wm.open(w.id, w.state.placed ? null : this.os.env.floating() ? { x: 200, y: 120 } : null);
+      w.update();
+      return w;
     }
     /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */
     async move(id, after) {
