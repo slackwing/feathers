@@ -3,15 +3,15 @@
    margins drag the window). Cards are the accepted characters of the
    Roster DB (GET /hxh/api/db/binder — the old html/hxh/roster.json is
    DEPRECATED, kept only for reference), each printed by GICard
-   (apps/card.js, spec docs/GI_CARD.md). Tabs are one per GROUP of
-   cards; the grouping is one function (groupCards) and only groups
-   that have cards get a tab, so tabs appear on their own as characters
-   are added. The pure parts (grouping, pagination, layout maths) are
-   exported for tests. */
+   (apps/card.js, spec docs/GI_CARD.md), in card-number order
+   (card_number — the Roster DB's binder position, renumbered by
+   dragging rows there), PER_PAGE to a page. Tabs are one per PAGE, so
+   a reader can see how deep into the book they are (Andrew,
+   2026-09-21: no tabs by Nen type or arc). The pure parts (pagination,
+   layout maths) are exported for tests. */
 import { App } from "../os/apps.js";
 import { Window } from "../os/window.js";
 import { h, esc } from "../os/dom.js";
-import { textColorFor } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
 import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
 import "./binder.css";
@@ -25,17 +25,6 @@ export const TYPES = [
   { slug: "specialization", code: "SP", name: "Specialist",  ja: "特質系", hue: "var(--specialist)",  hex: "#58e05c" },
   { slug: "",               code: "--", name: "Non-user",    ja: "非能力者", hue: "var(--none)",      hex: "#9a9a9a" },
 ];
-// Characters with no stated Nen type are filed by the arc they first
-// appear in, on muted arc-coloured tabs, so a page is still one tab.
-export const ARCS = [
-  { slug: "hunter-exam",       code: "EX", name: "Hunter Exam",       ja: "ハンター試験編",     hex: "#b8ad97" },
-  { slug: "zoldyck-family",    code: "ZO", name: "Zoldyck Family",    ja: "ゾルディック家編",   hex: "#a89bb8" },
-  { slug: "heavens-arena",     code: "HA", name: "Heavens Arena",     ja: "天空闘技場編",       hex: "#9fb8b0" },
-  { slug: "yorknew-city",      code: "YN", name: "Yorknew City",      ja: "ヨークシン編",       hex: "#b8a0a0" },
-  { slug: "greed-island",      code: "GI", name: "Greed Island",      ja: "グリードアイランド編", hex: "#a3b89b" },
-  { slug: "chimera-ant",       code: "CA", name: "Chimera Ant",       ja: "キメラアント編",     hex: "#b8b493" },
-  { slug: "chairman-election", code: "EL", name: "Chairman Election", ja: "会長選挙編",         hex: "#a8aec0" },
-];
 export { LIMIT };
 export const PER_PAGE = 9;                         // 3 × 3 sleeves per page, like the show
 export const SOURCE = "/hxh/api/db/binder";        // the Roster DB's accepted characters
@@ -48,35 +37,12 @@ export const firstSentence = s => (String(s || "").match(/^[^.!?]*[.!?]/) || [s 
 /** What a card's description box prints: the card description, else the profile's first sentence. */
 export const cardText = c => c.card_description || firstSentence(c.description);
 
-/**
- * The grouping behind the tabs: one group per Nen type, the untyped by
- * first arc. Returns only groups that have cards, in tab order. Swap
- * this function to change what the tabs mean (Andrew has "a better
- * idea for the tabs" — everything else keys off the group objects).
- */
-export function groupCards(chars) {
-  const out = [];
-  for (const t of TYPES.slice(0, -1)) {
-    const mine = chars.filter(c => typeOf(c) === t);
-    if (mine.length) out.push({ ...t, cards: mine });
-  }
-  const untyped = chars.filter(c => !(c.nen_types || []).length);
-  for (const a of ARCS) {
-    const mine = untyped.filter(c => (c.arcs || [])[0] === a.slug);
-    if (mine.length) out.push({ ...a, hue: a.hex, cards: mine });
-  }
-  return out;
-}
-
-/** One tab per page; a group never shares a page. */
+/** The pages: PER_PAGE cards each, in card-number order (a duplicate number keeps id order). Each page is a tab. */
 export function paginate(chars) {
+  const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
   const out = [];
-  for (const g of groupCards(chars)) {
-    const { cards, ...type } = g;
-    for (let i = 0; i < cards.length; i += PER_PAGE) {
-      out.push({ type, cards: cards.slice(i, i + PER_PAGE), n: Math.floor(i / PER_PAGE) + 1, of: Math.ceil(cards.length / PER_PAGE) });
-    }
-  }
+  for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ cards: sorted.slice(i, i + PER_PAGE), n: out.length + 1 });
+  for (const p of out) p.of = out.length;
   return out;
 }
 
@@ -207,7 +173,7 @@ export class BinderApp extends App {
 
   /** The cards, in the order the API gives them (by number). A reload keeps the page the reader is on. */
   setRoster(list) {
-    this.roster = (list || []).map(c => ({ ...c, no: c.no ?? c.id }));
+    this.roster = (list || []).map(c => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
     this.pages = paginate(this.roster);
     this.renderTabs();
     this.showPage(Math.min(this.page || 0, Math.max(0, this.pages.length - 1)));
@@ -287,12 +253,7 @@ export class BinderApp extends App {
     const tabs = this.$(".tabs");
     tabs.replaceChildren();
     this.pages.forEach((p, i) => {
-      const b = h("button", { type: "button", className: "tab", text: p.type.code,
-        title: `${p.type.name} ${p.type.ja}` + (p.of > 1 ? ` · ${p.n}/${p.of}` : ""),
-        onclick: () => this.showPage(i) });
-      b.style.setProperty("--hue", p.type.hue);
-      b.style.setProperty("--t", textColorFor(p.type.hex));
-      tabs.append(b);
+      tabs.append(h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.showPage(i) }));
     });
   }
 
@@ -307,7 +268,7 @@ export class BinderApp extends App {
     this.$(".tabs").querySelectorAll(".tab").forEach((t, k) => t.classList.toggle("on", k === this.page));
     p.cards.forEach(c => box.append(this.cardEl(c)));
     for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
-    this.$(".pageno").innerHTML = `${this.page + 1} / ${this.pages.length}<span class="ja">${esc(p.type.ja)}</span>`;
+    this.$(".pageno").textContent = `${this.page + 1} / ${this.pages.length}`;
     if (this.sel && !p.cards.includes(this.sel)) this.select(null);
   }
 

@@ -1,30 +1,24 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, groupCards, binderLayout, TYPES, ARCS, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
+import { paginate, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RegisterApp } from "../html/hxh/apps/register.js";
 
 let nextId = 1;
 const mk = (name, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ id: nextId++, name, first: name, rank: "C", nen_types: nen, arcs, arms: [], description: "First. Second.", card_description: "", ...extra });
 
-test("groupCards / paginate: one tab per group that has cards, PER_PAGE cards a page, the untyped filed by first arc", () => {
-  const chars = [
-    ...Array.from({ length: PER_PAGE + 1 }, (_, i) => mk("en" + i, ["enhancement"])),
-    mk("tr", ["transmutation", "emission"]),
-    mk("ex1"), mk("ex2"), mk("zo", [], ["zoldyck-family"]),
-  ];
-  assert.deepEqual(groupCards(chars).map(g => [g.code, g.cards.length]), [["EN", 10], ["TR", 1], ["EX", 2], ["ZO", 1]]);
+test("paginate: PER_PAGE cards a page in card-number order (a duplicate number keeps id order), every page a tab, nothing grouped by Nen or arc", () => {
+  const chars = Array.from({ length: PER_PAGE + 2 }, (_, i) => mk("c" + i, i % 2 ? ["enhancement"] : [], ["hunter-exam"], { no: PER_PAGE + 2 - i }));   // numbers run against ids
   const pages = paginate(chars);
-  assert.deepEqual(pages.map(p => p.type.code), ["EN", "EN", "TR", "EX", "ZO"]);
-  assert.equal(pages[0].cards.length, PER_PAGE);
+  assert.equal(pages.length, 2);
   assert.deepEqual([pages[0].n, pages[0].of, pages[1].n, pages[1].of], [1, 2, 2, 2]);
-  assert.equal(pages[2].cards[0].name, "tr");   // first Nen type wins
-  assert.equal(pages[4].type.hue, ARCS[1].hex);   // arc tabs use their own hex as hue
+  assert.deepEqual(pages[0].cards.map(c => c.no), Array.from({ length: PER_PAGE }, (_, i) => i + 1));
+  assert.deepEqual(pages[1].cards.map(c => c.no), [PER_PAGE + 1, PER_PAGE + 2]);
   assert.equal(paginate([]).length, 0);
-  assert.deepEqual(groupCards([mk("solo", ["enhancement"])]).map(g => g.code), ["EN"]);   // one character → one tab
+  const dup = [mk("a", [], [], { no: 2 }), mk("b", [], [], { no: 2 }), mk("c", [], [], { no: 1 })];
+  assert.deepEqual(paginate(dup)[0].cards.map(c => c.name), ["c", "a", "b"]);
   assert.equal(TYPES.length, 7);
-  assert.equal(ARCS.length, 7);
 });
 
 test("helpers: typeOf, rankBox, cardNo, firstSentence, cardText", () => {
@@ -121,17 +115,19 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   await os.launch("binder");
   nextId = 1;
   b.setRoster([
-    mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon", rank: "S", arms: ["fishing-rod"], affiliation: "Hunter", card_description: "A cheerful boy.", card_image_id: 18, avatar_image_id: 12 }),
-    mk("Killua Zoldyck", ["transmutation"], ["hunter-exam"], { first: "Killua", avatar_image_id: 30 }),
-    mk("Leorio", [], ["hunter-exam"], { first: "Leorio" }),
+    mk("Killua Zoldyck", ["transmutation"], ["hunter-exam"], { first: "Killua", avatar_image_id: 30, card_number: 2 }),   // id 1 but No. 2: card_number orders the book, not the id
+    mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon", rank: "S", arms: ["fishing-rod"], affiliation: "Hunter", card_description: "A cheerful boy.", card_image_id: 18, avatar_image_id: 12, card_number: 1 }),
+    mk("Leorio", [], ["hunter-exam"], { first: "Leorio", card_number: 3 }),
+    ...Array.from({ length: PER_PAGE - 2 }, (_, i) => mk("filler" + i, [], ["hunter-exam"], { card_number: 4 + i })),
   ]);
-  assert.equal(b.pages.length, 3);
+  assert.equal(b.pages.length, 2);
   const tabs = b.$(".tabs").querySelectorAll(".tab");
-  assert.deepEqual([...tabs].map(t => t.textContent), ["EN", "TR", "EX"]);
+  assert.deepEqual([...tabs].map(t => t.textContent), ["1", "2"]);
+  assert.deepEqual([...tabs].map(t => t.title), ["Page 1 of 2", "Page 2 of 2"]);
   assert.ok(tabs[0].classList.contains("on"));
   const cards = b.$(".cards");
-  assert.equal(cards.querySelectorAll(".card").length, 1);
-  assert.equal(cards.querySelectorAll(".slot").length, PER_PAGE - 1);
+  assert.equal(cards.querySelectorAll(".card").length, PER_PAGE);
+  assert.equal(cards.querySelectorAll(".slot").length, 0);
   const card = cards.querySelector(".card .gicard");
   assert.ok(card, "the sleeve holds a printed GICard");
   assert.equal(card.querySelector(".gi-panel.no .gi-txt").textContent, "001");
@@ -140,7 +136,7 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   assert.equal(card.querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/18");
   assert.equal(card.querySelector(".gi-desc").textContent, "A cheerful boy.");
   assert.ok(card.classList.contains("kind-restricted"));
-  assert.match(b.$(".pageno").textContent, /^1 \/ 3/);
+  assert.equal(b.$(".pageno").textContent, "1 / 2");
   assert.match(b.$(".screen").innerHTML, /カードを選択/);
   d.click(cards.querySelector(".card"));
   assert.equal(b.selected.name, "Gon Freecss");
@@ -151,19 +147,25 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   assert.match(scr.innerHTML, /Fishing Rod/);
   assert.match(scr.querySelector(".status").textContent, /残り 1枚/);
   assert.equal(scr.querySelector(".desc").textContent, "First. Second.");
-  d.click(b.$('[data-dir="down"]'));   // past the last card → next page, first card
-  assert.equal(b.page, 1);
+  d.click(b.$('[data-dir="down"]'));   // the next card on the page
+  assert.equal(b.page, 0);
   assert.equal(b.selected.name, "Killua Zoldyck");
-  const k = b.$(".cards .card .gicard");
+  const k = b.$(".cards .card.on .gicard");
+  assert.equal(k.querySelector(".gi-panel.no .gi-txt").textContent, "002");
   assert.equal(k.querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/30");   // no card picture yet: the avatar stands in
   assert.equal(k.querySelector(".gi-desc").textContent, "First.");                              // no card description: the profile's first sentence
   d.click(b.$('[data-dir="up"]'));
-  assert.equal(b.page, 0);
-  d.click(b.$('[data-dir="right"]')); d.click(b.$('[data-dir="right"]'));
-  assert.equal(b.page, 2);
+  assert.equal(b.selected.name, "Gon Freecss");
+  d.click(b.$('[data-dir="right"]'));
+  assert.equal(b.page, 1);
   assert.equal(b.selected, null);     // selection cleared when its page leaves
+  assert.equal(b.$(".cards").querySelectorAll(".card").length, 1);
+  assert.equal(b.$(".cards").querySelectorAll(".slot").length, PER_PAGE - 1);
   assert.ok(b.$(".cards .card .gicard .gi-nopic"), "no picture at all: the hatched window");
+  assert.ok(tabs[1].classList.contains("on") && !tabs[0].classList.contains("on"));
   d.click(b.$('[data-dir="left"]'));
+  assert.equal(b.page, 0);
+  d.click(tabs[1]);
   assert.equal(b.page, 1);
   d.click(tabs[0]);
   assert.equal(b.page, 0);

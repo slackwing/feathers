@@ -56,6 +56,11 @@
 .rlist .listbox { height: 580px; max-height: 68vh; }
 .rlist .rows { font: var(--t-ui); }
 .rlist .row { padding: 3px 6px; cursor: default; }
+/* dragging a row: the row dims, a red line marks where it lands */
+.rlist .lbody { position: relative; }
+.rlist .rows.dragging { user-select: none; cursor: grabbing; }
+.rlist .row.dragging { opacity: .45; }
+.rlist .drop-line { position: absolute; left: 4px; right: 4px; height: 0; border-top: 2px solid var(--blood); pointer-events: none; z-index: 3; }
 .rlist .c-pics { display: flex; gap: 0; font-variant-numeric: tabular-nums; }
 .rlist .c-pics i { font-style: normal; width: 24px; text-align: right; }
 .rlist .c-pics i.zero { color: var(--paper-dim); }
@@ -97,6 +102,7 @@
 .rchar .profile .form { display: flex; flex-direction: column; gap: 6px; }
 .rchar .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
 .rchar .frow.four { grid-template-columns: 1fr 90px 1.6fr 1.4fr; }
+.rchar .frow.three { grid-template-columns: 80px 1fr 1fr; }
 .rchar .f { min-width: 0; }
 .rchar .f .lbl { margin: 4px 0 3px; display: flex; justify-content: space-between; }
 .rchar .lbl .count { text-transform: none; letter-spacing: 0; color: var(--ink-4); }

@@ -48,6 +48,7 @@ export class RosterApp extends App {
     const w = this.listWin = new RosterWindow({ thumbURL: id => this.api.thumbURL(id), menus: win => this.listMenus(win) });
     os.wm.add(w);
     w.on("open", ({ id }) => this.openChar(id));
+    w.on("move", ({ id, after }) => this.move(id, after));
     return w;
   }
 
@@ -154,6 +155,17 @@ export class RosterApp extends App {
       w?.setChar(c, { form: false });
       w?.say(status === "accepted" ? "Accepted" : status === "rejected" ? "Rejected" : "Back to pending");
       this.changed(c);
+    } catch (err) { w?.say(err.message, true); }
+  }
+
+  /** A row dragged between two others: one atomic renumbering on the server; the list re-renders from its reply. */
+  async move(id, after) {
+    const w = this.listWin;
+    try {
+      const list = await this.hold(w, this.api.move(id, after), "Renumbering…");
+      w?.setChars(list);
+      w?.select(id);
+      this.os.bus?.emit("roster:changed", { id });
     } catch (err) { w?.say(err.message, true); }
   }
 

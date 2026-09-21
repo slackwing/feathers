@@ -28,6 +28,8 @@ export class RosterAPI {
   get(id) { return this.call("GET", `/chars/${id}`); }
   create(fields) { return this.call("POST", "/chars", fields); }
   patch(id, fields) { return this.call("PATCH", `/chars/${id}`, fields); }
+  /** Put a character right after another in the binder order (after = 0 → the front); the server renumbers atomically and answers with the whole list. */
+  move(id, after) { return this.call("POST", `/chars/${id}/move`, { after }); }
   review(id, status, reason = "") { return this.call("POST", `/chars/${id}/review`, { status, reason }); }
   requestKinds() { return this.call("GET", "/request-kinds"); }
   request(id, kind, text = "") { return this.call("POST", `/chars/${id}/request`, { kind, text }); }

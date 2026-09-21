@@ -164,6 +164,16 @@ profile, crop the avatar and card, and pass a verdict.
   with `--type upscaled --source-image <id>`.
 Every derived picture carries `source_image_id` so lineage is visible.
 
+## 8a. Card numbers
+
+`card_number` is the character's place in the binder (Andrew,
+2026-09-21) — separate from the id, which is the handle roster.py
+uses and never changes. A new character takes the next number after
+the highest; the reviewers renumber by dragging rows in the Roster
+DB, and `roster.py move <id> --after <id>` does the same from here.
+Numbers are deliberately not unique: a duplicate is a thing to fix,
+not an error. `roster.py list` shows both.
+
 ## 8b. Requests from the reviewers
 
 A reviewer can file a request on a character from the app's review box

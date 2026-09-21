@@ -3,7 +3,7 @@
    picture categories (gallery sections AND the list's Pics counts).
    Nothing else spells these out. */
 export const FIELDS = [
-  ["name", "Name"], ["name_ja", "Japanese"], ["first", "Short"], ["rank", "Card Rank"], ["nen_types", "Nen"],
+  ["card_number", "No."], ["name", "Name"], ["name_ja", "Japanese"], ["first", "Short"], ["rank", "Card Rank"], ["nen_types", "Nen"],
   ["affiliation", "Affiliation"], ["arcs", "Arcs"], ["arms", "Arms"], ["description", "Description"], ["card_description", "Card description"], ["notes", "Notes"],
 ];
 /* the two picture slots a card needs: avatar 1:1, card illustration 16:9 (the Greed Island card's picture window) */

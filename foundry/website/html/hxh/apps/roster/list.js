@@ -1,10 +1,12 @@
 /* RosterWindow — the character list, a 90s "details" view: column
    headers as raised buttons INSIDE the sunken list (sticky at the top,
    so they line up with the rows under the same scrollbar), one row per
-   character, a status bar counting them. All verdicts show, pending
-   first, then accepted, then rejected; View narrows to one. Column
-   names and picture categories come from fields.js. Double-click (or
-   Enter) opens the character. */
+   character, a status bar counting them. All verdicts show, sorted by
+   status (pending, requested, accepted, rejected) then by card number;
+   View narrows to one status. Column names and picture categories come
+   from fields.js. Double-click (or Enter) opens the character. Rows
+   drag: dropping one between two others is ONE renumbering on the
+   server (Andrew, 2026-09-21), shown under the busy overlay. */
 import { Window } from "../../os/window.js";
 import { h } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
@@ -13,6 +15,24 @@ import { LABEL, TYPES, STATUSES, STATUS_ORDER } from "./fields.js";
 export const FILTERS = [["", "All"], ...STATUSES];
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 const PICS_TITLE = TYPES.map(([, l]) => l).join(" · ");
+export const number = c => c.card_number ?? c.id;
+
+/**
+ * Where a dragged row would land: the row above the insertion point,
+ * as { after: its id (0 for the top), y: where to draw the line } — or
+ * null when the drop would leave the order as it is. rows are the row
+ * elements in their visual order; y is the pointer's clientY.
+ */
+export function dropTarget(rows, y, id) {
+  const others = rows.filter(r => +r.dataset.id !== id);
+  const before = others.find(r => { const b = r.getBoundingClientRect(); return y < b.top + b.height / 2; });
+  const i = before ? others.indexOf(before) : others.length;
+  const after = i === 0 ? 0 : +others[i - 1].dataset.id;
+  const cur = rows.findIndex(r => +r.dataset.id === id);
+  if (after === (cur > 0 ? +rows[cur - 1].dataset.id : 0)) return null;
+  const last = others[others.length - 1];
+  return { after, y: before ? before.offsetTop : last ? last.offsetTop + last.offsetHeight : 0 };
+}
 
 export class RosterWindow extends Window {
   /** props: menus (win => spec), thumbURL(id) */
@@ -31,7 +51,7 @@ export class RosterWindow extends Window {
     const el = super.render();
     this.rows = h("div", { className: "rows", role: "listbox", tabindex: "0" });
     this.head = h("div", { className: "lhead" },
-      h("span", { className: "c-no", text: "#" }), h("span", { className: "c-av" }),
+      h("span", { className: "c-no", text: LABEL.card_number, title: "Card number" }), h("span", { className: "c-av" }),
       h("span", { className: "c-name", text: LABEL.name }), h("span", { className: "c-ja", text: LABEL.name_ja }),
       h("span", { className: "c-rank", text: LABEL.rank }), h("span", { className: "c-nen", text: LABEL.nen_types }),
       h("span", { className: "c-aff", text: LABEL.affiliation }), h("span", { className: "c-pics", text: "Pics", title: PICS_TITLE }),
@@ -44,6 +64,7 @@ export class RosterWindow extends Window {
     this.countEl = el.querySelector(".count");
     this.body.addEventListener("click", e => { const r = e.target.closest(".row"); if (r) this.select(+r.dataset.id); });
     this.body.addEventListener("dblclick", e => { const r = e.target.closest(".row"); if (r) this.emit("open", { id: +r.dataset.id }); });
+    this.body.addEventListener("mousedown", e => this.dragStart(e));
     this.rows.addEventListener("keydown", e => {
       if (e.key === "Enter" && this.selected) { e.preventDefault(); this.emit("open", { id: this.selected }); }
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -63,10 +84,41 @@ export class RosterWindow extends Window {
   setFilter(f) { this.filter = f; this.renderRows(); }
   say(msg, err = false) { this.msgEl.textContent = msg; this.msgEl.classList.toggle("err", !!err); }
 
-  /** Pending first, then accepted, then rejected; by number within. */
+  /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
   shown() {
     return this.chars.filter(c => !this.filter || c.review_status === this.filter)
-      .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || a.id - b.id);
+      .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
+  }
+
+  /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
+  dragStart(e) {
+    if (e.button !== 0) return;
+    const row = e.target.closest(".row");
+    if (!row) return;
+    const id = +row.dataset.id, doc = row.ownerDocument;
+    const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
+    const move = ev => {
+      if (!st.on) {
+        if (Math.abs(ev.clientX - st.x0) + Math.abs(ev.clientY - st.y0) < 4) return;
+        st.on = true;
+        row.classList.add("dragging"); this.rows.classList.add("dragging");
+        st.line = h("div", { className: "drop-line" });
+        this.body.append(st.line);
+      }
+      ev.preventDefault();
+      const t = dropTarget([...this.body.querySelectorAll(".row")], ev.clientY, id);
+      st.after = t ? t.after : null;
+      st.line.hidden = !t;
+      if (t) st.line.style.top = t.y + "px";
+    };
+    const end = ev => {
+      doc.removeEventListener("mousemove", move); doc.removeEventListener("mouseup", end); doc.removeEventListener("keydown", key);
+      if (!st.on) return;
+      row.classList.remove("dragging"); this.rows.classList.remove("dragging"); st.line.remove();
+      if (ev && st.after !== null) this.emit("move", { id, after: st.after });
+    };
+    const key = ev => { if (ev.key === "Escape") end(null); };
+    doc.addEventListener("mousemove", move); doc.addEventListener("mouseup", end); doc.addEventListener("keydown", key);
   }
 
   renderRows() {
@@ -84,7 +136,7 @@ export class RosterWindow extends Window {
     const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
     const counts = TYPES.map(([t]) => (c.image_counts || {})[t] || 0);
     return h("div", { className: "row", dataset: { id: String(c.id) }, role: "option" },
-      h("span", { className: "c-no", text: String(c.id) }),
+      h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
       h("span", { className: "c-av" }, av),
       h("span", { className: "c-name", text: c.name }),
       h("span", { className: "c-ja", text: c.name_ja || "" }),

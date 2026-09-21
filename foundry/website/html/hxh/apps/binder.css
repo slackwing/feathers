@@ -133,7 +133,7 @@
 }
 .tab {
   flex: 0 0 auto; min-width: 34px; height: 22px; padding: 2px 3px 0;
-  background: var(--hue, var(--none)); color: var(--t, var(--ink));
+  background: var(--hue, var(--paper)); color: var(--t, var(--ink));
   border: var(--px) solid var(--ink); border-bottom: 0;
   font: 10px/1 var(--font-px); text-transform: uppercase; overflow: hidden; white-space: nowrap;
   cursor: pointer; display: grid; place-items: center;

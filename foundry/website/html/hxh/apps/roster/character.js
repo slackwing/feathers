@@ -25,7 +25,8 @@ export const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
 export const winId = id => "win-roster-c-" + id;
 
 const FORM = `
-  <div class="frow">
+  <div class="frow three">
+    <div class="f"><label class="lbl">${LABEL.card_number}</label><input class="field" data-f="card_number" type="number" min="0" step="1"></div>
     <div class="f"><label class="lbl">${LABEL.name}</label><input class="field" data-f="name" maxlength="100"></div>
     <div class="f"><label class="lbl">${LABEL.name_ja}</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
   </div>
@@ -121,6 +122,7 @@ export class CharacterWindow extends Window {
       if (t.dataset.f) {
         let v = t.value;
         if (t.dataset.f === "arms") v = v.split(",").map(slugify).filter(Boolean);
+        else if (t.dataset.f === "card_number") v = Math.max(0, parseInt(v, 10) || 0);
         else if (t.tagName !== "TEXTAREA") v = v.trim();
         this.emit("patch", { fields: { [t.dataset.f]: v } });
       } else if (t.dataset.nen !== undefined) {
@@ -155,7 +157,7 @@ export class CharacterWindow extends Window {
   /** Everything from the character: title, slots, review, form (unless a field has focus), gallery. */
   setChar(c, { form = true } = {}) {
     this.char = c;
-    this.setTitle(`#${c.id} ${c.name}`);
+    this.setTitle(`No. ${c.card_number ?? c.id} · ${c.name} (id ${c.id})`);
     this.renderSlots();
     this.renderReview();
     if (form) this.fillForm();
@@ -200,6 +202,7 @@ export class CharacterWindow extends Window {
   fillForm() {
     const c = this.char, f = this.el.querySelector(".form");
     for (const k of ["name", "name_ja", "first", "rank", "affiliation", "description", "card_description", "notes"]) f.querySelector(`[data-f="${k}"]`).value = c[k] || (k === "rank" ? "C" : "");
+    f.querySelector('[data-f="card_number"]').value = String(c.card_number ?? c.id);
     f.querySelector('[data-f="arms"]').value = (c.arms || []).join(", ");
     f.querySelectorAll("[data-nen]").forEach((s, i) => { s.value = (c.nen_types || [])[i] || ""; });
     for (const [s] of ARCS) f.querySelector(`[data-arc="${s}"]`).checked = (c.arcs || []).includes(s);

@@ -11,11 +11,11 @@ const ADMIN = { username: "andrew", display_name: "Andrew", initial: "AC", color
 const GUEST = { username: "abi", display_name: "Abi", initial: "AG", color: "#349db2", roles: [{ website: "hxh", role: "guest" }] };
 const IMG = (id, type, extra = {}) => ({ id, char_id: 3, type, source_image_id: null, mime: "image/png", width: 1920, height: 1080, bytes: 100000, sha256: "x", source_url: "", caption: "cap " + id, status: "kept", owner: "claude", created_at: "2026-09-19T00:00:00Z", ...extra });
 const gon = () => ({ id: 3, name: "Gon Freecss", name_ja: "ゴン＝フリークス", first: "Gon", rank: "S", nen_types: ["enhancement"], affiliation: "Hunter Association",
-  arcs: ["hunter-exam", "greed-island"], arms: ["fishing-rod"], description: "A boy.", notes: "n", version: 4, review_status: "pending", review_reason: "",
+  arcs: ["hunter-exam", "greed-island"], arms: ["fishing-rod"], description: "A boy.", notes: "n", version: 4, review_status: "pending", review_reason: "", card_number: 3,
   avatar_image_id: null, card_image_id: null, owner: "claude", created_at: "2026-09-19T00:00:00Z", updated_at: "2026-09-19T00:00:00Z", image_count: 3,
   card_description: "", images: [IMG(12, "cropped", { source_image_id: 10, width: 640, height: 360, owner: "abi" }), IMG(11, "cropped", { source_image_id: 10, width: 500, height: 500, owner: "andrew" }), IMG(10, "raw")],
   reviews: [{ id: 1, char_id: 3, version: 2, status: "rejected", reason: "wrong Nen", owner: "andrew", created_at: "2026-09-18T00:00:00Z" }] });
-const killua = () => ({ ...gon(), id: 4, name: "Killua Zoldyck", review_status: "accepted", images: [], reviews: [], image_count: 0, version: 1 });
+const killua = () => ({ ...gon(), id: 4, card_number: 4, name: "Killua Zoldyck", review_status: "accepted", images: [], reviews: [], image_count: 0, version: 1 });
 
 let d, os, log, api, state;
 async function boot(me = ADMIN) {
@@ -93,7 +93,7 @@ test("launch opens the list: every verdict, pending first; headers inside the li
   assert.equal(w.filter, "");
   assert.deepEqual([...w.body.querySelectorAll(".row .c-name")].map(e => e.textContent), ["Aaa Pending", "Gon Freecss", "Killua Zoldyck", "Zzz Rejected"]);
   assert.equal(w.head.parentElement, w.rows);   // the header scrolls with the rows, under the same scrollbar
-  assert.deepEqual([...w.head.children].map(e => e.textContent), ["#", "", "Name", "Japanese", "Card Rank", "Nen", "Affiliation", "Pics", "v", "Review"]);
+  assert.deepEqual([...w.head.children].map(e => e.textContent), ["No.", "", "Name", "Japanese", "Card Rank", "Nen", "Affiliation", "Pics", "v", "Review"]);
   assert.equal(w.countEl.textContent, "4 characters · 1 pending");
   const gonRow = w.body.querySelector('.row[data-id="3"]');
   assert.equal(gonRow.querySelector(".c-ver").textContent, "4");
@@ -109,7 +109,7 @@ test("launch opens the list: every verdict, pending first; headers inside the li
   d.key(w.rows, "Enter");
   await tick();
   assert.ok(charWin() instanceof CharacterWindow && charWin().state.open);
-  assert.equal(charWin().title, "#3 Gon Freecss");
+  assert.equal(charWin().title, "No. 3 · Gon Freecss (id 3)");
 });
 
 test("the character window: profile, review box, every picture category (empty ones too), thumbnails by proportion; a field change PATCHes and bumps the version", async () => {
@@ -126,7 +126,8 @@ test("the character window: profile, review box, every picture category (empty o
   assert.match(el.querySelector(".log").textContent, /v2 rejected andrew — wrong Nen/);
   assert.deepEqual([...el.querySelectorAll(".sec")].map(s => s.dataset.type), ["raw", "uploaded", "cropped", "pixelated", "upscaled", "transparent"]);
   assert.deepEqual([...el.querySelectorAll(".sec .sech")].map(s => s.textContent), ["Random1", "Uploaded0", "Edited2", "Pixel art0", "Upscaled0", "Transparent0"]);
-  assert.equal(el.querySelector(".profile .lbl").textContent, "Name");
+  assert.deepEqual([...el.querySelectorAll(".profile .frow.three .lbl")].map(l => l.textContent), ["No.", "Name", "Japanese"]);
+  assert.equal(el.querySelector('[data-f="card_number"]').value, "3");
   assert.equal([...el.querySelectorAll(".profile .lbl")].find(l => l.textContent === "Card Rank")?.textContent, "Card Rank");
   assert.equal(el.querySelector('.tile[data-id="10"] .pic').className, "pic fit");     // 16:9 is the edge of the range — shows whole
   assert.equal(el.querySelector('.tile[data-id="11"] .pic').className, "pic fit");     // 1:1 shows whole
@@ -202,6 +203,64 @@ test("Reject… asks for an optional reason and logs the verdict with its owner;
   await tick();
   assert.deepEqual(log.at(-1).body, { status: "accepted", reason: "" });
   assert.equal(w.el.querySelector(".verdict .st").textContent, "Accepted");
+});
+
+test("No. is the card number (the id in its tooltip); rows sort by status then number; dragging a row between two others posts one move and the list re-renders from the reply under the busy overlay", async () => {
+  await boot();
+  api["GET /hxh/api/db/chars"] = () => [200, [
+    { ...killua(), id: 7, name: "Zzz Rejected", review_status: "rejected", card_number: 1 },
+    { ...killua(), id: 4, card_number: 9 },
+    { ...killua(), id: 6, name: "Aaa Pending", review_status: "pending", card_number: 5 },
+    { ...state.gon, images: undefined, reviews: undefined, card_number: 2 },
+    { ...killua(), id: 8, name: "Bbb Accepted", card_number: 3 },
+  ]];
+  // the server's answer to "put 4 right after 3": numbers 3, 5, 9 redistributed over the cards now at those positions
+  api["POST /hxh/api/db/chars/4/move"] = () => [200, [
+    { ...killua(), id: 7, name: "Zzz Rejected", review_status: "rejected", card_number: 1 },
+    { ...killua(), id: 4, card_number: 3 },
+    { ...killua(), id: 6, name: "Aaa Pending", review_status: "pending", card_number: 9 },
+    { ...state.gon, images: undefined, reviews: undefined, card_number: 2 },
+    { ...killua(), id: 8, name: "Bbb Accepted", card_number: 5 },
+  ]];
+  await os.launch("roster");
+  await tick();
+  const w = listWin();
+  const ids = () => [...w.body.querySelectorAll(".row")].map(r => +r.dataset.id);
+  const nos = () => [...w.body.querySelectorAll(".row .c-no")].map(e => e.textContent);
+  assert.equal(w.head.firstElementChild.textContent, "No.");
+  assert.deepEqual(ids(), [3, 6, 8, 4, 7], "pending by number, then accepted by number, then rejected");
+  assert.deepEqual(nos(), ["2", "5", "3", "9", "1"]);
+  assert.equal(w.body.querySelector(".row .c-no").title, "id 3");
+  // rows are 20px tall from y = 0; drag Killua (id 4, No. 9) onto the upper half of the Aaa row → between Gon and Aaa → "after 3"
+  const rows = [...w.body.querySelectorAll(".row")];
+  rows.forEach((r, i) => { r.getBoundingClientRect = () => ({ top: i * 20, bottom: i * 20 + 20, height: 20, left: 0, right: 500, width: 500 }); });
+  const ev = (type, target, y) => target.dispatchEvent(new d.win.MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: 10, clientY: y }));
+  ev("mousedown", rows[3], 70);
+  ev("mousemove", d.win.document, 71);
+  assert.ok(!rows[3].classList.contains("dragging"), "a couple of pixels is not a drag");
+  ev("mousemove", d.win.document, 25);
+  assert.ok(rows[3].classList.contains("dragging") && w.rows.classList.contains("dragging"));
+  const line = w.body.querySelector(".drop-line");
+  assert.ok(line && !line.hidden, "the drop line shows where it lands");
+  ev("mousemove", d.win.document, 75);
+  assert.ok(line.hidden, "dropping where it already sits draws no line");
+  ev("mousemove", d.win.document, 25);
+  ev("mouseup", d.win.document, 25);
+  assert.ok(!w.el.querySelector(".busy").hidden, "busy while the renumbering is in flight");
+  assert.ok(!w.body.querySelector(".drop-line") && !rows[3].classList.contains("dragging"));
+  await tick(); await tick();
+  assert.ok(w.el.querySelector(".busy").hidden);
+  assert.deepEqual(log.at(-1).body, { after: 3 });
+  assert.deepEqual(ids(), [3, 6, 4, 8, 7], "re-rendered from the reply: Killua now No. 3, between Gon and Bbb in the accepted run");
+  assert.deepEqual(nos(), ["2", "9", "3", "5", "1"]);
+  assert.equal(w.selected, 4);
+  // Escape abandons a drag
+  ev("mousedown", rows[0], 10);
+  ev("mousemove", d.win.document, 60);
+  d.win.document.dispatchEvent(new d.win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  assert.ok(!w.body.querySelector(".drop-line"));
+  ev("mouseup", d.win.document, 60);
+  assert.deepEqual(log.at(-1).body, { after: 3 }, "no second move");
 });
 
 test("Request…: at the far right of the verdict buttons; asks for a kind (the server's list) and optional details; the character reads Requested with the ask under the verdict; the list sorts it after pending", async () => {
