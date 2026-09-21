@@ -13,7 +13,7 @@ export const requestsId = id => `win-roster-q-${id}`;
 export class RequestsWindow extends Window {
   /** props: id (character), name, char (() => the character as last loaded) */
   constructor({ id, name, char, ...rest } = {}) {
-    super({ id: requestsId(id), title: `Requests · ${name || "#" + id}`, icon: "db", width: 760, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
+    super({ id: requestsId(id), title: `Requests · ${name || "#" + id}`, icon: "db", width: 860, cls: "roster rreq", content: `<div class="status"><span class="msg"></span><span class="count"></span></div>`, ...rest });
     this.charId = id;
     this.char = char;
   }
@@ -22,7 +22,7 @@ export class RequestsWindow extends Window {
     const el = super.render();
     this.rows = h("div", { className: "rows" });
     this.head = h("div", { className: "lhead" },
-      h("span", { className: "q-no", text: "#" }), h("span", { className: "q-kind", text: "Request" }), h("span", { className: "q-text", text: "Details" }),
+      h("span", { className: "q-no", text: "#" }), h("span", { className: "q-kind", text: "Request" }), h("span", { className: "q-pic", text: "Picture" }), h("span", { className: "q-text", text: "Details" }),
       h("span", { className: "q-st", text: "Status" }), h("span", { className: "q-by", text: "By" }), h("span", { className: "q-when", text: "Filed" }), h("span", { className: "q-done", text: "Resolved" }));
     this.body = h("div", { className: "lbody" });
     this.rows.append(this.head, this.body);
@@ -42,6 +42,7 @@ export class RequestsWindow extends Window {
     this.body.replaceChildren(...list.map(q => h("div", { className: "row " + q.status, dataset: { id: String(q.id) } },
       h("span", { className: "q-no", text: String(q.id) }),
       h("span", { className: "q-kind", text: q.label || q.kind }),
+      h("span", { className: "q-pic", text: q.image_id ? `#${q.image_id}${(c.images || []).some(im => im.id === q.image_id) ? "" : " (deleted)"}` : "" }),
       h("span", { className: "q-text", text: q.text || "", title: q.text || "" }),
       h("span", { className: "q-st" }, h("i", { className: "verdict rq-" + q.status, text: REQUEST_STATUS[q.status] || q.status })),
       h("span", { className: "q-by", text: q.owner || "" }),

@@ -223,7 +223,7 @@ def main():
     p = sub.add_parser("refetch"); p.add_argument("id", type=int); p.add_argument("--dry-run", action="store_true")
     sub.add_parser("kinds")
     p = sub.add_parser("requests"); p.add_argument("--status", default="open", help="open (default), done, withdrawn, or '' for all")
-    p = sub.add_parser("request"); p.add_argument("id", type=int); p.add_argument("kind"); p.add_argument("text", nargs="?", default="")
+    p = sub.add_parser("request"); p.add_argument("id", type=int); p.add_argument("kind"); p.add_argument("text", nargs="?", default=""); p.add_argument("--image", type=int, default=None, help="the picture the request is about")
     p = sub.add_parser("resolve"); p.add_argument("request", type=int)
     p = sub.add_parser("move"); p.add_argument("id", type=int); p.add_argument("--after", type=int, default=0, help="the character id it goes right after (0 = the front)")
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
@@ -242,7 +242,9 @@ def main():
         out(rows[0])
     elif a.cmd == "list":
         for r in c.db("GET", "/chars?status=" + a.status):
-            print(f"{r['id']:>4}  No.{r.get('card_number', r['id']):<4} v{r['version']:<3} {r['review_status']:<9} {r['rank']}  {r['name']}  ({r['image_count']} pictures)")
+            acc = f" accepted@v{r['accepted_version']}" if r.get("accepted_version") is not None else ""
+            rq = f"  [{r['open_requests']} open request{'s' if r['open_requests'] != 1 else ''}]" if r.get("open_requests") else ""
+            print(f"{r['id']:>4}  No.{r.get('card_number', r['id']):<4} v{r['version']:<3} {r['review_status']:<9}{acc} {r['rank']}  {r['name']}  ({r['image_count']} pictures){rq}")
     elif a.cmd == "get":
         out(c.db("GET", f"/chars/{a.id}"))
     elif a.cmd == "delete":
@@ -267,17 +269,18 @@ def main():
         out(refetch(c, a.id, a.dry_run))
     elif a.cmd == "kinds":
         for k in c.db("GET", "/request-kinds"):
-            print(f"{k['slug']:<20} {k['label']}")
+            print(f"{k['slug']:<20} {k['label']:<24} {k['scope']:<10} {'details required' if k['needs_text'] else ''}")
     elif a.cmd == "requests":
         rows = c.db("GET", "/requests?status=" + urllib.parse.quote(a.status))
         if not rows:
             print("none", file=sys.stderr)
         for q in rows:
-            print(f"{q['id']:>4}  {q['status']:<9} #{q['char_id']} {q['char_name']}  v{q['version']}  {q['kind']}  by {q['owner']}  {q['created_at'][:16]}")
+            pic = f"  picture #{q['image_id']}" if q.get("image_id") else ""
+            print(f"{q['id']:>4}  {q['status']:<9} #{q['char_id']} {q['char_name']}{pic}  v{q['version']}  {q['kind']}  by {q['owner']}  {q['created_at'][:16]}")
             if q["text"]:
                 print(f"      {q['text']}")
     elif a.cmd == "request":
-        out(c.db("POST", f"/chars/{a.id}/request", {"kind": a.kind, "text": a.text}))
+        out(c.db("POST", f"/chars/{a.id}/request", {"kind": a.kind, "text": a.text, "image_id": a.image}))
     elif a.cmd == "resolve":
         out(c.db("POST", f"/requests/{a.request}/resolve", {}))
     elif a.cmd == "move":

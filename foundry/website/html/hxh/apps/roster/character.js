@@ -76,7 +76,7 @@ export class CharacterWindow extends Window {
           </div>
           <fieldset class="group review">
             <legend>Review</legend>
-            <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span></div>
+            <div class="verdict"><i class="st"></i><span class="ver"></span><span class="by"></span><i class="reqs"></i></div>
             <div class="changes"></div>
             <div class="reason"></div>
             <div class="rbtns">
@@ -98,6 +98,8 @@ export class CharacterWindow extends Window {
             <button class="btn sm" type="button" data-img="crop" disabled>Crop</button>
             <button class="btn sm" type="button" data-img="open" disabled>Open in New Tab</button>
             <button class="btn sm" type="button" data-img="delete" disabled>Delete</button>
+            <span class="gap"></span>
+            <button class="btn sm" type="button" data-img="request" disabled>Request…</button>
             <span class="grow"></span>
             <button class="btn sm" type="button" data-img="upload">Upload…</button>
           </div>
@@ -226,11 +228,15 @@ export class CharacterWindow extends Window {
     st.className = "st " + c.review_status;
     el.querySelector(".verdict .ver").textContent = "v" + c.version;
     const last = (c.reviews || [])[0];
-    // who put it in this state: the verdict's owner, or for "requested" whoever filed the open request
-    const asked = c.review_status === "requested" ? (c.requests || []).find(q => q.status === "open") : null;
-    el.querySelector(".verdict .by").textContent = asked ? `by ${asked.owner}` : last && last.status === c.review_status ? `by ${last.owner}` : "";
+    el.querySelector(".verdict .by").textContent = last && last.status === c.review_status ? `by ${last.owner}` : "";
+    const open = (c.requests || []).filter(q => q.status === "open").length;
+    const reqs = el.querySelector(".verdict .reqs");
+    reqs.textContent = open ? `${open} request${open === 1 ? "" : "s"} open` : "";
+    reqs.hidden = !open;
     this.renderChanges();
-    el.querySelector(".reason").textContent = c.review_status === "rejected" ? c.review_reason : "";
+    const reason = el.querySelector(".reason");
+    reason.textContent = c.review_status === "rejected" && c.review_reason ? "Rejected: " + c.review_reason : "";
+    reason.classList.toggle("rejected", c.review_status === "rejected");
     for (const b of el.querySelectorAll("[data-review]")) b.disabled = b.dataset.review === c.review_status;
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },
@@ -286,7 +292,8 @@ export class CharacterWindow extends Window {
     const r = im.width / im.height;
     const fit = r > FIT_MAX ? "cut-x" : r < FIT_MIN ? "cut-y" : "fit";
     return h("figure", { className: `tile${["pixelated", "transparent"].includes(im.type) ? " pixel" : ""}`, dataset: { id: String(im.id) }, title: im.caption || "" },
-      h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }), this.fresh?.images.has(im.id) ? wedge() : null),
+      h("div", { className: "pic " + fit }, h("img", { alt: "", src: this.props.thumbURL?.(im.id) || "", loading: "lazy" }), this.fresh?.images.has(im.id) ? wedge() : null,
+        (c.requests || []).some(q => q.status === "open" && q.image_id === im.id) ? h("i", { className: "asked", text: "Request made", title: "An open request is on this picture" }) : null),
       h("figcaption", {},
         h("div", { className: "l1" }, h("b", { text: "#" + im.id }), h("span", { text: `${im.width}×${im.height}` }), h("span", { className: "role", text: roles })),
         h("div", { className: "l2", text: [from, im.caption].filter(Boolean).join(" · ") })));

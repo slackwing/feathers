@@ -2,8 +2,8 @@
    headers as raised buttons INSIDE the sunken list (sticky at the top,
    so they line up with the rows under the same scrollbar), one row per
    character, a status bar counting them. All verdicts show, sorted by
-   status (pending, requested, accepted, rejected) then by card number;
-   View narrows to one status. Column names and picture categories come
+   status (pending, accepted, rejected) then by card number; View
+   narrows to one status, or to the characters with open requests. Column names and picture categories come
    from fields.js. Double-click (or Enter) opens the character. Rows
    drag: dropping one between two others is ONE renumbering on the
    server (Andrew, 2026-09-21), shown under the busy overlay. */
@@ -12,7 +12,7 @@ import { h } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
 import { LABEL, TYPES, STATUSES, STATUS_ORDER } from "./fields.js";
 
-export const FILTERS = [["", "All"], ...STATUSES];
+export const FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 const PICS_TITLE = TYPES.map(([, l]) => l).join(" · ");
 export const number = c => c.card_number ?? c.id;
@@ -86,7 +86,7 @@ export class RosterWindow extends Window {
 
   /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
   shown() {
-    return this.chars.filter(c => !this.filter || c.review_status === this.filter)
+    return this.chars.filter(c => !this.filter || (this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter))
       .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || number(a) - number(b) || a.id - b.id);
   }
 
@@ -127,8 +127,8 @@ export class RosterWindow extends Window {
     if (!list.length) this.body.append(h("div", { className: "empty", text: "None." }));
     this.markSel();
     const pending = this.chars.filter(c => c.review_status === "pending").length;
-    const requested = this.chars.filter(c => c.review_status === "requested").length;
-    this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} · ${pending} pending` + (requested ? ` · ${requested} requested` : "");
+    const asked = this.chars.filter(c => c.open_requests > 0).length;
+    this.countEl.textContent = `${this.chars.length} character${this.chars.length === 1 ? "" : "s"} · ${pending} pending` + (asked ? ` · ${asked} with requests` : "");
     this.pane.update();
   }
 
@@ -145,7 +145,8 @@ export class RosterWindow extends Window {
       h("span", { className: "c-aff", text: c.affiliation || "" }),
       h("span", { className: "c-pics", title: PICS_TITLE }, ...counts.map((n, i) => h("i", { className: n ? "" : "zero", text: String(n), title: TYPES[i][1] }))),
       h("span", { className: "c-ver", text: String(c.version || 1) }),
-      h("span", { className: "c-st" }, h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) })),
+      h("span", { className: "c-st" }, h("i", { className: "verdict " + c.review_status, text: cap(c.review_status) }),
+        c.open_requests > 0 ? h("i", { className: "reqs", text: String(c.open_requests), title: `${c.open_requests} open request${c.open_requests === 1 ? "" : "s"}` }) : null),
     );
   }
 

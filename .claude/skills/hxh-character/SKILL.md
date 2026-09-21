@@ -177,45 +177,57 @@ not an error. `roster.py list` shows both.
 ## 8a½. Your changes are the ones that need review
 
 The server keeps a change log per version (what field or picture
-changed, by whom, bot or person). Andrew's rule (2026-09-21): a
-person's change is self-approved; YOURS are what the reviewers look
-at. So any change you make to an accepted or rejected character sends
-it back to pending, and the Roster DB marks every field and picture
-you touched since their last verdict with a red "New" wedge. Two
-consequences: never touch an accepted character casually (a batch of
-small edits is one review, a trickle is many), and a patch that
-changes nothing does not bump the version, so re-sending a field is
-harmless.
+changed, by whom, bot or person). Andrew's rules (2026-09-21):
+
+- What is ACCEPTED is a version: `accepted_version`, and the Binder
+  prints that version's content (a snapshot), never the live row. So
+  your edits never change what the party sees until a reviewer
+  accepts again.
+- A person's change is self-approved: it moves the accepted pointer
+  along. YOURS make the character pending and every field or
+  picture you touched since their last verdict wears a red "New"
+  wedge. Batch your edits; a trickle is many reviews.
+- A request never changes the verdict; fulfilling one is just your
+  change, judged like any other.
+- You cannot pass a verdict (`roster.py review` is refused for the
+  bot), and you cannot delete a picture the accepted card uses.
+- A patch that changes nothing does not bump the version.
 
 ## 8b. Requests from the reviewers
 
-A reviewer can file a request on a character from the app's review box
-("Request…" — a kind plus optional details). The character then reads
-"requested" until every open request is resolved, when it goes back to
-"pending" for the reviewer to look again. A reviewer's own verdict on
-a requested character withdraws its open requests. When Andrew says to
-work the queue:
+A reviewer can file a request on a character (the review box's
+"Request…") or on one picture (the pictures toolbar's "Request…"):
+a kind plus details. The verdict does not change; the row shows a
+count of open requests and the picture a yellow "Request made" tag.
+When Andrew says to work the queue:
 
     python3 roster.py requests            # open ones, oldest first
     python3 roster.py kinds               # the categories (slugs live in hxh_request_kind)
     ...do the work with patch / fetch / upload / crop...
     python3 roster.py resolve <request-id>
 
-Report per request what was done. The kinds so far:
+Report per request what was done. A request is on the character or
+on ONE picture (`picture #n` in the listing; `--image` when filing
+from here). The kinds:
 
-- `extend-picture` — a crop wants more canvas than the picture has
-  (hair cut off at the top, background too tight for 16:9). This needs
-  generative outpainting, which is not something I can do on my own;
-  until an image API is configured (see the hub CLAUDE.md), only a flat
-  or gradient background can be extended honestly — with Pillow, by
-  stretching the edge colour — and the resolve report must say which
-  it was. Store the result with `--type uploaded --source-image <id>`
-  so lineage shows.
-- `card-description` — the card text is wrong. If the request says
-  what, fix that; if it says nothing (Andrew: "try to find out what is
-  wrong"), re-read the notes, the description and the wiki, find the
-  error or the weak beat, and rewrite within § 3b's rules. Say in the
-  resolve report what you changed and why.
+- `outpaint-white` (a picture) — the reviewer expanded the canvas in
+  the crop tool and the white margins need painting in (hair cut off
+  at the top, background too tight for 16:9). This is generative
+  outpainting, which I cannot do on my own: it needs an image API key
+  (Andrew will add one to the roster env when ready). Until then say
+  so in the resolve report; do not stretch or mirror pixels and call
+  it done. When it is possible: find the pure-white regions at the
+  edges, fill them in the picture's own style, upload the result with
+  `--type cropped --source-image <id>` (it shows under Edited with its
+  lineage), and NEVER set the avatar or card slot to it — the
+  reviewer chooses (Andrew, 2026-09-21).
+- `card-description` (the character) — the card text is wrong. If
+  the request says what, fix that; if it says nothing (Andrew: "try
+  to find out what is wrong"), re-read the notes, the description
+  and the wiki, find the error or the weak beat, and rewrite within
+  § 3b's rules. Say in the resolve report what you changed and why.
+- `other` (either) — the details are the request. Read them, do
+  exactly that, report.
 
 ## 9. Feedback loop
 

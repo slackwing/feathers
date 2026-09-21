@@ -85,20 +85,25 @@ export class PromptDialog extends Dialog {
 }
 
 /* A request to the bot (Andrew, 2026-09-21): a kind from the server's
-   list, then free text with the details — optional, since "Card
-   description" with no text means "work out what is wrong". */
+   list (already narrowed to the character or to one picture), then the
+   details — optional unless the kind says otherwise ("Other…": the
+   text IS the request). */
 export class RequestDialog extends Dialog {
-  constructor({ kinds = [] } = {}) {
-    super({ title: "Request", body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map(k => `<option value="${esc(k.slug)}">${esc(k.label)}</option>`).join("")}</select>
+  constructor({ kinds = [], image = null } = {}) {
+    super({ title: image ? `Request · #${image}` : "Request", body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map(k => `<option value="${esc(k.slug)}"${k.needs_text ? ' data-needs="1"' : ""}>${esc(k.label)}</option>`).join("")}</select>
       <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
       buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }], focus: "select", width: 460 });
+    this.image = image;
   }
   render() {
     const el = super.render();
-    el.querySelector("textarea").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.finish("ok"); } });
+    const sel = el.querySelector("select"), ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]'), lbl = el.querySelector('label[for="dlg-req"]');
+    const sync = () => { const needs = !!sel.selectedOptions[0]?.dataset.needs; lbl.textContent = needs ? "Details:" : "Details (optional):"; ok.disabled = needs && !ta.value.trim(); };
+    sel.addEventListener("change", sync); ta.addEventListener("input", sync); sync();
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.finish("ok"); } });
     return el;
   }
-  value() { return { kind: this.$("select").value, text: this.$("textarea").value.trim() }; }
+  value() { return { kind: this.$("select").value, text: this.$("textarea").value.trim(), image_id: this.image }; }
 }
 
 export class ReasonDialog extends Dialog {

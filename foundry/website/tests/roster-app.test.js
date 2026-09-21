@@ -30,11 +30,14 @@ async function boot(me = ADMIN) {
     "PATCH /hxh/api/db/chars/3": init => { const body = JSON.parse(init.body); state.gon = { ...state.gon, ...body, version: state.gon.version + 1 }; return [200, state.gon]; },
     "POST /hxh/api/db/chars/3/review": init => { const body = JSON.parse(init.body);
       state.gon = { ...state.gon, review_status: body.status, review_reason: body.reason, reviews: [{ id: 9, char_id: 3, version: state.gon.version, status: body.status, reason: body.reason, owner: "andrew", created_at: "2026-09-19T01:00:00Z" }, ...state.gon.reviews] }; return [200, state.gon]; },
-    "GET /hxh/api/db/request-kinds": [200, [{ slug: "extend-picture", label: "Extend picture", sort: 1 }, { slug: "card-description", label: "Card description", sort: 2 }]],
-    "POST /hxh/api/db/chars/3/request": init => { const body = JSON.parse(init.body); const label = body.kind === "extend-picture" ? "Extend picture" : "Card description";
-      state.gon = { ...state.gon, review_status: "requested", review_reason: "",
-        requests: [{ id: 2, char_id: 3, kind: body.kind, label, text: body.text, status: "open", version: state.gon.version, owner: "abi", created_at: "2026-09-21T01:00:00Z", resolved_by: "", resolved_at: null },
-          { id: 1, char_id: 3, kind: "card-description", label: "Card description", text: "", status: "done", version: 2, owner: "andrew", created_at: "2026-09-20T01:00:00Z", resolved_by: "claude", resolved_at: "2026-09-20T02:00:00Z" }] };
+    "GET /hxh/api/db/request-kinds": [200, [
+      { slug: "outpaint-white", label: "Outpaint White Region", sort: 1, scope: "image", needs_text: false },
+      { slug: "card-description", label: "Card description", sort: 2, scope: "character", needs_text: false },
+      { slug: "other", label: "Other…", sort: 9, scope: "any", needs_text: true }]],
+    "POST /hxh/api/db/chars/3/request": init => { const body = JSON.parse(init.body); const label = { "outpaint-white": "Outpaint White Region", "card-description": "Card description", other: "Other…" }[body.kind];
+      state.gon = { ...state.gon, open_requests: 1,
+        requests: [{ id: 2, char_id: 3, kind: body.kind, label, text: body.text, status: "open", version: state.gon.version, owner: "abi", created_at: "2026-09-21T01:00:00Z", resolved_by: "", resolved_at: null, image_id: body.image_id },
+          { id: 1, char_id: 3, kind: "card-description", label: "Card description", text: "", status: "done", version: 2, owner: "andrew", created_at: "2026-09-20T01:00:00Z", resolved_by: "claude", resolved_at: "2026-09-20T02:00:00Z", image_id: null }] };
       return [200, state.gon]; },
     "POST /hxh/api/db/chars": init => [201, { ...killua(), id: 5, name: JSON.parse(init.body).name }],
     "GET /hxh/api/db/chars/5": () => [200, { ...killua(), id: 5, name: "Leorio" }],
@@ -104,7 +107,7 @@ test("launch opens the list: every verdict, pending first; headers inside the li
   assert.equal(w.body.querySelectorAll(".row").length, 1);
   w.setFilter("");
   const items = w.menuBar.menus[1].itemsNow();
-  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Requested", "Accepted", "Rejected", "Refresh"]);
+  assert.deepEqual(items.filter(i => i !== "sep").map(i => i.label), ["All", "Pending", "Accepted", "Rejected", "With requests", "Refresh"]);
   assert.equal(items[0].check(), true);
   w.select(3);
   d.key(w.rows, "Enter");
@@ -155,16 +158,16 @@ test("the toolbar: Set as Avatar only for 1:1, Set as Card only for 16:9; Crop, 
   await app().openChar(3);
   await tick();
   const w = charWin(), el = w.el;
-  assert.deepEqual([...el.querySelectorAll(".gtools [data-img]")].map(b => b.textContent), ["Set as Avatar", "Set as Card", "Crop", "Open in New Tab", "Delete", "Upload…"]);
+  assert.deepEqual([...el.querySelectorAll(".gtools [data-img]")].map(b => b.textContent), ["Set as Avatar", "Set as Card", "Crop", "Open in New Tab", "Delete", "Request…", "Upload…"]);
   assert.ok(!el.querySelector('[data-img="reject"]') && !el.querySelector("[data-show-rejected]"));
   const enabled = () => [...el.querySelectorAll(".gtools [data-img]")].filter(b => !b.disabled).map(b => b.dataset.img);
   assert.deepEqual(enabled(), ["upload"]);
   d.click(el.querySelector('.tile[data-id="10"]'));   // 16:9 raw: card-shaped already
-  assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "upload"]);
+  assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "request", "upload"]);
   d.click(el.querySelector('.tile[data-id="11"]'));   // 1:1
-  assert.deepEqual(enabled(), ["avatar", "crop", "open", "delete", "upload"]);
+  assert.deepEqual(enabled(), ["avatar", "crop", "open", "delete", "request", "upload"]);
   d.click(el.querySelector('.tile[data-id="12"]'));   // 16:9
-  assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "upload"]);
+  assert.deepEqual(enabled(), ["card", "crop", "open", "delete", "request", "upload"]);
   assert.match(w.selEl.textContent, /#12 · cropped · 640×360/);
   d.click(el.querySelector('[data-img="card"]'));
   await tick();
@@ -204,6 +207,24 @@ test("Reject… asks for an optional reason and logs the verdict with its owner;
   await tick();
   assert.deepEqual(log.at(-1).body, { status: "accepted", reason: "" });
   assert.equal(w.el.querySelector(".verdict .st").textContent, "Accepted");
+});
+
+test("open requests show as a count beside the verdict in the list, and View narrows to the characters that have them", async () => {
+  await boot();
+  api["GET /hxh/api/db/chars"] = () => [200, [{ ...state.gon, images: undefined, reviews: undefined, open_requests: 2 }, { ...killua(), open_requests: 0 }]];
+  await os.launch("roster");
+  await tick();
+  const w = listWin();
+  const gonRow = w.body.querySelector('.row[data-id="3"]');
+  assert.equal(gonRow.querySelector(".c-st .verdict").textContent, "Pending");
+  assert.equal(gonRow.querySelector(".c-st .reqs").textContent, "2");
+  assert.equal(gonRow.querySelector(".c-st .reqs").title, "2 open requests");
+  assert.ok(!w.body.querySelector('.row[data-id="4"] .reqs'));
+  assert.match(w.el.querySelector(".status .count").textContent, /1 with requests/);
+  w.setFilter("requests");
+  assert.deepEqual([...w.body.querySelectorAll(".row")].map(r => +r.dataset.id), [3]);
+  w.setFilter("");
+  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "accepted", "rejected"]);
 });
 
 test("No. is the card number (the id in its tooltip); rows sort by status then number; dragging a row between two others posts one move and the list re-renders from the reply under the busy overlay", async () => {
@@ -302,6 +323,51 @@ test("New wedges: the bot's changes above the last human verdict mark their fiel
   assert.equal(el.querySelectorAll(".new").length, 0);
 });
 
+test("a request on one picture: Request… after Delete wakes with a selection, offers the picture kinds, posts the picture id; the tile wears a Request made tag and the table names the picture", async () => {
+  await boot();
+  await app().openChar(3);
+  await tick();
+  const w = charWin(), el = w.el;
+  const btn = el.querySelector('.gtools [data-img="request"]');
+  assert.ok(btn && btn.disabled && btn.previousElementSibling.classList.contains("gap") && btn.previousElementSibling.previousElementSibling.dataset.img === "delete", "after a spacer to the right of Delete, off until a picture is picked");
+  d.click(el.querySelector('.tile[data-id="10"]'));
+  assert.equal(btn.disabled, false);
+  d.click(btn);
+  await tick(); await tick();
+  const dlg = os.wm.all().find(x => x instanceof Dialog);
+  assert.ok(dlg && dlg.title === "Request · #10");
+  assert.deepEqual([...dlg.$("select").options].map(o => o.value), ["outpaint-white", "other"], "the picture kinds");
+  assert.equal(dlg.$('[data-act="ok"]').disabled, false, "outpainting needs no text");
+  d.click(dlg.$('[data-act="ok"]'));
+  await tick(); await tick();
+  assert.deepEqual(log.at(-1).body, { kind: "outpaint-white", text: "", image_id: 10 });
+  assert.equal(el.querySelector(".verdict .st").textContent, "Pending", "a request is not a verdict");
+  assert.equal(el.querySelector(".verdict .reqs").textContent, "1 request open");
+  assert.equal(el.querySelector('.tile[data-id="10"] .pic .asked')?.textContent, "Request made");
+  assert.ok(!el.querySelector('.tile[data-id="11"] .pic .asked'));
+  d.click(el.querySelector("[data-requests]"));
+  await tick();
+  const rw = os.wm.get("win-roster-q-3");
+  assert.deepEqual([...rw.body.querySelectorAll(".row .q-pic")].map(e => e.textContent), ["#10", ""]);
+  state.gon.images = state.gon.images.filter(i => i.id !== 10);
+  os.bus.emit("roster:changed", { id: 3 });
+  assert.equal(rw.body.querySelector(".row .q-pic").textContent, "#10 (deleted)");
+});
+
+test("a rejection reads \"Rejected: <reason>\" in red; an empty reason shows nothing", async () => {
+  await boot();
+  state.gon.review_status = "rejected"; state.gon.review_reason = "wrong Nen";
+  await app().openChar(3);
+  await tick();
+  const el = charWin().el;
+  assert.equal(el.querySelector(".reason").textContent, "Rejected: wrong Nen");
+  assert.ok(el.querySelector(".reason").classList.contains("rejected"));
+  charWin().setChar({ ...state.gon, review_reason: "" });
+  assert.equal(el.querySelector(".reason").textContent, "");
+  charWin().setChar({ ...state.gon, review_status: "pending" });
+  assert.ok(!el.querySelector(".reason").classList.contains("rejected"));
+});
+
 test("Request…: at the far right of the verdict buttons; asks for a kind (the server's list) and optional details; the character reads Requested with the ask under the verdict; the list sorts it after pending", async () => {
   await boot();
   await os.launch("roster");
@@ -319,27 +385,31 @@ test("Request…: at the far right of the verdict buttons; asks for a kind (the 
   await tick(); await tick();
   const dlg = os.wm.all().find(x => x instanceof Dialog);
   assert.ok(dlg && dlg.state.open && dlg.title === "Request");
-  assert.deepEqual([...dlg.$("select").options].map(o => [o.value, o.textContent]), [["extend-picture", "Extend picture"], ["card-description", "Card description"]]);
+  assert.deepEqual([...dlg.$("select").options].map(o => [o.value, o.textContent]), [["card-description", "Card description"], ["other", "Other…"]], "only the character's kinds");
   assert.equal(dlg.$("textarea").previousElementSibling.textContent, "Details (optional):");
   assert.equal(dlg.$('[data-act="ok"]').disabled, false);
-  dlg.$("textarea").value = "hair cut off at the top";
+  dlg.$("select").value = "other"; d.fire(dlg.$("select"), "change");
+  assert.equal(dlg.$("textarea").previousElementSibling.textContent, "Details:");
+  assert.equal(dlg.$('[data-act="ok"]').disabled, true, "Other… needs the details");
+  dlg.$("textarea").value = "hair cut off at the top"; d.fire(dlg.$("textarea"), "input");
+  assert.equal(dlg.$('[data-act="ok"]').disabled, false);
   d.click(dlg.$('[data-act="ok"]'));
   await tick(); await tick();
-  assert.deepEqual(log.at(-1).body, { kind: "extend-picture", text: "hair cut off at the top" });
-  assert.equal(w.el.querySelector(".verdict .st").textContent, "Requested");
-  assert.equal(w.el.querySelector(".verdict .by").textContent, "by abi", "requested by whoever filed the open request");
+  assert.deepEqual(log.at(-1).body, { kind: "other", text: "hair cut off at the top", image_id: null });
+  assert.equal(w.el.querySelector(".verdict .st").textContent, "Pending", "filing a request is not a verdict: the status stays");
+  assert.equal(w.el.querySelector(".verdict .reqs").textContent, "1 request open");
   assert.equal(w.el.querySelector(".reason").textContent, "", "the review box no longer lists the requests");
   assert.doesNotMatch(w.el.querySelector(".log").textContent, /requested/, "the review log holds verdicts only");
-  for (const b of w.el.querySelectorAll("[data-review]")) assert.equal(b.disabled, false, "a reviewer can still overrule with a verdict");
   // View Requests → the table, newest first, with statuses; it follows the character
   d.click(link);
   await tick();
   const rw = os.wm.get("win-roster-q-3");
   assert.ok(rw && rw.state.open && rw.title === "Requests · Gon Freecss");
-  assert.deepEqual([...rw.head.children].map(e => e.textContent), ["#", "Request", "Details", "Status", "By", "Filed", "Resolved"]);
+  assert.deepEqual([...rw.head.children].map(e => e.textContent), ["#", "Request", "Picture", "Details", "Status", "By", "Filed", "Resolved"]);
   const cells = sel => [...rw.body.querySelectorAll(".row " + sel)].map(e => e.textContent);
   assert.deepEqual(cells(".q-no"), ["2", "1"]);
-  assert.deepEqual(cells(".q-kind"), ["Extend picture", "Card description"]);
+  assert.deepEqual(cells(".q-kind"), ["Other…", "Card description"]);
+  assert.deepEqual(cells(".q-pic"), ["", ""]);
   assert.deepEqual(cells(".q-st"), ["Pending", "Fulfilled"]);
   assert.deepEqual(cells(".q-by"), ["abi", "andrew"]);
   assert.match(cells(".q-done")[1], /claude$/);
@@ -348,9 +418,9 @@ test("Request…: at the far right of the verdict buttons; asks for a kind (the 
   os.bus.emit("roster:changed", { id: 3 });
   assert.deepEqual(cells(".q-st"), ["Withdrawn", "Fulfilled"]);
   const list = listWin();
-  assert.equal(list.el.querySelector('.row[data-id="3"] .verdict').textContent, "Requested");
-  assert.match(list.el.querySelector(".status .count").textContent, /1 requested/);
-  assert.deepEqual(STATUSES.map(([s]) => s), ["pending", "requested", "accepted", "rejected"]);
+  assert.equal(list.el.querySelector('.row[data-id="3"] .verdict').textContent, "Pending");
+  assert.equal(list.el.querySelector('.row[data-id="3"] .reqs').textContent, "1");
+  assert.match(list.el.querySelector(".status .count").textContent, /1 with requests/);
 });
 
 test("crop window: sized to show the whole picture; a ratio button starts a centred selection; the status reads the picture size; save closes it", async () => {

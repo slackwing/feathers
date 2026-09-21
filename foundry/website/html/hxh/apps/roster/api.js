@@ -32,7 +32,7 @@ export class RosterAPI {
   move(id, after) { return this.call("POST", `/chars/${id}/move`, { after }); }
   review(id, status, reason = "") { return this.call("POST", `/chars/${id}/review`, { status, reason }); }
   requestKinds() { return this.call("GET", "/request-kinds"); }
-  request(id, kind, text = "") { return this.call("POST", `/chars/${id}/request`, { kind, text }); }
+  request(id, kind, text = "", image_id = null) { return this.call("POST", `/chars/${id}/request`, { kind, text, image_id }); }
   requests(status = "open") { return this.call("GET", "/requests" + (status ? `?status=${encodeURIComponent(status)}` : "")); }
   resolveRequest(id) { return this.call("POST", `/requests/${id}/resolve`); }
   remove(id) { return this.call("DELETE", `/chars/${id}`); }

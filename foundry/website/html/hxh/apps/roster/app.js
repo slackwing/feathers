@@ -187,15 +187,16 @@ export class RosterApp extends App {
   }
 
   /** Request…: a kind from the server's list plus optional details; the character reads "requested" until the bot resolves it. */
-  async request(id) {
+  async request(id, imageId = null) {
     const w = this.chars.get(id);
     try {
       this.kinds ||= await this.hold(w, this.api.requestKinds());
     } catch (err) { w?.say(err.message, true); return; }
-    const r = await new RequestDialog({ kinds: this.kinds }).ask(this.os);
+    const scope = imageId ? "image" : "character";
+    const r = await new RequestDialog({ kinds: this.kinds.filter(k => k.scope === "any" || k.scope === scope), image: imageId }).ask(this.os);
     if (!r) return;
     try {
-      const c = await this.hold(w, this.api.request(id, r.kind, r.text));
+      const c = await this.hold(w, this.api.request(id, r.kind, r.text, r.image_id));
       w?.setChar(c, { form: false });
       w?.say("Requested");
       this.changed(c);
@@ -231,6 +232,7 @@ export class RosterApp extends App {
         case "avatar": await this.patch(id, { avatar_image_id: w.char.avatar_image_id === imageId ? null : imageId }); w.select(imageId); break;
         case "card": await this.patch(id, { card_image_id: w.char.card_image_id === imageId ? null : imageId }); w.select(imageId); break;
         case "crop": this.openCrop(imageId); break;
+        case "request": return this.request(id, imageId);
         case "open": this.os.win.open?.(this.api.imageURL(imageId), "_blank"); break;
         case "delete":
           if (!await new ConfirmDialog({ message: `Delete picture #${imageId}?`, ok: "Delete" }).ask(this.os)) return;

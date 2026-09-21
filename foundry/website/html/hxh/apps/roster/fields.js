@@ -13,6 +13,7 @@ export const LABEL = Object.fromEntries(FIELDS);
 /* type key → label; the order is the gallery order and the Pics column order */
 export const TYPES = [["raw", "Random"], ["uploaded", "Uploaded"], ["cropped", "Edited"], ["pixelated", "Pixel art"], ["upscaled", "Upscaled"], ["transparent", "Transparent"]];
 export const TYPE_LABEL = Object.fromEntries(TYPES);
-/* review states in the order the list sorts them: "requested" is a character waiting on the bot (a reviewer filed a request) */
-export const STATUSES = [["pending", "Pending"], ["requested", "Requested"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
+/* review states in the order the list sorts them. Requests are not a state (Andrew, 2026-09-21): a character
+   keeps its verdict while requests are open; open_requests is a count shown beside the chip. */
+export const STATUSES = [["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]];
 export const STATUS_ORDER = Object.fromEntries(STATUSES.map(([s], i) => [s, i]));

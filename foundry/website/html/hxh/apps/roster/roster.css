@@ -25,7 +25,9 @@
 .roster i.verdict.pending, .roster .st.pending { background: var(--emitter); color: var(--ink); }
 .roster i.verdict.accepted, .roster .st.accepted { background: var(--nen); color: var(--ink); }
 .roster i.verdict.rejected, .roster .st.rejected { background: var(--blood); color: var(--paper-hi); }
-.roster i.verdict.requested, .roster .st.requested { background: var(--conjurer); color: var(--ink); }
+/* open requests ride beside the verdict as a count (the list) or a tag (the character window) */
+.roster i.reqs { font: var(--t-small); font-style: normal; font-weight: 700; display: inline-block; margin-left: 4px; padding: 1px 5px 0; line-height: 14px; background: var(--emitter); color: var(--ink); border: 1px solid var(--ink); vertical-align: middle; }
+.rlist .row.sel .reqs { border-color: var(--paper-hi); }
 
 /* group boxes, the 90s fieldset */
 .roster .group {
@@ -45,7 +47,7 @@
 
 /* ---------- the list ---------- */
 .rlist .body { padding: 8px 10px 10px; }
-.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 112px; align-items: center; gap: 6px; padding: 0 6px; }
+.rlist .lhead, .rlist .row { display: grid; grid-template-columns: 48px 44px 1.1fr 1.1fr 100px 1.4fr 1.3fr 150px 44px 136px; align-items: center; gap: 6px; padding: 0 6px; }
 /* the header lives inside the list, above the rows it rules, and stays put when they scroll */
 .rlist .lhead, .rreq .lhead { position: sticky; top: 0; z-index: 2; padding: 3px 6px; background: var(--paper); border-bottom: var(--px) solid var(--paper-lo); box-shadow: 0 var(--px) 0 var(--paper-hi); }
 .rlist .lhead > span, .rreq .lhead > span {
@@ -99,7 +101,7 @@
 .roster button.link { background: none; border: 0; padding: 0; margin: 0; color: #0000ee; text-decoration: underline; cursor: pointer; font: var(--t-small); }
 .roster button.link:hover { color: var(--blood); }
 /* the requests window: a table like the list */
-.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 130px 1fr 108px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
+.rreq .lhead, .rreq .row { display: grid; grid-template-columns: 36px 150px 92px 1fr 108px 70px 96px 110px; align-items: center; gap: 6px; padding: 0 6px; }
 .rreq .rows { font: var(--t-ui); }
 .rreq .row { padding: 3px 6px; }
 .rreq .row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
@@ -122,6 +124,10 @@
 .rchar .new { font: var(--t-small); font-style: normal; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; line-height: 14px;
   background: var(--blood); color: var(--paper-hi); padding: 1px 5px 0 9px; clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%); pointer-events: none; }
 .rchar .slot .new, .rchar .tile .pic .new { position: absolute; top: 0; right: 0; z-index: 2; }
+/* an open request on this picture: a plain tag (Andrew: rectangular, "request made") */
+.rchar .tile .pic .asked { position: absolute; top: 0; left: 0; z-index: 2; font: var(--t-small); font-style: normal; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; line-height: 14px;
+  background: var(--emitter); color: var(--ink); padding: 1px 5px 0; border: 1px solid var(--ink); border-top: 0; border-left: 0; pointer-events: none; }
+.rchar .review .reason.rejected { color: var(--blood); }
 .rchar .review .changes { font: var(--t-small); color: var(--ink); }
 .rchar .review .changes:empty { display: none; }
 .rchar .review .changes .since { color: var(--ink-4); }
