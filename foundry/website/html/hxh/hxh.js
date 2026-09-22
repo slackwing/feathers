@@ -407,6 +407,44 @@ var HxH = (() => {
       "................",
       "................"
     ],
+    // the binder's heart: "I like this character!" — red, ink-edged, a highlight on the left lobe
+    heart: [
+      "................",
+      "..kkkk....kkkk..",
+      ".krrrrk..krrrrk.",
+      "krhrrrrkkrrrrrrk",
+      "krhhrrrrrrrrrrrk",
+      "krrrrrrrrrrrrrrk",
+      "krrrrrrrrrrrrrrk",
+      "krrrrrrrrrrrrrrk",
+      ".krrrrrrrrrrrrk.",
+      "..krrrrrrrrrrk..",
+      "...krrrrrrrrk...",
+      "....krrrrrrk....",
+      ".....krrrrk.....",
+      "......krrk......",
+      ".......kk.......",
+      "................"
+    ],
+    // the binder's bookmark: "Bookmark for myself" — a gold ribbon with a notched tail
+    bookmark: [
+      "................",
+      "...kkkkkkkkkk...",
+      "...kGGGGGGGGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyyyyyyGk...",
+      "...kGyykkyyGk...",
+      "...kGykk.kkyGk..",
+      "...kkk....kkk...",
+      "................",
+      "................"
+    ],
     // About: a bevelled yellow help block
     question: [
       "kkkkkkkkkkkkkkkk",
@@ -3552,17 +3590,28 @@ var HxH = (() => {
   ];
   var PER_PAGE = 9;
   var SOURCE = "/hxh/api/db/binder";
+  var STAMPS = "/hxh/api/db/stamps";
+  var STAMP_ROT = 25;
+  var BOOKMARK_HINT = "Bookmark characters for them to show here!";
+  function randomStamp(rand = Math.random) {
+    return { x: Math.round((-8 + rand() * 92) * 10) / 10, y: Math.round((-15 + rand() * 100) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
+  }
   var LIVE_MS = 2e4;
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
   var titleCase = (s) => s.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
   var cardNo2 = (c) => cardNo(c.no ?? c.id);
   var firstSentence = (s) => (String(s || "").match(/^[^.!?]*[.!?]/) || [s || ""])[0].trim();
   var cardText = (c) => c.card_description || firstSentence(c.description);
-  function paginate(chars) {
+  function paginate(chars, bookmarks = []) {
     const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
+    const marked = new Set(bookmarks);
+    const mine = sorted.filter((c) => marked.has(c.id));
     const out = [];
-    for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ cards: sorted.slice(i, i + PER_PAGE), n: out.length + 1 });
+    for (let i = 0; i < Math.max(1, mine.length); i += PER_PAGE) out.push({ kind: "bookmark", cards: mine.slice(i, i + PER_PAGE), n: out.length + 1 });
     for (const p of out) p.of = out.length;
+    const first = out.length;
+    for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ kind: "cards", cards: sorted.slice(i, i + PER_PAGE), n: out.length - first + 1 });
+    for (const p of out.slice(first)) p.of = out.length - first;
     return out;
   }
   var CARD_W = 150;
@@ -3600,8 +3649,9 @@ var HxH = (() => {
         <div class="screen"></div>
         <div class="controls">
           <div class="keys">
-            <button class="key" type="button" data-act="claim">CLAIM</button>
-            <button class="key" type="button" data-act="shut">CLOSE</button>
+            <button class="key ico" type="button" data-act="heart" title="I like this character!" disabled>${icon("heart", 16)}</button>
+            <button class="key ico" type="button" data-act="bookmark" title="Bookmark for myself" disabled>${icon("bookmark", 16)}</button>
+            <button class="key" type="button" data-act="become" title="This is me!" disabled>BECOME</button>
           </div>
           <div class="dial"></div>
           <div class="pad"></div>
@@ -3645,12 +3695,15 @@ var HxH = (() => {
     constructor(os2, options = {}) {
       super(os2, options);
       this.pages = [];
-      this.page = 0;
+      this.page = null;
+      this.chose = false;
       this.sel = null;
       this.roster = [];
       this.typer = null;
       this.cards = /* @__PURE__ */ new Map();
+      this.stamps = { hearts: [], hearts_mine: [], bookmarks: [] };
       this.src = options.src || SOURCE;
+      this.stampsSrc = options.stampsSrc || STAMPS;
     }
     /** The chromeless window with the book inside. Built once. */
     window() {
@@ -3682,10 +3735,9 @@ var HxH = (() => {
       el.addEventListener("click", (e) => {
         const act = e.target.closest("[data-act]")?.dataset.act;
         const dir = e.target.closest("[data-dir]")?.dataset.dir;
-        if (act === "shut") this.shut();
-        if (act === "claim") this.claimSel();
-        if (dir === "left") this.showPage(this.page - 1);
-        if (dir === "right") this.showPage(this.page + 1);
+        if (act === "heart" || act === "bookmark") this.stampSel(act);
+        if (dir === "left") this.go(this.page - 1);
+        if (dir === "right") this.go(this.page + 1);
         if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
       });
       os2.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
@@ -3702,19 +3754,101 @@ var HxH = (() => {
       os2.live?.every(this.win, LIVE_MS, () => this.load());
       return this.win;
     }
-    load() {
+    get(url) {
       const fetch = this.options.fetch || this.os.win.fetch?.bind(this.os.win);
-      if (!fetch) return Promise.resolve();
-      return fetch(this.src, { cache: "no-cache", credentials: "same-origin" }).then((r) => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))).then((list) => this.setRoster(list)).catch(() => {
+      if (!fetch) return Promise.reject(new Error("no fetch"));
+      return fetch(url, { cache: "no-cache", credentials: "same-origin" }).then((r) => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)));
+    }
+    /** The roster and the stamps together; a stamps failure only loses the stamps. */
+    load() {
+      if (!(this.options.fetch || this.os.win.fetch)) return Promise.resolve();
+      return Promise.all([this.get(this.src), this.get(this.stampsSrc).catch(() => null)]).then(([list, stamps]) => {
+        if (stamps && Array.isArray(stamps.hearts)) this.stamps = stamps;
+        this.setRoster(list);
+      }).catch(() => {
         this.$(".cards").textContent = "The binder is empty.";
       });
     }
-    /** The cards, in the order the API gives them (by number). A reload keeps the page the reader is on. */
+    /**
+     * The cards, in the order the API gives them (by number). The book opens
+     * on the reader's bookmarks when they have some, else on page 1; a reload
+     * keeps the page the reader is on (an empty bookmark page they never
+     * chose is not a page they are on).
+     */
     setRoster(list) {
       this.roster = (list || []).map((c) => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
-      this.pages = paginate(this.roster);
+      this.pages = paginate(this.roster, this.stamps.bookmarks);
       this.renderTabs();
-      this.showPage(Math.min(this.page || 0, Math.max(0, this.pages.length - 1)));
+      const bm = this.pages[0], last = this.pages.length - 1;
+      const auto = this.page == null || !this.chose && this.page === 0 && !bm.cards.length;
+      this.showPage(auto ? bm.cards.length ? 0 : Math.min(1, last) : Math.min(this.page, last));
+    }
+    /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */
+    go(i) {
+      this.chose = true;
+      this.showPage(i);
+    }
+    /* ---------- stamps ---------- */
+    heartsOn(id) {
+      return (this.stamps.hearts || []).filter((h2) => h2.char_id === id);
+    }
+    hearted(id) {
+      return (this.stamps.hearts_mine || []).includes(id);
+    }
+    bookmarked(id) {
+      return (this.stamps.bookmarks || []).includes(id);
+    }
+    /** The heart stamps on one printed card: drawn over the description box at their saved spots. */
+    renderStamps(card, c) {
+      const band = card.el?.querySelector(".gi-band");
+      if (!band) return;
+      let box = band.querySelector(".gi-stamps");
+      if (!box) {
+        box = h("div", { className: "gi-stamps" });
+        band.append(box);
+      }
+      box.replaceChildren(...this.heartsOn(c.id).map((s) => {
+        const el = h("span", { className: "gi-stamp", html: icon("heart", 16), title: "Someone likes this character" });
+        el.style.left = s.x + "%";
+        el.style.top = s.y + "%";
+        el.style.transform = `rotate(${s.rotation}deg)`;
+        return el;
+      }));
+    }
+    /** The heart and bookmark keys follow the selected card: lit when the reader's own stamp is on it, off with no card. */
+    syncKeys() {
+      const c = this.sel;
+      for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)]]) {
+        const b = this.$(`[data-act="${act}"]`);
+        b.disabled = !c;
+        b.classList.toggle("lit", !!on);
+      }
+    }
+    /** Heart or bookmark the selected card, or take the stamp back; then re-read the stamps so every card shows the truth. */
+    async stampSel(kind) {
+      const os2 = this.os, c = this.sel;
+      if (!c) {
+        os2.toast.show("Pick a card first.");
+        return;
+      }
+      const fetch = this.options.fetch || os2.win.fetch?.bind(os2.win);
+      const spot = kind === "heart" ? randomStamp() : { x: 0, y: 0, rotation: 0 };
+      try {
+        const r = await fetch(`/hxh/api/db/chars/${c.id}/stamp`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, ...spot }) });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        this.stamps = await this.get(this.stampsSrc);
+      } catch {
+        os2.toast.show("The stamp did not take. Try again.");
+        return;
+      }
+      if (kind === "bookmark") {
+        this.setRoster(this.roster);
+        if (this.sel !== c) this.select(c);
+      } else for (const [id, card] of this.cards) {
+        const cc = this.roster.find((x) => x.id === id);
+        if (cc) this.renderStamps(card, cc);
+      }
+      this.syncKeys();
     }
     /** Size the book to the viewport and return where to put the window. */
     layout() {
@@ -3803,7 +3937,7 @@ var HxH = (() => {
       const tabs = this.$(".tabs");
       tabs.replaceChildren();
       this.pages.forEach((p, i) => {
-        tabs.append(h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.showPage(i) }));
+        tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
       });
     }
     showPage(i) {
@@ -3821,8 +3955,10 @@ var HxH = (() => {
       p.cards.forEach((c) => box.append(this.cardEl(c)));
       for (const card of this.cards.values()) card.fit();
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
-      this.$(".pageno").textContent = `${this.page + 1} / ${this.pages.length}`;
+      if (p.kind === "bookmark" && !p.cards.length) box.append(h("div", { className: "hint", text: BOOKMARK_HINT }));
+      this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
       if (this.sel && !p.cards.includes(this.sel)) this.select(null);
+      this.syncKeys();
     }
     /** A sleeve holding one printed card. */
     cardEl(c) {
@@ -3837,6 +3973,7 @@ var HxH = (() => {
         image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null
       });
       card.mount(b);
+      this.renderStamps(card, c);
       this.cards.set(c.id, card);
       return b;
     }
@@ -3846,6 +3983,7 @@ var HxH = (() => {
     select(c) {
       this.sel = c;
       this.$(".cards").querySelectorAll(".card").forEach((b) => b.classList.toggle("on", b.dataset.id === String(c && c.id)));
+      this.syncKeys();
       const scr = this.$(".screen");
       this.typer?.skip?.();
       clearInterval(this.follow);
@@ -3878,24 +4016,14 @@ var HxH = (() => {
       const i = this.sel ? cards.indexOf(this.sel) : -1;
       const n = i + d;
       if (n < 0) {
-        this.showPage(this.page - 1);
+        this.go(this.page - 1);
         return this.select(this.pages[this.page].cards[this.pages[this.page].cards.length - 1]);
       }
       if (n >= cards.length) {
-        this.showPage(this.page + 1);
+        this.go(this.page + 1);
         return this.select(this.pages[this.page].cards[0]);
       }
       this.select(cards[n]);
-    }
-    claimSel() {
-      const os2 = this.os;
-      if (!this.sel) {
-        os2.toast.show("Pick a card first.");
-        return;
-      }
-      const c = this.sel;
-      os2.toast.show(`${c.first || c.name} is a fine choice \u2014 registration opens soon.`);
-      if (os2.registry.has("register")) os2.launch("register");
     }
   };
 
