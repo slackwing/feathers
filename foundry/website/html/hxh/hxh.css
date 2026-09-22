@@ -2177,7 +2177,7 @@ html[data-theme=seapumpkin-pastel] {
   font: 700 12px/1 var(--font-px);
   padding-top: 2px;
 }
-.key.ico.lit {
+.key.lit {
   background: linear-gradient(#fff6e0, var(--gold) 45%);
   box-shadow:
     inset 1px 1px 0 #fff,
@@ -2219,23 +2219,23 @@ html[data-theme=seapumpkin-pastel] {
   white-space: nowrap;
   box-sizing: border-box;
   z-index: 4;
-  padding: 1.2cqw 2.2cqw 0.9cqw;
-  border: 1.1cqw solid #c8102e;
-  border-radius: 2.2cqw;
+  padding: 1.4cqw 2.4cqw 1cqw;
+  border: 1.5cqw solid #c8102e;
+  border-radius: 2.4cqw;
   color: #c8102e;
   font:
-    800 4.6cqw/1 "Bodoni Moda",
+    800 5.4cqw/1 "Bodoni Moda",
     "Crimson Pro",
     Georgia,
     serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: .78;
+  opacity: .88;
   mix-blend-mode: multiply;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
-  -webkit-mask-size: 6cqw 6cqw;
-  mask-size: 6cqw 6cqw;
+  -webkit-mask-size: 7cqw 7cqw;
+  mask-size: 7cqw 7cqw;
 }
 .cards .hint {
   grid-column: 1 / -1;
