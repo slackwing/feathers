@@ -2120,11 +2120,12 @@ html[data-theme=seapumpkin-pastel] {
   justify-items: center;
 }
 .keys {
-  grid-column: 1;
+  grid-column: 1 / span 2;
   grid-row: 1;
   display: flex;
   gap: calc(10px * var(--u, 1));
   justify-self: start;
+  z-index: 1;
 }
 .key {
   min-width: calc(64px * var(--u, 1));
@@ -2169,8 +2170,12 @@ html[data-theme=seapumpkin-pastel] {
   height: calc(16px * var(--u, 1));
   image-rendering: pixelated;
 }
-.key.ico:not(.lit):not(:disabled) svg {
-  filter: grayscale(1) brightness(1.15);
+.key:disabled svg {
+  filter: grayscale(1) opacity(.45);
+}
+.key.ico.info {
+  font: 700 12px/1 var(--font-px);
+  padding-top: 2px;
 }
 .key.ico.lit {
   background: linear-gradient(#fff6e0, var(--gold) 45%);
@@ -2207,6 +2212,30 @@ html[data-theme=seapumpkin-pastel] {
   height: 100%;
   display: block;
   image-rendering: pixelated;
+}
+.gicard .gi-claim {
+  position: absolute;
+  display: block;
+  white-space: nowrap;
+  box-sizing: border-box;
+  z-index: 4;
+  padding: 1.2cqw 2.2cqw 0.9cqw;
+  border: 1.1cqw solid #c8102e;
+  border-radius: 2.2cqw;
+  color: #c8102e;
+  font:
+    800 4.6cqw/1 "Bodoni Moda",
+    "Crimson Pro",
+    Georgia,
+    serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: .78;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 6cqw 6cqw;
+  mask-size: 6cqw 6cqw;
 }
 .cards .hint {
   grid-column: 1 / -1;
@@ -4037,5 +4066,13 @@ body.stacked .room .logbox {
   justify-content: flex-end;
   margin-top: 14px;
   gap: 8px;
+}
+.dlg .pts {
+  margin: 8px 0 0;
+  padding-left: 22px;
+  font: var(--t-body);
+}
+.dlg .pts li {
+  margin: 4px 0;
 }
 /*# sourceMappingURL=hxh.css.map */

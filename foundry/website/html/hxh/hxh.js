@@ -3597,6 +3597,204 @@ var HxH = (() => {
     return size;
   }
 
+  // html/hxh/apps/roster/dialogs.js
+  var seq2 = 0;
+  var Dialog = class extends Window {
+    /** props: title, body (html), buttons [{act, label, primary}], width, focus (selector) */
+    constructor({ title, body, buttons = [{ act: "ok", label: "OK", primary: true }, { act: "cancel", label: "Cancel" }], width = 420, focus = null, icon: icon2 = "question", cls = "" } = {}) {
+      super({
+        id: "win-dlg-" + ++seq2,
+        title,
+        icon: icon2,
+        width,
+        popup: true,
+        task: false,
+        minimizable: false,
+        cls: "roster dlg " + cls,
+        content: `<div class="dbody">${body}</div>
+        <div class="actions right">${buttons.map((b) => `<button class="btn ${b.primary ? "primary" : ""}" type="button" data-act="${b.act}">${esc(b.label)}</button>`).join("")}</div>`
+      });
+      this.focusSel = focus;
+      this.result = null;
+    }
+    render() {
+      const el = super.render();
+      el.querySelector(".actions").addEventListener("click", (e) => {
+        const act = e.target.closest("[data-act]")?.dataset.act;
+        if (act) this.finish(act);
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          if (this.canOK()) this.finish("ok");
+        }
+      });
+      return el;
+    }
+    canOK() {
+      return !this.$('[data-act="ok"]')?.disabled;
+    }
+    finish(act) {
+      if (act === "ok" && !this.canOK()) return;
+      this.result = act === "ok" ? this.value() : null;
+      this.emit(act === "ok" ? "ok" : "cancel", this.result);
+      this.close();
+    }
+    /** What OK resolves with; subclasses override. */
+    value() {
+      return true;
+    }
+    /** Show on the window manager and resolve with the value, or null on cancel / close. */
+    ask(os2) {
+      os2.wm.add(this);
+      return new Promise((res) => {
+        let done = false;
+        const settle = (v) => {
+          if (!done) {
+            done = true;
+            res(v);
+            os2.wm.remove(this.id);
+          }
+        };
+        this.on("ok", (v) => settle(v));
+        this.on("cancel", () => settle(null));
+        this.on("close", () => settle(null));
+        os2.wm.open(this.id, this.centre(os2)).then(() => this.$(this.focusSel || ".btn")?.focus());
+      });
+    }
+    centre(os2) {
+      if (!os2.env.floating()) return null;
+      const w = this.props.width || 420;
+      return { x: Math.max(16, (os2.env.width - w) / 2), y: Math.max(40, os2.env.height * 0.3) };
+    }
+  };
+  var ConfirmDialog = class extends Dialog {
+    constructor({ title = "Roster DB", message, ok = "OK" } = {}) {
+      super({ title, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }] });
+    }
+  };
+  var PromptDialog = class extends Dialog {
+    constructor({ title, label, value = "", ok = "OK" } = {}) {
+      super({
+        title,
+        body: `<label class="lbl" for="dlg-in">${esc(label)}</label><input class="field" id="dlg-in" value="${esc(value)}" autocomplete="off">`,
+        buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "input"
+      });
+    }
+    render() {
+      const el = super.render();
+      const input = el.querySelector("input"), ok = el.querySelector('[data-act="ok"]');
+      const sync = () => {
+        ok.disabled = !input.value.trim();
+      };
+      input.addEventListener("input", sync);
+      sync();
+      return el;
+    }
+    value() {
+      return this.$("input").value.trim();
+    }
+  };
+  var RequestDialog = class extends Dialog {
+    constructor({ kinds = [], image = null } = {}) {
+      super({
+        title: image ? `Request \xB7 #${image}` : "Request",
+        body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map((k) => `<option value="${esc(k.slug)}"${k.needs_text ? ' data-needs="1"' : ""}>${esc(k.label)}</option>`).join("")}</select>
+      <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
+        buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "select",
+        width: 460
+      });
+      this.image = image;
+    }
+    render() {
+      const el = super.render();
+      const sel = el.querySelector("select"), ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]'), lbl = el.querySelector('label[for="dlg-req"]');
+      const sync = () => {
+        const needs = !!sel.selectedOptions[0]?.dataset.needs;
+        lbl.textContent = needs ? "Details:" : "Details (optional):";
+        ok.disabled = needs && !ta.value.trim();
+      };
+      sel.addEventListener("change", sync);
+      ta.addEventListener("input", sync);
+      sync();
+      ta.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          this.finish("ok");
+        }
+      });
+      return el;
+    }
+    value() {
+      return { kind: this.$("select").value, text: this.$("textarea").value.trim(), image_id: this.image };
+    }
+  };
+  var CLAIM_MESSAGE = {
+    lead: "Claim the character you plan to show up as!",
+    points: [
+      "Others won't be able to claim this character, so please be considerate.",
+      "It's okay to change your mind! You can claim a different character anytime.",
+      "If there's a character you really might like to be, claim them!"
+    ]
+  };
+  var claimBody = () => `<p class="q">${esc(CLAIM_MESSAGE.lead)}</p><ul class="pts">${CLAIM_MESSAGE.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`;
+  var ClaimInfoDialog = class extends Dialog {
+    constructor() {
+      super({ title: "Claim", body: claimBody(), buttons: [{ act: "ok", label: "OK", primary: true }], icon: "question", width: 460 });
+    }
+  };
+  var ClaimDialog = class extends Dialog {
+    constructor({ name } = {}) {
+      super({
+        title: name ? `Claim ${name}?` : "Claim",
+        body: claimBody(),
+        buttons: [{ act: "ok", label: "Claim", primary: true }, { act: "cancel", label: "Not Yet" }, { act: "bookmark", label: "Bookmark Instead" }],
+        icon: "question",
+        width: 460
+      });
+    }
+    finish(act) {
+      if (act === "bookmark") {
+        this.result = "bookmark";
+        this.emit("ok", this.result);
+        this.close();
+        return;
+      }
+      super.finish(act);
+    }
+    value() {
+      return "claim";
+    }
+  };
+  var ReasonDialog = class extends Dialog {
+    constructor({ name } = {}) {
+      void name;
+      super({
+        title: "Reject",
+        body: `<label class="lbl" for="dlg-reason">Rejection reason (optional):</label><textarea class="field" id="dlg-reason" rows="4"></textarea>`,
+        buttons: [{ act: "ok", label: "Reject", primary: true }, { act: "cancel", label: "Cancel" }],
+        focus: "textarea",
+        width: 460
+      });
+    }
+    render() {
+      const el = super.render();
+      el.querySelector("textarea").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          this.finish("ok");
+        }
+      });
+      return el;
+    }
+    /** The reason, possibly empty — OK always means "reject". */
+    value() {
+      return this.$("textarea").value.trim();
+    }
+  };
+
   // html/hxh/apps/binder.js
   var TYPES = [
     { slug: "enhancement", code: "EN", name: "Enhancer", ja: "\u5F37\u5316\u7CFB", hue: "var(--enhancer)", hex: "#ff5a36" },
@@ -3621,6 +3819,9 @@ var HxH = (() => {
     if (!onPlate(s.x, s.y)) return s;
     const left = s.x + STAMP_W / 2 - PLATE.x, up = s.y + STAMP_W / 2 - PLATE.y;
     return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
+  }
+  function randomPlate(rand = Math.random) {
+    return { x: Math.round((PLATE.x + rand() * 8) * 10) / 10, y: Math.round((PLATE.y + 4 + rand() * 10) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
   }
   function randomStamp(rand = Math.random) {
     let spot;
@@ -3685,7 +3886,8 @@ var HxH = (() => {
           <div class="keys">
             <button class="key ico" type="button" data-act="heart" title="I like this character!" disabled>${icon("heart", 16)}</button>
             <button class="key ico" type="button" data-act="bookmark" title="Bookmark for myself" disabled>${icon("bookmark", 16)}</button>
-            <button class="key" type="button" data-act="become" title="This is me!" disabled>BECOME</button>
+            <button class="key" type="button" data-act="claim" title="This is me!" disabled>CLAIM</button>
+            <button class="key ico info" type="button" data-act="claim-info" title="About claiming">?</button>
           </div>
           <div class="dial"></div>
           <div class="pad"></div>
@@ -3735,7 +3937,8 @@ var HxH = (() => {
       this.roster = [];
       this.typer = null;
       this.cards = /* @__PURE__ */ new Map();
-      this.stamps = { hearts: [], hearts_mine: [], bookmarks: [] };
+      this.stamps = { hearts: [], hearts_mine: [], bookmarks: [], claims: [] };
+      this.me = null;
       this.src = options.src || SOURCE;
       this.stampsSrc = options.stampsSrc || STAMPS;
     }
@@ -3770,11 +3973,18 @@ var HxH = (() => {
         const act = e.target.closest("[data-act]")?.dataset.act;
         const dir = e.target.closest("[data-dir]")?.dataset.dir;
         if (act === "heart" || act === "bookmark") this.stampSel(act);
+        if (act === "claim") this.claimSel();
+        if (act === "claim-info") new ClaimInfoDialog().ask(os2);
         if (dir === "left") this.go(this.page - 1);
         if (dir === "right") this.go(this.page + 1);
         if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
       });
       os2.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
+      this.me = os2.user?.username || null;
+      os2.bus.on("session:user", ({ user }) => {
+        this.me = user?.username || null;
+        if (this.win.el) this.syncKeys();
+      });
       os2.bus.on("resize", () => {
         if (this.win.state.open) {
           const at = this.layout();
@@ -3807,15 +4017,23 @@ var HxH = (() => {
      * The cards, in the order the API gives them (by number). The book opens
      * on the reader's bookmarks when they have some, else on page 1; a reload
      * keeps the page the reader is on (an empty bookmark page they never
-     * chose is not a page they are on).
+     * chose is not a page they are on) AND the card they had selected — the
+     * live re-read every LIVE_MS used to rebuild the page and drop the
+     * selection (Andrew, 2026-09-22). A re-read that changes nothing
+     * touches nothing.
      */
     setRoster(list) {
-      this.roster = (list || []).map((c) => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
+      const roster = (list || []).map((c) => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
+      const sig = JSON.stringify([roster.map((c) => [c.id, c.no, c.version, c.card_image_id, c.avatar_image_id, c.card_description, c.first || c.name, c.rank]), this.stamps]);
+      if (sig === this.sig && this.page != null) return;
+      this.sig = sig;
+      this.roster = roster;
       this.pages = paginate(this.roster, this.stamps.bookmarks);
       this.renderTabs();
       const bm = this.pages[0], last = this.pages.length - 1;
       const auto = this.page == null || !this.chose && this.page === 0 && !bm.cards.length;
-      this.showPage(auto ? bm.cards.length ? 0 : Math.min(1, last) : Math.min(this.page, last));
+      const keep = this.sel && this.roster.find((c) => c.id === this.sel.id);
+      this.showPage(auto ? bm.cards.length ? 0 : Math.min(1, last) : Math.min(this.page, last), keep);
     }
     /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */
     go(i) {
@@ -3831,6 +4049,12 @@ var HxH = (() => {
     }
     bookmarked(id) {
       return (this.stamps.bookmarks || []).includes(id);
+    }
+    claimOn(id) {
+      return (this.stamps.claims || []).find((c) => c.char_id === id) || null;
+    }
+    myClaim() {
+      return this.me ? (this.stamps.claims || []).find((c) => c.username === this.me) || null : null;
     }
     /** The heart stamps on one printed card: drawn over the description box at their saved spots. */
     renderStamps(card, c) {
@@ -3848,15 +4072,52 @@ var HxH = (() => {
         el.style.transform = `rotate(${s.rotation}deg)`;
         return el;
       }));
+      const cl = this.claimOn(c.id);
+      if (cl) {
+        const el = h("span", { className: "gi-claim", text: cl.label || cl.username.toUpperCase(), title: `${cl.label || cl.username} is coming as ${c.first || c.name}` });
+        el.style.left = cl.x + "%";
+        el.style.top = cl.y + "%";
+        el.style.transform = `rotate(${cl.rotation}deg)`;
+        box.append(el);
+      }
     }
-    /** The heart and bookmark keys follow the selected card: lit when the reader's own stamp is on it, off with no card. */
+    /** The heart, bookmark and claim keys follow the selected card: off with no card, lit when the reader's own stamp is on it; Claim also off on a card someone else holds. */
     syncKeys() {
-      const c = this.sel;
-      for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)]]) {
+      const c = this.sel, cl = c && this.claimOn(c.id), mine = !!(cl && this.me && cl.username === this.me);
+      for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)], ["claim", mine]]) {
         const b = this.$(`[data-act="${act}"]`);
-        b.disabled = !c;
+        b.disabled = !c || act === "claim" && !!cl && !mine;
         b.classList.toggle("lit", !!on);
       }
+      const claim = this.$('[data-act="claim"]');
+      claim.title = cl && !mine ? `Claimed by ${cl.label || cl.username}` : mine ? "This is you! Press again to release" : "This is me!";
+    }
+    /** Claim: the question first (or a release when the reader already holds this card); Bookmark Instead bookmarks. */
+    async claimSel() {
+      const os2 = this.os, c = this.sel;
+      if (!c) {
+        os2.toast.show("Pick a card first.");
+        return;
+      }
+      const cl = this.claimOn(c.id);
+      if (cl && this.me && cl.username === this.me) {
+        await this.stampSel("claim");
+        os2.toast.show(`Your claim on ${c.first || c.name} is released.`);
+        return;
+      }
+      if (cl) {
+        os2.toast.show(`${cl.label || cl.username} already claimed ${c.first || c.name}.`);
+        return;
+      }
+      const answer = await new ClaimDialog({ name: c.first || c.name }).ask(os2);
+      if (!answer) return;
+      if (answer === "bookmark") {
+        if (!this.bookmarked(c.id)) await this.stampSel("bookmark");
+        return;
+      }
+      const before = this.myClaim();
+      await this.stampSel("claim");
+      if (this.claimOn(c.id)?.username === this.me) os2.toast.show(before ? `You are now ${c.first || c.name} (your claim moved).` : `You are ${c.first || c.name}!`);
     }
     /** Heart or bookmark the selected card, or take the stamp back; then re-read the stamps so every card shows the truth. */
     async stampSel(kind) {
@@ -3866,13 +4127,20 @@ var HxH = (() => {
         return;
       }
       const fetch = this.options.fetch || os2.win.fetch?.bind(os2.win);
-      const spot = kind === "heart" ? randomStamp() : { x: 0, y: 0, rotation: 0 };
+      const spot = kind === "heart" ? randomStamp() : kind === "claim" ? randomPlate() : { x: 0, y: 0, rotation: 0 };
       try {
         const r = await fetch(`/hxh/api/db/chars/${c.id}/stamp`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, ...spot }) });
-        if (!r.ok) throw new Error("HTTP " + r.status);
+        if (!r.ok) {
+          let why = "";
+          try {
+            why = (await r.json()).error || "";
+          } catch {
+          }
+          throw new Error(why || "HTTP " + r.status);
+        }
         this.stamps = await this.get(this.stampsSrc);
-      } catch {
-        os2.toast.show("The stamp did not take. Try again.");
+      } catch (err) {
+        os2.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again.");
         return;
       }
       if (kind === "bookmark") {
@@ -3974,7 +4242,7 @@ var HxH = (() => {
         tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
       });
     }
-    showPage(i) {
+    showPage(i, keep = null) {
       const box = this.$(".cards");
       for (const c of this.cards.values()) c.unmount();
       this.cards.clear();
@@ -3991,7 +4259,8 @@ var HxH = (() => {
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
       if (p.kind === "bookmark" && !p.cards.length) box.append(h("div", { className: "hint", text: BOOKMARK_HINT }));
       this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
-      if (this.sel && !p.cards.includes(this.sel)) this.select(null);
+      if (keep && p.cards.includes(keep)) this.select(keep, { quiet: true });
+      else if (this.sel && !p.cards.includes(this.sel)) this.select(null);
       this.syncKeys();
     }
     /** A sleeve holding one printed card. */
@@ -4014,10 +4283,11 @@ var HxH = (() => {
     idle() {
       this.$(".screen").innerHTML = `<div class="idle"><div class="emblem"></div><div class="ja">\u30AB\u30FC\u30C9\u3092\u9078\u629E</div></div>`;
     }
-    select(c) {
+    select(c, { quiet = false } = {}) {
       this.sel = c;
       this.$(".cards").querySelectorAll(".card").forEach((b) => b.classList.toggle("on", b.dataset.id === String(c && c.id)));
       this.syncKeys();
+      if (quiet) return;
       const scr = this.$(".screen");
       this.typer?.skip?.();
       clearInterval(this.follow);
@@ -5990,6 +6260,7 @@ var HxH = (() => {
     ["card_description", "Card description"],
     ["notes", "Notes"]
   ];
+  var AUTO_ACCEPTED = ["name", "first", "description", "card_description"];
   var AVATAR_RATIO = 1;
   var CARD_RATIO2 = 16 / 9;
   var CARD_RATIO_LABEL = "16:9";
@@ -6210,7 +6481,7 @@ var HxH = (() => {
   var words = (s) => (String(s || "").trim().match(/\S+/g) || []).length;
   var winId = (id) => "win-roster-c-" + id;
   function freshness(c) {
-    const rows = c.baseline ? (c.changes || []).filter((x) => x.bot && x.version > c.baseline.version) : [];
+    const rows = c.baseline ? (c.changes || []).filter((x) => x.bot && x.version > c.baseline.version && !(x.kind === "field" && AUTO_ACCEPTED.includes(x.field))) : [];
     return {
       rows,
       fields: new Set(rows.filter((x) => x.kind === "field").map((x) => x.field)),
@@ -7173,167 +7444,6 @@ var HxH = (() => {
       this.saveBtn.disabled = !this.box && !this.dirty;
       this.savedEl.textContent = msg;
       this.savedEl.classList.add("err");
-    }
-  };
-
-  // html/hxh/apps/roster/dialogs.js
-  var seq2 = 0;
-  var Dialog = class extends Window {
-    /** props: title, body (html), buttons [{act, label, primary}], width, focus (selector) */
-    constructor({ title, body, buttons = [{ act: "ok", label: "OK", primary: true }, { act: "cancel", label: "Cancel" }], width = 420, focus = null, icon: icon2 = "question", cls = "" } = {}) {
-      super({
-        id: "win-dlg-" + ++seq2,
-        title,
-        icon: icon2,
-        width,
-        popup: true,
-        task: false,
-        minimizable: false,
-        cls: "roster dlg " + cls,
-        content: `<div class="dbody">${body}</div>
-        <div class="actions right">${buttons.map((b) => `<button class="btn ${b.primary ? "primary" : ""}" type="button" data-act="${b.act}">${esc(b.label)}</button>`).join("")}</div>`
-      });
-      this.focusSel = focus;
-      this.result = null;
-    }
-    render() {
-      const el = super.render();
-      el.querySelector(".actions").addEventListener("click", (e) => {
-        const act = e.target.closest("[data-act]")?.dataset.act;
-        if (act) this.finish(act);
-      });
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
-          e.preventDefault();
-          if (this.canOK()) this.finish("ok");
-        }
-      });
-      return el;
-    }
-    canOK() {
-      return !this.$('[data-act="ok"]')?.disabled;
-    }
-    finish(act) {
-      if (act === "ok" && !this.canOK()) return;
-      this.result = act === "ok" ? this.value() : null;
-      this.emit(act === "ok" ? "ok" : "cancel", this.result);
-      this.close();
-    }
-    /** What OK resolves with; subclasses override. */
-    value() {
-      return true;
-    }
-    /** Show on the window manager and resolve with the value, or null on cancel / close. */
-    ask(os2) {
-      os2.wm.add(this);
-      return new Promise((res) => {
-        let done = false;
-        const settle = (v) => {
-          if (!done) {
-            done = true;
-            res(v);
-            os2.wm.remove(this.id);
-          }
-        };
-        this.on("ok", (v) => settle(v));
-        this.on("cancel", () => settle(null));
-        this.on("close", () => settle(null));
-        os2.wm.open(this.id, this.centre(os2)).then(() => this.$(this.focusSel || ".btn")?.focus());
-      });
-    }
-    centre(os2) {
-      if (!os2.env.floating()) return null;
-      const w = this.props.width || 420;
-      return { x: Math.max(16, (os2.env.width - w) / 2), y: Math.max(40, os2.env.height * 0.3) };
-    }
-  };
-  var ConfirmDialog = class extends Dialog {
-    constructor({ title = "Roster DB", message, ok = "OK" } = {}) {
-      super({ title, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }] });
-    }
-  };
-  var PromptDialog = class extends Dialog {
-    constructor({ title, label, value = "", ok = "OK" } = {}) {
-      super({
-        title,
-        body: `<label class="lbl" for="dlg-in">${esc(label)}</label><input class="field" id="dlg-in" value="${esc(value)}" autocomplete="off">`,
-        buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }],
-        focus: "input"
-      });
-    }
-    render() {
-      const el = super.render();
-      const input = el.querySelector("input"), ok = el.querySelector('[data-act="ok"]');
-      const sync = () => {
-        ok.disabled = !input.value.trim();
-      };
-      input.addEventListener("input", sync);
-      sync();
-      return el;
-    }
-    value() {
-      return this.$("input").value.trim();
-    }
-  };
-  var RequestDialog = class extends Dialog {
-    constructor({ kinds = [], image = null } = {}) {
-      super({
-        title: image ? `Request \xB7 #${image}` : "Request",
-        body: `<label class="lbl" for="dlg-kind">Request:</label><select class="field" id="dlg-kind">${kinds.map((k) => `<option value="${esc(k.slug)}"${k.needs_text ? ' data-needs="1"' : ""}>${esc(k.label)}</option>`).join("")}</select>
-      <label class="lbl" for="dlg-req">Details (optional):</label><textarea class="field" id="dlg-req" rows="4"></textarea>`,
-        buttons: [{ act: "ok", label: "Request", primary: true }, { act: "cancel", label: "Cancel" }],
-        focus: "select",
-        width: 460
-      });
-      this.image = image;
-    }
-    render() {
-      const el = super.render();
-      const sel = el.querySelector("select"), ta = el.querySelector("textarea"), ok = el.querySelector('[data-act="ok"]'), lbl = el.querySelector('label[for="dlg-req"]');
-      const sync = () => {
-        const needs = !!sel.selectedOptions[0]?.dataset.needs;
-        lbl.textContent = needs ? "Details:" : "Details (optional):";
-        ok.disabled = needs && !ta.value.trim();
-      };
-      sel.addEventListener("change", sync);
-      ta.addEventListener("input", sync);
-      sync();
-      ta.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          this.finish("ok");
-        }
-      });
-      return el;
-    }
-    value() {
-      return { kind: this.$("select").value, text: this.$("textarea").value.trim(), image_id: this.image };
-    }
-  };
-  var ReasonDialog = class extends Dialog {
-    constructor({ name } = {}) {
-      void name;
-      super({
-        title: "Reject",
-        body: `<label class="lbl" for="dlg-reason">Rejection reason (optional):</label><textarea class="field" id="dlg-reason" rows="4"></textarea>`,
-        buttons: [{ act: "ok", label: "Reject", primary: true }, { act: "cancel", label: "Cancel" }],
-        focus: "textarea",
-        width: 460
-      });
-    }
-    render() {
-      const el = super.render();
-      el.querySelector("textarea").addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          this.finish("ok");
-        }
-      });
-      return el;
-    }
-    /** The reason, possibly empty — OK always means "reject". */
-    value() {
-      return this.$("textarea").value.trim();
     }
   };
 
