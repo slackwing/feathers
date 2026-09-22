@@ -3612,8 +3612,23 @@ var HxH = (() => {
   var STAMPS = "/hxh/api/db/stamps";
   var STAMP_ROT = 25;
   var BOOKMARK_HINT = "Bookmark characters for them to show here!";
+  var STAMP_W = 17;
+  var PLATE = { x: 50, y: 58 };
+  function onPlate(x, y) {
+    return x + STAMP_W / 2 > PLATE.x && y + STAMP_W / 2 > PLATE.y;
+  }
+  function clearOfPlate(s) {
+    if (!onPlate(s.x, s.y)) return s;
+    const left = s.x + STAMP_W / 2 - PLATE.x, up = s.y + STAMP_W / 2 - PLATE.y;
+    return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
+  }
   function randomStamp(rand = Math.random) {
-    return { x: Math.round((-8 + rand() * 92) * 10) / 10, y: Math.round((-15 + rand() * 100) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
+    let spot;
+    for (let tries = 0; tries < 40; tries++) {
+      spot = { x: Math.round((-8 + rand() * 92) * 10) / 10, y: Math.round((-15 + rand() * 100) * 10) / 10 };
+      if (!onPlate(spot.x, spot.y)) break;
+    }
+    return { ...clearOfPlate(spot), rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
   }
   var LIVE_MS = 2e4;
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
@@ -3826,7 +3841,7 @@ var HxH = (() => {
         box = h("div", { className: "gi-stamps" });
         band.append(box);
       }
-      box.replaceChildren(...this.heartsOn(c.id).map((s) => {
+      box.replaceChildren(...this.heartsOn(c.id).map(clearOfPlate).map((s) => {
         const el = h("span", { className: "gi-stamp", html: icon("heart-stamp", 16), title: "Someone likes this character" });
         el.style.left = s.x + "%";
         el.style.top = s.y + "%";
