@@ -182,7 +182,7 @@ export class CharacterWindow extends Window {
   setChar(c, { form = true } = {}) {
     this.char = c;
     this.fresh = freshness(c);
-    this.setTitle((c.card_number == null ? "" : `No. ${c.card_number} · `) + `${c.name} (id ${c.id})`);
+    this.setTitle(`No. ${c.card_number ?? c.id} · ${c.name} (id ${c.id})`);
     this.renderSlots();
     this.renderReview();
     if (form) this.fillForm(); else this.syncNumber();   // the number arrives with the first Accept, whatever field has focus
@@ -190,12 +190,12 @@ export class CharacterWindow extends Window {
     this.renderGallery();
   }
 
-  /** The No. field: blank and off until the card is first accepted, then its number. */
+  /** The No. field follows the character (unless the reviewer is typing in it); a skipped stub's is off with the rest of its form. */
   syncNumber() {
     const c = this.char, no = this.el.querySelector('[data-f="card_number"]');
     if (no === this.el.ownerDocument.activeElement) return;
-    no.value = c.card_number == null ? "" : String(c.card_number);
-    no.disabled = c.card_number == null;
+    no.value = String(c.card_number ?? c.id);
+    no.disabled = c.review_status === "skipped";
   }
 
   /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
@@ -254,7 +254,7 @@ export class CharacterWindow extends Window {
     for (const b of el.querySelectorAll("[data-review]")) b.disabled = frozen || b.dataset.review === c.review_status;
     el.querySelector("[data-request]").disabled = frozen;
     el.querySelector('[data-img="upload"]').disabled = frozen;
-    for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) { if (f.dataset.f !== "card_number") f.disabled = frozen; }
+    for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) f.disabled = frozen;
     el.classList.toggle("frozen-skipped", frozen);
     const log = el.querySelector(".log");
     log.replaceChildren(...(c.reviews || []).slice(0, 6).map(r => h("div", { className: "lrow" },

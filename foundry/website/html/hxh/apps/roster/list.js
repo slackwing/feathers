@@ -1,22 +1,24 @@
 /* RosterWindow — the character list, a 90s "details" view: column
    headers as raised buttons INSIDE the sunken list (sticky at the top,
    so they line up with the rows under the same scrollbar), one row per
-   character, a status bar counting them. All verdicts show, sorted by
-   status (pending, accepted, rejected) then by card number; View
-   narrows to one status, or to the characters with open requests. Column names and picture categories come
+   character, a status bar counting them. Every card has a number and
+   the list is ALWAYS in number order, whatever the statuses (Andrew,
+   2026-09-22: grouping by status fought the binder order and made
+   dragging meaningless); View narrows to one status, or to the
+   characters with open requests. Column names and picture categories come
    from fields.js. Double-click (or Enter) opens the character. Rows
    drag: dropping one between two others is ONE renumbering on the
    server (Andrew, 2026-09-21), shown under the busy overlay. */
 import { Window } from "../../os/window.js";
 import { h } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
-import { LABEL, TYPES, STATUSES, STATUS_ORDER } from "./fields.js";
+import { LABEL, TYPES, STATUSES } from "./fields.js";
 
 export const FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
 const PICS_TITLE = TYPES.map(([, l]) => l).join(" · ");
-/* a card's number, or null until it is first accepted (Andrew, 2026-09-21: pending and rejected numbers were confusing) */
-export const number = c => (c.card_number == null ? null : c.card_number);
+/* a card's number: every card has one (Andrew, 2026-09-22) */
+export const number = c => c.card_number ?? c.id;
 
 /**
  * Where a dragged row would land: the row above the insertion point,
@@ -25,7 +27,6 @@ export const number = c => (c.card_number == null ? null : c.card_number);
  * elements in their visual order; y is the pointer's clientY.
  */
 export function dropTarget(rows, y, id) {
-  rows = rows.filter(r => r.dataset.no);   // only numbered cards take part
   const others = rows.filter(r => +r.dataset.id !== id);
   const before = others.find(r => { const b = r.getBoundingClientRect(); return y < b.top + b.height / 2; });
   const i = before ? others.indexOf(before) : others.length;
@@ -86,17 +87,17 @@ export class RosterWindow extends Window {
   setFilter(f) { this.filter = f; this.renderRows(); }
   say(msg, err = false) { this.msgEl.textContent = msg; this.msgEl.classList.toggle("err", !!err); }
 
-  /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
+  /** By card number, then by id — never by status. */
   shown() {
     return this.chars.filter(c => !this.filter ? c.review_status !== "skipped" : this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter)
-      .sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
+      .sort((a, b) => number(a) - number(b) || a.id - b.id);
   }
 
   /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
   dragStart(e) {
     if (e.button !== 0) return;
     const row = e.target.closest(".row");
-    if (!row || !row.dataset.no) return;   // an unnumbered card has no place to drag to
+    if (!row) return;
     const id = +row.dataset.id, doc = row.ownerDocument;
     const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
     const move = ev => {
@@ -139,9 +140,8 @@ export class RosterWindow extends Window {
   row(c) {
     const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
     const counts = TYPES.map(([t]) => (c.image_counts || {})[t] || 0);
-    const no = number(c);
-    return h("div", { className: "row", dataset: { id: String(c.id), ...(no == null ? {} : { no: String(no) }) }, role: "option" },
-      h("span", { className: "c-no", text: no == null ? "" : String(no), title: "id " + c.id }),
+    return h("div", { className: "row", dataset: { id: String(c.id), no: String(number(c)) }, role: "option" },
+      h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
       h("span", { className: "c-av" }, av),
       h("span", { className: "c-name", text: c.name }),
       h("span", { className: "c-ja", text: c.name_ja || "" }),

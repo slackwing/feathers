@@ -184,11 +184,12 @@ Every derived picture carries `source_image_id` so lineage is visible.
 ## 8a. Card numbers
 
 `card_number` is the character's place in the binder (Andrew,
-2026-09-21) — separate from the id, which is the handle roster.py
-uses and never changes. A character has NO number until a reviewer
-first accepts it (Accept hands out the next one); the reviewers
-renumber by dragging rows in the Roster DB, and `roster.py move <id>
---after <id>` does the same from here for numbered cards.
+2026-09-21/22) — separate from the id, which is the handle roster.py
+uses and never changes. Every character has one from creation (the
+next after the highest, whatever its status); the Roster DB lists
+cards in number order only, and the reviewers renumber by dragging
+rows there; `roster.py move <id> --after <id>` does the same from
+here.
 Numbers are deliberately not unique: a duplicate is a thing to fix,
 not an error. `roster.py list` shows both.
 

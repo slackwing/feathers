@@ -228,7 +228,7 @@ def main():
     p = sub.add_parser("skip"); p.add_argument("name"); p.add_argument("--arc", required=True, help="the arc slug they appear in"); p.add_argument("--why", required=True, help="one line: why no card"); p.add_argument("--first", default="")
     p = sub.add_parser("resurrect"); p.add_argument("id", type=int)
     sub.add_parser("stamps")
-    p = sub.add_parser("move"); p.add_argument("id", type=int); p.add_argument("--after", type=int, default=0, help="the character id it goes right after (0 = the front)")
+    p = sub.add_parser("move"); p.add_argument("id", type=int); p.add_argument("--after", type=int, default=0, help="the character id it goes right after (0 = the front); every card is numbered")
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
     p = sub.add_parser("crop"); p.add_argument("image", type=int); [p.add_argument(k, type=int) for k in ("x", "y", "w", "h")]
@@ -247,7 +247,7 @@ def main():
         for r in c.db("GET", "/chars?status=" + a.status):
             acc = f" accepted@v{r['accepted_version']}" if r.get("accepted_version") is not None else ""
             rq = f"  [{r['open_requests']} open request{'s' if r['open_requests'] != 1 else ''}]" if r.get("open_requests") else ""
-            no = f"No.{r['card_number']:<4}" if r.get("card_number") is not None else "No.—   "
+            no = f"No.{r['card_number']:<4}"
             print(f"{r['id']:>4}  {no} v{r['version']:<3} {r['review_status']:<9}{acc} {r['rank']}  {r['name']}  ({r['image_count']} pictures){rq}")
     elif a.cmd == "get":
         out(c.db("GET", f"/chars/{a.id}"))
@@ -301,7 +301,7 @@ def main():
         if not by: print("no hearts yet", file=sys.stderr)
     elif a.cmd == "move":
         for r in c.db("POST", f"/chars/{a.id}/move", {"after": a.after}):
-            print(f"{r['id']:>4}  No.{r['card_number'] if r['card_number'] is not None else '—':<4} {r['name']}")
+            print(f"{r['id']:>4}  No.{r['card_number']:<4} {r['name']}")
     elif a.cmd in ("reject", "keep"):
         out(c.db("PATCH", f"/images/{a.image}", {"status": "rejected" if a.cmd == "reject" else "kept"}))
     elif a.cmd == "crop":
