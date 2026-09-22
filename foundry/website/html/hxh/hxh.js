@@ -6226,7 +6226,7 @@ var HxH = (() => {
     <div class="f"><label class="lbl">${LABEL.name_ja}</label><input class="field" data-f="name_ja" maxlength="100" lang="ja"></div>
   </div>
   <div class="frow four">
-    <div class="f"><label class="lbl">${LABEL.first}</label><input class="field" data-f="first" maxlength="20"></div>
+    <div class="f"><label class="lbl">${LABEL.first}</label><input class="field" data-f="first" maxlength="60"></div>
     <div class="f"><label class="lbl">${LABEL.rank}</label><select class="field" data-f="rank">${RANKS.map((r) => `<option>${r}</option>`).join("")}</select></div>
     <div class="f"><label class="lbl">${LABEL.nen_types}</label><div class="pair"><select class="field" data-nen="0"></select><select class="field" data-nen="1"></select></div></div>
     <div class="f"><label class="lbl">${LABEL.affiliation}</label><input class="field" data-f="affiliation" maxlength="60"></div>
