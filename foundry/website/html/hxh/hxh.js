@@ -426,6 +426,25 @@ var HxH = (() => {
       ".......kk.......",
       "................"
     ],
+    // the heart as a rubber stamp would print it: the outline only, ink-red, two pixels thick
+    "heart-stamp": [
+      "................",
+      "..rrrr....rrrr..",
+      ".rrrrrr..rrrrrr.",
+      "rrr..rrrrrr..rrr",
+      "rr....rrrr....rr",
+      "rr............rr",
+      "rr............rr",
+      "rr............rr",
+      ".rr..........rr.",
+      "..rr........rr..",
+      "...rr......rr...",
+      "....rr....rr....",
+      ".....rr..rr.....",
+      "......rrrr......",
+      ".......rr.......",
+      "................"
+    ],
     // the binder's bookmark: "Bookmark for myself" — a gold ribbon with a notched tail
     bookmark: [
       "................",
@@ -3808,7 +3827,7 @@ var HxH = (() => {
         band.append(box);
       }
       box.replaceChildren(...this.heartsOn(c.id).map((s) => {
-        const el = h("span", { className: "gi-stamp", html: icon("heart", 16), title: "Someone likes this character" });
+        const el = h("span", { className: "gi-stamp", html: icon("heart-stamp", 16), title: "Someone likes this character" });
         el.style.left = s.x + "%";
         el.style.top = s.y + "%";
         el.style.transform = `rotate(${s.rotation}deg)`;
