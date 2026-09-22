@@ -310,7 +310,8 @@ test("a claim: the question with Claim / Not Yet / Bookmark Instead; a claim pri
   assert.ok(plate, "the name plate is on the card");
   assert.equal(plate.textContent, "READER A");
   const x = parseFloat(plate.style.left), y = parseFloat(plate.style.top);
-  assert.ok(x >= PLATE.x && x <= PLATE.x + 8 && y >= PLATE.y + 4 && y <= PLATE.y + 14, "in the reserved corner: " + plate.style.left + " " + plate.style.top);
+  assert.ok(x >= 90 && x <= 100 && y >= 94 && y <= 102, "its bottom-right corner sits at the box's corner: " + plate.style.left + " " + plate.style.top);
+  assert.ok(/translate\(-100%, -100%\)/.test(plate.style.transform), "hung from its bottom-right corner, so a long name grows into the box");
   assert.ok(claim.classList.contains("lit") && !claim.disabled);
   assert.equal(claim.title, "This is you! Press again to release");
   // a new claim moves the old one

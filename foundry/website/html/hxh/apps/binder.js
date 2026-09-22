@@ -53,9 +53,9 @@ export function clearOfPlate(s) {
   return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
 }
 
-/** Where a claim's name plate lands: inside the reserved corner, a little off its anchor, leaning at most ±8°. */
+/** Where a claim's name plate lands: the plate hangs from its BOTTOM-RIGHT corner, which sits near the box's own corner (a little past it is fine), leaning at most ±8°; a long name grows leftward into the box. */
 export function randomPlate(rand = Math.random) {
-  return { x: Math.round((PLATE.x + rand() * 8) * 10) / 10, y: Math.round((PLATE.y + 4 + rand() * 10) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
+  return { x: Math.round((90 + rand() * 10) * 10) / 10, y: Math.round((94 + rand() * 8) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
 }
 
 /** Where a new heart lands on the description box: % of the box, allowed to hang over its edge, never on the plate; upright within ±STAMP_ROT. */
@@ -285,7 +285,7 @@ export class BinderApp extends App {
     const cl = this.claimOn(c.id);
     if (cl) {
       const el = h("span", { className: "gi-claim", text: cl.label || cl.username.toUpperCase(), title: `${cl.label || cl.username} is coming as ${c.first || c.name}` });
-      el.style.left = cl.x + "%"; el.style.top = cl.y + "%"; el.style.transform = `rotate(${cl.rotation}deg)`;
+      el.style.left = cl.x + "%"; el.style.top = cl.y + "%"; el.style.transform = `translate(-100%, -100%) rotate(${cl.rotation}deg)`;   // (x, y) is the plate's bottom-right corner
       box.append(el);
     }
   }
