@@ -1302,8 +1302,21 @@ var HxH = (() => {
       this.env = env;
       this.desktop = desktop;
       this.wins = /* @__PURE__ */ new Map();
+      this.hints = /* @__PURE__ */ new Map();
       this.zTop = 10;
       this.activeId = null;
+    }
+    /** Where a window not yet open should land (the saved desktop); consumed by its first open. */
+    hint(id, at) {
+      this.hints.set(id, at);
+    }
+    unhint(id) {
+      this.hints.delete(id);
+    }
+    /** Keep a saved place on the desktop: at least a hand's width visible, never above the top. */
+    clamp({ x, y }) {
+      const maxX = Math.max(0, (this.env.width || 0) - 80);
+      return { x: Math.min(Math.max(0, x), maxX), y: Math.max(0, y) };
     }
     get(id) {
       return this.wins.get(id);
@@ -1372,13 +1385,17 @@ var HxH = (() => {
       w.el.hidden = false;
       w.state.open = true;
       w.state.minimized = false;
+      const hint = this.hints.get(id);
+      if (hint) this.hints.delete(id);
       if (this.env.floating() && !w.static) {
-        if (at) this.placeEl(w, at);
+        if (hint) this.placeEl(w, this.clamp(hint));
+        else if (at) this.placeEl(w, at);
         else if (!w.state.placed) this.placeEl(w, { x: 150 + this.wins.size % 6 * 35, y: 30 + this.wins.size % 6 * 35 });
       }
       this.focus(id);
       this.fit();
       this.bus.emit("window:open", { id, first: wasHidden });
+      if (hint?.min) this.minimize(id);
       if (scroll && !this.env.floating() && wasHidden && !w.el.classList.contains("profile")) {
         w.el.scrollIntoView?.({ block: "start", behavior: this.env.reduced ? "auto" : "smooth" });
       }
@@ -1448,7 +1465,10 @@ var HxH = (() => {
         sy = e.clientY;
         ox = el.offsetLeft;
         oy = el.offsetTop;
-        handle.setPointerCapture?.(e.pointerId);
+        try {
+          handle.setPointerCapture?.(e.pointerId);
+        } catch {
+        }
         e.preventDefault();
       });
       handle.addEventListener("pointermove", (e) => {
@@ -1462,6 +1482,7 @@ var HxH = (() => {
         if (!moving) return;
         moving = false;
         this.fit();
+        this.bus.emit("window:move", { id: win.id });
       };
       handle.addEventListener("pointerup", end);
       handle.addEventListener("pointercancel", end);
@@ -1789,6 +1810,28 @@ var HxH = (() => {
     /** Optional tray presence: { icon, title, on, onClick, menu: () => items }. */
     tray() {
       return null;
+    }
+    /* ---- the saved desktop (os/layout.js) ---- */
+    /** Which windows are this app's: "win-<id>" and "win-<id>-…" by convention. */
+    owns(winId2) {
+      return winId2 === "win-" + this.id || winId2.startsWith("win-" + this.id + "-");
+    }
+    /** A token that lets reopen() rebuild a sub-window (a chat room, a character id); null for the main window. */
+    key(win) {
+      void win;
+      return null;
+    }
+    /**
+     * Bring back one of this app's windows for the saved desktop. The
+     * default knows only the main window (`launch({ restore: true })`);
+     * apps with more override it. Return false for windows not worth
+     * waking up to (dialogs, transient views) — they are dropped.
+     */
+    async reopen(winId2, key) {
+      void key;
+      if (winId2 !== "win-" + this.id) return false;
+      await this.launch({ restore: true });
+      return true;
     }
   };
   var AppRegistry = class {
@@ -3064,6 +3107,122 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/layout.js
+  var DESK_PREFIX = "hxh.desk.";
+  var SAVE_DELAY = 300;
+  var DESK_VERSION = 1;
+  var Layout = class {
+    constructor({ os: os2, storage = globalThis.localStorage, delay = SAVE_DELAY } = {}) {
+      this.os = os2;
+      this.storage = storage;
+      this.delay = delay;
+      this.armed = false;
+      this.restoring = false;
+      this.timer = null;
+    }
+    get key() {
+      const u = this.os.user?.username;
+      return u ? DESK_PREFIX + u : null;
+    }
+    /** Start recording: window events schedule a save; leaving the page flushes one. */
+    watch() {
+      for (const ev of ["window:open", "window:close", "window:minimize", "window:focus", "window:move", "window:remove"]) this.os.bus.on(ev, () => this.schedule());
+      this.os.win?.addEventListener?.("pagehide", () => this.flush());
+      return this;
+    }
+    schedule() {
+      if (!this.armed || this.restoring) return;
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.save(), this.delay);
+      this.timer.unref?.();
+    }
+    flush() {
+      if (!this.armed || this.restoring) return;
+      clearTimeout(this.timer);
+      this.save();
+    }
+    /** The app that owns a window, if any (dialogs and the logon box have none). */
+    appOf(winId2) {
+      return this.os.registry.all().find((a) => a.owns(winId2)) || null;
+    }
+    /** Every open (or minimized) app window, bottom to top, with its place. */
+    snapshot() {
+      const wm = this.os.wm;
+      const wins = wm.all().filter((w) => w.state.open && !w.static && this.appOf(w.id)).sort((a, b) => (+a.el.style.zIndex || 0) - (+b.el.style.zIndex || 0));
+      const windows = wins.map((w) => {
+        const app = this.appOf(w.id), key = app.key(w);
+        return { id: w.id, app: app.id, ...key != null ? { key } : {}, x: parseInt(w.el.style.left) || 0, y: parseInt(w.el.style.top) || 0, ...w.state.minimized ? { min: true } : {} };
+      });
+      const active = wm.activeId && windows.some((s) => s.id === wm.activeId) ? wm.activeId : null;
+      return { v: DESK_VERSION, active, windows };
+    }
+    save() {
+      const k = this.key;
+      if (!k) return null;
+      const snap = this.snapshot();
+      try {
+        this.storage?.setItem(k, JSON.stringify(snap));
+      } catch {
+      }
+      return snap;
+    }
+    /** The saved desktop for the current user, or null (none, another version, garbage). */
+    load() {
+      const k = this.key;
+      if (!k) return null;
+      try {
+        const raw = this.storage?.getItem(k);
+        if (raw == null) return null;
+        const d = JSON.parse(raw);
+        return d && d.v === DESK_VERSION && Array.isArray(d.windows) ? d : null;
+      } catch {
+        return null;
+      }
+    }
+    clear() {
+      const k = this.key;
+      if (k) try {
+        this.storage?.removeItem(k);
+      } catch {
+      }
+    }
+    /**
+     * Rebuild the saved desktop. Resolves true when there was one (the
+     * page's autostart is then skipped, even if nothing was open), false
+     * on a first visit. Windows whose app is gone, hidden from this user,
+     * or unwilling to bring them back are dropped from the record.
+     */
+    async restore() {
+      const os2 = this.os, wm = os2.wm;
+      if (!os2.user) return false;
+      const saved = this.load();
+      this.armed = true;
+      if (!saved) return false;
+      this.restoring = true;
+      try {
+        for (const s of saved.windows) {
+          if (!s || typeof s.id !== "string") continue;
+          const app = os2.registry.get(s.app);
+          if (!app || !app.owns(s.id) || !app.visible(os2.user)) continue;
+          wm.hint(s.id, { x: +s.x || 0, y: +s.y || 0, min: !!s.min });
+          try {
+            await app.reopen(s.id, s.key);
+          } catch (err) {
+            console.warn(`[hxh] could not bring back ${s.id}:`, err);
+          }
+          wm.unhint(s.id);
+        }
+        const a = saved.active ? wm.get(saved.active) : null;
+        if (a && a.state.open && !a.state.minimized) wm.focus(a.id);
+        else wm.focusTop();
+      } finally {
+        this.restoring = false;
+      }
+      this.save();
+      return true;
+    }
+  };
+
   // html/hxh/os/os.js
   var THEME_KEY = "theme";
   var THEME_DEFAULT = "seapumpkin";
@@ -3096,6 +3255,7 @@ var HxH = (() => {
       this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
       this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
       this.settings = new Settings({ storage: win.localStorage });
+      this.layout = new Layout({ os: this, storage: win.localStorage });
       this.registry = new AppRegistry(this);
       this.user = null;
       this.ready = false;
@@ -3112,6 +3272,7 @@ var HxH = (() => {
       this.desktop.mount(existing ? null : body);
       this.desktop.on("launch", (id) => this.launch(id));
       this.wm = new WindowManager({ bus: this.bus, env: this.env, desktop: this.desktop.el });
+      this.layout.watch();
       this.toast = new Toast().mount(body);
       this.boot = new Boot({ env: this.env }).mount(body);
       this.backdrop = new Backdrop().mount(body);
@@ -3277,7 +3438,8 @@ var HxH = (() => {
      * start({ apps, autostart, gate, taskbar, wallpaper, boot, start, icons,
      *         bootLines }) — register apps, build the chrome, boot (cold loads
      * only), look up the session, log on if gated, then bring up the desktop
-     * and launch the autostart apps. Resolves with the OS once ready.
+     * as it was left (`Layout.restore`) or, on a first visit, launch the
+     * autostart apps. Resolves with the OS once ready.
      */
     async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, start: start2 = false, icons = taskbar, bootLines: extra = [] } = {}) {
       for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
@@ -3295,7 +3457,8 @@ var HxH = (() => {
       if (icons) this.desktop.showIcons(true);
       this.ready = true;
       this.bus.emit("os:ready", { user: me });
-      for (const id of autostart) await this.launch(id, { autostart: true });
+      const restored = await this.layout.restore();
+      if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
       return this;
     }
     launch(id, opts = {}) {
@@ -5671,6 +5834,27 @@ var HxH = (() => {
         ]
       };
     }
+    /* The saved desktop (os/layout.js): the buddy list and each room come
+       back — a room by its name, so a DM finds its partner — and the app
+       connects once; the cracktro, profiles and the picture dialog do not.
+       Not `launching`: the first hello must not open and focus the global
+       room over the desktop as it was left (unread rooms still surface). */
+    key(win) {
+      return win.props?.room ?? null;
+    }
+    async reopen(id, key) {
+      if (id === this.contactsWin?.id || id === "win-chat-contacts") {
+        this.connect();
+        this.openContacts();
+        return true;
+      }
+      if (key && id === "win-chat-" + roomSlug(key)) {
+        this.connect();
+        this.openRoom(key, { focus: true });
+        return true;
+      }
+      return false;
+    }
     /** Exit (the tray menu): every BeetleChat window closes; the connection and the tray icon stay (Andrew, 2026-09-22). */
     exit() {
       const wm = this.os.wm;
@@ -7659,6 +7843,22 @@ var HxH = (() => {
       }
     }
     /* ---------- a character ---------- */
+    /* The saved desktop (os/layout.js): the list and each character window
+       (by its character id); requests and crop windows are not worth waking up to. */
+    key(win) {
+      return win instanceof CharacterWindow ? win.charId : null;
+    }
+    async reopen(id, key) {
+      if (id === "win-roster") {
+        this.launch();
+        return true;
+      }
+      if (key != null && id === winId(key)) {
+        await this.openChar(key);
+        return true;
+      }
+      return false;
+    }
     async openChar(id) {
       const os2 = this.os;
       let w = this.chars.get(id);

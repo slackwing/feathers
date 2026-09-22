@@ -1181,8 +1181,6 @@ body.logon .icons {
   color: var(--t, var(--paper-hi));
   font: 700 11px/1 var(--font-ui);
   padding-top: 1px;
-  border: var(--px) solid var(--ink);
-  box-shadow: 0 0 0 1px var(--paper-hi);
   vertical-align: middle;
 }
 .avatar.lg {
@@ -1193,8 +1191,6 @@ body.logon .icons {
 .avatar.pic {
   padding: 0;
   overflow: hidden;
-  box-sizing: border-box;
-  border: 2px solid var(--c, var(--none));
   background: var(--paper-hi);
 }
 .avatar.pic img {
