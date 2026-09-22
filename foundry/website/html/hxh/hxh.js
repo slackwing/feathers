@@ -6003,9 +6003,8 @@ var HxH = (() => {
   var FILTERS = [["", "All"], ...STATUSES, ["requests", "With requests"]];
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : "";
   var PICS_TITLE = TYPES2.map(([, l]) => l).join(" \xB7 ");
-  var number = (c) => c.card_number == null ? null : c.card_number;
+  var number = (c) => c.card_number ?? c.id;
   function dropTarget(rows, y, id) {
-    rows = rows.filter((r) => r.dataset.no);
     const others = rows.filter((r) => +r.dataset.id !== id);
     const before = others.find((r) => {
       const b = r.getBoundingClientRect();
@@ -6092,15 +6091,15 @@ var HxH = (() => {
       this.msgEl.textContent = msg;
       this.msgEl.classList.toggle("err", !!err);
     }
-    /** By status (pending, requested, accepted, rejected), then by card number, then by id. */
+    /** By card number, then by id — never by status. */
     shown() {
-      return this.chars.filter((c) => !this.filter ? c.review_status !== "skipped" : this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter).sort((a, b) => (STATUS_ORDER[a.review_status] ?? 9) - (STATUS_ORDER[b.review_status] ?? 9) || (number(a) ?? Infinity) - (number(b) ?? Infinity) || a.id - b.id);
+      return this.chars.filter((c) => !this.filter ? c.review_status !== "skipped" : this.filter === "requests" ? c.open_requests > 0 : c.review_status === this.filter).sort((a, b) => number(a) - number(b) || a.id - b.id);
     }
     /* A row drags once the mouse has moved a few pixels (a plain click still selects); a line shows where it would land. */
     dragStart(e) {
       if (e.button !== 0) return;
       const row = e.target.closest(".row");
-      if (!row || !row.dataset.no) return;
+      if (!row) return;
       const id = +row.dataset.id, doc = row.ownerDocument;
       const st = { on: false, after: null, line: null, x0: e.clientX, y0: e.clientY };
       const move = (ev) => {
@@ -6150,11 +6149,10 @@ var HxH = (() => {
     row(c) {
       const av = c.avatar_image_id ? h("img", { className: "av", alt: "", src: this.props.thumbURL?.(c.avatar_image_id) || "" }) : h("i", { className: "av none" });
       const counts = TYPES2.map(([t]) => (c.image_counts || {})[t] || 0);
-      const no = number(c);
       return h(
         "div",
-        { className: "row", dataset: { id: String(c.id), ...no == null ? {} : { no: String(no) } }, role: "option" },
-        h("span", { className: "c-no", text: no == null ? "" : String(no), title: "id " + c.id }),
+        { className: "row", dataset: { id: String(c.id), no: String(number(c)) }, role: "option" },
+        h("span", { className: "c-no", text: String(number(c)), title: "id " + c.id }),
         h("span", { className: "c-av" }, av),
         h("span", { className: "c-name", text: c.name }),
         h("span", { className: "c-ja", text: c.name_ja || "" }),
@@ -6387,7 +6385,7 @@ var HxH = (() => {
     setChar(c, { form = true } = {}) {
       this.char = c;
       this.fresh = freshness(c);
-      this.setTitle((c.card_number == null ? "" : `No. ${c.card_number} \xB7 `) + `${c.name} (id ${c.id})`);
+      this.setTitle(`No. ${c.card_number ?? c.id} \xB7 ${c.name} (id ${c.id})`);
       this.renderSlots();
       this.renderReview();
       if (form) this.fillForm();
@@ -6395,12 +6393,12 @@ var HxH = (() => {
       this.renderWedges();
       this.renderGallery();
     }
-    /** The No. field: blank and off until the card is first accepted, then its number. */
+    /** The No. field follows the character (unless the reviewer is typing in it); a skipped stub's is off with the rest of its form. */
     syncNumber() {
       const c = this.char, no = this.el.querySelector('[data-f="card_number"]');
       if (no === this.el.ownerDocument.activeElement) return;
-      no.value = c.card_number == null ? "" : String(c.card_number);
-      no.disabled = c.card_number == null;
+      no.value = String(c.card_number ?? c.id);
+      no.disabled = c.review_status === "skipped";
     }
     /** The New wedge on every profile field the bot changed since the last verdict (the slots and tiles draw their own). */
     renderWedges() {
@@ -6456,9 +6454,7 @@ var HxH = (() => {
       for (const b of el.querySelectorAll("[data-review]")) b.disabled = frozen || b.dataset.review === c.review_status;
       el.querySelector("[data-request]").disabled = frozen;
       el.querySelector('[data-img="upload"]').disabled = frozen;
-      for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) {
-        if (f.dataset.f !== "card_number") f.disabled = frozen;
-      }
+      for (const f of el.querySelectorAll(".form input, .form select, .form textarea")) f.disabled = frozen;
       el.classList.toggle("frozen-skipped", frozen);
       const log = el.querySelector(".log");
       log.replaceChildren(...(c.reviews || []).slice(0, 6).map((r) => h(
