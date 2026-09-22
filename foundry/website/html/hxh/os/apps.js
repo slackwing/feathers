@@ -34,6 +34,27 @@ export class App {
 
   /** Optional tray presence: { icon, title, on, onClick, menu: () => items }. */
   tray() { return null; }
+
+  /* ---- the saved desktop (os/layout.js) ---- */
+
+  /** Which windows are this app's: "win-<id>" and "win-<id>-…" by convention. */
+  owns(winId) { return winId === "win-" + this.id || winId.startsWith("win-" + this.id + "-"); }
+
+  /** A token that lets reopen() rebuild a sub-window (a chat room, a character id); null for the main window. */
+  key(win) { void win; return null; }
+
+  /**
+   * Bring back one of this app's windows for the saved desktop. The
+   * default knows only the main window (`launch({ restore: true })`);
+   * apps with more override it. Return false for windows not worth
+   * waking up to (dialogs, transient views) — they are dropped.
+   */
+  async reopen(winId, key) {
+    void key;
+    if (winId !== "win-" + this.id) return false;
+    await this.launch({ restore: true });
+    return true;
+  }
 }
 
 export class AppRegistry {

@@ -2,16 +2,29 @@
    places and drags windows. Windows talk to it through their
    "chrome" / "pointerdown" events; it talks to everyone else through the OS
    bus: window:add, window:remove, window:open, window:close,
-   window:minimize, window:focus, window:title,
-   window:attention, window:calm (each payload carries the window id). */
+   window:minimize, window:focus, window:move (a drag ended), window:title,
+   window:attention, window:calm (each payload carries the window id).
+   `hint(id, {x, y, min})` is how the saved desktop (os/layout.js) says
+   where a window that is about to be opened belongs: the first open
+   takes the hint over the app's own placement, then forgets it. */
 export class WindowManager {
   constructor({ bus, env, desktop }) {
     this.bus = bus;
     this.env = env;
     this.desktop = desktop;
     this.wins = new Map();
+    this.hints = new Map();
     this.zTop = 10;
     this.activeId = null;
+  }
+
+  /** Where a window not yet open should land (the saved desktop); consumed by its first open. */
+  hint(id, at) { this.hints.set(id, at); }
+  unhint(id) { this.hints.delete(id); }
+  /** Keep a saved place on the desktop: at least a hand's width visible, never above the top. */
+  clamp({ x, y }) {
+    const maxX = Math.max(0, (this.env.width || 0) - 80);
+    return { x: Math.min(Math.max(0, x), maxX), y: Math.max(0, y) };
   }
 
   get(id) { return this.wins.get(id); }
@@ -76,13 +89,17 @@ export class WindowManager {
     if (animate) w.el.classList.add("loading");
     w.el.hidden = false;
     w.state.open = true; w.state.minimized = false;
+    const hint = this.hints.get(id);
+    if (hint) this.hints.delete(id);
     if (this.env.floating() && !w.static) {
-      if (at) this.placeEl(w, at);
+      if (hint) this.placeEl(w, this.clamp(hint));
+      else if (at) this.placeEl(w, at);
       else if (!w.state.placed) this.placeEl(w, { x: 150 + (this.wins.size % 6) * 35, y: 30 + (this.wins.size % 6) * 35 });
     }
     this.focus(id);
     this.fit();
     this.bus.emit("window:open", { id, first: wasHidden });
+    if (hint?.min) this.minimize(id);   // it was sitting in the taskbar
     if (scroll && !this.env.floating() && wasHidden && !w.el.classList.contains("profile")) {
       w.el.scrollIntoView?.({ block: "start", behavior: this.env.reduced ? "auto" : "smooth" });
     }
@@ -147,7 +164,7 @@ export class WindowManager {
       if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
       if (allow && !allow(e)) return;
       moving = true; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
-      handle.setPointerCapture?.(e.pointerId);
+      try { handle.setPointerCapture?.(e.pointerId); } catch {}   // a synthetic pointerdown has no pointer to capture
       e.preventDefault();
     });
     handle.addEventListener("pointermove", e => {
@@ -157,7 +174,7 @@ export class WindowManager {
       el.style.left = Math.min(this.desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
       el.style.top = Math.max(0, y) + "px";
     });
-    const end = () => { if (!moving) return; moving = false; this.fit(); };
+    const end = () => { if (!moving) return; moving = false; this.fit(); this.bus.emit("window:move", { id: win.id }); };
     handle.addEventListener("pointerup", end);
     handle.addEventListener("pointercancel", end);
   }

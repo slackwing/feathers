@@ -11,7 +11,7 @@ import { App } from "../../os/apps.js";
 import { ChatClient, ChatAPI, wsURL } from "./client.js";
 import { ContactsWindow } from "./contacts.js";
 import { avatar } from "../../os/icons.js";
-import { ChatWindow } from "./window.js";
+import { ChatWindow, roomSlug } from "./window.js";
 import { ProfileWindow, ProfileEditor } from "./profile.js";
 import { AboutWindow } from "./about.js";
 import { PictureDialog } from "./picture.js";
@@ -70,6 +70,18 @@ export class ChatApp extends App {
         { label: "Exit", icon: "door", onclick: () => this.exit() },
       ],
     };
+  }
+
+  /* The saved desktop (os/layout.js): the buddy list and each room come
+     back — a room by its name, so a DM finds its partner — and the app
+     connects once; the cracktro, profiles and the picture dialog do not.
+     Not `launching`: the first hello must not open and focus the global
+     room over the desktop as it was left (unread rooms still surface). */
+  key(win) { return win.props?.room ?? null; }
+  async reopen(id, key) {
+    if (id === this.contactsWin?.id || id === "win-chat-contacts") { this.connect(); this.openContacts(); return true; }
+    if (key && id === "win-chat-" + roomSlug(key)) { this.connect(); this.openRoom(key, { focus: true }); return true; }
+    return false;
   }
 
   /** Exit (the tray menu): every BeetleChat window closes; the connection and the tray icon stay (Andrew, 2026-09-22). */

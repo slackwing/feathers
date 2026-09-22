@@ -136,7 +136,7 @@ the OS.
   `events` bus (`on/once/emit`), `onMount/onUnmount` hooks.
 - `EventBus` (`bus.js`) — `on` returns an unsubscribe; handlers are
   isolated (one throwing never stops the rest). The OS bus carries:
-  `window:add/remove/open/close/minimize/maximize/focus/title/attention
+  `window:add/remove/open/close/minimize/maximize/focus/move/title/attention
   {id}`, `tray:add {spec} / tray:remove {id} / tray:refresh`,
   `app:register / app:launch {id}`, `session:user {user}`, `crt {on}`,
   `resize`, `wake {reason}`, `os:ready`. Components never call each
@@ -155,6 +155,27 @@ the OS.
   `close/minimize/toggleMax/focus/focusTop/place/drag` (4 px snap,
   zoom-divided, desktop only), `fit/relayout`, `handleEscape` (active
   popup). Every change is announced on the bus.
+- `Layout` (`layout.js`) — the desktop as you left it (Andrew,
+  2026-09-22: "like they just woke up their desktop computer"). Records
+  which app windows are open, where, in what stacking order, which is
+  minimized and which is active — nothing of what is IN them — in
+  localStorage `hxh.desk.<username>` (per browser, per user, beside
+  the settings), debounced on every window event (`window:move` is
+  emitted at the end of a drag) and flushed on `pagehide`. `OS.start`
+  calls `restore()` once the user is known: when a record exists (even
+  an empty one) the page's `autostart` is skipped and each window comes
+  back bottom to top through its app's `reopen(id, key)`, with
+  `wm.hint(id, {x, y, min})` telling the manager where the FIRST open
+  of that window lands (the hint beats the app's own `at`, is clamped
+  to the desktop, then forgotten; `min` re-minimizes it). Apps: `owns(id)`
+  (default: `win-<app>` and `win-<app>-…`), `key(win)` (a token to
+  rebuild a sub-window: the chat's room, the roster's character id),
+  `reopen(id, key)` (default: only the main window, via
+  `launch({ restore: true })`; return false for dialogs and transient
+  views — they are dropped from the record, as are windows of apps the
+  user cannot see). Chat restores the buddy list and rooms, the roster
+  its list and character windows; the cracktro, profiles, requests and
+  crop windows do not come back.
 - `Taskbar` (`taskbar.js`) = `StartButton` + one `TaskButton` per open
   window (kept in step from the bus: press = minimize if active else
   restore; `flash()` on `window:attention` until focused — the chat
@@ -312,9 +333,10 @@ component architecture (many windows, tray icons + menus, the bus).
   room; `ChatAPI` for the REST calls.
 - **The log (2026-09-22)** — Abi found the AIM-style `name (HH:MM): text`
   lines too text-heavy, so a message row is a grid: a 40 px avatar
-  (`os/icons.js` `avatar()` — the initial on the member's colour, or,
-  when the contact carries `avatar_url`, that picture in a circle
-  RINGED with the member's colour, `.avatar.pic`), a header line
+  (`os/icons.js` `avatar()` — the initial on a plain disc of the
+  member's colour, or, when the contact carries `avatar_url`, a circle
+  crop of that picture, `.avatar.pic`; no borders on either — Andrew
+  dropped the ring 2026-09-22), a header line
   (`.hd`: `.who` bold in the colour, `.ts` HH:MM), and the body
   (`.bd > .txt`, `.pic`). A run of messages from one sender within
   `GROUP_MS` (5 min) on the same day shows the avatar and header ONCE;

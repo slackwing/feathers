@@ -105,6 +105,15 @@ export class RosterApp extends App {
   }
 
   /* ---------- a character ---------- */
+  /* The saved desktop (os/layout.js): the list and each character window
+     (by its character id); requests and crop windows are not worth waking up to. */
+  key(win) { return win instanceof CharacterWindow ? win.charId : null; }
+  async reopen(id, key) {
+    if (id === "win-roster") { this.launch(); return true; }
+    if (key != null && id === winId(key)) { await this.openChar(key); return true; }
+    return false;
+  }
+
   async openChar(id) {
     const os = this.os;
     let w = this.chars.get(id);

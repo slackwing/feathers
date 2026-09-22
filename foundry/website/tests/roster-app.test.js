@@ -711,3 +711,17 @@ test("File › New character… prompts for a name, creates and opens it; delete
   assert.equal(log.some(l => l.method === "DELETE"), false);
   assert.ok(charWin().state.open);
 });
+
+test("the saved desktop: the list and a character window come back (by character id); a requests window does not", async () => {
+  await boot();
+  const a = app();
+  assert.equal(await a.reopen("win-roster"), true);
+  assert.ok(os.wm.get("win-roster").state.open);
+  assert.equal(await a.reopen(winId(3), 3), true);
+  const cw = os.wm.get(winId(3));
+  assert.ok(cw instanceof CharacterWindow && cw.state.open);
+  assert.equal(a.key(cw), 3);
+  assert.equal(a.key(os.wm.get("win-roster")), null);
+  assert.equal(await a.reopen("win-roster-q-3", 3), false);
+  assert.equal(await a.reopen(winId(3), 4), false, "a key that does not match the id is refused");
+});

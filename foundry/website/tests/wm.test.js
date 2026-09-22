@@ -179,13 +179,34 @@ test("drag moves a window with 4px snapping, only from the title bar and only wh
   const down = (x, y, extra = {}) => bar.dispatchEvent(Object.assign(new d.win.Event("pointerdown", { bubbles: true }), { button: 0, clientX: x, clientY: y, pointerId: 1 }, extra));
   const move = (x, y) => bar.dispatchEvent(Object.assign(new d.win.Event("pointermove", { bubbles: true }), { clientX: x, clientY: y }));
   const up = () => bar.dispatchEvent(new d.win.Event("pointerup", { bubbles: true }));
+  const moves = []; bus.on("window:move", p => moves.push(p.id));
   down(100, 100); move(133, 150); up();
   assert.equal(a.el.style.left, "132px");   // snap(100 + 33) = 132
   assert.equal(a.el.style.top, "152px");    // snap(100 + 50) = 152
+  assert.deepEqual(moves, ["a"], "the end of a drag is announced (the saved desktop listens)");
   down(0, 0, { button: 2 }); move(500, 500); up();   // right button: no drag
   assert.equal(a.el.style.left, "132px");
+  assert.deepEqual(moves, ["a"]);
   document.body.classList.add("stacked");             // the stacked layout: no drag
   down(0, 0); move(500, 500); up();
   assert.equal(a.el.style.left, "132px");
   document.body.classList.remove("stacked");
+});
+
+test("a place hint (the saved desktop) wins over the app's placement on the first open only, is clamped, and can mean minimized", async () => {
+  Object.defineProperty(env, "width", { value: 1366 });
+  const a = wm.add(new Window({ id: "a" })), b = wm.add(new Window({ id: "b" }));
+  wm.hint("a", { x: 2000, y: -9 });
+  await wm.open("a", { x: 100, y: 100 });
+  assert.equal(a.el.style.left + " " + a.el.style.top, "1286px 0px", "the hint, clamped to the desktop");
+  wm.close("a");
+  await wm.open("a", { x: 100, y: 100 });
+  assert.equal(a.el.style.left, "100px", "consumed: the second open is the app's");
+  wm.hint("b", { x: 30, y: 40, min: true });
+  await wm.open("b");
+  assert.ok(b.state.open && b.state.minimized && b.el.hidden);
+  assert.equal(b.el.style.left, "30px");
+  assert.equal(wm.activeId, "a", "the minimized one did not take the focus");
+  wm.hint("c", { x: 1, y: 1 }); wm.unhint("c");
+  assert.equal(wm.hints.size, 0);
 });

@@ -28,6 +28,7 @@ import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { WakeWatch } from "./wake.js";
 import { Blimp } from "./blimp.js";
+import { Layout } from "./layout.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
 export const THEME_KEY = "theme", THEME_DEFAULT = "seapumpkin";   // Andrew, 2026-09-21
@@ -60,6 +61,7 @@ export class OS {
     this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
     this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
     this.settings = new Settings({ storage: win.localStorage });
+    this.layout = new Layout({ os: this, storage: win.localStorage });
     this.registry = new AppRegistry(this);
     this.user = null;
     this.ready = false;
@@ -78,6 +80,7 @@ export class OS {
     this.desktop.mount(existing ? null : body);
     this.desktop.on("launch", id => this.launch(id));
     this.wm = new WindowManager({ bus: this.bus, env: this.env, desktop: this.desktop.el });
+    this.layout.watch();
 
     this.toast = new Toast().mount(body);
     this.boot = new Boot({ env: this.env }).mount(body);
@@ -245,7 +248,8 @@ export class OS {
    * start({ apps, autostart, gate, taskbar, wallpaper, boot, start, icons,
    *         bootLines }) — register apps, build the chrome, boot (cold loads
    * only), look up the session, log on if gated, then bring up the desktop
-   * and launch the autostart apps. Resolves with the OS once ready.
+   * as it was left (`Layout.restore`) or, on a first visit, launch the
+   * autostart apps. Resolves with the OS once ready.
    */
   async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
     for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
@@ -263,7 +267,8 @@ export class OS {
     if (icons) this.desktop.showIcons(true);
     this.ready = true;
     this.bus.emit("os:ready", { user: me });
-    for (const id of autostart) await this.launch(id, { autostart: true });
+    const restored = await this.layout.restore();
+    if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
     return this;
   }
 

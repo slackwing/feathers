@@ -536,11 +536,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--c, var(--none)); color: var(--t, var(--paper-hi));
   font: 700 11px/1 var(--font-ui); padding-top: 1px;
-  border: var(--px) solid var(--ink); box-shadow: 0 0 0 1px var(--paper-hi);
-  vertical-align: middle;
+  vertical-align: middle;   /* no border (Andrew, 2026-09-22): just the coloured disc */
 }
 .avatar.lg { width: 55px; height: 55px; font-size: 20px; }
-.avatar.pic { padding: 0; overflow: hidden; box-sizing: border-box; border: 2px solid var(--c, var(--none)); background: var(--paper-hi); }
+.avatar.pic { padding: 0; overflow: hidden; background: var(--paper-hi); }   /* a circle crop of the picture, no ring (Andrew, 2026-09-22) */
 .avatar.pic img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }

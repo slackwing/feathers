@@ -664,3 +664,22 @@ test("Exit in the tray menu closes every BeetleChat window and leaves the connec
   assert.equal(app().connected, true);
   assert.ok(os.taskbar.tray.get("chat"));
 });
+
+test("the saved desktop: the buddy list and a DM come back by their room (one connection), the cracktro and profiles do not", async () => {
+  const a = app();
+  assert.equal(await a.reopen("win-chat-dm-abi-andrew", "dm:abi:andrew"), true);
+  assert.equal(sockets.length, 1, "connected once");
+  const dm = os.wm.get("win-chat-dm-abi-andrew");
+  assert.ok(dm && dm.state.open);
+  assert.equal(a.key(dm), "dm:abi:andrew");
+  assert.equal(await a.reopen("win-chat-contacts"), true);
+  assert.equal(sockets.length, 1);
+  assert.ok(os.wm.get("win-chat-contacts").state.open);
+  assert.equal(a.key(os.wm.get("win-chat-contacts")), null);
+  assert.equal(await a.reopen("win-chat-global", "global"), true);
+  assert.ok(os.wm.get("win-chat-global").state.open);
+  assert.equal(await a.reopen("win-chat-about"), false);
+  assert.equal(await a.reopen("win-chat-profile-abi"), false);
+  assert.equal(await a.reopen("win-chat-dm-abi-andrew", "global"), false, "a key that does not match the id is refused");
+  assert.ok(a.owns("win-chat-contacts") && !a.owns("win-binder"));
+});
