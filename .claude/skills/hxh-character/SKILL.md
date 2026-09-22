@@ -65,9 +65,13 @@ batch report.
   Freecss`, `Melody` (not Senritsu), `Biscuit Krueger`, `Isaac Netero`.
 - `name_ja` — the infobox `kana` exactly (`ゴン＝フリークス`), with the
   `＝` between given and family names. Never transliterate from memory.
-- `first` — the short name printed on a card, ≤ 10 characters, unique
-  in the roster: the given name or the nickname everyone says (`Youpi`
-  for Menthuthuyoupi; `Neferpitou` stays, `Pitou` is not used).
+- `first` — the short name printed on a card, unique in the roster:
+  the given name, or the name everyone in the show actually says
+  (`Youpi` for Menthuthuyoupi, `Pitou` for Neferpitou, `Netero`,
+  `Bisky`). No length cap — the plaque shrinks a long name to fit
+  (Andrew, 2026-09-22: never substitute a number or a truncation like
+  `#301` or `Gittarack`; if a name is genuinely too long to print,
+  say so in the report and let him decide).
 
 ## 2. Classify
 

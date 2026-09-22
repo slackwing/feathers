@@ -288,7 +288,7 @@ def main():
     elif a.cmd == "resolve":
         out(c.db("POST", f"/requests/{a.request}/resolve", {"status": "dropped" if a.dropped else "done", "note": a.note}))
     elif a.cmd == "skip":
-        first = a.first or a.name.split()[0][:10]
+        first = a.first or a.name
         out(c.db("POST", "/chars", {"name": a.name, "first": first, "rank": "C", "nen_types": [], "affiliation": "", "arcs": [a.arc], "arms": [],
                                      "description": "", "card_description": "", "notes": "Skipped: " + a.why, "review_status": "skipped", "review_reason": a.why}))
     elif a.cmd == "resurrect":
