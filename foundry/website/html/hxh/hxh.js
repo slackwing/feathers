@@ -959,6 +959,7 @@ var HxH = (() => {
   }
   function avatar(acct, cls = "") {
     const color = acct?.color || "#9a9a9a";
+    if (acct?.avatar_url) return `<span class="avatar pic ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}"><img src="${esc(acct.avatar_url)}" alt=""></span>`;
     return `<span class="avatar ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}">${esc(acct?.initial || "?")}</span>`;
   }
 
@@ -3316,7 +3317,6 @@ var HxH = (() => {
     Binder: () => BinderApp,
     Chat: () => ChatApp,
     NOTICE: () => NOTICE,
-    Register: () => RegisterApp,
     Roster: () => RosterApp,
     SetPassword: () => SetPasswordApp,
     Summons: () => SummonsApp
@@ -4339,48 +4339,6 @@ var HxH = (() => {
     }
   };
 
-  // html/hxh/apps/register.js
-  var BARS = 20;
-  var BARS_ON = 7;
-  var RegisterApp = class extends App {
-    static id = "register";
-    static name = "Register";
-    static longName = "Registration";
-    static icon = "hourglass";
-    static order = 30;
-    window() {
-      if (this.win) return this.win;
-      this.win = new Window({
-        id: "win-register",
-        title: "Registration",
-        icon: "hourglass",
-        width: 450,
-        cls: "register",
-        content: `
-        <div class="stamp">OPENS SOON</div>
-        <p>Applicant intake is being prepared by the exam committee.
-        Check back shortly to lock in your character \u2014 claims will be
-        first come, first served.</p>
-        <div class="prog" id="prog">${Array.from({ length: BARS }, (_, i) => `<i class="${i < BARS_ON ? "on" : ""}"></i>`).join("")}</div>`
-      });
-      this.os.wm.add(this.win);
-      return this.win;
-    }
-    /** Beside the summons when there is room (145 + 750 + 30 + 450 + 30), else under it. */
-    position() {
-      const os2 = this.os;
-      if (!os2.env.floating()) return null;
-      const vw = os2.desktop.el.clientWidth || os2.env.width;
-      const s = os2.wm.get("win-summons")?.el;
-      if (vw >= 145 + 750 + 30 + 450 + 30 || !s) return { x: 925, y: 24 };
-      return { x: 200, y: s.offsetTop + s.offsetHeight + 12 };
-    }
-    launch() {
-      const win = this.window();
-      return this.os.wm.open(win.id, win.state.placed ? null : this.position());
-    }
-  };
-
   // html/hxh/apps/chat/client.js
   var DEFAULT_BACKOFF = [1e3, 2e3, 5e3, 1e4, 3e4];
   function wsURL(location) {
@@ -4611,6 +4569,10 @@ var HxH = (() => {
         case "presence":
           this.emit("presence", { user: f.user, state: f.state, last_seen_at: f.last_seen_at });
           break;
+        case "contacts":
+          this.emit("contacts", f.contacts || []);
+          break;
+        // a site override changed (a claim): the whole list again
         case "error":
           this.emit("error", { code: f.code, room: f.room });
           break;
@@ -4807,11 +4769,12 @@ var HxH = (() => {
     renderBanner() {
       if (!this.banner) return;
       const me = this.me;
-      this.banner.innerHTML = me ? `${avatar(me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>` : "";
+      this.banner.innerHTML = me ? `${avatar(this.contacts.get(me.username) ? { ...me, ...this.contacts.get(me.username) } : me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>` : "";
     }
     setContacts(list) {
       this.contacts = /* @__PURE__ */ new Map();
       for (const c of list || []) this.contacts.set(c.username, { ...c });
+      this.renderBanner();
       this.renderTree();
       this.syncTools();
     }
@@ -4986,6 +4949,15 @@ var HxH = (() => {
   });
   var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
   var MAX_LOG = 500;
+  var GROUP_MS = 5 * 60 * 1e3;
+  var dayKey = (iso) => {
+    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
+    return isNaN(d) ? "" : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  };
+  var dayLabel = (iso) => {
+    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
+    return isNaN(d) ? "" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  };
   var ChatWindow = class extends Window {
     /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 1.5× both ways) */
     constructor(props) {
@@ -5134,6 +5106,7 @@ var HxH = (() => {
       this.log.replaceChildren();
       this.ids.clear();
       this.messages = [];
+      this.lastDay = null;
       for (const m of list || []) this.addMessage(m, { scroll: false });
       this.scrollDown();
     }
@@ -5151,32 +5124,54 @@ var HxH = (() => {
       if (this.ids.has(m.id)) return null;
       this.ids.add(m.id);
       const p = this.props;
-      const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : ""), dataset: { id: String(m.id), sender: m.sender } });
-      row.append(
-        h("b", { className: "who", text: p.nameOf?.(m.sender) || m.sender, style: { color: p.colorOf?.(m.sender) || "" } }),
-        h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` })
-      );
-      if (m.body) row.append(" ", h("span", { className: "txt", text: m.body }));
-      if (m.image) {
-        row.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+      const day = dayKey(m.created_at);
+      if (day !== this.lastDay) {
+        this.log.append(h("div", { className: "day", text: dayLabel(m.created_at) }));
+        this.lastDay = day;
       }
+      const last = this.messages[this.messages.length - 1];
+      const cont = !!last && last.sender === m.sender && dayKey(last.created_at) === day && Math.abs(new Date(m.created_at || 0) - new Date(last.created_at || 0)) < GROUP_MS && this.log.lastElementChild?.classList.contains("m");
+      const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : "") + (cont ? " cont" : ""), dataset: { id: String(m.id), sender: m.sender } });
+      if (!cont) {
+        row.append(
+          h("span", { className: "av", html: p.avatarOf?.(m.sender) || "" }),
+          h(
+            "div",
+            { className: "hd" },
+            h("b", { className: "who", text: p.nameOf?.(m.sender) || m.sender, style: { color: p.colorOf?.(m.sender) || "" } }),
+            h("span", { className: "ts", text: this.time(m.created_at) })
+          )
+        );
+      }
+      const body = h("div", { className: "bd", title: cont ? this.time(m.created_at) : "" });
+      if (m.body) body.append(h("span", { className: "txt", text: m.body }));
+      if (m.image) {
+        body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+      }
+      row.append(body);
       this.log.append(row);
       this.messages.push(m);
-      while (this.log.childElementCount > MAX_LOG) {
-        this.log.firstElementChild.remove();
+      while (this.messages.length > MAX_LOG) {
+        const first = this.log.querySelector(".m");
+        first?.remove();
         this.messages.shift();
+        while (this.log.firstElementChild && !this.log.firstElementChild.classList.contains("m")) this.log.firstElementChild.remove();
       }
       if (scroll) this.scrollDown();
       else this.pane.update();
       return row;
     }
-    /** Re-apply names and colours (contacts may arrive after history did). */
+    /** Re-apply names, colours and avatars (contacts may arrive after history did, and a claim changes them). */
     refreshNames() {
       const p = this.props;
       for (const row of this.log.querySelectorAll(".m")) {
         const who = row.querySelector(".who"), u = row.dataset.sender;
-        who.textContent = p.nameOf?.(u) || u;
-        who.style.color = p.colorOf?.(u) || "";
+        if (who) {
+          who.textContent = p.nameOf?.(u) || u;
+          who.style.color = p.colorOf?.(u) || "";
+        }
+        const av = row.querySelector(".av");
+        if (av) av.innerHTML = p.avatarOf?.(u) || "";
       }
     }
     showTyping(name, ms = 3e3) {
@@ -5670,9 +5665,17 @@ var HxH = (() => {
           { label: "Global chat", icon: "comment", onclick: () => this.openRoom(ROOM_GLOBAL) },
           { label: "My profile", icon: "card", onclick: () => this.editProfile() },
           "sep",
-          { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() }
+          { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() },
+          "sep",
+          { label: "Exit", icon: "door", onclick: () => this.exit() }
         ]
       };
+    }
+    /** Exit (the tray menu): every BeetleChat window closes; the connection and the tray icon stay (Andrew, 2026-09-22). */
+    exit() {
+      const wm = this.os.wm;
+      for (const w of this.windows.values()) if (w.state.open) wm.close(w.id);
+      if (this.contactsWin?.state.open) wm.close(this.contactsWin.id);
     }
     /* ---------- names, colours, rooms ---------- */
     nameOf(user) {
@@ -5680,6 +5683,17 @@ var HxH = (() => {
     }
     colorOf(user) {
       return this.contacts.get(user)?.color || (user === this.me ? this.os.user?.color : null) || "#9a9a9a";
+    }
+    /** In a chat a member who has claimed a character speaks as "Gon (Andrew C)" (Andrew, 2026-09-22); the contacts list keeps the plain name. */
+    chatNameOf(user) {
+      const ch = this.contacts.get(user)?.character;
+      const n = this.nameOf(user);
+      return ch ? `${ch} (${n})` : n;
+    }
+    /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
+    avatarOf(user) {
+      const c = this.contacts.get(user) || (user === this.me ? this.os.user : null) || { username: user, display_name: user, initial: (user || "?").slice(0, 2).toUpperCase(), color: "#9a9a9a" };
+      return avatar(c);
     }
     roomTitle(room) {
       if (room === ROOM_GLOBAL) return "Global chat";
@@ -5695,6 +5709,7 @@ var HxH = (() => {
         this.setContacts(contacts);
         this.onUnread(unread || []);
       });
+      c.on("contacts", (list) => this.setContacts(list));
       c.on("msg", (m) => this.onMessage(m));
       c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
       c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
@@ -5853,8 +5868,9 @@ var HxH = (() => {
           room,
           title: this.roomTitle(room),
           me: this.me,
-          nameOf: (u) => this.nameOf(u),
+          nameOf: (u) => this.chatNameOf(u),
           colorOf: (u) => this.colorOf(u),
+          avatarOf: (u) => this.avatarOf(u),
           menus: (win) => this.roomMenus(win, room),
           profile: !!other,
           large: room === ROOM_GLOBAL,

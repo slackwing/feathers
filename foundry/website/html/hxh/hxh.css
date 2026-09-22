@@ -1190,6 +1190,20 @@ body.logon .icons {
   height: 55px;
   font-size: 20px;
 }
+.avatar.pic {
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid var(--c, var(--none));
+  background: var(--paper-hi);
+}
+.avatar.pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 .backdrop {
   position: fixed;
   inset: 0;
@@ -2498,39 +2512,6 @@ body.stacked .pageno {
   margin-top: 8px;
 }
 
-/* html/hxh/apps/register.css */
-.register .body {
-  text-align: center;
-}
-.stamp {
-  display: inline-block;
-  transform: rotate(-4deg);
-  font: 18px/1 var(--font-display);
-  color: var(--blood);
-  border: 3px solid var(--blood);
-  padding: 10px 15px 8px;
-  margin: 5px 0 18px;
-  box-shadow: 2px 2px 0 var(--ink);
-}
-.prog {
-  display: flex;
-  gap: 3px;
-  height: 25px;
-  padding: 3px;
-  margin-top: 18px;
-  background: var(--paper-hi);
-  border: var(--px) solid;
-  border-color: var(--paper-lo) var(--paper-hi) var(--paper-hi) var(--paper-lo);
-  box-shadow: inset var(--px) var(--px) 0 rgba(11, 10, 8, .25);
-}
-.prog i {
-  flex: 1;
-  background: var(--paper);
-}
-.prog i.on {
-  background: var(--blood);
-}
-
 /* html/hxh/apps/chat/chat.css */
 .win.chat .body {
   padding: 8px 10px 10px;
@@ -2760,14 +2741,37 @@ body.stacked .pageno {
   min-height: 108px;
 }
 .room .log {
-  padding: 8px 10px;
+  padding: 6px 10px 8px;
   font: var(--t-chat);
 }
 .room .compose textarea {
   font: var(--t-chat);
 }
 .room .m {
-  margin: 0 0 2px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  column-gap: 10px;
+  align-items: start;
+  margin-top: 10px;
+}
+.room .m.cont {
+  margin-top: 3px;
+}
+.room .m .av {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  padding-top: 1px;
+}
+.room .m .av .avatar {
+  width: 30px;
+  height: 30px;
+}
+.room .m .hd {
+  grid-column: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.2;
 }
 .room .m .who {
   color: var(--c, var(--ink));
@@ -2776,9 +2780,34 @@ body.stacked .pageno {
   color: var(--dim-fg);
   font: var(--t-small);
 }
+.room .m .bd {
+  grid-column: 2;
+  min-width: 0;
+}
+.room .m.cont .bd:hover {
+  background: var(--paper);
+}
 .room .m .txt {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.room .day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 2px;
+  font: var(--t-small);
+  color: var(--dim-fg);
+  letter-spacing: .04em;
+}
+.room .day::before,
+.room .day::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--paper-lo);
+}
+.room .log > .day:first-child {
+  margin-top: 2px;
 }
 .room .compose {
   display: flex;
