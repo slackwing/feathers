@@ -230,6 +230,20 @@ Never call `boot`, build a login form, or list apps in a page.
   stays the visual check.
 - `node_modules/` is git-ignored; `npm install` once per machine.
 
+## Local e2e stack (rebuilt 2026-09-22)
+
+Docker postgres `hobby-test-pg` on :5434 (dbs `hobby_server_test` +
+`hxh_test`, migrated with hobby-server's `hobby-liquibase` image per its
+AGENTS.md), the server built from hobby-server and run with its
+`config.test.yaml` on :5099, and `foundry/website/scripts/preview.mjs`
+(`PROXY=http://127.0.0.1:5099 node scripts/preview.mjs 8768`) serving
+`html/` and proxying `/<site>/api/*` → `/api/<site>/*` with the Host
+preserved (the hub checks Origin against Host) and the WebSocket
+tunnelled. Log in through `POST /admin/api/login` (users andrew / abi /
+gon / killua / kurapika, password hunterhunter). Playwright
+(playwright-core on system Chrome) drives two contexts; those scripts
+are throwaway and live in the session scratchpad.
+
 ## BeetleChat — the chat app (`apps/chat/`)
 
 Andrew's spec (items 1–19, 2026-09-18) is `foundry/website/docs/HXH_CHAT.md`;
