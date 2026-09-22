@@ -132,6 +132,7 @@ export class ChatClient {
       case "msg": this.emit("msg", f.msg); break;
       case "typing": this.emit("typing", { room: f.room, user: f.user }); break;
       case "presence": this.emit("presence", { user: f.user, state: f.state, last_seen_at: f.last_seen_at }); break;
+      case "contacts": this.emit("contacts", f.contacts || []); break;   // a site override changed (a claim): the whole list again
       case "error": this.emit("error", { code: f.code, room: f.room }); break;
       default: break;
     }

@@ -104,13 +104,14 @@ export class ContactsWindow extends Window {
     if (!this.banner) return;
     const me = this.me;
     this.banner.innerHTML = me
-      ? `${avatar(me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>`
+      ? `${avatar(this.contacts.get(me.username) ? { ...me, ...this.contacts.get(me.username) } : me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>`
       : "";
   }
 
   setContacts(list) {
     this.contacts = new Map();
     for (const c of list || []) this.contacts.set(c.username, { ...c });
+    this.renderBanner();   // the site may override my own avatar (a claim)
     this.renderTree();
     this.syncTools();
   }

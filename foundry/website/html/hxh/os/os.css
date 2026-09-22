@@ -540,6 +540,8 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   vertical-align: middle;
 }
 .avatar.lg { width: 55px; height: 55px; font-size: 20px; }
+.avatar.pic { padding: 0; overflow: hidden; box-sizing: border-box; border: 2px solid var(--c, var(--none)); background: var(--paper-hi); }
+.avatar.pic img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(11,10,8,.55); display: none; }
 .backdrop.on { display: block; }
 

@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { SummonsApp, NOTICE } from "../html/hxh/apps/summons.js";
-import { RegisterApp, BARS, BARS_ON } from "../html/hxh/apps/register.js";
 import { BinderApp } from "../html/hxh/apps/binder.js";
 import * as apps from "../html/hxh/apps/index.js";
 
@@ -18,14 +17,14 @@ beforeEach(() => make());
 
 test("the index page's app set is exported under short names", () => {
   assert.equal(apps.Summons, SummonsApp);
-  assert.equal(apps.Register, RegisterApp);
+  assert.equal(apps.Register, undefined);   // removed 2026-09-22: claiming a card replaced registration
   assert.equal(apps.About, undefined);   // removed 2026-09-19
   assert.equal(apps.Binder, BinderApp);
   assert.ok(apps.SetPassword);
 });
 
 test("summons autostart: bare desktop, then the window at 145,24 with the notice typed", async () => {
-  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp], autostart: ["summons"], start: true, boot: false });
+  await os.start({ apps: [SummonsApp, BinderApp], autostart: ["summons"], start: true, boot: false });
   const w = os.wm.get("win-summons");
   assert.equal(w.title, "Hunter × Halloween");
   assert.equal(w.el.style.width, "750px");
@@ -43,11 +42,11 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
 });
 
 test("summons menus are derived from the registry", async () => {
-  await os.start({ apps: [SummonsApp, BinderApp, RegisterApp], autostart: ["summons"], boot: false });
+  await os.start({ apps: [SummonsApp, BinderApp], autostart: ["summons"], boot: false });
   const w = os.wm.get("win-summons");
   const [file, view, settings] = w.menuBar.menus;
   view.open();
-  assert.deepEqual([...view.el.children].map(c => c.textContent), ["Binder", "Registration"]);
+  assert.deepEqual([...view.el.children].map(c => c.textContent), ["Binder"]);
   settings.open();
   assert.deepEqual([...settings.el.children].map(c => c.querySelector("button").firstChild.textContent), ["Display", "Sounds"]);   // the OS Settings tree, cascading
   assert.equal(settings.el.querySelector("svg"), null);   // window menus carry no icons
@@ -81,26 +80,4 @@ test("the summons CTA launches the Binder; clicking the notice skips typing; rel
   d.click(w.$("#vn"));
 });
 
-test("registration: OPENS SOON, 7 of 20 bars, beside the summons on wide screens, below on narrow", async () => {
-  make({ width: 1500 });   // 145 + 750 + 30 + 450 + 30 = 1405 needed for side by side
-  await os.start({ apps: [SummonsApp, RegisterApp], autostart: ["summons"], boot: false });
-  await os.launch("register");
-  const w = os.wm.get("win-register");
-  assert.equal(w.title, "Registration");
-  assert.equal(w.$(".stamp").textContent, "OPENS SOON");
-  assert.equal(w.el.querySelectorAll(".prog i").length, BARS);
-  assert.equal(w.el.querySelectorAll(".prog i.on").length, BARS_ON);
-  assert.equal(w.el.style.left, "925px");
-  assert.equal(w.el.style.top, "24px");
-  os.wm.close("win-register");
-  w.el.style.left = "3px";
-  await os.launch("register");
-  assert.equal(w.el.style.left, "3px");   // never moved once placed
-  make({ width: 1366 });
-  await os.start({ apps: [SummonsApp, RegisterApp], autostart: ["summons"], boot: false });
-  await os.launch("register");
-  const n = os.wm.get("win-register");
-  assert.equal(n.el.style.left, "200px");
-  assert.equal(n.el.style.top, "12px");   // summons offset* are 0 in jsdom
-});
 

@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
 import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
-import { RegisterApp } from "../html/hxh/apps/register.js";
 
 let nextId = 1;
 const mk = (name, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ id: nextId++, name, first: name, rank: "C", nen_types: nen, arcs, arms: [], description: "First. Second.", card_description: "", ...extra });
@@ -130,7 +129,7 @@ beforeEach(async () => {
     return { ok: false, status: 404, json: async () => ({}) };
   };
   os = new OS({ win: d.win, fetch: fakeFetch, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
-  await os.start({ apps: [[BinderApp, { fetch: fakeFetch }], RegisterApp], boot: false });
+  await os.start({ apps: [[BinderApp, { fetch: fakeFetch }]], boot: false });
 });
 
 test("the Binder window is chromeless with minimize + close, popup, on the taskbar; it reads the Roster DB, not roster.json", async () => {

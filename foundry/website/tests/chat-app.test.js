@@ -64,7 +64,7 @@ test("the app is on the desktop and in the tray with a menu", () => {
   const tray = os.taskbar.tray.get("chat");
   assert.ok(tray);
   assert.ok(!tray.btn.classList.contains("on"));   // not connected yet
-  assert.deepEqual(tray.menu.itemsNow().map(i => i === "sep" ? "-" : i.label), ["Contacts", "Global chat", "My profile", "-", "Sounds"]);
+  assert.deepEqual(tray.menu.itemsNow().map(i => i === "sep" ? "-" : i.label), ["Contacts", "Global chat", "My profile", "-", "Sounds", "-", "Exit"]);
 });
 
 test("launch connects, opens contacts (right side) and the global chat with history", async () => {
@@ -215,7 +215,8 @@ test("sending: Enter sends over the socket in the sender's colour; typing is rel
   const mine = g.el.querySelector('.m[data-id="2"]');
   assert.ok(mine.classList.contains("mine"));
   assert.equal(mine.querySelector(".who").style.color, "rgb(217, 20, 227)");
-  assert.match(mine.querySelector(".ts").textContent, /^ \(.*\):$/);
+  assert.match(mine.querySelector(".ts").textContent, /^\d{1,2}:\d{2}/);   // the time alone, beside the name
+  assert.ok(mine.querySelector(".av .avatar"), "an avatar on the line");
   d.key(g.input, "a");
   assert.deepEqual(sockets[0].sent.at(-1), { t: "typing", room: "global" });
   sockets[0].push({ t: "typing", room: "global", user: "abi" });
@@ -600,4 +601,66 @@ test("windows are plain Windows: chrome, taskbar, Escape does not close chats", 
   os.wm.focus("win-chat-global");
   d.key(document.body, "Escape");
   assert.equal(g.state.open, true);
+});
+
+test("the log: one avatar and name line per run of a sender's messages, bare lines under it; a new run after 5 minutes or another sender; a centred date line when the day changes", async () => {
+  api["GET /hxh/api/chat/history?room=global"] = [200, { room: "global", messages: [
+    { id: 1, room: "global", sender: "abi", body: "one", created_at: "2026-10-31T20:00:00Z" },
+    { id: 2, room: "global", sender: "abi", body: "two", created_at: "2026-10-31T20:01:00Z" },
+    { id: 3, room: "global", sender: "andrew", body: "three", created_at: "2026-10-31T20:02:00Z" },
+    { id: 4, room: "global", sender: "andrew", body: "four", created_at: "2026-10-31T20:20:00Z" },
+    { id: 5, room: "global", sender: "andrew", body: "five", created_at: "2026-11-01T09:00:00Z" },
+  ] }];
+  await os.launch("chat"); hello();
+  await tick();
+  const g = os.wm.get("win-chat-global");
+  const rows = [...g.el.querySelectorAll(".m")];
+  assert.deepEqual(rows.map(r => r.dataset.id), ["1", "2", "3", "4", "5"]);
+  assert.deepEqual(rows.map(r => r.classList.contains("cont")), [false, true, false, false, false], "two follows one; three is another sender; four is 18 minutes later; five is another day");
+  assert.deepEqual(rows.map(r => !!r.querySelector(".av")), [false, true, false, false, false].map(c => !c), "an avatar only where a run starts");
+  assert.equal(rows[0].querySelector(".who").textContent, "Abigail Goh");
+  assert.equal(rows[0].querySelector(".av .avatar").textContent, "AG");
+  assert.equal(rows[1].querySelector(".who"), null);
+  assert.equal(rows[1].querySelector(".bd").title, new Date("2026-10-31T20:01:00Z").toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), "a bare line carries its time as a tooltip");
+  const days = [...g.el.querySelectorAll(".day")].map(e => e.textContent);
+  const label = iso => new Date(iso).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  assert.deepEqual(days, [label("2026-10-31T20:00:00Z"), label("2026-11-01T09:00:00Z")], "a date line opens the log and another opens the new day");
+  assert.match(days[0], /^[A-Z][a-z]+day, [A-Z][a-z]{2} \d{1,2}$/, "weekday, short month, day — no year");
+  assert.equal(g.el.querySelectorAll(".day")[1].nextElementSibling.dataset.id, "5");
+});
+
+test("a claim: the contacts message re-lists everyone; a claimer speaks as 'Gon (Andrew)' with the character's picture in a circle of their own colour; the buddy list keeps the plain name", async () => {
+  await os.launch("chat"); hello();
+  await tick();
+  const g = os.wm.get("win-chat-global"), contacts = os.wm.get("win-chat-contacts");
+  sockets[0].push({ t: "msg", msg: { id: 2, room: "global", sender: "andrew", body: "yo", created_at: "2026-10-31T20:30:00Z" } });
+  const row = g.el.querySelector('.m[data-id="2"]');
+  assert.equal(row.querySelector(".who").textContent, "Andrew");
+  assert.equal(row.querySelector(".av .avatar").textContent, "AC");
+  sockets[0].push({ t: "contacts", contacts: CONTACTS.map(c => c.username === "andrew" ? { ...c, character: "Gon", avatar_url: "/hxh/api/db/images/231/thumb" } : c) });
+  assert.equal(row.querySelector(".who").textContent, "Gon (Andrew)");
+  assert.equal(row.querySelector(".who").style.color, "rgb(217, 20, 227)", "the colour stays the member's own");
+  const av = row.querySelector(".av .avatar");
+  assert.ok(av.classList.contains("pic") && av.querySelector("img").getAttribute("src") === "/hxh/api/db/images/231/thumb");
+  assert.equal(av.style.getPropertyValue("--c"), "#d914e3", "the ring is the member's colour");
+  assert.equal(contacts.el.querySelector('[data-user="andrew"] .nm')?.textContent ?? contacts.el.querySelector(".banner .who b").textContent, "Andrew", "the buddy list keeps the plain name");
+  assert.ok(contacts.el.querySelector(".banner .avatar.pic img"), "the banner shows me as this site sees me");
+  assert.equal(g.title, "Global chat");
+  sockets[0].push({ t: "contacts", contacts: CONTACTS });
+  assert.equal(row.querySelector(".who").textContent, "Andrew", "the claim released: back to the plain name");
+});
+
+test("Exit in the tray menu closes every BeetleChat window and leaves the connection and the tray icon", async () => {
+  await os.launch("chat"); hello();
+  await tick();
+  app().openChat("abi");
+  const items = app().tray().menu();
+  assert.equal(items.at(-1).label, "Exit");
+  assert.equal(items.at(-2), "sep");
+  items.at(-1).onclick();
+  assert.equal(os.wm.get("win-chat-contacts").state.open, false);
+  assert.equal(os.wm.get("win-chat-global").state.open, false);
+  assert.equal(os.wm.get("win-chat-dm-abi-andrew").state.open, false);
+  assert.equal(app().connected, true);
+  assert.ok(os.taskbar.tray.get("chat"));
 });

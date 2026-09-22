@@ -1,8 +1,13 @@
-/* ChatWindow — one conversation: a sunken log with a real scrollbar
-   (names bold in the sender's avatar colour, time stamps), a compose
-   box, a button row (Profile for a buddy's chat, Send), and a status
-   bar at the bottom that reads "<name> is typing…". Enter sends,
-   Shift+Enter breaks a line. */
+/* ChatWindow — one conversation: a sunken log with a real scrollbar, a
+   compose box, a button row (Profile for a buddy's chat, Send), and a
+   status bar at the bottom that reads "<name> is typing…". Enter sends,
+   Shift+Enter breaks a line.
+   The log (Andrew/Abi, 2026-09-22: the AIM-style lines were too
+   text-heavy): each run of messages from one sender within GROUP_MS
+   gets ONE avatar and ONE name line (name bold in the sender's colour,
+   then the time); the rest of the run are bare lines under it. A new
+   calendar day gets a centred date line, "Tuesday, Sep 22", since a
+   time alone is ambiguous. */
 import { Window } from "../../os/window.js";
 import { h } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
@@ -14,6 +19,11 @@ const blobText = blob => (typeof blob.text === "function" ? blob.text() : new Pr
 
 export const roomSlug = room => room.replace(/[^a-z0-9]+/gi, "-");
 export const MAX_LOG = 500;
+export const GROUP_MS = 5 * 60 * 1000;   // messages from one sender this close together share an avatar and name line
+
+/** The day a message belongs to, in the reader's zone, and its date line. */
+export const dayKey = iso => { const d = iso ? new Date(iso) : new Date(); return isNaN(d) ? "" : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+export const dayLabel = iso => { const d = iso ? new Date(iso) : new Date(); return isNaN(d) ? "" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" }); };
 
 export class ChatWindow extends Window {
   /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 1.5× both ways) */
@@ -135,7 +145,7 @@ export class ChatWindow extends Window {
 
   setMessages(list) {
     this.log.replaceChildren();
-    this.ids.clear(); this.messages = [];
+    this.ids.clear(); this.messages = []; this.lastDay = null;
     for (const m of list || []) this.addMessage(m, { scroll: false });
     this.scrollDown();
   }
@@ -155,30 +165,45 @@ export class ChatWindow extends Window {
     if (this.ids.has(m.id)) return null;
     this.ids.add(m.id);
     const p = this.props;
-    const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : ""), dataset: { id: String(m.id), sender: m.sender } });
-    row.append(
-      h("b", { className: "who", text: (p.nameOf?.(m.sender) || m.sender), style: { color: p.colorOf?.(m.sender) || "" } }),
-      h("span", { className: "ts", text: ` (${this.time(m.created_at)}):` }),
-    );
-    if (m.body) row.append(" ", h("span", { className: "txt", text: m.body }));   // never hand null to DOM append(): it prints the word null
-    if (m.image) {   // a picture is a block of its own under the text, scaled to fit the log
-      row.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+    const day = dayKey(m.created_at);
+    if (day !== this.lastDay) { this.log.append(h("div", { className: "day", text: dayLabel(m.created_at) })); this.lastDay = day; }
+    const last = this.messages[this.messages.length - 1];
+    const cont = !!last && last.sender === m.sender && dayKey(last.created_at) === day && Math.abs(new Date(m.created_at || 0) - new Date(last.created_at || 0)) < GROUP_MS
+      && this.log.lastElementChild?.classList.contains("m");
+    const row = h("div", { className: "m" + (m.sender === p.me ? " mine" : "") + (cont ? " cont" : ""), dataset: { id: String(m.id), sender: m.sender } });
+    if (!cont) {
+      row.append(
+        h("span", { className: "av", html: p.avatarOf?.(m.sender) || "" }),
+        h("div", { className: "hd" },
+          h("b", { className: "who", text: (p.nameOf?.(m.sender) || m.sender), style: { color: p.colorOf?.(m.sender) || "" } }),
+          h("span", { className: "ts", text: this.time(m.created_at) })));
     }
+    const body = h("div", { className: "bd", title: cont ? this.time(m.created_at) : "" });
+    if (m.body) body.append(h("span", { className: "txt", text: m.body }));   // never hand null to DOM append(): it prints the word null
+    if (m.image) {   // a picture is a block of its own under the text, scaled to fit the log
+      body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+    }
+    row.append(body);
     this.log.append(row);
     this.messages.push(m);
-    while (this.log.childElementCount > MAX_LOG) { this.log.firstElementChild.remove(); this.messages.shift(); }
+    while (this.messages.length > MAX_LOG) {   // the oldest line goes, with any date line left stranded above it
+      const first = this.log.querySelector(".m");
+      first?.remove(); this.messages.shift();
+      while (this.log.firstElementChild && !this.log.firstElementChild.classList.contains("m")) this.log.firstElementChild.remove();
+    }
     if (scroll) this.scrollDown();
     else this.pane.update();
     return row;
   }
 
-  /** Re-apply names and colours (contacts may arrive after history did). */
+  /** Re-apply names, colours and avatars (contacts may arrive after history did, and a claim changes them). */
   refreshNames() {
     const p = this.props;
     for (const row of this.log.querySelectorAll(".m")) {
       const who = row.querySelector(".who"), u = row.dataset.sender;
-      who.textContent = p.nameOf?.(u) || u;
-      who.style.color = p.colorOf?.(u) || "";
+      if (who) { who.textContent = p.nameOf?.(u) || u; who.style.color = p.colorOf?.(u) || ""; }
+      const av = row.querySelector(".av");
+      if (av) av.innerHTML = p.avatarOf?.(u) || "";
     }
   }
 

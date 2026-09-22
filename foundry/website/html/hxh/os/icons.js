@@ -679,8 +679,9 @@ export function textColorFor(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 170 ? "#0b0a08" : "#fff6e0";
 }
 
-/** Circular initials avatar from the shared-auth profile (initial + color). */
+/** Circular avatar from the shared-auth profile (initial + color) — or, when the site overrides it (a claimed character), that picture in a circle ringed with the member's own colour. */
 export function avatar(acct, cls = "") {
   const color = acct?.color || "#9a9a9a";
+  if (acct?.avatar_url) return `<span class="avatar pic ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}"><img src="${esc(acct.avatar_url)}" alt=""></span>`;
   return `<span class="avatar ${cls}" style="--c:${esc(color)};--t:${textColorFor(color)}" title="${esc(acct?.display_name || "")}">${esc(acct?.initial || "?")}</span>`;
 }

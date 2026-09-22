@@ -10,6 +10,7 @@
 import { App } from "../../os/apps.js";
 import { ChatClient, ChatAPI, wsURL } from "./client.js";
 import { ContactsWindow } from "./contacts.js";
+import { avatar } from "../../os/icons.js";
 import { ChatWindow } from "./window.js";
 import { ProfileWindow, ProfileEditor } from "./profile.js";
 import { AboutWindow } from "./about.js";
@@ -65,13 +66,29 @@ export class ChatApp extends App {
         { label: "My profile", icon: "card", onclick: () => this.editProfile() },
         "sep",
         { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() },
+        "sep",
+        { label: "Exit", icon: "door", onclick: () => this.exit() },
       ],
     };
+  }
+
+  /** Exit (the tray menu): every BeetleChat window closes; the connection and the tray icon stay (Andrew, 2026-09-22). */
+  exit() {
+    const wm = this.os.wm;
+    for (const w of this.windows.values()) if (w.state.open) wm.close(w.id);
+    if (this.contactsWin?.state.open) wm.close(this.contactsWin.id);
   }
 
   /* ---------- names, colours, rooms ---------- */
   nameOf(user) { return this.contacts.get(user)?.display_name || (user === this.me ? this.os.user?.display_name : null) || user; }
   colorOf(user) { return this.contacts.get(user)?.color || (user === this.me ? this.os.user?.color : null) || "#9a9a9a"; }
+  /** In a chat a member who has claimed a character speaks as "Gon (Andrew C)" (Andrew, 2026-09-22); the contacts list keeps the plain name. */
+  chatNameOf(user) { const ch = this.contacts.get(user)?.character; const n = this.nameOf(user); return ch ? `${ch} (${n})` : n; }
+  /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
+  avatarOf(user) {
+    const c = this.contacts.get(user) || (user === this.me ? this.os.user : null) || { username: user, display_name: user, initial: (user || "?").slice(0, 2).toUpperCase(), color: "#9a9a9a" };
+    return avatar(c);
+  }
   roomTitle(room) {
     if (room === ROOM_GLOBAL) return "Global chat";
     const other = room.slice(3).split(":").find(u => u !== this.me) || room;
@@ -84,6 +101,7 @@ export class ChatApp extends App {
     const os = this.os;
     const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.presenceFocus(), ...(this.options.client || {}) });
     c.on("hello", ({ contacts, unread }) => { this.setContacts(contacts); this.onUnread(unread || []); });
+    c.on("contacts", list => this.setContacts(list));
     c.on("msg", m => this.onMessage(m));
     c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
     c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
@@ -236,7 +254,7 @@ export class ChatApp extends App {
     let w = this.windows.get(room);
     if (!w) {
       const other = this.otherOf(room);
-      w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.nameOf(u), colorOf: u => this.colorOf(u),
+      w = new ChatWindow({ room, title: this.roomTitle(room), me: this.me, nameOf: u => this.chatNameOf(u), colorOf: u => this.colorOf(u), avatarOf: u => this.avatarOf(u),
         menus: win => this.roomMenus(win, room), profile: !!other, large: room === ROOM_GLOBAL, imageURL: id => this.api.imageURL(id), clipboard: this.options.clipboard });
       os.wm.add(w);
       this.windows.set(room, w);

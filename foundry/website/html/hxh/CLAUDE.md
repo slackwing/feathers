@@ -88,7 +88,7 @@ A page is now three lines:
 ```html
 <link rel="stylesheet" href="hxh.css?v=N">
 <script src="hxh.js?v=N"></script>
-<script>HxH.start({ apps: [HxH.apps.Summons, HxH.apps.Binder, HxH.apps.Register, HxH.apps.About],
+<script>HxH.start({ apps: [HxH.apps.Summons, HxH.apps.Binder, HxH.apps.About],
                     autostart: ["summons"], wallpaper: true, start: true, gate: true });</script>
 ```
 
@@ -197,7 +197,7 @@ the OS.
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + registry-derived menus + typewriter notice + CTA),
   `Binder`, `Chat` (BeetleChat, `apps/chat/`; the global room's window is
-  1.5× a buddy chat in both dimensions — `large`), `Register`, `About` (group
+  1.5× a buddy chat in both dimensions — `large`), `About` (group
   "system"), `SetPassword` (desktop/menuable false; its words come in
   as options). `apps/index.js` exports them as `HxH.apps.*`.
 
@@ -218,7 +218,7 @@ Never call `boot`, build a login form, or list apps in a page.
   taskbar, startmenu, apps, desktop, toast, typewriter, boot, session,
   crt, logon, os (the whole start flow: cold/warm boot, gate, splash,
   logout), binder (pagination, layout maths, the window, cards, D-pad,
-  claim), apps-desktop (summons/register/about), setpw, wallpaper (pure
+  claim), apps-desktop (summons/about), setpw, wallpaper (pure
   maths), sound, chat-client / chat-app / chat-runs (BeetleChat), and
   `bundle.test.js`, which FAILS when the committed bundle is stale. `tests/dom.js` is the harness (`setupDom({floating,
   reduced, width})`, `fakeFetch`); `tests/loader.mjs` makes `.css`
@@ -253,7 +253,8 @@ component architecture (many windows, tray icons + menus, the bus).
 - **Frontend**: `apps/chat/app.js` `ChatApp` (id `chat`, name
   "BeetleChat", icon `beetle`, order 15; `tray()` → the app's tray icon,
   lit while connected, with a menu: Contacts, Global chat, My profile,
-  Sounds; the icon is the Beetle 07 phone from the show — a red beetle-
+  — Sounds — Exit (closes every BeetleChat window; the connection and
+  the tray icon stay — closing the buddy list alone never exits); the icon is the Beetle 07 phone from the show — a red beetle-
   shaped flip phone with a black head and two antennae). `launch()`
   connects and opens the **buddy list**
   (`contacts.js`, window title just "BeetleChat", tall/narrow at the right
@@ -280,8 +281,7 @@ component architecture (many windows, tray icons + menus, the bus).
   tracker (`Sounds.playTune`, `TUNES` in `os/sound.js`) — Andrew asked
   for Hunter × Hunter MIDI, but those compositions are copyrighted, so
   the music is ours; it stops when the window closes. `window.js` `ChatWindow` — one
-  per room (`win-chat-<room>`): the log (names in the sender's avatar
-  colour, HH:MM, last 100 from history), the "<name> is typing…" line,
+  per room (`win-chat-<room>`): the log, the "<name> is typing…" line,
   the compose box (Enter sends, Shift+Enter breaks; no unsend — Andrew
   dropped it as anachronistic). `client.js`
   `ChatClient` — the socket: ping every 25 s; a ping still unanswered
@@ -296,6 +296,23 @@ component architecture (many windows, tray icons + menus, the bus).
   condemns it — a laptop's socket dies in its sleep without any event);
   queue while offline, ≤ 10 messages/s, typing at most every 2 s per
   room; `ChatAPI` for the REST calls.
+- **The log (2026-09-22)** — Abi found the AIM-style `name (HH:MM): text`
+  lines too text-heavy, so a message row is a grid: a 30 px avatar
+  (`os/icons.js` `avatar()` — the initial on the member's colour, or,
+  when the contact carries `avatar_url`, that picture in a circle
+  RINGED with the member's colour, `.avatar.pic`), a header line
+  (`.hd`: `.who` bold in the colour, `.ts` HH:MM), and the body
+  (`.bd > .txt`, `.pic`). A run of messages from one sender within
+  `GROUP_MS` (5 min) on the same day shows the avatar and header ONCE;
+  the rest are `.m.cont` bare lines whose time is a `title` tooltip.
+  A new calendar day (reader's zone) gets a centred `.day` line
+  between rules, "Tuesday, Sep 22" (`dayLabel`; no year). A claimed
+  member's name in the log is "<character> (<display name>)"
+  (`ChatApp.chatNameOf`); the buddy list and window titles keep the
+  plain name. Contacts arrive in `hello` and again in a `contacts`
+  frame whenever a claim is made or released (the server's
+  `Contact.character` / `avatar_url` are hxh's overrides of the shared
+  profile; `setContacts` re-renders names, avatars and the banner).
 - **Resync (2026-09-19)** — Andrew's laptop slept overnight; on wake the
   socket reconnected and new messages arrived, but the night's messages
   never showed until a refresh. Now `ChatApp.resync()` runs on every
@@ -706,7 +723,9 @@ desktop: pixelation is a system property, like the type scale.
   Start menu, menus (`.dd.open`, `.dd.up` for tray menus), toast, boot
   overlay, scanlines, `.task.flash`, phone stacking rules. App-specific
   rules live with the app: `apps/summons.css` (the `.vn` visual-novel
-  box), `apps/register.css` (stamp + progress), `apps/binder.css`.
+  box), `apps/binder.css`. (`apps/register.*` — the registration
+  progress window — was removed 2026-09-22: claiming a card in the
+  Binder is the registration now.)
 - Class vocabulary: `.win[.static|.chromeless|.popup|.max|.inactive]
   > .tbar (.ico .ttl .tbtn.min/.maxb/.close) + .mbar (.menu > button +
   .dd) + .body`; chromeless windows get `.fbtns` instead of `.tbar`;
