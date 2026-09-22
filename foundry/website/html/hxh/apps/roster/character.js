@@ -8,7 +8,7 @@
 import { Window } from "../../os/window.js";
 import { h, esc } from "../../os/dom.js";
 import { ScrollPane } from "../../os/scrollpane.js";
-import { LABEL, TYPES, AVATAR_RATIO, CARD_RATIO } from "./fields.js";
+import { LABEL, TYPES, AVATAR_RATIO, CARD_RATIO, AUTO_ACCEPTED } from "./fields.js";
 
 export const NEN = ["enhancement", "transmutation", "conjuration", "emission", "manipulation", "specialization"];
 export const ARCS = [["hunter-exam", "Hunter Exam"], ["zoldyck-family", "Zoldyck Family"], ["heavens-arena", "Heavens Arena"],
@@ -32,7 +32,7 @@ export const winId = id => "win-roster-c-" + id;
  * names and picture ids to mark, plus the rows for the summary line.
  */
 export function freshness(c) {
-  const rows = c.baseline ? (c.changes || []).filter(x => x.bot && x.version > c.baseline.version) : [];
+  const rows = c.baseline ? (c.changes || []).filter(x => x.bot && x.version > c.baseline.version && !(x.kind === "field" && AUTO_ACCEPTED.includes(x.field))) : [];
   return {
     rows,
     fields: new Set(rows.filter(x => x.kind === "field").map(x => x.field)),

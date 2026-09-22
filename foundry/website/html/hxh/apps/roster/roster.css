@@ -253,3 +253,5 @@
 .dlg .dbody .lbl { margin-top: 0; }
 .dlg .dbody textarea.field { resize: vertical; }
 .dlg .actions.right { justify-content: flex-end; margin-top: 14px; gap: 8px; }
+.dlg .pts { margin: 8px 0 0; padding-left: 22px; font: var(--t-body); }
+.dlg .pts li { margin: 4px 0; }

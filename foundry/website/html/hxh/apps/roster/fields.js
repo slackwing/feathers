@@ -6,6 +6,8 @@ export const FIELDS = [
   ["card_number", "No."], ["name", "Name"], ["name_ja", "Japanese"], ["first", "Short"], ["rank", "Card Rank"], ["nen_types", "Nen"],
   ["affiliation", "Affiliation"], ["arcs", "Arcs"], ["arms", "Arms"], ["description", "Description"], ["card_description", "Card description"], ["notes", "Notes"],
 ];
+/* fields a bot may change on an accepted card without reopening review: text fixes are self-approved (Andrew, 2026-09-22) */
+export const AUTO_ACCEPTED = ["name", "first", "description", "card_description"];
 /* the two picture slots a card needs: avatar 1:1, card illustration 16:9 (the Greed Island card's picture window) */
 export const AVATAR_RATIO = 1, CARD_RATIO = 16 / 9;
 export const CARD_RATIO_LABEL = "16:9";

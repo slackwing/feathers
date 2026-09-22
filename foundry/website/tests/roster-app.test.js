@@ -340,18 +340,18 @@ test("New wedges: the bot's changes above the last human verdict mark their fiel
     CH(4, "image", { action: "removed", image_id: 99 }),
   ];
   const fr = freshness(state.gon);
-  assert.deepEqual([...fr.fields], ["description", "nen_types", "avatar_image_id"]);
+  assert.deepEqual([...fr.fields], ["nen_types", "avatar_image_id"], "description is auto-accepted text: no wedge (Andrew, 2026-09-22)");
   assert.deepEqual([...fr.images], [12]);
   await app().openChar(3);
   await tick();
   const el = charWin().el;
   const wedged = sel => !!el.querySelector(sel)?.closest(".f")?.querySelector(".lbl .new");
-  assert.ok(wedged('[data-f="description"]') && wedged("[data-nen]"), "description and Nen carry the wedge");
+  assert.ok(!wedged('[data-f="description"]') && wedged("[data-nen]"), "Nen carries the wedge; the description, an auto-accepted text field, does not");
   assert.ok(!wedged('[data-f="notes"]') && !wedged('[data-f="name"]'), "a human's change and untouched fields do not");
   assert.equal(el.querySelector(".new").textContent, "New");
   assert.ok(el.querySelector('.slot[data-slot="avatar_image_id"] .new') && !el.querySelector('.slot[data-slot="card_image_id"] .new'));
   assert.ok(el.querySelector('.tile[data-id="12"] .pic .new') && !el.querySelector('.tile[data-id="10"] .pic .new'));
-  assert.equal(el.querySelector(".review .changes").textContent, "Since v2 (rejected by andrew), claude: Description, Nen, Avatar · 1 picture added · 1 picture removed");
+  assert.equal(el.querySelector(".review .changes").textContent, "Since v2 (rejected by andrew), claude: Nen, Avatar · 1 picture added · 1 picture removed");
   // a verdict moves the baseline: nothing above it → no wedges, no line
   state.gon.baseline = { version: 4, status: "accepted", owner: "abi" };
   charWin().setChar(state.gon);

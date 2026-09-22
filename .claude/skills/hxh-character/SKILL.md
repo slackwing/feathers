@@ -102,6 +102,16 @@ habit, a line, a relationship). Anime spellings, no episode numbers,
 no manga-only facts, no fan theories, no series-ending spoilers in the
 first sentence.
 
+### Prose that reads like a person wrote it
+
+Andrew, 2026-09-22, on "a blue-crested grin studded with pins": no
+metonymy, no stacked modifiers, no noun piles. Say who the character
+is in plain words a party guest would understand on a card: "the
+Hunter Exam applicant with the pins in his face" beats "a
+blue-crested grin studded with round-headed pins that never breaks
+stride". Read each sentence back; if it needs the wiki to parse, cut
+it.
+
 ## 3b. Card description
 
 `card_description` — what the Greed Island card's white box prints
@@ -207,9 +217,12 @@ changed, by whom, bot or person). Andrew's rules (2026-09-21):
   your edits never change what the party sees until a reviewer
   accepts again.
 - A person's change is self-approved: it moves the accepted pointer
-  along. YOURS make the character pending and every field or
-  picture you touched since their last verdict wears a red "New"
-  wedge. Batch your edits; a trickle is many reviews.
+  along. So is YOUR change to the text fields name, first,
+  description and card_description (Andrew, 2026-09-22: text fixes
+  must not send a card back to pending). Anything else you change —
+  a picture, a slot, rank, Nen, arcs, arms — makes the character
+  pending and wears a red "New" wedge until the reviewers look.
+  Batch such edits; a trickle is many reviews.
 - A request never changes the verdict; fulfilling one is just your
   change, judged like any other.
 - You cannot pass a verdict (`roster.py review` is refused for the

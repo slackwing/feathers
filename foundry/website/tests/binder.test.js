@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, randomStamp, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
+import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RegisterApp } from "../html/hxh/apps/register.js";
 
@@ -103,7 +103,7 @@ let d, os, fetched, stampsDb;
 beforeEach(async () => {
   d = setupDom();
   fetched = [];
-  stampsDb = { hearts: [], hearts_mine: [], bookmarks: [] };   // the server's stamp table, as the reader "a" sees it
+  stampsDb = { hearts: [], hearts_mine: [], bookmarks: [], claims: [] };   // the server's stamp table, as the reader "a" sees it
   const fakeFetch = async (url, init) => {
     fetched.push({ url: String(url), init });
     if (String(url).includes("/admin/api/me")) return { ok: true, status: 200, json: async () => ({ username: "a", roles: [{ website: "hxh", role: "guest" }] }) };
@@ -112,6 +112,15 @@ beforeEach(async () => {
     const m = String(url).match(/\/hxh\/api\/db\/chars\/(\d+)\/stamp$/);
     if (m && init?.method === "POST") {
       const id = +m[1], body = JSON.parse(init.body);
+      if (body.kind === "claim") {
+        const mine = stampsDb.claims.find(c => c.char_id === id && c.username === "a");
+        if (mine) { stampsDb.claims = stampsDb.claims.filter(c => c !== mine); return { ok: true, status: 200, json: async () => ({ on: false }) }; }
+        const other = stampsDb.claims.find(c => c.char_id === id);
+        if (other) return { ok: false, status: 409, json: async () => ({ error: "claimed by " + other.label }) };
+        stampsDb.claims = stampsDb.claims.filter(c => c.username !== "a");
+        stampsDb.claims.push({ char_id: id, username: "a", label: "READER A", x: body.x, y: body.y, rotation: body.rotation });
+        return { ok: true, status: 200, json: async () => ({ on: true }) };
+      }
       const list = body.kind === "heart" ? stampsDb.hearts_mine : stampsDb.bookmarks;
       const on = !list.includes(id);
       if (on) { list.push(id); if (body.kind === "heart") stampsDb.hearts.push({ char_id: id, x: body.x, y: body.y, rotation: body.rotation, by: "a" }); }
@@ -234,25 +243,123 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   assert.equal(b.page, 1);
 });
 
-test("the panel keys: heart, bookmark, Become (off until registration opens) with their hints; no Claim or Close", async () => {
+const settle = () => new Promise(r => setTimeout(r, 30));
+
+test("the panel keys: heart, bookmark, Claim and ? — Claim (off until registration opens) with their hints; no Claim or Close", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
   await tick();   // the launch-time load (an empty roster) settles first
   const keys = [...b.$(".keys").querySelectorAll(".key")];
-  assert.deepEqual(keys.map(k => k.dataset.act), ["heart", "bookmark", "become"]);
-  assert.deepEqual(keys.map(k => k.title), ["I like this character!", "Bookmark for myself", "This is me!"]);
+  assert.deepEqual(keys.map(k => k.dataset.act), ["heart", "bookmark", "claim", "claim-info"]);
+  assert.deepEqual(keys.map(k => k.title), ["I like this character!", "Bookmark for myself", "This is me!", "About claiming"]);
   assert.ok(keys[0].querySelector("svg") && keys[1].querySelector("svg"), "icon keys");
-  assert.equal(keys[2].textContent, "BECOME");
-  assert.deepEqual(keys.map(k => k.disabled), [true, true, true], "nothing selected: heart and bookmark off; Become off until registration");
-  assert.ok(!b.$('[data-act="claim"]') && !b.$('[data-act="shut"]'));
+  assert.equal(keys[2].textContent, "CLAIM");
+  assert.equal(keys[3].textContent, "?");
+  assert.deepEqual(keys.map(k => k.disabled), [true, true, true, false], "nothing selected: heart, bookmark and Claim off; ? always on");
+  assert.ok(!b.$('[data-act="become"]') && !b.$('[data-act="shut"]'));
   nextId = 1;
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 })]);
   b.showPage(1);
   d.click(b.$(".cards .card"));
-  assert.deepEqual(keys.map(k => k.disabled), [false, false, true]);
+  assert.deepEqual(keys.map(k => k.disabled), [false, false, false, false]);
+  d.click(keys[3]);
+  await tick();
+  const dlg = os.wm.all().find(x => x.props?.cls?.includes("dlg"));
+  assert.ok(dlg && dlg.state.open && dlg.title === "Claim");
+  assert.equal(dlg.$(".q").textContent, "Claim the character you plan to show up as!");
+  assert.equal(dlg.el.querySelectorAll(".pts li").length, 3);
+  assert.deepEqual([...dlg.el.querySelectorAll(".actions .btn")].map(x => x.textContent), ["OK"]);
+  d.click(dlg.$('[data-act="ok"]'));
 });
 
-const settle = () => new Promise(r => setTimeout(r, 30));
+test("a claim: the question with Claim / Not Yet / Bookmark Instead; a claim prints the reader's name in the card's corner; one per reader (a new claim moves), one per card (another's is refused); pressing again releases", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  b.me = "a";
+  b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 }), mk("Leorio", [], ["hunter-exam"], { card_number: 3 })]);
+  b.showPage(1);
+  const card = id => b.$(`.cards .card[data-id="${id}"]`);
+  const claim = b.$('[data-act="claim"]');
+  d.click(card(1));
+  d.click(claim);
+  await tick();
+  let dlg = os.wm.all().find(x => x.props?.cls?.includes("dlg") && x.state.open);
+  assert.ok(dlg && dlg.title === "Claim Gon?");
+  assert.deepEqual([...dlg.el.querySelectorAll(".actions .btn")].map(x => x.textContent), ["Claim", "Not Yet", "Bookmark Instead"]);
+  assert.equal(dlg.$(".q").textContent, "Claim the character you plan to show up as!", "the same words as the ? box");
+  d.click(dlg.$('[data-act="cancel"]'));
+  await settle();
+  assert.equal(stampsDb.claims.length, 0, "Not Yet claims nothing");
+  d.click(claim);
+  await tick();
+  dlg = os.wm.all().find(x => x.props?.cls?.includes("dlg") && x.state.open);
+  d.click(dlg.$('[data-act="bookmark"]'));
+  await settle();
+  assert.deepEqual(stampsDb.bookmarks, [1], "Bookmark Instead bookmarks");
+  assert.equal(stampsDb.claims.length, 0);
+  d.click(card(1));
+  d.click(claim);
+  await tick();
+  dlg = os.wm.all().find(x => x.props?.cls?.includes("dlg") && x.state.open);
+  d.click(dlg.$('[data-act="ok"]'));
+  await settle();
+  assert.deepEqual(stampsDb.claims.map(c => c.char_id), [1]);
+  const plate = card(1).querySelector(".gi-stamps .gi-claim");
+  assert.ok(plate, "the name plate is on the card");
+  assert.equal(plate.textContent, "READER A");
+  const x = parseFloat(plate.style.left), y = parseFloat(plate.style.top);
+  assert.ok(x >= PLATE.x && x <= PLATE.x + 8 && y >= PLATE.y + 4 && y <= PLATE.y + 14, "in the reserved corner: " + plate.style.left + " " + plate.style.top);
+  assert.ok(claim.classList.contains("lit") && !claim.disabled);
+  assert.equal(claim.title, "This is you! Press again to release");
+  // a new claim moves the old one
+  d.click(card(2));
+  assert.ok(!claim.classList.contains("lit"));
+  d.click(claim);
+  await tick();
+  dlg = os.wm.all().find(x => x.props?.cls?.includes("dlg") && x.state.open);
+  d.click(dlg.$('[data-act="ok"]'));
+  await settle();
+  assert.deepEqual(stampsDb.claims.map(c => c.char_id), [2], "the claim moved");
+  assert.ok(!card(1).querySelector(".gi-claim") && card(2).querySelector(".gi-claim"));
+  // another reader's claim: the key is off and says whose
+  stampsDb.claims.push({ char_id: 3, username: "b", label: "READER B", x: 55, y: 70, rotation: 3 });
+  b.stamps = JSON.parse(JSON.stringify(stampsDb));
+  b.setRoster(b.roster.map(c => ({ ...c })));
+  d.click(card(3));
+  assert.ok(claim.disabled, "someone else holds it");
+  assert.equal(claim.title, "Claimed by READER B");
+  assert.equal(card(3).querySelector(".gi-claim").textContent, "READER B");
+  // pressing again on my own releases it
+  d.click(card(2));
+  d.click(claim);
+  await settle();
+  assert.deepEqual(stampsDb.claims.map(c => c.char_id), [3], "released");
+  assert.ok(!card(2).querySelector(".gi-claim") && !claim.classList.contains("lit"));
+});
+
+test("a live re-read keeps the selected card and does not retype the screen; an unchanged re-read touches nothing", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  const roster = [mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })];
+  b.setRoster(roster);
+  b.showPage(1);
+  d.click(b.$('.cards .card[data-id="2"]'));
+  assert.equal(b.selected.id, 2);
+  const scr = b.$(".screen").innerHTML, el = b.$('.cards .card[data-id="2"]');
+  b.setRoster(roster.map(c => ({ ...c })));   // the same content again, as the clock does
+  assert.equal(b.$('.cards .card[data-id="2"]'), el, "nothing changed: the page was not rebuilt");
+  assert.equal(b.selected.id, 2);
+  b.setRoster(roster.map(c => ({ ...c, version: 9 })));   // something changed: rebuilt, but the selection stays and the screen is not retyped
+  assert.notEqual(b.$('.cards .card[data-id="2"]'), el, "rebuilt");
+  assert.equal(b.selected.id, 2, "the selection survived the rebuild");
+  assert.ok(b.$('.cards .card[data-id="2"]').classList.contains("on"));
+  assert.equal(b.$(".screen").innerHTML, scr, "the screen was left alone");
+  assert.ok(!b.$('[data-act="heart"]').disabled);
+});
 
 test("a heart: one per reader per card, toggled; the key lights while mine is on; every heart is stamped on the card at its saved spot and leans", async () => {
   const b = os.registry.get("binder");
@@ -335,7 +442,7 @@ test("the book opens on the reader's bookmarks when they have some, else on page
   b.stamps = { hearts: [], hearts_mine: [], bookmarks: [2] };
   b.setRoster(roster);
   assert.equal(b.page, 1, "a reload keeps page 1 even once a bookmark exists");
-  b.page = null; b.chose = false;   // as at a fresh open
+  b.page = null; b.chose = false; b.sig = null;   // as at a fresh open
   b.setRoster(roster);
   assert.equal(b.page, 0, "a reader with bookmarks opens on them");
   d.click(b.$(".tabs .tab.bm"));

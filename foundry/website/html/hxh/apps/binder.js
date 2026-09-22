@@ -15,6 +15,7 @@ import { h, esc } from "../os/dom.js";
 import { icon } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
 import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
+import { ClaimDialog, ClaimInfoDialog } from "./roster/dialogs.js";
 import "./binder.css";
 
 export const TYPES = [
@@ -50,6 +51,11 @@ export function clearOfPlate(s) {
   if (!onPlate(s.x, s.y)) return s;
   const left = s.x + STAMP_W / 2 - PLATE.x, up = s.y + STAMP_W / 2 - PLATE.y;
   return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
+}
+
+/** Where a claim's name plate lands: inside the reserved corner, a little off its anchor, leaning at most ±8°. */
+export function randomPlate(rand = Math.random) {
+  return { x: Math.round((PLATE.x + rand() * 8) * 10) / 10, y: Math.round((PLATE.y + 4 + rand() * 10) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
 }
 
 /** Where a new heart lands on the description box: % of the box, allowed to hang over its edge, never on the plate; upright within ±STAMP_ROT. */
@@ -124,7 +130,8 @@ const BOOK = `
           <div class="keys">
             <button class="key ico" type="button" data-act="heart" title="I like this character!" disabled>${icon("heart", 16)}</button>
             <button class="key ico" type="button" data-act="bookmark" title="Bookmark for myself" disabled>${icon("bookmark", 16)}</button>
-            <button class="key" type="button" data-act="become" title="This is me!" disabled>BECOME</button>
+            <button class="key" type="button" data-act="claim" title="This is me!" disabled>CLAIM</button>
+            <button class="key ico info" type="button" data-act="claim-info" title="About claiming">?</button>
           </div>
           <div class="dial"></div>
           <div class="pad"></div>
@@ -172,7 +179,8 @@ export class BinderApp extends App {
   constructor(os, options = {}) {
     super(os, options);
     this.pages = []; this.page = null; this.chose = false; this.sel = null; this.roster = []; this.typer = null; this.cards = new Map();
-    this.stamps = { hearts: [], hearts_mine: [], bookmarks: [] };
+    this.stamps = { hearts: [], hearts_mine: [], bookmarks: [], claims: [] };
+    this.me = null;   // the reader's username, from the OS session
     this.src = options.src || SOURCE;
     this.stampsSrc = options.stampsSrc || STAMPS;
   }
@@ -197,12 +205,16 @@ export class BinderApp extends App {
       const act = e.target.closest("[data-act]")?.dataset.act;
       const dir = e.target.closest("[data-dir]")?.dataset.dir;
       if (act === "heart" || act === "bookmark") this.stampSel(act);
+      if (act === "claim") this.claimSel();
+      if (act === "claim-info") new ClaimInfoDialog().ask(os);
       if (dir === "left") this.go(this.page - 1);
       if (dir === "right") this.go(this.page + 1);
       if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
     });
     // drag the window by the book's margins (Andrew, 2026-09-19) — never by a card or a control
     os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS) });
+    this.me = os.user?.username || null;
+    os.bus.on("session:user", ({ user }) => { this.me = user?.username || null; if (this.win.el) this.syncKeys(); });
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
     // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
     os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
@@ -228,15 +240,23 @@ export class BinderApp extends App {
    * The cards, in the order the API gives them (by number). The book opens
    * on the reader's bookmarks when they have some, else on page 1; a reload
    * keeps the page the reader is on (an empty bookmark page they never
-   * chose is not a page they are on).
+   * chose is not a page they are on) AND the card they had selected — the
+   * live re-read every LIVE_MS used to rebuild the page and drop the
+   * selection (Andrew, 2026-09-22). A re-read that changes nothing
+   * touches nothing.
    */
   setRoster(list) {
-    this.roster = (list || []).map(c => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
+    const roster = (list || []).map(c => ({ ...c, no: c.card_number ?? c.no ?? c.id }));
+    const sig = JSON.stringify([roster.map(c => [c.id, c.no, c.version, c.card_image_id, c.avatar_image_id, c.card_description, c.first || c.name, c.rank]), this.stamps]);
+    if (sig === this.sig && this.page != null) return;
+    this.sig = sig;
+    this.roster = roster;
     this.pages = paginate(this.roster, this.stamps.bookmarks);
     this.renderTabs();
     const bm = this.pages[0], last = this.pages.length - 1;
     const auto = this.page == null || (!this.chose && this.page === 0 && !bm.cards.length);
-    this.showPage(auto ? (bm.cards.length ? 0 : Math.min(1, last)) : Math.min(this.page, last));
+    const keep = this.sel && this.roster.find(c => c.id === this.sel.id);
+    this.showPage(auto ? (bm.cards.length ? 0 : Math.min(1, last)) : Math.min(this.page, last), keep);
   }
 
   /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */
@@ -247,6 +267,8 @@ export class BinderApp extends App {
   heartsOn(id) { return (this.stamps.hearts || []).filter(h => h.char_id === id); }
   hearted(id) { return (this.stamps.hearts_mine || []).includes(id); }
   bookmarked(id) { return (this.stamps.bookmarks || []).includes(id); }
+  claimOn(id) { return (this.stamps.claims || []).find(c => c.char_id === id) || null; }
+  myClaim() { return this.me ? (this.stamps.claims || []).find(c => c.username === this.me) || null : null; }
 
   /** The heart stamps on one printed card: drawn over the description box at their saved spots. */
   renderStamps(card, c) {
@@ -259,16 +281,40 @@ export class BinderApp extends App {
       el.style.left = s.x + "%"; el.style.top = s.y + "%"; el.style.transform = `rotate(${s.rotation}deg)`;
       return el;
     }));
+    // the claim: the member's name in the reserved corner, a passport stamp
+    const cl = this.claimOn(c.id);
+    if (cl) {
+      const el = h("span", { className: "gi-claim", text: cl.label || cl.username.toUpperCase(), title: `${cl.label || cl.username} is coming as ${c.first || c.name}` });
+      el.style.left = cl.x + "%"; el.style.top = cl.y + "%"; el.style.transform = `rotate(${cl.rotation}deg)`;
+      box.append(el);
+    }
   }
 
-  /** The heart and bookmark keys follow the selected card: lit when the reader's own stamp is on it, off with no card. */
+  /** The heart, bookmark and claim keys follow the selected card: off with no card, lit when the reader's own stamp is on it; Claim also off on a card someone else holds. */
   syncKeys() {
-    const c = this.sel;
-    for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)]]) {
+    const c = this.sel, cl = c && this.claimOn(c.id), mine = !!(cl && this.me && cl.username === this.me);
+    for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)], ["claim", mine]]) {
       const b = this.$(`[data-act="${act}"]`);
-      b.disabled = !c;
+      b.disabled = !c || (act === "claim" && !!cl && !mine);
       b.classList.toggle("lit", !!on);
     }
+    const claim = this.$('[data-act="claim"]');
+    claim.title = cl && !mine ? `Claimed by ${cl.label || cl.username}` : mine ? "This is you! Press again to release" : "This is me!";
+  }
+
+  /** Claim: the question first (or a release when the reader already holds this card); Bookmark Instead bookmarks. */
+  async claimSel() {
+    const os = this.os, c = this.sel;
+    if (!c) { os.toast.show("Pick a card first."); return; }
+    const cl = this.claimOn(c.id);
+    if (cl && this.me && cl.username === this.me) { await this.stampSel("claim"); os.toast.show(`Your claim on ${c.first || c.name} is released.`); return; }
+    if (cl) { os.toast.show(`${cl.label || cl.username} already claimed ${c.first || c.name}.`); return; }
+    const answer = await new ClaimDialog({ name: c.first || c.name }).ask(os);
+    if (!answer) return;
+    if (answer === "bookmark") { if (!this.bookmarked(c.id)) await this.stampSel("bookmark"); return; }
+    const before = this.myClaim();
+    await this.stampSel("claim");
+    if (this.claimOn(c.id)?.username === this.me) os.toast.show(before ? `You are now ${c.first || c.name} (your claim moved).` : `You are ${c.first || c.name}!`);
   }
 
   /** Heart or bookmark the selected card, or take the stamp back; then re-read the stamps so every card shows the truth. */
@@ -276,12 +322,12 @@ export class BinderApp extends App {
     const os = this.os, c = this.sel;
     if (!c) { os.toast.show("Pick a card first."); return; }
     const fetch = this.options.fetch || os.win.fetch?.bind(os.win);
-    const spot = kind === "heart" ? randomStamp() : { x: 0, y: 0, rotation: 0 };
+    const spot = kind === "heart" ? randomStamp() : kind === "claim" ? randomPlate() : { x: 0, y: 0, rotation: 0 };
     try {
       const r = await fetch(`/hxh/api/db/chars/${c.id}/stamp`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, ...spot }) });
-      if (!r.ok) throw new Error("HTTP " + r.status);
+      if (!r.ok) { let why = ""; try { why = (await r.json()).error || ""; } catch { /* no body */ } throw new Error(why || "HTTP " + r.status); }
       this.stamps = await this.get(this.stampsSrc);
-    } catch { os.toast.show("The stamp did not take. Try again."); return; }
+    } catch (err) { os.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again."); return; }
     if (kind === "bookmark") { this.setRoster(this.roster); if (this.sel !== c) this.select(c); }
     else for (const [id, card] of this.cards) { const cc = this.roster.find(x => x.id === id); if (cc) this.renderStamps(card, cc); }
     this.syncKeys();
@@ -367,7 +413,7 @@ export class BinderApp extends App {
     });
   }
 
-  showPage(i) {
+  showPage(i, keep = null) {
     const box = this.$(".cards");
     for (const c of this.cards.values()) c.unmount();
     this.cards.clear();
@@ -381,7 +427,8 @@ export class BinderApp extends App {
     for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
     if (p.kind === "bookmark" && !p.cards.length) box.append(h("div", { className: "hint", text: BOOKMARK_HINT }));
     this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
-    if (this.sel && !p.cards.includes(this.sel)) this.select(null);
+    if (keep && p.cards.includes(keep)) this.select(keep, { quiet: true });   // the same card, re-read: keep it, do not retype the screen
+    else if (this.sel && !p.cards.includes(this.sel)) this.select(null);
     this.syncKeys();
   }
 
@@ -400,10 +447,11 @@ export class BinderApp extends App {
     this.$(".screen").innerHTML = `<div class="idle"><div class="emblem"></div><div class="ja">カードを選択</div></div>`;
   }
 
-  select(c) {
+  select(c, { quiet = false } = {}) {
     this.sel = c;
     this.$(".cards").querySelectorAll(".card").forEach(b => b.classList.toggle("on", b.dataset.id === String(c && c.id)));
     this.syncKeys();
+    if (quiet) return;
     const scr = this.$(".screen");
     this.typer?.skip?.();
     clearInterval(this.follow);

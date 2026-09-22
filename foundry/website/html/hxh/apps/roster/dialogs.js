@@ -106,6 +106,38 @@ export class RequestDialog extends Dialog {
   value() { return { kind: this.$("select").value, text: this.$("textarea").value.trim(), image_id: this.image }; }
 }
 
+/* The claim message (Andrew, 2026-09-22), shown from the binder's ? key
+   as plain information and again as the question when Claim is pressed
+   — the same words both times. */
+export const CLAIM_MESSAGE = {
+  lead: "Claim the character you plan to show up as!",
+  points: [
+    "Others won't be able to claim this character, so please be considerate.",
+    "It's okay to change your mind! You can claim a different character anytime.",
+    "If there's a character you really might like to be, claim them!",
+  ],
+};
+const claimBody = () => `<p class="q">${esc(CLAIM_MESSAGE.lead)}</p><ul class="pts">${CLAIM_MESSAGE.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`;
+
+export class ClaimInfoDialog extends Dialog {
+  constructor() {
+    super({ title: "Claim", body: claimBody(), buttons: [{ act: "ok", label: "OK", primary: true }], icon: "question", width: 460 });
+  }
+}
+
+/** Claim / Not Yet / Bookmark Instead — resolves "claim", "bookmark", or null. */
+export class ClaimDialog extends Dialog {
+  constructor({ name } = {}) {
+    super({ title: name ? `Claim ${name}?` : "Claim", body: claimBody(),
+      buttons: [{ act: "ok", label: "Claim", primary: true }, { act: "cancel", label: "Not Yet" }, { act: "bookmark", label: "Bookmark Instead" }], icon: "question", width: 460 });
+  }
+  finish(act) {
+    if (act === "bookmark") { this.result = "bookmark"; this.emit("ok", this.result); this.close(); return; }
+    super.finish(act);
+  }
+  value() { return "claim"; }
+}
+
 export class ReasonDialog extends Dialog {
   constructor({ name } = {}) {
     void name;
