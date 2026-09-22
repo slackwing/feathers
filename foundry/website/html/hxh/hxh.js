@@ -3437,14 +3437,22 @@ var HxH = (() => {
   };
   var isSkin = (h2, s, l) => h2 >= 8 && h2 <= 45 && s <= 0.62 && l >= 0.35 && l <= 0.9;
   var isInteresting = (h2, s, l) => s >= 0.32 && l >= 0.16 && l <= 0.82 && !isSkin(h2, s, l);
-  function interestingPalette(data, { step = 1 } = {}) {
+  var CENTER_SIGMA = 0.25;
+  var FOCUS = 2 / 3;
+  function interestingPalette(data, { step = 1, width = 0, height = 0, sigma = CENTER_SIGMA, focus = FOCUS } = {}) {
     const bins = Array.from({ length: 24 }, () => ({ w: 0, sx: 0, sy: 0, s: 0, l: 0, n: 0 }));
     let count = 0;
+    const px = data.length / 4, W = width || px, H = width ? height || Math.ceil(px / width) : 1;
+    const cx = (W - 1) / 2, cy = (H - 1) * focus, half = Math.hypot(cx, (H - 1) / 2) || 1;
+    const spatial = sigma > 0 && width ? (j) => {
+      const dx = j % W - cx, dy = Math.floor(j / W) - cy;
+      return Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma * half * half));
+    } : () => 1;
     for (let i = 0; i < data.length; i += 4 * step) {
       if (data[i + 3] < 128) continue;
       const [h2, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
       if (!isInteresting(h2, s, l)) continue;
-      const b = bins[Math.floor(h2 / 15) % 24], w = s * (1 - Math.abs(l - 0.5));
+      const b = bins[Math.floor(h2 / 15) % 24], w = s * (1 - Math.abs(l - 0.5)) * spatial(i / 4);
       b.w += w;
       b.sx += Math.cos(h2 * Math.PI / 180) * w;
       b.sy += Math.sin(h2 * Math.PI / 180) * w;
@@ -3482,7 +3490,7 @@ var HxH = (() => {
       const ctx = c.getContext("2d");
       if (ctx) {
         ctx.drawImage(img, 0, 0, 64, 36);
-        pal = interestingPalette(ctx.getImageData(0, 0, 64, 36).data);
+        pal = interestingPalette(ctx.getImageData(0, 0, 64, 36).data, { width: 64, height: 36 });
       }
     } catch {
       pal = null;

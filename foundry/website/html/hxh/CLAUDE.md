@@ -482,7 +482,12 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   3 × 3 cards and the book as two pages + spine in BOOK pixels, then
   shows it all at one CSS zoom that fills 85 % of the desktop (Andrew:
   "the binder is tiny!" on his big monitor); the band's foil is marbled in
-  the picture's own saturated hues (skin, white, black discounted).
+  the picture's own saturated hues (skin, white, black discounted),
+  weighed by a tight spotlight on the lower third of the frame
+  (`CENTER_SIGMA`, `FOCUS` in `card.js`; Andrew 2026-09-22: True
+  Bisky's band came out sky-blue because the whole 16:9 frame voted —
+  "pink should win for her"; the spotlight sits where a portrait's
+  outfit hangs, below the face, so a sky that fills the edges loses).
   Tabs come from `groupCards` (one per group that has cards — one
   character, one tab; Andrew has "a better idea for the tabs" to come).
   The book's margins drag the window (`WindowManager.drag` with an

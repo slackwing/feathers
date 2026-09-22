@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
-import { GICard, KINDS, LIMIT, cardNo, rankLimit, panelPath, foilURI, fitText, NAME_MAX, NAME_MIN, rgbToHsl, hslToHex, isSkin, isInteresting, interestingPalette, foilFromPalette } from "../html/hxh/apps/card.js";
+import { GICard, KINDS, LIMIT, cardNo, rankLimit, panelPath, foilURI, fitText, NAME_MAX, NAME_MIN, rgbToHsl, hslToHex, isSkin, isInteresting, interestingPalette, foilFromPalette, CENTER_SIGMA, FOCUS } from "../html/hxh/apps/card.js";
 
 test("numbers and rank-limits print as the cards do", () => {
   assert.equal(cardNo(7), "007");
@@ -91,4 +91,20 @@ test("the picture's palette: saturated mid-light hues count, skin / white / blac
   assert.deepEqual(foilFromPalette({ dominant: null, count: 0 }, "spell"), KINDS.spell);
   assert.deepEqual(interestingPalette(new Uint8ClampedArray([250, 250, 250, 255])), { dominant: null, second: null, count: 0 });
   assert.equal(foilURI({ foil: "#123456", foilHi: "#abcdef", foilLo: "#000000" }).includes(encodeURIComponent("#123456")), true);
+});
+
+test("the spotlight: with the picture's layout the hue under the lower third of the frame outvotes a sky that fills the rest (True Bisky's pink dress, not the blue around her)", () => {
+  const W = 64, H = 36, px = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {   // a blue sky everywhere; a pink dress in the lower middle, a third of the area
+    const dress = x >= 20 && x < 44 && y >= 16 && y < 34, i = (y * W + x) * 4;
+    px.set(dress ? [214, 60, 120, 255] : [45, 110, 210, 255], i);
+  }
+  const flat = interestingPalette(px, { width: W, height: H, sigma: 0 });
+  assert.ok(flat.dominant[0] > 200 && flat.dominant[0] < 230, "every pixel alike: the sky wins " + flat.dominant[0]);
+  const lit = interestingPalette(px, { width: W, height: H });
+  assert.ok(lit.dominant[0] > 320 && lit.dominant[0] < 350, "under the spotlight: the dress wins " + lit.dominant[0]);
+  assert.ok(lit.second && lit.second[0] > 200 && lit.second[0] < 230, "the sky still veins the foil: " + JSON.stringify(lit.second));
+  assert.ok(CENTER_SIGMA > 0 && CENTER_SIGMA < 0.5 && FOCUS > 0.5 && FOCUS < 0.75, "a tight spotlight below the middle");
+  const none = new Uint8ClampedArray(W * H * 4).fill(255);
+  assert.deepEqual(interestingPalette(none, { width: W, height: H }), { dominant: null, second: null, count: 0 });
 });
