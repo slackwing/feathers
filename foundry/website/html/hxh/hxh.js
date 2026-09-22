@@ -3821,7 +3821,7 @@ var HxH = (() => {
     return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
   }
   function randomPlate(rand = Math.random) {
-    return { x: Math.round((PLATE.x + rand() * 8) * 10) / 10, y: Math.round((PLATE.y + 4 + rand() * 10) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
+    return { x: Math.round((90 + rand() * 10) * 10) / 10, y: Math.round((94 + rand() * 8) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
   }
   function randomStamp(rand = Math.random) {
     let spot;
@@ -4077,7 +4077,7 @@ var HxH = (() => {
         const el = h("span", { className: "gi-claim", text: cl.label || cl.username.toUpperCase(), title: `${cl.label || cl.username} is coming as ${c.first || c.name}` });
         el.style.left = cl.x + "%";
         el.style.top = cl.y + "%";
-        el.style.transform = `rotate(${cl.rotation}deg)`;
+        el.style.transform = `translate(-100%, -100%) rotate(${cl.rotation}deg)`;
         box.append(el);
       }
     }

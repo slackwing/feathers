@@ -2219,6 +2219,7 @@ html[data-theme=seapumpkin-pastel] {
   white-space: nowrap;
   box-sizing: border-box;
   z-index: 4;
+  transform-origin: 100% 100%;
   padding: 1.4cqw 2.4cqw 1cqw;
   border: 1.5cqw solid #c8102e;
   border-radius: 2.4cqw;
