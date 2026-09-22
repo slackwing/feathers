@@ -2749,7 +2749,7 @@ body.stacked .pageno {
 }
 .room .m {
   display: grid;
-  grid-template-columns: 30px 1fr;
+  grid-template-columns: 40px 1fr;
   column-gap: 10px;
   align-items: start;
   margin-top: 10px;
@@ -2763,8 +2763,9 @@ body.stacked .pageno {
   padding-top: 1px;
 }
 .room .m .av .avatar {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
 }
 .room .m .hd {
   grid-column: 2;
