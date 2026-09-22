@@ -227,6 +227,7 @@ def main():
     p = sub.add_parser("resolve"); p.add_argument("request", type=int); p.add_argument("--dropped", action="store_true", help="nobody will do it (the bot could not, or it is moot)"); p.add_argument("--note", default="", help="how it ended, in your words")
     p = sub.add_parser("skip"); p.add_argument("name"); p.add_argument("--arc", required=True, help="the arc slug they appear in"); p.add_argument("--why", required=True, help="one line: why no card"); p.add_argument("--first", default="")
     p = sub.add_parser("resurrect"); p.add_argument("id", type=int)
+    sub.add_parser("stamps")
     p = sub.add_parser("move"); p.add_argument("id", type=int); p.add_argument("--after", type=int, default=0, help="the character id it goes right after (0 = the front)")
     p = sub.add_parser("reject"); p.add_argument("image", type=int)
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
@@ -292,6 +293,12 @@ def main():
                                      "description": "", "card_description": "", "notes": "Skipped: " + a.why, "review_status": "skipped", "review_reason": a.why}))
     elif a.cmd == "resurrect":
         out(c.db("POST", f"/chars/{a.id}/resurrect", {}))
+    elif a.cmd == "stamps":
+        st = c.db("GET", "/stamps")
+        by = {}
+        for h in st["hearts"]: by[h["char_id"]] = by.get(h["char_id"], 0) + 1
+        for cid, n in sorted(by.items(), key=lambda kv: -kv[1]): print(f"#{cid:<4} {n} heart{'s' if n != 1 else ''}")
+        if not by: print("no hearts yet", file=sys.stderr)
     elif a.cmd == "move":
         for r in c.db("POST", f"/chars/{a.id}/move", {"after": a.after}):
             print(f"{r['id']:>4}  No.{r['card_number'] if r['card_number'] is not None else '—':<4} {r['name']}")

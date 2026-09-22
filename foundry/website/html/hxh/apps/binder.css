@@ -206,6 +206,23 @@
   font: 10px/1 var(--font-px); cursor: pointer; padding-top: 2px;
 }
 .key:active { box-shadow: inset 1px 1px 0 var(--mint-2); transform: translate(1px, 1px); }
+.key:disabled { cursor: default; filter: saturate(.3) brightness(.85); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--mint-2); }
+.key:disabled:active { transform: none; }
+/* the heart and bookmark keys: square, an icon in the middle; lit while the reader's own stamp is on the selected card */
+.key.ico { width: calc(30px * var(--u, 1)); padding: 0; display: grid; place-items: center; }
+.key.ico svg { width: calc(16px * var(--u, 1)); height: calc(16px * var(--u, 1)); image-rendering: pixelated; }
+.key.ico:not(.lit):not(:disabled) svg { filter: grayscale(1) brightness(1.15); }
+.key.ico.lit { background: linear-gradient(#fff6e0, var(--gold) 45%); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #a67c00, 0 0 0 2px rgba(255,209,102,.55), 2px 2px 0 var(--teal-3); }
+/* heart stamps: over the description box, at their saved spots, free to hang past its edge */
+.gicard .gi-band { overflow: visible; }
+.gicard .gi-stamps { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.gicard .gi-stamp { position: absolute; width: 16cqw; height: 16cqw; margin: 0; display: block; filter: drop-shadow(0.5cqw 0.5cqw 0 rgba(0,0,0,.35)); opacity: .92; }
+.gicard .gi-stamp svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+/* the empty bookmark page */
+.cards .hint { grid-column: 1 / -1; grid-row: 2; align-self: center; text-align: center; color: rgba(255,255,255,.55); font: 700 12px/1.6 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; padding: 0 20px; }
+.tab.bm { padding: 4px 12px 0; }
+.tab.bm svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .8; }
+.tab.bm.on svg { opacity: 1; }
 .dial {
   grid-column: 1; grid-row: 2; justify-self: start; position: relative;
   width: calc(128px * var(--u, 1)); height: calc(128px * var(--u, 1)); border-radius: 50%;
