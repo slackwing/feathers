@@ -231,7 +231,7 @@ export class BinderApp extends App {
     let box = band.querySelector(".gi-stamps");
     if (!box) { box = h("div", { className: "gi-stamps" }); band.append(box); }
     box.replaceChildren(...this.heartsOn(c.id).map(s => {
-      const el = h("span", { className: "gi-stamp", html: icon("heart", 16), title: "Someone likes this character" });
+      const el = h("span", { className: "gi-stamp", html: icon("heart-stamp", 16), title: "Someone likes this character" });
       el.style.left = s.x + "%"; el.style.top = s.y + "%"; el.style.transform = `rotate(${s.rotation}deg)`;
       return el;
     }));

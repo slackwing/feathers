@@ -125,6 +125,25 @@ export const ICONS = {
     ".......kk.......",
     "................",
   ],
+  // the heart as a rubber stamp would print it: the outline only, ink-red, two pixels thick
+  "heart-stamp": [
+    "................",
+    "..rrrr....rrrr..",
+    ".rrrrrr..rrrrrr.",
+    "rrr..rrrrrr..rrr",
+    "rr....rrrr....rr",
+    "rr............rr",
+    "rr............rr",
+    "rr............rr",
+    ".rr..........rr.",
+    "..rr........rr..",
+    "...rr......rr...",
+    "....rr....rr....",
+    ".....rr..rr.....",
+    "......rrrr......",
+    ".......rr.......",
+    "................",
+  ],
   // the binder's bookmark: "Bookmark for myself" — a gold ribbon with a notched tail
   bookmark: [
     "................",

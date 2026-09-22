@@ -200,23 +200,30 @@
 .controls { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: calc(15px * var(--u, 1)); align-items: center; justify-items: center; }
 .keys { grid-column: 1; grid-row: 1; display: flex; gap: calc(10px * var(--u, 1)); justify-self: start; }
 .key {
-  width: calc(64px * var(--u, 1)); height: calc(30px * var(--u, 1)); border-radius: 3px;
+  min-width: calc(64px * var(--u, 1)); height: calc(30px * var(--u, 1)); border-radius: 3px;   /* a word key grows to fit its word (BECOME clipped at 64) */
   background: linear-gradient(var(--mint-hi), var(--mint) 40%); color: var(--ink);
   border: var(--px) solid var(--ink); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--mint-2), 2px 2px 0 var(--teal-3);
-  font: 10px/1 var(--font-px); cursor: pointer; padding-top: 2px;
+  font: 10px/1 var(--font-px); cursor: pointer; padding: 2px calc(10px * var(--u, 1)) 0; white-space: nowrap;
 }
 .key:active { box-shadow: inset 1px 1px 0 var(--mint-2); transform: translate(1px, 1px); }
-.key:disabled { cursor: default; filter: saturate(.3) brightness(.85); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--mint-2); }
+/* off: flat grey, the word engraved, no raised shadow — unmistakably not a button to press */
+.key:disabled { cursor: default; background: #b9c4c2; color: rgba(11,10,8,.42); text-shadow: 1px 1px 0 rgba(255,255,255,.55); border-color: #6c7a78; box-shadow: inset 1px 1px 0 rgba(255,255,255,.35); }
 .key:disabled:active { transform: none; }
 /* the heart and bookmark keys: square, an icon in the middle; lit while the reader's own stamp is on the selected card */
-.key.ico { width: calc(30px * var(--u, 1)); padding: 0; display: grid; place-items: center; }
+.key.ico { width: calc(30px * var(--u, 1)); min-width: 0; padding: 0; display: grid; place-items: center; }
 .key.ico svg { width: calc(16px * var(--u, 1)); height: calc(16px * var(--u, 1)); image-rendering: pixelated; }
 .key.ico:not(.lit):not(:disabled) svg { filter: grayscale(1) brightness(1.15); }
 .key.ico.lit { background: linear-gradient(#fff6e0, var(--gold) 45%); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #a67c00, 0 0 0 2px rgba(255,209,102,.55), 2px 2px 0 var(--teal-3); }
 /* heart stamps: over the description box, at their saved spots, free to hang past its edge */
 .gicard .gi-band { overflow: visible; }
 .gicard .gi-stamps { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.gicard .gi-stamp { position: absolute; width: 16cqw; height: 16cqw; margin: 0; display: block; filter: drop-shadow(0.5cqw 0.5cqw 0 rgba(0,0,0,.35)); opacity: .92; }
+/* a passport stamp: the outline only, faded ink, unevenly pressed (Andrew, 2026-09-21) — a mottled mask thins the ink here and there */
+.gicard .gi-stamp {
+  position: absolute; width: 17cqw; height: 17cqw; margin: 0; display: block; opacity: .62; mix-blend-mode: multiply;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.55'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.55'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+}
 .gicard .gi-stamp svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 /* the empty bookmark page */
 .cards .hint { grid-column: 1 / -1; grid-row: 2; align-self: center; text-align: center; color: rgba(255,255,255,.55); font: 700 12px/1.6 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; padding: 0 20px; }
