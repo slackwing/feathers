@@ -33,9 +33,33 @@ export const STAMPS = "/hxh/api/db/stamps";        // everyone's hearts, my hear
 export const STAMP_ROT = 25;                        // a heart leans at most this far from upright (degrees)
 export const BOOKMARK_HINT = "Bookmark characters for them to show here!";
 
-/** Where a new heart lands on the description box: % of the box, allowed to hang over its edge; upright within ±STAMP_ROT. */
+/* The lower-right corner of the description box is kept for the name
+   plate of whoever becomes the character (Andrew, 2026-09-21) — the
+   plate itself will sit somewhere in that corner with a little random
+   lean and offset, so the whole corner is the reserved zone. A heart
+   stays out when its CENTRE is in the zone; its edge may overlap a
+   little ("don't be so scared to be exclusive between stamps"). */
+export const STAMP_W = 17;               // a heart's width, % of the description box
+export const PLATE = { x: 50, y: 58 };   // the zone: from here to the corner, in % of the box
+
+/** True when a heart at (x, y) has its centre in the name plate's zone. */
+export function onPlate(x, y) { return x + STAMP_W / 2 > PLATE.x && y + STAMP_W / 2 > PLATE.y; }
+
+/** A saved spot moved out of the zone by the shorter move: left of it, or above it. */
+export function clearOfPlate(s) {
+  if (!onPlate(s.x, s.y)) return s;
+  const left = s.x + STAMP_W / 2 - PLATE.x, up = s.y + STAMP_W / 2 - PLATE.y;
+  return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
+}
+
+/** Where a new heart lands on the description box: % of the box, allowed to hang over its edge, never on the plate; upright within ±STAMP_ROT. */
 export function randomStamp(rand = Math.random) {
-  return { x: Math.round((-8 + rand() * 92) * 10) / 10, y: Math.round((-15 + rand() * 100) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
+  let spot;
+  for (let tries = 0; tries < 40; tries++) {
+    spot = { x: Math.round((-8 + rand() * 92) * 10) / 10, y: Math.round((-15 + rand() * 100) * 10) / 10 };
+    if (!onPlate(spot.x, spot.y)) break;
+  }
+  return { ...clearOfPlate(spot), rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
 }
 export const LIVE_MS = 20000;                        // an open binder re-reads itself this often
 
@@ -230,7 +254,7 @@ export class BinderApp extends App {
     if (!band) return;
     let box = band.querySelector(".gi-stamps");
     if (!box) { box = h("div", { className: "gi-stamps" }); band.append(box); }
-    box.replaceChildren(...this.heartsOn(c.id).map(s => {
+    box.replaceChildren(...this.heartsOn(c.id).map(clearOfPlate).map(s => {
       const el = h("span", { className: "gi-stamp", html: icon("heart-stamp", 16), title: "Someone likes this character" });
       el.style.left = s.x + "%"; el.style.top = s.y + "%"; el.style.transform = `rotate(${s.rotation}deg)`;
       return el;

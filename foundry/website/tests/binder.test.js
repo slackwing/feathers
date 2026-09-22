@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, randomStamp, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
+import { paginate, randomStamp, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 import { RegisterApp } from "../html/hxh/apps/register.js";
 
@@ -26,15 +26,30 @@ test("paginate: a bookmark page always comes first (empty or not, one per PER_PA
   assert.equal(TYPES.length, 7);
 });
 
-test("randomStamp: on the description box, allowed past its edge, never far from upright", () => {
-  for (const r of [0, 0.5, 0.999]) {
+test("randomStamp: on the description box, allowed past its edge, never far from upright, its centre never on the name plate's zone in the lower right", () => {
+  for (const r of [0, 0.3, 0.5, 0.999]) {
     const s = randomStamp(() => r);
     assert.ok(s.x >= -8 && s.x <= 84.1 && s.y >= -15 && s.y <= 85.1, JSON.stringify(s));
     assert.ok(Math.abs(s.rotation) <= STAMP_ROT);
+    assert.ok(!onPlate(s.x, s.y), JSON.stringify(s));
   }
-  assert.deepEqual(randomStamp(() => 0.5), { x: 38, y: 35, rotation: 0 });
+  assert.deepEqual(randomStamp(() => 0.3), { x: 19.6, y: 15, rotation: -10 });
+  // a draw whose centre lands in the zone is thrown away and drawn again
+  const rolls = [0.9, 0.9, 0.1, 0.1, 0.5];   // (74.8, 75) is in the zone → (1.2, -5); rotation 0
+  assert.deepEqual(randomStamp(() => rolls.shift()), { x: 1.2, y: -5, rotation: 0 });
+  assert.equal(rolls.length, 0, "every roll was used");
+  // a generator that only ever lands in the zone still ends, nudged clear
+  const stuck = randomStamp(() => 0.999);
+  assert.ok(!onPlate(stuck.x, stuck.y) && stuck.y === PLATE.y - STAMP_W / 2, JSON.stringify(stuck));
+  // the zone is judged by the heart's centre: an edge may overlap it a little
+  assert.ok(onPlate(PLATE.x - STAMP_W / 2 + 1, PLATE.y - STAMP_W / 2 + 1));
+  assert.ok(!onPlate(PLATE.x - STAMP_W / 2, 80), "centre left of the zone, however low");
+  assert.ok(!onPlate(80, PLATE.y - STAMP_W / 2), "centre above the zone, however far right");
+  // saved hearts from before the zone existed are moved out by the shorter move
+  assert.deepEqual(clearOfPlate({ x: 40, y: 40, rotation: 3 }), { x: 40, y: 40, rotation: 3 }, "outside: untouched");
+  assert.deepEqual(clearOfPlate({ x: 70, y: 52, rotation: 3 }), { x: 70, y: 49.5, rotation: 3 }, "barely over the top edge: moves up");
+  assert.deepEqual(clearOfPlate({ x: 44, y: 80, rotation: 3 }), { x: 41.5, y: 80, rotation: 3 }, "barely over the left edge: moves left");
 });
-
 test("a card's plaque prints the short name; the full name stays on the screen", async () => {
   const { setupDom } = await import("./dom.js"); const { OS } = await import("../html/hxh/os/os.js");
   const d = setupDom();
@@ -252,6 +267,13 @@ test("a heart: one per reader per card, toggled; the key lights while mine is on
   const stamps = () => [...gon().querySelectorAll(".gi-band .gi-stamps .gi-stamp")];
   assert.equal(stamps().length, 1, "the other reader's heart shows");
   assert.deepEqual([stamps()[0].style.left, stamps()[0].style.top, stamps()[0].style.transform], ["60%", "10%", "rotate(-12deg)"]);
+  stampsDb.hearts.push({ char_id: 1, x: 70, y: 70, rotation: 5 });   // a heart saved on the plate: drawn clear of it
+  b.stamps = JSON.parse(JSON.stringify(stampsDb));
+  b.showPage(1);
+  assert.deepEqual(stamps().map(s => [s.style.left, s.style.top]), [["60%", "10%"], ["70%", "49.5%"]]);
+  stampsDb.hearts.pop();
+  b.stamps = JSON.parse(JSON.stringify(stampsDb));
+  b.showPage(1);
   d.click(gon());
   const heart = b.$('[data-act="heart"]');
   assert.ok(!heart.classList.contains("lit"));
