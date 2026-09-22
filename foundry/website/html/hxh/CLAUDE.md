@@ -196,8 +196,8 @@ the OS.
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + registry-derived menus + typewriter notice + CTA),
-  `Binder`, `Chat` (BeetleChat, `apps/chat/`; the global room's window is
-  1.5× a buddy chat in both dimensions — `large`), `About` (group
+  `Binder`, `Chat` (BeetleChat, `apps/chat/`; a buddy chat is 565 wide,
+  the global room's window 705 with a 1.5× log and compose — `large`), `About` (group
   "system"), `SetPassword` (desktop/menuable false; its words come in
   as options). `apps/index.js` exports them as `HxH.apps.*`.
 
@@ -297,7 +297,7 @@ component architecture (many windows, tray icons + menus, the bus).
   queue while offline, ≤ 10 messages/s, typing at most every 2 s per
   room; `ChatAPI` for the REST calls.
 - **The log (2026-09-22)** — Abi found the AIM-style `name (HH:MM): text`
-  lines too text-heavy, so a message row is a grid: a 30 px avatar
+  lines too text-heavy, so a message row is a grid: a 40 px avatar
   (`os/icons.js` `avatar()` — the initial on the member's colour, or,
   when the contact carries `avatar_url`, that picture in a circle
   RINGED with the member's colour, `.avatar.pic`), a header line

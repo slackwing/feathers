@@ -26,10 +26,10 @@ export const dayKey = iso => { const d = iso ? new Date(iso) : new Date(); retur
 export const dayLabel = iso => { const d = iso ? new Date(iso) : new Date(); return isNaN(d) ? "" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" }); };
 
 export class ChatWindow extends Window {
-  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 1.5× both ways) */
+  /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 705 wide, a 1.5× log and compose; a buddy chat is 565 — Andrew, 2026-09-22: "wider by about 20%", from 470) */
   constructor(props) {
     super({
-      id: "win-chat-" + roomSlug(props.room), title: props.title, icon: props.icon || "comment", width: props.large ? 705 : 470, cls: "chat room" + (props.large ? " large" : ""),
+      id: "win-chat-" + roomSlug(props.room), title: props.title, icon: props.icon || "comment", width: props.large ? 705 : 565, cls: "chat room" + (props.large ? " large" : ""),
       content: `
         <div class="compose">
           <div class="ctools">

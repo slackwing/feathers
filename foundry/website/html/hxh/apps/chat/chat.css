@@ -86,10 +86,10 @@
 .room .log { padding: 6px 10px 8px; font: var(--t-chat); }
 .room .compose textarea { font: var(--t-chat); }
 /* a run of messages: avatar left, name and time above the first line, bare lines under it (Andrew/Abi, 2026-09-22) */
-.room .m { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: start; margin-top: 10px; }
+.room .m { display: grid; grid-template-columns: 40px 1fr; column-gap: 10px; align-items: start; margin-top: 10px; }
 .room .m.cont { margin-top: 3px; }
 .room .m .av { grid-row: 1 / span 2; grid-column: 1; padding-top: 1px; }
-.room .m .av .avatar { width: 30px; height: 30px; }
+.room .m .av .avatar { width: 40px; height: 40px; font-size: 15px; }   /* two text lines tall (Andrew, 2026-09-22: "about 30% larger") */
 .room .m .hd { grid-column: 2; display: flex; align-items: baseline; gap: 8px; line-height: 1.2; }
 .room .m .who { color: var(--c, var(--ink)); }
 .room .m .ts { color: var(--dim-fg); font: var(--t-small); }

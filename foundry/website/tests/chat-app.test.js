@@ -193,7 +193,7 @@ test("menus: BeetleChat File/Edit/Settings as specified, chats File(+View), no i
   assert.deepEqual([...g.menuBar.menus[0].el.children].map(c => c.textContent), ["Exit"]);
   assert.equal(g.el.querySelector('[data-act="profile"]'), null);
   const dm = app().openChat("abi");
-  assert.equal(dm.el.style.width, "470px");
+  assert.equal(dm.el.style.width, "565px");   // a buddy chat, 20% wider than it was (Andrew, 2026-09-22)
   assert.deepEqual([...dm.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View"]);
   dm.menuBar.menus[1].open();
   assert.deepEqual([...dm.menuBar.menus[1].el.children].map(c => c.textContent), ["Profile"]);
