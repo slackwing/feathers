@@ -268,9 +268,11 @@ renderCup();
    An apology bouquet, duct-taped to the table so the cat can't do to
    it what it does to cups. It's part of the table: it buzzes when the
    table is bapped (the stems sway) but it never drifts.
-   VASE_ON puts it on the table for everyone; ?test=flowers forces it.
-   Off since 2026-09-22 — flip VASE_ON to bring the apology back. */
-const VASE_ON = false;
+   VASE_OPTS is what stands on the table for everyone:
+     vase  — the glass vase of roses, duct-taped down
+     sorry — the "sorry" card leaning against it (off since 2026-09-22)
+   ?test=flowers forces the whole thing, card included. */
+const VASE_OPTS = { vase: true, sorry: false };
 const VASE_AT = { x: 255, y: 770 };   // base center, scene coords
 const vase = { on: false, vib: 0, sway: 0, vSway: 0 };
 const vaseG = $("vaseG");
@@ -318,7 +320,7 @@ function tapeStrip(parent, p0, c0, c1, p1, w) {
     "stroke-linecap": "round", fill: "none" }, g);
   return g;
 }
-function drawVase(outer) {
+function drawVase(outer, opts = VASE_OPTS) {
   outer.innerHTML = "";
   const root = el("g", {}, outer);
   const ROSE = "#e0533d", ROSE_DK = "#8f2a1a", STEM = "#3f7a35", LEAF = "#5aa04b", LEAF_DK = "#2d5a26";
@@ -381,12 +383,14 @@ function drawVase(outer) {
   tapeStrip(tape, [-150, 44], [-60, -4], [50, -48], [140, -64], 30);
   tapeStrip(tape, [150, 44], [60, -4], [-50, -48], [-140, -64], 30);
   // the card
-  const card = el("g", { transform: "translate(64 6) rotate(-7) skewX(-8)" }, root);
-  el("rect", { x: -32, y: -44, width: 64, height: 44, rx: 3, fill: "#fff",
-    stroke: "var(--ink)", "stroke-width": "4" }, card);
-  const tx = el("text", { x: 0, y: -14, "text-anchor": "middle", "font-size": "29",
-    "font-family": "Gochi Hand, cursive", fill: "var(--ink)" }, card);
-  tx.textContent = "sorry";
+  if (opts.sorry) {
+    const card = el("g", { transform: "translate(64 6) rotate(-7) skewX(-8)" }, root);
+    el("rect", { x: -32, y: -44, width: 64, height: 44, rx: 3, fill: "#fff",
+      stroke: "var(--ink)", "stroke-width": "4" }, card);
+    const tx = el("text", { x: 0, y: -14, "text-anchor": "middle", "font-size": "29",
+      "font-family": "Gochi Hand, cursive", fill: "var(--ink)" }, card);
+    tx.textContent = "sorry";
+  }
   renderVase();
 }
 function renderVase() {
@@ -812,7 +816,8 @@ function applyTest() {
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
   if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y, false); }
   if (TEST === "picks") { cup.mode = "broken"; burstPicks(780, FLOOR_Y, false); }
-  if (VASE_ON || TEST === "flowers") { vase.on = true; drawVase(vaseG); }
+  const vopts = TEST === "flowers" ? { vase: true, sorry: true } : VASE_OPTS;
+  if (vopts.vase) { vase.on = true; drawVase(vaseG, vopts); }
   if (TEST) renderCup();
 }
 applyTest();

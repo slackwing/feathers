@@ -30,8 +30,9 @@ the shatter later.
   foreground, stands an apology: a glass vase of red roses with a
   "sorry" card, duct-taped to the table (an X of torn strips over the
   foot). It buzzes in place on a bap and the stems whip on a spring,
-  but it never drifts or falls. It is OFF since 2026-09-22 (`VASE_ON`
-  in index.html; `?test=flowers` previews it without flipping the flag).
+  but it never drifts or falls. `VASE_OPTS` in index.html picks what
+  stands there (`vase`, `sorry`); the card has been off since
+  2026-09-22. `?test=flowers` forces both without touching the flags.
   Physics: near-real gravity
   (1px ~ 1mm), baps only move a grounded cup, but a bap can resonantly
   catch a cup that's just about to land. Scene space is 1800×1000,
