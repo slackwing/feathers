@@ -47,6 +47,21 @@ test("a flight is a ship and a banner, west or east, gone when its animation end
   b.unmount();
 });
 
+test("flying: a ship is up from launch until its animation ends — or, for a hidden tab's stale flight, until it is purged", () => {
+  let now = 5_000_000;
+  const b = new Blimp({ reduced: true, random: () => 0.5, duration: 100000, now: () => now }).mount(document.body);
+  assert.equal(b.flying, false);
+  const el = b.launch({ dir: -1 });
+  assert.equal(b.flying, true, "launched and still at the edge counts as up");
+  el.dispatchEvent(new d.win.Event("animationend"));
+  assert.equal(b.flying, false);
+  b.launch({ dir: 1 });
+  now += 100001;   // the tab was hidden through the whole flight: the element never got its animationend
+  assert.equal(b.flying, false, "an overdue flight is purged, not counted");
+  assert.equal(b.el.querySelectorAll(".blimp").length, 0);
+  b.unmount();
+});
+
 test("one flight at a time, none while the page is hidden, overdue flights purged on return (fifty blimps after a night, 2026-09-20)", () => {
   const timers = [];
   const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };

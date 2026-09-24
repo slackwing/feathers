@@ -2,6 +2,7 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
+import { Blimp } from "../html/hxh/os/blimp.js";
 import { App } from "../html/hxh/os/apps.js";
 import { Window } from "../html/hxh/os/window.js";
 import { WARM_KEY, Nav } from "../html/hxh/os/session.js";
@@ -18,13 +19,13 @@ class Sys extends App { static id = "sys"; static name = "Sys"; static group = "
 class Tray extends App { static id = "tr"; static name = "Tr"; static desktop = false; static menuable = false; tray() { return { title: "Tray thing", on: true }; } visible(u) { return !!u; } }
 class AdminOnly extends App { static id = "adm"; static name = "Adm"; visible(u) { return (u?.roles || []).some(r => r.role === "admin"); } launch() {} }
 
-function make({ me = ME, warm = false, loc = { href: "" } } = {}) {
+function make({ me = ME, warm = false, loc = { href: "" }, reduced = true } = {}) {
   if (warm) d.win.sessionStorage.setItem(WARM_KEY, "1");
   const log = [];
   const fetch = fakeFetch({ "GET /admin/api/me": me ? [200, me] : [401, {}], "POST /admin/api/login": [200, ME] }, log);
   const win = d.win;
   const nav = new Nav({ storage: win.sessionStorage, location: loc });
-  const os = new OS({ win, fetch, nav, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  const os = new OS({ win, fetch, nav, env: { reduced, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   return { os, log, loc };
 }
 
@@ -63,6 +64,27 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.equal(os.taskbar.buttons.size, 1);
   assert.deepEqual(events.slice(0, 2), ["session:user:andrew", "tray:add:tr"]);   // user first, then the tray follows
   assert.ok(events.includes("os:ready:andrew") && events.includes("app:launch:hello"));
+});
+
+test("Settings › Display › Fly the blimp launches one now, greys while a ship is up, and is absent under reduced motion (Andrew, 2026-09-24: for testing)", async () => {
+  const { os } = make({ reduced: false });
+  await os.start({ apps: [Hello], start: true });
+  os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
+  const display = () => os.settingsItems()[0].items().map(i => i === "sep" ? "-" : i);
+  let items = display();
+  assert.deepEqual(items.map(i => i === "-" ? i : i.label), ["Theme", "Sky", "Scanlines", "-", "Fly the blimp"]);
+  assert.equal(items[4].disabled, false);
+  items[4].onclick();
+  assert.equal(os.blimp.flying, true);
+  assert.equal(os.blimp.el.querySelectorAll(".blimp").length, 1);
+  items = display();
+  assert.equal(items[4].disabled, true, "one is up: the item greys until it has crossed");
+  os.blimp.el.querySelector(".blimp").dispatchEvent(new d.win.Event("animationend"));
+  assert.equal(display()[4].disabled, false);
+  os.blimp.unmount();
+  const quiet = make({ reduced: true }).os;
+  await quiet.start({ apps: [Hello], start: true });
+  assert.deepEqual(quiet.settingsItems()[0].items().map(i => i.label), ["Theme", "Sky", "Scanlines"]);
 });
 
 test("the Start menu lists apps, Settings ▸, system apps and Log out; the Settings tree is one source for Start, tray and windows", async () => {

@@ -53,7 +53,7 @@ test("summons menus are derived from the registry", async () => {
   d.click(settings.el.querySelector(".menu.sub > button"));   // Display ▸
   const display = settings.subs[0];
   assert.ok(display.isOpen && settings.isOpen, "the submenu opens and keeps its parent open");
-  assert.deepEqual([...display.el.querySelectorAll(":scope > button, :scope > .menu > button")].map(b => b.firstChild.textContent), ["Theme", "Sky", "Scanlines"]);
+  assert.deepEqual([...display.el.querySelectorAll(":scope > button, :scope > .menu > button")].map(b => b.firstChild.textContent), ["Theme", "Sky", "Scanlines"]);   // reduced motion here: no "Fly the blimp"
   d.click([...display.el.querySelectorAll("button")].find(b => b.textContent === "Scanlines"));
   assert.equal(os.crt.on, true);
   assert.ok(!settings.isOpen && !display.isOpen, "picking a leaf closes the chain");

@@ -2689,6 +2689,11 @@ var HxH = (() => {
       }
       return n;
     }
+    /** Is a ship up — on screen or launched and still at the edge? Overdue flights (a hidden tab's) are purged first. */
+    get flying() {
+      this.purge();
+      return !!this.el.querySelector(".blimp");
+    }
     /** Fly one across now — the previous one, if still up, lands. Returns the element. */
     launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
       const { random = Math.random, duration = 1e5 } = this.props;
@@ -3292,7 +3297,9 @@ var HxH = (() => {
         { label: "Display", icon: "crt", items: () => [
           { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: (v) => this.applyTheme(v) }) },
           { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: (v) => this.applySky(v) }) },
-          { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() }
+          { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
+          // Andrew (2026-09-24): a way to summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
+          ...this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]
         ] },
         { label: "Sounds", icon: "sound", items: () => [
           { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }

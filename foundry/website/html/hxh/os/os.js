@@ -131,6 +131,8 @@ export class OS {
         { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: v => this.applyTheme(v) }) },
         { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: v => this.applySky(v) }) },
         { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
+        // Andrew (2026-09-24): a way to summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
+        ...(this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
       ] },
       { label: "Sounds", icon: "sound", items: () => [
         { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },

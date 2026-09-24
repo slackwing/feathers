@@ -649,10 +649,14 @@ over the sky.
 - **One Settings tree** — `OS.settingsItems({icons})` — is rendered by
   the Start menu (Settings ▸), the tray gear (`icon: "gear"`, replaced
   the scanlines icon) and any app window's Settings menu (Summons passes
-  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines) and Sounds ▸
-  (Sounds). Andrew: "keep all our experiments in the UI as settings
-  people can toggle". Add a knob there, nowhere else. Scanlines is OFF
-  by default (`hxh.crt` in localStorage remembers an override).
+  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines, ─, Fly the
+  blimp) and Sounds ▸ (Sounds). Andrew: "keep all our experiments in
+  the UI as settings people can toggle". Add a knob there, nowhere
+  else. Scanlines is OFF by default (`hxh.crt` in localStorage
+  remembers an override). "Fly the blimp" (Andrew, 2026-09-24, "would
+  help with testing") launches one now; it is greyed while a ship is
+  up or launched and still off the edge (`Blimp.flying`, which purges
+  overdue flights first) and hidden under reduced motion.
 - **Submenus** are a menu-item feature: `{ label, items }` cascades to
   the right (Windows style: hover or click, one sibling open at a
   time, ancestors stay open, a leaf pick closes the chain; up-menus

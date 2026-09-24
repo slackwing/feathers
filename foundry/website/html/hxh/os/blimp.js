@@ -101,6 +101,12 @@ export class Blimp extends Component {
     return n;
   }
 
+  /** Is a ship up — on screen or launched and still at the edge? Overdue flights (a hidden tab's) are purged first. */
+  get flying() {
+    this.purge();
+    return !!this.el.querySelector(".blimp");
+  }
+
   /** Fly one across now — the previous one, if still up, lands. Returns the element. */
   launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
     const { random = Math.random, duration = 100000 } = this.props;
