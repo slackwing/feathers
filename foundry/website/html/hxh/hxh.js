@@ -2603,63 +2603,75 @@ var HxH = (() => {
 
   // html/hxh/os/blimp.js
   var FLYER_TEXT = "HUNTER \xD7 HALLOWEEN";
+  var STYLES = ["original", "pixelated"];
   var SHIP_SRC = "/hxh/img/blimp.png";
+  var SHIP_SRC_PX = "/hxh/img/blimp-px.png";
   var ART_W = 1289;
   var ART_H = 955;
   var ART_LINE_Y = 582.85;
   var ART_LINE_W = 4.25;
-  var SHIP_W = 480;
-  var SHIP_H = Math.round(SHIP_W * ART_H / ART_W);
+  var PX = 5;
+  var SHIP_W = 240;
+  var SHIP_H = Math.round(SHIP_W * ART_H / ART_W / PX) * PX;
+  var SPRITE_W = SHIP_W / PX;
+  var SPRITE_H = SHIP_H / PX;
+  var PX_LINE_ROW = 21;
   var SCALE_Y = SHIP_H / ART_H;
   var STERN_Y = +(ART_LINE_Y * SCALE_Y).toFixed(2);
   var ROPE_W = +(ART_LINE_W * SCALE_Y).toFixed(2);
   var ROPE_SOFT = 0.12;
-  var OVERLAP = 5;
-  var BANNER_W = 332;
-  var BANNER_H = 70;
-  var ROPE = 56;
-  var FLYER_TOP = Math.round(STERN_Y - 10);
-  var ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);
-  var LETTER_PX = 16;
+  var OVERLAP = 2;
+  var BANNER_W = 236;
+  var BANNER_H = 46;
+  var ROPE = 40;
+  var CLOTH_TOP = 9;
+  var CLOTH_H = 28;
+  var AMP = 2.5;
+  var WAVE = 34;
+  var LETTER_PX = 11;
   var CAP = 0.72;
+  var FLYER_TOP = Math.round(STERN_Y - 6);
+  var ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);
+  var PX_ROPE_Y = +((PX_LINE_ROW + 0.5) * PX - FLYER_TOP).toFixed(2);
   var seq = 0;
-  function airshipHTML() {
-    return `<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
+  function airshipHTML(style = "original") {
+    return `<img class="airship" src="${style === "pixelated" ? SHIP_SRC_PX : SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
   }
-  function ropePath(rope, top) {
-    const y0 = ROPE_Y, yq = top + 2;
-    const a = [0, y0], b = [OVERLAP + 9, y0], q = [ROPE, yq], p = [ROPE - 22, y0 + (yq - y0) * 0.45];
-    const len = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
-    const c1 = [b[0] + 8, y0], c2 = [p[0] - 7 * u[0], p[1] - 7 * u[1]];
+  function ropePath(rope, y0 = ROPE_Y, yq = CLOTH_TOP + 2) {
+    const t = 8;
+    const b = [OVERLAP + 6, y0], m = [b[0] + 2 * t, y0], q = [ROPE, yq];
+    const len = Math.hypot(q[0] - m[0], q[1] - m[1]), u = [(q[0] - m[0]) / len, (q[1] - m[1]) / len];
+    const c1 = [b[0] + t, y0], p = [m[0] + t * u[0], m[1] + t * u[1]];
     const X = rope === "left" ? (x) => x : (x) => BANNER_W - x;
     const pt = ([x, y]) => `${X(x).toFixed(2)} ${y.toFixed(2)}`;
-    return `M ${pt(a)} L ${pt(b)} C ${pt(c1)} ${pt(c2)} ${pt(p)} L ${pt(q)}`;
+    return `M ${pt([0, y0])} L ${pt(b)} C ${pt(c1)} ${pt(m)} ${pt(p)} L ${pt(q)}`;
   }
-  function ripple(x0, x1, base, amp, phase, step = 10) {
+  function ripple(x0, x1, base, amp, phase, step = 8) {
     const pts = [];
-    for (let x = x0; x <= x1; x += step) pts.push([x, base + amp * Math.sin(phase + (x - x0) / 46)]);
+    for (let x = x0; x <= x1; x += step) pts.push([x, base + amp * Math.sin(phase + (x - x0) / WAVE)]);
     return pts;
   }
   var poly = (pts, start2 = "M") => start2 + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L ");
-  function bannerSVG(text = FLYER_TEXT, rope = "left") {
-    const id = "bwave" + ++seq;
+  function bannerSVG(text = FLYER_TEXT, rope = "left", style = "original") {
+    const id = "bwave" + ++seq, px = style === "pixelated";
     const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
-    const top = 16, hgt = 40, amp = 3.5;
     const phases = [0, 2.1, 4.2, 0];
-    const cloth = phases.map((p) => poly(ripple(x0, x1, top, amp, p)) + " " + poly(ripple(x0, x1, top + hgt, amp, p).reverse(), "L") + " Z").join(";");
-    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt / 2 + LETTER_PX * CAP / 2, amp, p))).join(";");
+    const cloth = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP, AMP, p)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p).reverse(), "L") + " Z").join(";");
+    const line = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p))).join(";");
     const dur = "1.5s";
-    return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">
+    const ropeAttrs = px ? `stroke-width="${PX}" shape-rendering="crispEdges"` : `stroke-width="${ROPE_W}" filter="url(#${id}-soft)"`;
+    return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" data-style="${px ? "pixelated" : "original"}" aria-hidden="true">
   <defs><filter id="${id}-soft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="${ROPE_SOFT}"/></filter></defs>
-  <path class="rope" d="${ropePath(rope, top)}" stroke-width="${ROPE_W}" filter="url(#${id}-soft)"/>
+  <path class="rope" d="${ropePath(rope, px ? PX_ROPE_Y : ROPE_Y)}" ${ropeAttrs}/>
   <path class="cloth" d="${cloth.split(";")[0]}"><animate attributeName="d" values="${cloth}" dur="${dur}" repeatCount="indefinite"/></path>
   <defs><path id="${id}" d="${line.split(";")[0]}"><animate attributeName="d" values="${line}" dur="${dur}" repeatCount="indefinite"/></path></defs>
   <text class="lettering"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${text}</textPath></text>
 </svg>`;
   }
   var Blimp = class extends Component {
-    /** props: reduced, random, minWait / maxWait (ms), duration (ms), setTimeout/clearTimeout (tests) */
+    /** props: style ("original" | "pixelated"), reduced, random, minWait / maxWait (ms), duration (ms), setTimeout/clearTimeout (tests) */
     render() {
+      this.style = STYLES.includes(this.props.style) ? this.props.style : "original";
       return h("div", { className: "blimps", id: "blimps" });
     }
     onMount() {
@@ -2709,16 +2721,27 @@ var HxH = (() => {
       this.purge();
       return !!this.el.querySelector(".blimp");
     }
+    /** Settings › Display › Blimp: Original or Pixelated — re-dresses any ship already up, too. */
+    setStyle(style) {
+      if (!STYLES.includes(style)) style = "original";
+      this.style = style;
+      for (const el of this.el.querySelectorAll(".blimp")) {
+        el.classList.toggle("pixelated", style === "pixelated");
+        el.querySelector(".ship").innerHTML = airshipHTML(style);
+        el.querySelector(".flyer").innerHTML = bannerSVG(FLYER_TEXT, el.classList.contains("west") ? "left" : "right", style);
+      }
+      return style;
+    }
     /** Fly one across now — the previous one, if still up, lands. Returns the element. */
     launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
       const { random = Math.random, duration = 1e5 } = this.props;
       for (const old of this.el.querySelectorAll(".blimp")) old.remove();
-      const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
+      const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east") + (this.style === "pixelated" ? " pixelated" : ""), dataset: { until: String(this.now + duration) } });
       el.style.top = (top ?? 2 + random() * 10) + "%";
       el.style.animationDuration = duration + "ms";
       el.append(
-        h("span", { className: "ship", html: airshipHTML() }),
-        h("span", { className: "flyer", style: { marginTop: FLYER_TOP + "px", [dir < 0 ? "marginLeft" : "marginRight"]: -OVERLAP + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
+        h("span", { className: "ship", html: airshipHTML(this.style) }),
+        h("span", { className: "flyer", style: { marginTop: FLYER_TOP + "px", [dir < 0 ? "marginLeft" : "marginRight"]: -OVERLAP + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right", this.style) })
         // the rope starts on the art's own axis line, a few px inside the ship's box
       );
       el.addEventListener("animationend", () => el.remove());
@@ -3222,6 +3245,12 @@ var HxH = (() => {
     ["seapumpkin", "Whale Island Sea Pumpkin"],
     ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"]
   ];
+  var BLIMP_KEY = "blimp";
+  var BLIMP_DEFAULT = "original";
+  var BLIMP_OPTIONS = [
+    ["original", "Original"],
+    ["pixelated", "Pixelated"]
+  ];
   var SKY_KEY = "sky";
   var SKY_DEFAULT = "hypergradient";
   var SKY_OPTIONS = [
@@ -3313,8 +3342,13 @@ var HxH = (() => {
           { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: (v) => this.applyTheme(v) }) },
           { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: (v) => this.applySky(v) }) },
           { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-          // Andrew (2026-09-24): a way to summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
-          ...this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]
+          // Andrew (2026-09-24): Blimp ▸ Original | Pixelated (Abi's drawing smooth, or on the wallpaper's 5-px grain) and Fly the blimp — a way to
+          // summon one for testing, greyed while one is up or launched and still at the edge. Absent under reduced motion, where no blimp ever flies.
+          ...this.env.reduced ? [] : [{ label: "Blimp", items: () => [
+            ...st.radio({ key: BLIMP_KEY, def: BLIMP_DEFAULT, options: BLIMP_OPTIONS, onChange: (v) => this.applyBlimp(v) }),
+            "sep",
+            { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }
+          ] }]
         ] },
         { label: "Sounds", icon: "sound", items: () => [
           { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
@@ -3330,6 +3364,9 @@ var HxH = (() => {
     get sky() {
       return this.settings.getStr(SKY_KEY, SKY_DEFAULT);
     }
+    get blimpStyle() {
+      return this.settings.getStr(BLIMP_KEY, BLIMP_DEFAULT);
+    }
     /** Choose (persist) and apply; unknown names fall back to the default. */
     applyTheme(name = this.theme) {
       if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
@@ -3342,6 +3379,13 @@ var HxH = (() => {
       if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
       this.settings.setStr(SKY_KEY, name);
       this.bus.emit("sky", { name });
+      return name;
+    }
+    applyBlimp(name = this.blimpStyle) {
+      if (!BLIMP_OPTIONS.some(([v]) => v === name)) name = BLIMP_DEFAULT;
+      this.settings.setStr(BLIMP_KEY, name);
+      this.blimp?.setStyle(name);
+      this.bus.emit("blimp", { name });
       return name;
     }
     /**
@@ -3408,7 +3452,7 @@ var HxH = (() => {
       if (this.wallpaper) return;
       const body = this.doc.body;
       this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus, sky: () => this.sky }).mount(body, { before: body.firstChild });
-      this.blimp = new Blimp({ reduced: !!this.env.reduced }).mount(body, { before: this.wallpaper.el.nextSibling });
+      this.blimp = new Blimp({ reduced: !!this.env.reduced, style: this.blimpStyle }).mount(body, { before: this.wallpaper.el.nextSibling });
     }
     /** The logon dialog, alone on the bare desktop. Resolves with the account. */
     logon() {

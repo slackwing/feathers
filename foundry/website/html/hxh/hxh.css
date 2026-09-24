@@ -239,6 +239,9 @@ body.crt::after {
 .blimp .ship img {
   display: block;
 }
+.blimp.pixelated .ship img {
+  image-rendering: pixelated;
+}
 .blimp.east .ship {
   transform: scaleX(-1);
 }
@@ -250,17 +253,17 @@ body.crt::after {
 .banner .cloth {
   fill: #ffb266;
   stroke: #2a1d10;
-  stroke-width: 2;
+  stroke-width: 1.5;
   stroke-linejoin: round;
 }
 .banner .lettering {
   font:
-    700 16px "Helvetica Neue",
+    700 11px "Helvetica Neue",
     "Liberation Sans",
     Arial,
     sans-serif;
   fill: #2a1d10;
-  letter-spacing: .14em;
+  letter-spacing: .12em;
 }
 @keyframes blimp-west {
   from {

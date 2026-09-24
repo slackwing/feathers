@@ -66,21 +66,32 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(events.includes("os:ready:andrew") && events.includes("app:launch:hello"));
 });
 
-test("Settings › Display › Fly the blimp launches one now, greys while a ship is up, and is absent under reduced motion (Andrew, 2026-09-24: for testing)", async () => {
+test("Settings › Display › Blimp ▸ Original | Pixelated | Fly the blimp: a radio pair that dresses the ship, and a launch that greys while a ship is up; absent under reduced motion (Andrew, 2026-09-24)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
-  os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
-  const display = () => os.settingsItems()[0].items().map(i => i === "sep" ? "-" : i);
-  let items = display();
-  assert.deepEqual(items.map(i => i === "-" ? i : i.label), ["Theme", "Sky", "Scanlines", "-", "Fly the blimp"]);
-  assert.equal(items[4].disabled, false);
-  items[4].onclick();
+  os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000, style: os.blimpStyle }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
+  const display = () => os.settingsItems()[0].items();
+  assert.deepEqual(display().map(i => i.label), ["Theme", "Sky", "Scanlines", "Blimp"]);
+  const blimp = () => display()[3].items().map(i => i === "sep" ? "-" : i);
+  let items = blimp();
+  assert.deepEqual(items.map(i => i === "-" ? i : i.label), ["Original", "Pixelated", "-", "Fly the blimp"]);
+  assert.deepEqual([items[0].check(), items[1].check()], [true, false], "Original by default");
+  assert.equal(items[3].disabled, false);
+  items[3].onclick();
   assert.equal(os.blimp.flying, true);
   assert.equal(os.blimp.el.querySelectorAll(".blimp").length, 1);
-  items = display();
-  assert.equal(items[4].disabled, true, "one is up: the item greys until it has crossed");
+  assert.equal(blimp()[3].disabled, true, "one is up: the item greys until it has crossed");
+  const seen = []; os.bus.on("blimp", p => seen.push(p.name));
+  blimp()[1].onclick();   // Pixelated
+  assert.deepEqual([blimp()[0].check(), blimp()[1].check()], [false, true]);
+  assert.equal(os.blimpStyle, "pixelated");
+  assert.equal(d.win.localStorage.getItem("hxh.set.blimp"), "pixelated");
+  assert.ok(os.blimp.el.querySelector(".blimp").classList.contains("pixelated"), "the ship that is up changes dress");
+  assert.deepEqual(seen, ["pixelated"]);
+  blimp()[0].onclick();   // back to Original
+  assert.equal(os.blimpStyle, "original");
   os.blimp.el.querySelector(".blimp").dispatchEvent(new d.win.Event("animationend"));
-  assert.equal(display()[4].disabled, false);
+  assert.equal(blimp()[3].disabled, false);
   os.blimp.unmount();
   const quiet = make({ reduced: true }).os;
   await quiet.start({ apps: [Hello], start: true });

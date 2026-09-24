@@ -38,6 +38,11 @@ export const THEME_OPTIONS = [
   ["seapumpkin", "Whale Island Sea Pumpkin"],
   ["seapumpkin-pastel", "Whale Island Sea Pumpkin Pastel"],
 ];
+export const BLIMP_KEY = "blimp", BLIMP_DEFAULT = "original";   // Settings › Display › Blimp (Andrew, 2026-09-24)
+export const BLIMP_OPTIONS = [
+  ["original", "Original"],
+  ["pixelated", "Pixelated"],
+];
 export const SKY_KEY = "sky", SKY_DEFAULT = "hypergradient";   // Andrew, 2026-09-21
 export const SKY_OPTIONS = [
   ["original", "Original"],
@@ -131,8 +136,13 @@ export class OS {
         { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: v => this.applyTheme(v) }) },
         { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: v => this.applySky(v) }) },
         { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-        // Andrew (2026-09-24): a way to summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
-        ...(this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
+        // Andrew (2026-09-24): Blimp ▸ Original | Pixelated (Abi's drawing smooth, or on the wallpaper's 5-px grain) and Fly the blimp — a way to
+        // summon one for testing, greyed while one is up or launched and still at the edge. Absent under reduced motion, where no blimp ever flies.
+        ...(this.env.reduced ? [] : [{ label: "Blimp", items: () => [
+          ...st.radio({ key: BLIMP_KEY, def: BLIMP_DEFAULT, options: BLIMP_OPTIONS, onChange: v => this.applyBlimp(v) }),
+          "sep",
+          { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() },
+        ] }]),
       ] },
       { label: "Sounds", icon: "sound", items: () => [
         { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
@@ -145,6 +155,7 @@ export class OS {
   /** The current theme / sky (Settings › Display), applied to the page. */
   get theme() { return this.settings.getStr(THEME_KEY, THEME_DEFAULT); }
   get sky() { return this.settings.getStr(SKY_KEY, SKY_DEFAULT); }
+  get blimpStyle() { return this.settings.getStr(BLIMP_KEY, BLIMP_DEFAULT); }
   /** Choose (persist) and apply; unknown names fall back to the default. */
   applyTheme(name = this.theme) {
     if (!THEME_OPTIONS.some(([v]) => v === name)) name = THEME_DEFAULT;
@@ -157,6 +168,13 @@ export class OS {
     if (!SKY_OPTIONS.some(([v]) => v === name)) name = SKY_DEFAULT;
     this.settings.setStr(SKY_KEY, name);
     this.bus.emit("sky", { name });
+    return name;
+  }
+  applyBlimp(name = this.blimpStyle) {
+    if (!BLIMP_OPTIONS.some(([v]) => v === name)) name = BLIMP_DEFAULT;
+    this.settings.setStr(BLIMP_KEY, name);
+    this.blimp?.setStyle(name);
+    this.bus.emit("blimp", { name });
     return name;
   }
 
@@ -226,7 +244,7 @@ export class OS {
     const body = this.doc.body;
     this.wallpaper = new Wallpaper({ env: this.env, bus: this.bus, sky: () => this.sky }).mount(body, { before: body.firstChild });
     // Netero's blimp crosses the sky now and then: above the wallpaper, below icons and windows
-    this.blimp = new Blimp({ reduced: !!this.env.reduced }).mount(body, { before: this.wallpaper.el.nextSibling });
+    this.blimp = new Blimp({ reduced: !!this.env.reduced, style: this.blimpStyle }).mount(body, { before: this.wallpaper.el.nextSibling });
   }
 
   /** The logon dialog, alone on the bare desktop. Resolves with the account. */

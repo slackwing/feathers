@@ -166,13 +166,14 @@ body.crt::after {
 .blimp .ship, .blimp .flyer { display: block; }
 .blimp svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }   /* the one smooth thing on the desktop */
 .blimp .ship img { display: block; }   /* Abi's drawing of the ship, transparent PNG */
+.blimp.pixelated .ship img { image-rendering: pixelated; }   /* Settings › Display › Blimp › Pixelated: the 48×36 sprite on the wallpaper's 5-px grain */
 .blimp.east .ship { transform: scaleX(-1); }   /* the art's nose points west; flip it to fly east (the banner is built for either side, so its letters never mirror) */
 /* the flyer's margin-top (the rope meeting the stern) is set by blimp.js from the art's measurements */
 /* the banner: all-orange cloth (Andrew, 2026-09-21/24: "more orange, too pale"; the blue lip came off 2026-09-24) — its own colours, like the ship.
    The rope is the ship's axis line carried on: the art's ink, its width set by blimp.js from the drawing's measurements. */
 .banner .rope { fill: none; stroke: #231f20; stroke-linecap: butt; }
-.banner .cloth { fill: #ffb266; stroke: #2a1d10; stroke-width: 2; stroke-linejoin: round; }
-.banner .lettering { font: 700 16px "Helvetica Neue", "Liberation Sans", Arial, sans-serif; fill: #2a1d10; letter-spacing: .14em; }   /* 16px = LETTER_PX in blimp.js, which places the baseline */
+.banner .cloth { fill: #ffb266; stroke: #2a1d10; stroke-width: 1.5; stroke-linejoin: round; }
+.banner .lettering { font: 700 11px "Helvetica Neue", "Liberation Sans", Arial, sans-serif; fill: #2a1d10; letter-spacing: .12em; }   /* 11px = LETTER_PX in blimp.js, which places the baseline */
 @keyframes blimp-west { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100%)); } }
 @keyframes blimp-east { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
 @media (prefers-reduced-motion: reduce) { .blimp { display: none; } }
