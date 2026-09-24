@@ -244,19 +244,14 @@ body.crt::after {
 }
 .banner .rope {
   fill: none;
-  stroke: #2a1d10;
-  stroke-width: 2;
+  stroke: #231f20;
+  stroke-linecap: butt;
 }
 .banner .cloth {
   fill: #ffb266;
   stroke: #2a1d10;
   stroke-width: 2;
   stroke-linejoin: round;
-}
-.banner .hem {
-  fill: none;
-  stroke: #2f6cc0;
-  stroke-width: 4;
 }
 .banner .lettering {
   font:

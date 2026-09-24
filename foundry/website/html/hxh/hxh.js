@@ -2606,17 +2606,34 @@ var HxH = (() => {
   var SHIP_SRC = "/hxh/img/blimp.png";
   var ART_W = 1289;
   var ART_H = 955;
-  var ART_STERN_Y = 581;
+  var ART_LINE_Y = 582.85;
+  var ART_LINE_W = 4.25;
   var SHIP_W = 480;
   var SHIP_H = Math.round(SHIP_W * ART_H / ART_W);
-  var STERN_Y = Math.round(SHIP_W * ART_STERN_Y / ART_W);
-  var BANNER_W = 320;
+  var SCALE_Y = SHIP_H / ART_H;
+  var STERN_Y = +(ART_LINE_Y * SCALE_Y).toFixed(2);
+  var ROPE_W = +(ART_LINE_W * SCALE_Y).toFixed(2);
+  var ROPE_SOFT = 0.12;
+  var OVERLAP = 5;
+  var BANNER_W = 332;
   var BANNER_H = 70;
-  var ROPE = 44;
-  var ROPE_Y = 10;
+  var ROPE = 56;
+  var FLYER_TOP = Math.round(STERN_Y - 10);
+  var ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);
+  var LETTER_PX = 16;
+  var CAP = 0.72;
   var seq = 0;
   function airshipHTML() {
     return `<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
+  }
+  function ropePath(rope, top) {
+    const y0 = ROPE_Y, yq = top + 2;
+    const a = [0, y0], b = [OVERLAP + 9, y0], q = [ROPE, yq], p = [ROPE - 22, y0 + (yq - y0) * 0.45];
+    const len = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+    const c1 = [b[0] + 8, y0], c2 = [p[0] - 7 * u[0], p[1] - 7 * u[1]];
+    const X = rope === "left" ? (x) => x : (x) => BANNER_W - x;
+    const pt = ([x, y]) => `${X(x).toFixed(2)} ${y.toFixed(2)}`;
+    return `M ${pt(a)} L ${pt(b)} C ${pt(c1)} ${pt(c2)} ${pt(p)} L ${pt(q)}`;
   }
   function ripple(x0, x1, base, amp, phase, step = 10) {
     const pts = [];
@@ -2630,16 +2647,14 @@ var HxH = (() => {
     const top = 16, hgt = 40, amp = 3.5;
     const phases = [0, 2.1, 4.2, 0];
     const cloth = phases.map((p) => poly(ripple(x0, x1, top, amp, p)) + " " + poly(ripple(x0, x1, top + hgt, amp, p).reverse(), "L") + " Z").join(";");
-    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt / 2, amp, p))).join(";");
-    const hem = phases.map((p) => poly(ripple(x0, x1, top + 3, amp, p))).join(";");
-    const ropeD = rope === "left" ? `M 0 ${ROPE_Y} L ${ROPE} ${top + 2}` : `M ${BANNER_W} ${ROPE_Y} L ${BANNER_W - ROPE} ${top + 2}`;
+    const line = phases.map((p) => poly(ripple(x0, x1, top + hgt / 2 + LETTER_PX * CAP / 2, amp, p))).join(";");
     const dur = "1.5s";
     return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">
-  <path class="rope" d="${ropeD}"/>
+  <defs><filter id="${id}-soft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="${ROPE_SOFT}"/></filter></defs>
+  <path class="rope" d="${ropePath(rope, top)}" stroke-width="${ROPE_W}" filter="url(#${id}-soft)"/>
   <path class="cloth" d="${cloth.split(";")[0]}"><animate attributeName="d" values="${cloth}" dur="${dur}" repeatCount="indefinite"/></path>
-  <path class="hem" d="${hem.split(";")[0]}"><animate attributeName="d" values="${hem}" dur="${dur}" repeatCount="indefinite"/></path>
   <defs><path id="${id}" d="${line.split(";")[0]}"><animate attributeName="d" values="${line}" dur="${dur}" repeatCount="indefinite"/></path></defs>
-  <text class="lettering" dominant-baseline="central"><textPath href="#${id}" startOffset="50%" text-anchor="middle" dominant-baseline="central">${text}</textPath></text>
+  <text class="lettering"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${text}</textPath></text>
 </svg>`;
   }
   var Blimp = class extends Component {
@@ -2703,8 +2718,8 @@ var HxH = (() => {
       el.style.animationDuration = duration + "ms";
       el.append(
         h("span", { className: "ship", html: airshipHTML() }),
-        h("span", { className: "flyer", style: { marginTop: STERN_Y - ROPE_Y + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
-        // the rope's start meets the stern
+        h("span", { className: "flyer", style: { marginTop: FLYER_TOP + "px", [dir < 0 ? "marginLeft" : "marginRight"]: -OVERLAP + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
+        // the rope starts on the art's own axis line, a few px inside the ship's box
       );
       el.addEventListener("animationend", () => el.remove());
       this.el.append(el);

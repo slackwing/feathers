@@ -693,13 +693,27 @@ over the sky.
   live beside it (`ART_W/H`, `ART_STERN_Y` = the hull's tail centreline,
   measured from the PNG's alpha): the flyer's `margin-top` is computed
   so the rope's start (`ROPE_Y`) meets the stern — re-measure if the
-  drawing changes. The banner is kept: an orange cloth (`#ffb266`;
-  "more orange, too pale" 2026-09-24, was pastel `#ffd6b0`) with a blue
-  lip along its top, fixed colours like the ship, whose cloth, hem and
-  lettering ripple via SMIL `<animate>` on path `d` (three phases,
-  looping) — `bannerSVG(text, rope)` builds it with the rope on the
-  trailing side so the letters never mirror; lettering a bold smooth
-  sans centred on the cloth's midline (`dominant-baseline: central`).
+  drawing changes. The banner is kept: an all-orange cloth (`#ffb266`;
+  "more orange, too pale" 2026-09-24, was pastel `#ffd6b0`; the blue
+  lip along its top came off the same day), fixed colours like the
+  ship, whose cloth and lettering ripple via SMIL `<animate>` on path
+  `d` (three phases, looping) — `bannerSVG(text, rope)` builds it with
+  the rope on the trailing side so the letters never mirror. The
+  lettering (bold smooth sans, all caps) is centred by its CAPS: the
+  textPath's baseline rides the cloth's midline plus half a cap height
+  (`LETTER_PX * CAP / 2`), not `dominant-baseline`, which Safari
+  ignores on a textPath. The ROPE continues the art's stern axis line
+  (`ropePath`): it starts `OVERLAP` px inside the ship's box ON that
+  line — same ink `#231f20`, `ROPE_W` a hair wider than the measured
+  line (`ART_LINE_W`) so it covers it, at the line's exact height
+  (`ART_LINE_Y`; `FLYER_TOP` is whole px and `ROPE_Y` carries the
+  fraction so nothing snaps) — runs on horizontally, bends through a
+  cubic whose tangents match both neighbours, and ends as a straight
+  edge at the cloth's leading top corner (Andrew, 2026-09-24: "smoothly
+  horizontal where it connects… a straightedge connecting to the
+  banner… stroke width perfect, no seam"). Check it with the zoomed
+  join screenshot recipe (a DPR-4 clip at the ship's right edge), not
+  by eye at 1×.
   The wallpaper's frame loop must `clearRect` first: the hypergradient
   sky paints nothing, and without the clear clouds and birds left
   trails (2026-09-20).
