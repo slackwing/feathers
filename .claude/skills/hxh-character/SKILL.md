@@ -28,8 +28,17 @@ Tools (feathers `foundry/website/hxh-roster/`):
 - The previous attempt, `html/hxh/roster.json` (198 entries, 2026-09-17,
   automated, quality unknown): a cross-check only, never a source.
 
-Scope: the 2011 anime (Madhouse) through the Chairman Election arc,
-plus "Kurapika's Memories". No manga-only facts, no Dark Continent.
+Scope: the 2011 anime (Madhouse) through the Chairman Election arc.
+No manga-only facts, no Dark Continent. "Kurapika's Memories" is NOT an
+animated arc — it is a manga one-shot (chapters 0A/0B), and the only
+animation of that story is the film Phantom Rouge, which the wiki marks
+as non-canon; an earlier version of this line listed it as in scope by
+mistake (found 2026-09-24 while adding Pairo). The films are out of
+scope by default. The one exception Andrew has granted is PAIRO (id
+124), who appears in the TV series only as a silent memory flash: his
+other pictures come from Phantom Rouge, every caption prefixed
+"Phantom Rouge film:", and his notes say so. Any further film exception
+needs Andrew's word.
 
 ## 0. Start
 
@@ -302,3 +311,20 @@ commit both. Keep a dated line in the log below.
   same day). `roster.py refetch <id>` swaps a character's WebP raws
   for Fandom's originals, keeping captions and any raw a crop or slot
   still points at; the first ten characters were refetched that way.
+- 2026-09-24 — the 39-character sweep (all twelve Zodiacs, the Chimera
+  Ant stragglers, the Hunter Exam supporting cast, the Greed Island
+  makers, the Nostrade bodyguards, and the variant cards Nanika, Adult
+  Gon and Reborn Kite), run six agents at a time. Three lessons: (1)
+  the scope line was WRONG about "Kurapika's Memories" — it is a manga
+  one-shot, not an animated arc (fixed above, with Pairo's film
+  exception); (2) BEYOND NETERO never appears in the 2011 anime at all
+  (manga debut ch. 340, after ep 148) — an agent checked four sources
+  and correctly refused to create him, which is the behaviour this
+  skill wants; (3) for minor characters the six-picture aim is often
+  impossible — Botobai, Saccho, Saiyu, Gel, Cluck and Bourbon yielded
+  three to four clean stills each, and every agent said so in the notes
+  instead of padding. A brief from the orchestrator is NOT a source:
+  agents corrected "Ginta the Boar" (he is the Sheep), "Imori the
+  middle brother" (he is the youngest), Saccho's non-existent eye mask
+  and Cheadle's election as Chairman (manga-only). Keep trusting the
+  wiki over the brief.
