@@ -679,26 +679,26 @@ over the sky.
   t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
 - **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
   HALLOWEEN banner, every 4–9 min, 100 s across, `HxH.os.blimp.launch()`
-  on demand; z-order above the wallpaper, below icons and windows. It is
-  smooth vector SVG on purpose (Andrew: "you may even make the blimp
-  full resolution"), dressed in THEME tokens (hull = `--win-bg`, stripe =
-  `--tb-bg`, fins/cabin = `--tb-bg-off`, windows = `--field-bg`, lines =
-  `--win-border`), with a turning propeller and a banner whose cloth,
-  hem and lettering ripple via SMIL `<animate>` on path `d` (three
-  phases, looping) — `bannerSVG(text, rope)` builds it with the rope on
-  the trailing side so the letters never mirror. The wallpaper's frame
-  loop must `clearRect` first: the hypergradient sky paints nothing, and
-  without the clear clouds and birds left trails (2026-09-20).
-  2026-09-21: redrawn after the show's ship (Andrew's reference is a
-  night shot; colours are its daylight ones, FIXED, not theme tokens —
-  this is the Hunter Association's airship): blue gradient hull, nose
-  painted black as a grinning shark (sawtooth teeth, angry eye), the
-  ✕✕ plate, four propeller masts along the spine, a long cabin with
-  eleven lit windows, an engine pod astern, cross fins, stern prop.
-  Nose points WEST in the art; `.blimp.east .ship` flips it. The banner
-  is a pastel orange cloth with a blue lip along its top (fixed colours,
-  like the ship — Andrew, 2026-09-21), its lettering a bold smooth sans
-  centred on the cloth's midline (`dominant-baseline: central`).
+  on demand; z-order above the wallpaper, below icons and windows. The
+  ship is ABI'S DRAWING — `img/blimp.png`, a 1289×955 transparent PNG,
+  side view flying WEST (shark nose, ✕✕ plate, propeller masts, lit
+  cabin, engine pod, stern prop) — shown smooth at `SHIP_W` (480 px) by
+  `airshipHTML()`; `.blimp.east .ship` flips it to fly east. It replaced
+  the vector SVG ship (2026-09-24, Andrew: "abi drew a blimp graphic for
+  you to use… in place of your blimp graphic"). The art's measurements
+  live beside it (`ART_W/H`, `ART_STERN_Y` = the hull's tail centreline,
+  measured from the PNG's alpha): the flyer's `margin-top` is computed
+  so the rope's start (`ROPE_Y`) meets the stern — re-measure if the
+  drawing changes. The banner is kept: an orange cloth (`#ffb266`;
+  "more orange, too pale" 2026-09-24, was pastel `#ffd6b0`) with a blue
+  lip along its top, fixed colours like the ship, whose cloth, hem and
+  lettering ripple via SMIL `<animate>` on path `d` (three phases,
+  looping) — `bannerSVG(text, rope)` builds it with the rope on the
+  trailing side so the letters never mirror; lettering a bold smooth
+  sans centred on the cloth's midline (`dominant-baseline: central`).
+  The wallpaper's frame loop must `clearRect` first: the hypergradient
+  sky paints nothing, and without the clear clouds and birds left
+  trails (2026-09-20).
 - **About is gone** (app, Start entry, Summons' Help). `HxH.os` exposes
   the running OS for demos and screenshots.
 - **Defaults (2026-09-21): theme Whale Island Sea Pumpkin, sky

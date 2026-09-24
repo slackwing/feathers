@@ -1,20 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
-import { Blimp, FLYER_TEXT, airshipSVG, bannerSVG, SHIP_W, BANNER_W } from "../html/hxh/os/blimp.js";
+import { existsSync } from "node:fs";
+import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, SHIP_SRC, SHIP_W, SHIP_H, STERN_Y, ROPE_Y, ART_W, ART_H, BANNER_W } from "../html/hxh/os/blimp.js";
 
 const d = setupDom();
 
-test("the airship is the show's: a shark-nosed blue hull, the ✕✕ plate, masts along the spine, a cabin with lit windows, an engine pod, fins and turning propellers", () => {
-  const svg = airshipSVG();
-  assert.match(svg, new RegExp(`viewBox="0 0 ${SHIP_W} `));
-  for (const cls of ["hull", "nose", "teeth", "eye", "pupil", "brow", "plate", "masts", "cabin", "windows", "pod", "fins", "outline"]) assert.match(svg, new RegExp(`class="${cls}`), cls);
-  assert.equal((svg.match(/<rect x="\d+" y="158"/g) || []).length, 11);   // the cabin's windows
-  assert.equal((svg.match(/class="mast"/g) || []).length, 4);
-  assert.equal((svg.match(/animateTransform[^>]*rotate/g) || []).length, 2);   // stern and pod propellers turn
-  assert.match(svg, /linearGradient/);                 // a lit hull
-  assert.doesNotMatch(svg, /class="px"/);             // not pixel art, on purpose
-  assert.notEqual(airshipSVG().match(/id="(ship\d+)-hull"/)[1], svg.match(/id="(ship\d+)-hull"/)[1], "each ship's gradient and clip have their own ids");
+test("the airship is Abi's drawing: a transparent PNG shipped with the site, shown at its own proportions, nose west", () => {
+  const html = airshipHTML();
+  assert.match(html, new RegExp(`^<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false"`));
+  assert.ok(existsSync(new URL("../html/hxh" + SHIP_SRC.replace(/^\/hxh/, ""), import.meta.url)), "the art is in the repo at " + SHIP_SRC);
+  assert.equal(SHIP_H, Math.round(SHIP_W * ART_H / ART_W), "the box keeps the art's aspect");
+  assert.ok(STERN_Y > SHIP_H * 0.55 && STERN_Y < SHIP_H * 0.7, "the stern sits a little below the middle of the art: " + STERN_Y);
+  assert.doesNotMatch(html, /class="px"/);   // not pixel art, on purpose
 });
 
 test("the banner ripples: cloth, hem and lettering paths animate through phases; the rope sits on the side that trails", () => {
@@ -22,7 +20,7 @@ test("the banner ripples: cloth, hem and lettering paths animate through phases;
   assert.equal((left.match(/<animate attributeName="d"/g) || []).length, 3);
   assert.match(left, new RegExp(`<textPath[^>]*dominant-baseline="central"[^>]*>${FLYER_TEXT}</textPath>`));   // centred in the cloth
   assert.match(left, /data-rope="left"/);
-  assert.match(left, /class="rope" d="M 0 /);
+  assert.match(left, new RegExp(`class="rope" d="M 0 ${ROPE_Y} `));   // the rope starts at ROPE_Y: the flyer hangs so that point meets the stern
   assert.match(right, new RegExp(`class="rope" d="M ${BANNER_W} `));
   const values = left.match(/values="([^"]+)"/)[1].split(";");
   assert.equal(values.length, 4);
@@ -36,7 +34,8 @@ test("a flight is a ship and a banner, west or east, gone when its animation end
   const el = b.launch({ dir: -1, top: 10 });
   assert.ok(el.classList.contains("blimp") && el.classList.contains("west"));
   assert.equal(el.style.top, "10%");
-  assert.ok(el.querySelector(".ship svg.airship"));
+  assert.ok(el.querySelector(".ship img.airship"));
+  assert.equal(el.querySelector(".flyer").style.marginTop, (STERN_Y - ROPE_Y) + "px", "the rope ties on at the stern");
   assert.equal(el.querySelector(".flyer svg.banner").dataset.rope, "left");
   assert.equal(el.querySelector(".flyer textPath").textContent, FLYER_TEXT);
   const east = b.launch({ dir: 1 });

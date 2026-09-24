@@ -236,100 +236,11 @@ body.crt::after {
   overflow: visible;
   shape-rendering: geometricPrecision;
 }
+.blimp .ship img {
+  display: block;
+}
 .blimp.east .ship {
   transform: scaleX(-1);
-}
-.blimp .flyer {
-  margin-top: 78px;
-}
-.airship .outline {
-  fill: none;
-  stroke: #10243d;
-  stroke-width: 2.5;
-}
-.airship .nose {
-  fill: #14161c;
-}
-.airship .teeth {
-  fill: #fffaf0;
-}
-.airship .gum {
-  fill: none;
-  stroke: #5a1a1a;
-  stroke-width: 2;
-}
-.airship .eye {
-  fill: #fffaf0;
-}
-.airship .pupil {
-  fill: #14161c;
-}
-.airship .brow {
-  fill: none;
-  stroke: #fffaf0;
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-.airship .panel {
-  fill: none;
-  stroke: rgba(10, 30, 60, .35);
-  stroke-width: 1.5;
-}
-.airship .sheen {
-  fill: none;
-  stroke: rgba(255, 255, 255, .45);
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-.airship .fins path {
-  fill: #9fc6e8;
-  stroke: #10243d;
-  stroke-width: 2;
-  stroke-linejoin: round;
-}
-.airship .masts line {
-  stroke: #22354d;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-}
-.airship .masts circle {
-  fill: #e8eef5;
-  stroke: #22354d;
-  stroke-width: 1.5;
-}
-.airship .plate rect {
-  fill: #f4ecd8;
-  stroke: #10243d;
-  stroke-width: 2;
-}
-.airship .plate path {
-  fill: none;
-  stroke: #14161c;
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-.airship .struts line {
-  stroke: #22354d;
-  stroke-width: 2.5;
-}
-.airship .cabin,
-.airship .pod {
-  fill: #1b3252;
-  stroke: #10243d;
-  stroke-width: 2;
-}
-.airship .windows rect {
-  fill: #ffd94a;
-  stroke: #7a5a00;
-  stroke-width: .8;
-}
-.airship .prop ellipse {
-  fill: #e8eef5;
-  stroke: #22354d;
-  stroke-width: 1;
-}
-.airship .prop circle {
-  fill: #22354d;
 }
 .banner .rope {
   fill: none;
@@ -337,7 +248,7 @@ body.crt::after {
   stroke-width: 2;
 }
 .banner .cloth {
-  fill: #ffd6b0;
+  fill: #ffb266;
   stroke: #2a1d10;
   stroke-width: 2;
   stroke-linejoin: round;

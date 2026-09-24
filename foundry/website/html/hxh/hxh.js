@@ -69,7 +69,7 @@ var HxH = (() => {
     Wallpaper: () => Wallpaper,
     Window: () => Window,
     WindowManager: () => WindowManager,
-    airshipSVG: () => airshipSVG,
+    airshipHTML: () => airshipHTML,
     apps: () => apps_exports,
     avatar: () => avatar,
     badgeHTML: () => badgeHTML,
@@ -2603,51 +2603,20 @@ var HxH = (() => {
 
   // html/hxh/os/blimp.js
   var FLYER_TEXT = "HUNTER \xD7 HALLOWEEN";
-  var SHIP_W = 440;
-  var SHIP_H = 190;
+  var SHIP_SRC = "/hxh/img/blimp.png";
+  var ART_W = 1289;
+  var ART_H = 955;
+  var ART_STERN_Y = 581;
+  var SHIP_W = 480;
+  var SHIP_H = Math.round(SHIP_W * ART_H / ART_W);
+  var STERN_Y = Math.round(SHIP_W * ART_STERN_Y / ART_W);
   var BANNER_W = 320;
   var BANNER_H = 70;
   var ROPE = 44;
+  var ROPE_Y = 10;
   var seq = 0;
-  var HULL = "M 18 92 C 18 46, 78 22, 176 22 C 280 22, 368 44, 416 88 C 372 132, 280 156, 176 156 C 78 156, 18 136, 18 92 Z";
-  function airshipSVG() {
-    const id = "ship" + ++seq;
-    const teeth = (x0, y, n, w, h2, up) => {
-      let d = `M ${x0} ${y}`;
-      for (let i = 0; i < n; i++) d += ` L ${x0 + w * (i + 0.5)} ${up ? y - h2 : y + h2} L ${x0 + w * (i + 1)} ${y}`;
-      return d + " Z";
-    };
-    const masts = [150, 205, 260, 315].map((x) => `<g class="mast"><line x1="${x}" y1="24" x2="${x}" y2="6"/><line x1="${x - 12}" y1="6" x2="${x + 12}" y2="6"/><circle cx="${x}" cy="6" r="2.4"/></g>`).join("");
-    const windows = Array.from({ length: 11 }, (_, i) => `<rect x="${118 + i * 12}" y="158" width="7" height="6" rx="1"/>`).join("");
-    return `<svg class="airship" viewBox="0 0 ${SHIP_W} ${SHIP_H}" width="${SHIP_W}" height="${SHIP_H}" aria-hidden="true">
-  <defs>
-    <linearGradient id="${id}-hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc0f2"/><stop offset=".35" stop-color="#3e8ed6"/><stop offset=".75" stop-color="#2a68ad"/><stop offset="1" stop-color="#173f6f"/></linearGradient>
-    <clipPath id="${id}-clip"><path d="${HULL}"/></clipPath>
-  </defs>
-  <g class="fins"><path d="M 352 40 L 404 4 L 412 74 Z"/><path d="M 352 138 L 404 174 L 412 104 Z"/><path d="M 372 84 L 436 78 L 436 96 L 372 100 Z"/></g>
-  <g class="masts">${masts}</g>
-  <path class="hull" d="${HULL}" fill="url(#${id}-hull)"/>
-  <g clip-path="url(#${id}-clip)">
-    <path class="nose" d="M -10 -10 H 128 C 110 40, 110 140, 128 200 H -10 Z"/>
-    <path class="teeth" d="${teeth(24, 98, 8, 12.5, 15, false)}"/>
-    <path class="teeth lower" d="${teeth(38, 128, 6, 12.5, 12, true)}"/>
-    <path class="gum" d="M 22 98 C 60 96, 100 92, 124 88"/>
-    <ellipse class="eye" cx="88" cy="58" rx="16" ry="9"/>
-    <circle class="pupil" cx="92" cy="60" r="5"/>
-    <path class="brow" d="M 66 50 L 104 46"/>
-    <path class="panel" d="M 140 40 C 220 30, 320 36, 400 70"/>
-    <path class="panel" d="M 136 132 C 220 146, 320 140, 400 106"/>
-    <path class="sheen" d="M 150 34 C 230 26, 320 30, 380 52"/>
-  </g>
-  <path class="outline" d="${HULL}"/>
-  <g class="plate"><rect x="150" y="50" width="58" height="40" rx="3"/><path d="M 158 58 L 174 82 M 174 58 L 158 82 M 184 58 L 200 82 M 200 58 L 184 82"/></g>
-  <g class="struts"><line x1="130" y1="150" x2="126" y2="166"/><line x1="185" y1="154" x2="185" y2="166"/><line x1="240" y1="150" x2="244" y2="166"/><line x1="322" y1="146" x2="326" y2="160"/></g>
-  <rect class="cabin" x="108" y="150" width="150" height="22" rx="6"/>
-  <g class="windows">${windows}</g>
-  <rect class="pod" x="308" y="152" width="40" height="18" rx="6"/>
-  <g class="prop pod-prop"><ellipse cx="352" cy="161" rx="2" ry="10"><animateTransform attributeName="transform" type="rotate" from="0 352 161" to="360 352 161" dur="0.45s" repeatCount="indefinite"/></ellipse><circle cx="352" cy="161" r="2.5"/></g>
-  <g class="prop stern"><ellipse cx="424" cy="88" rx="2.5" ry="16"><animateTransform attributeName="transform" type="rotate" from="0 424 88" to="360 424 88" dur="0.5s" repeatCount="indefinite"/></ellipse><circle cx="424" cy="88" r="3.5"/></g>
-</svg>`;
+  function airshipHTML() {
+    return `<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
   }
   function ripple(x0, x1, base, amp, phase, step = 10) {
     const pts = [];
@@ -2663,7 +2632,7 @@ var HxH = (() => {
     const cloth = phases.map((p) => poly(ripple(x0, x1, top, amp, p)) + " " + poly(ripple(x0, x1, top + hgt, amp, p).reverse(), "L") + " Z").join(";");
     const line = phases.map((p) => poly(ripple(x0, x1, top + hgt / 2, amp, p))).join(";");
     const hem = phases.map((p) => poly(ripple(x0, x1, top + 3, amp, p))).join(";");
-    const ropeD = rope === "left" ? `M 0 ${top - 6} L ${ROPE} ${top + 2}` : `M ${BANNER_W} ${top - 6} L ${BANNER_W - ROPE} ${top + 2}`;
+    const ropeD = rope === "left" ? `M 0 ${ROPE_Y} L ${ROPE} ${top + 2}` : `M ${BANNER_W} ${ROPE_Y} L ${BANNER_W - ROPE} ${top + 2}`;
     const dur = "1.5s";
     return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">
   <path class="rope" d="${ropeD}"/>
@@ -2725,11 +2694,12 @@ var HxH = (() => {
       const { random = Math.random, duration = 1e5 } = this.props;
       for (const old of this.el.querySelectorAll(".blimp")) old.remove();
       const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
-      el.style.top = (top ?? 4 + random() * 14) + "%";
+      el.style.top = (top ?? 2 + random() * 10) + "%";
       el.style.animationDuration = duration + "ms";
       el.append(
-        h("span", { className: "ship", html: airshipSVG() }),
-        h("span", { className: "flyer", html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
+        h("span", { className: "ship", html: airshipHTML() }),
+        h("span", { className: "flyer", style: { marginTop: STERN_Y - ROPE_Y + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") })
+        // the rope's start meets the stern
       );
       el.addEventListener("animationend", () => el.remove());
       this.el.append(el);
