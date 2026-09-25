@@ -2610,12 +2610,13 @@ var HxH = (() => {
   var ART_H = 955;
   var ART_LINE_Y = 582.85;
   var ART_LINE_W = 4.25;
-  var PX = 5;
+  var GRAIN = 5;
+  var SPRITE_PX = GRAIN / 2;
   var SHIP_W = 240;
-  var SHIP_H = Math.round(SHIP_W * ART_H / ART_W / PX) * PX;
-  var SPRITE_W = SHIP_W / PX;
-  var SPRITE_H = SHIP_H / PX;
-  var PX_LINE_ROW = 21;
+  var SHIP_H = Math.round(SHIP_W * ART_H / ART_W / GRAIN) * GRAIN;
+  var SPRITE_W = SHIP_W / SPRITE_PX;
+  var SPRITE_H = SHIP_H / SPRITE_PX;
+  var PX_LINE_ROW = 43;
   var SCALE_Y = SHIP_H / ART_H;
   var STERN_Y = +(ART_LINE_Y * SCALE_Y).toFixed(2);
   var ROPE_W = +(ART_LINE_W * SCALE_Y).toFixed(2);
@@ -2632,7 +2633,7 @@ var HxH = (() => {
   var CAP = 0.72;
   var FLYER_TOP = Math.round(STERN_Y - 6);
   var ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);
-  var PX_ROPE_Y = +((PX_LINE_ROW + 0.5) * PX - FLYER_TOP).toFixed(2);
+  var PX_ROPE_Y = +((PX_LINE_ROW + 0.5) * SPRITE_PX - FLYER_TOP).toFixed(2);
   var seq = 0;
   function airshipHTML(style = "original") {
     return `<img class="airship" src="${style === "pixelated" ? SHIP_SRC_PX : SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
@@ -2659,7 +2660,7 @@ var HxH = (() => {
     const cloth = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP, AMP, p)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p).reverse(), "L") + " Z").join(";");
     const line = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p))).join(";");
     const dur = "1.5s";
-    const ropeAttrs = px ? `stroke-width="${PX}" shape-rendering="crispEdges"` : `stroke-width="${ROPE_W}" filter="url(#${id}-soft)"`;
+    const ropeAttrs = px ? `stroke-width="${SPRITE_PX}" shape-rendering="crispEdges"` : `stroke-width="${ROPE_W}" filter="url(#${id}-soft)"`;
     return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" data-style="${px ? "pixelated" : "original"}" aria-hidden="true">
   <defs><filter id="${id}-soft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="${ROPE_SOFT}"/></filter></defs>
   <path class="rope" d="${ropePath(rope, px ? PX_ROPE_Y : ROPE_Y)}" ${ropeAttrs}/>

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
 import { existsSync, readFileSync } from "node:fs";
-import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, SHIP_SRC, SHIP_SRC_PX, SHIP_W, SHIP_H, PX, SPRITE_W, SPRITE_H, PX_LINE_ROW, PX_ROPE_Y, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, ART_W, ART_H, ART_LINE_W, BANNER_W, CLOTH_TOP, CLOTH_H, LETTER_PX, CAP } from "../html/hxh/os/blimp.js";
+import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, SHIP_SRC, SHIP_SRC_PX, SHIP_W, SHIP_H, GRAIN, SPRITE_PX, SPRITE_W, SPRITE_H, PX_LINE_ROW, PX_ROPE_Y, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, ART_W, ART_H, ART_LINE_W, BANNER_W, CLOTH_TOP, CLOTH_H, LETTER_PX, CAP } from "../html/hxh/os/blimp.js";
 
 const d = setupDom();
 
@@ -11,8 +11,8 @@ test("the airship is Abi's drawing: a transparent PNG shipped with the site, sho
   assert.match(html, new RegExp(`^<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false"`));
   assert.ok(existsSync(new URL("../html/hxh" + SHIP_SRC.replace(/^\/hxh/, ""), import.meta.url)), "the art is in the repo at " + SHIP_SRC);
   assert.equal(SHIP_W, 240, "half of 480 (Andrew, 2026-09-24: way too big)");
-  assert.equal(SHIP_H % PX, 0, "a whole number of grain cells tall");
-  assert.ok(Math.abs(SHIP_H - SHIP_W * ART_H / ART_W) <= PX / 2, "the box keeps the art's aspect to within half a cell");
+  assert.equal(SHIP_H % GRAIN, 0, "a whole number of grain cells tall");
+  assert.ok(Math.abs(SHIP_H - SHIP_W * ART_H / ART_W) <= GRAIN / 2, "the box keeps the art's aspect to within half a cell");
   assert.ok(STERN_Y > SHIP_H * 0.55 && STERN_Y < SHIP_H * 0.7, "the stern sits a little below the middle of the art: " + STERN_Y);
   assert.doesNotMatch(html, /class="px"/);
   const px = airshipHTML("pixelated");
@@ -20,8 +20,9 @@ test("the airship is Abi's drawing: a transparent PNG shipped with the site, sho
   const spritePath = new URL("../html/hxh" + SHIP_SRC_PX.replace(/^\/hxh/, ""), import.meta.url);
   assert.ok(existsSync(spritePath), "the sprite is in the repo at " + SHIP_SRC_PX);
   const png = readFileSync(spritePath);   // IHDR: width at 16, height at 20
-  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [SPRITE_W, SPRITE_H], "the sprite is one pixel per grain cell");
-  assert.equal(SPRITE_W * PX, SHIP_W);
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [SPRITE_W, SPRITE_H], "the sprite is one pixel per cell");
+  assert.equal(SPRITE_W * SPRITE_PX, SHIP_W);
+  assert.equal(SPRITE_PX, GRAIN / 2, "twice the wallpaper's granularity (Andrew, 2026-09-25)");
   assert.ok(PX_LINE_ROW >= 0 && PX_LINE_ROW < SPRITE_H);
 });
 
@@ -36,9 +37,9 @@ test("the banner ripples: cloth and lettering paths animate through phases; no h
   assert.match(left, /data-style="original"/);
   const px = bannerSVG(FLYER_TEXT, "left", "pixelated");
   assert.match(px, /data-style="pixelated"/);
-  assert.match(px, new RegExp(`class="rope" d="M 0.00 ${PX_ROPE_Y.toFixed(2)} L [^"]*" stroke-width="${PX}" shape-rendering="crispEdges"`), "pixelated: a crisp grain-wide rope on the sprite's own row");
+  assert.match(px, new RegExp(`class="rope" d="M 0.00 ${PX_ROPE_Y.toFixed(2)} L [^"]*" stroke-width="${SPRITE_PX}" shape-rendering="crispEdges"`), "pixelated: a crisp cell-wide rope on the sprite's own row");
   assert.doesNotMatch(px, /class="rope" [^>]*filter=/);
-  assert.equal(+(PX_ROPE_Y + FLYER_TOP).toFixed(2), (PX_LINE_ROW + 0.5) * PX, "…whose centre is the centre of that row in the ship's box");
+  assert.equal(+(PX_ROPE_Y + FLYER_TOP).toFixed(2), (PX_LINE_ROW + 0.5) * SPRITE_PX, "…whose centre is the centre of that row in the ship's box");
   assert.match(left, /data-rope="left"/);
   assert.match(left, new RegExp(`class="rope" d="M 0.00 ${ROPE_Y.toFixed(2)} L `));   // the rope starts at the art's axis line, inside the ship's box
   assert.match(right, new RegExp(`class="rope" d="M ${BANNER_W}.00 ${ROPE_Y.toFixed(2)} L `));

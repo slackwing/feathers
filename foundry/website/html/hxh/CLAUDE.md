@@ -694,8 +694,10 @@ over the sky.
   `.blimp.east .ship` flips it to fly east. It replaced the vector SVG
   ship (2026-09-24, Andrew: "abi drew a blimp graphic for you to use…
   in place of your blimp graphic"). PIXELATED (Settings › Display ›
-  Blimp): `img/blimp-px.png`, a 48×36 sprite — one pixel per 5-px
-  grain cell, the wallpaper's own granularity (`PX` = WHALE.scale) —
+  Blimp): `img/blimp-px.png`, a 96×72 sprite — 2.5-px cells, TWICE
+  the wallpaper's granularity (`SPRITE_PX` = `GRAIN` / 2; the full
+  5-px grain "lost too much", Andrew 2026-09-25: the ✕✕ plate, the
+  windows and the teeth must survive) —
   made by `scripts/pixelate-blimp.py` from the drawing (cells decided
   by opaque / ink fractions: a one-cell outline where the drawing's
   outline runs, ink over air for masts and the stern line, interior
@@ -724,8 +726,8 @@ over the sky.
   "smooth derivatives from the image to the string") and whose last
   sits on the straight run's line (it meets the run at its angle), and
   ends as a straight edge at the cloth's leading top corner ("straight
-  into the banner is fine"). Pixelated, the rope is a crisp `PX`-wide
-  line on the sprite's own axis-line row (`PX_ROPE_Y`). Check joins
+  into the banner is fine"). Pixelated, the rope is a crisp cell-wide
+  (`SPRITE_PX`) line on the sprite's own axis-line row (`PX_ROPE_Y`). Check joins
   with the zoomed screenshot recipe (a DPR-4 clip at the ship's edge,
   column-by-column centre/thickness), not by eye at 1×.
   The wallpaper's frame loop must `clearRect` first: the hypergradient

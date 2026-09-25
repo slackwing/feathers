@@ -6,7 +6,8 @@
    cabin with lit windows, an engine pod and a stern propeller — on a
    transparent ground, smooth (the one thing on the desktop that is not
    pixel art), OR, with Settings › Display › Blimp › Pixelated, as a
-   sprite on the wallpaper's own 5-px grain (`img/blimp-px.png`, made by
+   sprite at twice the wallpaper's granularity — 2.5-px cells, so the ✕✕
+   plate and the windows survive (`img/blimp-px.png`, made by
    scripts/pixelate-blimp.py). CSS flips it to fly east. The banner is an
    orange cloth whose edges and lettering ripple (SMIL, no script) on a
    rope that continues the stern's axis line. CSS animates the flight
@@ -29,10 +30,11 @@ export const STYLES = ["original", "pixelated"];
 export const SHIP_SRC = "/hxh/img/blimp.png", SHIP_SRC_PX = "/hxh/img/blimp-px.png";
 export const ART_W = 1289, ART_H = 955;                     // Abi's drawing, in its own pixels
 export const ART_LINE_Y = 582.85, ART_LINE_W = 4.25;        // the stern's propeller axis line: alpha-weighted centre (pixel centres) and equivalent thickness, from the PNG — the rope continues it
-export const PX = 5;                                        // the wallpaper's grain, screen px per art px (env.js WHALE.scale): the pixelated ship is drawn on the same grid
-export const SHIP_W = 240, SHIP_H = Math.round(SHIP_W * ART_H / ART_W / PX) * PX;   // 240 × 180 — half the size Andrew found "way too big" (2026-09-24), a whole number of grain cells tall
-export const SPRITE_W = SHIP_W / PX, SPRITE_H = SHIP_H / PX;   // 48 × 36: the pixel sprite (scripts/pixelate-blimp.py draws it at this size)
-export const PX_LINE_ROW = 21;                              // the sprite row that carries the stern's axis line (the script prints it): the pixelated rope sits on that row
+export const GRAIN = 5;                                     // the wallpaper's grain, screen px per art px (env.js WHALE.scale)
+export const SPRITE_PX = GRAIN / 2;                         // the pixel sprite's cell: twice the wallpaper's granularity (Andrew, 2026-09-25: "lost too much" at the full grain — keep the ✕✕ plate and the windows)
+export const SHIP_W = 240, SHIP_H = Math.round(SHIP_W * ART_H / ART_W / GRAIN) * GRAIN;   // 240 × 180 — half the size Andrew found "way too big" (2026-09-24), a whole number of grain cells tall
+export const SPRITE_W = SHIP_W / SPRITE_PX, SPRITE_H = SHIP_H / SPRITE_PX;   // 96 × 72: the pixel sprite (scripts/pixelate-blimp.py draws it at this size)
+export const PX_LINE_ROW = 43;                              // the sprite row that carries the stern's axis line (the script prints it): the pixelated rope sits on that row
 const SCALE_Y = SHIP_H / ART_H;                             // the browser stretches the art to the whole-px box: heights scale by this
 export const STERN_Y = +(ART_LINE_Y * SCALE_Y).toFixed(2);  // ≈ 109.9 px down the ship's box
 export const ROPE_W = +(ART_LINE_W * SCALE_Y).toFixed(2);   // exactly the art's line, as drawn (≈ 0.8 px)
@@ -43,7 +45,7 @@ export const CLOTH_TOP = 9, CLOTH_H = 28, AMP = 2.5, WAVE = 34;   // the cloth's
 export const LETTER_PX = 11, CAP = 0.72;                    // the lettering's size (= os.css .banner .lettering) and its cap height (a fraction of the em): capitals are centred by their caps
 export const FLYER_TOP = Math.round(STERN_Y - 6);           // the flyer's margin-top, whole px: the rope's height inside the banner carries the fraction, so nothing snaps
 export const ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);    // where the rope starts (and the art's line runs), in banner coordinates
-export const PX_ROPE_Y = +((PX_LINE_ROW + 0.5) * PX - FLYER_TOP).toFixed(2);   // pixelated: the centre of the sprite's line row, in banner coordinates
+export const PX_ROPE_Y = +((PX_LINE_ROW + 0.5) * SPRITE_PX - FLYER_TOP).toFixed(2);   // pixelated: the centre of the sprite's line row, in banner coordinates
 
 let seq = 0;
 
@@ -88,7 +90,7 @@ const poly = (pts, start = "M") => start + pts.map(([x, y]) => `${x.toFixed(1)} 
  * and lettering ripple through three phases (values loop). `rope` is the
  * side the rope is on — "left" trails behind a ship flying west, "right"
  * behind one flying east — so the letters never mirror. `style`
- * "pixelated" draws the rope as a crisp PX-wide line on the sprite's own
+ * "pixelated" draws the rope as a crisp cell-wide line on the sprite's own
  * row (the cloth and lettering stay smooth).
  */
 export function bannerSVG(text = FLYER_TEXT, rope = "left", style = "original") {
@@ -98,7 +100,7 @@ export function bannerSVG(text = FLYER_TEXT, rope = "left", style = "original") 
   const cloth = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP, AMP, p)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p).reverse(), "L") + " Z").join(";");
   const line = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p))).join(";");   // the baseline rides the cloth's midline plus half a cap: the capitals sit centred (no dominant-baseline — Safari ignores it on a textPath)
   const dur = "1.5s";
-  const ropeAttrs = px ? `stroke-width="${PX}" shape-rendering="crispEdges"` : `stroke-width="${ROPE_W}" filter="url(#${id}-soft)"`;
+  const ropeAttrs = px ? `stroke-width="${SPRITE_PX}" shape-rendering="crispEdges"` : `stroke-width="${ROPE_W}" filter="url(#${id}-soft)"`;
   return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" data-style="${px ? "pixelated" : "original"}" aria-hidden="true">
   <defs><filter id="${id}-soft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="${ROPE_SOFT}"/></filter></defs>
   <path class="rope" d="${ropePath(rope, px ? PX_ROPE_Y : ROPE_Y)}" ${ropeAttrs}/>

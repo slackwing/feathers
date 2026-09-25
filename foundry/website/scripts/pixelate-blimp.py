@@ -2,10 +2,13 @@
 """Pixel-art sprite of Abi's blimp (html/hxh/img/blimp.png → blimp-px.png).
 
 The desktop wallpaper is pixel art at 5 screen px per art px (os/env.js
-WHALE.scale); Settings › Display › Blimp › Pixelated flies the ship on
-that same grain (Andrew, 2026-09-24: "matches the pixelation of the rest
-of the background"). The sprite is SPRITE_W × SPRITE_H cells (blimp.js:
-the ship's box ÷ 5), each cell decided from its block of source pixels:
+WHALE.scale); Settings › Display › Blimp › Pixelated flies the ship as a
+sprite at TWICE that granularity — 2.5 screen px per cell (Andrew,
+2026-09-24: "matches the pixelation of the rest of the background";
+2026-09-25: "lost too much… double that granularity and preserve some
+features like the X's"). The sprite is SPRITE_W × SPRITE_H cells
+(blimp.js: the ship's box ÷ SPRITE_PX), each cell decided from its block
+of source pixels:
 
   - transparent when the block is mostly empty and carries no ink;
   - INK (the drawing's line colour) when enough of the block is line —
@@ -26,20 +29,20 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC, OUT = ROOT / "html/hxh/img/blimp.png", ROOT / "html/hxh/img/blimp-px.png"
-SPRITE_W, SPRITE_H = 48, 36          # = blimp.js SPRITE_W/H (ship box 240 × 180 at 5 px grain)
+SPRITE_W, SPRITE_H = 96, 72          # = blimp.js SPRITE_W/H (ship box 240 × 180 at a 2.5 px cell)
 INK = (35, 31, 32)                   # the drawing's line colour (#231f20)
 INK_DIST = 40                        # how close a source pixel must be to count as ink
-INK_OVER_AIR = 0.06                  # ink fraction that makes an otherwise-empty cell ink: masts, the stern's axis line
+INK_OVER_AIR = 0.12                  # ink fraction that makes an otherwise-empty cell ink: masts, the stern's axis line
 INK_AT_EDGE = 0.05                   # a body cell on the silhouette with this much line in it is outline: one clean cell all round
-INK_IN_HULL = 0.30                   # an interior cell is ink only when a line crosses its middle: 1-px panel lines, no blobs
+INK_IN_HULL = 0.26                   # an interior cell is ink when a line crosses it well: 1-px panel lines (dashed, like the drawing's stripes) and the plate's X strokes, no blobs (0.35 lost the X's)
 SOLID = 0.5                          # opaque fraction that makes a cell part of the body
 PALETTE_MIN = 0.002                  # a flat fill is a colour with at least this share of the opaque pixels
 
 def dist2(a, b): return sum((x - y) ** 2 for x, y in zip(a[:3], b[:3]))
 
 src = Image.open(SRC).convert("RGBA")
-B = 27                                                    # block: the source stretched to a whole number of cells
-big = src.resize((SPRITE_W * B, SPRITE_H * B), Image.BILINEAR)
+B = 13                                                    # block: the source scaled to a whole number of cells (1248 × 936)
+big = src.resize((SPRITE_W * B, SPRITE_H * B), Image.LANCZOS)
 px = big.load()
 
 # the drawing's flat fills: frequent, opaque, not ink
@@ -84,8 +87,9 @@ out.save(OUT)
 rows = [y for y in range(SPRITE_H) if op[SPRITE_W - 1, y][3] and op[SPRITE_W - 1, y][:3] == INK]
 print(f"saved {OUT.relative_to(ROOT)} {out.size}; stern axis line in the last column at row(s) {rows}  → blimp.js PX_LINE_ROW")
 if len(sys.argv) > 1:   # optional: a 5× preview on sky blue for eyeballing
-    prev = Image.new("RGBA", (SPRITE_W * 5 * 2 + 30, SPRITE_H * 5 + 20), (110, 178, 235, 255))
-    prev.paste(out.resize((SPRITE_W * 5, SPRITE_H * 5), Image.NEAREST), (10, 10), out.resize((SPRITE_W * 5, SPRITE_H * 5), Image.NEAREST))
-    small = src.resize((SPRITE_W * 5, SPRITE_H * 5), Image.LANCZOS)
-    prev.paste(small, (SPRITE_W * 5 + 20, 10), small)
+    Z = 5   # preview zoom per cell
+    prev = Image.new("RGBA", (SPRITE_W * Z * 2 + 30, SPRITE_H * Z + 20), (110, 178, 235, 255))
+    prev.paste(out.resize((SPRITE_W * Z, SPRITE_H * Z), Image.NEAREST), (10, 10), out.resize((SPRITE_W * Z, SPRITE_H * Z), Image.NEAREST))
+    small = src.resize((SPRITE_W * Z, SPRITE_H * Z), Image.LANCZOS)
+    prev.paste(small, (SPRITE_W * Z + 20, 10), small)
     prev.save(sys.argv[1]); print("preview", sys.argv[1])
