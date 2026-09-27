@@ -9,7 +9,7 @@ import { avatar } from "./icons.js";
 import { Menus, renderItems } from "./menu.js";
 
 export class StartMenu extends Component {
-  /** props: items: () => items, user: () => account | null, band = "HUNTER×HALLOWEEN" */
+  /** props: items: () => items, user: () => account | null (the site's view of it), label: () => the name line ("Chrollo (Andrew C)"), band = "HUNTER×HALLOWEEN" */
   render() {
     const el = h("div", { className: "startmenu", id: "startmenu" });
     el.addEventListener("click", e => e.stopPropagation());
@@ -21,7 +21,8 @@ export class StartMenu extends Component {
     const band = this.props.band ?? "HUNTER×HALLOWEEN";
     this.el.replaceChildren();
     if (user) {
-      this.el.append(h("div", { className: "user", html: `${avatar(user, "lg")}<span class="name">${esc(user.display_name || user.username || "")}</span>` }));
+      const name = this.props.label?.() || user.display_name || user.username || "";
+      this.el.append(h("div", { className: "user", html: `${avatar(user, "lg")}<span class="name">${esc(name)}</span>` }));
     }
     const row = h("div", { className: "row" }, h("div", { className: "band", text: band }));
     const box = h("div", { className: "items" });

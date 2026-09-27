@@ -1830,7 +1830,7 @@ var HxH = (() => {
 
   // html/hxh/os/startmenu.js
   var StartMenu = class extends Component {
-    /** props: items: () => items, user: () => account | null, band = "HUNTER×HALLOWEEN" */
+    /** props: items: () => items, user: () => account | null (the site's view of it), label: () => the name line ("Chrollo (Andrew C)"), band = "HUNTER×HALLOWEEN" */
     render() {
       const el = h("div", { className: "startmenu", id: "startmenu" });
       el.addEventListener("click", (e) => e.stopPropagation());
@@ -1841,7 +1841,8 @@ var HxH = (() => {
       const band = this.props.band ?? "HUNTER\xD7HALLOWEEN";
       this.el.replaceChildren();
       if (user) {
-        this.el.append(h("div", { className: "user", html: `${avatar(user, "lg")}<span class="name">${esc(user.display_name || user.username || "")}</span>` }));
+        const name = this.props.label?.() || user.display_name || user.username || "";
+        this.el.append(h("div", { className: "user", html: `${avatar(user, "lg")}<span class="name">${esc(name)}</span>` }));
       }
       const row = h("div", { className: "row" }, h("div", { className: "band", text: band }));
       const box = h("div", { className: "items" });
@@ -3242,6 +3243,12 @@ var HxH = (() => {
       if (!o) return { ...base, character: void 0, avatar_url: void 0 };
       return { ...base, character: o.character || void 0, avatar_url: o.avatar_url || void 0 };
     }
+    /** A member's name as this site shows it: "Chrollo (Andrew C)" once they have claimed a character, else their own name. */
+    label(who) {
+      const m = this.of(who);
+      const name = m.display_name || m.username || "";
+      return m.character ? `${m.character} (${name})` : name;
+    }
     /** The avatar HTML for a member (icons.avatar on `of(who)`). */
     avatar(who, cls = "") {
       return avatar(this.of(who), cls);
@@ -3736,7 +3743,7 @@ var HxH = (() => {
         this.taskbar = new Taskbar({ bus: this.bus, wm: this.wm, start: start2 }).mount(body);
         this.taskbar.el.hidden = true;
         if (start2) {
-          this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user) }).mount(body);
+          this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user), label: () => this.user && this.people.label(this.user) }).mount(body);
           this.taskbar.on("start", () => this.startMenu.toggle());
           this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
           this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
@@ -6481,10 +6488,9 @@ var HxH = (() => {
     }
     /** In a chat a member who has claimed a character speaks as "Gon (Andrew C)" (Andrew, 2026-09-22); the contacts list keeps the plain name. */
     chatNameOf(user) {
-      const ch = this.contacts.get(user)?.character;
-      const n = this.nameOf(user);
-      return ch ? `${ch} (${n})` : n;
+      return this.os.people.label(this.contacts.get(user) || user);
     }
+    // os/people.js: one rule for "Character (Name)", shared with the Start menu
     /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
     avatarOf(user) {
       return this.os.people.avatar(this.contacts.get(user) || user);

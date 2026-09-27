@@ -93,7 +93,7 @@ export class OS {
       this.taskbar = new Taskbar({ bus: this.bus, wm: this.wm, start }).mount(body);
       this.taskbar.el.hidden = true;   // nothing else on screen while booting / logging on
       if (start) {
-        this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user) }).mount(body);
+        this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user), label: () => this.user && this.people.label(this.user) }).mount(body);
         this.taskbar.on("start", () => this.startMenu.toggle());
         this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
         this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));

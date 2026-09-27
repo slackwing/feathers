@@ -916,12 +916,10 @@ body.logon .icons {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--menu-lo);
+  background: none;
   color: var(--menu-fg);
   padding: 10px 12px;
   margin-bottom: 5px;
-  border: var(--px) solid;
-  border-color: var(--menu-border) var(--menu-hi) var(--menu-hi) var(--menu-border);
   font: var(--t-ui-bold);
 }
 .startmenu .user .name {

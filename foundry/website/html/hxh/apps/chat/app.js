@@ -94,7 +94,7 @@ export class ChatApp extends App {
   nameOf(user) { return this.contacts.get(user)?.display_name || (user === this.me ? this.os.user?.display_name : null) || user; }
   colorOf(user) { return this.contacts.get(user)?.color || (user === this.me ? this.os.user?.color : null) || "#9a9a9a"; }
   /** In a chat a member who has claimed a character speaks as "Gon (Andrew C)" (Andrew, 2026-09-22); the contacts list keeps the plain name. */
-  chatNameOf(user) { const ch = this.contacts.get(user)?.character; const n = this.nameOf(user); return ch ? `${ch} (${n})` : n; }
+  chatNameOf(user) { return this.os.people.label(this.contacts.get(user) || user); }   // os/people.js: one rule for "Character (Name)", shared with the Start menu
   /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
   avatarOf(user) { return this.os.people.avatar(this.contacts.get(user) || user); }   // os/people.js: the one place a member's look is decided
   roomTitle(room) {

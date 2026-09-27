@@ -193,7 +193,10 @@ the OS.
   roads: `GET /hxh/api/db/people` at sign-in and after your own claim
   (Binder `stampSel`), and the chat's contacts frames, which the server
   re-sends to everyone on any claim. Draw every avatar with
-  `os.people.avatar(who)` / `os.people.of(who)` — never
+  `os.people.avatar(who)` / `os.people.of(who)`, and every site name
+  with `os.people.label(who)` ("Chrollo (Andrew C)" once claimed —
+  the Start menu header and the chat's lines; the buddy list keeps
+  plain names) — never
   `icons.avatar()` on a raw profile: the Start menu did that and kept
   showing Andrew's green AC after he claimed Chrollo (2026-09-27, "the
   avatar determination should have been centralized"). The Start menu,

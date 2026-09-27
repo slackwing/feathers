@@ -61,6 +61,19 @@ test("the Start menu header draws the member through People: a claim shows there
   await p.load();
   m.open();
   assert.equal(m.el.querySelector(".user .avatar img")?.getAttribute("src"), "/hxh/api/db/images/7/thumb");
-  assert.equal(m.el.querySelector(".user .name").textContent, "Andrew C", "the name line stays the member's own");
+  assert.equal(m.el.querySelector(".user .name").textContent, "Andrew C", "without a label source the header falls back to the member's own name");
+  m.close(); m.unmount();
+});
+
+test("People.label: one rule for a member's name on this site — \"Chrollo (Andrew C)\" once claimed, the plain name otherwise; the Start menu header uses it, flat (Andrew, 2026-09-27)", async () => {
+  const p = new People({ fetch: fetchOf({ andrew: { character: "Chrollo", avatar_url: "/x.png" } }), bus: bus(), user: () => ME });
+  assert.equal(p.label(ME), "Andrew C");
+  await p.load();
+  assert.equal(p.label(ME), "Chrollo (Andrew C)");
+  assert.equal(p.label("andrew"), "Chrollo (Andrew C)", "by username too");
+  assert.equal(p.label("stranger"), "stranger");
+  const m = new StartMenu({ items: () => [], user: () => p.of(ME), label: () => p.label(ME) }).mount(document.body);
+  m.open();
+  assert.equal(m.el.querySelector(".user .name").textContent, "Chrollo (Andrew C)");
   m.close(); m.unmount();
 });

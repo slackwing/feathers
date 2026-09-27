@@ -13,7 +13,8 @@
        (so the Start menu is right without the chat ever opening);
      - the chat's contacts frames, which the server re-sends to everyone
        whenever anyone's claim changes (so it stays live).
-   Every avatar the page draws goes through `of()` / `avatar()` here —
+   Every avatar and every "Character (Name)" label the page draws goes
+   through `of()` / `avatar()` / `label()` here —
    never `icons.avatar(profile)` on a raw profile, which is how the Start
    menu went stale. The bus hears "people" when anything changes. */
 import { avatar as avatarHTML } from "./icons.js";
@@ -39,6 +40,13 @@ export class People {
     const o = username ? this.overrides.get(username) : null;
     if (!o) return { ...base, character: undefined, avatar_url: undefined };
     return { ...base, character: o.character || undefined, avatar_url: o.avatar_url || undefined };
+  }
+
+  /** A member's name as this site shows it: "Chrollo (Andrew C)" once they have claimed a character, else their own name. */
+  label(who) {
+    const m = this.of(who);
+    const name = m.display_name || m.username || "";
+    return m.character ? `${m.character} (${name})` : name;
   }
 
   /** The avatar HTML for a member (icons.avatar on `of(who)`). */
