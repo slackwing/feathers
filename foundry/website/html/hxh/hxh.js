@@ -1521,36 +1521,70 @@ var HxH = (() => {
       w.el.style.top = Math.max(0, Math.round(y)) + "px";
       w.state.placed = true;
     }
-    /** Move `win` by dragging `handle`; `allow(e)` may veto a press (a chromeless window dragged by its margins only). */
-    drag(win, handle, { allow = null } = {}) {
-      const el = win.el;
-      let sx, sy, ox, oy, moving = false;
+    /**
+     * Move `win` by dragging `handle`. `allow(e)` may veto a press (the
+     * binder: never from a card or a control). `threshold` is the slop, in
+     * screen pixels, before a press becomes a drag: under it the press stays
+     * a click (the binder's cover opens on a still click and moves on a
+     * travelling one — Andrew, 2026-09-27); 0, a title bar, drags from the
+     * first pixel. Once a drag has moved the window, the click the browser
+     * sends on release is swallowed, so a drag never also presses whatever
+     * it ends over.
+     */
+    drag(win, handle, { allow = null, threshold = 0 } = {}) {
+      const el = win.el, doc = handle.ownerDocument;
+      let sx, sy, ox, oy, pressed = false, moving = false, moved = false;
+      const grab = (id) => {
+        try {
+          handle.setPointerCapture?.(id);
+        } catch {
+        }
+      };
       handle.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
         if (allow && !allow(e)) return;
-        moving = true;
+        pressed = true;
+        moved = false;
         sx = e.clientX;
         sy = e.clientY;
         ox = el.offsetLeft;
         oy = el.offsetTop;
-        try {
-          handle.setPointerCapture?.(e.pointerId);
-        } catch {
+        moving = threshold <= 0;
+        if (moving) {
+          grab(e.pointerId);
+          e.preventDefault();
         }
-        e.preventDefault();
       });
       handle.addEventListener("pointermove", (e) => {
-        if (!moving) return;
+        if (!pressed) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        if (!moving) {
+          if (Math.hypot(dx, dy) < threshold) return;
+          moving = true;
+          grab(e.pointerId);
+        }
+        if (dx || dy) moved = true;
         const snap = (v) => Math.round(v / 4) * 4, z = this.env.zoom();
-        const x = snap(ox + (e.clientX - sx) / z), y = snap(oy + (e.clientY - sy) / z);
+        const x = snap(ox + dx / z), y = snap(oy + dy / z);
         el.style.left = Math.min(this.desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
         el.style.top = Math.max(0, y) + "px";
       });
       const end = () => {
-        if (!moving) return;
-        moving = false;
-        this.fit();
-        this.bus.emit("window:move", { id: win.id });
+        if (!pressed) return;
+        const was = moving;
+        pressed = moving = false;
+        if (moved && doc) {
+          const eat = (ev) => {
+            ev.stopPropagation();
+            ev.preventDefault();
+          };
+          doc.addEventListener("click", eat, { capture: true, once: true });
+          setTimeout(() => doc.removeEventListener("click", eat, true), 0);
+        }
+        if (was) {
+          this.fit();
+          this.bus.emit("window:move", { id: win.id });
+        }
       };
       handle.addEventListener("pointerup", end);
       handle.addEventListener("pointercancel", end);
@@ -4195,7 +4229,8 @@ var HxH = (() => {
       </div>
     </div>
   </div>`;
-  var CONTROLS = ".card, .gicard, .tab, button, .cover, .screen, .dpad, .keys, .pad, .dial, .fbtns";
+  var CONTROLS = ".card, .gicard, .tab, button, .screen, .dpad, .keys, .pad, .dial, .fbtns";
+  var DRAG_SLOP = 5;
   var BinderApp = class extends App {
     static id = "binder";
     static name = "Binder";
@@ -4252,7 +4287,7 @@ var HxH = (() => {
         if (dir === "right") this.go(this.page + 1);
         if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
       });
-      os2.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS) });
+      os2.wm.drag(this.win, this.book, { allow: (e) => !e.target.closest?.(CONTROLS), threshold: DRAG_SLOP });
       this.me = os2.user?.username || null;
       os2.bus.on("session:user", ({ user }) => {
         this.me = user?.username || null;

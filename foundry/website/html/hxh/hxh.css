@@ -370,6 +370,7 @@ body.logon .icons {
   box-shadow: none;
   padding: 0;
   width: auto;
+  max-width: none;
 }
 .win.chromeless.inactive {
   filter: none;
@@ -380,15 +381,15 @@ body.logon .icons {
 }
 .win.chromeless .fbtns {
   position: absolute;
-  right: 3px;
-  top: 3px;
+  right: 2px;
+  top: 2px;
   z-index: 6;
   display: flex;
   gap: 2px;
 }
 .win.chromeless .fbtns .tbtn {
-  width: 20px;
-  height: 17px;
+  width: 14px;
+  height: 11px;
 }
 .tbar {
   display: flex;
@@ -455,7 +456,8 @@ body.logon .icons {
   transform: translateY(4px);
 }
 .win.chromeless .fbtns .tbtn.min::before {
-  transform: translateY(3px);
+  width: 6px;
+  transform: translateY(2px);
 }
 .tbtn.close svg.x {
   display: block;
@@ -469,8 +471,8 @@ body.logon .icons {
   stroke-linecap: square;
 }
 .win.chromeless .fbtns .tbtn.close svg.x {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
 }
 .tbtn {
   padding: 0;
