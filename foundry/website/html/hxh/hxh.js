@@ -965,6 +965,25 @@ var HxH = (() => {
       "................",
       "................"
     ],
+    // the Binder's claimed pages: a thick red checkmark, ink-edged
+    check: [
+      "................",
+      "............kkkk",
+      "...........krrrk",
+      "..........krrrk.",
+      ".........krrrk..",
+      "........krrrk...",
+      ".kkk...krrrk....",
+      "krrrk.krrrk.....",
+      "krrrrkrrrk......",
+      ".krrrrrrrk......",
+      "..krrrrrk.......",
+      "...krrrk........",
+      "....kkk.........",
+      "................",
+      "................",
+      "................"
+    ],
     sound: [
       "................",
       "........k.......",
@@ -3686,9 +3705,9 @@ var HxH = (() => {
     "#8b6d4b": "#241a33"
     // the pier
   };
-  var SEA_BANDS = ["#221243", "#1a0e36", "#130a29", "#0d061d"];
-  var SEA_HORIZON = "#2c1856";
-  var ISLAND_SHADOW = "#08041a";
+  var SEA_BANDS = ["#170c2e", "#0f0820", "#080413", "#030108"];
+  var SEA_HORIZON = "#221243";
+  var ISLAND_SHADOW = "#040209";
   var WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
   var WINDOW_LIT = 0.8;
   function townWindows() {
@@ -3720,11 +3739,11 @@ var HxH = (() => {
     }
     return isl;
   }
-  var GLINT_CYCLE = 3.2;
+  var GLINT_CYCLE = 4.5;
   function moonRoad({ H, HZ, MX, MR }, t) {
     const out = [], depth = H - HZ;
     for (let y = HZ + 1; y < H; y++) {
-      const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
+      const d = (y - HZ) / depth, half = MR * (0.8 + 2.2 * d), dens = 0.34 * Math.pow(1 - d, 2.6) + 6e-3;
       for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
         const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
         if (edge <= 0) continue;
@@ -4809,6 +4828,7 @@ var HxH = (() => {
   var STAMPS = "/hxh/api/db/stamps";
   var STAMP_ROT = 25;
   var BOOKMARK_HINT = "Bookmark characters for them to show here!";
+  var CLAIMED_HINT = "No cards claimed yet.";
   var STAMP_W = 17;
   var PLATE = { x: 50, y: 58 };
   function onPlate(x, y) {
@@ -4841,16 +4861,20 @@ var HxH = (() => {
   var cardNo2 = (c) => cardNo(c.no ?? c.id);
   var firstSentence = (s) => (String(s || "").match(/^[^.!?]*[.!?]/) || [s || ""])[0].trim();
   var cardText = (c) => c.card_description || firstSentence(c.description);
-  function paginate(chars, bookmarks = []) {
+  function paginate(chars, bookmarks = [], claimed = []) {
     const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
-    const marked = new Set(bookmarks);
-    const mine = sorted.filter((c) => marked.has(c.id));
     const out = [];
-    for (let i = 0; i < Math.max(1, mine.length); i += PER_PAGE) out.push({ kind: "bookmark", cards: mine.slice(i, i + PER_PAGE), n: out.length + 1 });
-    for (const p of out) p.of = out.length;
+    const group = (kind, cards) => {
+      const from = out.length;
+      for (let i = 0; i < Math.max(1, cards.length); i += PER_PAGE) out.push({ kind, cards: cards.slice(i, i + PER_PAGE), n: out.length - from + 1 });
+      for (const p of out.slice(from)) p.of = out.length - from;
+    };
+    const marked = new Set(bookmarks), taken = new Set(claimed);
+    group("bookmark", sorted.filter((c) => marked.has(c.id)));
     const first = out.length;
     for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ kind: "cards", cards: sorted.slice(i, i + PER_PAGE), n: out.length - first + 1 });
     for (const p of out.slice(first)) p.of = out.length - first;
+    group("claimed", sorted.filter((c) => taken.has(c.id)));
     return out;
   }
   var CARD_W = 150;
@@ -5057,7 +5081,7 @@ var HxH = (() => {
       if (sig === this.sig && this.page != null) return;
       this.sig = sig;
       this.roster = roster;
-      this.pages = paginate(this.roster, this.stamps.bookmarks);
+      this.pages = paginate(this.roster, this.stamps.bookmarks, (this.stamps.claims || []).map((c) => c.char_id));
       this.renderTabs();
       const bm = this.pages[0], last = this.pages.length - 1;
       const auto = this.page == null || !this.chose && this.page === 0 && !bm.cards.length;
@@ -5173,7 +5197,7 @@ var HxH = (() => {
         return;
       }
       if (kind === "claim") os2.people?.load();
-      if (kind === "bookmark") {
+      if (kind === "bookmark" || kind === "claim") {
         this.setRoster(this.roster);
         if (this.sel !== c) this.select(c);
       } else {
@@ -5281,7 +5305,7 @@ var HxH = (() => {
       const tabs = this.$(".tabs");
       tabs.replaceChildren();
       this.pages.forEach((p, i) => {
-        tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
+        tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : p.kind === "claimed" ? h("button", { type: "button", className: "tab claimed" + (p.n === 1 ? " first" : ""), html: icon("check", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
       });
     }
     showPage(i, keep = null) {
@@ -5300,7 +5324,8 @@ var HxH = (() => {
       for (const card of this.cards.values()) card.fit();
       for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
       if (p.kind === "bookmark" && !p.cards.length) box.append(h("div", { className: "hint", text: BOOKMARK_HINT }));
-      this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
+      if (p.kind === "claimed" && !p.cards.length) box.append(h("div", { className: "hint", text: CLAIMED_HINT }));
+      this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : p.kind === "claimed" ? "Claimed" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
       if (keep && p.cards.includes(keep)) this.select(keep, { quiet: true });
       else if (this.sel && !p.cards.includes(this.sel)) this.select(null);
       this.syncKeys();

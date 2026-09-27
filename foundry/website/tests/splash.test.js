@@ -138,9 +138,15 @@ test("Night's moon road: nearly the moon's width at the top, thinning with depth
   const road = moonRoad(geo, 3.1);
   const rows = y => road.filter(p => p[1] === y);
   const span = ys => { const xs = road.filter(p => ys.includes(p[1])).map(p => p[0]); return Math.max(...xs) - Math.min(...xs); };
-  assert.ok(span([131, 132, 133]) >= geo.MR * 1.4, "the top is nearly as wide as the moon: " + span([131, 132, 133]));
-  const top = [131, 132, 133, 134, 135].reduce((n, y) => n + rows(y).length, 0), bottom = [175, 176, 177, 178, 179].reduce((n, y) => n + rows(y).length, 0);
+  const band = (y0, y1) => Array.from({ length: y1 - y0 }, (_, k) => y0 + k);
+  // measured over several frames: the glints are sparse now, so one frame lights only some of the road
+  const lit = new Set(); for (const t of [0.5, 3, 7, 11, 17, 23]) for (const p of moonRoad(geo, t)) lit.add(p[0] + "," + p[1]);
+  const spanAll = ys => { const xs = [...lit].map(k => k.split(",").map(Number)).filter(([, y]) => ys.includes(y)).map(([x]) => x); return Math.max(...xs) - Math.min(...xs); };
+  assert.ok(spanAll(band(131, 136)) >= geo.MR * 1.3, "the top is nearly as wide as the moon: " + spanAll(band(131, 136)));
+  assert.ok(spanAll(band(160, 180)) >= spanAll(band(131, 136)) * 1.8, `a wide trapezoid — it spreads toward us (Andrew, 2026-09-27): ${spanAll(band(131, 136))} → ${spanAll(band(160, 180))}`);
+  const top = band(131, 136).reduce((n, y) => n + rows(y).length, 0), bottom = band(175, 180).reduce((n, y) => n + rows(y).length, 0);
   assert.ok(top > bottom * 3, `densest at the top, thinning down: ${top} vs ${bottom}`);
+  assert.ok(road.length < 200, `sparse: ${road.length} glints in a frame`);
   const tick = 0.18, trials = [1.3, 4.7, 9.1, 22.6];   // the painter's interval, at a few moments
   for (const t0 of trials) {
     const a = new Set(moonRoad(geo, t0).map(key)), b = new Set(moonRoad(geo, t0 + tick).map(key));
@@ -177,6 +183,7 @@ test("Night's island is the desktop's, pixel for pixel, at night: every colour t
 test("the night sea is purple like the sky, not blue, and darker: lightest under the horizon, darkening toward us (Andrew, 2026-09-27)", () => {
   const rgb = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
   for (const c of [...SEA_BANDS, SEA_HORIZON]) { const [r, g, b] = rgb(c); assert.ok(r > g && b > r, c + " is a purple (red over green, blue on top)"); }
+  assert.ok(rgb(SEA_BANDS.at(-1)).reduce((a, b) => a + b) < 20, "the foreground is almost black");
   const lum = h => rgb(h).reduce((a, b) => a + b);
   for (let i = 1; i < SEA_BANDS.length; i++) assert.ok(lum(SEA_BANDS[i]) < lum(SEA_BANDS[i - 1]), "darker toward us");
   assert.ok(lum(SEA_BANDS[0]) < lum("#321a60"), "the sea is darker than the sky at the horizon");

@@ -184,8 +184,10 @@ the OS.
   glints each re-rolling on their own staggered `GLINT_CYCLE` (3.2 s) so
   only ~7% change per frame, calm rather than static noise — and
   Abi's blimp crossing; a PURPLE sea (`SEA_BANDS`: the sky's purples
-  mirrored and darker, lightest under the horizon — not blue, Andrew
-  2026-09-27); and the desktop's Whale Island PIXEL FOR PIXEL —
+  mirrored and much darker, lightest under the horizon and almost black
+  in the foreground — not blue, Andrew 2026-09-27); the moon road a WIDE
+  trapezoid (half-width 0.8→3.0 moon radii) and sparse (density falling
+  as (1−d)^2.6), its glints on a 4.5 s staggered cycle; and the desktop's Whale Island PIXEL FOR PIXEL —
   Night uses the wallpaper's own `geometry()` and `islandLayer()` (the
   wallpaper's island code, extracted verbatim and checked identical by
   pixel hash), maps every day colour through `NIGHT_ISLAND` to a
@@ -646,6 +648,12 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   and the float buttons are hidden, fading back in when it lands
   (`settle`; Andrew, 2026-09-27: they stayed put over the turning cover
   and ruined the page turn).
+  TABS are 31 book px wide (40 until 2026-09-27) so fourteen fit one row
+  of the page's 474; past that they wrap upward. The CLAIMED pages
+  (`paginate`'s third group: claimed cards in card-number order, nine to
+  a page, at least one) sit all the way right (`.tab.claimed.first`
+  margin-left:auto) with a thick red checkmark (`icon("check")`); a claim
+  or release re-paginates like a bookmark does.
   The book's margins drag the window, and so does the whole closed
   cover (Andrew, 2026-09-27): `WindowManager.drag` with an `allow`
   predicate (never a card or a control) and `threshold: DRAG_SLOP`

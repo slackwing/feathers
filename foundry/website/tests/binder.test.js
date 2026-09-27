@@ -7,16 +7,40 @@ import { OS } from "../html/hxh/os/os.js";
 let nextId = 1;
 const mk = (name, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ id: nextId++, name, first: name, rank: "C", nen_types: nen, arcs, arms: [], description: "First. Second.", card_description: "", ...extra });
 
+test("paginate: the claimed cards get their own pages at the end — card-number order, nine to a page, a second past nine claimants (Andrew, 2026-09-27)", () => {
+  const chars = Array.from({ length: 25 }, (_, i) => mk("c" + i, [], ["hunter-exam"], { no: i + 1 }));
+  const claimed = chars.slice(0, 11).map(c => c.id).reverse();   // eleven claimants, in any order
+  const pages = paginate(chars, [], claimed);
+  const cl = pages.filter(p => p.kind === "claimed");
+  assert.deepEqual(cl.map(p => [p.cards.length, p.n, p.of]), [[PER_PAGE, 1, 2], [2, 2, 2]]);
+  assert.deepEqual(cl[0].cards.map(c => c.no).slice(0, 3), [1, 2, 3], "card-number order");
+  assert.deepEqual(pages.slice(-2).map(p => p.kind), ["claimed", "claimed"], "all the way on the right");
+  assert.deepEqual(paginate(chars, [], []).filter(p => p.kind === "claimed").map(p => p.cards.length), [0], "nobody has claimed yet: one empty claimed page");
+});
+
+test("the tabs: 31 book pixels each (was 40), so fourteen fit one row of the page's 474 — the claimed tab sits all the way right with a red checkmark (Andrew, 2026-09-27)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/apps/binder.css", import.meta.url), "utf8");
+  const w = +css.match(/\.tab \{[^}]*?width: (\d+)px/)[1];
+  const gap = +css.match(/\.tabs \{[^}]*?gap: (\d+)px/)[1];
+  const row = 3 * 150 + 2 * 12 + 2 * 20 - 2 * 20;   // the page's width less the strip's insets
+  assert.equal(w, 31);
+  assert.ok(14 * w + 13 * gap <= row, `fourteen tabs fit one row: ${14 * w + 13 * gap} of ${row}`);
+  assert.match(css, /\.tab\.claimed\.first \{[^}]*margin-left: auto/, "the first claimed tab is pushed to the right end");
+  const { hasIconPair, ICONS } = await import("../html/hxh/os/icons.js");
+  assert.ok(hasIconPair("check") && ICONS.check.join("").includes("r"), "a 16×16 red checkmark");
+});
+
 test("paginate: a bookmark page always comes first (empty or not, one per PER_PAGE bookmarks), then PER_PAGE cards a page in card-number order (a duplicate number keeps id order)", () => {
   const chars = Array.from({ length: PER_PAGE + 2 }, (_, i) => mk("c" + i, i % 2 ? ["enhancement"] : [], ["hunter-exam"], { no: PER_PAGE + 2 - i }));   // numbers run against ids
   const pages = paginate(chars);
-  assert.equal(pages.length, 3);
-  assert.deepEqual(pages.map(p => p.kind), ["bookmark", "cards", "cards"]);
+  assert.equal(pages.length, 4);
+  assert.deepEqual(pages.map(p => p.kind), ["bookmark", "cards", "cards", "claimed"], "the claimed page comes last, always at least one");
   assert.deepEqual([pages[0].cards.length, pages[0].n, pages[0].of], [0, 1, 1], "no bookmarks: one empty bookmark page");
   assert.deepEqual([pages[1].n, pages[1].of, pages[2].n, pages[2].of], [1, 2, 2, 2], "card pages number from 1 on their own");
   assert.deepEqual(pages[1].cards.map(c => c.no), Array.from({ length: PER_PAGE }, (_, i) => i + 1));
   assert.deepEqual(pages[2].cards.map(c => c.no), [PER_PAGE + 1, PER_PAGE + 2]);
-  assert.deepEqual(paginate([]).map(p => p.kind), ["bookmark"], "an empty binder still has its bookmark page");
+  assert.deepEqual(paginate([]).map(p => p.kind), ["bookmark", "claimed"], "an empty binder still has its bookmark page and its claimed page");
   const marked = paginate(chars, chars.slice(0, PER_PAGE + 1).map(c => c.id));
   assert.deepEqual(marked.slice(0, 2).map(p => [p.kind, p.cards.length, p.n, p.of]), [["bookmark", PER_PAGE, 1, 2], ["bookmark", 1, 2, 2]], "ten bookmarks: two bookmark pages");
   assert.deepEqual(marked[0].cards.map(c => c.no).slice(0, 3), [2, 3, 4], "bookmarks keep card-number order (ids 1–10 carry numbers 11 down to 2)");
@@ -184,10 +208,10 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
     mk("Leorio", [], ["hunter-exam"], { first: "Leorio", card_number: 3 }),
     ...Array.from({ length: PER_PAGE - 2 }, (_, i) => mk("filler" + i, [], ["hunter-exam"], { card_number: 4 + i })),
   ]);
-  assert.equal(b.pages.length, 3);
+  assert.equal(b.pages.length, 4);
   const tabs = b.$(".tabs").querySelectorAll(".tab");
-  assert.deepEqual([...tabs].map(t => t.classList.contains("bm") ? "bm" : t.textContent), ["bm", "1", "2"]);
-  assert.deepEqual([...tabs].map(t => t.title), ["Bookmarks", "Page 1 of 2", "Page 2 of 2"]);
+  assert.deepEqual([...tabs].map(t => t.classList.contains("bm") ? "bm" : t.classList.contains("claimed") ? "claimed" : t.textContent), ["bm", "1", "2", "claimed"]);
+  assert.deepEqual([...tabs].map(t => t.title), ["Bookmarks", "Page 1 of 2", "Page 2 of 2", "Claimed"]);
   assert.ok(tabs[0].querySelector("svg"), "the bookmark tab wears the icon");
   assert.ok(tabs[1].classList.contains("on"), "no bookmarks: the binder opens on page 1");
   d.click(tabs[0]);

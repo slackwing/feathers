@@ -2377,10 +2377,11 @@ html[data-theme=seapumpkin-pastel] {
   gap: 2px;
 }
 .tab {
-  flex: 0 0 auto;
-  min-width: 40px;
+  flex: 0 0 31px;
+  width: 31px;
   height: 24px;
-  padding: 4px 10px 0;
+  padding: 4px 0 0;
+  box-sizing: border-box;
   background: var(--navy-2);
   color: rgba(255, 255, 255, .55);
   border: 2px solid var(--navy-3);
@@ -2706,8 +2707,21 @@ html[data-theme=seapumpkin-pastel] {
   letter-spacing: .06em;
   padding: 0 20px;
 }
-.tab.bm {
-  padding: 4px 12px 0;
+.tab.bm,
+.tab.claimed {
+  padding: 4px 0 0;
+}
+.tab.claimed.first {
+  margin-left: auto;
+}
+.tab.claimed svg {
+  width: 14px;
+  height: 14px;
+  image-rendering: pixelated;
+  opacity: .85;
+}
+.tab.claimed.on svg {
+  opacity: 1;
 }
 .tab.bm svg {
   width: 14px;

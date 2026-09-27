@@ -147,8 +147,8 @@
 }
 /* page tabs: smooth (not pixel art), in the binder's own blues; the open page's tab is taller,
    lit, and joined to the page — Andrew, 2026-09-21 */
-.tab {
-  flex: 0 0 auto; min-width: 40px; height: 24px; padding: 4px 10px 0;
+.tab {   /* 31 wide (was 40): room for the claimed tabs and a few more bookmark pages in one row — "12" still fits (Andrew, 2026-09-27) */
+  flex: 0 0 31px; width: 31px; height: 24px; padding: 4px 0 0; box-sizing: border-box;
   background: var(--navy-2); color: rgba(255,255,255,.55);
   border: 2px solid var(--navy-3); border-bottom: 0; border-radius: 7px 7px 0 0;
   font: 700 12px/1 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em;
@@ -258,7 +258,10 @@
 }
 /* the empty bookmark page */
 .cards .hint { grid-column: 1 / -1; grid-row: 2; align-self: center; text-align: center; color: rgba(255,255,255,.55); font: 700 12px/1.6 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; padding: 0 20px; }
-.tab.bm { padding: 4px 12px 0; }
+.tab.bm, .tab.claimed { padding: 4px 0 0; }
+.tab.claimed.first { margin-left: auto; }   /* the claimed pages sit all the way on the right */
+.tab.claimed svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .85; }
+.tab.claimed.on svg { opacity: 1; }
 .tab.bm svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .8; }
 .tab.bm.on svg { opacity: 1; }
 .dial {

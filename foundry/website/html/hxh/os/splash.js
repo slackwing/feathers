@@ -174,9 +174,11 @@ export const NIGHT_ISLAND = {
   "#8b6d4b": "#241a33",                                                                        // the pier
 };
 /** The night sea: the sky's purples mirrored and darker, horizon first (lightest) to the foreground (darkest). */
-export const SEA_BANDS = ["#221243", "#1a0e36", "#130a29", "#0d061d"];
-export const SEA_HORIZON = "#2c1856";          // a faint lit line where sea meets sky
-export const ISLAND_SHADOW = "#08041a";        // the island's dithered shadow on the water
+/** The night sea: the sky's purples mirrored and much darker, horizon first to the foreground, which is almost black
+    (Andrew, 2026-09-27: "much darker shades, it's fine if it even almost seems black by the darkest"). */
+export const SEA_BANDS = ["#170c2e", "#0f0820", "#080413", "#030108"];
+export const SEA_HORIZON = "#221243";          // a faint lit line where sea meets sky
+export const ISLAND_SHADOW = "#040209";        // the island's dithered shadow on the water
 export const WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
 export const WINDOW_LIT = 0.8;   // "lights in most windows"
 /** Where a house has windows (island space): both upper corners and the lower one beside the door. */
@@ -210,7 +212,7 @@ export function nightIsland(doc) {
 /** How long one glint keeps its state before it re-rolls, in seconds. The re-rolls are staggered pixel by pixel, so at
     any moment only a small share of the road changes: a shimmer, not static (Andrew, 2026-09-27: "too random and
     chaotic… only swap a certain proportion at a time"). */
-export const GLINT_CYCLE = 3.2;
+export const GLINT_CYCLE = 4.5;   // 3.2 until the road grew sparse (2026-09-27): fewer glints make each re-roll a larger share of the lit ones
 
 /**
  * The moon's road on the water, as lit pixels [x, y, colour] at time t
@@ -222,7 +224,9 @@ export const GLINT_CYCLE = 3.2;
 export function moonRoad({ H, HZ, MX, MR }, t) {
   const out = [], depth = H - HZ;
   for (let y = HZ + 1; y < H; y++) {
-    const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
+    // a wide trapezoid — the road spreads toward us as over a long stretch of water — and far sparser, thinning fast
+    // (Andrew, 2026-09-27: "widen the trapezoid… too straight for the distance… reduce the density more dramatically")
+    const d = (y - HZ) / depth, half = MR * (0.8 + 2.2 * d), dens = 0.34 * Math.pow(1 - d, 2.6) + 0.006;
     for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
       const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
       if (edge <= 0) continue;

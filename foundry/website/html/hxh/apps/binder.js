@@ -33,6 +33,7 @@ export const SOURCE = "/hxh/api/db/binder";        // the Roster DB's accepted c
 export const STAMPS = "/hxh/api/db/stamps";        // everyone's hearts, my hearts, my bookmarks
 export const STAMP_ROT = 25;                        // a heart leans at most this far from upright (degrees)
 export const BOOKMARK_HINT = "Bookmark characters for them to show here!";
+export const CLAIMED_HINT = "No cards claimed yet.";
 
 /* The lower-right corner of the description box is kept for the name
    plate of whoever becomes the character (Andrew, 2026-09-21) — the
@@ -85,19 +86,27 @@ export const cardText = c => c.card_description || firstSentence(c.description);
 /**
  * The pages: the reader's bookmarks first (always at least one page, empty
  * or not — Andrew, 2026-09-21), then every card PER_PAGE to a page in
- * card-number order (a duplicate number keeps id order). Each page is a
- * tab; bookmark pages wear the bookmark icon, the rest their number.
+ * card-number order (a duplicate number keeps id order), then the CLAIMED
+ * cards, PER_PAGE to a page, last (always at least one page — Andrew,
+ * 2026-09-27: "all the way on the right… a thick red checkmark, to show
+ * claimed cards", a second page past nine claimants). Each page is a tab;
+ * bookmark pages wear the bookmark icon, claimed pages the checkmark, the
+ * rest their number.
  */
-export function paginate(chars, bookmarks = []) {
+export function paginate(chars, bookmarks = [], claimed = []) {
   const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
-  const marked = new Set(bookmarks);
-  const mine = sorted.filter(c => marked.has(c.id));
   const out = [];
-  for (let i = 0; i < Math.max(1, mine.length); i += PER_PAGE) out.push({ kind: "bookmark", cards: mine.slice(i, i + PER_PAGE), n: out.length + 1 });
-  for (const p of out) p.of = out.length;
+  const group = (kind, cards) => {
+    const from = out.length;
+    for (let i = 0; i < Math.max(1, cards.length); i += PER_PAGE) out.push({ kind, cards: cards.slice(i, i + PER_PAGE), n: out.length - from + 1 });
+    for (const p of out.slice(from)) p.of = out.length - from;
+  };
+  const marked = new Set(bookmarks), taken = new Set(claimed);
+  group("bookmark", sorted.filter(c => marked.has(c.id)));
   const first = out.length;
   for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ kind: "cards", cards: sorted.slice(i, i + PER_PAGE), n: out.length - first + 1 });
   for (const p of out.slice(first)) p.of = out.length - first;
+  group("claimed", sorted.filter(c => taken.has(c.id)));
   return out;
 }
 
@@ -272,7 +281,7 @@ export class BinderApp extends App {
     if (sig === this.sig && this.page != null) return;
     this.sig = sig;
     this.roster = roster;
-    this.pages = paginate(this.roster, this.stamps.bookmarks);
+    this.pages = paginate(this.roster, this.stamps.bookmarks, (this.stamps.claims || []).map(c => c.char_id));
     this.renderTabs();
     const bm = this.pages[0], last = this.pages.length - 1;
     const auto = this.page == null || (!this.chose && this.page === 0 && !bm.cards.length);
@@ -350,7 +359,7 @@ export class BinderApp extends App {
       this.stamps = await this.get(this.stampsSrc);
     } catch (err) { os.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again."); return; }
     if (kind === "claim") os.people?.load();   // a claim changes how you look everywhere (os/people.js): the Start menu, the chat
-    if (kind === "bookmark") { this.setRoster(this.roster); if (this.sel !== c) this.select(c); }
+    if (kind === "bookmark" || kind === "claim") { this.setRoster(this.roster); if (this.sel !== c) this.select(c); }   // both change which pages exist
     else {
       for (const [id, card] of this.cards) { const cc = this.roster.find(x => x.id === id); if (cc) this.renderStamps(card, cc); }
       if (this.bigCard && this.sel) this.renderStamps(this.bigCard, this.sel);   // the enlarged copy on the screen too
@@ -448,7 +457,9 @@ export class BinderApp extends App {
     this.pages.forEach((p, i) => {
       tabs.append(p.kind === "bookmark"
         ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) })
-        : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
+        : p.kind === "claimed"
+          ? h("button", { type: "button", className: "tab claimed" + (p.n === 1 ? " first" : ""), html: icon("check", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) })
+          : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
     });
   }
 
@@ -465,7 +476,8 @@ export class BinderApp extends App {
     for (const card of this.cards.values()) card.fit();   // a card mounts before its sleeve is in the page (no width yet): fit once the page holds it
     for (let k = p.cards.length; k < PER_PAGE; k++) box.append(h("div", { className: "slot" }));
     if (p.kind === "bookmark" && !p.cards.length) box.append(h("div", { className: "hint", text: BOOKMARK_HINT }));
-    this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
+    if (p.kind === "claimed" && !p.cards.length) box.append(h("div", { className: "hint", text: CLAIMED_HINT }));
+    this.$(".pageno").textContent = p.kind === "bookmark" ? "Bookmarks" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : p.kind === "claimed" ? "Claimed" + (p.of > 1 ? ` ${p.n} / ${p.of}` : "") : `${p.n} / ${p.of}`;
     if (keep && p.cards.includes(keep)) this.select(keep, { quiet: true });   // the same card, re-read: keep it, do not retype the screen
     else if (this.sel && !p.cards.includes(this.sel)) this.select(null);
     this.syncKeys();
