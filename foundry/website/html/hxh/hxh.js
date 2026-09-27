@@ -4215,6 +4215,8 @@ var HxH = (() => {
     return { ...clearOfPlate(spot), rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
   }
   var LIVE_MS = 2e4;
+  var TYPE_MS = 4;
+  var BIG_W = 0.92;
   var typeOf = (c) => TYPES.find((t) => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
   var titleCase = (s) => s.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
   var cardNo2 = (c) => cardNo(c.no ?? c.id);
@@ -4297,6 +4299,7 @@ var HxH = (() => {
       </div>
       <div class="face back">
         <div class="page">
+          <i class="edge" title="Close"></i>
           <div class="tabs"></div>
           <div class="cards"></div>
           <div class="pageno"></div>
@@ -4354,6 +4357,10 @@ var HxH = (() => {
         }
       });
       el.addEventListener("click", (e) => {
+        if (e.target.closest(".edge")) {
+          this.shut();
+          return;
+        }
         const act = e.target.closest("[data-act]")?.dataset.act;
         const dir = e.target.closest("[data-dir]")?.dataset.dir;
         if (act === "heart" || act === "bookmark") this.stampSel(act);
@@ -4531,9 +4538,12 @@ var HxH = (() => {
       if (kind === "bookmark") {
         this.setRoster(this.roster);
         if (this.sel !== c) this.select(c);
-      } else for (const [id, card] of this.cards) {
-        const cc = this.roster.find((x) => x.id === id);
-        if (cc) this.renderStamps(card, cc);
+      } else {
+        for (const [id, card] of this.cards) {
+          const cc = this.roster.find((x) => x.id === id);
+          if (cc) this.renderStamps(card, cc);
+        }
+        if (this.bigCard && this.sel) this.renderStamps(this.bigCard, this.sel);
       }
       this.syncKeys();
     }
@@ -4648,18 +4658,21 @@ var HxH = (() => {
       else if (this.sel && !p.cards.includes(this.sel)) this.select(null);
       this.syncKeys();
     }
-    /** A sleeve holding one printed card. */
-    cardEl(c) {
-      const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
-      const card = new GICard({
+    /** A character's printed card: the plaque prints the SHORT name (Gon, not Gon Freecss); no card picture yet, the avatar stands in. */
+    printed(c) {
+      return new GICard({
         no: c.no,
         name: c.first || c.name,
         rank: c.rank,
         description: cardText(c),
         alt: c.name,
-        // the plaque prints the SHORT name (Gon, not Gon Freecss)
         image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null
       });
+    }
+    /** A sleeve holding one printed card. */
+    cardEl(c) {
+      const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
+      const card = this.printed(c);
       card.mount(b);
       this.renderStamps(card, c);
       this.cards.set(c.id, card);
@@ -4676,6 +4689,8 @@ var HxH = (() => {
       const scr = this.$(".screen");
       this.typer?.skip?.();
       clearInterval(this.follow);
+      this.bigCard?.unmount();
+      this.bigCard = null;
       if (!c) {
         this.idle();
         return;
@@ -4690,11 +4705,37 @@ var HxH = (() => {
       <div class="line">Arms: <b>${esc(arms)}</b></div>
       <div class="desc"></div>
       <div class="status">\u6240\u6301\u8005 0\u540D \uFF0F \u6B8B\u308A ${LIMIT[c.rank] || 4}\u679A</div>`;
+      scr.scrollTop = 0;
       this.follow = setInterval(() => {
         scr.scrollTop = scr.scrollHeight;
       }, 80);
-      this.typer = type(scr.querySelector(".desc"), [c.description || ""], { speed: 6, reduced: this.os.env.reduced, onDone: () => clearInterval(this.follow) });
-      scr.scrollTop = 0;
+      this.typer = type(scr.querySelector(".desc"), [c.description || ""], { speed: TYPE_MS, reduced: this.os.env.reduced, onDone: () => {
+        clearInterval(this.follow);
+        this.showCard(c);
+      } });
+    }
+    /**
+     * The whole card, enlarged, under the typed profile (Andrew, 2026-09-27:
+     * "so people can see the card enlargened in the display screen"). As
+     * wide as BIG_W of the screen allows but never taller than the screen,
+     * so all of it shows at once; the screen scrolls down to it and it
+     * paints in top to bottom in bands, like a picture over a slow modem.
+     */
+    showCard(c) {
+      if (this.sel !== c) return;
+      const scr = this.$(".screen"), cs = getComputedStyle(scr), px = (v) => parseFloat(v) || 0;
+      const room = { w: scr.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight), h: scr.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) };
+      const w = Math.max(80, Math.floor(Math.min(room.w * BIG_W, room.h / CARD_RATIO)));
+      const reduced = !!this.os.env.reduced;
+      const box = h("div", { className: "big" + (reduced ? "" : " load") });
+      box.style.width = w + "px";
+      scr.append(box);
+      const card = this.bigCard = this.printed(c);
+      card.mount(box);
+      this.renderStamps(card, c);
+      const top = box.offsetTop - px(cs.paddingTop);
+      if (reduced || !scr.scrollTo) scr.scrollTop = top;
+      else scr.scrollTo({ top, behavior: "smooth" });
     }
     get selected() {
       return this.sel;
