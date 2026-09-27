@@ -63,3 +63,21 @@ test("avatar carries the initial, colour and escaped name", () => {
   assert.match(a, />AC</);
   assert.match(avatar(null), />\?</);
 });
+
+test("desktop icons: every desktop app has a 20×20 grid in DESK, palette letters only, drawn at 3× = 60 px; an app without one falls back to its 16-grid at 3× (Andrew, 2026-09-27: 25% larger, same pixel granularity)", async () => {
+  const { DESK, DESK_SCALE, DESK_GRID, desktopIcon } = await import("../html/hxh/os/icons.js");
+  assert.equal(DESK_SCALE, 3, "the same 3 px cells as before");
+  assert.equal(DESK_GRID * DESK_SCALE, 60, "25% larger than the old 48");
+  for (const [name, rows] of Object.entries(DESK)) {
+    assert.equal(`${rows[0].length}x${rows.length}`, "20x20", `${name}`);
+    assert.ok(rows.every(r => r.length === 20), `${name} is ragged`);
+    for (const r of rows) for (const c of r) assert.ok(c === "." || PAL[c], `${name}: unknown colour "${c}"`);
+    assert.match(desktopIcon(name), /viewBox="0 0 20 20" width="60" height="60"/);
+    assert.ok(ICONS[name], `${name} also has its 16-grid for the taskbar, tray and menus`);
+  }
+  for (const name of ["envelope", "book", "beetle", "arena", "db"]) assert.ok(DESK[name], `the ${name} desktop app has a 20-grid`);
+  assert.match(desktopIcon("door"), /width="48" height="48"/, "no 20-grid: its 16-grid at 3×");
+  // the binder is a tall cover and the Beetle a tall egg, both at 20 and at 16
+  const bbox = rows => { const ys = rows.map((r, y) => /[^.]/.test(r) ? y : -1).filter(y => y >= 0); const xs = rows.flatMap(r => [...r].map((c, x) => c !== "." ? x : -1)).filter(x => x >= 0); return { w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1 }; };
+  for (const g of [DESK.book, ICONS.book]) { const b = bbox(g.map(r => r.replace(/G/g, "."))); assert.ok(b.h > b.w * 1.3, `the binder is taller than wide (${b.w}×${b.h})`); }
+});

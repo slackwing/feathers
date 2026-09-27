@@ -200,7 +200,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   color: var(--paper); font: var(--t-caption); text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
-.icon .ib { width: 48px; height: 48px; display: grid; place-items: center; }
+.icon .ib { width: 60px; height: 60px; display: grid; place-items: center; }   /* 20×20 desktop grids at 3× (os/icons.js DESK) */
 .icon .cap { padding: 1px 3px; text-shadow: 1px 0 var(--ink), -1px 0 var(--ink), 0 1px var(--ink), 0 -1px var(--ink), 1px 1px var(--ink); }
 .icon:hover .cap, .icon:focus-visible .cap { background: var(--sel-bg); color: var(--sel-fg); outline: 1px dotted var(--sel-fg); }
 .icon:focus-visible { outline: none; }

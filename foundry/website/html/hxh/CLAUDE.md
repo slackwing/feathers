@@ -882,9 +882,18 @@ desktop: pixelation is a system property, like the type scale.
 - **Small icons draw at 16 px** (1×, "full resolution", unrealistically
   crisp on purpose): taskbar buttons, tray icons, Start menu and menu
   items, window title bars. `icon(name, 16)`.
-- **Desktop icons draw at 48 px** (3×): about half the wallpaper's 5 px
-  whale scale; text (Pixelify Sans at 13–15 px, ~1.3 px cells) sits
-  between the two. `Desktop` uses `icon(a.icon, 48)` in a 48 px `.ib`.
+- **Desktop icons draw at 60 px from their own 20×20 grids** (2026-09-27,
+  Andrew: "25% larger, same pixel granularity … recreate all the icons
+  with more pixels"): `DESK` in `os/icons.js`, drawn at `DESK_SCALE` 3
+  — the same 3 px cells as the old 48 px icons, about half the
+  wallpaper's 5 px whale scale. `Desktop` uses `desktopIcon(a.icon)` in
+  a 60 px `.ib`; an app with no 20-grid falls back to its 16-grid at 3×.
+  Every desktop app keeps its 16-grid too (taskbar, tray, menus, title
+  bars), drawn to the SAME design: the binder is a tall cover with the
+  green emblem ~37 % down (as on the app's cover), the Beetle is the
+  Beetle 07 phone in red (split egg shell, domed eyes, Y antenna), and
+  Heavens Arena is a Super Famicom pad (the tower read as a pointed
+  hood). `tests/icons.test.js` holds both rules.
 - **Two exceptions, on purpose**: the Start button's pumpkin (12×12 at
   2× = 24 px — "the pumpkin is unique") and the boot badge's tee (18×14
   at 4×). Don't reuse them elsewhere.

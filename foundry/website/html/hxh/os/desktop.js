@@ -2,7 +2,7 @@
    from the registry), and the modal backdrop. */
 import { Component } from "./component.js";
 import { h } from "./dom.js";
-import { icon } from "./icons.js";
+import { desktopIcon } from "./icons.js";
 
 export class DesktopIcon extends Component {
   /** props: app */
@@ -10,7 +10,7 @@ export class DesktopIcon extends Component {
     const a = this.props.app;
     return h("button", {
       type: "button", className: "icon", dataset: { act: a.id },
-      html: `<span class="ib">${icon(a.icon, 48)}</span><span class="cap"></span>`,
+      html: `<span class="ib">${desktopIcon(a.icon)}</span><span class="cap"></span>`,
       onclick: () => this.emit("press", a.id),
     }, );
   }
