@@ -277,11 +277,13 @@ export class OS {
     const warm = this.nav.consumeWarm();
     const pending = this.session.me();
     if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
-    if (splash && boot && !warm) await this.showSplash();   // the title screen: a style at random, until the viewer clicks (os/splash.js)
     let me = await pending;
     if ((!me && gate) || !taskbar) this.showBadge();   // splash screens keep the badge
     if (!me && gate) me = await this.logon();
     if (taskbar) this.hideBadge();
+    // the title screen (os/splash.js), a style at random, until the viewer clicks: after the boot screen when you are
+    // signed in, after the logon when you were not (Andrew, 2026-09-27) — never in front of the logon
+    if (me && splash && boot && !warm) await this.showSplash();
     this.setUser(me);
     if (me && wallpaper) this.startWallpaper();       // Whale Island only once you're in
     if (this.taskbar) this.taskbar.el.hidden = false;
@@ -295,7 +297,7 @@ export class OS {
 
   /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
   showSplash(id = null) {
-    if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds }).mount(this.doc.body);
+    if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
     return this.splash.show(id);
   }
 

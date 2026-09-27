@@ -158,24 +158,31 @@ the OS.
   that ends a real drag), `fit/relayout`, `handleEscape` (active
   popup). Every change is announced on the bus.
 - `Splash` (`splash.js` + `splash.css`, `os.showSplash(id)`) — the
-  title screen between the boot screen and the logon / desktop on a
-  COLD load of a page that passes `splash: true` (index only; a warm
-  navigation skips it with the boot). Three styles, one at random
-  (`SPLASHES`): Summons (the first landing page, tag `hxh-pre-retro`,
-  revived: Alfa Slab logotype, pulsing ✕, embers), Clouds (the Win98
-  splash our way: a canvas cloth flag with the ✕ waving and shedding
-  squares, the wordmark with '26, the sliding bar), Night (an arcade
-  attract screen at the wallpaper's 5-px grain: stars, harvest moon on
-  the sea, Abi's blimp crossing, Press Start 2P title). It NEVER moves
-  on by itself (Andrew, 2026-09-27): "Click to start" on every style;
-  click, tap, Enter, Space or Escape dismisses it and plays the
-  original `startup` chime when Sounds are on. Settings › Other ›
-  Splash screen ▸ shows any style over the desktop until clicked.
-  Sized only in container units of the full-screen root
+  title screen on a COLD load of a page that passes `splash: true`
+  (index only; a warm navigation skips it with the boot). ORDER (Andrew,
+  2026-09-27): signed in → boot, splash, desktop; signed out → boot,
+  logon, THEN the splash, desktop — never a splash in front of the
+  logon. Three styles, one at random (`SPLASHES`): Summons (the first
+  landing page, tag `hxh-pre-retro`, revived: Alfa Slab logotype,
+  pulsing ✕, embers), Player Select (a retro fighting game's select
+  screen: chrome-gradient italic pixel type, 12 random Binder
+  characters with avatars as 24×24 pixel portraits read from
+  /hxh/api/db/binder at show time, red 1P / blue 2P cursors hopping as
+  in attract mode, the big portraits and name plates they point at —
+  2P mirrored — and CREDIT 01; ??? silhouettes without a roster; it
+  replaced a Win98 "Clouds" style the same day), Night (an arcade
+  attract screen at the wallpaper's 5-px grain: PURPLE SQUARE PRESENTS,
+  stars, a harvest moon whose road on the sea starts nearly the moon's
+  width and thins in density going down — not a Christmas tree — and
+  Abi's blimp crossing). It NEVER moves on by itself: "Click to start"
+  on every style; click, tap, Enter, Space or Escape dismisses it and
+  plays the original `startup` chime when Sounds are on. Settings ›
+  Other › Splash screen ▸ shows any style over the desktop until
+  clicked. Sized only in container units of the full-screen root
   (`container-type: size`) so the desktop's zoom can't distort it;
   z-index 90 — over the desktop and taskbar, under the CRT scanlines.
-  Still pictures under reduced motion. Fonts: Alfa Slab One, Special
-  Elite, Archivo Black added to index.html's Google Fonts link.
+  Still pictures under reduced motion. Fonts: Alfa Slab One and Special
+  Elite added to index.html's Google Fonts link.
 - `People` (`people.js`, `os.people`) — THE place a member's look is
   decided: the shared-auth profile with this site's overrides on top
   (a claim: the character's short name and avatar picture; the colour
@@ -742,7 +749,7 @@ over the sky.
   the scanlines icon) and any app window's Settings menu (window menus pass
   `icons: false`; the Summons has none — File › Exit alone): Display ▸ (Theme ▸, Sky ▸, Scanlines), Sounds ▸ (Sounds), Windows ▸
   (Show all / Hide all / Close all windows) and, last, Other ▸ (Fly the
-  blimp, Splash screen ▸ Summons / Clouds / Night) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
+  blimp, Splash screen ▸ Summons / Player Select / Night) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
   the UI as settings people can toggle". Add a knob there, nowhere
   else. Scanlines is OFF by default (`hxh.crt` in localStorage
   remembers an override). Fly the blimp (2026-09-24, "would help with

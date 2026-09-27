@@ -85,7 +85,26 @@ test("a cold load with splash: after the boot screen the title screen holds ever
   assert.ok(!warm.splash || warm.splash.el.hidden);
 });
 
-test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Clouds / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
+test("logged out: the boot screen, then the logon — and the splash only once you have signed in, never in front of the logon (Andrew, 2026-09-27)", async () => {
+  const { os } = make({ me: null });
+  let ready = false;
+  const p = os.start({ apps: [Hello], autostart: ["hello"], start: true, splash: true }).then(() => { ready = true; });
+  await tick();
+  const dlg = os.wm.get("win-logon");
+  assert.ok(dlg && dlg.state.open, "the logon comes first");
+  const sp = () => document.querySelector(".splashscreen");
+  assert.ok(!sp() || sp().hidden, "no splash in front of the logon");
+  dlg.el.querySelector("#lg-u").value = "andrew"; dlg.el.querySelector("#lg-p").value = "x";
+  d.fire(dlg.el.querySelector("#logon-form"), "submit");
+  await new Promise(r => setTimeout(r, 40));
+  assert.ok(sp() && !sp().hidden, "signed in: now the splash");
+  assert.equal(ready, false, "and the desktop waits for it");
+  sp().click();
+  await p;
+  assert.equal(os.wm.get("win-hello").state.open, true);
+});
+
+test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Player Select / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
   os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
@@ -103,10 +122,10 @@ test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons
   assert.equal(other()[0].disabled, false);
   os.blimp.unmount();
   const splashes = other()[1].items();
-  assert.deepEqual(splashes.map(i => i.label), ["Summons", "Clouds", "Night"]);
-  splashes[1].onclick();   // Clouds, over the desktop
+  assert.deepEqual(splashes.map(i => i.label), ["Summons", "Player Select", "Night"]);
+  splashes[1].onclick();   // Player Select, over the desktop
   const el = document.querySelector(".splashscreen");
-  assert.ok(el && !el.hidden && el.classList.contains("sp-clouds"));
+  assert.ok(el && !el.hidden && el.classList.contains("sp-select"));
   assert.match(el.textContent, /click to start/i);
   el.click();
   assert.equal(el.hidden, true, "a click returns to the desktop");

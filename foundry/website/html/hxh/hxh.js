@@ -3099,7 +3099,7 @@ var HxH = (() => {
     eg.fillRect(172 + OX, HZ, 14, 1);
     px(eg, 185 + OX, HZ + 1, "#8b6d4b");
     px(eg, 174 + OX, HZ + 1, "#8b6d4b");
-    const clouds2 = CLOUDS.map((c) => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
+    const clouds = CLOUDS.map((c) => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
     const gl = glints(g);
     let flock = null, nextFlock = 60, tick = 0;
     const drawGlints = () => {
@@ -3130,7 +3130,7 @@ var HxH = (() => {
       tick++;
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(sky, 0, 0);
-      for (const c of clouds2) {
+      for (const c of clouds) {
         if (!reduced) {
           c.x += c.v;
           if (c.x > W + 4) c.x = -c.img.width - 4;
@@ -3297,7 +3297,7 @@ var HxH = (() => {
   // html/hxh/os/splash.js
   var SPLASHES = [
     ["summons", "Summons"],
-    ["clouds", "Clouds"],
+    ["select", "Player Select"],
     ["night", "Night"]
   ];
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
@@ -3330,112 +3330,127 @@ var HxH = (() => {
     return () => {
     };
   }
-  function drawCloth(doc, W, H) {
-    const c = doc.createElement("canvas");
-    c.width = W;
-    c.height = H;
-    const g = c.getContext("2d");
-    if (!g) return null;
-    g.fillStyle = "#fff6e0";
-    g.fillRect(0, 0, W, H);
-    g.fillStyle = "#ff7518";
-    g.fillRect(0, H * 0.84, W, H * 0.16);
-    const cx = W * 0.5, cy = H * 0.42, r = H * 0.3;
-    g.lineCap = "round";
-    for (const [w, col] of [[H * 0.2, "#0b0a08"], [H * 0.13, "#c8102e"]]) {
-      g.strokeStyle = col;
-      g.lineWidth = w;
-      g.beginPath();
-      g.moveTo(cx - r, cy - r);
-      g.lineTo(cx + r, cy + r);
-      g.moveTo(cx + r, cy - r);
-      g.lineTo(cx - r, cy + r);
-      g.stroke();
+  var TILE_PX = 24;
+  var BIG_PX = 40;
+  var SELECT_TILES = 12;
+  async function selectRoster(fetch, random = Math.random) {
+    if (!fetch) return [];
+    try {
+      const r = await fetch("/hxh/api/db/binder", { credentials: "same-origin" });
+      if (!r.ok) return [];
+      const list = (await r.json()).filter((c) => c && c.avatar_image_id);
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      return list.slice(0, SELECT_TILES).map((c) => ({ name: String(c.first || c.name || "???").toUpperCase(), src: `/hxh/api/db/images/${c.avatar_image_id}/thumb` }));
+    } catch {
+      return [];
     }
-    g.strokeStyle = "#0b0a08";
-    g.lineWidth = Math.max(2, H * 0.03);
-    g.strokeRect(g.lineWidth / 2, g.lineWidth / 2, W - g.lineWidth, H - g.lineWidth);
+  }
+  function pixelPortrait(doc, img, px) {
+    const c = doc.createElement("canvas");
+    c.width = px;
+    c.height = px;
+    const g = c.getContext?.("2d");
+    if (!g) {
+      const i = doc.createElement("img");
+      i.src = img.src;
+      i.alt = "";
+      return i;
+    }
+    const s = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 4;
+    g.imageSmoothingEnabled = true;
+    g.drawImage(img, sx, Math.max(0, sy), s, s, 0, 0, px, px);
     return c;
   }
-  function clouds(el, { reduced, random }) {
+  function select(el, { reduced, random, fetch }) {
     el.innerHTML = `
-    <div class="sp-cloud c1"></div><div class="sp-cloud c2"></div><div class="sp-cloud c3"></div><div class="sp-cloud c4"></div><div class="sp-cloud c5"></div>
-    <div class="sp-lockup">
-      <canvas class="sp-flag" aria-hidden="true"></canvas>
-      <div class="sp-word">
-        <div class="sp-maker">Hunter Association<sup>\xAE</sup></div>
-        <div class="sp-name">Hunter${X}Halloween<sup class="yr">'26</sup></div>
-        <div class="sp-edition">Party Edition</div>
-      </div>
+    <div class="sp-backdrop"></div>
+    <div class="sp-head">PLAYER SELECT</div>
+    <div class="sp-logo"><span class="w1">HUNTER</span><span class="x">\xD7</span><span class="w2">HALLOWEEN</span></div>
+    <div class="sp-stage">
+      <div class="sp-fighter p1"><div class="sp-big"></div><div class="sp-plate"></div></div>
+      <div class="sp-grid"></div>
+      <div class="sp-fighter p2"><div class="sp-big"></div><div class="sp-plate"></div></div>
     </div>
-    <div class="sp-start">Click to start</div>
-    <div class="sp-bar"></div>`;
-    const canvas = el.querySelector(".sp-flag");
+    <div class="sp-start">CLICK TO START</div>
+    <div class="sp-credit"><span>1P</span><span>CREDIT 01</span></div>`;
     const doc = el.ownerDocument, win = doc.defaultView;
-    const g = canvas.getContext?.("2d");
-    if (!g) return () => {
-    };
-    const CW = 180, CH = 124, PAD2 = 18;
-    const cloth = drawCloth(doc, CW, CH);
-    if (!cloth) return () => {
-    };
-    const dpr = Math.min(3, win?.devicePixelRatio || 1);
-    canvas.width = (CW + PAD2 * 3) * dpr;
-    canvas.height = (CH + PAD2 * 2) * dpr;
-    const bits = Array.from({ length: 9 }, (_, i) => ({ y: 0.1 + random() * 0.8, s: 3 + random() * 6, col: ["#c8102e", "#ff7518", "#fff6e0"][i % 3], off: random() }));
-    const draw = (t) => {
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, CW + PAD2 * 3, CH + PAD2 * 2);
-      const x0 = PAD2 * 2, y0 = PAD2;
-      for (let x = 0; x < CW; x += 2) {
-        const ph = x * 0.05 - t * 3.2, amp = 2 + x * 0.075;
-        g.drawImage(cloth, x, 0, 2, CH, x0 + x, y0 + amp * Math.sin(ph), 2.4, CH);
+    const grid = el.querySelector(".sp-grid");
+    let fighters = Array.from({ length: SELECT_TILES }, () => ({ name: "???", img: null }));
+    const tiles = fighters.map((_, i) => {
+      const t = h("div", { className: "sp-tile", dataset: { i: String(i) } }, h("div", { className: "sp-sil" }));
+      grid.append(t);
+      return t;
+    });
+    const cur = { p1: 0, p2: SELECT_TILES - 1 };
+    const show = () => {
+      for (const t of tiles) t.classList.remove("p1", "p2");
+      tiles[cur.p1].classList.add("p1");
+      tiles[cur.p2].classList.add("p2");
+      for (const who of ["p1", "p2"]) {
+        const f = fighters[cur[who]], box = el.querySelector(`.sp-fighter.${who}`);
+        box.querySelector(".sp-plate").textContent = f.name;
+        const big = box.querySelector(".sp-big");
+        big.replaceChildren(f.img ? pixelPortrait(doc, f.img, BIG_PX) : h("div", { className: "sp-sil" }));
       }
-      g.globalCompositeOperation = "source-atop";
-      for (let x = 0; x < CW; x += 2) {
-        const ph = x * 0.05 - t * 3.2, k = Math.cos(ph);
-        g.fillStyle = k > 0 ? `rgba(255,255,255,${(0.16 * k).toFixed(3)})` : `rgba(20,10,40,${(-0.22 * k).toFixed(3)})`;
-        g.fillRect(x0 + x, 0, 2.4, CH + PAD2 * 2);
-      }
-      g.globalCompositeOperation = "source-over";
-      for (const b of bits) {
-        const f = (t * 0.35 + b.off) % 1;
-        g.globalAlpha = 1 - f;
-        g.fillStyle = b.col;
-        g.fillRect(x0 - 4 - f * PAD2 * 2, y0 + b.y * CH + Math.sin(t * 2 + b.off * 6) * 3, b.s * (1 - f * 0.5), b.s * (1 - f * 0.5));
-      }
-      g.globalAlpha = 1;
     };
-    if (reduced) {
-      draw(0.6);
-      return () => {
-      };
-    }
-    let raf = 0, stop = false;
-    const t0 = win.performance?.now?.() ?? Date.now();
-    const tick = () => {
-      if (stop) return;
-      draw(((win.performance?.now?.() ?? Date.now()) - t0) / 1e3);
-      raf = win.requestAnimationFrame(tick);
+    show();
+    let stopped = false;
+    selectRoster(fetch, random).then((list) => {
+      if (stopped || !list.length) return;
+      list.forEach((f, i) => {
+        const img = new win.Image();
+        img.onload = () => {
+          if (stopped) return;
+          fighters[i] = { name: f.name, img };
+          tiles[i].replaceChildren(pixelPortrait(doc, img, TILE_PX));
+          if (cur.p1 === i || cur.p2 === i) show();
+        };
+        img.src = f.src;
+        fighters[i] = { name: f.name, img: null };
+      });
+      show();
+    });
+    if (reduced) return () => {
+      stopped = true;
     };
-    raf = win.requestAnimationFrame(tick);
+    const cols = () => (win.getComputedStyle?.(grid).gridTemplateColumns || "").split(" ").filter(Boolean).length || 6;
+    const hop = (k) => {
+      const n = cols(), r = Math.floor(k / n), c = k % n, moves = [];
+      if (c > 0) moves.push(k - 1);
+      if (c < n - 1 && k + 1 < SELECT_TILES) moves.push(k + 1);
+      if (r > 0) moves.push(k - n);
+      if (k + n < SELECT_TILES) moves.push(k + n);
+      return moves[Math.floor(random() * moves.length)] ?? k;
+    };
+    const timer = win.setInterval(() => {
+      if (random() < 0.7) cur.p1 = hop(cur.p1);
+      if (random() < 0.7) cur.p2 = hop(cur.p2);
+      show();
+    }, 650);
     return () => {
-      stop = true;
-      win.cancelAnimationFrame?.(raf);
+      stopped = true;
+      win.clearInterval(timer);
     };
   }
+  var glint = (x, y, f) => {
+    const v = Math.sin(x * 12.9898 + y * 78.233 + f * 37.719) * 43758.5453;
+    return v - Math.floor(v);
+  };
   var GRAIN = 5;
   function night(el, { reduced, random }) {
     el.innerHTML = `
     <canvas class="sp-sky px" aria-hidden="true"></canvas>
     <img class="sp-ship" src="${SHIP_SRC}" alt="" draggable="false">
     <div class="sp-title">
-      <div class="sp-top">HUNTER ASSOCIATION PRESENTS</div>
+      <div class="sp-top">PURPLE SQUARE PRESENTS</div>
       <div class="sp-big">HUNTER${X}</div>
       <div class="sp-big hallow">HALLOWEEN</div>
       <div class="sp-start">CLICK TO START</div>
     </div>
-    <div class="sp-foot">\xA9 2026 HUNTER ASSOCIATION \xB7 A PURPLE SQUARE PRODUCTION</div>`;
+    <div class="sp-foot">\xA9 2026 HUNTER ASSOCIATION</div>`;
     const canvas = el.querySelector(".sp-sky");
     const g = canvas.getContext?.("2d");
     const win = el.ownerDocument.defaultView;
@@ -3486,14 +3501,14 @@ var HxH = (() => {
         g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
         g.fillRect(s.x, s.y, 1, 1);
       }
+      const frame = Math.floor(t * 5), depth = H - HZ;
       for (let y = HZ + 1; y < H; y++) {
-        const spread = 1 + Math.round((y - HZ) * 0.5);
-        for (let k = 0; k < 3; k++) {
-          const x = MX + Math.round(Math.sin(t * 1.3 + y * 0.9 + k * 2.1) * spread);
-          if ((y + k + Math.floor(t * 4)) % 3 === 0) {
-            g.fillStyle = k ? "#ffd98a" : "#fff3c9";
-            g.fillRect(x, y, k ? 1 : 2, 1);
-          }
+        const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
+        for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
+          const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
+          if (edge <= 0 || glint(x, y, frame) >= dens * edge) continue;
+          g.fillStyle = d < 0.25 ? glint(y, x, frame) < 0.5 ? "#fff3c9" : "#ffd98a" : d < 0.6 ? "#ffd98a" : "#c9a45e";
+          g.fillRect(x, y, 1, 1);
         }
       }
     };
@@ -3506,9 +3521,9 @@ var HxH = (() => {
     const timer = win.setInterval(() => paint((win.performance?.now?.() ?? Date.now()) / 1e3), 180);
     return () => win.clearInterval(timer);
   }
-  var BUILD = { summons, clouds, night };
+  var BUILD = { summons, select, night };
   var Splash = class extends Component {
-    /** props: reduced, random, sounds ({ play(name) }) */
+    /** props: reduced, random, sounds ({ play(name) }), fetch (Player Select reads the roster) */
     render() {
       return h("div", { className: "splashscreen", role: "button", tabindex: "0", "aria-label": "Click to start", hidden: true });
     }
@@ -3528,7 +3543,7 @@ var HxH = (() => {
       el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
       el.dataset.style = id;
       el.hidden = false;
-      const stop = BUILD[id](el, { reduced, random });
+      const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch });
       el.focus?.({ preventScroll: true });
       return new Promise((resolve) => {
         const onKey = (e) => {
@@ -3916,11 +3931,11 @@ var HxH = (() => {
       const warm = this.nav.consumeWarm();
       const pending = this.session.me();
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
-      if (splash && boot && !warm) await this.showSplash();
       let me = await pending;
       if (!me && gate || !taskbar) this.showBadge();
       if (!me && gate) me = await this.logon();
       if (taskbar) this.hideBadge();
+      if (me && splash && boot && !warm) await this.showSplash();
       this.setUser(me);
       if (me && wallpaper2) this.startWallpaper();
       if (this.taskbar) this.taskbar.el.hidden = false;
@@ -3933,7 +3948,7 @@ var HxH = (() => {
     }
     /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
     showSplash(id = null) {
-      if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds }).mount(this.doc.body);
+      if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
       return this.splash.show(id);
     }
     launch(id, opts = {}) {
