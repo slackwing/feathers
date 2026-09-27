@@ -541,7 +541,7 @@ test("the left page's left edge closes the book; a card beside it does not (Andr
   assert.equal(os.wm.get("win-binder").state.open, true, "the book shuts; the window stays");
 });
 
-test("once the profile is typed, the screen shows the whole card enlarged: the same printed card, hearts included; the next pick replaces it (Andrew, 2026-09-27)", async () => {
+test("a pick puts the whole card, enlarged, above the profile: the same printed card, hearts included; the next pick replaces it (Andrew, 2026-09-27)", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
   await tick();
@@ -551,10 +551,11 @@ test("once the profile is typed, the screen shows the whole card enlarged: the s
   d.click(b.$('.cards .card[data-id="1"]'));
   const scr = b.$(".screen");
   const big = () => scr.querySelector(":scope > .big .gicard");
-  assert.ok(big(), "reduced motion types at once, and the card follows");
-  assert.equal(scr.lastElementChild.className, "big", "under the profile, and no modem paint-in under reduced motion");
+  assert.deepEqual([...scr.children].map(e => e.className), ["big", "prof"], "the card first, the profile under it; reduced motion: no paint-in");
   assert.equal(big().querySelector(".gi-panel.name .gi-txt").textContent, "Gon", "the plaque's short name");
   assert.equal(big().querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/18");
+  assert.equal(scr.querySelector(".prof .desc").textContent, "First. Second.", "reduced motion types it at once");
+  assert.equal(scr.querySelector(".prof > .name").textContent, "Gon Freecss", "the profile's full name, not the card's panel");
   d.click(b.$('[data-act="heart"]'));
   await settle();
   assert.equal(big().querySelectorAll(".gi-stamps .gi-stamp").length, 1, "a heart lands on the enlarged card too");
@@ -562,4 +563,41 @@ test("once the profile is typed, the screen shows the whole card enlarged: the s
   assert.equal(scr.querySelectorAll(".big").length, 1, "one card at a time");
   assert.equal(big().querySelector(".gi-panel.name .gi-txt").textContent, "Killua");
   assert.equal(TYPE_MS, 4, "a little faster than the old 6 ms a character");
+});
+
+test("with motion: the card paints in, then the screen glides to the profile and types; a reader who scrolls up stays up while it types on, and back at the bottom is followed again", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  b.setRoster([mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon", description: "x".repeat(400) })]);
+  d.click(b.$(".cover"));
+  os.env.reduced = false;
+  Object.assign(b.options, { revealMs: 20, glidePause: 10, typeMs: 2 });
+  const scr = b.$(".screen");
+  let top = 0;   // jsdom has no layout: a screen 300 tall over 1000 of content
+  Object.defineProperty(scr, "scrollTop", { get: () => top, set: v => { top = v; }, configurable: true });
+  Object.defineProperty(scr, "scrollHeight", { value: 1000, configurable: true });
+  Object.defineProperty(scr, "clientHeight", { value: 300, configurable: true });
+  const scroll = to => { top = to; scr.dispatchEvent(new d.win.Event("scroll")); };
+  const desc = () => scr.querySelector(".prof .desc").textContent.length;
+  d.click(b.$(".cards .card"));
+  assert.ok(scr.querySelector(".big").classList.contains("load"), "the card paints in");
+  assert.equal(scr.querySelector(".big .gicard").style.animationDuration, "20ms");
+  assert.equal(desc(), 0, "no typing while it paints in");
+  await tick(60);
+  assert.ok(desc() > 0, "then the profile types");
+  scroll(0);   // the reader scrolls up to the card mid-typing
+  const at = desc();
+  await tick(200);
+  assert.equal(top, 0, "and is left there");
+  assert.ok(desc() > at, "while the typing goes on below");
+  scroll(700);   // back at the bottom (1000 − 700 − 300 = 0)
+  top = 690;     // the text grows: 10 px short of the bottom again
+  await tick(120);
+  assert.equal(top, 700, "followed again: the typing keeps the reader at the bottom");
+  scroll(700);   // the event of that own scroll is not taken for the reader's
+  assert.equal(b.run.pinned, true);
+  b.select(null);
+  assert.equal(b.run, null, "a new pick (or none) stops the old sequence");
 });

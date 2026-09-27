@@ -608,14 +608,24 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   2026-09-27); it is part of the draggable margin, so the same slop
   applies. The page label ("1 / 10", "Bookmarks") is 16 px and sits
   12 px off the page's bottom inside the PAGENO strip, clear of the
-  cards. The screen types the profile at `TYPE_MS` (4 ms a character,
-  the timer floor), then `showCard` appends the whole printed card
-  (`printed(c)`, the sleeve's GICard, stamps included) at BIG_W of the
-  screen's width but never taller than the screen, scrolls to it, and
-  paints it in top to bottom in 22 bands (`@keyframes modem`,
-  clip-path) — "like images used to load with slow modems". The
-  screen's text rules are direct-child selectors (`.screen > .name`)
-  so they cannot restyle the card's own `.name` panel. The float
+  cards. A pick fills the screen in order (`play`, Andrew 2026-09-27:
+  "start with the enlarged card first … then scroll down to do the
+  typing"): the whole printed card first (`printed(c)`, the sleeve's
+  GICard, stamps included), ABOVE the profile, at BIG_W of the screen's
+  width but never taller than it, painting in top to bottom in bands
+  over REVEAL_MS (`@keyframes modem`, clip-path — "like images used to
+  load with slow modems"); after GLIDE_PAUSE the screen glides down to
+  the profile (`.prof`, given a screenful of min-height so its top can
+  reach the top) and types it at `TYPE_MS` (4 ms a character). The
+  typing follows the reader only while they are at the bottom
+  (PIN_SLACK): scroll up to the card and it types on below without
+  pulling them back; scroll back down and it follows again. Each own
+  follow scroll is recognised by its one event (`run.expect`), never by
+  position — a reader returning to the same spot is a reader. A reader
+  who scrolls during the paint-in is not glided. Reduced motion: no
+  paint-in, no glide, the text typed at once under the card. The
+  profile's rules are scoped to `.prof` so they cannot restyle the
+  card's own `.name` panel. The float
   buttons (`.fbtns`, os.css) are 14×11 at right 2 px, top
   2 × --px (one simulated pixel below the book's border, not fused
   with it), so they clear the gold rivet 17 px in; the

@@ -195,17 +195,18 @@
 .screen .idle .emblem { width: calc(150px * var(--u, 1)); height: calc(150px * var(--u, 1)); box-shadow: none; border-color: var(--scr); }
 .screen .idle .ja { color: var(--scr-dim); letter-spacing: .2em; }
 .screen { font: 13px/1.5 var(--font-dot); }   /* a device display: small type (Andrew, 2026-09-21: it was way too big) */
-.screen > .top { font: 15px/1.4 var(--font-dot); color: var(--paper-hi); text-shadow: 0 0 8px rgba(223,243,255,.6); }
-.screen > .name { font: 9px/1.8 var(--font-px); color: var(--paper-hi); margin-bottom: 6px; }
-.screen > .line { color: var(--scr-dim); }
-.screen > .line b { color: var(--scr-text); font-weight: normal; }
-.screen > .desc { margin-top: 10px; white-space: pre-line; }
-.screen > .status { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--teal-3); color: var(--scr-green); }
+.screen .prof > .top { font: 15px/1.4 var(--font-dot); color: var(--paper-hi); text-shadow: 0 0 8px rgba(223,243,255,.6); }
+.screen .prof > .name { font: 9px/1.8 var(--font-px); color: var(--paper-hi); margin-bottom: 6px; }
+.screen .prof > .line { color: var(--scr-dim); }
+.screen .prof > .line b { color: var(--scr-text); font-weight: normal; }
+.screen .prof > .desc { margin-top: 10px; white-space: pre-line; }
+.screen .prof > .status { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--teal-3); color: var(--scr-green); }
 .screen .cur::after { content: "█"; animation: blink .8s steps(2) infinite; color: var(--scr-green); }
-/* (the profile rules above are direct children only: the enlarged card's own .name / .no panels must keep the card's type)
-   the enlarged card under the profile, painted in top to bottom in bands like a picture over a 1990s modem */
-.screen .big { margin: 22px auto 0; }
-.screen .big.load .gicard { animation: modem 1.8s steps(22, end) .35s both; }   /* the delay lets the screen scroll to it first */
+/* (the profile rules above reach only the .prof block: the enlarged card's own .name / .no panels must keep the card's type)
+   the enlarged card ABOVE the profile, painted in top to bottom in bands like a picture over a 1990s modem;
+   binder.js sets the duration (REVEAL_MS), then glides the screen down to the profile */
+.screen .big { margin: 0 auto 18px; }
+.screen .big.load .gicard { animation: modem 1.4s steps(18, end) both; }
 @keyframes modem { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 
 /* the controls are sized from the page width: --u is 1 at the design page (514 book px, apps/binder.js sets it) —

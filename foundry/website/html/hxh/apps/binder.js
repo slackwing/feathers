@@ -70,6 +70,9 @@ export function randomStamp(rand = Math.random) {
 export const LIVE_MS = 20000;                        // an open binder re-reads itself this often
 export const TYPE_MS = 4;                            // ms per character on the screen: "a little faster" than 6 (Andrew, 2026-09-27); 4 is the browsers' timer floor
 export const BIG_W = 0.92;                           // the enlarged card on the screen: at most this share of the screen's width, and never taller than it
+export const REVEAL_MS = 1400;                       // the enlarged card paints in top to bottom over this long
+export const GLIDE_PAUSE = 350;                      // then a beat before the screen glides down to the profile under it
+export const PIN_SLACK = 16;                         // px: a reader this close to the bottom is at the bottom, and the typing keeps them there
 
 export const typeOf = c => TYPES.find(t => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
 const titleCase = s => s.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
@@ -203,6 +206,17 @@ export class BinderApp extends App {
     this.book = el.querySelector(".book");
     this.$ = sel => el.querySelector(sel);
     this.idle();
+    // the typing follows the reader only while they sit at the bottom: scroll up to the card and the text goes on typing below
+    const scr = this.$(".screen");
+    scr.addEventListener("scroll", () => {
+      const r = this.run;
+      if (!r || r.gliding) return;                                                                     // our own glide
+      if (r.expect != null && Math.abs(scr.scrollTop - r.expect) <= 1) { r.expect = null; return; }  // the one event our own follow causes
+      r.expect = null;
+      if (!r.typing && scr.scrollTop <= 1) return;                                                     // the pick's reset to the top
+      r.moved = true;
+      r.pinned = scr.scrollHeight - scr.scrollTop - scr.clientHeight <= PIN_SLACK;
+    });
     const cover = this.$(".cover");
     cover.addEventListener("click", () => this.openBook());
     cover.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.openBook(); } });
@@ -478,47 +492,82 @@ export class BinderApp extends App {
     if (quiet) return;
     const scr = this.$(".screen");
     this.typer?.skip?.();
-    clearInterval(this.follow);
+    this.stopRun();
     this.bigCard?.unmount(); this.bigCard = null;
     if (!c) { this.idle(); return; }
     const t = typeOf(c);
     const types = (c.nen_types || []).length ? c.nen_types.map(n => (TYPES.find(x => x.slug === n) || {}).name || n).join(" / ") : "—";
     const arms = (c.arms || []).length ? c.arms.map(titleCase).join(", ") : "—";
-    scr.innerHTML = `
+    scr.innerHTML = `<div class="prof">
       <div class="top">No.${esc(cardNo(c))}「${esc(c.first || c.name)}」</div>
       <div class="name">${esc(c.name)}</div>
       <div class="line">Nen: <b style="color:${t.hex}">${esc(types)}</b>${c.affiliation ? ` · <b>${esc(c.affiliation)}</b>` : ""}</div>
       <div class="line">Arms: <b>${esc(arms)}</b></div>
       <div class="desc"></div>
-      <div class="status">所持者 0名 ／ 残り ${LIMIT[c.rank] || 4}枚</div>`;
+      <div class="status">所持者 0名 ／ 残り ${LIMIT[c.rank] || 4}枚</div></div>`;
     scr.scrollTop = 0;
-    // keep the typing cursor in view on the small screen; when the description is out, the card itself
-    this.follow = setInterval(() => { scr.scrollTop = scr.scrollHeight; }, 80);
-    this.typer = type(scr.querySelector(".desc"), [c.description || ""], { speed: TYPE_MS, reduced: this.os.env.reduced, onDone: () => { clearInterval(this.follow); this.showCard(c); } });
+    this.play(c);
+  }
+
+  /** Stop a pick's screen sequence (its timers and its follow). */
+  stopRun() {
+    const r = this.run;
+    if (!r) return;
+    r.timers.forEach(clearTimeout); clearInterval(r.follow);
+    this.run = null;
   }
 
   /**
-   * The whole card, enlarged, under the typed profile (Andrew, 2026-09-27:
-   * "so people can see the card enlargened in the display screen"). As
-   * wide as BIG_W of the screen allows but never taller than the screen,
-   * so all of it shows at once; the screen scrolls down to it and it
-   * paints in top to bottom in bands, like a picture over a slow modem.
+   * A pick on the screen (Andrew, 2026-09-27: "start with the enlarged
+   * card first showing on the screen, then scroll down to do the typing.
+   * The user may scroll up while the typing continues"). The whole card
+   * comes first, above the profile, as big as the screen shows whole
+   * (BIG_W of its width, never taller than it), painting in top to bottom
+   * like a picture over a slow modem; after GLIDE_PAUSE the screen glides
+   * down to the profile — a screenful of its own — and types it. The
+   * typing keeps the reader at the bottom only while they stay there: a
+   * reader who scrolls up to the card is left there, and one who scrolls
+   * before the glide is not glided at all. Reduced motion: no paint-in,
+   * no glide, the text typed at once below the card.
    */
-  showCard(c) {
-    if (this.sel !== c) return;   // a later pick owns the screen now
-    const scr = this.$(".screen"), cs = getComputedStyle(scr), px = v => parseFloat(v) || 0;
+  play(c) {
+    const scr = this.$(".screen"), prof = scr.querySelector(".prof");
+    const cs = getComputedStyle(scr), px = v => parseFloat(v) || 0;
     const room = { w: scr.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight), h: scr.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) };
+    const o = this.options, reduced = !!this.os.env.reduced;
+    const reveal = o.revealMs ?? REVEAL_MS, pause = o.glidePause ?? GLIDE_PAUSE, speed = o.typeMs ?? TYPE_MS;
+    const r = this.run = { c, timers: [], follow: null, gliding: false, typing: false, pinned: false, moved: false, expect: null };
+    const later = (ms, fn) => r.timers.push(setTimeout(() => { if (this.run === r) fn(); }, ms));
     const w = Math.max(80, Math.floor(Math.min(room.w * BIG_W, room.h / CARD_RATIO)));
-    const reduced = !!this.os.env.reduced;
     const box = h("div", { className: "big" + (reduced ? "" : " load") });
     box.style.width = w + "px";
-    scr.append(box);
+    scr.insertBefore(box, prof);
     const card = this.bigCard = this.printed(c);
     card.mount(box);
+    card.el.style.animationDuration = reveal + "ms";
     this.renderStamps(card, c);
-    const top = box.offsetTop - px(cs.paddingTop);
-    if (reduced || !scr.scrollTo) scr.scrollTop = top;
-    else scr.scrollTo({ top, behavior: "smooth" });
+    prof.style.minHeight = Math.max(0, room.h) + "px";   // a screenful of its own, so the glide can bring its top to the top
+    const typeIt = () => {
+      r.typing = true;
+      r.follow = setInterval(() => {
+        if (!r.pinned) return;
+        const bottom = scr.scrollHeight - scr.clientHeight;
+        if (scr.scrollTop >= bottom - 1) return;
+        scr.scrollTop = bottom; r.expect = scr.scrollTop;   // an own scroll: the listener lets exactly its event pass
+      }, 80);
+      this.typer = type(prof.querySelector(".desc"), [c.description || ""], { speed, reduced, onDone: () => clearInterval(r.follow) });
+    };
+    if (reduced) { typeIt(); return; }
+    later(reveal + pause, () => {
+      if (r.moved) { typeIt(); return; }   // the reader already took the screen: leave it where they put it
+      const top = prof.offsetTop - px(cs.paddingTop);
+      const land = () => { if (this.run !== r || !r.gliding) return; r.gliding = false; r.pinned = true; typeIt(); };
+      r.gliding = true;
+      if (!scr.scrollTo || Math.abs(scr.scrollTop - top) < 2) { scr.scrollTop = top; land(); return; }
+      scr.addEventListener("scrollend", land, { once: true });
+      later(900, land);   // a browser without scrollend
+      scr.scrollTo({ top, behavior: "smooth" });
+    });
   }
 
   get selected() { return this.sel; }
