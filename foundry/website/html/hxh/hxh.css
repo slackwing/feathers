@@ -742,7 +742,7 @@ body.logon .icons {
   color: var(--ink-3);
 }
 .logo {
-  font: clamp(15px, 6cqw, 38px)/1.25 var(--font-px);
+  font: clamp(15px, calc(6cqw * var(--cqk, 1)), 38px)/1.25 var(--font-px);
   color: var(--ink);
   margin: 8px 0 10px;
   text-shadow: 3px 3px 0 var(--blood);
@@ -755,7 +755,7 @@ body.logon .icons {
     display: inline;
   }
   .logo {
-    font-size: clamp(18px, 9cqw, 38px);
+    font-size: clamp(18px, calc(9cqw * var(--cqk, 1)), 38px);
   }
 }
 .logo .x {
@@ -1905,7 +1905,7 @@ html[data-theme=seapumpkin-pastel] {
   inset: 0;
   background: var(--base);
   color: var(--ink);
-  border-radius: 4.5cqw;
+  border-radius: calc(4.5cqw * var(--cqk, 1));
   overflow: hidden;
   font-family:
     "Bodoni Moda",
@@ -1915,15 +1915,15 @@ html[data-theme=seapumpkin-pastel] {
 }
 .gicard .gi-plaque {
   position: absolute;
-  left: 2.85cqw;
-  top: 5.83cqw;
-  width: 94.6cqw;
-  height: 13.5cqw;
+  left: calc(2.85cqw * var(--cqk, 1));
+  top: calc(5.83cqw * var(--cqk, 1));
+  width: calc(94.6cqw * var(--cqk, 1));
+  height: calc(13.5cqw * var(--cqk, 1));
   background: var(--cream);
   display: grid;
   grid-template-columns: 26.1fr 39.6fr 26.1fr;
-  column-gap: 0.4cqw;
-  padding: 0.62cqw 0.58cqw 0.55cqw 0.75cqw;
+  column-gap: calc(0.4cqw * var(--cqk, 1));
+  padding: calc(0.62cqw * var(--cqk, 1)) calc(0.58cqw * var(--cqk, 1)) calc(0.55cqw * var(--cqk, 1)) calc(0.75cqw * var(--cqk, 1));
   box-sizing: border-box;
 }
 .gicard .gi-panel {
@@ -1948,36 +1948,36 @@ html[data-theme=seapumpkin-pastel] {
   line-height: 1;
   font-weight: 700;
   letter-spacing: 0.01em;
-  padding-top: 0.4cqw;
+  padding-top: calc(0.4cqw * var(--cqk, 1));
 }
 .gicard .gi-panel.no .gi-txt {
-  font-size: 9.3cqw;
+  font-size: calc(9.3cqw * var(--cqk, 1));
   letter-spacing: 0.02em;
 }
 .gicard .gi-panel.rank .gi-txt {
-  font-size: 8cqw;
+  font-size: calc(8cqw * var(--cqk, 1));
   letter-spacing: 0.02em;
 }
 .gicard .gi-panel.name .gi-txt {
-  font-size: 7.4cqw;
+  font-size: calc(7.4cqw * var(--cqk, 1));
   max-width: 92%;
   overflow: hidden;
 }
 .gicard .gi-frame {
   position: absolute;
-  left: 2.85cqw;
-  top: 22.9cqw;
-  width: 94.6cqw;
-  height: 54.8cqw;
+  left: calc(2.85cqw * var(--cqk, 1));
+  top: calc(22.9cqw * var(--cqk, 1));
+  width: calc(94.6cqw * var(--cqk, 1));
+  height: calc(54.8cqw * var(--cqk, 1));
   background: var(--cream);
-  padding: 1.5cqw;
+  padding: calc(1.5cqw * var(--cqk, 1));
   box-sizing: border-box;
 }
 .gicard .gi-frame .gi-pic {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border: 0.3cqw solid var(--ink);
+  border: calc(0.3cqw * var(--cqk, 1)) solid var(--ink);
   background: #2b2a2a;
   overflow: hidden;
 }
@@ -1993,17 +1993,17 @@ html[data-theme=seapumpkin-pastel] {
   background:
     repeating-linear-gradient(
       45deg,
-      #3a3838 0 2cqw,
-      #2b2a2a 0 4cqw);
+      #3a3838 0 calc(2cqw * var(--cqk, 1)),
+      #2b2a2a 0 calc(4cqw * var(--cqk, 1)));
 }
 .gicard .gi-band {
   position: absolute;
-  left: 2.85cqw;
-  top: 80.95cqw;
-  width: 94.6cqw;
-  height: 56.65cqw;
+  left: calc(2.85cqw * var(--cqk, 1));
+  top: calc(80.95cqw * var(--cqk, 1));
+  width: calc(94.6cqw * var(--cqk, 1));
+  height: calc(56.65cqw * var(--cqk, 1));
   background: var(--foil) center / 100% 100% no-repeat, var(--foil-base, #d4577c);
-  padding: 4.1cqw;
+  padding: calc(4.1cqw * var(--cqk, 1));
   box-sizing: border-box;
 }
 .gicard .gi-inset {
@@ -2011,15 +2011,15 @@ html[data-theme=seapumpkin-pastel] {
   height: 100%;
   box-sizing: border-box;
   background: var(--paper);
-  border: 0.65cqw solid var(--ink);
-  border-radius: 1.3cqw;
-  padding: 3.2cqw 4.2cqw 3cqw 4.7cqw;
+  border: calc(0.65cqw * var(--cqk, 1)) solid var(--ink);
+  border-radius: calc(1.3cqw * var(--cqk, 1));
+  padding: calc(3.2cqw * var(--cqk, 1)) calc(4.2cqw * var(--cqk, 1)) calc(3cqw * var(--cqk, 1)) calc(4.7cqw * var(--cqk, 1));
   overflow: hidden;
 }
 .gicard .gi-desc {
   margin: 0;
   font:
-    500 5.2cqw/1.28 "Crimson Pro",
+    500 calc(5.2cqw * var(--cqk, 1))/1.28 "Crimson Pro",
     "Crimson Text",
     Georgia,
     "Times New Roman",
@@ -2653,8 +2653,8 @@ html[data-theme=seapumpkin-pastel] {
 }
 .gicard .gi-stamp {
   position: absolute;
-  width: 17cqw;
-  height: 17cqw;
+  width: calc(17cqw * var(--cqk, 1));
+  height: calc(17cqw * var(--cqk, 1));
   margin: 0;
   display: block;
   opacity: .62;
@@ -2677,12 +2677,12 @@ html[data-theme=seapumpkin-pastel] {
   box-sizing: border-box;
   z-index: 4;
   transform-origin: 100% 100%;
-  padding: 1.4cqw 2.4cqw 1cqw;
-  border: 1.5cqw solid #c8102e;
-  border-radius: 2.4cqw;
+  padding: calc(1.4cqw * var(--cqk, 1)) calc(2.4cqw * var(--cqk, 1)) calc(1cqw * var(--cqk, 1));
+  border: calc(1.5cqw * var(--cqk, 1)) solid #c8102e;
+  border-radius: calc(2.4cqw * var(--cqk, 1));
   color: #c8102e;
   font:
-    800 5.4cqw/1 "Bodoni Moda",
+    800 calc(5.4cqw * var(--cqk, 1))/1 "Bodoni Moda",
     "Crimson Pro",
     Georgia,
     serif;
@@ -2692,8 +2692,8 @@ html[data-theme=seapumpkin-pastel] {
   mix-blend-mode: multiply;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23fff' opacity='.62'/%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='2' width='5' height='4'/%3E%3Crect x='9' y='0' width='6' height='5'/%3E%3Crect x='3' y='8' width='4' height='5'/%3E%3Crect x='10' y='7' width='5' height='3'/%3E%3Crect x='0' y='12' width='3' height='3'/%3E%3Crect x='8' y='12' width='7' height='4'/%3E%3C/g%3E%3C/svg%3E");
-  -webkit-mask-size: 7cqw 7cqw;
-  mask-size: 7cqw 7cqw;
+  -webkit-mask-size: calc(7cqw * var(--cqk, 1)) calc(7cqw * var(--cqk, 1));
+  mask-size: calc(7cqw * var(--cqk, 1)) calc(7cqw * var(--cqk, 1));
 }
 .cards .hint {
   grid-column: 1 / -1;

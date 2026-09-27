@@ -243,6 +243,20 @@ var HxH = (() => {
     }
     return el;
   }
+  function cqFix(host) {
+    const doc = host?.ownerDocument;
+    if (!doc) return 1;
+    const box = doc.createElement("div"), i = doc.createElement("i");
+    box.style.cssText = "position:absolute;left:0;top:0;width:100px;height:1px;container-type:inline-size;visibility:hidden;pointer-events:none";
+    i.style.cssText = "display:block;width:100cqw;height:1px";
+    box.append(i);
+    host.append(box);
+    const want = box.getBoundingClientRect().width, got = i.getBoundingClientRect().width;
+    box.remove();
+    const k = want > 0 && got > 0 && Math.abs(want / got - 1) > 2e-3 ? Math.round(want / got * 1e4) / 1e4 : 1;
+    host.style.setProperty("--cqk", String(k));
+    return k;
+  }
 
   // html/hxh/os/env.js
   var DESIGN_WIDTH = 1366;
@@ -3902,6 +3916,7 @@ var HxH = (() => {
     applyZoom() {
       const z = this.env.wantedZoom?.() ?? 1;
       this.doc.documentElement.style.setProperty("--zoom", String(z));
+      if (this.doc.body) cqFix(this.doc.body);
       return z;
     }
     /**
@@ -4822,6 +4837,12 @@ var HxH = (() => {
           os2.wm.fit();
         }
       });
+      os2.bus.on("window:open", ({ id }) => {
+        if (id === this.win.id) {
+          cqFix(this.win.el);
+          for (const c of this.cards.values()) c.fit();
+        }
+      });
       os2.bus.on("roster:changed", () => {
         if (this.win.state.open) this.load();
       });
@@ -4999,6 +5020,7 @@ var HxH = (() => {
       el.style.setProperty("--cardh", l.ch + "px");
       el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1e3) / 1e3));
       el.style.zoom = String(l.zoom);
+      if (!el.hidden) cqFix(el);
       const scale = l.zoom + "|" + (os2.env.zoom?.() ?? 1);
       const rescaled = this.scale != null && this.scale !== scale;
       this.scale = scale;
@@ -5215,7 +5237,7 @@ var HxH = (() => {
           typeIt();
           return;
         }
-        const top = prof.offsetTop - px(cs.paddingTop);
+        const top = scr.scrollHeight - scr.clientHeight;
         const land = () => {
           if (this.run !== r || !r.gliding) return;
           r.gliding = false;
