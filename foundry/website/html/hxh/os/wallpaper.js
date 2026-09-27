@@ -197,6 +197,72 @@ export function islandHeight(x) {
   return Math.round(hgt * taper);
 }
 
+/* ---------- the island, as one layer ----------
+   Drawn in its own 320-column space, ISLAND_H rows tall, bottom row on
+   the horizon; the wallpaper places it at (OX, HZ - ISLAND_H). Shared
+   with the Night splash (os/splash.js), which recolours these very
+   pixels for the night and lights the town's windows (Andrew,
+   2026-09-27: "take the desktop background's whale island exactly pixel
+   for pixel"). Returns null without a 2-D canvas. */
+export const ISLAND_H = 60;
+export const TOWN_X = [154, 159, 165, 170, 176, 182, 188, 194];   // the harbour town's houses (left columns)
+/** A house on the tail: its left column, width and roof row, in island space. */
+export const house = (x, i, IH = ISLAND_H) => ({ x, w: i % 3 === 1 ? 4 : 3, top: IH - 5 - (i % 2) });
+export function islandLayer(doc = globalThis.document) {
+  const IH = ISLAND_H;
+  const isl = doc.createElement("canvas"); isl.width = ISLAND_W; isl.height = IH;
+  const ig = isl.getContext?.("2d");
+  if (!ig) return null;
+  const px = (gg, x, y, col) => { gg.fillStyle = col; gg.fillRect(x, y, 1, 1); };
+  const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
+  const hs = Array.from({ length: ISLAND_W }, (_, x) => islandHeight(x));
+  for (let x = 0; x < ISLAND_W; x++) {
+    const hgt = hs[x];
+    if (!hgt) continue;
+    const slope = (hs[x + 1] || 0) - (hs[x - 1] || 0);   // >0: rising to the right (faces left/sun)
+    for (let y = IH - hgt; y < IH; y++) {
+      const d = y - (IH - hgt);                          // depth below the ridge
+      let col;
+      if (d === 0) col = GREEN[3];
+      else if (d < 3 && slope > 0) col = GREEN[2];
+      else if (slope < -1 && d < hgt * 0.6) col = (x + y) % 2 ? GREEN[0] : GREEN[1];
+      else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
+      px(ig, x, y, col);
+    }
+    px(ig, x, IH - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);   // beach strip
+  }
+  // harbour town on the low tail
+  const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
+  TOWN_X.forEach((x, i) => {
+    const { w, top } = house(x, i, IH);
+    ig.fillStyle = ROOF[i]; ig.fillRect(x, top, w, 1);
+    ig.fillStyle = "#efe3c8"; ig.fillRect(x, top + 1, w, IH - 1 - (top + 1));
+    px(ig, x + 1, IH - 2, "#0b0a08");
+  });
+  // the tail: a pale rock spire rising from the knoll at the island's tip
+  // — wide at the base, tapering, leaning outward like a raised fluke —
+  // with a little surf at the point; the top 3 rows are left off
+  const SP = 18, sx0 = 229, base = IH - hs[sx0] + 2;   // foot sunk 2px into the green
+  for (let k = 3; k < SP; k++) {
+    const t = k / (SP - 1);
+    const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
+    const cx = sx0 + Math.round(3 * (1 - t));           // top leans 3px outward
+    const y = base - SP + 1 + k;
+    for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
+      const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);   // 0 = lit left edge, 1 = shaded right edge
+      px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
+    }
+  }
+  for (const dx of [-3, -2, 3]) { px(ig, sx0 + dx, base - 1, GREEN[2]); px(ig, sx0 + dx, base - 2, GREEN[1]); }   // scrub over the foot
+  for (const x of [238, 239, 241, 242]) px(ig, x, IH - 1, "#fff6e0");         // surf at the tip
+  return isl;
+}
+
+/** The pier into the sea, in canvas space (the wallpaper draws it on its sea layer). */
+export function drawPier(g, OX, HZ, col = "#8b6d4b") {
+  g.fillStyle = col; g.fillRect(172 + OX, HZ, 14, 1); g.fillRect(185 + OX, HZ + 1, 1, 1); g.fillRect(174 + OX, HZ + 1, 1, 1);
+}
+
 /* ---------- glitter ----------
    After the sea reference: a narrow inverted bell hanging from the horizon
    (σ = 40 columns) — 44 rows deep at the centre, nothing at the sides —
@@ -265,52 +331,10 @@ export function wallpaper(canvas, { vw = 1366, vh = 900, reduced = false, doc = 
     px(eg, x, y, col);
   }
 
-  // island, drawn in its own 320-column space then placed centred
-  const IH = 60;   // rows the island art needs above the horizon
-  const isl = layer(ISLAND_W, IH), ig = isl.getContext("2d");
-  const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
-  const hs = Array.from({ length: ISLAND_W }, (_, x) => islandHeight(x));
-  for (let x = 0; x < ISLAND_W; x++) {
-    const hgt = hs[x];
-    if (!hgt) continue;
-    const slope = (hs[x + 1] || 0) - (hs[x - 1] || 0);   // >0: rising to the right (faces left/sun)
-    for (let y = IH - hgt; y < IH; y++) {
-      const d = y - (IH - hgt);                          // depth below the ridge
-      let col;
-      if (d === 0) col = GREEN[3];
-      else if (d < 3 && slope > 0) col = GREEN[2];
-      else if (slope < -1 && d < hgt * 0.6) col = (x + y) % 2 ? GREEN[0] : GREEN[1];
-      else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
-      px(ig, x, y, col);
-    }
-    px(ig, x, IH - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);   // beach strip
-  }
-  // harbour town on the low tail
-  const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
-  [154, 159, 165, 170, 176, 182, 188, 194].forEach((x, i) => {
-    const w = i % 3 === 1 ? 4 : 3, top = IH - 5 - (i % 2);
-    ig.fillStyle = ROOF[i]; ig.fillRect(x, top, w, 1);
-    ig.fillStyle = "#efe3c8"; ig.fillRect(x, top + 1, w, IH - 1 - (top + 1));
-    px(ig, x + 1, IH - 2, "#0b0a08");
-  });
-  // the tail: a pale rock spire rising from the knoll at the island's tip
-  // — wide at the base, tapering, leaning outward like a raised fluke —
-  // with a little surf at the point; the top 3 rows are left off
-  const SP = 18, sx0 = 229, base = IH - hs[sx0] + 2;   // foot sunk 2px into the green
-  for (let k = 3; k < SP; k++) {
-    const t = k / (SP - 1);
-    const w = 1 + Math.round(5 * Math.pow(t, 1.4));     // 1px tip → 6px foot
-    const cx = sx0 + Math.round(3 * (1 - t));           // top leans 3px outward
-    const y = base - SP + 1 + k;
-    for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
-      const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);   // 0 = lit left edge, 1 = shaded right edge
-      px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
-    }
-  }
-  for (const dx of [-3, -2, 3]) { px(ig, sx0 + dx, base - 1, GREEN[2]); px(ig, sx0 + dx, base - 2, GREEN[1]); }   // scrub over the foot
-  for (const x of [238, 239, 241, 242]) px(ig, x, IH - 1, "#fff6e0");         // surf at the tip
+  // island, drawn in its own 320-column space (islandLayer) then placed centred
+  const IH = ISLAND_H, isl = islandLayer(doc);
   // pier into the sea (drawn on the sea layer, in canvas space)
-  eg.fillStyle = "#8b6d4b"; eg.fillRect(172 + OX, HZ, 14, 1); px(eg, 185 + OX, HZ + 1, "#8b6d4b"); px(eg, 174 + OX, HZ + 1, "#8b6d4b");
+  drawPier(eg, OX, HZ);
 
   const clouds = CLOUDS.map(c => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
   const gl = glints(g);

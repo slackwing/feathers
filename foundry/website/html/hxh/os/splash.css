@@ -128,13 +128,13 @@
 .sp-night { background: #0a0620; color: #ffd98a; font-family: "Press Start 2P", "Courier New", monospace; }
 .sp-night .sp-sky { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .sp-night .sp-ship {
-  position: absolute; top: 9cqh; left: 100cqw; width: max(120px, 18cqmin); height: auto;
+  position: absolute; top: 2cqh; left: 100cqw;   /* above the title, still across the moon */ width: max(120px, 18cqmin); height: auto;
   filter: brightness(.62) saturate(.75) hue-rotate(-12deg) drop-shadow(0 0 .8cqmin rgba(255,217,138,.3));
   animation: sp-cross 70s -22s linear infinite;   /* already on its way when the screen comes up */
 }
 @keyframes sp-cross { from { transform: translateX(0); } to { transform: translateX(calc(-100cqw - 100%)); } }
 .sp-night.still .sp-ship { left: 58cqw; }
-.sp-night .sp-title { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; padding: 6cqmin 4cqw; }
+.sp-night .sp-title { position: absolute; left: 0; right: 0; top: 31%; transform: translateY(-50%); text-align: center; padding: 6cqmin 4cqw; }   /* up in the sky: the island stands on the horizon below it */
 .sp-night .sp-title::before { content: ""; position: absolute; inset: -4cqmin 4cqw; z-index: -1; background: radial-gradient(closest-side, rgba(10,6,32,.82), rgba(10,6,32,0)); }   /* a pool of dark sky behind the words: the stars stay out of the letters */
 .sp-night .sp-top { font-size: max(8px, 1.6cqmin); color: #b9a8e8; letter-spacing: .25em; margin-bottom: 3cqmin; }
 .sp-night .sp-big {
@@ -143,5 +143,5 @@
 }
 .sp-night .sp-big.hallow { color: #ff9a3c; }
 .sp-night .sp-big .x { color: #ff2444; text-shadow: .6cqmin .6cqmin 0 #2a1450; }
-.sp-night .sp-start { margin-top: 6cqmin; font-size: max(10px, 2.2cqmin); color: #fff3c9; letter-spacing: .15em; animation: sp-blink .9s steps(2, jump-none) infinite; }
+.sp-night .sp-start { position: absolute; left: 0; right: 0; bottom: 17cqh; text-align: center; font-size: max(10px, 2.2cqmin); color: #fff3c9; letter-spacing: .15em; text-shadow: .3cqmin .3cqmin 0 #1b0f44; animation: sp-blink .9s steps(2, jump-none) infinite; }   /* over the sea, under the island */
 .sp-night .sp-foot { position: absolute; left: 0; right: 0; bottom: 4cqh; text-align: center; font-size: max(7px, 1.2cqmin); color: #7c6aa8; letter-spacing: .12em; padding: 0 3cqw; }

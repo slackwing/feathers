@@ -178,7 +178,14 @@ the OS.
   width and thins in density going down — not a Christmas tree — its
   glints each re-rolling on their own staggered `GLINT_CYCLE` (3.2 s) so
   only ~7% change per frame, calm rather than static noise — and
-  Abi's blimp crossing). It NEVER moves on by itself: "Click to start"
+  Abi's blimp crossing; and the desktop's Whale Island PIXEL FOR PIXEL —
+  Night uses the wallpaper's own `geometry()` and `islandLayer()` (the
+  wallpaper's island code, extracted verbatim and checked identical by
+  pixel hash), maps every day colour through `NIGHT_ISLAND` to a
+  shadowy moonlit purple, and lights ~80% of the town's windows
+  (`litWindows`, stable per visit) with their reflections on the water;
+  the title sits up in the sky and CLICK TO START over the sea so the
+  island shows between them). It NEVER moves on by itself: "Click to start"
   on every style; click, tap, Enter, Space or Escape dismisses it and
   plays the original `startup` chime when Sounds are on. Settings ›
   Other › Splash screen ▸ shows any style over the desktop until

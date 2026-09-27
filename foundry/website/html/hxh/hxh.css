@@ -1752,7 +1752,7 @@ html[data-theme=seapumpkin-pastel] {
 }
 .sp-night .sp-ship {
   position: absolute;
-  top: 9cqh;
+  top: 2cqh;
   left: 100cqw;
   width: max(120px, 18cqmin);
   height: auto;
@@ -1774,7 +1774,7 @@ html[data-theme=seapumpkin-pastel] {
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
+  top: 31%;
   transform: translateY(-50%);
   text-align: center;
   padding: 6cqmin 4cqw;
@@ -1811,10 +1811,15 @@ html[data-theme=seapumpkin-pastel] {
   text-shadow: .6cqmin .6cqmin 0 #2a1450;
 }
 .sp-night .sp-start {
-  margin-top: 6cqmin;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 17cqh;
+  text-align: center;
   font-size: max(10px, 2.2cqmin);
   color: #fff3c9;
   letter-spacing: .15em;
+  text-shadow: .3cqmin .3cqmin 0 #1b0f44;
   animation: sp-blink .9s steps(2, jump-none) infinite;
 }
 .sp-night .sp-foot {

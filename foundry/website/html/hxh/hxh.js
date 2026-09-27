@@ -2989,6 +2989,70 @@ var HxH = (() => {
     const hgt = Math.max(hump, back, fluke) + Math.floor(hash(x) * 3);
     return Math.round(hgt * taper);
   }
+  var ISLAND_H = 60;
+  var TOWN_X = [154, 159, 165, 170, 176, 182, 188, 194];
+  var house = (x, i, IH = ISLAND_H) => ({ x, w: i % 3 === 1 ? 4 : 3, top: IH - 5 - i % 2 });
+  function islandLayer(doc = globalThis.document) {
+    const IH = ISLAND_H;
+    const isl = doc.createElement("canvas");
+    isl.width = ISLAND_W;
+    isl.height = IH;
+    const ig = isl.getContext?.("2d");
+    if (!ig) return null;
+    const px = (gg, x, y, col) => {
+      gg.fillStyle = col;
+      gg.fillRect(x, y, 1, 1);
+    };
+    const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
+    const hs = Array.from({ length: ISLAND_W }, (_, x) => islandHeight(x));
+    for (let x = 0; x < ISLAND_W; x++) {
+      const hgt = hs[x];
+      if (!hgt) continue;
+      const slope = (hs[x + 1] || 0) - (hs[x - 1] || 0);
+      for (let y = IH - hgt; y < IH; y++) {
+        const d = y - (IH - hgt);
+        let col;
+        if (d === 0) col = GREEN[3];
+        else if (d < 3 && slope > 0) col = GREEN[2];
+        else if (slope < -1 && d < hgt * 0.6) col = (x + y) % 2 ? GREEN[0] : GREEN[1];
+        else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
+        px(ig, x, y, col);
+      }
+      px(ig, x, IH - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);
+    }
+    const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
+    TOWN_X.forEach((x, i) => {
+      const { w, top } = house(x, i, IH);
+      ig.fillStyle = ROOF[i];
+      ig.fillRect(x, top, w, 1);
+      ig.fillStyle = "#efe3c8";
+      ig.fillRect(x, top + 1, w, IH - 1 - (top + 1));
+      px(ig, x + 1, IH - 2, "#0b0a08");
+    });
+    const SP = 18, sx0 = 229, base = IH - hs[sx0] + 2;
+    for (let k = 3; k < SP; k++) {
+      const t = k / (SP - 1);
+      const w = 1 + Math.round(5 * Math.pow(t, 1.4));
+      const cx = sx0 + Math.round(3 * (1 - t));
+      const y = base - SP + 1 + k;
+      for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
+        const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);
+        px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
+      }
+    }
+    for (const dx of [-3, -2, 3]) {
+      px(ig, sx0 + dx, base - 1, GREEN[2]);
+      px(ig, sx0 + dx, base - 2, GREEN[1]);
+    }
+    for (const x of [238, 239, 241, 242]) px(ig, x, IH - 1, "#fff6e0");
+    return isl;
+  }
+  function drawPier(g, OX, HZ, col = "#8b6d4b") {
+    g.fillStyle = col;
+    g.fillRect(172 + OX, HZ, 14, 1);
+    g.fillRect(185 + OX, HZ + 1, 1, 1);
+    g.fillRect(174 + OX, HZ + 1, 1, 1);
+  }
   var GS = 40;
   var GD = 44;
   var bell = (x, g, k = 1) => Math.exp(-(((x - g.GX) / (GS * k)) ** 2) / 2);
@@ -3052,54 +3116,8 @@ var HxH = (() => {
       if (y < HZ + 7 && x - OX > 96 && x - OX < 240 && (x + y) % 2 === 0) col = SEA[Math.min(3, b + 1)];
       px(eg, x, y, col);
     }
-    const IH = 60;
-    const isl = layer(ISLAND_W, IH), ig = isl.getContext("2d");
-    const GREEN = ["#24552b", "#2f6f35", "#3f8c42", "#7cc26a"];
-    const hs = Array.from({ length: ISLAND_W }, (_, x) => islandHeight(x));
-    for (let x = 0; x < ISLAND_W; x++) {
-      const hgt = hs[x];
-      if (!hgt) continue;
-      const slope = (hs[x + 1] || 0) - (hs[x - 1] || 0);
-      for (let y = IH - hgt; y < IH; y++) {
-        const d = y - (IH - hgt);
-        let col;
-        if (d === 0) col = GREEN[3];
-        else if (d < 3 && slope > 0) col = GREEN[2];
-        else if (slope < -1 && d < hgt * 0.6) col = (x + y) % 2 ? GREEN[0] : GREEN[1];
-        else col = hash(x, y) < 0.35 ? GREEN[0] : GREEN[1];
-        px(ig, x, y, col);
-      }
-      px(ig, x, IH - 1, x > 98 && x < 236 ? "#c9b88a" : GREEN[0]);
-    }
-    const ROOF = ["#c8102e", "#ff7518", "#c8102e", "#e8dcc3", "#ff7518", "#c8102e", "#7c4dff", "#c8102e"];
-    [154, 159, 165, 170, 176, 182, 188, 194].forEach((x, i) => {
-      const w = i % 3 === 1 ? 4 : 3, top = IH - 5 - i % 2;
-      ig.fillStyle = ROOF[i];
-      ig.fillRect(x, top, w, 1);
-      ig.fillStyle = "#efe3c8";
-      ig.fillRect(x, top + 1, w, IH - 1 - (top + 1));
-      px(ig, x + 1, IH - 2, "#0b0a08");
-    });
-    const SP = 18, sx0 = 229, base = IH - hs[sx0] + 2;
-    for (let k = 3; k < SP; k++) {
-      const t = k / (SP - 1);
-      const w = 1 + Math.round(5 * Math.pow(t, 1.4));
-      const cx = sx0 + Math.round(3 * (1 - t));
-      const y = base - SP + 1 + k;
-      for (let dx = -Math.floor(w / 2); dx < w - Math.floor(w / 2); dx++) {
-        const f = (dx + Math.floor(w / 2)) / Math.max(1, w - 1);
-        px(ig, cx + dx, y, k === 0 ? "#fff6e0" : f < 0.35 ? "#f1e6cc" : f < 0.8 ? "#dccb9f" : "#b8a071");
-      }
-    }
-    for (const dx of [-3, -2, 3]) {
-      px(ig, sx0 + dx, base - 1, GREEN[2]);
-      px(ig, sx0 + dx, base - 2, GREEN[1]);
-    }
-    for (const x of [238, 239, 241, 242]) px(ig, x, IH - 1, "#fff6e0");
-    eg.fillStyle = "#8b6d4b";
-    eg.fillRect(172 + OX, HZ, 14, 1);
-    px(eg, 185 + OX, HZ + 1, "#8b6d4b");
-    px(eg, 174 + OX, HZ + 1, "#8b6d4b");
+    const IH = ISLAND_H, isl = islandLayer(doc);
+    drawPier(eg, OX, HZ);
     const clouds = CLOUDS.map((c) => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
     const gl = glints(g);
     let flock = null, nextFlock = 60, tick = 0;
@@ -3435,6 +3453,61 @@ var HxH = (() => {
     const v = Math.sin(x * 12.9898 + y * 78.233 + f * 37.719) * 43758.5453;
     return v - Math.floor(v);
   };
+  var NIGHT_ISLAND = {
+    "#24552b": "#150d2a",
+    "#2f6f35": "#1c1236",
+    "#3f8c42": "#261a48",
+    "#7cc26a": "#3d2d6e",
+    // forest; its ridge catches the moon
+    "#c9b88a": "#34284f",
+    // beach
+    "#c8102e": "#3b1633",
+    "#ff7518": "#4a2436",
+    "#e8dcc3": "#3c3352",
+    "#7c4dff": "#2c2160",
+    // roofs
+    "#efe3c8": "#2a2140",
+    "#0b0a08": "#0b0612",
+    // walls, doors
+    "#fff6e0": "#8a7fb4",
+    "#f1e6cc": "#6f6598",
+    "#dccb9f": "#554b7c",
+    "#b8a071": "#3d3460",
+    // the rock spire, surf
+    "#8b6d4b": "#241a33"
+    // the pier
+  };
+  var WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
+  var WINDOW_LIT = 0.8;
+  function townWindows() {
+    const out = [];
+    TOWN_X.forEach((x, i) => {
+      const { w, top } = house(x, i);
+      for (const [wx, wy] of [[x, top + 1], [x + w - 1, top + 1], [x + w - 1, ISLAND_H - 2]]) if (!out.some(([a, b]) => a === wx && b === wy)) out.push([wx, wy]);
+    });
+    return out;
+  }
+  var litWindows = () => townWindows().filter(([x, y]) => glint(x, y, 3.1) < WINDOW_LIT);
+  var hex22 = (r, g, b) => "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+  function nightIsland(doc) {
+    const isl = islandLayer(doc);
+    if (!isl) return null;
+    const g = isl.getContext("2d"), img = g.getImageData(0, 0, ISLAND_W, ISLAND_H), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue;
+      const n = NIGHT_ISLAND[hex22(d[i], d[i + 1], d[i + 2])];
+      const [r, gg, b] = n ? [1, 3, 5].map((k) => parseInt(n.slice(k, k + 2), 16)) : [d[i] * 0.2 + 17, d[i + 1] * 0.2 + 10, d[i + 2] * 0.2 + 34];
+      d[i] = r;
+      d[i + 1] = gg;
+      d[i + 2] = b;
+    }
+    g.putImageData(img, 0, 0);
+    for (const [x, y] of litWindows()) {
+      g.fillStyle = WINDOW_LIGHTS[glint(y, x, 5.7) < 0.7 ? 0 : 1];
+      g.fillRect(x, y, 1, 1);
+    }
+    return isl;
+  }
   var GLINT_CYCLE = 3.2;
   function moonRoad({ H, HZ, MX, MR }, t) {
     const out = [], depth = H - HZ;
@@ -3450,7 +3523,6 @@ var HxH = (() => {
     }
     return out;
   }
-  var GRAIN = 5;
   function night(el, { reduced, random }) {
     el.innerHTML = `
     <canvas class="sp-sky px" aria-hidden="true"></canvas>
@@ -3459,8 +3531,8 @@ var HxH = (() => {
       <div class="sp-top">PURPLE SQUARE PRESENTS</div>
       <div class="sp-big">HUNTER${X}</div>
       <div class="sp-big hallow">HALLOWEEN</div>
-      <div class="sp-start">CLICK TO START</div>
     </div>
+    <div class="sp-start">CLICK TO START</div>
     <div class="sp-foot">\xA9 2026 HUNTER ASSOCIATION</div>`;
     const canvas = el.querySelector(".sp-sky");
     const g = canvas.getContext?.("2d");
@@ -3468,10 +3540,10 @@ var HxH = (() => {
     if (!g) return () => {
     };
     const r = el.getBoundingClientRect();
-    const W = Math.max(40, Math.ceil((r.width || 1366) / GRAIN)), H = Math.max(30, Math.ceil((r.height || 900) / GRAIN));
+    const { W, H, HZ, OX } = geometry(win.innerWidth || r.width || 1366, win.innerHeight || r.height || 900);
     canvas.width = W;
     canvas.height = H;
-    const HZ = Math.round(H * 0.72), MR = Math.max(6, Math.round(Math.min(W, H) * 0.11));
+    const MR = Math.max(6, Math.round(Math.min(W, H) * 0.11));
     const MX = Math.round(W * 0.84), MY = Math.max(MR + 4, Math.round(H * 0.17));
     const stars = Array.from({ length: Math.round(W * H / 170) }, () => ({ x: Math.floor(random() * W), y: Math.floor(random() * HZ * 0.95), p: random() * 6.28, b: random() }));
     const bands = ["#0a0620", "#120a33", "#1b0f44", "#261554", "#321a60"];
@@ -3503,12 +3575,33 @@ var HxH = (() => {
     b.fillRect(0, HZ + Math.round((H - HZ) * 0.45), W, H - HZ);
     b.fillStyle = "#16294f";
     b.fillRect(0, HZ, W, 1);
+    for (let y = HZ; y < HZ + 7; y++) for (let x = OX + 97; x < OX + 240; x++) if ((x + y) % 2 === 0) {
+      b.fillStyle = "#070f24";
+      b.fillRect(x, y, 1, 1);
+    }
+    const isle = nightIsland(el.ownerDocument);
+    const IY = HZ - ISLAND_H;
+    let onIsle = () => false;
+    if (isle) {
+      b.drawImage(isle, OX, IY);
+      const m = isle.getContext("2d").getImageData(0, 0, ISLAND_W, ISLAND_H).data;
+      onIsle = (x, y) => {
+        const ix = x - OX, iy = y - IY;
+        return ix >= 0 && ix < ISLAND_W && iy >= 0 && iy < ISLAND_H && m[(iy * ISLAND_W + ix) * 4 + 3] > 0;
+      };
+      for (const [x, y] of litWindows()) for (const k of [2, 4]) {
+        b.fillStyle = "#6b5424";
+        b.fillRect(OX + x, HZ + (ISLAND_H - 1 - y) + k, 1, 1);
+      }
+    }
+    drawPier(b, OX, HZ, NIGHT_ISLAND["#8b6d4b"]);
     const paint = (t) => {
       if (bg !== canvas && b !== g) g.drawImage(bg, 0, 0);
       for (const s of stars) {
         const tw = 0.5 + 0.5 * Math.sin(t * 2 + s.p);
         if (tw < 0.25) continue;
         if (Math.hypot(s.x - MX, s.y - MY) <= MR + 3) continue;
+        if (onIsle(s.x, s.y)) continue;
         g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
         g.fillRect(s.x, s.y, 1, 1);
       }

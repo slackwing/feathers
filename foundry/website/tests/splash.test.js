@@ -1,8 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch } from "./dom.js";
-import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE } from "../html/hxh/os/splash.js";
+import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE, NIGHT_ISLAND, townWindows, litWindows, WINDOW_LIT } from "../html/hxh/os/splash.js";
 import { CUES } from "../html/hxh/os/sound.js";
+import { readFileSync } from "node:fs";
+import { TOWN_X, house, ISLAND_H } from "../html/hxh/os/wallpaper.js";
 
 const d = setupDom();
 
@@ -145,4 +147,27 @@ test("Night's moon road: nearly the moon's width at the top, thinning with depth
   }
   const a = new Set(moonRoad(geo, 5).map(key)), later = new Set(moonRoad(geo, 5 + GLINT_CYCLE * 2).map(key));
   assert.ok([...a].filter(k => !later.has(k)).length > a.size * 0.3, "over a couple of cycles the whole road has moved on: it shimmers");
+});
+
+test("Night's island is the desktop's, pixel for pixel, at night: every colour the wallpaper paints the island with has a night tone; most of the town's windows are lit (Andrew, 2026-09-27)", () => {
+  const src = readFileSync(new URL("../html/hxh/os/wallpaper.js", import.meta.url), "utf8");
+  const body = src.slice(src.indexOf("export function islandLayer"), src.indexOf("/* ---------- glitter"));
+  const used = new Set((body.match(/#[0-9a-f]{6}/gi) || []).map(c => c.toLowerCase()));
+  for (const c of used) assert.ok(NIGHT_ISLAND[c], "no night tone for the island's " + c);
+  for (const [day, night] of Object.entries(NIGHT_ISLAND)) {
+    const lum = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16)).reduce((a, b) => a + b);
+    assert.ok(lum(night) < lum(day) || lum(night) - lum(day) <= 12, `${day} → ${night} is darker (near-black ink may only shift hue)`);
+  }
+  const wins = townWindows();
+  assert.equal(wins.length, TOWN_X.length * 3, "three windows a house");
+  TOWN_X.forEach((x, i) => {
+    const { w, top } = house(x, i);
+    for (const [wx, wy] of wins.filter(([a]) => a >= x && a < x + w)) {
+      assert.ok(wy > top && wy <= ISLAND_H - 2, "a window is in the wall, under the roof");
+      assert.ok(!(wx === x + 1 && wy === ISLAND_H - 2), "not the door");
+    }
+  });
+  const lit = litWindows();
+  assert.ok(lit.length >= wins.length * (WINDOW_LIT - 0.15) && lit.length < wins.length, `most, not all, are lit: ${lit.length} of ${wins.length}`);
+  assert.deepEqual(litWindows(), lit, "the same windows every visit");
 });

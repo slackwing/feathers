@@ -35,6 +35,7 @@
 import { Component } from "./component.js";
 import { h } from "./dom.js";
 import { SHIP_SRC } from "./blimp.js";
+import { geometry, islandLayer, drawPier, ISLAND_W, ISLAND_H, TOWN_X, house } from "./wallpaper.js";
 import "./splash.css";
 
 export const SPLASHES = [
@@ -160,6 +161,46 @@ function select(el, { reduced, random, fetch }) {
 /** A stable pseudo-random number in [0, 1) for a pixel and a frame (the glints' shimmer). */
 const glint = (x, y, f) => { const v = Math.sin(x * 12.9898 + y * 78.233 + f * 37.719) * 43758.5453; return v - Math.floor(v); };
 
+/* The desktop's Whale Island, pixel for pixel (wallpaper.js islandLayer), at night (Andrew, 2026-09-27): every colour
+   of the day art mapped to a dark, moonlit purple — almost a shadow — with the harbour town's windows lit. */
+export const NIGHT_ISLAND = {
+  "#24552b": "#150d2a", "#2f6f35": "#1c1236", "#3f8c42": "#261a48", "#7cc26a": "#3d2d6e",   // forest; its ridge catches the moon
+  "#c9b88a": "#34284f",                                                                        // beach
+  "#c8102e": "#3b1633", "#ff7518": "#4a2436", "#e8dcc3": "#3c3352", "#7c4dff": "#2c2160",      // roofs
+  "#efe3c8": "#2a2140", "#0b0a08": "#0b0612",                                                  // walls, doors
+  "#fff6e0": "#8a7fb4", "#f1e6cc": "#6f6598", "#dccb9f": "#554b7c", "#b8a071": "#3d3460",      // the rock spire, surf
+  "#8b6d4b": "#241a33",                                                                        // the pier
+};
+export const WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
+export const WINDOW_LIT = 0.8;   // "lights in most windows"
+/** Where a house has windows (island space): both upper corners and the lower one beside the door. */
+export function townWindows() {
+  const out = [];
+  TOWN_X.forEach((x, i) => {
+    const { w, top } = house(x, i);
+    for (const [wx, wy] of [[x, top + 1], [x + w - 1, top + 1], [x + w - 1, ISLAND_H - 2]]) if (!out.some(([a, b]) => a === wx && b === wy)) out.push([wx, wy]);
+  });
+  return out;
+}
+/** The lit ones — stable from visit to visit. */
+export const litWindows = () => townWindows().filter(([x, y]) => glint(x, y, 3.1) < WINDOW_LIT);
+const hex2 = (r, g, b) => "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
+/** The island layer at night, or null without a canvas. */
+export function nightIsland(doc) {
+  const isl = islandLayer(doc);
+  if (!isl) return null;
+  const g = isl.getContext("2d"), img = g.getImageData(0, 0, ISLAND_W, ISLAND_H), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (!d[i + 3]) continue;
+    const n = NIGHT_ISLAND[hex2(d[i], d[i + 1], d[i + 2])];
+    const [r, gg, b] = n ? [1, 3, 5].map(k => parseInt(n.slice(k, k + 2), 16)) : [d[i] * 0.2 + 17, d[i + 1] * 0.2 + 10, d[i + 2] * 0.2 + 34];   // anything unmapped: sunk into the night
+    d[i] = r; d[i + 1] = gg; d[i + 2] = b;
+  }
+  g.putImageData(img, 0, 0);
+  for (const [x, y] of litWindows()) { g.fillStyle = WINDOW_LIGHTS[glint(y, x, 5.7) < 0.7 ? 0 : 1]; g.fillRect(x, y, 1, 1); }
+  return isl;
+}
+
 /** How long one glint keeps its state before it re-rolls, in seconds. The re-rolls are staggered pixel by pixel, so at
     any moment only a small share of the road changes: a shimmer, not static (Andrew, 2026-09-27: "too random and
     chaotic… only swap a certain proportion at a time"). */
@@ -186,7 +227,6 @@ export function moonRoad({ H, HZ, MX, MR }, t) {
   }
   return out;
 }
-const GRAIN = 5;
 function night(el, { reduced, random }) {
   el.innerHTML = `
     <canvas class="sp-sky px" aria-hidden="true"></canvas>
@@ -195,17 +235,18 @@ function night(el, { reduced, random }) {
       <div class="sp-top">PURPLE SQUARE PRESENTS</div>
       <div class="sp-big">HUNTER${X}</div>
       <div class="sp-big hallow">HALLOWEEN</div>
-      <div class="sp-start">CLICK TO START</div>
     </div>
+    <div class="sp-start">CLICK TO START</div>
     <div class="sp-foot">© 2026 HUNTER ASSOCIATION</div>`;
   const canvas = el.querySelector(".sp-sky");
   const g = canvas.getContext?.("2d");
   const win = el.ownerDocument.defaultView;
   if (!g) return () => {};
   const r = el.getBoundingClientRect();
-  const W = Math.max(40, Math.ceil((r.width || 1366) / GRAIN)), H = Math.max(30, Math.ceil((r.height || 900) / GRAIN));
+  // the wallpaper's own geometry — its scale, horizon and centring — so the island sits exactly where the desktop's does
+  const { W, H, HZ, OX } = geometry(win.innerWidth || r.width || 1366, win.innerHeight || r.height || 900);
   canvas.width = W; canvas.height = H;
-  const HZ = Math.round(H * 0.72), MR = Math.max(6, Math.round(Math.min(W, H) * 0.11));
+  const MR = Math.max(6, Math.round(Math.min(W, H) * 0.11));
   const MX = Math.round(W * 0.84), MY = Math.max(MR + 4, Math.round(H * 0.17));   // high and to the right, clear of the title
   const stars = Array.from({ length: Math.round(W * H / 170) }, () => ({ x: Math.floor(random() * W), y: Math.floor(random() * HZ * 0.95), p: random() * 6.28, b: random() }));
   const bands = ["#0a0620", "#120a33", "#1b0f44", "#261554", "#321a60"];
@@ -231,12 +272,25 @@ function night(el, { reduced, random }) {
   b.fillStyle = "#0c1a3a"; b.fillRect(0, HZ, W, H - HZ);   // the sea
   b.fillStyle = "#081229"; b.fillRect(0, HZ + Math.round((H - HZ) * 0.45), W, H - HZ);
   b.fillStyle = "#16294f"; b.fillRect(0, HZ, W, 1);
+  // the island's shadow on the water, as on the desktop's sea, and the town's windows glimmering in it
+  for (let y = HZ; y < HZ + 7; y++) for (let x = OX + 97; x < OX + 240; x++) if ((x + y) % 2 === 0) { b.fillStyle = "#070f24"; b.fillRect(x, y, 1, 1); }
+  const isle = nightIsland(el.ownerDocument);
+  const IY = HZ - ISLAND_H;
+  let onIsle = () => false;
+  if (isle) {
+    b.drawImage(isle, OX, IY);
+    const m = isle.getContext("2d").getImageData(0, 0, ISLAND_W, ISLAND_H).data;
+    onIsle = (x, y) => { const ix = x - OX, iy = y - IY; return ix >= 0 && ix < ISLAND_W && iy >= 0 && iy < ISLAND_H && m[(iy * ISLAND_W + ix) * 4 + 3] > 0; };
+    for (const [x, y] of litWindows()) for (const k of [2, 4]) { b.fillStyle = "#6b5424"; b.fillRect(OX + x, HZ + (ISLAND_H - 1 - y) + k, 1, 1); }   // their reflections, dim, under each window
+  }
+  drawPier(b, OX, HZ, NIGHT_ISLAND["#8b6d4b"]);
   const paint = t => {
     if (bg !== canvas && b !== g) g.drawImage(bg, 0, 0);
     for (const s of stars) {
       const tw = 0.5 + 0.5 * Math.sin(t * 2 + s.p);
       if (tw < 0.25) continue;
       if (Math.hypot(s.x - MX, s.y - MY) <= MR + 3) continue;   // not in front of the moon
+      if (onIsle(s.x, s.y)) continue;   // nor in front of the island
       g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
       g.fillRect(s.x, s.y, 1, 1);
     }
