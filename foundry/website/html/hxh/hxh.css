@@ -220,7 +220,7 @@ body.crt::after {
   left: 100%;
   display: flex;
   align-items: flex-start;
-  animation: blimp-west 100s linear forwards;
+  animation: blimp-west 50s linear forwards;
 }
 .blimp.east {
   left: 0;
@@ -238,9 +238,6 @@ body.crt::after {
 }
 .blimp .ship img {
   display: block;
-}
-.blimp.pixelated .ship img {
-  image-rendering: pixelated;
 }
 .blimp.east .ship {
   transform: scaleX(-1);

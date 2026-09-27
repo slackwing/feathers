@@ -661,16 +661,17 @@ over the sky.
 - **One Settings tree** — `OS.settingsItems({icons})` — is rendered by
   the Start menu (Settings ▸), the tray gear (`icon: "gear"`, replaced
   the scanlines icon) and any app window's Settings menu (Summons passes
-  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines, Blimp ▸) and
+  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines, ─, Fly the blimp) and
   Sounds ▸ (Sounds). Andrew: "keep all our experiments in the UI as
   settings people can toggle". Add a knob there, nowhere else.
   Scanlines is OFF by default (`hxh.crt` in localStorage remembers an
-  override). Blimp ▸ is Original | Pixelated (a radio, `hxh.set.blimp`,
-  `OS.applyBlimp` → `Blimp.setStyle`, which re-dresses a ship already
-  up) then ─ Fly the blimp (Andrew, 2026-09-24, "would help with
-  testing"): launches one now, greyed while a ship is up or launched
-  and still off the edge (`Blimp.flying`, which purges overdue flights
-  first). The whole Blimp ▸ submenu is absent under reduced motion.
+  override). Fly the blimp (Andrew, 2026-09-24, "would help with
+  testing") sits below a rule: launches one now, greyed while a ship is
+  up or launched and still off the edge (`Blimp.flying`, which purges
+  overdue flights first), absent under reduced motion. (A Blimp ▸
+  Original | Pixelated submenu existed 2026-09-24..27; the pixel sprite
+  was removed at Andrew's ask, and the stale `hxh.set.blimp` key in
+  browsers is simply ignored.)
 - **Submenus** are a menu-item feature: `{ label, items }` cascades to
   the right (Windows style: hover or click, one sibling open at a
   time, ancestors stay open, a leaf pick closes the chain; up-menus
@@ -696,52 +697,42 @@ over the sky.
   (a shade per row), noisy gradient. All but the original follow
   t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
 - **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
-  HALLOWEEN banner, every 4–9 min, 100 s across, `HxH.os.blimp.launch()`
-  on demand; z-order above the wallpaper, below icons and windows. The
-  ship is ABI'S DRAWING — `img/blimp.png`, a 1289×955 transparent PNG,
-  side view flying WEST (shark nose, ✕✕ plate, propeller masts, lit
-  cabin, engine pod, stern prop) — shown smooth at `SHIP_W` = 240 px
-  (half of the first 480: "way too big", 2026-09-24) in a box a whole
-  number of grain cells tall (`SHIP_H` 180) by `airshipHTML(style)`;
-  `.blimp.east .ship` flips it to fly east. It replaced the vector SVG
-  ship (2026-09-24, Andrew: "abi drew a blimp graphic for you to use…
-  in place of your blimp graphic"). PIXELATED (Settings › Display ›
-  Blimp): `img/blimp-px.png`, a 96×72 sprite — 2.5-px cells, TWICE
-  the wallpaper's granularity (`SPRITE_PX` = `GRAIN` / 2; the full
-  5-px grain "lost too much", Andrew 2026-09-25: the ✕✕ plate, the
-  windows and the teeth must survive) —
-  made by `scripts/pixelate-blimp.py` from the drawing (cells decided
-  by opaque / ink fractions: a one-cell outline where the drawing's
-  outline runs, ink over air for masts and the stern line, interior
-  ink only where a line crosses a cell's middle, fills snapped to the
-  drawing's flat palette); rerun it if Abi's art changes and copy the
-  printed axis-line row into `PX_LINE_ROW`. The art's measurements
-  live beside the code (`ART_W/H`, `ART_LINE_Y/W` = the stern's axis
-  line, alpha-weighted, from the PNG): the flyer's `margin-top`
-  (`FLYER_TOP`, whole px) + the rope's start height (`ROPE_Y`, the
-  fraction) put the rope exactly on that line — re-measure if the
-  drawing changes. The banner is an all-orange cloth (`#ffb266`; the
-  blue lip came off 2026-09-24), scaled to the smaller ship (`BANNER_W`
-  236, cloth 28 tall, 11 px lettering), whose cloth and lettering
-  ripple via SMIL `<animate>` on path `d` (three phases, looping) —
-  `bannerSVG(text, rope, style)` builds it with the rope on the
-  trailing side so the letters never mirror. The lettering (bold
-  smooth sans, all caps) is centred by its CAPS: the textPath's
-  baseline rides the cloth's midline plus half a cap height
-  (`LETTER_PX * CAP / 2`), not `dominant-baseline`, which Safari
-  ignores on a textPath. The ROPE continues the art's stern axis line
-  (`ropePath(rope, y0)`): it starts `OVERLAP` px inside the ship's box
-  ON that line — same ink `#231f20`, `ROPE_W` = the measured line's
-  thickness as drawn, softened (`ROPE_SOFT`) to the downsampled art's
-  edge — runs on horizontally, bends through a cubic whose first two
-  control points lie on the line (zero curvature leaving the drawing:
-  "smooth derivatives from the image to the string") and whose last
-  sits on the straight run's line (it meets the run at its angle), and
-  ends as a straight edge at the cloth's leading top corner ("straight
-  into the banner is fine"). Pixelated, the rope is a crisp cell-wide
-  (`SPRITE_PX`) line on the sprite's own axis-line row (`PX_ROPE_Y`). Check joins
-  with the zoomed screenshot recipe (a DPR-4 clip at the ship's edge,
-  column-by-column centre/thickness), not by eye at 1×.
+  HALLOWEEN banner, every 4–9 min, 50 s across (`FLIGHT_MS`; was 100 s
+  until Andrew asked for more speed, 2026-09-27),
+  `HxH.os.blimp.launch()` on demand; z-order above the wallpaper, below
+  icons and windows. The ship is ABI'S DRAWING — `img/blimp.png`, a
+  1289×955 transparent PNG, side view flying WEST (shark nose, ✕✕
+  plate, propeller masts, lit cabin, engine pod, stern prop) — shown
+  smooth at `SHIP_W` = 240 px (half the first 480: "way too big",
+  2026-09-24) by `airshipHTML()`; `.blimp.east .ship` flips it to fly
+  east. It replaced the vector SVG ship (2026-09-24). A pixelated
+  sprite variant lived 2026-09-24..27 and is gone. The art's
+  measurements live beside the code (`ART_W/H`, `ART_LINE_Y/W` = the
+  stern's axis line, alpha-weighted, from the PNG): the flyer's
+  `margin-top` (`FLYER_TOP`, whole px) + the bridle's start height
+  (`ROPE_Y`, the fraction) put the bridle exactly on that line, AND
+  hang the cloth so that line meets its midline — re-measure if the
+  drawing changes. The banner is an all-orange cloth (`#ffb266`, no
+  blue lip), whose cloth and lettering ripple via SMIL `<animate>` on
+  path `d` (three phases, looping) — `bannerSVG(text, rope)` builds it
+  with the bridle on the trailing side so the letters never mirror.
+  The lettering (bold smooth sans, all caps) is centred by its CAPS:
+  the textPath's baseline rides the cloth's midline plus half a cap
+  height (`LETTER_PX * CAP / 2`), not `dominant-baseline`, which Safari
+  ignores on a textPath. The BRIDLE (Andrew, 2026-09-27: "2 coming out
+  from the same point… one toward the top of the banner… the other
+  toward the bottom… kind of like a triangle") is two `ropePath(rope,
+  yq)` lines sharing one start: `OVERLAP` px inside the ship's box ON
+  the art's axis line — same ink `#231f20`, `ROPE_W` = the measured
+  line's thickness as drawn, softened (`ROPE_SOFT`) to the downsampled
+  art's edge — a shared horizontal stretch, then each bends through a
+  cubic whose first two control points lie on the line (zero curvature
+  leaving the drawing: "smooth derivatives from the image to the
+  string") and whose last sits on its straight run's line, ending
+  straight at `BRIDLE` = the cloth's top / bottom leading corner
+  (`CORNER_IN` px inside the edges). Check joins with the zoomed
+  screenshot recipe (a DPR-4 clip at the ship's edge, column-by-column
+  centre/thickness), not by eye at 1×.
   The wallpaper's frame loop must `clearRect` first: the hypergradient
   sky paints nothing, and without the clear clouds and birds left
   trails (2026-09-20).

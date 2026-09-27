@@ -159,14 +159,13 @@ body.crt::after {
   z-index: 0; pointer-events: none;
 }
 
-/* Netero's blimp (os/blimp.js): the show's airship towing a banner, drifting across the sky in ~100 s */
+/* Netero's blimp (os/blimp.js): the show's airship towing a banner, drifting across the sky in 50 s */
 .blimps { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 100s linear forwards; }
+.blimp { position: absolute; left: 100%; display: flex; align-items: flex-start; animation: blimp-west 50s linear forwards; }   /* = FLIGHT_MS in blimp.js, which sets each flight's duration */
 .blimp.east { left: 0; flex-direction: row-reverse; animation-name: blimp-east; }
 .blimp .ship, .blimp .flyer { display: block; }
 .blimp svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }   /* the one smooth thing on the desktop */
 .blimp .ship img { display: block; }   /* Abi's drawing of the ship, transparent PNG */
-.blimp.pixelated .ship img { image-rendering: pixelated; }   /* Settings › Display › Blimp › Pixelated: the 96×72 sprite, 2.5-px cells (twice the wallpaper's granularity) */
 .blimp.east .ship { transform: scaleX(-1); }   /* the art's nose points west; flip it to fly east (the banner is built for either side, so its letters never mirror) */
 /* the flyer's margin-top (the rope meeting the stern) is set by blimp.js from the art's measurements */
 /* the banner: all-orange cloth (Andrew, 2026-09-21/24: "more orange, too pale"; the blue lip came off 2026-09-24) — its own colours, like the ship.
