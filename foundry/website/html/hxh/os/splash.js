@@ -159,6 +159,33 @@ function select(el, { reduced, random, fetch }) {
 /* ---------- night: an arcade attract screen at the wallpaper's grain ---------- */
 /** A stable pseudo-random number in [0, 1) for a pixel and a frame (the glints' shimmer). */
 const glint = (x, y, f) => { const v = Math.sin(x * 12.9898 + y * 78.233 + f * 37.719) * 43758.5453; return v - Math.floor(v); };
+
+/** How long one glint keeps its state before it re-rolls, in seconds. The re-rolls are staggered pixel by pixel, so at
+    any moment only a small share of the road changes: a shimmer, not static (Andrew, 2026-09-27: "too random and
+    chaotic… only swap a certain proportion at a time"). */
+export const GLINT_CYCLE = 3.2;
+
+/**
+ * The moon's road on the water, as lit pixels [x, y, colour] at time t
+ * (s): nearly the moon's width at the horizon, widening a little toward
+ * the viewer, densest at the top and thinning as it comes down, softer
+ * at its sides (not a Christmas tree). Each pixel re-rolls once per
+ * GLINT_CYCLE at its own offset.
+ */
+export function moonRoad({ H, HZ, MX, MR }, t) {
+  const out = [], depth = H - HZ;
+  for (let y = HZ + 1; y < H; y++) {
+    const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
+    for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
+      const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
+      if (edge <= 0) continue;
+      const f = Math.floor(t / GLINT_CYCLE + glint(x, y, 7.3));   // this pixel's own epoch: it changes when its offset comes round
+      if (glint(x, y, f) >= dens * edge) continue;
+      out.push([x, y, d < 0.25 ? (glint(y, x, f) < 0.5 ? "#fff3c9" : "#ffd98a") : d < 0.6 ? "#ffd98a" : "#c9a45e"]);
+    }
+  }
+  return out;
+}
 const GRAIN = 5;
 function night(el, { reduced, random }) {
   el.innerHTML = `
@@ -213,18 +240,7 @@ function night(el, { reduced, random }) {
       g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
       g.fillRect(s.x, s.y, 1, 1);
     }
-    // the moon's road on the water (Andrew, 2026-09-27: not a Christmas tree): nearly the moon's width at the horizon,
-    // widening a little toward us, its glints densest at the top and thinning as it comes down; they shimmer frame to frame
-    const frame = Math.floor(t * 5), depth = H - HZ;
-    for (let y = HZ + 1; y < H; y++) {
-      const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
-      for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
-        const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);   // softer toward the road's sides
-        if (edge <= 0 || glint(x, y, frame) >= dens * edge) continue;
-        g.fillStyle = d < 0.25 ? (glint(y, x, frame) < 0.5 ? "#fff3c9" : "#ffd98a") : d < 0.6 ? "#ffd98a" : "#c9a45e";
-        g.fillRect(x, y, 1, 1);
-      }
-    }
+    for (const [x, y, col] of moonRoad({ H, HZ, MX, MR }, t)) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   };
   if (reduced) { paint(0); return () => {}; }
   paint(0);

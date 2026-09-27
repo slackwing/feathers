@@ -3435,6 +3435,21 @@ var HxH = (() => {
     const v = Math.sin(x * 12.9898 + y * 78.233 + f * 37.719) * 43758.5453;
     return v - Math.floor(v);
   };
+  var GLINT_CYCLE = 3.2;
+  function moonRoad({ H, HZ, MX, MR }, t) {
+    const out = [], depth = H - HZ;
+    for (let y = HZ + 1; y < H; y++) {
+      const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
+      for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
+        const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
+        if (edge <= 0) continue;
+        const f = Math.floor(t / GLINT_CYCLE + glint(x, y, 7.3));
+        if (glint(x, y, f) >= dens * edge) continue;
+        out.push([x, y, d < 0.25 ? glint(y, x, f) < 0.5 ? "#fff3c9" : "#ffd98a" : d < 0.6 ? "#ffd98a" : "#c9a45e"]);
+      }
+    }
+    return out;
+  }
   var GRAIN = 5;
   function night(el, { reduced, random }) {
     el.innerHTML = `
@@ -3497,15 +3512,9 @@ var HxH = (() => {
         g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
         g.fillRect(s.x, s.y, 1, 1);
       }
-      const frame = Math.floor(t * 5), depth = H - HZ;
-      for (let y = HZ + 1; y < H; y++) {
-        const d = (y - HZ) / depth, half = MR * (0.85 + 0.45 * d), dens = 0.62 * Math.pow(1 - d, 1.7) + 0.025;
-        for (let x = Math.floor(MX - half); x <= Math.ceil(MX + half); x++) {
-          const edge = 1 - Math.pow(Math.abs(x - MX) / half, 2);
-          if (edge <= 0 || glint(x, y, frame) >= dens * edge) continue;
-          g.fillStyle = d < 0.25 ? glint(y, x, frame) < 0.5 ? "#fff3c9" : "#ffd98a" : d < 0.6 ? "#ffd98a" : "#c9a45e";
-          g.fillRect(x, y, 1, 1);
-        }
+      for (const [x, y, col] of moonRoad({ H, HZ, MX, MR }, t)) {
+        g.fillStyle = col;
+        g.fillRect(x, y, 1, 1);
       }
     };
     if (reduced) {

@@ -175,7 +175,9 @@ the OS.
   replaced a Win98 "Clouds" style the same day), Night (an arcade
   attract screen at the wallpaper's 5-px grain: PURPLE SQUARE PRESENTS,
   stars, a harvest moon whose road on the sea starts nearly the moon's
-  width and thins in density going down — not a Christmas tree — and
+  width and thins in density going down — not a Christmas tree — its
+  glints each re-rolling on their own staggered `GLINT_CYCLE` (3.2 s) so
+  only ~7% change per frame, calm rather than static noise — and
   Abi's blimp crossing). It NEVER moves on by itself: "Click to start"
   on every style; click, tap, Enter, Space or Escape dismisses it and
   plays the original `startup` chime when Sounds are on. Settings ›

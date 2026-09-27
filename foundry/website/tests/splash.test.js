@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch } from "./dom.js";
-import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES } from "../html/hxh/os/splash.js";
+import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE } from "../html/hxh/os/splash.js";
 import { CUES } from "../html/hxh/os/sound.js";
 
 const d = setupDom();
@@ -127,4 +127,22 @@ test("Night: PURPLE SQUARE PRESENTS", async () => {
   assert.match(s.el.textContent, /PURPLE SQUARE PRESENTS/);
   assert.doesNotMatch(s.el.textContent, /HUNTER ASSOCIATION PRESENTS/);
   s.el.click(); await p; s.unmount();
+});
+
+test("Night's moon road: nearly the moon's width at the top, thinning with depth, and calm — only a small share of glints change from one frame to the next (Andrew, 2026-09-27: too random and chaotic)", () => {
+  const geo = { H: 180, HZ: 130, MX: 230, MR: 20 }, key = p => p[0] + "," + p[1];
+  const road = moonRoad(geo, 3.1);
+  const rows = y => road.filter(p => p[1] === y);
+  const span = ys => { const xs = road.filter(p => ys.includes(p[1])).map(p => p[0]); return Math.max(...xs) - Math.min(...xs); };
+  assert.ok(span([131, 132, 133]) >= geo.MR * 1.4, "the top is nearly as wide as the moon: " + span([131, 132, 133]));
+  const top = [131, 132, 133, 134, 135].reduce((n, y) => n + rows(y).length, 0), bottom = [175, 176, 177, 178, 179].reduce((n, y) => n + rows(y).length, 0);
+  assert.ok(top > bottom * 3, `densest at the top, thinning down: ${top} vs ${bottom}`);
+  const tick = 0.18, trials = [1.3, 4.7, 9.1, 22.6];   // the painter's interval, at a few moments
+  for (const t0 of trials) {
+    const a = new Set(moonRoad(geo, t0).map(key)), b = new Set(moonRoad(geo, t0 + tick).map(key));
+    let changed = 0; for (const k of a) if (!b.has(k)) changed++; for (const k of b) if (!a.has(k)) changed++;
+    assert.ok(changed / a.size < 0.15, `at t=${t0}: ${changed} of ${a.size} glints changed in one frame`);
+  }
+  const a = new Set(moonRoad(geo, 5).map(key)), later = new Set(moonRoad(geo, 5 + GLINT_CYCLE * 2).map(key));
+  assert.ok([...a].filter(k => !later.has(k)).length > a.size * 0.3, "over a couple of cycles the whole road has moved on: it shimmers");
 });
