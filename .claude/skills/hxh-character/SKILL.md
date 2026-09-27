@@ -261,15 +261,26 @@ from here). The kinds:
 
 - `outpaint-white` (a picture) — the reviewer expanded the canvas in
   the crop tool and the white margins need painting in (hair cut off
-  at the top, background too tight for 16:9). This is generative
-  outpainting, which I cannot do on my own: it needs an image API key
-  (Andrew will add one to the roster env when ready). Until then say
-  so in the resolve report; do not stretch or mirror pixels and call
-  it done. When it is possible: find the pure-white regions at the
-  edges, fill them in the picture's own style, upload the result with
-  `--type cropped --source-image <id>` (it shows under Edited with its
-  lineage), and NEVER set the avatar or card slot to it — the
-  reviewer chooses (Andrew, 2026-09-21).
+  at the top, background too tight for 16:9). Andrew does the painting
+  himself in DALL-E and similar sites (2026-09-27: an image API was too
+  complicated), so the bot's part is the hand-off both ways:
+  1. OUT: `roster.py requests`, then `roster.py download <image-id>`
+     each requested picture into `~/hxh-outpaint/todo/` as
+     `NN-<Short>-r<request>-img<image>.png` (NN = 01, 02… in request
+     order), measure the pure-white band on each edge, and write
+     `~/hxh-outpaint/README.md` (a table: number, character, edges to
+     fill in px, size, picture, request) and `manifest.json` (number →
+     request id, char id, image id, source image id). An empty `done/`
+     sits beside `todo/`.
+  2. BACK, on "upload the outpaint folder": for each `done/NN*` file,
+     look NN up in `manifest.json`, `roster.py upload <char-id> <file>
+     --type cropped --source-image <image-id> --caption "<the
+     original's caption>, outpainted"` (it shows under Edited with its
+     lineage), then `roster.py resolve <request-id> --note "outpainted
+     by Andrew; uploaded as picture #<new id>"`. NEVER set the avatar or
+     card slot to it — the reviewer chooses (Andrew, 2026-09-21). A
+     number with no file in `done/` stays open; say so.
+  Never stretch or mirror pixels and call it done.
 - `card-description` (the character) — the card text is wrong. If
   the request says what, fix that; if it says nothing (Andrew: "try
   to find out what is wrong"), re-read the notes, the description
@@ -328,3 +339,7 @@ commit both. Keep a dated line in the log below.
   middle brother" (he is the youngest), Saccho's non-existent eye mask
   and Cheadle's election as Chairman (manga-only). Keep trusting the
   wiki over the brief.
+- 2026-09-27 — outpainting is Andrew's, by hand: the bot hands the
+  requested pictures out in `~/hxh-outpaint/` (numbered, with a README
+  of which edges to fill and a manifest) and uploads the results back
+  as Edited pictures on "upload the outpaint folder" (§8b).
