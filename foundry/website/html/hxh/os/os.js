@@ -30,6 +30,7 @@ import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { WakeWatch } from "./wake.js";
 import { Blimp } from "./blimp.js";
+import { cqFix } from "./dom.js";
 import { Layout } from "./layout.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
@@ -116,6 +117,7 @@ export class OS {
   applyZoom() {
     const z = this.env.wantedZoom?.() ?? 1;
     this.doc.documentElement.style.setProperty("--zoom", String(z));
+    if (this.doc.body) cqFix(this.doc.body);   // Safari scales container units by the zoom again: cancel it (os/dom.js)
     return z;
   }
 

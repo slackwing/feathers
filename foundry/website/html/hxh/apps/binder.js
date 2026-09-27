@@ -11,7 +11,7 @@
    layout maths) are exported for tests. */
 import { App } from "../os/apps.js";
 import { Window } from "../os/window.js";
-import { h, esc } from "../os/dom.js";
+import { h, esc, cqFix } from "../os/dom.js";
 import { icon } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
 import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
@@ -236,6 +236,7 @@ export class BinderApp extends App {
     this.me = os.user?.username || null;
     os.bus.on("session:user", ({ user }) => { this.me = user?.username || null; if (this.win.el) this.syncKeys(); });
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
+    os.bus.on("window:open", ({ id }) => { if (id === this.win.id) { cqFix(this.win.el); for (const c of this.cards.values()) c.fit(); } });   // shown (launched or restored): measure with it laid out
     // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
     os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
     os.live?.every(this.win, LIVE_MS, () => this.load());   // and on its own clock, for readers without the Roster app
@@ -370,11 +371,12 @@ export class BinderApp extends App {
     el.style.setProperty("--cardh", l.ch + "px");
     el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1000) / 1000));   // the panel's controls scale with the page
     el.style.zoom = String(l.zoom);
-    // A change of scale (the Binder's own zoom or the desktop's — an iPad turning) rebuilds the page's cards:
-    // Abi's iPad briefly drew every card at about half size inside full-size slots after a rotation (Andrew,
-    // 2026-09-27). Chrome and Firefox size them right; the likely culprit is Safari keeping the cards' container
-    // units (cqw) from the old zoom, since a card's width in book pixels never changes. Fresh elements are sized
-    // from scratch. Precautionary — Safari could not be run here to confirm.
+    if (!el.hidden) cqFix(el);   // the binder's zoom on top of the page's: Safari's container-unit error is their product (os/dom.js)
+    // A change of scale (the Binder's own zoom or the desktop's — an iPad turning) rebuilds the page's cards.
+    // Abi's iPad drew every card's artwork at about 2/3 of its sleeve (Andrew, 2026-09-27). CONFIRMED in WebKit
+    // since (Playwright's WebKit 26.6): the cause is WebKit applying `zoom` a second time to container-query units,
+    // on every load, not only after a rotation — cqFix above cancels it. The rebuild is kept: harmless, and fresh
+    // elements measure their text from scratch.
     const scale = l.zoom + "|" + (os.env.zoom?.() ?? 1);
     const rescaled = this.scale != null && this.scale !== scale;
     this.scale = scale;
@@ -564,7 +566,9 @@ export class BinderApp extends App {
     if (reduced) { typeIt(); return; }
     later(reveal + pause, () => {
       if (r.moved) { typeIt(); return; }   // the reader already took the screen: leave it where they put it
-      const top = prof.offsetTop - px(cs.paddingTop);
+      // the profile is exactly a screenful at this point, so its top is the screen's last scroll position; not offsetTop,
+      // which Safari scales by the page zoom (it aimed ~30 px short on Abi's iPad and the follow then jumped)
+      const top = scr.scrollHeight - scr.clientHeight;
       const land = () => { if (this.run !== r || !r.gliding) return; r.gliding = false; r.pinned = true; typeIt(); };
       r.gliding = true;
       if (!scr.scrollTo || Math.abs(scr.scrollTop - top) < 2) { scr.scrollTop = top; land(); return; }

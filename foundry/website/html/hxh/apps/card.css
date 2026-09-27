@@ -14,43 +14,43 @@
 .gicard .gi-body {
   position: absolute; inset: 0;
   background: var(--base); color: var(--ink);
-  border-radius: 4.5cqw; overflow: hidden;
+  border-radius: calc(4.5cqw * var(--cqk, 1)); overflow: hidden;
   font-family: "Bodoni Moda", "Didot", "Times New Roman", serif;
 }
 /* the plaque: one cream strip, three outlined panels 26 : 39.5 : 26 */
 .gicard .gi-plaque {
-  position: absolute; left: 2.85cqw; top: 5.83cqw; width: 94.6cqw; height: 13.5cqw;
+  position: absolute; left: calc(2.85cqw * var(--cqk, 1)); top: calc(5.83cqw * var(--cqk, 1)); width: calc(94.6cqw * var(--cqk, 1)); height: calc(13.5cqw * var(--cqk, 1));
   background: var(--cream);
-  display: grid; grid-template-columns: 26.1fr 39.6fr 26.1fr; column-gap: 0.4cqw;
-  padding: 0.62cqw 0.58cqw 0.55cqw 0.75cqw; box-sizing: border-box;
+  display: grid; grid-template-columns: 26.1fr 39.6fr 26.1fr; column-gap: calc(0.4cqw * var(--cqk, 1));
+  padding: calc(0.62cqw * var(--cqk, 1)) calc(0.58cqw * var(--cqk, 1)) calc(0.55cqw * var(--cqk, 1)) calc(0.75cqw * var(--cqk, 1)); box-sizing: border-box;
 }
 .gicard .gi-panel { position: relative; display: grid; place-items: center; min-width: 0; color: var(--ink); }
 .gicard .gi-panel svg.gi-outline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.gicard .gi-panel .gi-txt { position: relative; z-index: 1; white-space: nowrap; line-height: 1; font-weight: 700; letter-spacing: 0.01em; padding-top: 0.4cqw; }
-.gicard .gi-panel.no .gi-txt { font-size: 9.3cqw; letter-spacing: 0.02em; }
-.gicard .gi-panel.rank .gi-txt { font-size: 8cqw; letter-spacing: 0.02em; }
-.gicard .gi-panel.name .gi-txt { font-size: 7.4cqw; max-width: 92%; overflow: hidden; }
+.gicard .gi-panel .gi-txt { position: relative; z-index: 1; white-space: nowrap; line-height: 1; font-weight: 700; letter-spacing: 0.01em; padding-top: calc(0.4cqw * var(--cqk, 1)); }
+.gicard .gi-panel.no .gi-txt { font-size: calc(9.3cqw * var(--cqk, 1)); letter-spacing: 0.02em; }
+.gicard .gi-panel.rank .gi-txt { font-size: calc(8cqw * var(--cqk, 1)); letter-spacing: 0.02em; }
+.gicard .gi-panel.name .gi-txt { font-size: calc(7.4cqw * var(--cqk, 1)); max-width: 92%; overflow: hidden; }
 /* the picture: cream frame, thin dark inner line, 16:9 window */
 .gicard .gi-frame {
-  position: absolute; left: 2.85cqw; top: 22.9cqw; width: 94.6cqw; height: 54.8cqw;
-  background: var(--cream); padding: 1.5cqw; box-sizing: border-box;
+  position: absolute; left: calc(2.85cqw * var(--cqk, 1)); top: calc(22.9cqw * var(--cqk, 1)); width: calc(94.6cqw * var(--cqk, 1)); height: calc(54.8cqw * var(--cqk, 1));
+  background: var(--cream); padding: calc(1.5cqw * var(--cqk, 1)); box-sizing: border-box;
 }
-.gicard .gi-frame .gi-pic { width: 100%; height: 100%; box-sizing: border-box; border: 0.3cqw solid var(--ink); background: #2b2a2a; overflow: hidden; }
+.gicard .gi-frame .gi-pic { width: 100%; height: 100%; box-sizing: border-box; border: calc(0.3cqw * var(--cqk, 1)) solid var(--ink); background: #2b2a2a; overflow: hidden; }
 .gicard .gi-frame .gi-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.gicard .gi-frame .gi-pic .gi-nopic { width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #3a3838 0 2cqw, #2b2a2a 0 4cqw); }
+.gicard .gi-frame .gi-pic .gi-nopic { width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #3a3838 0 calc(2cqw * var(--cqk, 1)), #2b2a2a 0 calc(4cqw * var(--cqk, 1))); }
 /* the description band: foil mottle, a white rounded inset with a dark outline */
 .gicard .gi-band {
-  position: absolute; left: 2.85cqw; top: 80.95cqw; width: 94.6cqw; height: 56.65cqw;
+  position: absolute; left: calc(2.85cqw * var(--cqk, 1)); top: calc(80.95cqw * var(--cqk, 1)); width: calc(94.6cqw * var(--cqk, 1)); height: calc(56.65cqw * var(--cqk, 1));
   background: var(--foil) center / 100% 100% no-repeat, var(--foil-base, #d4577c);
-  padding: 4.1cqw; box-sizing: border-box;
+  padding: calc(4.1cqw * var(--cqk, 1)); box-sizing: border-box;
 }
 .gicard .gi-inset {
   width: 100%; height: 100%; box-sizing: border-box;
-  background: var(--paper); border: 0.65cqw solid var(--ink); border-radius: 1.3cqw;
-  padding: 3.2cqw 4.2cqw 3cqw 4.7cqw; overflow: hidden;
+  background: var(--paper); border: calc(0.65cqw * var(--cqk, 1)) solid var(--ink); border-radius: calc(1.3cqw * var(--cqk, 1));
+  padding: calc(3.2cqw * var(--cqk, 1)) calc(4.2cqw * var(--cqk, 1)) calc(3cqw * var(--cqk, 1)) calc(4.7cqw * var(--cqk, 1)); overflow: hidden;
 }
 .gicard .gi-desc {
   /* the rules-text face of a real trading card: a sturdy old-style serif, larger than the print's gothic */
-  margin: 0; font: 500 5.2cqw/1.28 "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;   /* card.js fitBlock steps this down only for a text that will not fit */
+  margin: 0; font: 500 calc(5.2cqw * var(--cqk, 1))/1.28 "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;   /* card.js fitBlock steps this down only for a text that will not fit */
   color: #1e1e1e; letter-spacing: 0.002em; overflow-wrap: anywhere;
 }

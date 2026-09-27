@@ -37,3 +37,28 @@ export function append(el, children) {
   }
   return el;
 }
+
+/**
+ * Safari's engine (WebKit — every iPad) applies CSS `zoom` a second time to
+ * container-query units: under a total zoom of z, 100cqw comes out z times
+ * the container. Blink and Gecko are right. On Abi's iPad (2026-09-27, 820
+ * wide) the page zoom 0.917 times the binder's 0.705 drew every card's
+ * artwork at 0.646 of its sleeve. cqFix measures the error for everything
+ * under `host` and sets `--cqk` there to cancel it; the stylesheets write
+ * each container length as calc(N cqw * var(--cqk, 1)). Always set (1 where
+ * the engine is right) so a host overrides whatever it inherits. Needs a
+ * laid-out host (not display:none). Returns the factor.
+ */
+export function cqFix(host) {
+  const doc = host?.ownerDocument;
+  if (!doc) return 1;
+  const box = doc.createElement("div"), i = doc.createElement("i");
+  box.style.cssText = "position:absolute;left:0;top:0;width:100px;height:1px;container-type:inline-size;visibility:hidden;pointer-events:none";
+  i.style.cssText = "display:block;width:100cqw;height:1px";
+  box.append(i); host.append(box);
+  const want = box.getBoundingClientRect().width, got = i.getBoundingClientRect().width;
+  box.remove();
+  const k = want > 0 && got > 0 && Math.abs(want / got - 1) > 0.002 ? Math.round(want / got * 10000) / 10000 : 1;
+  host.style.setProperty("--cqk", String(k));
+  return k;
+}

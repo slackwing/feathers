@@ -963,6 +963,35 @@ desktop: pixelation is a system property, like the type scale.
   SVG); sprites are emoji drawn on a 16px canvas, alpha-thresholded and
   snapped to the web-safe palette — our copyright-free "pixel art".
 
+## Safari: container units under zoom (2026-09-27)
+
+WebKit (Safari, every iPad) applies CSS `zoom` a SECOND time to
+container-query units: under a total zoom z, `100cqw` is z × the
+container. The page zooms (the whale rule, body `zoom`) and the binder
+zooms on top, so on Abi's 820-wide iPad the cards' artwork (all cqw in
+`apps/card.css`) drew at 0.917 × 0.705 = 0.646 of the sleeves, on every
+load. Blink and Gecko are right. The fix: `cqFix(host)` (`os/dom.js`)
+measures the error with a probe and sets `--cqk` = 1 / error on the
+host (always set, 1 where the engine is right, so a host overrides what
+it inherits); `OS.applyZoom` runs it on `<body>`, the binder on its
+window whenever it is shown or re-laid out. EVERY container length is
+written `calc(N cqw * var(--cqk, 1))` — `tests/dom.test.js` fails on a
+bare one in card.css, binder.css or os.css. (`os/splash.css` still has
+bare ones: its layouts are off by the page zoom on narrow screens in
+Safari until they are wrapped too.) WebKit also scales `offsetTop` by
+the page zoom: use scroll metrics (`scrollHeight - clientHeight`) for
+scroll targets, not offsets.
+
+Testing in WebKit here (Arch, no sudo): Playwright's WebKit build
+(`npx playwright-core install webkit`, the Ubuntu 24.04 fallback)
+needs ICU 74, libxml2 .so.2, flite, harfbuzz-icu, manette, enchant-2,
+hyphen (unpacked from Ubuntu noble .debs), libjxl .so.0.8 (a symlink
+to Arch's 0.12 works) and libbacktrace (built from
+github.com/ianlancetaylor/libbacktrace). They live in
+`~/.cache/ms-playwright/webkit-2359/minibrowser-{wpe,gtk}/sys/lib`,
+which the MiniBrowser wrapper already puts on its library path; then
+`webkit.launch()` just works (it reports WebKit 26.6).
+
 ## Previewing / screenshots
 
 There is no local backend. To screenshot the logged-in state, run a stub
