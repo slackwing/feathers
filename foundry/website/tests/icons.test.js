@@ -81,3 +81,18 @@ test("desktop icons: every desktop app has a 20×20 grid in DESK, palette letter
   const bbox = rows => { const ys = rows.map((r, y) => /[^.]/.test(r) ? y : -1).filter(y => y >= 0); const xs = rows.flatMap(r => [...r].map((c, x) => c !== "." ? x : -1)).filter(x => x >= 0); return { w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1 }; };
   for (const g of [DESK.book, ICONS.book]) { const b = bbox(g.map(r => r.replace(/G/g, "."))); assert.ok(b.h > b.w * 1.3, `the binder is taller than wide (${b.w}×${b.h})`); }
 });
+
+test("the Beetle and the game pad are mirror-symmetric in outline at both sizes (Andrew, 2026-09-27: the antenna off-centre, the D-pad lopsided)", async () => {
+  const { DESK } = await import("../html/hxh/os/icons.js");
+  const shape = rows => rows.map(r => [...r].map(c => c === "." ? "." : "#").join(""));
+  const mirrored = rows => { const sh = shape(rows); const xs = sh.flatMap(r => [...r].map((c, x) => c === "#" ? x : -1)).filter(x => x >= 0); const lo = Math.min(...xs), hi = Math.max(...xs);
+    return sh.every(r => { for (let x = lo; x <= hi; x++) if (r[x] !== r[lo + hi - x]) return false; return true; }); };
+  for (const [set, g] of [["DESK", DESK], ["ICONS", ICONS]]) for (const name of ["beetle", "arena"]) assert.ok(mirrored(g[name]), `${set}.${name} is lopsided`);
+  // and the pad's controls sit symmetrically: the D-pad's arms are equal, the D-pad and the buttons equally far from the middle
+  const pad = DESK.arena, cells = ch => pad.flatMap((r, y) => [...r].map((c, x) => c === ch ? [x, y] : null)).filter(Boolean);
+  const d = cells("s"), xs = d.map(p => p[0]), ys = d.map(p => p[1]);
+  const mid = v => (Math.min(...v) + Math.max(...v)) / 2;
+  assert.equal(mid(ys), (Math.min(...cells("b").map(p => p[1])) + Math.max(...cells("y").map(p => p[1]))) / 2, "D-pad and buttons share a middle row");
+  const btn = ["b", "g", "r", "y"].flatMap(cells).map(p => p[0]);
+  assert.equal(mid(xs) + mid(btn), 19, "D-pad and buttons mirror about the pad's middle");
+});

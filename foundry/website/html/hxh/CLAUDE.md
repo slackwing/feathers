@@ -889,11 +889,16 @@ desktop: pixelation is a system property, like the type scale.
   wallpaper's 5 px whale scale. `Desktop` uses `desktopIcon(a.icon)` in
   a 60 px `.ib`; an app with no 20-grid falls back to its 16-grid at 3×.
   Every desktop app keeps its 16-grid too (taskbar, tray, menus, title
-  bars), drawn to the SAME design: the binder is a tall cover with the
-  green emblem ~37 % down (as on the app's cover), the Beetle is the
-  Beetle 07 phone in red (split egg shell, domed eyes, Y antenna), and
-  Heavens Arena is a Super Famicom pad (the tower read as a pointed
-  hood). `tests/icons.test.js` holds both rules.
+  bars), drawn to the SAME design: the binder is a tall, SIMPLE cover
+  — two blues, two gold tabs and only the green emblem, ~37 % down as on
+  the app's cover (Andrew: the plate, the BINDER line and corner rivets
+  were "too faithful"); the Beetle is the Beetle 07 phone in red (split
+  egg shell, dark eyes, Y antenna, all on ONE centre column — odd body
+  width); Heavens Arena is a Super Famicom pad (the tower read as a
+  pointed hood), mirror-symmetric with equal D-pad arms; the Roster DB
+  is a 3D database drum (oval top, curved seams, curved bottom). Odd
+  widths where something must sit on a centre line. `tests/icons.test.js`
+  holds the size rules and the Beetle's and pad's symmetry.
 - **Two exceptions, on purpose**: the Start button's pumpkin (12×12 at
   2× = 24 px — "the pumpkin is unique") and the boot badge's tee (18×14
   at 4×). Don't reuse them elsewhere.
