@@ -68,6 +68,8 @@ export function randomStamp(rand = Math.random) {
   return { ...clearOfPlate(spot), rotation: Math.round((rand() * 2 - 1) * STAMP_ROT * 10) / 10 };
 }
 export const LIVE_MS = 20000;                        // an open binder re-reads itself this often
+export const TYPE_MS = 4;                            // ms per character on the screen: "a little faster" than 6 (Andrew, 2026-09-27); 4 is the browsers' timer floor
+export const BIG_W = 0.92;                           // the enlarged card on the screen: at most this share of the screen's width, and never taller than it
 
 export const typeOf = c => TYPES.find(t => t.slug === ((c.nen_types || [])[0] || "")) || TYPES[TYPES.length - 1];
 const titleCase = s => s.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
@@ -158,6 +160,7 @@ const BOOK = `
       </div>
       <div class="face back">
         <div class="page">
+          <i class="edge" title="Close"></i>
           <div class="tabs"></div>
           <div class="cards"></div>
           <div class="pageno"></div>
@@ -204,6 +207,7 @@ export class BinderApp extends App {
     cover.addEventListener("click", () => this.openBook());
     cover.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.openBook(); } });
     el.addEventListener("click", e => {
+      if (e.target.closest(".edge")) { this.shut(); return; }   // the left page's left edge closes the book (Andrew, 2026-09-27); a drag from it moves the window instead
       const act = e.target.closest("[data-act]")?.dataset.act;
       const dir = e.target.closest("[data-dir]")?.dataset.dir;
       if (act === "heart" || act === "bookmark") this.stampSel(act);
@@ -332,7 +336,10 @@ export class BinderApp extends App {
     } catch (err) { os.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again."); return; }
     if (kind === "claim") os.people?.load();   // a claim changes how you look everywhere (os/people.js): the Start menu, the chat
     if (kind === "bookmark") { this.setRoster(this.roster); if (this.sel !== c) this.select(c); }
-    else for (const [id, card] of this.cards) { const cc = this.roster.find(x => x.id === id); if (cc) this.renderStamps(card, cc); }
+    else {
+      for (const [id, card] of this.cards) { const cc = this.roster.find(x => x.id === id); if (cc) this.renderStamps(card, cc); }
+      if (this.bigCard && this.sel) this.renderStamps(this.bigCard, this.sel);   // the enlarged copy on the screen too
+    }
     this.syncKeys();
   }
 
@@ -435,11 +442,16 @@ export class BinderApp extends App {
     this.syncKeys();
   }
 
+  /** A character's printed card: the plaque prints the SHORT name (Gon, not Gon Freecss); no card picture yet, the avatar stands in. */
+  printed(c) {
+    return new GICard({ no: c.no, name: c.first || c.name, rank: c.rank, description: cardText(c), alt: c.name,
+      image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : (c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null) });
+  }
+
   /** A sleeve holding one printed card. */
   cardEl(c) {
     const b = h("button", { type: "button", className: "card" + (c === this.sel ? " on" : ""), dataset: { id: String(c.id) }, title: c.name, onclick: () => this.select(c) });
-    const card = new GICard({ no: c.no, name: c.first || c.name, rank: c.rank, description: cardText(c), alt: c.name,   // the plaque prints the SHORT name (Gon, not Gon Freecss)
-      image: c.card_image_id ? `/hxh/api/db/images/${c.card_image_id}` : (c.avatar_image_id ? `/hxh/api/db/images/${c.avatar_image_id}` : null) });
+    const card = this.printed(c);
     card.mount(b);
     this.renderStamps(card, c);
     this.cards.set(c.id, card);
@@ -458,6 +470,7 @@ export class BinderApp extends App {
     const scr = this.$(".screen");
     this.typer?.skip?.();
     clearInterval(this.follow);
+    this.bigCard?.unmount(); this.bigCard = null;
     if (!c) { this.idle(); return; }
     const t = typeOf(c);
     const types = (c.nen_types || []).length ? c.nen_types.map(n => (TYPES.find(x => x.slug === n) || {}).name || n).join(" / ") : "—";
@@ -469,10 +482,34 @@ export class BinderApp extends App {
       <div class="line">Arms: <b>${esc(arms)}</b></div>
       <div class="desc"></div>
       <div class="status">所持者 0名 ／ 残り ${LIMIT[c.rank] || 4}枚</div>`;
-    // keep the typing cursor in view on the small screen
-    this.follow = setInterval(() => { scr.scrollTop = scr.scrollHeight; }, 80);
-    this.typer = type(scr.querySelector(".desc"), [c.description || ""], { speed: 6, reduced: this.os.env.reduced, onDone: () => clearInterval(this.follow) });
     scr.scrollTop = 0;
+    // keep the typing cursor in view on the small screen; when the description is out, the card itself
+    this.follow = setInterval(() => { scr.scrollTop = scr.scrollHeight; }, 80);
+    this.typer = type(scr.querySelector(".desc"), [c.description || ""], { speed: TYPE_MS, reduced: this.os.env.reduced, onDone: () => { clearInterval(this.follow); this.showCard(c); } });
+  }
+
+  /**
+   * The whole card, enlarged, under the typed profile (Andrew, 2026-09-27:
+   * "so people can see the card enlargened in the display screen"). As
+   * wide as BIG_W of the screen allows but never taller than the screen,
+   * so all of it shows at once; the screen scrolls down to it and it
+   * paints in top to bottom in bands, like a picture over a slow modem.
+   */
+  showCard(c) {
+    if (this.sel !== c) return;   // a later pick owns the screen now
+    const scr = this.$(".screen"), cs = getComputedStyle(scr), px = v => parseFloat(v) || 0;
+    const room = { w: scr.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight), h: scr.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) };
+    const w = Math.max(80, Math.floor(Math.min(room.w * BIG_W, room.h / CARD_RATIO)));
+    const reduced = !!this.os.env.reduced;
+    const box = h("div", { className: "big" + (reduced ? "" : " load") });
+    box.style.width = w + "px";
+    scr.append(box);
+    const card = this.bigCard = this.printed(c);
+    card.mount(box);
+    this.renderStamps(card, c);
+    const top = box.offsetTop - px(cs.paddingTop);
+    if (reduced || !scr.scrollTo) scr.scrollTop = top;
+    else scr.scrollTo({ top, behavior: "smooth" });
   }
 
   get selected() { return this.sel; }

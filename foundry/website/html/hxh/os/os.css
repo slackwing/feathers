@@ -222,7 +222,7 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; max-width: none; }   /* the binder fits itself to the screen (its zoom); the window cap, measured inside that zoom, cut the book short at 1024 px and left the buttons mid-cover */
 .win.chromeless.inactive { filter: none; }
 .win.chromeless .body { padding: 0; container-type: normal; }
-.win.chromeless .fbtns { position: absolute; right: 2px; top: 2px; z-index: 6; display: flex; gap: 2px; }
+.win.chromeless .fbtns { position: absolute; right: 2px; top: calc(2 * var(--px)); z-index: 6; display: flex; gap: 2px; }   /* one simulated pixel below the book's own border, not fused with it (Andrew, 2026-09-27) */
 .win.chromeless .fbtns .tbtn { width: 14px; height: 11px; }   /* the binder's: small, in the very corner, clear above the gold rivet 15 px in (Andrew, 2026-09-27) */
 .tbar {
   display: flex; align-items: center; gap: 8px;

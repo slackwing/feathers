@@ -576,8 +576,23 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   (5 screen px) — a press that wanders less stays a click, so a still
   click on the cover opens the book and a travelling one moves it; the
   click the browser sends after a real drag is swallowed so the drag
-  never also opens it. The float buttons (`.fbtns`, os.css) are 14×11,
-  2 px in from the corner, so they clear the gold rivet 15 px in; the
+  never also opens it. The open book shuts from the left page's left
+  edge (`.page .edge`, the border plus PAD, cursor pointer, tooltip
+  "Close" — the hinge side, where you would take hold of the leaf;
+  2026-09-27); it is part of the draggable margin, so the same slop
+  applies. The page label ("1 / 10", "Bookmarks") is 16 px and sits
+  12 px off the page's bottom inside the PAGENO strip, clear of the
+  cards. The screen types the profile at `TYPE_MS` (4 ms a character,
+  the timer floor), then `showCard` appends the whole printed card
+  (`printed(c)`, the sleeve's GICard, stamps included) at BIG_W of the
+  screen's width but never taller than the screen, scrolls to it, and
+  paints it in top to bottom in 22 bands (`@keyframes modem`,
+  clip-path) — "like images used to load with slow modems". The
+  screen's text rules are direct-child selectors (`.screen > .name`)
+  so they cannot restyle the card's own `.name` panel. The float
+  buttons (`.fbtns`, os.css) are 14×11 at right 2 px, top
+  2 × --px (one simulated pixel below the book's border, not fused
+  with it), so they clear the gold rivet 17 px in; the
   chromeless window has no `max-width` (the binder fits itself by its
   zoom — the generic cap, measured inside that zoom, cut the book short
   at 1024 px and stranded the buttons mid-cover). `roster.json` is DEPRECATED — kept for reference

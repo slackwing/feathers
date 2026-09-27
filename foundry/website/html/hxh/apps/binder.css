@@ -127,6 +127,14 @@
   box-shadow: inset 8px 8px 0 var(--navy-hi), inset 0 -6px 0 var(--navy-3);
   display: flex; flex-direction: column;
 }
+/* the page's left edge closes the book — the hinge side, where you'd take hold of the leaf to flip it back (Andrew, 2026-09-27) */
+.page .edge {
+  position: absolute; left: calc(-1 * var(--px)); top: calc(-1 * var(--px)); bottom: calc(-1 * var(--px)); width: calc(20px + var(--px));   /* the border and PAD */
+  cursor: pointer; z-index: 1;
+}
+.page .edge:hover { background: rgba(255, 255, 255, .06); }
+/* "Bookmarks" / "1 / 10": small, down in the strip PAGENO reserves, clear of the last row of cards */
+.pageno { position: absolute; left: 20px; bottom: 12px; font: 16px/1 var(--font-dot); color: rgba(255, 255, 255, .72); letter-spacing: .04em; pointer-events: none; }
 .tabs {   /* one tab per page; rows wrap UPWARD from the page's top edge */
   position: absolute; left: 20px; right: 20px; bottom: 100%;
   /* wrap-reverse flips the cross axis, so flex-START is the bottom: every tab's foot on the page edge, the open one just taller (Andrew, 2026-09-21) */
@@ -187,13 +195,18 @@
 .screen .idle .emblem { width: calc(150px * var(--u, 1)); height: calc(150px * var(--u, 1)); box-shadow: none; border-color: var(--scr); }
 .screen .idle .ja { color: var(--scr-dim); letter-spacing: .2em; }
 .screen { font: 13px/1.5 var(--font-dot); }   /* a device display: small type (Andrew, 2026-09-21: it was way too big) */
-.screen .top { font: 15px/1.4 var(--font-dot); color: var(--paper-hi); text-shadow: 0 0 8px rgba(223,243,255,.6); }
-.screen .name { font: 9px/1.8 var(--font-px); color: var(--paper-hi); margin-bottom: 6px; }
-.screen .line { color: var(--scr-dim); }
-.screen .line b { color: var(--scr-text); font-weight: normal; }
-.screen .desc { margin-top: 10px; white-space: pre-line; }
-.screen .status { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--teal-3); color: var(--scr-green); }
+.screen > .top { font: 15px/1.4 var(--font-dot); color: var(--paper-hi); text-shadow: 0 0 8px rgba(223,243,255,.6); }
+.screen > .name { font: 9px/1.8 var(--font-px); color: var(--paper-hi); margin-bottom: 6px; }
+.screen > .line { color: var(--scr-dim); }
+.screen > .line b { color: var(--scr-text); font-weight: normal; }
+.screen > .desc { margin-top: 10px; white-space: pre-line; }
+.screen > .status { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--teal-3); color: var(--scr-green); }
 .screen .cur::after { content: "█"; animation: blink .8s steps(2) infinite; color: var(--scr-green); }
+/* (the profile rules above are direct children only: the enlarged card's own .name / .no panels must keep the card's type)
+   the enlarged card under the profile, painted in top to bottom in bands like a picture over a 1990s modem */
+.screen .big { margin: 22px auto 0; }
+.screen .big.load .gicard { animation: modem 1.8s steps(22, end) .35s both; }   /* the delay lets the screen scroll to it first */
+@keyframes modem { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 
 /* the controls are sized from the page width: --u is 1 at the design page (514 book px, apps/binder.js sets it) —
    dial 128 + pad 128 + D-pad 140 + two 15 gaps fit the panel's 464 inner pixels with room to spare */

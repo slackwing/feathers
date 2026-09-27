@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS, DRAG_SLOP } from "../html/hxh/apps/binder.js";
+import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS, DRAG_SLOP, TYPE_MS } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 
 let nextId = 1;
@@ -493,4 +493,44 @@ test("the closed cover drags the binder on a travelling press and opens on a sti
   assert.equal(el.style.left, "160px", "a wobble under DRAG_SLOP does not move it");
   assert.ok(!b.book.classList.contains("closed"), "a still click opens the book");
   assert.equal(DRAG_SLOP, 5);
+});
+
+test("the left page's left edge closes the book; a card beside it does not (Andrew, 2026-09-27)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  b.setRoster([mk("Gon", ["enhancement"])]);
+  d.click(b.$(".cover"));
+  assert.ok(b.book.classList.contains("open"));
+  const edge = b.$(".leaf .page .edge");
+  assert.ok(edge, "the edge travels with the page into the open leaf");
+  assert.equal(edge.title, "Close");
+  d.click(b.$(".cards .card"));
+  assert.ok(b.book.classList.contains("open"), "a card is not the edge");
+  d.click(edge);
+  assert.ok(b.book.classList.contains("closed"), "the edge shuts the book");
+  assert.ok(b.$(".face.back .page .edge"), "the page, edge and all, is back on the leaf");
+  assert.equal(os.wm.get("win-binder").state.open, true, "the book shuts; the window stays");
+});
+
+test("once the profile is typed, the screen shows the whole card enlarged: the same printed card, hearts included; the next pick replaces it (Andrew, 2026-09-27)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  b.setRoster([mk("Gon Freecss", ["enhancement"], ["hunter-exam"], { first: "Gon", rank: "S", card_image_id: 18, card_number: 1 }), mk("Killua Zoldyck", [], ["hunter-exam"], { first: "Killua", card_number: 2 })]);
+  d.click(b.$(".cover"));
+  d.click(b.$('.cards .card[data-id="1"]'));
+  const scr = b.$(".screen");
+  const big = () => scr.querySelector(":scope > .big .gicard");
+  assert.ok(big(), "reduced motion types at once, and the card follows");
+  assert.equal(scr.lastElementChild.className, "big", "under the profile, and no modem paint-in under reduced motion");
+  assert.equal(big().querySelector(".gi-panel.name .gi-txt").textContent, "Gon", "the plaque's short name");
+  assert.equal(big().querySelector(".gi-frame img").getAttribute("src"), "/hxh/api/db/images/18");
+  d.click(b.$('[data-act="heart"]'));
+  await settle();
+  assert.equal(big().querySelectorAll(".gi-stamps .gi-stamp").length, 1, "a heart lands on the enlarged card too");
+  d.click(b.$('.cards .card[data-id="2"]'));
+  assert.equal(scr.querySelectorAll(".big").length, 1, "one card at a time");
+  assert.equal(big().querySelector(".gi-panel.name .gi-txt").textContent, "Killua");
+  assert.equal(TYPE_MS, 4, "a little faster than the old 6 ms a character");
 });
