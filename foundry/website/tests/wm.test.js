@@ -210,3 +210,29 @@ test("a place hint (the saved desktop) wins over the app's placement on the firs
   wm.hint("c", { x: 1, y: 1 }); wm.unhint("c");
   assert.equal(wm.hints.size, 0);
 });
+
+test("a slop drag (threshold): under it a press stays a click; past it the window moves and the release's click is swallowed — that one only, and never the next real click when none came", async () => {
+  Object.defineProperty(desktop, "clientWidth", { value: 1366 });
+  const a = wm.add(new Window({ id: "a" }));
+  await wm.open("a", { x: 100, y: 100 });
+  for (const [k, v] of [["offsetLeft", 100], ["offsetTop", 100], ["offsetWidth", 700]]) Object.defineProperty(a.el, k, { value: v });
+  const h = a.body;
+  wm.drag(a, h, { threshold: 5 });
+  let clicks = 0; h.addEventListener("click", () => clicks++);
+  const moves = []; bus.on("window:move", p => moves.push(p.id));
+  const ev = (type, x, y) => h.dispatchEvent(Object.assign(new d.win.Event(type, { bubbles: true }), { button: 0, clientX: x, clientY: y, pointerId: 1 }));
+  ev("pointerdown", 0, 0); ev("pointermove", 3, 3); ev("pointerup", 3, 3); h.click();
+  assert.equal(a.el.style.left, "100px", "4.2 px of wobble is not a drag");
+  assert.equal(clicks, 1, "under the slop the press is a click");
+  assert.deepEqual(moves, [], "and nothing moved");
+  ev("pointerdown", 0, 0); ev("pointermove", 40, 0); ev("pointerup", 40, 0); h.click();
+  assert.equal(a.el.style.left, "140px", "past the slop the window follows the whole travel");
+  assert.equal(clicks, 1, "the drag's release click is swallowed");
+  assert.deepEqual(moves, ["a"]);
+  h.click();
+  assert.equal(clicks, 2, "only that one click");
+  ev("pointerdown", 0, 0); ev("pointermove", 40, 0); ev("pointerup", 40, 0);   // released where no click follows
+  await new Promise(r => setTimeout(r, 5));
+  h.click();
+  assert.equal(clicks, 3, "no click came, so the next real one is not eaten");
+});

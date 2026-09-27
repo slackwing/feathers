@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
-import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS } from "../html/hxh/apps/binder.js";
+import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLATE, STAMP_ROT, BOOKMARK_HINT, STAMPS, binderLayout, TYPES, PER_PAGE, LIMIT, typeOf, rankBox, cardNo, firstSentence, cardText, SOURCE, BinderApp, CARD_W, CARD_RATIO, FILL, GAP, PAD, PAGENO, SPINE, TASKBAR, TABS, DRAG_SLOP } from "../html/hxh/apps/binder.js";
 import { OS } from "../html/hxh/os/os.js";
 
 let nextId = 1;
@@ -469,4 +469,28 @@ test("the book's margins drag the window; cards and controls do not", async () =
   pd(b.book, 10, 10); pm(50, 42); pu();
   assert.equal(el.style.left, "140px");   // a margin press does, snapped to 4 px
   assert.equal(el.style.top, "112px");
+});
+
+test("the closed cover drags the binder on a travelling press and opens on a still click; the click that ends a drag never opens it (Andrew, 2026-09-27)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  b.setRoster([mk("Gon", ["enhancement"])]);
+  const w = os.wm.get("win-binder"), el = w.el, cover = b.$(".cover");
+  el.style.left = "100px"; el.style.top = "80px";
+  Object.defineProperty(el, "offsetLeft", { value: 100, configurable: true });
+  Object.defineProperty(el, "offsetTop", { value: 80, configurable: true });
+  Object.defineProperty(el, "offsetWidth", { value: 1000, configurable: true });
+  Object.defineProperty(os.desktop.el, "clientWidth", { value: 1366, configurable: true });
+  const pd = (target, x, y) => target.dispatchEvent(new d.win.PointerEvent("pointerdown", { bubbles: true, clientX: x, clientY: y, button: 0 }));
+  const pm = (x, y) => b.book.dispatchEvent(new d.win.PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
+  const pu = () => b.book.dispatchEvent(new d.win.PointerEvent("pointerup", { bubbles: true }));
+  assert.ok(b.book.classList.contains("closed"));
+  pd(b.$(".cover .plate"), 10, 10); pm(70, 50); pu(); cover.click();   // the browser's click after the release
+  assert.equal(el.style.left, "160px", "a press anywhere on the cover, the name plate included, drags");
+  assert.equal(el.style.top, "120px");
+  assert.ok(b.book.classList.contains("closed"), "the drag's own click does not open the book");
+  pd(cover, 10, 10); pm(12, 13); pu(); cover.click();   // 3.6 px of wobble
+  assert.equal(el.style.left, "160px", "a wobble under DRAG_SLOP does not move it");
+  assert.ok(!b.book.classList.contains("closed"), "a still click opens the book");
+  assert.equal(DRAG_SLOP, 5);
 });

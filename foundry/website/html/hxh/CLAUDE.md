@@ -153,7 +153,9 @@ the OS.
   at, {scroll, jank})` (jank = frame → menu bar → body, 90/110 ms;
   default cascade `150+35n, 30+35n`; phones scroll it into view),
   `close/minimize/toggleMax/focus/focusTop/place/drag` (4 px snap,
-  zoom-divided, desktop only), `fit/relayout`, `handleEscape` (active
+  zoom-divided, desktop only; `drag(win, handle, {allow, threshold})` —
+  a threshold > 0 keeps a short press a click and swallows the click
+  that ends a real drag), `fit/relayout`, `handleEscape` (active
   popup). Every change is announced on the bus.
 - `Layout` (`layout.js`) — the desktop as you left it (Andrew,
   2026-09-22: "like they just woke up their desktop computer"). Records
@@ -555,8 +557,17 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   outfit hangs, below the face, so a sky that fills the edges loses).
   Tabs come from `groupCards` (one per group that has cards — one
   character, one tab; Andrew has "a better idea for the tabs" to come).
-  The book's margins drag the window (`WindowManager.drag` with an
-  `allow` predicate). `roster.json` is DEPRECATED — kept for reference
+  The book's margins drag the window, and so does the whole closed
+  cover (Andrew, 2026-09-27): `WindowManager.drag` with an `allow`
+  predicate (never a card or a control) and `threshold: DRAG_SLOP`
+  (5 screen px) — a press that wanders less stays a click, so a still
+  click on the cover opens the book and a travelling one moves it; the
+  click the browser sends after a real drag is swallowed so the drag
+  never also opens it. The float buttons (`.fbtns`, os.css) are 14×11,
+  2 px in from the corner, so they clear the gold rivet 15 px in; the
+  chromeless window has no `max-width` (the binder fits itself by its
+  zoom — the generic cap, measured inside that zoom, cut the book short
+  at 1024 px and stranded the buttons mid-cover). `roster.json` is DEPRECATED — kept for reference
   and as the skill's cross-check, read by nothing.
 - Old data: `roster.json` — 198 characters, the complete named cast of the
   2011 anime through the Election arc (researched 2026-09-17 by eight

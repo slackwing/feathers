@@ -219,11 +219,11 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   font: var(--t-body);
 }
 .win.static { position: relative; z-index: auto; }
-.win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; }
+.win.chromeless { background: none; border: 0; box-shadow: none; padding: 0; width: auto; max-width: none; }   /* the binder fits itself to the screen (its zoom); the window cap, measured inside that zoom, cut the book short at 1024 px and left the buttons mid-cover */
 .win.chromeless.inactive { filter: none; }
 .win.chromeless .body { padding: 0; container-type: normal; }
-.win.chromeless .fbtns { position: absolute; right: 3px; top: 3px; z-index: 6; display: flex; gap: 2px; }
-.win.chromeless .fbtns .tbtn { width: 20px; height: 17px; }   /* the binder's: small, in the very corner, off the screen bezel */
+.win.chromeless .fbtns { position: absolute; right: 2px; top: 2px; z-index: 6; display: flex; gap: 2px; }
+.win.chromeless .fbtns .tbtn { width: 14px; height: 11px; }   /* the binder's: small, in the very corner, clear above the gold rivet 15 px in (Andrew, 2026-09-27) */
 .tbar {
   display: flex; align-items: center; gap: 8px;
   background: var(--tb-bg); color: var(--tb-fg);
@@ -248,10 +248,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 }
 .tbtn:active { box-shadow: inset 1px 1px 0 var(--tbtn-lo); }
 .tbtn.min::before { content: ""; display: block; width: 8px; height: 2px; background: currentColor; transform: translateY(4px); }   /* Windows' minimize: a short bar low in the button, clear of the edge */
-.win.chromeless .fbtns .tbtn.min::before { transform: translateY(3px); }
+.win.chromeless .fbtns .tbtn.min::before { width: 6px; transform: translateY(2px); }
 .tbtn.close svg.x { display: block; width: 10px; height: 10px; }   /* the cross, drawn: always inside the box whatever the button's size */
 .tbtn.close svg.x path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
-.win.chromeless .fbtns .tbtn.close svg.x { width: 9px; height: 9px; }
+.win.chromeless .fbtns .tbtn.close svg.x { width: 7px; height: 7px; }
 .tbtn { padding: 0; }
 .mbar {
   display: flex; gap: 2px; position: relative;

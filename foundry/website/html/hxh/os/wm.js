@@ -185,25 +185,52 @@ export class WindowManager {
     w.state.placed = true;
   }
 
-  /** Move `win` by dragging `handle`; `allow(e)` may veto a press (a chromeless window dragged by its margins only). */
-  drag(win, handle, { allow = null } = {}) {
-    const el = win.el;
-    let sx, sy, ox, oy, moving = false;
+  /**
+   * Move `win` by dragging `handle`. `allow(e)` may veto a press (the
+   * binder: never from a card or a control). `threshold` is the slop, in
+   * screen pixels, before a press becomes a drag: under it the press stays
+   * a click (the binder's cover opens on a still click and moves on a
+   * travelling one — Andrew, 2026-09-27); 0, a title bar, drags from the
+   * first pixel. Once a drag has moved the window, the click the browser
+   * sends on release is swallowed, so a drag never also presses whatever
+   * it ends over.
+   */
+  drag(win, handle, { allow = null, threshold = 0 } = {}) {
+    const el = win.el, doc = handle.ownerDocument;
+    let sx, sy, ox, oy, pressed = false, moving = false, moved = false;
+    const grab = id => { try { handle.setPointerCapture?.(id); } catch {} };   // a synthetic pointer has nothing to capture
     handle.addEventListener("pointerdown", e => {
       if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
       if (allow && !allow(e)) return;
-      moving = true; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
-      try { handle.setPointerCapture?.(e.pointerId); } catch {}   // a synthetic pointerdown has no pointer to capture
-      e.preventDefault();
+      pressed = true; moved = false; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
+      moving = threshold <= 0;
+      // capturing now would retarget the click to the handle, so a slop press captures only once it becomes a drag
+      if (moving) { grab(e.pointerId); e.preventDefault(); }
     });
     handle.addEventListener("pointermove", e => {
-      if (!moving) return;
+      if (!pressed) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!moving) {
+        if (Math.hypot(dx, dy) < threshold) return;   // still a click
+        moving = true; grab(e.pointerId);
+      }
+      if (dx || dy) moved = true;
       const snap = v => Math.round(v / 4) * 4, z = this.env.zoom();
-      const x = snap(ox + (e.clientX - sx) / z), y = snap(oy + (e.clientY - sy) / z);
+      const x = snap(ox + dx / z), y = snap(oy + dy / z);
       el.style.left = Math.min(this.desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
       el.style.top = Math.max(0, y) + "px";
     });
-    const end = () => { if (!moving) return; moving = false; this.fit(); this.bus.emit("window:move", { id: win.id }); };
+    const end = () => {
+      if (!pressed) return;
+      const was = moving;
+      pressed = moving = false;
+      if (moved && doc) {   // the release's click belongs to the drag
+        const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
+        doc.addEventListener("click", eat, { capture: true, once: true });
+        setTimeout(() => doc.removeEventListener("click", eat, true), 0);   // no click came (released elsewhere): the next real one is not eaten
+      }
+      if (was) { this.fit(); this.bus.emit("window:move", { id: win.id }); }
+    };
     handle.addEventListener("pointerup", end);
     handle.addEventListener("pointercancel", end);
   }

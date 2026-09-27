@@ -167,8 +167,10 @@ const BOOK = `
     </div>
   </div>`;
 
-/* Presses on these are the book's own controls; anything else on the book drags the window. */
-const CONTROLS = ".card, .gicard, .tab, button, .cover, .screen, .dpad, .keys, .pad, .dial, .fbtns";
+/* Presses on these are the book's own controls; anything else on the book drags the window —
+   the closed cover included: it moves on a travelling press and opens on a still click (DRAG_SLOP). */
+const CONTROLS = ".card, .gicard, .tab, button, .screen, .dpad, .keys, .pad, .dial, .fbtns";
+export const DRAG_SLOP = 5;   // screen px a press may wander and still be a click (Andrew, 2026-09-27)
 
 export class BinderApp extends App {
   static id = "binder";
@@ -211,8 +213,8 @@ export class BinderApp extends App {
       if (dir === "right") this.go(this.page + 1);
       if (dir === "up" || dir === "down") this.step(dir === "up" ? -1 : 1);
     });
-    // drag the window by the book's margins (Andrew, 2026-09-19) — never by a card or a control
-    os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS) });
+    // drag the window by the book's margins (Andrew, 2026-09-19) and anywhere on the closed cover (2026-09-27) — never by a card or a control
+    os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS), threshold: DRAG_SLOP });
     this.me = os.user?.username || null;
     os.bus.on("session:user", ({ user }) => { this.me = user?.username || null; if (this.win.el) this.syncKeys(); });
     os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
