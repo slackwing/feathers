@@ -4878,10 +4878,12 @@ var HxH = (() => {
     }
     settle(from, to, fn) {
       const flap = this.$(".flap"), book = this.book;
+      this.win.el.classList.add("turning");
       const done = () => {
         if (!book.classList.contains(from)) return;
         clearTimeout(this.turnTimer);
         flap.removeEventListener("transitionend", onEnd);
+        this.win.el.classList.remove("turning");
         fn();
         book.classList.replace(from, to);
         this.os.wm.fit();
@@ -4916,6 +4918,8 @@ var HxH = (() => {
       const page = this.$(".page"), back = this.$(".face.back");
       back.prepend(page);
       if (!this.animated() || !book.classList.contains("open")) {
+        clearTimeout(this.turnTimer);
+        this.win.el.classList.remove("turning");
         book.classList.remove("open", "opening", "closing", "start");
         book.classList.add("closed");
         this.os.wm.fit();

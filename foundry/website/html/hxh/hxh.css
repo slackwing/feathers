@@ -2086,6 +2086,14 @@ html[data-theme=seapumpkin-pastel] {
   opacity: 0;
   transition: none;
 }
+.win.binder .fbtns {
+  transition: opacity .25s ease-out;
+}
+.win.binder.turning .fbtns {
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
 .cover {
   width: 100%;
   height: 100%;
