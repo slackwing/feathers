@@ -55,6 +55,7 @@ var HxH = (() => {
     SOUND_KEY: () => SOUND_KEY,
     SPLASHES: () => SPLASHES,
     SPLASH_IDS: () => SPLASH_IDS,
+    STARTUP_SPLASH: () => STARTUP_SPLASH,
     ScrollPane: () => ScrollPane,
     Session: () => Session,
     Settings: () => Settings,
@@ -900,6 +901,25 @@ var HxH = (() => {
       "................",
       "................",
       "................"
+    ],
+    // Heavens Arena: the 251-floor tower, a beacon at its tip, lit windows up its sides
+    arena: [
+      ".......kk.......",
+      ".......ky.......",
+      "......kyyk......",
+      "......kwwk......",
+      ".....kwNNwk.....",
+      ".....kwwwwk.....",
+      ".....kwNNwk.....",
+      ".....kwwwwk.....",
+      "....kwwNNwwk....",
+      "....kwwwwwwk....",
+      "....kwwNNwwk....",
+      "...kwwwwwwwwk...",
+      "...kwNwwwwNwk...",
+      "..kwwwwwwwwwwk..",
+      ".kwNwwwNNwwwNwk.",
+      "kkkkkkkkkkkkkkkk"
     ],
     sound: [
       "................",
@@ -3326,11 +3346,12 @@ var HxH = (() => {
     ["night", "Night"]
   ];
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
+  var STARTUP_SPLASH = "summons";
   function randomSplash(random = Math.random) {
     return SPLASH_IDS[Math.min(SPLASH_IDS.length - 1, Math.floor(random() * SPLASH_IDS.length))];
   }
   var X = `<span class="x">\xD7</span>`;
-  function summons(el, { reduced, random }) {
+  function summons(el, { reduced, random, prompt = "Click to start" }) {
     el.innerHTML = `
     <div class="sp-grain"></div>
     <div class="sp-embers"></div>
@@ -3338,7 +3359,7 @@ var HxH = (() => {
       <div class="sp-assoc">Hunter Association \xB7 Official Summons</div>
       <h1 class="sp-logo">HUNTER${X}<br><span class="hallow">HALLOWEEN</span></h1>
       <div class="sp-kana">\u30CF\u30F3\u30BF\u30FC\xD7\u30CF\u30ED\u30A6\u30A3\u30F3</div>
-      <div class="sp-start">Click to start</div>
+      <div class="sp-start">${esc(prompt)}</div>
     </div>`;
     if (!reduced) {
       const box = el.querySelector(".sp-embers");
@@ -3378,7 +3399,7 @@ var HxH = (() => {
     i.src = src;
     return i;
   }
-  function select(el, { reduced, random, fetch }) {
+  function select(el, { reduced, random, fetch, prompt = "CLICK TO START" }) {
     el.innerHTML = `
     <div class="sp-backdrop"></div>
     <div class="sp-head">PLAYER SELECT</div>
@@ -3388,7 +3409,7 @@ var HxH = (() => {
       <div class="sp-grid"></div>
       <div class="sp-fighter p2"><div class="sp-big"></div><div class="sp-plate"></div></div>
     </div>
-    <div class="sp-start">CLICK TO START</div>
+    <div class="sp-start">${esc(prompt)}</div>
     <div class="sp-credit"><span>1P</span><span>CREDIT 01</span></div>`;
     const doc = el.ownerDocument, win = doc.defaultView;
     const grid = el.querySelector(".sp-grid");
@@ -3523,7 +3544,7 @@ var HxH = (() => {
     }
     return out;
   }
-  function night(el, { reduced, random }) {
+  function night(el, { reduced, random, prompt = "CLICK TO START" }) {
     el.innerHTML = `
     <canvas class="sp-sky px" aria-hidden="true"></canvas>
     <img class="sp-ship" src="${SHIP_SRC}" alt="" draggable="false">
@@ -3532,7 +3553,7 @@ var HxH = (() => {
       <div class="sp-big">HUNTER${X}</div>
       <div class="sp-big hallow">HALLOWEEN</div>
     </div>
-    <div class="sp-start">CLICK TO START</div>
+    <div class="sp-start">${esc(prompt)}</div>
     <div class="sp-foot">\xA9 2026 HUNTER ASSOCIATION</div>`;
     const canvas = el.querySelector(".sp-sky");
     const g = canvas.getContext?.("2d");
@@ -3631,9 +3652,10 @@ var HxH = (() => {
     /**
      * Show a style (default: one at random) until the viewer clicks, taps or
      * presses Enter / Space / Escape. Resolves with the style's id. Showing
-     * another while one is up replaces it.
+     * another while one is up replaces it. `prompt` replaces "Click to start"
+     * (Heavens Arena: COMING SOON); `chime: false` dismisses it silently.
      */
-    show(id = null) {
+    show(id = null, { prompt, chime = true } = {}) {
       const { reduced = false, random = Math.random } = this.props;
       if (!SPLASH_IDS.includes(id)) id = randomSplash(random);
       this.finish?.(false);
@@ -3641,7 +3663,8 @@ var HxH = (() => {
       el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
       el.dataset.style = id;
       el.hidden = false;
-      const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch });
+      const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...prompt ? { prompt } : {} });
+      el.setAttribute("aria-label", prompt || "Click to start");
       el.focus?.({ preventScroll: true });
       return new Promise((resolve) => {
         const onKey = (e) => {
@@ -3661,7 +3684,7 @@ var HxH = (() => {
           stop();
           el.hidden = true;
           el.replaceChildren();
-          if (gesture) this.props.sounds?.play?.("startup");
+          if (gesture && chime) this.props.sounds?.play?.("startup");
           resolve(id);
         };
         this.finish = done;
@@ -4033,7 +4056,7 @@ var HxH = (() => {
       if (!me && gate || !taskbar) this.showBadge();
       if (!me && gate) me = await this.logon();
       if (taskbar) this.hideBadge();
-      if (me && splash && boot && !warm) await this.showSplash();
+      if (me && splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
       this.setUser(me);
       if (me && wallpaper2) this.startWallpaper();
       if (this.taskbar) this.taskbar.el.hidden = false;
@@ -4044,10 +4067,10 @@ var HxH = (() => {
       if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
       return this;
     }
-    /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
-    showSplash(id = null) {
+    /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random; `opts` { prompt, chime }. Resolves when the viewer clicks it away. */
+    showSplash(id = null, opts = {}) {
       if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
-      return this.splash.show(id);
+      return this.splash.show(id, opts);
     }
     launch(id, opts = {}) {
       return this.registry.launch(id, opts);
@@ -4067,6 +4090,7 @@ var HxH = (() => {
   __export(apps_exports, {
     Binder: () => BinderApp,
     Chat: () => ChatApp,
+    HeavensArena: () => HeavensArenaApp,
     NOTICE: () => NOTICE,
     Roster: () => RosterApp,
     SetPassword: () => SetPasswordApp,
@@ -8853,6 +8877,22 @@ var HxH = (() => {
     if (!c.card_image_id && Math.abs(r - CARD_RATIO2) <= tol) return "card_image_id";
     return null;
   }
+
+  // html/hxh/apps/arena.js
+  var HeavensArenaApp = class extends App {
+    static id = "arena";
+    static name = "Heavens Arena";
+    static icon = "arena";
+    static order = 22;
+    // after the Binder
+    launch() {
+      return this.os.showSplash("select", { prompt: "COMING SOON", chime: false });
+    }
+    reopen() {
+      return Promise.resolve(false);
+    }
+    // nothing to bring back
+  };
 
   // html/hxh/os/index.js
   var os = null;

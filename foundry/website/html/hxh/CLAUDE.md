@@ -162,7 +162,12 @@ the OS.
   (index only; a warm navigation skips it with the boot). ORDER (Andrew,
   2026-09-27): signed in → boot, splash, desktop; signed out → boot,
   logon, THEN the splash, desktop — never a splash in front of the
-  logon. Three styles, one at random (`SPLASHES`): Summons (the first
+  logon. The startup splash is ALWAYS the Summons (`STARTUP_SPLASH` —
+  Andrew, 2026-09-27: the site's anchor); Player Select is the Heavens
+  Arena placeholder (`apps/arena.js`: the app has no window, it shows
+  Player Select with `prompt: "COMING SOON"`, `chime: false`, closed by a
+  click); Night is found only in Settings › Other › Splash screen. Three
+  styles (`SPLASHES`): Summons (the first
   landing page, tag `hxh-pre-retro`, revived: Alfa Slab logotype,
   pulsing ✕, embers), Player Select (a retro fighting game's select
   screen: chrome-gradient italic pixel type over Andrew's key-art

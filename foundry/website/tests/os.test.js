@@ -4,6 +4,7 @@ import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { Blimp } from "../html/hxh/os/blimp.js";
 import { hasIconPair } from "../html/hxh/os/icons.js";
+import { HeavensArenaApp } from "../html/hxh/apps/arena.js";
 import { App } from "../html/hxh/os/apps.js";
 import { Window } from "../html/hxh/os/window.js";
 import { WARM_KEY, Nav } from "../html/hxh/os/session.js";
@@ -74,6 +75,8 @@ test("a cold load with splash: after the boot screen the title screen holds ever
   await new Promise(r => setTimeout(r, 40));
   const el = document.querySelector(".splashscreen");
   assert.ok(el && !el.hidden, "the splash is up");
+  assert.equal(el.dataset.style, "summons", "always the Summons: the site's anchor (Andrew, 2026-09-27)");
+  assert.match(el.textContent, /Click to start/);
   assert.equal(ready, false, "and the desktop waits for it");
   assert.equal(os.wm.get("win-hello")?.state.open ?? false, false);
   el.click();
@@ -102,6 +105,28 @@ test("logged out: the boot screen, then the logon — and the splash only once y
   sp().click();
   await p;
   assert.equal(os.wm.get("win-hello").state.open, true);
+});
+
+test("Heavens Arena: a desktop icon and Start entry after the Binder; opening it covers the screen with Player Select saying COMING SOON, and a click closes it — silently (Andrew, 2026-09-27)", async () => {
+  const played = [];
+  const { os } = make({ reduced: false });
+  os.sounds.play = n => { played.push(n); return true; };
+  await os.start({ apps: [Hello, HeavensArenaApp], start: true });
+  const app = os.registry.get("arena");
+  assert.ok(app && hasIconPair(HeavensArenaApp.icon), "a 16×16 tower icon");
+  assert.ok(os.startItems().some(i => i.label === "Heavens Arena"), "in the Start menu");
+  assert.ok(document.querySelector('.icons [data-act="arena"]'), "on the desktop");
+  const done = os.launch("arena");
+  const el = document.querySelector(".splashscreen");
+  assert.ok(el && !el.hidden && el.dataset.style === "select");
+  assert.match(el.textContent, /COMING SOON/);
+  assert.doesNotMatch(el.textContent, /CLICK TO START/i);
+  assert.equal(el.getAttribute("aria-label"), "COMING SOON");
+  el.click();
+  await done;
+  assert.equal(el.hidden, true, "a click closes it, back to the desktop");
+  assert.deepEqual(played, [], "no startup chime for a placeholder");
+  assert.equal(await app.reopen("win-arena"), false, "nothing for the saved desktop to bring back");
 });
 
 test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Player Select / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {

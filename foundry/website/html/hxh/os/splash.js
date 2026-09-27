@@ -33,7 +33,7 @@
    is `container-type: size`), so the desktop's CSS zoom cannot distort it.
    Under reduced motion each is a still picture. No copyrighted art. */
 import { Component } from "./component.js";
-import { h } from "./dom.js";
+import { h, esc } from "./dom.js";
 import { SHIP_SRC } from "./blimp.js";
 import { geometry, islandLayer, drawPier, ISLAND_W, ISLAND_H, TOWN_X, house } from "./wallpaper.js";
 import "./splash.css";
@@ -44,6 +44,9 @@ export const SPLASHES = [
   ["night", "Night"],
 ];
 export const SPLASH_IDS = SPLASHES.map(([id]) => id);
+/** The one the site opens with: the Summons is the site's anchor (Andrew, 2026-09-27). Player Select is the Heavens Arena
+    placeholder (apps/arena.js); Night lives only in Settings › Other › Splash screen. */
+export const STARTUP_SPLASH = "summons";
 
 /** A style at random (the page's first load picks one). */
 export function randomSplash(random = Math.random) {
@@ -53,7 +56,7 @@ export function randomSplash(random = Math.random) {
 const X = `<span class="x">×</span>`;
 
 /* ---------- summons: the first landing page, revived ---------- */
-function summons(el, { reduced, random }) {
+function summons(el, { reduced, random, prompt = "Click to start" }) {
   el.innerHTML = `
     <div class="sp-grain"></div>
     <div class="sp-embers"></div>
@@ -61,7 +64,7 @@ function summons(el, { reduced, random }) {
       <div class="sp-assoc">Hunter Association · Official Summons</div>
       <h1 class="sp-logo">HUNTER${X}<br><span class="hallow">HALLOWEEN</span></h1>
       <div class="sp-kana">ハンター×ハロウィン</div>
-      <div class="sp-start">Click to start</div>
+      <div class="sp-start">${esc(prompt)}</div>
     </div>`;
   if (!reduced) {
     const box = el.querySelector(".sp-embers");
@@ -100,7 +103,7 @@ function portrait(doc, src) {
   return i;
 }
 
-function select(el, { reduced, random, fetch }) {
+function select(el, { reduced, random, fetch, prompt = "CLICK TO START" }) {
   el.innerHTML = `
     <div class="sp-backdrop"></div>
     <div class="sp-head">PLAYER SELECT</div>
@@ -110,7 +113,7 @@ function select(el, { reduced, random, fetch }) {
       <div class="sp-grid"></div>
       <div class="sp-fighter p2"><div class="sp-big"></div><div class="sp-plate"></div></div>
     </div>
-    <div class="sp-start">CLICK TO START</div>
+    <div class="sp-start">${esc(prompt)}</div>
     <div class="sp-credit"><span>1P</span><span>CREDIT 01</span></div>`;
   const doc = el.ownerDocument, win = doc.defaultView;
   const grid = el.querySelector(".sp-grid");
@@ -227,7 +230,7 @@ export function moonRoad({ H, HZ, MX, MR }, t) {
   }
   return out;
 }
-function night(el, { reduced, random }) {
+function night(el, { reduced, random, prompt = "CLICK TO START" }) {
   el.innerHTML = `
     <canvas class="sp-sky px" aria-hidden="true"></canvas>
     <img class="sp-ship" src="${SHIP_SRC}" alt="" draggable="false">
@@ -236,7 +239,7 @@ function night(el, { reduced, random }) {
       <div class="sp-big">HUNTER${X}</div>
       <div class="sp-big hallow">HALLOWEEN</div>
     </div>
-    <div class="sp-start">CLICK TO START</div>
+    <div class="sp-start">${esc(prompt)}</div>
     <div class="sp-foot">© 2026 HUNTER ASSOCIATION</div>`;
   const canvas = el.querySelector(".sp-sky");
   const g = canvas.getContext?.("2d");
@@ -314,9 +317,10 @@ export class Splash extends Component {
   /**
    * Show a style (default: one at random) until the viewer clicks, taps or
    * presses Enter / Space / Escape. Resolves with the style's id. Showing
-   * another while one is up replaces it.
+   * another while one is up replaces it. `prompt` replaces "Click to start"
+   * (Heavens Arena: COMING SOON); `chime: false` dismisses it silently.
    */
-  show(id = null) {
+  show(id = null, { prompt, chime = true } = {}) {
     const { reduced = false, random = Math.random } = this.props;
     if (!SPLASH_IDS.includes(id)) id = randomSplash(random);
     this.finish?.(false);
@@ -324,7 +328,8 @@ export class Splash extends Component {
     el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
     el.dataset.style = id;
     el.hidden = false;
-    const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch });
+    const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...(prompt ? { prompt } : {}) });
+    el.setAttribute("aria-label", prompt || "Click to start");
     el.focus?.({ preventScroll: true });
     return new Promise(resolve => {
       const onKey = e => { if (["Enter", " ", "Escape"].includes(e.key)) { e.preventDefault(); done(true); } };
@@ -336,7 +341,7 @@ export class Splash extends Component {
         stop();
         el.hidden = true;
         el.replaceChildren();
-        if (gesture) this.props.sounds?.play?.("startup");
+        if (gesture && chime) this.props.sounds?.play?.("startup");
         resolve(id);
       };
       this.finish = done;

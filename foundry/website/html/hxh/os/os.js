@@ -20,7 +20,7 @@ import { WindowManager } from "./wm.js";
 import { Taskbar } from "./taskbar.js";
 import { StartMenu } from "./startmenu.js";
 import { People } from "./people.js";
-import { Splash, SPLASHES } from "./splash.js";
+import { Splash, SPLASHES, STARTUP_SPLASH } from "./splash.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
 import { LogonDialog } from "./logon.js";
@@ -283,7 +283,7 @@ export class OS {
     if (taskbar) this.hideBadge();
     // the title screen (os/splash.js), a style at random, until the viewer clicks: after the boot screen when you are
     // signed in, after the logon when you were not (Andrew, 2026-09-27) — never in front of the logon
-    if (me && splash && boot && !warm) await this.showSplash();
+    if (me && splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);   // always the Summons: the site's anchor (Andrew, 2026-09-27)
     this.setUser(me);
     if (me && wallpaper) this.startWallpaper();       // Whale Island only once you're in
     if (this.taskbar) this.taskbar.el.hidden = false;
@@ -295,10 +295,10 @@ export class OS {
     return this;
   }
 
-  /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
-  showSplash(id = null) {
+  /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random; `opts` { prompt, chime }. Resolves when the viewer clicks it away. */
+  showSplash(id = null, opts = {}) {
     if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
-    return this.splash.show(id);
+    return this.splash.show(id, opts);
   }
 
   launch(id, opts = {}) { return this.registry.launch(id, opts); }

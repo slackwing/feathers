@@ -4,3 +4,4 @@ export { BinderApp as Binder } from "./binder.js";
 export { ChatApp as Chat } from "./chat/app.js";
 export { SetPasswordApp as SetPassword } from "./setpw.js";
 export { RosterApp as Roster } from "./roster/app.js";
+export { HeavensArenaApp as HeavensArena } from "./arena.js";
