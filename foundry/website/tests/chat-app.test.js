@@ -683,3 +683,13 @@ test("the saved desktop: the buddy list and a DM come back by their room (one co
   assert.equal(await a.reopen("win-chat-dm-abi-andrew", "global"), false, "a key that does not match the id is refused");
   assert.ok(a.owns("win-chat-contacts") && !a.owns("win-binder"));
 });
+
+test("a message picture's frame never reaches the sender's avatar picture: no border, no margin on a claimed member's avatar (Andrew, 2026-09-27: half a dark ring)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/apps/chat/chat.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const rule of css.match(/[^{}]+\{[^}]*\}/g) || []) {
+    const [sel, body] = rule.split("{");
+    if (!/\.pic\b/.test(sel) || !/border|margin/.test(body)) continue;
+    for (const one of sel.split(",")) assert.match(one, /\.bd\s*>\s*\.pic|\.picture|\.pbox/, `"${one.trim()}" could reach .avatar.pic`);
+  }
+});

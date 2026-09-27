@@ -113,7 +113,8 @@
 .room .attach { position: relative; align-self: flex-start; max-width: 100%; }
 .room .attach img { display: block; width: auto; height: auto; max-width: 100%; max-height: 120px; border: var(--px) solid var(--win-border); }
 .room .attach .x { position: absolute; top: -8px; right: -8px; }
-.room .m .pic img { display: block; width: auto; height: auto; max-width: 100%; max-height: 300px; margin: 4px 0 6px; border: var(--px) solid var(--win-border); image-rendering: auto; }
+/* a picture sent in a message — scoped to the message body: the avatar's own .avatar.pic took this border and margin and showed half a dark ring (Andrew, 2026-09-27) */
+.room .m .bd > .pic img { display: block; width: auto; height: auto; max-width: 100%; max-height: 300px; margin: 4px 0 6px; border: var(--px) solid var(--win-border); image-rendering: auto; }
 /* the emoji palette: a grid, big glyphs in the colour emoji face */
 .dd.emoji { min-width: 0; width: 304px; padding: 6px; }
 .dd.emoji.open { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
