@@ -145,7 +145,7 @@ export class ContactsWindow extends Window {
   /** Everyone but me: the present under Buddies, the rest under Offline. */
   groups() {
     const mine = this.me?.username;
-    const all = [...this.contacts.values()].filter(c => c.username !== mine);
+    const all = [...this.contacts.values()].filter(c => c.username !== mine && !c.hidden);   // hidden: a bot while bots are off — not listed, but its name still resolves elsewhere
     const byName = (a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username);
     return [
       { key: "buddies", label: "Buddies", rows: all.filter(c => present(c.state)).sort(byName), total: all.length },
@@ -169,7 +169,7 @@ export class ContactsWindow extends Window {
     box.replaceChildren();
     const mine = this.me?.username;
     if (this.tab === "list") {
-      const all = [...this.contacts.values()].filter(c => c.username !== mine).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
+      const all = [...this.contacts.values()].filter(c => c.username !== mine && !c.hidden).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
       for (const c of all) box.append(this.row(c, { flat: true }));
       if (this.countEl) this.countEl.textContent = `${all.length} buddies`;
       this.pane?.update();

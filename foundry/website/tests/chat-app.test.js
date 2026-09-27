@@ -650,6 +650,19 @@ test("a claim: the contacts message re-lists everyone; a claimer speaks as 'Gon 
   assert.equal(row.querySelector(".who").textContent, "Andrew", "the claim released: back to the plain name");
 });
 
+test("bots off: a hidden member is not in the buddy list, but a chat with them keeps their proper name — not \"alyosha\" (Andrew, 2026-09-27)", async () => {
+  await os.launch("chat"); hello();
+  await tick();
+  sockets[0].push({ t: "contacts", contacts: CONTACTS.map(c => c.is_bot ? { ...c, hidden: true } : c) });
+  const contacts = app().contactsWin;
+  const listed = [...contacts.el.querySelectorAll("[data-user]")].map(e => e.dataset.user);
+  assert.ok(!listed.includes("alyosha"), "not listed: " + listed);
+  assert.ok(listed.includes("abi"), "people still are");
+  assert.equal(app().roomTitle("dm:alyosha:andrew"), "Alyosha", "the window title keeps the display name");
+  assert.equal(app().nameOf("alyosha"), "Alyosha");
+  sockets[0].push({ t: "contacts", contacts: CONTACTS });
+});
+
 test("Exit in the tray menu closes every BeetleChat window and leaves the connection and the tray icon", async () => {
   await os.launch("chat"); hello();
   await tick();

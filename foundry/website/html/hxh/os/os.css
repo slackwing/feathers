@@ -190,9 +190,10 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
   display: flex; align-items: center; justify-content: center;
   padding: 20px 20px calc(var(--taskbar-h) + 20px);
 }
-.icons {
+.icons {   /* columns that fill down to just above the taskbar, then wrap into the next column; they reflow on resize (Andrew, 2026-09-27: the 6th or 7th icon hid behind the taskbar) */
   position: absolute; left: 15px; top: 15px; z-index: 1;
-  display: flex; flex-direction: column; gap: 15px;
+  display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 15px;
+  max-height: calc(100svh / var(--zoom) - var(--taskbar-h) - 30px);   /* the visible desktop, less the 15px top and a 15px foot */
 }
 .icon {
   width: 100px; padding: 5px 2px;

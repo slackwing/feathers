@@ -75,7 +75,7 @@ test("desktop icons: every desktop app has a 20×20 grid in DESK, palette letter
     assert.match(desktopIcon(name), /viewBox="0 0 20 20" width="60" height="60"/);
     assert.ok(ICONS[name], `${name} also has its 16-grid for the taskbar, tray and menus`);
   }
-  for (const name of ["envelope", "book", "beetle", "arena", "db", "bug"]) assert.ok(DESK[name], `the ${name} desktop app has a 20-grid`);
+  for (const name of ["envelope", "book", "beetle", "arena", "db", "tools"]) assert.ok(DESK[name], `the ${name} desktop app has a 20-grid`);
   // every desktop app on the page has one: a 16-grid fallback draws 48 px among 60s and looks shrunken
   const fs = await import("node:fs"), path = await import("node:path");
   const appsDir = new URL("../html/hxh/apps/", import.meta.url).pathname;
@@ -104,4 +104,25 @@ test("the Beetle and the game pad are mirror-symmetric in outline at both sizes 
   assert.equal(mid(ys), (Math.min(...cells("b").map(p => p[1])) + Math.max(...cells("y").map(p => p[1]))) / 2, "D-pad and buttons share a middle row");
   const btn = ["b", "g", "r", "y"].flatMap(cells).map(p => p[0]);
   assert.equal(mid(xs) + mid(btn), 19, "D-pad and buttons mirror about the pad's middle");
+});
+
+test("the Binder's desktop icon is 2 px shorter at the bottom, its lower gold tab up with it; the tools icon replaces the bug at both sizes (Andrew, 2026-09-27)", async () => {
+  const { DESK, ICONS } = await import("../html/hxh/os/icons.js");
+  const book = DESK.book, rows = book.map((r, i) => [r, i]);
+  const drawn = rows.filter(([r]) => /[^.]/.test(r)).map(([, i]) => i);
+  assert.equal(book.length, 20);
+  assert.deepEqual([drawn[0], drawn.at(-1)], [0, 17], "the cover ends 2 rows higher, the top unmoved");
+  const gold = rows.filter(([r]) => r.includes("G")).map(([, i]) => i);
+  assert.deepEqual(gold, [3, 4, 5, 12, 13, 14], "the lower tab up by 2");
+  assert.ok(!DESK.bug && !ICONS.bug, "no bug icon left");
+  for (const g of [ICONS.tools, DESK.tools]) assert.ok(g && g.every(r => r.length === g.length) && /t/.test(g.join("")) && /n/.test(g.join("")), "a wooden handle and steel");
+});
+
+test("desktop icons fill a column down to just above the taskbar, then wrap into the next; resizing reflows them (Andrew, 2026-09-27)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/os/os.css", import.meta.url), "utf8");
+  const rule = css.match(/\n\.icons \{[^}]*\}/)[0];
+  assert.match(rule, /flex-direction: column/);
+  assert.match(rule, /flex-wrap: wrap/);
+  assert.match(rule, /max-height: calc\(100svh \/ var\(--zoom\) - var\(--taskbar-h\)/, "bounded by the visible desktop above the taskbar");
 });

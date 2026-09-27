@@ -30,7 +30,8 @@ function make(me, extra = {}) {
 test("Report a Bug: an app for everyone, with a 16×16 bug icon; the window is BeetleChat's compose box — Paste, Image, Emoji, the field, Send (Andrew, 2026-09-27)", async () => {
   const { os, options } = make(GUEST);
   await os.start({ apps: [[BugReportApp, options]], start: true });
-  assert.ok(hasIconPair("bug"));
+  assert.ok(hasIconPair("tools"), "a hammer and wrench, not a bug (too like BeetleChat, Andrew 2026-09-27)");
+  assert.equal(BugReportApp.icon, "tools");
   assert.ok(os.startItems().some(i => i.label === "Report a Bug"));
   await os.launch("bugs");
   const w = os.wm.get("win-bugs");

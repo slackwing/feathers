@@ -43,7 +43,7 @@ export function bugContext(os) {
 export class BugReportApp extends App {
   static id = "bugs";
   static name = "Report a Bug";
-  static icon = "bug";
+  static icon = "tools";
   static order = 90;
 
   constructor(os, options = {}) {
@@ -59,7 +59,7 @@ export class BugReportApp extends App {
   window() {
     if (this.win) return this.win;
     const os = this.os;
-    this.win = new Window({ id: "win-bugs", title: "Report a Bug", icon: "bug", width: 460, cls: "bugs", menus: w => os.appMenus(w) });
+    this.win = new Window({ id: "win-bugs", title: "Report a Bug", icon: "tools", width: 460, cls: "bugs", menus: w => os.appMenus(w) });
     os.wm.add(this.win);
     this.composer = this.win.adopt(new Composer({ clipboard: this.options.clipboard, rows: 5, label: "What went wrong?", placeholder: "What went wrong?" }), this.win.body);
     this.composer.on("send", p => this.submit(p));
@@ -128,7 +128,7 @@ export class BugReportApp extends App {
     if (!this.admin) return null;
     this.startPolling();
     return {
-      icon: "bug",
+      icon: "tools",
       title: () => this.pending ? `Bug reports: ${this.pending} pending` : "Bug reports",
       on: () => this.pending > 0,
       badge: () => this.pending,

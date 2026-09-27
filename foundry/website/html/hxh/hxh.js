@@ -946,23 +946,23 @@ var HxH = (() => {
       "................",
       "................"
     ],
-    // Report a Bug: a green beetle-shaped bug, legs out (BeetleChat's beetle is the red one)
-    bug: [
-      "....k......k....",
-      ".....k....k.....",
-      "......kkkk......",
-      ".....keeeek.....",
-      "..k.kkkkkkkk.k..",
-      "...kgggkkgggk...",
-      "kkkggggkkggggkkk",
-      "...kgggkkgggk...",
-      "..kggggkkggggk..",
-      "kkkggggkkggggkkk",
-      "..kggggkkggggk..",
-      "...kgggkkgggk...",
-      "kk..kggkkggk..kk",
-      ".....kkkkkk.....",
-      "................",
+    // Report a Bug: a hammer and a wrench crossed, like Windows' maintenance tools (Andrew, 2026-09-27: the bug was too like BeetleChat's beetle)
+    tools: [
+      "....kk...k......",
+      "...kwwk.knk.....",
+      "....knwknsnk....",
+      ".k..knnksssnk...",
+      "kwkkwnnkksssnk..",
+      "knwwnnnkktsssnk.",
+      ".knnnnnwottsssnk",
+      "..kkkkntttkkssk.",
+      ".....ktttnk.kk..",
+      "....kottnnwk....",
+      "...kottkknnwk...",
+      "..kottk..knnwk..",
+      ".kottk....knnwk.",
+      ".kttk......knnk.",
+      "..kk........kk..",
       "................"
     ],
     // the Binder's claimed pages: a thick red checkmark, ink-edged
@@ -1062,6 +1062,7 @@ var HxH = (() => {
       "...................."
     ],
     book: [
+      // 2 px shorter at the bottom, the lower gold tab up with it (Andrew, 2026-09-27: a little too long)
       "...kkkkkkkkkkkkk....",
       "...kqqNNNNNNNNNk....",
       "...kqqNNNNNNNNNk....",
@@ -1074,14 +1075,14 @@ var HxH = (() => {
       "...kqqNNgqqqgNNk....",
       "...kqqNNNgggNNNk....",
       "...kqqNNNNNNNNNk....",
-      "...kqqNNNNNNNNNk....",
-      "...kqqNNNNNNNNNk....",
       "...kqqNNNNNNNNNkG...",
       "...kqqNNNNNNNNNkG...",
       "...kqqNNNNNNNNNkG...",
       "...kqqNNNNNNNNNk....",
       "...kqqNNNNNNNNNk....",
-      "...kkkkkkkkkkkkk...."
+      "...kkkkkkkkkkkkk....",
+      "....................",
+      "...................."
     ],
     beetle: [
       ".....kLk...kLk......",
@@ -1149,27 +1150,27 @@ var HxH = (() => {
       ".....kkkbbbbkkk.....",
       "........kkkk........"
     ],
-    bug: [
-      // Report a Bug (another session's app, 2026-09-27): its 16-grid's design at 20
-      "....................",
-      ".....k........k.....",
-      "......k......k......",
-      ".......k....k.......",
-      ".......kkkkkk.......",
-      "......keeeeeek......",
-      "...k.kkkkkkkkkk.k...",
-      ".....kgggkkgggk.....",
-      "....kggggkkggggk....",
-      ".kkkkggggkkggggkkkk.",
-      "....kggggkkggggk....",
-      "....kggggkkggggk....",
-      ".kkkkggggkkggggkkkk.",
-      "....kggggkkggggk....",
-      "....kggggkkggggk....",
-      "..k.kggggkkggggk.k..",
-      ".k...kgggkkgggk...k.",
-      "......kggkkggk......",
-      ".......kkkkkk.......",
+    tools: [
+      // Report a Bug: the hammer and wrench at 20 (the 16's design, drawn by the same rasterizer)
+      "....kkk.............",
+      "...kwwwk...kk.......",
+      "....knnwk.knnk......",
+      ".k...knnwknssnk.....",
+      "kwk.kwknnkksssnk....",
+      "knwkwnwnnk.ksssnk...",
+      "knnwknnnnk.ktsssnk..",
+      ".knnwnnnnkkottsssnk.",
+      "..knnnnnnwottkksssk.",
+      "...kkkkkntttk..ksk..",
+      ".......ktttnk...k...",
+      "......kottnnwk......",
+      ".....kottkknnwk.....",
+      "....kottk..knnwkk...",
+      "...kottk....knnwwk..",
+      "..kottk......knnnwk.",
+      "..kttk.......knnnnk.",
+      "...kk.........knnk..",
+      "...............kk...",
       "...................."
     ]
   };
@@ -5946,7 +5947,7 @@ var HxH = (() => {
     /** Everyone but me: the present under Buddies, the rest under Offline. */
     groups() {
       const mine = this.me?.username;
-      const all = [...this.contacts.values()].filter((c) => c.username !== mine);
+      const all = [...this.contacts.values()].filter((c) => c.username !== mine && !c.hidden);
       const byName = (a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username);
       return [
         { key: "buddies", label: "Buddies", rows: all.filter((c) => present(c.state)).sort(byName), total: all.length },
@@ -5973,7 +5974,7 @@ var HxH = (() => {
       box.replaceChildren();
       const mine = this.me?.username;
       if (this.tab === "list") {
-        const all = [...this.contacts.values()].filter((c) => c.username !== mine).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
+        const all = [...this.contacts.values()].filter((c) => c.username !== mine && !c.hidden).sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
         for (const c of all) box.append(this.row(c, { flat: true }));
         if (this.countEl) this.countEl.textContent = `${all.length} buddies`;
         this.pane?.update();
@@ -9184,7 +9185,7 @@ var HxH = (() => {
       super({
         id: "win-bug-list",
         title: "Bug Reports",
-        icon: "bug",
+        icon: "tools",
         width: 560,
         cls: "buglist",
         content: `<div class="bfilters">${FILTERS2.map(([k, l]) => `<button class="btn" type="button" data-filter="${k}">${l}</button>`).join("")}</div><div class="breports sunken"></div>`,
@@ -9276,7 +9277,7 @@ var HxH = (() => {
   var BugReportApp = class extends App {
     static id = "bugs";
     static name = "Report a Bug";
-    static icon = "bug";
+    static icon = "tools";
     static order = 90;
     constructor(os2, options = {}) {
       super(os2, options);
@@ -9291,7 +9292,7 @@ var HxH = (() => {
     window() {
       if (this.win) return this.win;
       const os2 = this.os;
-      this.win = new Window({ id: "win-bugs", title: "Report a Bug", icon: "bug", width: 460, cls: "bugs", menus: (w) => os2.appMenus(w) });
+      this.win = new Window({ id: "win-bugs", title: "Report a Bug", icon: "tools", width: 460, cls: "bugs", menus: (w) => os2.appMenus(w) });
       os2.wm.add(this.win);
       this.composer = this.win.adopt(new Composer({ clipboard: this.options.clipboard, rows: 5, label: "What went wrong?", placeholder: "What went wrong?" }), this.win.body);
       this.composer.on("send", (p) => this.submit(p));
@@ -9368,7 +9369,7 @@ var HxH = (() => {
       if (!this.admin) return null;
       this.startPolling();
       return {
-        icon: "bug",
+        icon: "tools",
         title: () => this.pending ? `Bug reports: ${this.pending} pending` : "Bug reports",
         on: () => this.pending > 0,
         badge: () => this.pending,

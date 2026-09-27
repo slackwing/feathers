@@ -11,7 +11,7 @@ const when = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocale
 export class BugListWindow extends Window {
   /** props: fetch, api (base URL), imageURL(id), people (os.people), onChange(), toast(msg), menus */
   constructor(props) {
-    super({ id: "win-bug-list", title: "Bug Reports", icon: "bug", width: 560, cls: "buglist",
+    super({ id: "win-bug-list", title: "Bug Reports", icon: "tools", width: 560, cls: "buglist",
       content: `<div class="bfilters">${FILTERS.map(([k, l]) => `<button class="btn" type="button" data-filter="${k}">${l}</button>`).join("")}</div><div class="breports sunken"></div>`,
       ...props });
     this.filter = "pending";
