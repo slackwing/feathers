@@ -337,7 +337,13 @@ var HxH = (() => {
     l: "#9ad9ff",
     e: "#2fb54a",
     a: "#ffe9a8",
-    q: "#12213a"
+    q: "#12213a",
+    H: "#2a4a78",
+    E: "#2f8a3a",
+    L: "#d8d4cc",
+    M: "#5c0716",
+    P: "#6e6a84"
+    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills
   };
   var ICONS = {
     // the Hunter × Halloween ×, after the show's logo: a bold red cross, ink-edged
@@ -580,42 +586,44 @@ var HxH = (() => {
     ],
     // the Greed Island style binder: navy boards, gold clasps, ring emblem
     book: [
-      "................",
-      ".kkkkkkkkkkkkk..",
-      ".kqNNNNNNNNNNkG.",
-      ".kqNNNNNNNNNNkG.",
-      ".kqNNNNNNNNNNk..",
-      ".kqNNNggggNNNk..",
-      ".kqNNgNNNNgNNk..",
-      ".kqNNgNNNNgNNk..",
-      ".kqNNgNNNNgNNk..",
-      ".kqNNNggggNNNk..",
-      ".kqNNNNNNNNNNk..",
-      ".kqNNNNNNNNNNkG.",
-      ".kqNNNNNNNNNNkG.",
-      ".kkkkkkkkkkkkk..",
-      "................",
-      "................"
+      // the binder's cover: tall, spine left, the green emblem ~37 % down, plate below, gold clasps right
+      "..kkkkkkkkkkk...",
+      "..kqHHHHHHHHk...",
+      "..kqHNNNNNNNk...",
+      "..kqHNNgggNNkG..",
+      "..kqHNgqqqgNkG..",
+      "..kqHNgqgqgNk...",
+      "..kqHNgqqqgNk...",
+      "..kqHNNgggNNk...",
+      "..kqHNNNNNNNk...",
+      "..kqHNNNNNNNk...",
+      "..kqHNwrrrwNkG..",
+      "..kqHNwwwwwNkG..",
+      "..kqHNNNNNNNk...",
+      "..kqHNNGGGNNk...",
+      "..kqHNNNNNNNk...",
+      "..kkkkkkkkkkk..."
     ],
     // Beetle: the Beetle 07 phone from the show — black head with two antennae,
     // rounded red shell split down the middle. Drawn 15 wide, mirror-symmetric
     // about column 7 (Abi noticed one wing was bigger); column 15 stays empty
     beetle: [
-      "................",
-      "...k.......k....",
-      "....k.....k.....",
-      ".....kkkkk......",
-      "....kkkkkkk.....",
-      "...khrrkrrhk....",
-      "..khrrrkrrrhk...",
-      ".khrrrrkrrrrhk..",
-      ".krrrrrkrrrrrk..",
-      ".krrrrrkrrrrrk..",
-      "..krrrrkrrrrk...",
-      "...krrrkrrrk....",
-      "....kkkkkkk.....",
-      "..k..k...k..k...",
-      ".k...k...k...k..",
+      // the Beetle 07 phone, in red: a split egg shell, domed eyes, a Y antenna
+      "......kLk.kLk...",
+      ".......kLLLk....",
+      "........kLk.....",
+      ".....kkkkkk.....",
+      "....kwLrrwLk....",
+      "....kLnrrLnk....",
+      "...kMMMMMMMMk...",
+      "...khrrMrrmmk...",
+      "...khrrMrrmmk...",
+      "...khrrMrrmmk...",
+      "...khrrMrrmmk...",
+      "...khrrMrrmmk...",
+      "....khrMrmmk....",
+      ".....krMmmk.....",
+      "......kkkk......",
       "................"
     ],
     // a speech bubble (tray "new message" icon, chat app)
@@ -918,22 +926,23 @@ var HxH = (() => {
     ],
     // Heavens Arena: the 251-floor tower, a beacon at its tip, lit windows up its sides
     arena: [
-      ".......kk.......",
-      ".......ky.......",
-      "......kyyk......",
-      "......kwwk......",
-      ".....kwNNwk.....",
-      ".....kwwwwk.....",
-      ".....kwNNwk.....",
-      ".....kwwwwk.....",
-      "....kwwNNwwk....",
-      "....kwwwwwwk....",
-      "....kwwNNwwk....",
-      "...kwwwwwwwwk...",
-      "...kwNwwwwNwk...",
-      "..kwwwwwwwwwwk..",
-      ".kwNwwwNNwwwNwk.",
-      "kkkkkkkkkkkkkkkk"
+      // Heavens Arena: a Super Famicom pad (Andrew: the tower looked like a pointed hood)
+      "................",
+      "................",
+      "................",
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kLLLLLLLLLLLLk.",
+      "kLLsLLLLLLLLbLLk",
+      "kLsssLLLLLLgLrLk",
+      "kLLsLLPLLPLLyLLk",
+      "kLLLLLLLLLLLLLLk",
+      ".kLLLLkkkkLLLLk.",
+      "..kkkk....kkkk..",
+      "................",
+      "................",
+      "................",
+      "................"
     ],
     sound: [
       "................",
@@ -987,6 +996,122 @@ var HxH = (() => {
     const body = VICONS[name];
     if (!body) return icon(name, size);
     return `<svg class="vi" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  }
+  var DESK_SCALE = 3;
+  var DESK = {
+    envelope: [
+      "....................",
+      "....................",
+      "....................",
+      "....................",
+      ".kkkkkkkkkkkkkkkkkk.",
+      ".kkppppppppppppppkk.",
+      ".kpkppppppppppppkpk.",
+      ".kppkppppppppppkppk.",
+      ".kpppkppppppppkpppk.",
+      ".kppppkppppppkppppk.",
+      ".kpppppkrhrrkpppppk.",
+      ".kppppppmrrmppppppk.",
+      ".kpppppppmmpppppppk.",
+      ".kpppppppppppppppdk.",
+      ".kppppppppppppppddk.",
+      ".kkkkkkkkkkkkkkkkkk.",
+      "....................",
+      "....................",
+      "....................",
+      "...................."
+    ],
+    book: [
+      "...kkkkkkkkkkkkkk...",
+      "...kqqHHHHHHHHHHk...",
+      "...kqqHGNNNNNNNGk...",
+      "...kqqHNNNNNNNNNk...",
+      "...kqqHNNNgggNNNkG..",
+      "...kqqHNNgqqqgNNkG..",
+      "...kqqHNgqeeeqgNkG..",
+      "...kqqHNgqegeqgNk...",
+      "...kqqHNgqeeeqgNk...",
+      "...kqqHNNgqqqgNNk...",
+      "...kqqHNNNgggNNNk...",
+      "...kqqHNNNNNNNNNk...",
+      "...kqqHNNNNNNNNNkG..",
+      "...kqqHNwrrrrrwNkG..",
+      "...kqqHNwwwwwwwNkG..",
+      "...kqqHNNNNNNNNNk...",
+      "...kqqHNNNGGGNNNk...",
+      "...kqqHNNNNNNNNNk...",
+      "...kqqHGNNNNNNNGk...",
+      "...kkkkkkkkkkkkkk..."
+    ],
+    beetle: [
+      "........kLk.kLk.....",
+      ".........kLLLk......",
+      "..........kLk.......",
+      "..........ksk.......",
+      ".......kkkkkk.......",
+      "......khrrrrmk......",
+      ".....kwLkrrkwLk.....",
+      ".....kLnkrrkLnk.....",
+      ".....kkkkrrkkkk.....",
+      "....kMhrrrrrrmMk....",
+      "....khMMMMMMMMmk....",
+      "....khhrrMrrrmmk....",
+      "....khhrrMrrrmmk....",
+      "....khrrrMrrrmmk....",
+      "....khrrrMrrrmmk....",
+      "....khrrrMrrrmmk....",
+      ".....khrrMrrmmk.....",
+      "......krrMmmmk......",
+      ".......kkkkkk.......",
+      "...................."
+    ],
+    arena: [
+      "....................",
+      "....................",
+      "....................",
+      "....................",
+      "....................",
+      "..kkkkkkkkkkkkkkkk..",
+      ".kLLLLLLLLLLLLLLLLk.",
+      "kLLLssLLLLLLLLbbLLLk",
+      "kLLLssLLLLLLLLbbLLLk",
+      "kLssssssLLLLggLLrrLk",
+      "kLssssssLLLLggLLrrLk",
+      "kLLLssLLPPLPPLyyLLLk",
+      "kLLLLLLLLLLLLLyyLLLk",
+      ".kLLLLLLkkkkLLLLLLk.",
+      "..kkkkkk....kkkkkk..",
+      "....................",
+      "....................",
+      "....................",
+      "....................",
+      "...................."
+    ],
+    db: [
+      "....................",
+      ".....kkkkkkkkkk.....",
+      "....kllllllllllk....",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "....kkkkkkkkkkkk....",
+      "....kllllllllllk....",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "....kkkkkkkkkkkk....",
+      "....kllllllllllk....",
+      "...kbbbbbbbbbbbbk...",
+      "...kbbbbbbbbbbbbk...",
+      "....kbbbbbbbbbbk....",
+      ".....kkkkkkkkkk.....",
+      "...................."
+    ]
+  };
+  function desktopIcon(name) {
+    return gridSVG(DESK[name] || ICONS[name] || ICONS.x, DESK_SCALE);
   }
   function gridSVG(rows, k = 1, pal = null, cls = "px") {
     const h2 = rows.length, w = rows[0].length;
@@ -2026,7 +2151,7 @@ var HxH = (() => {
         type: "button",
         className: "icon",
         dataset: { act: a.id },
-        html: `<span class="ib">${icon(a.icon, 48)}</span><span class="cap"></span>`,
+        html: `<span class="ib">${desktopIcon(a.icon)}</span><span class="cap"></span>`,
         onclick: () => this.emit("press", a.id)
       });
     }
