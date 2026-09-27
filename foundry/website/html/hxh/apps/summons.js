@@ -12,7 +12,8 @@ export const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
   ".\n\nSite: ", { t: "618 Bushwick Ave", tag: "b" },
-  "\nCommences: ", { t: "Oct 31, 2026", tag: "b" }, "\n\n",
+  "\nCommences: ", { t: "Oct 31, 2026", tag: "b" },
+  "\nTime: ", { t: "TBD", tag: "b" }, "\n\n",   // Andrew, 2026-09-27
   "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona.",
 ];
 

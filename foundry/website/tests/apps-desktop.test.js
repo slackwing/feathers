@@ -36,6 +36,7 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
   assert.match(text, /289th Hunter Exam — Halloween Phase/);
   assert.match(text, /618 Bushwick Ave/);
   assert.match(text, /Oct 31, 2026/);
+  assert.match(text, /Commences: Oct 31, 2026\nTime: TBD\n/);
   assert.equal(w.$("#vn-text b").textContent, NOTICE[1].t);
   assert.ok(w.$("#vn").classList.contains("done"));   // reduced motion: typed instantly
   assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File"]);   // File › Exit and nothing else (Andrew, 2026-09-27)
