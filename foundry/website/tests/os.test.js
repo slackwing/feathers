@@ -147,7 +147,7 @@ test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons
   assert.equal(other()[0].disabled, false);
   os.blimp.unmount();
   const splashes = other()[1].items();
-  assert.deepEqual(splashes.map(i => i.label), ["Summons", "Player Select", "Night"]);
+  assert.deepEqual(splashes.map(i => i.label), ["Summons", "Heavens Arena", "Night"]);
   splashes[1].onclick();   // Player Select, over the desktop
   const el = document.querySelector(".splashscreen");
   assert.ok(el && !el.hidden && el.classList.contains("sp-select"));

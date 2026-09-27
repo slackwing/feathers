@@ -3356,7 +3356,7 @@ var HxH = (() => {
   // html/hxh/os/splash.js
   var SPLASHES = [
     ["summons", "Summons"],
-    ["select", "Player Select"],
+    ["select", "Heavens Arena"],
     ["night", "Night"]
   ];
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
@@ -3416,8 +3416,7 @@ var HxH = (() => {
   function select(el, { reduced, random, fetch, prompt = "CLICK TO START" }) {
     el.innerHTML = `
     <div class="sp-backdrop"></div>
-    <div class="sp-head">PLAYER SELECT</div>
-    <div class="sp-logo"><span class="w1">HUNTER</span><span class="x">\xD7</span><span class="w2">HALLOWEEN</span></div>
+    <div class="sp-head">HEAVENS ARENA</div>
     <div class="sp-stage">
       <div class="sp-fighter p1"><div class="sp-big"></div><div class="sp-plate"></div></div>
       <div class="sp-grid"></div>

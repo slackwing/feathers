@@ -73,15 +73,13 @@
     #050a2a;
 }
 /* the arcade's chrome type: a hot gradient in the letters, a dark outline around them, a forward lean */
-.sp-select .sp-head, .sp-select .sp-logo, .sp-select .sp-plate {
+.sp-select .sp-head, .sp-select .sp-plate {
   background: linear-gradient(180deg, #fffbd0 0%, #ffe34a 38%, #ff9a1a 62%, #e8420a 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(.35cqmin 0 0 #1a0600) drop-shadow(-.35cqmin 0 0 #1a0600) drop-shadow(0 .35cqmin 0 #1a0600) drop-shadow(0 -.35cqmin 0 #1a0600) drop-shadow(.5cqmin .6cqmin 0 rgba(0,0,0,.6));
   transform: skewX(-10deg); white-space: nowrap;
 }
-.sp-select .sp-head { font-size: min(4.2cqw, 6cqh); letter-spacing: .08em; }
-.sp-select .sp-logo { font-size: min(3cqw, 4.2cqh); letter-spacing: .04em; }
-.sp-select .sp-logo .x { background: linear-gradient(180deg, #ffb0b0, #ff2a2a 55%, #8a0010); -webkit-background-clip: text; background-clip: text; margin: 0 .3em; }
+.sp-select .sp-head { font-size: min(5cqw, 7cqh); letter-spacing: .08em; }   /* HEAVENS ARENA, alone (Andrew, 2026-09-27) */
 .sp-select .sp-stage { display: flex; align-items: center; justify-content: center; gap: 3cqw; width: 100%; min-height: 0; }
 .sp-select .sp-grid { display: grid; grid-template-columns: repeat(6, min(8cqw, 13cqh)); gap: .9cqmin; }
 .sp-select .sp-tile {
@@ -120,8 +118,7 @@
   .sp-select .sp-grid { order: -1; flex-basis: 100%; justify-content: center; grid-template-columns: repeat(4, min(18cqw, 10cqh)); }
   .sp-select .sp-big { width: min(36cqw, 24cqh); }
   .sp-select .sp-head { font-size: 6cqw; }
-  .sp-select .sp-logo { font-size: 3.6cqw; }
-  .sp-select .sp-plate { font-size: 4cqw; }
+    .sp-select .sp-plate { font-size: 4cqw; }
 }
 
 /* ---------- night: an arcade attract screen at the wallpaper's grain ---------- */

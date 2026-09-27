@@ -1538,7 +1538,6 @@ html[data-theme=seapumpkin-pastel] {
     #050a2a;
 }
 .sp-select .sp-head,
-.sp-select .sp-logo,
 .sp-select .sp-plate {
   background:
     linear-gradient(
@@ -1555,23 +1554,8 @@ html[data-theme=seapumpkin-pastel] {
   white-space: nowrap;
 }
 .sp-select .sp-head {
-  font-size: min(4.2cqw, 6cqh);
+  font-size: min(5cqw, 7cqh);
   letter-spacing: .08em;
-}
-.sp-select .sp-logo {
-  font-size: min(3cqw, 4.2cqh);
-  letter-spacing: .04em;
-}
-.sp-select .sp-logo .x {
-  background:
-    linear-gradient(
-      180deg,
-      #ffb0b0,
-      #ff2a2a 55%,
-      #8a0010);
-  -webkit-background-clip: text;
-  background-clip: text;
-  margin: 0 .3em;
 }
 .sp-select .sp-stage {
   display: flex;
@@ -1727,9 +1711,6 @@ html[data-theme=seapumpkin-pastel] {
   }
   .sp-select .sp-head {
     font-size: 6cqw;
-  }
-  .sp-select .sp-logo {
-    font-size: 3.6cqw;
   }
   .sp-select .sp-plate {
     font-size: 4cqw;

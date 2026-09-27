@@ -9,7 +9,7 @@ import { TOWN_X, house, ISLAND_H } from "../html/hxh/os/wallpaper.js";
 const d = setupDom();
 
 test("three title screens, one picked at random (Andrew, 2026-09-27: try 3 styles and randomize which loads)", () => {
-  assert.deepEqual(SPLASHES.map(([, n]) => n), ["Summons", "Player Select", "Night"]);   // Clouds made way for Player Select (Andrew, 2026-09-27)
+  assert.deepEqual(SPLASHES.map(([, n]) => n), ["Summons", "Heavens Arena", "Night"]);   // Clouds made way for Player Select (Andrew, 2026-09-27)
   assert.equal(randomSplash(() => 0), "summons");
   assert.equal(randomSplash(() => 0.5), "select");
   assert.equal(randomSplash(() => 0.9999), "night");
@@ -27,9 +27,11 @@ test("every style says Click to start, carries the title, and never moves on by 
     const el = s.el;
     assert.equal(el.hidden, false);
     assert.ok(el.classList.contains("sp-" + id));
-    assert.match(el.textContent, /click to start/i, id + ": says Click to start");
-    assert.match(el.textContent.toUpperCase(), /HUNTER\s*×\s*/, id + ": says Hunter ×");
-    assert.match(el.textContent.toUpperCase(), /HALLOWEEN/, id + ": says Halloween");
+    try {
+      assert.match(el.textContent, /click to start/i, id + ": says Click to start");
+      const title = id === "select" ? /HEAVENS ARENA/ : /HUNTER\s*×\s*[\s\S]*HALLOWEEN/;   // the select screen is the Heavens Arena placeholder
+      assert.match(el.textContent.toUpperCase(), title, id + ": carries its title");
+    } catch (err) { el.click(); s.unmount(); throw err; }   // a failure must not leave the screen's timers running (the run would hang)
     await new Promise(r => setTimeout(r, 30));
     assert.equal(done, null, id + ": it waits for the viewer");
     el.click();
@@ -104,8 +106,8 @@ test("Player Select looks the part: PLAYER SELECT, the title, a 12-tile grid, 1P
   const s = new Splash({ reduced: true, random: () => 0.3, fetch: binderFetch() }).mount(document.body);
   const p = s.show("select");
   const el = s.el;
-  assert.match(el.textContent, /PLAYER SELECT/);
-  assert.match(el.textContent, /HUNTER\s*×\s*HALLOWEEN/);
+  assert.match(el.textContent, /HEAVENS ARENA/);
+  assert.doesNotMatch(el.textContent, /PLAYER SELECT|HALLOWEEN/, "the title alone, no subtitle (Andrew, 2026-09-27)");
   assert.match(el.textContent, /CLICK TO START/);
   assert.match(el.textContent, /CREDIT 01/);
   assert.equal(el.querySelectorAll(".sp-grid .sp-tile").length, 12);
