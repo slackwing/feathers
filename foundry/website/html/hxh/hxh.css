@@ -2451,28 +2451,28 @@ html[data-theme=seapumpkin-pastel] {
 .screen {
   font: 13px/1.5 var(--font-dot);
 }
-.screen > .top {
+.screen .prof > .top {
   font: 15px/1.4 var(--font-dot);
   color: var(--paper-hi);
   text-shadow: 0 0 8px rgba(223, 243, 255, .6);
 }
-.screen > .name {
+.screen .prof > .name {
   font: 9px/1.8 var(--font-px);
   color: var(--paper-hi);
   margin-bottom: 6px;
 }
-.screen > .line {
+.screen .prof > .line {
   color: var(--scr-dim);
 }
-.screen > .line b {
+.screen .prof > .line b {
   color: var(--scr-text);
   font-weight: normal;
 }
-.screen > .desc {
+.screen .prof > .desc {
   margin-top: 10px;
   white-space: pre-line;
 }
-.screen > .status {
+.screen .prof > .status {
   margin-top: 12px;
   padding-top: 8px;
   border-top: 1px dashed var(--teal-3);
@@ -2484,10 +2484,10 @@ html[data-theme=seapumpkin-pastel] {
   color: var(--scr-green);
 }
 .screen .big {
-  margin: 22px auto 0;
+  margin: 0 auto 18px;
 }
 .screen .big.load .gicard {
-  animation: modem 1.8s steps(22, end) .35s both;
+  animation: modem 1.4s steps(18, end) both;
 }
 @keyframes modem {
   from {
