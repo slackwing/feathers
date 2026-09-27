@@ -5,3 +5,4 @@ export { ChatApp as Chat } from "./chat/app.js";
 export { SetPasswordApp as SetPassword } from "./setpw.js";
 export { RosterApp as Roster } from "./roster/app.js";
 export { HeavensArenaApp as HeavensArena } from "./arena.js";
+export { BugReportApp as BugReport } from "./bugs/app.js";

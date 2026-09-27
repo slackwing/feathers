@@ -946,6 +946,25 @@ var HxH = (() => {
       "................",
       "................"
     ],
+    // Report a Bug: a green beetle-shaped bug, legs out (BeetleChat's beetle is the red one)
+    bug: [
+      "....k......k....",
+      ".....k....k.....",
+      "......kkkk......",
+      ".....keeeek.....",
+      "..k.kkkkkkkk.k..",
+      "...kgggkkgggk...",
+      "kkkggggkkggggkkk",
+      "...kgggkkgggk...",
+      "..kggggkkggggk..",
+      "kkkggggkkggggkkk",
+      "..kggggkkggggk..",
+      "...kgggkkgggk...",
+      "kk..kggkkggk..kk",
+      ".....kkkkkk.....",
+      "................",
+      "................"
+    ],
     sound: [
       "................",
       "........k.......",
@@ -1860,7 +1879,8 @@ var HxH = (() => {
   };
   var TrayIcon = class extends Component {
     /**
-     * props: id, icon, title, on (bool | () => bool — lit vs dimmed),
+     * props: id, icon, title (string | () => string), on (bool | () => bool — lit vs dimmed),
+     *        badge (number | () => number — a count in a small red bubble; 0 hides it),
      *        onClick, menu (() => items — opens a Menu above the tray instead)
      */
     render() {
@@ -1868,14 +1888,14 @@ var HxH = (() => {
       const wrap = h("span", { className: "trayicon", dataset: { tray: p.id } });
       this.btn = h("button", {
         type: "button",
-        title: p.title || p.id,
         html: icon(p.icon, 16),
         onclick: (e) => {
           e.stopPropagation();
           this.press();
         }
       });
-      wrap.append(this.btn);
+      this.badgeEl = h("span", { className: "badge", hidden: true });
+      wrap.append(this.btn, this.badgeEl);
       if (p.menu) this.menu = this.adopt(new Menu({ items: p.menu, cls: "up" }), wrap);
       this.refresh();
       return wrap;
@@ -1888,10 +1908,15 @@ var HxH = (() => {
       this.props.onClick?.(this);
       this.emit("press");
     }
-    /** Re-evaluate the lit state. */
+    /** Re-evaluate the lit state, the hover title and the badge. */
     refresh() {
-      const on = typeof this.props.on === "function" ? this.props.on() : this.props.on;
+      const val = (v) => typeof v === "function" ? v() : v;
+      const on = val(this.props.on);
       this.btn.classList.toggle("on", on === void 0 ? true : !!on);
+      this.btn.title = val(this.props.title) || this.props.id;
+      const n = Number(val(this.props.badge)) || 0;
+      this.badgeEl.hidden = n <= 0;
+      this.badgeEl.textContent = n > 99 ? "99+" : String(n);
     }
     setOn(v) {
       this.props.on = v;
@@ -4238,6 +4263,7 @@ var HxH = (() => {
   var apps_exports = {};
   __export(apps_exports, {
     Binder: () => BinderApp,
+    BugReport: () => BugReportApp,
     Chat: () => ChatApp,
     HeavensArena: () => HeavensArenaApp,
     NOTICE: () => NOTICE,
@@ -6003,64 +6029,34 @@ var HxH = (() => {
     }
   };
 
-  // html/hxh/apps/chat/window.js
+  // html/hxh/apps/chat/composer.js
   var blobText = (blob) => typeof blob.text === "function" ? blob.text() : new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(String(r.result));
     r.onerror = rej;
     r.readAsText(blob);
   });
-  var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
-  var MAX_LOG = 500;
-  var GROUP_MS = 5 * 60 * 1e3;
-  var dayKey = (iso) => {
-    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
-    return isNaN(d) ? "" : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  };
-  var dayLabel = (iso) => {
-    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
-    return isNaN(d) ? "" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
-  };
-  var ChatWindow = class extends Window {
-    /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 705 wide, a 1.5× log and compose; a buddy chat is 565 — Andrew, 2026-09-22: "wider by about 20%", from 470) */
-    constructor(props) {
-      super({
-        id: "win-chat-" + roomSlug(props.room),
-        title: props.title,
-        icon: props.icon || "comment",
-        width: props.large ? 705 : 565,
-        cls: "chat room" + (props.large ? " large" : ""),
-        content: `
-        <div class="compose">
-          <div class="ctools">
-            <button class="ctool" type="button" data-act="clip" title="Paste">${icon("clipboard", 16)}</button>
-            <button class="ctool" type="button" data-act="pic" title="Image">${icon("picture", 16)}</button>
-            <div class="menu"><button class="ctool" type="button" data-act="emoji" title="Emoji">${icon("smile", 16)}</button></div>
-          </div>
-          <textarea class="field" rows="3" aria-label="Message"></textarea>
-          <div class="attach" hidden><img alt=""><button class="tbtn x" type="button" data-act="detach" title="Remove">\xD7</button></div>
-          <div class="cbtns">
-            ${props.profile ? `<button class="btn" type="button" data-act="profile">Profile</button>` : ""}
-            <button class="btn primary" type="button" data-act="send">Send</button>
-          </div>
-        </div>
-        <div class="status"><span class="typing"></span></div>`,
-        ...props
-      });
-      this.room = props.room;
-      this.ids = /* @__PURE__ */ new Set();
-      this.messages = [];
-    }
+  var Composer = class extends Component {
+    /** props: clipboard (for tests), buttons [{act, label}] before Send, send ("Send"), rows (3), label (the field's aria-label), placeholder */
     render() {
-      const el = super.render();
-      this.log = h("div", { className: "log", role: "log" });
-      this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".compose") });
-      this.pane.el.classList.add("sunken", "logbox");
-      this.typingEl = el.querySelector(".typing");
+      const p = this.props;
+      const el = h("div", { className: "compose", html: `
+      <div class="ctools">
+        <button class="ctool" type="button" data-act="clip" title="Paste">${icon("clipboard", 16)}</button>
+        <button class="ctool" type="button" data-act="pic" title="Image">${icon("picture", 16)}</button>
+        <div class="menu"><button class="ctool" type="button" data-act="emoji" title="Emoji">${icon("smile", 16)}</button></div>
+      </div>
+      <textarea class="field" rows="${p.rows || 3}" aria-label="${esc(p.label || "Message")}" placeholder="${esc(p.placeholder || "")}"></textarea>
+      <div class="attach" hidden><img alt=""><button class="tbtn x" type="button" data-act="detach" title="Remove">\xD7</button></div>
+      <div class="cbtns">
+        ${(p.buttons || []).map((b) => `<button class="btn" type="button" data-act="${esc(b.act)}">${esc(b.label)}</button>`).join("")}
+        <button class="btn primary" type="button" data-act="send">${esc(p.send || "Send")}</button>
+      </div>` });
       this.input = el.querySelector("textarea");
       this.attachEl = el.querySelector(".attach");
+      this.placeholder = p.placeholder || "";
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
-      el.querySelector('[data-act="profile"]')?.addEventListener("click", () => this.emit("profile"));
+      for (const b of p.buttons || []) el.querySelector(`[data-act="${b.act}"]`).addEventListener("click", () => this.emit(b.act));
       el.querySelector('[data-act="detach"]').addEventListener("click", () => {
         this.clearAttachment();
         this.focusInput();
@@ -6125,7 +6121,7 @@ var HxH = (() => {
       el.focus();
       this.emit("typing");
     }
-    /** One picture per message: it shows below the text you typed; you keep typing above it. */
+    /** One picture: it shows below the text you typed; you keep typing above it. */
     attachImage(ref) {
       this.image = ref;
       const img = this.attachEl.querySelector("img");
@@ -6151,19 +6147,94 @@ var HxH = (() => {
     focusInput() {
       this.input?.focus();
     }
+    /** Compose on or off — off, the field greys out and says why in italics. */
+    setCanSend(on, note = "") {
+      this.canSend = !!on;
+      this.input.disabled = !on;
+      this.input.placeholder = on ? this.placeholder : note;
+      this.el.querySelector('[data-act="send"]').disabled = !on;
+    }
+  };
+
+  // html/hxh/apps/chat/window.js
+  var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
+  var MAX_LOG = 500;
+  var GROUP_MS = 5 * 60 * 1e3;
+  var dayKey = (iso) => {
+    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
+    return isNaN(d) ? "" : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  };
+  var dayLabel = (iso) => {
+    const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
+    return isNaN(d) ? "" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  };
+  var ChatWindow = class extends Window {
+    /** props: room, title, icon, me, nameOf(user), colorOf(user), menus (win => spec), profile (bool: show the Profile button), large (the global room: 705 wide, a 1.5× log and compose; a buddy chat is 565 — Andrew, 2026-09-22: "wider by about 20%", from 470) */
+    constructor(props) {
+      super({
+        id: "win-chat-" + roomSlug(props.room),
+        title: props.title,
+        icon: props.icon || "comment",
+        width: props.large ? 705 : 565,
+        cls: "chat room" + (props.large ? " large" : ""),
+        content: `<div class="status"><span class="typing"></span></div>`,
+        ...props
+      });
+      this.room = props.room;
+      this.ids = /* @__PURE__ */ new Set();
+      this.messages = [];
+    }
+    render() {
+      const el = super.render();
+      this.log = h("div", { className: "log", role: "log" });
+      this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".status") });
+      this.pane.el.classList.add("sunken", "logbox");
+      this.typingEl = el.querySelector(".typing");
+      this.composer = this.adopt(new Composer({ clipboard: this.props.clipboard, buttons: this.props.profile ? [{ act: "profile", label: "Profile" }] : [] }), el.querySelector(".body"), { before: el.querySelector(".status") });
+      for (const ev of ["send", "image-file", "image-dialog", "clip-fail", "typing", "profile"]) this.composer.on(ev, (payload) => this.emit(ev, payload));
+      return el;
+    }
+    // the compose box's members, as the window always had them
+    get input() {
+      return this.composer?.input;
+    }
+    get attachEl() {
+      return this.composer?.attachEl;
+    }
+    get emoji() {
+      return this.composer?.emoji;
+    }
+    get image() {
+      return this.composer?.image;
+    }
+    get canSend() {
+      return this.composer?.canSend;
+    }
+    pasteFromClipboard() {
+      return this.composer.pasteFromClipboard();
+    }
+    insertText(text) {
+      return this.composer.insertText(text);
+    }
+    attachImage(ref) {
+      return this.composer.attachImage(ref);
+    }
+    clearAttachment() {
+      return this.composer.clearAttachment();
+    }
+    submit() {
+      return this.composer.submit();
+    }
+    focusInput() {
+      this.composer?.focusInput();
+    }
     /** The newest message shown (what a read marker points at). */
     get lastId() {
       return this.messages.length ? this.messages[this.messages.length - 1].id : 0;
     }
     /** Compose on or off — off, the field greys out and says why in italics (a buddy who is offline cannot be messaged). */
     setCanSend(on, note = "") {
-      this.canSend = !!on;
-      if (this.input) {
-        this.input.disabled = !on;
-        this.input.placeholder = on ? "" : note;
-      }
-      const send = this.el?.querySelector('[data-act="send"]');
-      if (send) send.disabled = !on;
+      this.composer.setCanSend(on, note);
     }
     setMessages(list) {
       this.log.replaceChildren();
@@ -9048,6 +9119,262 @@ var HxH = (() => {
       return Promise.resolve(false);
     }
     // nothing to bring back
+  };
+
+  // html/hxh/apps/bugs/list.js
+  var FILTERS2 = [["pending", "Pending"], ["resolved", "Resolved"], ["all", "All"]];
+  var when = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  };
+  var BugListWindow = class extends Window {
+    /** props: fetch, api (base URL), imageURL(id), people (os.people), onChange(), toast(msg), menus */
+    constructor(props) {
+      super({
+        id: "win-bug-list",
+        title: "Bug Reports",
+        icon: "bug",
+        width: 560,
+        cls: "buglist",
+        content: `<div class="bfilters">${FILTERS2.map(([k, l]) => `<button class="btn" type="button" data-filter="${k}">${l}</button>`).join("")}</div><div class="breports sunken"></div>`,
+        ...props
+      });
+      this.filter = "pending";
+      this.reports = [];
+    }
+    render() {
+      const el = super.render();
+      this.listEl = el.querySelector(".breports");
+      for (const b of el.querySelectorAll("[data-filter]")) b.addEventListener("click", () => {
+        this.filter = b.dataset.filter;
+        this.load();
+      });
+      this.listEl.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-act]");
+        if (b) this.setStatus(+b.dataset.id, b.dataset.act === "resolve" ? "resolved" : "pending");
+      });
+      return el;
+    }
+    async load() {
+      for (const b of this.el.querySelectorAll("[data-filter]")) b.classList.toggle("on", b.dataset.filter === this.filter);
+      try {
+        const r = await this.props.fetch(`${this.props.api}?status=${this.filter}`, { credentials: "same-origin", cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        this.reports = await r.json();
+      } catch {
+        this.reports = [];
+        this.props.toast?.("The reports could not be read.");
+      }
+      this.renderList();
+      return this.reports;
+    }
+    renderList() {
+      const people = this.props.people;
+      this.listEl.replaceChildren();
+      if (!this.reports.length) {
+        this.listEl.append(h("div", { className: "bempty", text: this.filter === "pending" ? "Nothing pending." : "No reports." }));
+        return;
+      }
+      for (const b of this.reports) {
+        const who = people?.label?.(b.reporter) || b.reporter;
+        const row = h("div", { className: `breport ${b.status}`, dataset: { id: String(b.id) } });
+        row.innerHTML = `
+        <div class="bhead">${people?.avatar?.(b.reporter) || ""}<b>${esc(who)}</b><span class="bwhen">${esc(when(b.created_at))} \xB7 #${b.id}</span><span class="bstatus">${esc(b.status)}</span></div>
+        ${b.body ? `<div class="bbody">${esc(b.body)}</div>` : ""}
+        ${b.image_id ? `<a class="bpic" href="${esc(this.props.imageURL(b.image_id))}" target="_blank" rel="noopener"><img src="${esc(this.props.imageURL(b.image_id))}" alt=""></a>` : ""}
+        ${b.note ? `<div class="bnote">${esc(b.note)}</div>` : ""}
+        <details class="bctx"><summary>Details</summary><pre>${esc(JSON.stringify(b.context || {}, null, 1))}</pre></details>
+        <div class="bacts"><button class="btn${b.status === "pending" ? " primary" : ""}" type="button" data-id="${b.id}" data-act="${b.status === "pending" ? "resolve" : "reopen"}">${b.status === "pending" ? "Resolve" : "Reopen"}</button></div>`;
+        this.listEl.append(row);
+      }
+    }
+    async setStatus(id, status) {
+      try {
+        const r = await this.props.fetch(`${this.props.api}/${id}/status`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+      } catch {
+        this.props.toast?.("That did not save.");
+        return false;
+      }
+      this.props.onChange?.();
+      await this.load();
+      return true;
+    }
+  };
+
+  // html/hxh/apps/bugs/app.js
+  var BUGS_API = "/hxh/api/bugs";
+  var POLL_MS = 6e4;
+  function bugContext(os2) {
+    const w = os2.win || globalThis.window, doc = os2.doc || globalThis.document;
+    const script = [...doc?.scripts || []].map((s) => s.src).find((s) => /hxh\.js/.test(s)) || "";
+    return {
+      url: w?.location?.href || "",
+      ua: w?.navigator?.userAgent || "",
+      viewport: [w?.innerWidth || 0, w?.innerHeight || 0],
+      dpr: w?.devicePixelRatio || 1,
+      zoom: os2.env?.zoom?.() ?? 1,
+      bundle: (script.match(/[?&]v=(\d+)/) || [])[1] || "",
+      theme: os2.theme,
+      sky: os2.sky,
+      windows: (os2.wm?.appWindows?.() || []).filter((x) => x.state.open).map((x) => x.id + (x.state.minimized ? " (min)" : "")),
+      at: (/* @__PURE__ */ new Date()).toISOString(),
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+  }
+  var BugReportApp = class extends App {
+    static id = "bugs";
+    static name = "Report a Bug";
+    static icon = "bug";
+    static order = 90;
+    constructor(os2, options = {}) {
+      super(os2, options);
+      this.fetch = options.fetch || ((...a) => os2.fetch(...a));
+      this.api = new ChatAPI({ fetch: this.fetch });
+      this.pending = 0;
+    }
+    get admin() {
+      return !!this.os.isAdmin?.();
+    }
+    /* ---------- reporting ---------- */
+    window() {
+      if (this.win) return this.win;
+      const os2 = this.os;
+      this.win = new Window({ id: "win-bugs", title: "Report a Bug", icon: "bug", width: 460, cls: "bugs", menus: (w) => os2.appMenus(w) });
+      os2.wm.add(this.win);
+      this.composer = this.win.adopt(new Composer({ clipboard: this.options.clipboard, rows: 5, label: "What went wrong?", placeholder: "What went wrong?" }), this.win.body);
+      this.composer.on("send", (p) => this.submit(p));
+      this.composer.on("image-file", ({ file }) => this.attach(file));
+      this.composer.on("image-dialog", () => this.pictureDialog());
+      this.composer.on("clip-fail", () => os2.toast.show("Nothing to paste."));
+      return this.win;
+    }
+    async launch() {
+      const win = this.window();
+      await this.os.wm.open(win.id);
+      this.composer.focusInput();
+      return win;
+    }
+    async attach(file) {
+      try {
+        const ref = await this.api.uploadImage(file);
+        this.composer.attachImage({ ...ref, url: this.api.imageURL(ref.id) });
+      } catch {
+        this.os.toast.show("That picture didn't take.");
+      }
+    }
+    async pictureDialog() {
+      if (!this.pictureWin) {
+        this.pictureWin = new PictureDialog({ id: "win-bug-picture", objectURL: this.options.objectURL, revoke: this.options.revokeURL });
+        this.os.wm.add(this.pictureWin);
+        this.pictureWin.on("insert", ({ file }) => this.attach(file));
+      }
+      this.pictureWin.setClipboard(await this.clipboardImage());
+      this.os.wm.open(this.pictureWin.id);
+    }
+    async clipboardImage() {
+      const cb = this.options.clipboard || this.os.win?.navigator?.clipboard;
+      try {
+        for (const item of await cb.read()) {
+          const type2 = item.types.find((t) => t.startsWith("image/"));
+          if (type2) return await item.getType(type2);
+        }
+      } catch {
+      }
+      return null;
+    }
+    /** Send the report; on success the box empties, the window closes and a toast thanks them. */
+    async submit({ body, image }) {
+      const os2 = this.os;
+      try {
+        const r = await this.fetch(BUGS_API, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, image_id: image?.id || 0, context: bugContext(os2) })
+        });
+        if (!r.ok) {
+          let why = "";
+          try {
+            why = (await r.json()).error || "";
+          } catch {
+          }
+          throw new Error(why || "HTTP " + r.status);
+        }
+        os2.toast.show("Thanks! Your report is in.");
+        os2.wm.close(this.win.id);
+        if (this.admin) this.poll();
+        return true;
+      } catch (err) {
+        this.composer.input.value = body;
+        if (image) this.composer.attachImage(image);
+        os2.toast.show(`The report didn't go through${err.message ? ": " + err.message : ""}.`);
+        return false;
+      }
+    }
+    /* ---------- the admins' tray alert ---------- */
+    tray() {
+      if (!this.admin) return null;
+      this.startPolling();
+      return {
+        icon: "bug",
+        title: () => this.pending ? `Bug reports: ${this.pending} pending` : "Bug reports",
+        on: () => this.pending > 0,
+        badge: () => this.pending,
+        onClick: () => this.openList()
+      };
+    }
+    startPolling() {
+      if (this.timer) return;
+      this.poll();
+      const st = this.options.setInterval || ((f, ms) => setInterval(f, ms));
+      this.timer = st(() => this.poll(), POLL_MS);
+      this.timer?.unref?.();
+    }
+    async poll() {
+      try {
+        const r = await this.fetch(BUGS_API + "/count", { credentials: "same-origin", cache: "no-store" });
+        if (!r.ok) return this.pending;
+        const { pending } = await r.json();
+        if (pending !== this.pending) {
+          this.pending = pending;
+          this.os.bus.emit("tray:refresh", { id: this.id });
+        }
+      } catch {
+      }
+      return this.pending;
+    }
+    async openList() {
+      const os2 = this.os;
+      if (!this.listWin) {
+        this.listWin = new BugListWindow({
+          fetch: this.fetch,
+          api: BUGS_API,
+          imageURL: (id) => this.api.imageURL(id),
+          people: os2.people,
+          menus: (w) => os2.appMenus(w),
+          onChange: () => this.poll(),
+          toast: (m) => os2.toast.show(m)
+        });
+        os2.wm.add(this.listWin);
+      }
+      await os2.wm.open(this.listWin.id);
+      await this.listWin.load();
+    }
+    owns(id) {
+      return id === "win-bugs" || id === "win-bug-list";
+    }
+    async reopen(id) {
+      if (id === "win-bugs") {
+        await this.launch();
+        return true;
+      }
+      if (id === "win-bug-list" && this.admin) {
+        await this.openList();
+        return true;
+      }
+      return false;
+    }
   };
 
   // html/hxh/os/index.js

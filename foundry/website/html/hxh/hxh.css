@@ -881,6 +881,22 @@ body.logon .icons {
 .taskbar .tray .trayicon > button.on {
   opacity: 1;
 }
+.taskbar .tray .trayicon .badge {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  background: var(--blood, #c8102e);
+  color: #fff;
+  box-shadow: 0 0 0 1px var(--tk-bg, #fff);
+  font: 700 10px/13px var(--font-ui);
+  text-align: center;
+  pointer-events: none;
+}
 .taskbar .task.flash {
   animation: taskflash 1s steps(2) infinite;
 }
@@ -2936,6 +2952,91 @@ body.stacked .pageno {
   margin-top: 8px;
 }
 
+/* html/hxh/apps/chat/composer.css */
+.compose textarea:disabled {
+  background: var(--field-off-bg);
+  color: var(--dim-fg);
+}
+.compose textarea:disabled::placeholder {
+  font-style: italic;
+  color: var(--dim-fg);
+  opacity: 1;
+}
+.compose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ctools {
+  display: flex;
+  gap: 4px;
+}
+.ctools .menu {
+  position: relative;
+}
+.ctool {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: var(--px) solid var(--btn-border);
+  box-shadow: inset 1px 1px 0 var(--btn-hi), inset -1px -1px 0 var(--btn-lo);
+}
+.ctool:hover {
+  background: var(--btn-hover);
+}
+.ctool:active {
+  box-shadow: inset 1px 1px 0 var(--btn-lo);
+}
+.attach {
+  position: relative;
+  align-self: flex-start;
+  max-width: 100%;
+}
+.attach img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 120px;
+  border: var(--px) solid var(--win-border);
+}
+.attach .x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+.compose textarea {
+  resize: none;
+  min-height: 72px;
+}
+.cbtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.dd.emoji {
+  min-width: 0;
+  width: 304px;
+  padding: 6px;
+}
+.dd.emoji.open {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+.dd.emoji button {
+  width: auto;
+  padding: 4px 0 2px;
+  justify-content: center;
+  font: 20px/1.2 var(--font-emoji), var(--font-body);
+}
+
 /* html/hxh/apps/chat/chat.css */
 .win.chat .body {
   padding: 8px 10px 10px;
@@ -2972,15 +3073,6 @@ body.stacked .pageno {
 }
 .chat .status .conn.off::before {
   background: var(--none);
-}
-.room .compose textarea:disabled {
-  background: var(--field-off-bg);
-  color: var(--dim-fg);
-}
-.room .compose textarea:disabled::placeholder {
-  font-style: italic;
-  color: var(--dim-fg);
-  opacity: 1;
 }
 .dot {
   flex: none;
@@ -3234,55 +3326,6 @@ body.stacked .pageno {
 .room .log > .day:first-child {
   margin-top: 2px;
 }
-.room .compose {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-.room .ctools {
-  display: flex;
-  gap: 4px;
-}
-.room .ctools .menu {
-  position: relative;
-}
-.room .ctool {
-  width: 28px;
-  height: 24px;
-  padding: 0;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  border: var(--px) solid var(--btn-border);
-  box-shadow: inset 1px 1px 0 var(--btn-hi), inset -1px -1px 0 var(--btn-lo);
-}
-.room .ctool:hover {
-  background: var(--btn-hover);
-}
-.room .ctool:active {
-  box-shadow: inset 1px 1px 0 var(--btn-lo);
-}
-.room .attach {
-  position: relative;
-  align-self: flex-start;
-  max-width: 100%;
-}
-.room .attach img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 120px;
-  border: var(--px) solid var(--win-border);
-}
-.room .attach .x {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-}
 .room .m .bd > .pic img {
   display: block;
   width: auto;
@@ -3292,22 +3335,6 @@ body.stacked .pageno {
   margin: 4px 0 6px;
   border: var(--px) solid var(--win-border);
   image-rendering: auto;
-}
-.dd.emoji {
-  min-width: 0;
-  width: 304px;
-  padding: 6px;
-}
-.dd.emoji.open {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-}
-.dd.emoji button {
-  width: auto;
-  padding: 4px 0 2px;
-  justify-content: center;
-  font: 20px/1.2 var(--font-emoji), var(--font-body);
 }
 .picture .pbox {
   height: 260px;
@@ -3328,15 +3355,6 @@ body.stacked .pageno {
 }
 .picture .upload {
   display: inline-block;
-}
-.room .compose textarea {
-  resize: none;
-  min-height: 72px;
-}
-.room .cbtns {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 .room .status .typing {
   font-style: italic;
@@ -4529,5 +4547,111 @@ body.stacked .room .logbox {
 }
 .dlg .pts li {
   margin: 4px 0;
+}
+
+/* html/hxh/apps/bugs/bugs.css */
+.win.bugs .compose {
+  margin-top: 0;
+}
+.win.bugs .compose textarea {
+  min-height: 110px;
+}
+.win.buglist .bfilters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.win.buglist .bfilters .btn.on {
+  background: var(--strong-bg, var(--btn-hover));
+  color: var(--strong-fg, inherit);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, .25);
+}
+.win.buglist .breports {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--field-bg);
+}
+.win.buglist .breport {
+  border: var(--px) solid var(--win-border);
+  background: var(--win-bg);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.win.buglist .breport.resolved {
+  opacity: .75;
+}
+.win.buglist .bhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--t-ui);
+}
+.win.buglist .bhead .avatar {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+}
+.win.buglist .bwhen {
+  color: var(--dim-fg);
+  font: var(--t-small);
+}
+.win.buglist .bstatus {
+  margin-left: auto;
+  font: var(--t-small);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.win.buglist .breport.pending .bstatus {
+  color: var(--blood, #c8102e);
+}
+.win.buglist .bbody {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: var(--t-chat, var(--t-ui));
+}
+.win.buglist .bpic img {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  border: var(--px) solid var(--win-border);
+}
+.win.buglist .bnote {
+  font: var(--t-small);
+  font-style: italic;
+  color: var(--dim-fg);
+}
+.win.buglist .bctx summary {
+  cursor: pointer;
+  font: var(--t-small);
+  color: var(--dim-fg);
+}
+.win.buglist .bctx pre {
+  margin: 4px 0 0;
+  font:
+    11px/1.35 ui-monospace,
+    "DejaVu Sans Mono",
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 160px;
+  overflow: auto;
+}
+.win.buglist .bacts {
+  display: flex;
+  justify-content: flex-end;
+}
+.win.buglist .bempty {
+  padding: 16px;
+  text-align: center;
+  color: var(--dim-fg);
+  font: var(--t-ui);
 }
 /*# sourceMappingURL=hxh.css.map */

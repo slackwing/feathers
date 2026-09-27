@@ -17,8 +17,6 @@
 }
 .chat .status .conn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--nen); border: 1px solid var(--ink); vertical-align: -1px; }
 .chat .status .conn.off::before { background: var(--none); }
-.room .compose textarea:disabled { background: var(--field-off-bg); color: var(--dim-fg); }
-.room .compose textarea:disabled::placeholder { font-style: italic; color: var(--dim-fg); opacity: 1; }
 /* presence dots: green online, yellow away, grey offline, red = no password yet */
 .dot { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); background: var(--none); }
 .dot.online { background: var(--nen); }
@@ -100,32 +98,13 @@
 .room .day { display: flex; align-items: center; gap: 10px; margin: 12px 0 2px; font: var(--t-small); color: var(--dim-fg); letter-spacing: .04em; }
 .room .day::before, .room .day::after { content: ""; flex: 1; border-top: 1px solid var(--paper-lo); }
 .room .log > .day:first-child { margin-top: 2px; }
-.room .compose { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.room .ctools { display: flex; gap: 4px; }
-.room .ctools .menu { position: relative; }
-.room .ctool {
-  width: 28px; height: 24px; padding: 0; cursor: pointer; display: grid; place-items: center;
-  background: var(--btn-bg); color: var(--btn-fg); border: var(--px) solid var(--btn-border);
-  box-shadow: inset 1px 1px 0 var(--btn-hi), inset -1px -1px 0 var(--btn-lo);
-}
-.room .ctool:hover { background: var(--btn-hover); }
-.room .ctool:active { box-shadow: inset 1px 1px 0 var(--btn-lo); }
-.room .attach { position: relative; align-self: flex-start; max-width: 100%; }
-.room .attach img { display: block; width: auto; height: auto; max-width: 100%; max-height: 120px; border: var(--px) solid var(--win-border); }
-.room .attach .x { position: absolute; top: -8px; right: -8px; }
 /* a picture sent in a message — scoped to the message body: the avatar's own .avatar.pic took this border and margin and showed half a dark ring (Andrew, 2026-09-27) */
 .room .m .bd > .pic img { display: block; width: auto; height: auto; max-width: 100%; max-height: 300px; margin: 4px 0 6px; border: var(--px) solid var(--win-border); image-rendering: auto; }
-/* the emoji palette: a grid, big glyphs in the colour emoji face */
-.dd.emoji { min-width: 0; width: 304px; padding: 6px; }
-.dd.emoji.open { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
-.dd.emoji button { width: auto; padding: 4px 0 2px; justify-content: center; font: 20px/1.2 var(--font-emoji), var(--font-body); }
 /* Insert Image */
 .picture .pbox { height: 260px; display: grid; place-items: center; overflow: hidden; background: var(--field-off-bg); border: var(--px) solid var(--win-border); }
 .picture .pbox img { max-width: 100%; max-height: 100%; width: auto; height: auto; }
 .picture .actions { justify-content: flex-end; }
 .picture .upload { display: inline-block; }
-.room .compose textarea { resize: none; min-height: 72px; }
-.room .cbtns { display: flex; justify-content: flex-end; gap: 8px; }
 .room .status .typing { font-style: italic; min-height: 1.3em; }
 
 /* ---------- about: the cracktro ---------- */

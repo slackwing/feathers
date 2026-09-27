@@ -419,6 +419,12 @@ body.logon .desktop > .win:not(#win-logon), body.logon .icons { display: none !i
 .taskbar .tray .trayicon { position: relative; display: block; }
 .taskbar .tray .trayicon > button { background: none; border: 0; padding: 0; cursor: pointer; display: block; opacity: .55; }
 .taskbar .tray .trayicon > button.on { opacity: 1; }
+/* a count on a tray icon (bug reports waiting): a small red bubble on its upper right, the digits face */
+.taskbar .tray .trayicon .badge {
+  position: absolute; top: -6px; right: -7px; min-width: 13px; height: 13px; padding: 0 3px; box-sizing: border-box;
+  border-radius: 7px; background: var(--blood, #c8102e); color: #fff; box-shadow: 0 0 0 1px var(--tk-bg, #fff);
+  font: 700 10px/13px var(--font-ui); text-align: center; pointer-events: none;
+}
 /* a window asking for attention (window:attention) blinks its task button until focused */
 .taskbar .task.flash { animation: taskflash 1s steps(2) infinite; }
 .taskbar .clock { padding-top: 1px; white-space: nowrap; }

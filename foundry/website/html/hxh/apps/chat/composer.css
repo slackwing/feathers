@@ -1,0 +1,22 @@
+/* Composer (composer.js) — the compose box BeetleChat and the bug report share. Room-specific sizes stay in chat.css. */
+.compose textarea:disabled { background: var(--field-off-bg); color: var(--dim-fg); }
+.compose textarea:disabled::placeholder { font-style: italic; color: var(--dim-fg); opacity: 1; }
+.compose { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.ctools { display: flex; gap: 4px; }
+.ctools .menu { position: relative; }
+.ctool {
+  width: 28px; height: 24px; padding: 0; cursor: pointer; display: grid; place-items: center;
+  background: var(--btn-bg); color: var(--btn-fg); border: var(--px) solid var(--btn-border);
+  box-shadow: inset 1px 1px 0 var(--btn-hi), inset -1px -1px 0 var(--btn-lo);
+}
+.ctool:hover { background: var(--btn-hover); }
+.ctool:active { box-shadow: inset 1px 1px 0 var(--btn-lo); }
+.attach { position: relative; align-self: flex-start; max-width: 100%; }
+.attach img { display: block; width: auto; height: auto; max-width: 100%; max-height: 120px; border: var(--px) solid var(--win-border); }
+.attach .x { position: absolute; top: -8px; right: -8px; }
+.compose textarea { resize: none; min-height: 72px; }
+.cbtns { display: flex; justify-content: flex-end; gap: 8px; }
+/* the emoji palette: a grid, big glyphs in the colour emoji face */
+.dd.emoji { min-width: 0; width: 304px; padding: 6px; }
+.dd.emoji.open { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.dd.emoji button { width: auto; padding: 4px 0 2px; justify-content: center; font: 20px/1.2 var(--font-emoji), var(--font-body); }

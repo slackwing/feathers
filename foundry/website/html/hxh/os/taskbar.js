@@ -50,17 +50,19 @@ export class Clock extends Component {
 
 export class TrayIcon extends Component {
   /**
-   * props: id, icon, title, on (bool | () => bool — lit vs dimmed),
+   * props: id, icon, title (string | () => string), on (bool | () => bool — lit vs dimmed),
+   *        badge (number | () => number — a count in a small red bubble; 0 hides it),
    *        onClick, menu (() => items — opens a Menu above the tray instead)
    */
   render() {
     const p = this.props;
     const wrap = h("span", { className: "trayicon", dataset: { tray: p.id } });
     this.btn = h("button", {
-      type: "button", title: p.title || p.id, html: icon(p.icon, 16),
+      type: "button", html: icon(p.icon, 16),
       onclick: e => { e.stopPropagation(); this.press(); },
     });
-    wrap.append(this.btn);
+    this.badgeEl = h("span", { className: "badge", hidden: true });
+    wrap.append(this.btn, this.badgeEl);
     if (p.menu) this.menu = this.adopt(new Menu({ items: p.menu, cls: "up" }), wrap);
     this.refresh();
     return wrap;
@@ -71,10 +73,15 @@ export class TrayIcon extends Component {
     this.props.onClick?.(this);
     this.emit("press");
   }
-  /** Re-evaluate the lit state. */
+  /** Re-evaluate the lit state, the hover title and the badge. */
   refresh() {
-    const on = typeof this.props.on === "function" ? this.props.on() : this.props.on;
+    const val = v => (typeof v === "function" ? v() : v);
+    const on = val(this.props.on);
     this.btn.classList.toggle("on", on === undefined ? true : !!on);
+    this.btn.title = val(this.props.title) || this.props.id;
+    const n = Number(val(this.props.badge)) || 0;
+    this.badgeEl.hidden = n <= 0;
+    this.badgeEl.textContent = n > 99 ? "99+" : String(n);
   }
   setOn(v) { this.props.on = v; this.refresh(); }
 }

@@ -291,6 +291,21 @@ the OS.
   `ICONS` incl. `comment` for chat — see "Icon sizes"), `dom.js` (`h()`, `esc`),
   `wallpaper.js` (below), `os.js` (`OS`), `index.js` (the bundle entry
   and `HxH.*` exports), `os.css` (the chrome).
+- **Report a Bug** (`apps/bugs/`, Andrew 2026-09-27): any member reports a
+  bug — text and at most one picture in BeetleChat's own compose box (the
+  shared `Composer`, `apps/chat/composer.js`: Paste / Image / Emoji tools,
+  the field, one attached picture, Send; it does no I/O, it emits `send`,
+  `image-file`, `image-dialog`, `clip-fail`, `typing` and its owner uploads
+  via `ChatAPI.uploadImage` and hands back `attachImage(ref)`; ChatWindow
+  adopts it and forwards its events, so chat code is unchanged). Sending
+  POSTs `/hxh/api/bugs` with `bugContext(os)` — page, browser, viewport,
+  zoom, theme, sky, open windows, bundle version — so a report can be
+  reproduced. Admins get a tray bug with a red count badge (TrayIcon
+  `badge`, re-read every minute) that opens Bug Reports (`list.js`:
+  Pending / Resolved / All, Resolve / Reopen). Server: hobby-server
+  `internal/hxh/bugs.go` (table `hxh_bug_report`, changeset 019); a
+  report's picture is a chat picture that admins may also see. Claude's
+  side: `hxh-roster/roster.py bugs | bug-image | bug-resolve --note`.
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
   (window + File > Exit alone + typewriter notice + CTA; EVERY path that
   opens it must fill the notice — see the reopen note above),

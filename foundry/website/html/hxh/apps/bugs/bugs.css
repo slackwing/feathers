@@ -1,0 +1,20 @@
+/* Report a Bug and the admins' Bug Reports (apps/bugs). The compose box is the shared Composer (apps/chat/composer.css). */
+.win.bugs .compose { margin-top: 0; }
+.win.bugs .compose textarea { min-height: 110px; }
+.win.buglist .bfilters { display: flex; gap: 6px; margin-bottom: 8px; }
+.win.buglist .bfilters .btn.on { background: var(--strong-bg, var(--btn-hover)); color: var(--strong-fg, inherit); box-shadow: inset 2px 2px 0 rgba(0,0,0,.25); }   /* the filter in use reads as pressed */
+.win.buglist .breports { max-height: 60vh; overflow: auto; padding: 6px; display: flex; flex-direction: column; gap: 8px; background: var(--field-bg); }
+.win.buglist .breport { border: var(--px) solid var(--win-border); background: var(--win-bg); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.win.buglist .breport.resolved { opacity: .75; }
+.win.buglist .bhead { display: flex; align-items: center; gap: 8px; font: var(--t-ui); }
+.win.buglist .bhead .avatar { width: 22px; height: 22px; font-size: 9px; }
+.win.buglist .bwhen { color: var(--dim-fg); font: var(--t-small); }
+.win.buglist .bstatus { margin-left: auto; font: var(--t-small); text-transform: uppercase; letter-spacing: .06em; }
+.win.buglist .breport.pending .bstatus { color: var(--blood, #c8102e); }
+.win.buglist .bbody { white-space: pre-wrap; overflow-wrap: anywhere; font: var(--t-chat, var(--t-ui)); }
+.win.buglist .bpic img { display: block; max-width: 100%; max-height: 240px; width: auto; height: auto; border: var(--px) solid var(--win-border); }
+.win.buglist .bnote { font: var(--t-small); font-style: italic; color: var(--dim-fg); }
+.win.buglist .bctx summary { cursor: pointer; font: var(--t-small); color: var(--dim-fg); }
+.win.buglist .bctx pre { margin: 4px 0 0; font: 11px/1.35 ui-monospace, "DejaVu Sans Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
+.win.buglist .bacts { display: flex; justify-content: flex-end; }
+.win.buglist .bempty { padding: 16px; text-align: center; color: var(--dim-fg); font: var(--t-ui); }

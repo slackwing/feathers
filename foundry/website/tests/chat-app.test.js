@@ -693,3 +693,17 @@ test("a message picture's frame never reaches the sender's avatar picture: no bo
     for (const one of sel.split(",")) assert.match(one, /\.bd\s*>\s*\.pic|\.picture|\.pbox/, `"${one.trim()}" could reach .avatar.pic`);
   }
 });
+
+test("a room window's body reads top to bottom: the log, the shared compose box, the status line (the Composer, 2026-09-27)", async () => {
+  const { ChatWindow } = await import("../html/hxh/apps/chat/window.js");
+  const w = new ChatWindow({ room: "g:global", title: "Global", me: "andrew", profile: true });
+  w.mount(document.body);
+  const body = w.el.querySelector(".body");
+  const kids = [...body.children].map(k => k.classList.contains("compose") ? "compose" : k.classList.contains("status") ? "status" : k.classList.contains("logbox") || k.querySelector?.(".log") ? "log" : k.className);
+  assert.deepEqual(kids, ["log", "compose", "status"]);
+  assert.ok(w.el.querySelector('.compose [data-act="profile"]'), "the Profile button rides in the compose row");
+  const sent = []; w.on("send", p => sent.push(p));
+  w.input.value = "hi"; w.submit();
+  assert.deepEqual(sent, [{ body: "hi", image: null }], "the composer's send is the window's send");
+  w.unmount();
+});

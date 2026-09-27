@@ -24,6 +24,12 @@ cookie is kept next to it (hxh-roster.cookie) and refreshed on 401.
     roster.py reject|keep <image-id>
     roster.py crop <image-id> X Y W H
     roster.py pixelate <image-id> [--size 96] [--colors 32]
+
+  Bug reports (the site's Report a Bug app; the account must be an hxh admin):
+    roster.py bugs [--status pending|resolved|all] [--json]
+                                          → the reports, newest first (default: pending)
+    roster.py bug-image <report-id> <out-file>     the report's picture
+    roster.py bug-resolve <report-id> [--note "what was fixed"] [--reopen]
 """
 import argparse, http.cookiejar, io, json, os, sys, urllib.error, urllib.parse, urllib.request
 
@@ -233,6 +239,9 @@ def main():
     p = sub.add_parser("keep"); p.add_argument("image", type=int)
     p = sub.add_parser("crop"); p.add_argument("image", type=int); [p.add_argument(k, type=int) for k in ("x", "y", "w", "h")]
     p = sub.add_parser("pixelate"); p.add_argument("image", type=int); p.add_argument("--size", type=int, default=96); p.add_argument("--colors", type=int, default=32)
+    p = sub.add_parser("bugs"); p.add_argument("--status", default="pending", choices=["pending", "resolved", "all"]); p.add_argument("--json", action="store_true")
+    p = sub.add_parser("bug-image"); p.add_argument("report", type=int); p.add_argument("out")
+    p = sub.add_parser("bug-resolve"); p.add_argument("report", type=int); p.add_argument("--note", default="", help="what was wrong and what was changed"); p.add_argument("--reopen", action="store_true", help="back to pending")
     a = ap.parse_args()
     c = Client()
 
@@ -285,6 +294,29 @@ def main():
                 print(f"      {q['text']}")
     elif a.cmd == "request":
         out(c.db("POST", f"/chars/{a.id}/request", {"kind": a.kind, "text": a.text, "image_id": a.image}))
+    elif a.cmd == "bugs":
+        rows = c.call("GET", "/hxh/api/bugs?status=" + a.status)
+        if a.json:
+            out(rows)
+        elif not rows:
+            print("none", file=sys.stderr)
+        for b in ([] if a.json else rows):
+            pic = f"  picture #{b['image_id']}" if b.get("image_id") else ""
+            ctx = b.get("context") or {}
+            print(f"{b['id']:>4}  {b['status']:<8} {b['created_at'][:16]}  by {b['reporter']}{pic}  bundle v{ctx.get('bundle', '?')}  {ctx.get('viewport', '')}  {ctx.get('url', '')}")
+            if b["body"]:
+                for line in b["body"].splitlines():
+                    print(f"      {line}")
+            if b.get("note"):
+                print(f"      → {b['note']}  ({b.get('resolved_by') or ''})")
+    elif a.cmd == "bug-image":
+        rep = next((b for b in c.call("GET", "/hxh/api/bugs?status=all") if b["id"] == a.report), None)
+        if not rep or not rep.get("image_id"):
+            sys.exit(f"report {a.report} has no picture")
+        data = c.call("GET", f"/hxh/api/chat/image/{rep['image_id']}")
+        open(a.out, "wb").write(data); print(f"{len(data)} bytes → {a.out}", file=sys.stderr)
+    elif a.cmd == "bug-resolve":
+        out(c.call("POST", f"/hxh/api/bugs/{a.report}/status", json.dumps({"status": "pending" if a.reopen else "resolved", "note": a.note}).encode(), "application/json"))
     elif a.cmd == "resolve":
         out(c.db("POST", f"/requests/{a.request}/resolve", {"status": "dropped" if a.dropped else "done", "note": a.note}))
     elif a.cmd == "skip":
