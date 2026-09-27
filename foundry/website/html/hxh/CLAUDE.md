@@ -157,6 +157,25 @@ the OS.
   a threshold > 0 keeps a short press a click and swallows the click
   that ends a real drag), `fit/relayout`, `handleEscape` (active
   popup). Every change is announced on the bus.
+- `Splash` (`splash.js` + `splash.css`, `os.showSplash(id)`) — the
+  title screen between the boot screen and the logon / desktop on a
+  COLD load of a page that passes `splash: true` (index only; a warm
+  navigation skips it with the boot). Three styles, one at random
+  (`SPLASHES`): Summons (the first landing page, tag `hxh-pre-retro`,
+  revived: Alfa Slab logotype, pulsing ✕, embers), Clouds (the Win98
+  splash our way: a canvas cloth flag with the ✕ waving and shedding
+  squares, the wordmark with '26, the sliding bar), Night (an arcade
+  attract screen at the wallpaper's 5-px grain: stars, harvest moon on
+  the sea, Abi's blimp crossing, Press Start 2P title). It NEVER moves
+  on by itself (Andrew, 2026-09-27): "Click to start" on every style;
+  click, tap, Enter, Space or Escape dismisses it and plays the
+  original `startup` chime when Sounds are on. Settings › Other ›
+  Splash screen ▸ shows any style over the desktop until clicked.
+  Sized only in container units of the full-screen root
+  (`container-type: size`) so the desktop's zoom can't distort it;
+  z-index 90 — over the desktop and taskbar, under the CRT scanlines.
+  Still pictures under reduced motion. Fonts: Alfa Slab One, Special
+  Elite, Archivo Black added to index.html's Google Fonts link.
 - `People` (`people.js`, `os.people`) — THE place a member's look is
   decided: the shared-auth profile with this site's overrides on top
   (a claim: the character's short name and avatar picture; the colour
@@ -707,16 +726,16 @@ over the sky.
 - **One Settings tree** — `OS.settingsItems({icons})` — is rendered by
   the Start menu (Settings ▸), the tray gear (`icon: "gear"`, replaced
   the scanlines icon) and any app window's Settings menu (window menus pass
-  `icons: false`; the Summons has none — File › Exit alone): Display ▸ (Theme ▸, Sky ▸, Scanlines), Sounds ▸ (Sounds), Other ▸
-  (Fly the blimp) and Windows ▸ (Show all / Hide all / Close all
-  windows) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
+  `icons: false`; the Summons has none — File › Exit alone): Display ▸ (Theme ▸, Sky ▸, Scanlines), Sounds ▸ (Sounds), Windows ▸
+  (Show all / Hide all / Close all windows) and, last, Other ▸ (Fly the
+  blimp, Splash screen ▸ Summons / Clouds / Night) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
   the UI as settings people can toggle". Add a knob there, nowhere
   else. Scanlines is OFF by default (`hxh.crt` in localStorage
   remembers an override). Fly the blimp (2026-09-24, "would help with
   testing") launches one now, greyed while a ship is up or launched
   and still off the edge (`Blimp.flying`, which purges overdue flights
-  first); Other is left out entirely under reduced motion, where it
-  would be empty. Windows ▸ acts on `wm.appWindows()` — windows with a
+  first) and absent under reduced motion; the splashes stay (they are
+  stills there). Windows ▸ acts on `wm.appWindows()` — windows with a
   taskbar button, never static dialogs or popups — via `wm.showAll()`
   (minimized ones back in place, in stacking order), `wm.hideAll()`
   (show-the-desktop; it lets go of the active window FIRST, because

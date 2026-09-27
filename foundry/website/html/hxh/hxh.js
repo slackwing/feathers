@@ -53,10 +53,13 @@ var HxH = (() => {
     PEOPLE_URL: () => PEOPLE_URL,
     People: () => People,
     SOUND_KEY: () => SOUND_KEY,
+    SPLASHES: () => SPLASHES,
+    SPLASH_IDS: () => SPLASH_IDS,
     ScrollPane: () => ScrollPane,
     Session: () => Session,
     Settings: () => Settings,
     Sounds: () => Sounds,
+    Splash: () => Splash,
     StartButton: () => StartButton,
     StartMenu: () => StartMenu,
     TaskButton: () => TaskButton,
@@ -83,6 +86,7 @@ var HxH = (() => {
     h: () => h,
     icon: () => icon,
     os: () => os,
+    randomSplash: () => randomSplash,
     renderItems: () => renderItems,
     sprite: () => sprite,
     start: () => start,
@@ -2366,7 +2370,9 @@ var HxH = (() => {
     message: [[880, 0, 0.07, null, "sine"], [1320, 0.09, 0.09, null, "sine"]],
     sent: [[1e3, 0, 0.04, null, "sine"]],
     dooropen: [[220, 0, 0.28, 520, "triangle"]],
-    doorclose: [[520, 0, 0.28, 220, "triangle"]]
+    doorclose: [[520, 0, 0.28, 220, "triangle"]],
+    // the title screen's click (os/splash.js): an original rising chord, C major with a high E on top
+    startup: [[523.25, 0, 0.5, null, "triangle"], [659.25, 0.12, 0.55, null, "triangle"], [783.99, 0.24, 0.6, null, "triangle"], [1046.5, 0.36, 0.9, null, "sine"], [1318.51, 0.5, 1.1, null, "sine"]]
   };
   var NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   function noteFreq(tok) {
@@ -2742,8 +2748,8 @@ var HxH = (() => {
     const b = [OVERLAP + 6, y0], m = [b[0] + 2 * t, y0], q = [ROPE, yq];
     const len = Math.hypot(q[0] - m[0], q[1] - m[1]), u = [(q[0] - m[0]) / len, (q[1] - m[1]) / len];
     const c1 = [b[0] + t, y0], p = [m[0] + t * u[0], m[1] + t * u[1]];
-    const X = rope === "left" ? (x) => x : (x) => BANNER_W - x;
-    const pt = ([x, y]) => `${X(x).toFixed(2)} ${y.toFixed(2)}`;
+    const X2 = rope === "left" ? (x) => x : (x) => BANNER_W - x;
+    const pt = ([x, y]) => `${X2(x).toFixed(2)} ${y.toFixed(2)}`;
     return `M ${pt([0, y0])} L ${pt(b)} C ${pt(c1)} ${pt(m)} ${pt(p)} L ${pt(q)}`;
   }
   var BRIDLE = [CLOTH_TOP + CORNER_IN, CLOTH_TOP + CLOTH_H - CORNER_IN];
@@ -3093,7 +3099,7 @@ var HxH = (() => {
     eg.fillRect(172 + OX, HZ, 14, 1);
     px(eg, 185 + OX, HZ + 1, "#8b6d4b");
     px(eg, 174 + OX, HZ + 1, "#8b6d4b");
-    const clouds = CLOUDS.map((c) => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
+    const clouds2 = CLOUDS.map((c) => ({ ...c, x: c.x * W / ISLAND_W, y: Math.round(c.y * HZ / 112), img: cloudSprite(SHAPES[c.shape], { scale: CLOUD_SCALE * (c.scale || 1) }) }));
     const gl = glints(g);
     let flock = null, nextFlock = 60, tick = 0;
     const drawGlints = () => {
@@ -3124,7 +3130,7 @@ var HxH = (() => {
       tick++;
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(sky, 0, 0);
-      for (const c of clouds) {
+      for (const c of clouds2) {
         if (!reduced) {
           c.x += c.v;
           if (c.x > W + 4) c.x = -c.img.width - 4;
@@ -3285,6 +3291,270 @@ var HxH = (() => {
       if (prev && prev.character === character && prev.avatar_url === avatar_url) return false;
       this.overrides.set(username, { character, avatar_url });
       return true;
+    }
+  };
+
+  // html/hxh/os/splash.js
+  var SPLASHES = [
+    ["summons", "Summons"],
+    ["clouds", "Clouds"],
+    ["night", "Night"]
+  ];
+  var SPLASH_IDS = SPLASHES.map(([id]) => id);
+  function randomSplash(random = Math.random) {
+    return SPLASH_IDS[Math.min(SPLASH_IDS.length - 1, Math.floor(random() * SPLASH_IDS.length))];
+  }
+  var X = `<span class="x">\xD7</span>`;
+  function summons(el, { reduced, random }) {
+    el.innerHTML = `
+    <div class="sp-grain"></div>
+    <div class="sp-embers"></div>
+    <div class="sp-center">
+      <div class="sp-assoc">Hunter Association \xB7 Official Summons</div>
+      <h1 class="sp-logo">HUNTER${X}<br><span class="hallow">HALLOWEEN</span></h1>
+      <div class="sp-kana">\u30CF\u30F3\u30BF\u30FC\xD7\u30CF\u30ED\u30A6\u30A3\u30F3</div>
+      <div class="sp-start">Click to start</div>
+    </div>`;
+    if (!reduced) {
+      const box = el.querySelector(".sp-embers");
+      for (let i = 0; i < 26; i++) {
+        const s = h("i");
+        s.style.left = (random() * 100).toFixed(1) + "%";
+        s.style.animationDelay = (-random() * 9).toFixed(2) + "s";
+        s.style.animationDuration = (6 + random() * 6).toFixed(2) + "s";
+        s.style.setProperty("--drift", ((random() - 0.5) * 12).toFixed(1) + "cqw");
+        s.style.setProperty("--size", (0.25 + random() * 0.45).toFixed(2) + "cqmin");
+        box.append(s);
+      }
+    }
+    return () => {
+    };
+  }
+  function drawCloth(doc, W, H) {
+    const c = doc.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    g.fillStyle = "#fff6e0";
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = "#ff7518";
+    g.fillRect(0, H * 0.84, W, H * 0.16);
+    const cx = W * 0.5, cy = H * 0.42, r = H * 0.3;
+    g.lineCap = "round";
+    for (const [w, col] of [[H * 0.2, "#0b0a08"], [H * 0.13, "#c8102e"]]) {
+      g.strokeStyle = col;
+      g.lineWidth = w;
+      g.beginPath();
+      g.moveTo(cx - r, cy - r);
+      g.lineTo(cx + r, cy + r);
+      g.moveTo(cx + r, cy - r);
+      g.lineTo(cx - r, cy + r);
+      g.stroke();
+    }
+    g.strokeStyle = "#0b0a08";
+    g.lineWidth = Math.max(2, H * 0.03);
+    g.strokeRect(g.lineWidth / 2, g.lineWidth / 2, W - g.lineWidth, H - g.lineWidth);
+    return c;
+  }
+  function clouds(el, { reduced, random }) {
+    el.innerHTML = `
+    <div class="sp-cloud c1"></div><div class="sp-cloud c2"></div><div class="sp-cloud c3"></div><div class="sp-cloud c4"></div><div class="sp-cloud c5"></div>
+    <div class="sp-lockup">
+      <canvas class="sp-flag" aria-hidden="true"></canvas>
+      <div class="sp-word">
+        <div class="sp-maker">Hunter Association<sup>\xAE</sup></div>
+        <div class="sp-name">Hunter${X}Halloween<sup class="yr">'26</sup></div>
+        <div class="sp-edition">Party Edition</div>
+      </div>
+    </div>
+    <div class="sp-start">Click to start</div>
+    <div class="sp-bar"></div>`;
+    const canvas = el.querySelector(".sp-flag");
+    const doc = el.ownerDocument, win = doc.defaultView;
+    const g = canvas.getContext?.("2d");
+    if (!g) return () => {
+    };
+    const CW = 180, CH = 124, PAD2 = 18;
+    const cloth = drawCloth(doc, CW, CH);
+    if (!cloth) return () => {
+    };
+    const dpr = Math.min(3, win?.devicePixelRatio || 1);
+    canvas.width = (CW + PAD2 * 3) * dpr;
+    canvas.height = (CH + PAD2 * 2) * dpr;
+    const bits = Array.from({ length: 9 }, (_, i) => ({ y: 0.1 + random() * 0.8, s: 3 + random() * 6, col: ["#c8102e", "#ff7518", "#fff6e0"][i % 3], off: random() }));
+    const draw = (t) => {
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, CW + PAD2 * 3, CH + PAD2 * 2);
+      const x0 = PAD2 * 2, y0 = PAD2;
+      for (let x = 0; x < CW; x += 2) {
+        const ph = x * 0.05 - t * 3.2, amp = 2 + x * 0.075;
+        g.drawImage(cloth, x, 0, 2, CH, x0 + x, y0 + amp * Math.sin(ph), 2.4, CH);
+      }
+      g.globalCompositeOperation = "source-atop";
+      for (let x = 0; x < CW; x += 2) {
+        const ph = x * 0.05 - t * 3.2, k = Math.cos(ph);
+        g.fillStyle = k > 0 ? `rgba(255,255,255,${(0.16 * k).toFixed(3)})` : `rgba(20,10,40,${(-0.22 * k).toFixed(3)})`;
+        g.fillRect(x0 + x, 0, 2.4, CH + PAD2 * 2);
+      }
+      g.globalCompositeOperation = "source-over";
+      for (const b of bits) {
+        const f = (t * 0.35 + b.off) % 1;
+        g.globalAlpha = 1 - f;
+        g.fillStyle = b.col;
+        g.fillRect(x0 - 4 - f * PAD2 * 2, y0 + b.y * CH + Math.sin(t * 2 + b.off * 6) * 3, b.s * (1 - f * 0.5), b.s * (1 - f * 0.5));
+      }
+      g.globalAlpha = 1;
+    };
+    if (reduced) {
+      draw(0.6);
+      return () => {
+      };
+    }
+    let raf = 0, stop = false;
+    const t0 = win.performance?.now?.() ?? Date.now();
+    const tick = () => {
+      if (stop) return;
+      draw(((win.performance?.now?.() ?? Date.now()) - t0) / 1e3);
+      raf = win.requestAnimationFrame(tick);
+    };
+    raf = win.requestAnimationFrame(tick);
+    return () => {
+      stop = true;
+      win.cancelAnimationFrame?.(raf);
+    };
+  }
+  var GRAIN = 5;
+  function night(el, { reduced, random }) {
+    el.innerHTML = `
+    <canvas class="sp-sky px" aria-hidden="true"></canvas>
+    <img class="sp-ship" src="${SHIP_SRC}" alt="" draggable="false">
+    <div class="sp-title">
+      <div class="sp-top">HUNTER ASSOCIATION PRESENTS</div>
+      <div class="sp-big">HUNTER${X}</div>
+      <div class="sp-big hallow">HALLOWEEN</div>
+      <div class="sp-start">CLICK TO START</div>
+    </div>
+    <div class="sp-foot">\xA9 2026 HUNTER ASSOCIATION \xB7 A PURPLE SQUARE PRODUCTION</div>`;
+    const canvas = el.querySelector(".sp-sky");
+    const g = canvas.getContext?.("2d");
+    const win = el.ownerDocument.defaultView;
+    if (!g) return () => {
+    };
+    const r = el.getBoundingClientRect();
+    const W = Math.max(40, Math.ceil((r.width || 1366) / GRAIN)), H = Math.max(30, Math.ceil((r.height || 900) / GRAIN));
+    canvas.width = W;
+    canvas.height = H;
+    const HZ = Math.round(H * 0.72), MR = Math.max(6, Math.round(Math.min(W, H) * 0.11));
+    const MX = Math.round(W * 0.84), MY = Math.max(MR + 4, Math.round(H * 0.17));
+    const stars = Array.from({ length: Math.round(W * H / 170) }, () => ({ x: Math.floor(random() * W), y: Math.floor(random() * HZ * 0.95), p: random() * 6.28, b: random() }));
+    const bands = ["#0a0620", "#120a33", "#1b0f44", "#261554", "#321a60"];
+    const bg = el.ownerDocument.createElement("canvas");
+    bg.width = W;
+    bg.height = H;
+    const b = bg.getContext("2d") || g;
+    for (let y = 0; y < HZ; y++) {
+      const f = y / HZ * bands.length, i = Math.min(bands.length - 1, Math.floor(f)), frac = f - i;
+      for (let x = 0; x < W; x++) {
+        b.fillStyle = frac > 0.8 && (x + y) % 2 && i < bands.length - 1 ? bands[i + 1] : bands[i];
+        b.fillRect(x, y, 1, 1);
+      }
+    }
+    for (let y = -MR - 4; y <= MR + 4; y++) for (let x = -MR - 4; x <= MR + 4; x++) {
+      const d = Math.hypot(x, y);
+      if (d <= MR) b.fillStyle = "#ffd98a";
+      else if (d <= MR + 2 && (x + y) % 2 === 0) b.fillStyle = "#5a3d6e";
+      else continue;
+      b.fillRect(MX + x, MY + y, 1, 1);
+    }
+    b.fillStyle = "#f2c56a";
+    for (const [cx, cy, cr] of [[-0.35, -0.2, 0.22], [0.3, 0.25, 0.16], [0.05, -0.45, 0.1]]) {
+      for (let y = -MR; y <= MR; y++) for (let x = -MR; x <= MR; x++) if (Math.hypot(x - cx * MR, y - cy * MR) <= cr * MR && Math.hypot(x, y) <= MR) b.fillRect(MX + x, MY + y, 1, 1);
+    }
+    b.fillStyle = "#0c1a3a";
+    b.fillRect(0, HZ, W, H - HZ);
+    b.fillStyle = "#081229";
+    b.fillRect(0, HZ + Math.round((H - HZ) * 0.45), W, H - HZ);
+    b.fillStyle = "#16294f";
+    b.fillRect(0, HZ, W, 1);
+    const paint = (t) => {
+      if (bg !== canvas && b !== g) g.drawImage(bg, 0, 0);
+      for (const s of stars) {
+        const tw = 0.5 + 0.5 * Math.sin(t * 2 + s.p);
+        if (tw < 0.25) continue;
+        if (Math.hypot(s.x - MX, s.y - MY) <= MR + 3) continue;
+        g.fillStyle = s.b > 0.85 && tw > 0.85 ? "#ffffff" : tw > 0.6 ? "#e8dcc3" : "#8a7fb0";
+        g.fillRect(s.x, s.y, 1, 1);
+      }
+      for (let y = HZ + 1; y < H; y++) {
+        const spread = 1 + Math.round((y - HZ) * 0.5);
+        for (let k = 0; k < 3; k++) {
+          const x = MX + Math.round(Math.sin(t * 1.3 + y * 0.9 + k * 2.1) * spread);
+          if ((y + k + Math.floor(t * 4)) % 3 === 0) {
+            g.fillStyle = k ? "#ffd98a" : "#fff3c9";
+            g.fillRect(x, y, k ? 1 : 2, 1);
+          }
+        }
+      }
+    };
+    if (reduced) {
+      paint(0);
+      return () => {
+      };
+    }
+    paint(0);
+    const timer = win.setInterval(() => paint((win.performance?.now?.() ?? Date.now()) / 1e3), 180);
+    return () => win.clearInterval(timer);
+  }
+  var BUILD = { summons, clouds, night };
+  var Splash = class extends Component {
+    /** props: reduced, random, sounds ({ play(name) }) */
+    render() {
+      return h("div", { className: "splashscreen", role: "button", tabindex: "0", "aria-label": "Click to start", hidden: true });
+    }
+    get showing() {
+      return !this.el.hidden;
+    }
+    /**
+     * Show a style (default: one at random) until the viewer clicks, taps or
+     * presses Enter / Space / Escape. Resolves with the style's id. Showing
+     * another while one is up replaces it.
+     */
+    show(id = null) {
+      const { reduced = false, random = Math.random } = this.props;
+      if (!SPLASH_IDS.includes(id)) id = randomSplash(random);
+      this.finish?.(false);
+      const el = this.el;
+      el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
+      el.dataset.style = id;
+      el.hidden = false;
+      const stop = BUILD[id](el, { reduced, random });
+      el.focus?.({ preventScroll: true });
+      return new Promise((resolve) => {
+        const onKey = (e) => {
+          if (["Enter", " ", "Escape"].includes(e.key)) {
+            e.preventDefault();
+            done(true);
+          }
+        };
+        const onClick = (e) => {
+          e.stopPropagation();
+          done(true);
+        };
+        const done = (gesture) => {
+          el.removeEventListener("click", onClick);
+          el.ownerDocument.removeEventListener("keydown", onKey, true);
+          this.finish = null;
+          stop();
+          el.hidden = true;
+          el.replaceChildren();
+          if (gesture) this.props.sounds?.play?.("startup");
+          resolve(id);
+        };
+        this.finish = done;
+        el.addEventListener("click", onClick);
+        el.ownerDocument.addEventListener("keydown", onKey, true);
+      });
     }
   };
 
@@ -3509,11 +3779,6 @@ var HxH = (() => {
         { label: "Sounds", icon: "sound", items: () => [
           { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
         ] },
-        // Other ▸ Fly the blimp (Andrew, 2026-09-24 "would help with testing"; moved here 2026-09-27): greyed while one is up or launched and
-        // still at the edge. Under reduced motion no blimp ever flies, so Other would be empty and is left out.
-        ...this.env.reduced ? [] : [{ label: "Other", icon: "other", items: () => [
-          { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }
-        ] }],
         // Windows ▸ (Andrew, 2026-09-27): the desktop's app windows — each greyed when there is nothing for it to do
         { label: "Windows", icon: "windows", items: () => {
           const ws = this.wm.appWindows().filter((w) => w.state.open), hidden = ws.filter((w) => w.state.minimized).length;
@@ -3522,7 +3787,14 @@ var HxH = (() => {
             { label: "Hide all windows", disabled: hidden === ws.length, onclick: () => this.wm.hideAll() },
             { label: "Close all windows", disabled: !ws.length, onclick: () => this.wm.closeAll() }
           ];
-        } }
+        } },
+        // Other ▸ — last (Andrew, 2026-09-27). Fly the blimp (2026-09-24, "would help with testing"): greyed while one is up or
+        // launched and still at the edge, absent under reduced motion. Splash screen ▸ any of the title screens again, over the
+        // desktop, until clicked.
+        { label: "Other", icon: "other", items: () => [
+          ...this.env.reduced ? [] : [{ label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }],
+          { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) }
+        ] }
       ];
       const strip = (list) => list.map((it) => it === "sep" ? it : { ...it, icon: void 0, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : void 0 });
       return icons ? items : strip(items);
@@ -3638,12 +3910,13 @@ var HxH = (() => {
      * as it was left (`Layout.restore`) or, on a first visit, launch the
      * autostart apps. Resolves with the OS once ready.
      */
-    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, start: start2 = false, icons = taskbar, bootLines: extra = [] } = {}) {
+    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, icons = taskbar, bootLines: extra = [] } = {}) {
       for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
       this.setup({ start: start2, taskbar });
       const warm = this.nav.consumeWarm();
       const pending = this.session.me();
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
+      if (splash && boot && !warm) await this.showSplash();
       let me = await pending;
       if (!me && gate || !taskbar) this.showBadge();
       if (!me && gate) me = await this.logon();
@@ -3657,6 +3930,11 @@ var HxH = (() => {
       const restored = await this.layout.restore();
       if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
       return this;
+    }
+    /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
+    showSplash(id = null) {
+      if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds }).mount(this.doc.body);
+      return this.splash.show(id);
     }
     launch(id, opts = {}) {
       return this.registry.launch(id, opts);

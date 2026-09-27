@@ -67,16 +67,34 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(events.includes("os:ready:andrew") && events.includes("app:launch:hello"));
 });
 
-test("Settings › Other ▸ Fly the blimp: launches one now, greys while a ship is up; Other is left out under reduced motion (Andrew, 2026-09-27)", async () => {
+test("a cold load with splash: after the boot screen the title screen holds everything until clicked; a warm navigation skips it (Andrew, 2026-09-27)", async () => {
+  const { os } = make();
+  let ready = false;
+  const started = os.start({ apps: [Hello], autostart: ["hello"], start: true, splash: true }).then(() => { ready = true; });
+  await new Promise(r => setTimeout(r, 40));
+  const el = document.querySelector(".splashscreen");
+  assert.ok(el && !el.hidden, "the splash is up");
+  assert.equal(ready, false, "and the desktop waits for it");
+  assert.equal(os.wm.get("win-hello")?.state.open ?? false, false);
+  el.click();
+  await started;
+  assert.equal(ready, true);
+  assert.equal(os.wm.get("win-hello").state.open, true, "then the desktop comes up as before");
+  const warm = make({ warm: true }).os;
+  await warm.start({ apps: [Hello], start: true, splash: true });   // no boot, no splash: resolves without a click
+  assert.ok(!warm.splash || warm.splash.el.hidden);
+});
+
+test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Clouds / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
   os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
   const tree = os.settingsItems();
-  assert.deepEqual(tree.map(i => i.label), ["Display", "Sounds", "Other", "Windows"]);
+  assert.deepEqual(tree.map(i => i.label), ["Display", "Sounds", "Windows", "Other"]);
   assert.ok(tree.every(i => i.icon && hasIconPair(i.icon)), "each submenu has a 16×16 icon: " + tree.map(i => i.icon));
   assert.deepEqual(tree[0].items().map(i => i === "sep" ? "-" : i.label), ["Theme", "Sky", "Scanlines"], "the blimp left Display");
-  const other = () => os.settingsItems()[2].items();
-  assert.deepEqual(other().map(i => i.label), ["Fly the blimp"]);
+  const other = () => os.settingsItems()[3].items();
+  assert.deepEqual(other().map(i => i.label), ["Fly the blimp", "Splash screen"]);
   assert.equal(other()[0].disabled, false);
   other()[0].onclick();
   assert.equal(os.blimp.flying, true);
@@ -84,9 +102,18 @@ test("Settings › Other ▸ Fly the blimp: launches one now, greys while a ship
   os.blimp.el.querySelector(".blimp").dispatchEvent(new d.win.Event("animationend"));
   assert.equal(other()[0].disabled, false);
   os.blimp.unmount();
+  const splashes = other()[1].items();
+  assert.deepEqual(splashes.map(i => i.label), ["Summons", "Clouds", "Night"]);
+  splashes[1].onclick();   // Clouds, over the desktop
+  const el = document.querySelector(".splashscreen");
+  assert.ok(el && !el.hidden && el.classList.contains("sp-clouds"));
+  assert.match(el.textContent, /click to start/i);
+  el.click();
+  assert.equal(el.hidden, true, "a click returns to the desktop");
   const quiet = make({ reduced: true }).os;
   await quiet.start({ apps: [Hello], start: true });
-  assert.deepEqual(quiet.settingsItems().map(i => i.label), ["Display", "Sounds", "Windows"]);
+  assert.deepEqual(quiet.settingsItems().map(i => i.label), ["Display", "Sounds", "Windows", "Other"]);
+  assert.deepEqual(quiet.settingsItems()[3].items().map(i => i.label), ["Splash screen"], "reduced motion: no blimp, the splashes stay (they are stills)");
 });
 
 test("Settings › Windows ▸ Show all / Hide all / Close all act on the desktop's app windows, each greyed when there is nothing to do (Andrew, 2026-09-27)", async () => {
@@ -134,7 +161,7 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Settings", "Sys", "-", "Log out"]);
   const labels = list => list.map(i => i.label);
   const tree = items[3].items();
-  assert.deepEqual(labels(tree), ["Display", "Sounds", "Windows"]);   // reduced motion here: no Other (its only item is the blimp)
+  assert.deepEqual(labels(tree), ["Display", "Sounds", "Windows", "Other"]);   // Other last (Andrew, 2026-09-27)
   const display = tree[0].items(), sounds = tree[1].items();
   assert.deepEqual(labels(display), ["Theme", "Sky", "Scanlines"]);
   assert.deepEqual(labels(sounds), ["Sounds"]);
@@ -161,9 +188,9 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   assert.equal(os.sky, "noisy-gradual");
   assert.deepEqual(seen, ["theme:tropical", "sky:noisy-gradual"]);
   // the tray gear pops the same tree; window menus get it without icons
-  assert.deepEqual(labels(os.taskbar.tray.get("settings").props.menu()), ["Display", "Sounds", "Windows"]);
+  assert.deepEqual(labels(os.taskbar.tray.get("settings").props.menu()), ["Display", "Sounds", "Windows", "Other"]);
   const bare = os.settingsItems({ icons: false });
-  assert.deepEqual(labels(bare), ["Display", "Sounds", "Windows"]);
+  assert.deepEqual(labels(bare), ["Display", "Sounds", "Windows", "Other"]);
   assert.ok(bare.every(i => i.icon === undefined) && bare[0].items().every(i => i.icon === undefined));
   assert.ok(tree.every(i => i.icon));
   os.startMenu.open();

@@ -12,6 +12,8 @@ export const CUES = {
   sent:      [[1000, 0, 0.04, null, "sine"]],
   dooropen:  [[220, 0, 0.28, 520, "triangle"]],
   doorclose: [[520, 0, 0.28, 220, "triangle"]],
+  // the title screen's click (os/splash.js): an original rising chord, C major with a high E on top
+  startup:   [[523.25, 0, 0.5, null, "triangle"], [659.25, 0.12, 0.55, null, "triangle"], [783.99, 0.24, 0.6, null, "triangle"], [1046.5, 0.36, 0.9, null, "sine"], [1318.51, 0.5, 1.1, null, "sine"]],
 };
 
 const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };

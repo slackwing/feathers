@@ -40,3 +40,4 @@ export function start(opts = {}) {
   return os.start(opts);
 }
 export { People, PEOPLE_URL } from "./people.js";
+export { Splash, SPLASHES, SPLASH_IDS, randomSplash } from "./splash.js";

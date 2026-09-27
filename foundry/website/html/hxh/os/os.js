@@ -20,6 +20,7 @@ import { WindowManager } from "./wm.js";
 import { Taskbar } from "./taskbar.js";
 import { StartMenu } from "./startmenu.js";
 import { People } from "./people.js";
+import { Splash, SPLASHES } from "./splash.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
 import { LogonDialog } from "./logon.js";
@@ -137,11 +138,6 @@ export class OS {
       { label: "Sounds", icon: "sound", items: () => [
         { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
       ] },
-      // Other ▸ Fly the blimp (Andrew, 2026-09-24 "would help with testing"; moved here 2026-09-27): greyed while one is up or launched and
-      // still at the edge. Under reduced motion no blimp ever flies, so Other would be empty and is left out.
-      ...(this.env.reduced ? [] : [{ label: "Other", icon: "other", items: () => [
-        { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() },
-      ] }]),
       // Windows ▸ (Andrew, 2026-09-27): the desktop's app windows — each greyed when there is nothing for it to do
       { label: "Windows", icon: "windows", items: () => {
         const ws = this.wm.appWindows().filter(w => w.state.open), hidden = ws.filter(w => w.state.minimized).length;
@@ -151,6 +147,13 @@ export class OS {
           { label: "Close all windows", disabled: !ws.length, onclick: () => this.wm.closeAll() },
         ];
       } },
+      // Other ▸ — last (Andrew, 2026-09-27). Fly the blimp (2026-09-24, "would help with testing"): greyed while one is up or
+      // launched and still at the edge, absent under reduced motion. Splash screen ▸ any of the title screens again, over the
+      // desktop, until clicked.
+      { label: "Other", icon: "other", items: () => [
+        ...(this.env.reduced ? [] : [{ label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
+        { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) },
+      ] },
     ];
     const strip = list => list.map(it => (it === "sep" ? it : { ...it, icon: undefined, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : undefined }));
     return icons ? items : strip(items);
@@ -268,12 +271,13 @@ export class OS {
    * as it was left (`Layout.restore`) or, on a first visit, launch the
    * autostart apps. Resolves with the OS once ready.
    */
-  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
+  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
     for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
     this.setup({ start, taskbar });
     const warm = this.nav.consumeWarm();
     const pending = this.session.me();
     if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
+    if (splash && boot && !warm) await this.showSplash();   // the title screen: a style at random, until the viewer clicks (os/splash.js)
     let me = await pending;
     if ((!me && gate) || !taskbar) this.showBadge();   // splash screens keep the badge
     if (!me && gate) me = await this.logon();
@@ -287,6 +291,12 @@ export class OS {
     const restored = await this.layout.restore();
     if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
     return this;
+  }
+
+  /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random. Resolves when the viewer clicks it away. */
+  showSplash(id = null) {
+    if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds }).mount(this.doc.body);
+    return this.splash.show(id);
   }
 
   launch(id, opts = {}) { return this.registry.launch(id, opts); }
