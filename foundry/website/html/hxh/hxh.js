@@ -3498,6 +3498,9 @@ var HxH = (() => {
     "#8b6d4b": "#241a33"
     // the pier
   };
+  var SEA_BANDS = ["#221243", "#1a0e36", "#130a29", "#0d061d"];
+  var SEA_HORIZON = "#2c1856";
+  var ISLAND_SHADOW = "#08041a";
   var WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
   var WINDOW_LIT = 0.8;
   function townWindows() {
@@ -3590,14 +3593,18 @@ var HxH = (() => {
     for (const [cx, cy, cr] of [[-0.35, -0.2, 0.22], [0.3, 0.25, 0.16], [0.05, -0.45, 0.1]]) {
       for (let y = -MR; y <= MR; y++) for (let x = -MR; x <= MR; x++) if (Math.hypot(x - cx * MR, y - cy * MR) <= cr * MR && Math.hypot(x, y) <= MR) b.fillRect(MX + x, MY + y, 1, 1);
     }
-    b.fillStyle = "#0c1a3a";
-    b.fillRect(0, HZ, W, H - HZ);
-    b.fillStyle = "#081229";
-    b.fillRect(0, HZ + Math.round((H - HZ) * 0.45), W, H - HZ);
-    b.fillStyle = "#16294f";
+    const sea = SEA_BANDS, depth = H - HZ;
+    for (let y = HZ; y < H; y++) {
+      const f = (y - HZ) / depth * sea.length, i = Math.min(sea.length - 1, Math.floor(f)), frac = f - i;
+      for (let x = 0; x < W; x++) {
+        b.fillStyle = frac > 0.8 && (x + y) % 2 && i < sea.length - 1 ? sea[i + 1] : sea[i];
+        b.fillRect(x, y, 1, 1);
+      }
+    }
+    b.fillStyle = SEA_HORIZON;
     b.fillRect(0, HZ, W, 1);
     for (let y = HZ; y < HZ + 7; y++) for (let x = OX + 97; x < OX + 240; x++) if ((x + y) % 2 === 0) {
-      b.fillStyle = "#070f24";
+      b.fillStyle = ISLAND_SHADOW;
       b.fillRect(x, y, 1, 1);
     }
     const isle = nightIsland(el.ownerDocument);
@@ -3675,6 +3682,7 @@ var HxH = (() => {
         };
         const onClick = (e) => {
           e.stopPropagation();
+          if (e.detail > 1) return;
           done(true);
         };
         const done = (gesture) => {

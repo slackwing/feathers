@@ -183,7 +183,9 @@ the OS.
   width and thins in density going down — not a Christmas tree — its
   glints each re-rolling on their own staggered `GLINT_CYCLE` (3.2 s) so
   only ~7% change per frame, calm rather than static noise — and
-  Abi's blimp crossing; and the desktop's Whale Island PIXEL FOR PIXEL —
+  Abi's blimp crossing; a PURPLE sea (`SEA_BANDS`: the sky's purples
+  mirrored and darker, lightest under the horizon — not blue, Andrew
+  2026-09-27); and the desktop's Whale Island PIXEL FOR PIXEL —
   Night uses the wallpaper's own `geometry()` and `islandLayer()` (the
   wallpaper's island code, extracted verbatim and checked identical by
   pixel hash), maps every day colour through `NIGHT_ISLAND` to a
@@ -191,7 +193,10 @@ the OS.
   (`litWindows`, stable per visit) with their reflections on the water;
   the title sits up in the sky and CLICK TO START over the sea so the
   island shows between them). It NEVER moves on by itself: "Click to start"
-  on every style; click, tap, Enter, Space or Escape dismisses it and
+  on every style; click, tap, Enter, Space or Escape dismisses it — but
+  never the SECOND click of a double-click (`e.detail > 1`), since desktop
+  icons open on one click and a double-click on Heavens Arena would
+  otherwise open and close it at once — and
   plays the original `startup` chime when Sounds are on. Settings ›
   Other › Splash screen ▸ shows any style over the desktop until
   clicked. Sized only in container units of the full-screen root

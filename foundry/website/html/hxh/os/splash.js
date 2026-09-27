@@ -174,6 +174,10 @@ export const NIGHT_ISLAND = {
   "#fff6e0": "#8a7fb4", "#f1e6cc": "#6f6598", "#dccb9f": "#554b7c", "#b8a071": "#3d3460",      // the rock spire, surf
   "#8b6d4b": "#241a33",                                                                        // the pier
 };
+/** The night sea: the sky's purples mirrored and darker, horizon first (lightest) to the foreground (darkest). */
+export const SEA_BANDS = ["#221243", "#1a0e36", "#130a29", "#0d061d"];
+export const SEA_HORIZON = "#2c1856";          // a faint lit line where sea meets sky
+export const ISLAND_SHADOW = "#08041a";        // the island's dithered shadow on the water
 export const WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
 export const WINDOW_LIT = 0.8;   // "lights in most windows"
 /** Where a house has windows (island space): both upper corners and the lower one beside the door. */
@@ -272,11 +276,16 @@ function night(el, { reduced, random, prompt = "CLICK TO START" }) {
   for (const [cx, cy, cr] of [[-0.35, -0.2, 0.22], [0.3, 0.25, 0.16], [0.05, -0.45, 0.1]]) {
     for (let y = -MR; y <= MR; y++) for (let x = -MR; x <= MR; x++) if (Math.hypot(x - cx * MR, y - cy * MR) <= cr * MR && Math.hypot(x, y) <= MR) b.fillRect(MX + x, MY + y, 1, 1);
   }
-  b.fillStyle = "#0c1a3a"; b.fillRect(0, HZ, W, H - HZ);   // the sea
-  b.fillStyle = "#081229"; b.fillRect(0, HZ + Math.round((H - HZ) * 0.45), W, H - HZ);
-  b.fillStyle = "#16294f"; b.fillRect(0, HZ, W, 1);
+  // the sea reflects the sky (Andrew, 2026-09-27: purple like the sky, not blue; darker): the sky's own purples
+  // mirrored and deepened — lightest just under the horizon, darkening toward us — its band edges dithered like the sky's
+  const sea = SEA_BANDS, depth = H - HZ;
+  for (let y = HZ; y < H; y++) {
+    const f = ((y - HZ) / depth) * sea.length, i = Math.min(sea.length - 1, Math.floor(f)), frac = f - i;
+    for (let x = 0; x < W; x++) { b.fillStyle = frac > 0.8 && (x + y) % 2 && i < sea.length - 1 ? sea[i + 1] : sea[i]; b.fillRect(x, y, 1, 1); }
+  }
+  b.fillStyle = SEA_HORIZON; b.fillRect(0, HZ, W, 1);
   // the island's shadow on the water, as on the desktop's sea, and the town's windows glimmering in it
-  for (let y = HZ; y < HZ + 7; y++) for (let x = OX + 97; x < OX + 240; x++) if ((x + y) % 2 === 0) { b.fillStyle = "#070f24"; b.fillRect(x, y, 1, 1); }
+  for (let y = HZ; y < HZ + 7; y++) for (let x = OX + 97; x < OX + 240; x++) if ((x + y) % 2 === 0) { b.fillStyle = ISLAND_SHADOW; b.fillRect(x, y, 1, 1); }
   const isle = nightIsland(el.ownerDocument);
   const IY = HZ - ISLAND_H;
   let onIsle = () => false;
@@ -333,7 +342,9 @@ export class Splash extends Component {
     el.focus?.({ preventScroll: true });
     return new Promise(resolve => {
       const onKey = e => { if (["Enter", " ", "Escape"].includes(e.key)) { e.preventDefault(); done(true); } };
-      const onClick = e => { e.stopPropagation(); done(true); };
+      // the second click of a double-click is not a dismissal: a desktop icon opens on one click, and a Windows
+      // habit double-click (Heavens Arena) would otherwise open the splash and close it again at once
+      const onClick = e => { e.stopPropagation(); if (e.detail > 1) return; done(true); };
       const done = gesture => {
         el.removeEventListener("click", onClick);
         el.ownerDocument.removeEventListener("keydown", onKey, true);

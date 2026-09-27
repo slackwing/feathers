@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch } from "./dom.js";
-import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE, NIGHT_ISLAND, townWindows, litWindows, WINDOW_LIT } from "../html/hxh/os/splash.js";
+import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE, NIGHT_ISLAND, townWindows, litWindows, WINDOW_LIT, SEA_BANDS, SEA_HORIZON } from "../html/hxh/os/splash.js";
 import { CUES } from "../html/hxh/os/sound.js";
 import { readFileSync } from "node:fs";
 import { TOWN_X, house, ISLAND_H } from "../html/hxh/os/wallpaper.js";
@@ -170,4 +170,23 @@ test("Night's island is the desktop's, pixel for pixel, at night: every colour t
   const lit = litWindows();
   assert.ok(lit.length >= wins.length * (WINDOW_LIT - 0.15) && lit.length < wins.length, `most, not all, are lit: ${lit.length} of ${wins.length}`);
   assert.deepEqual(litWindows(), lit, "the same windows every visit");
+});
+
+test("the night sea is purple like the sky, not blue, and darker: lightest under the horizon, darkening toward us (Andrew, 2026-09-27)", () => {
+  const rgb = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
+  for (const c of [...SEA_BANDS, SEA_HORIZON]) { const [r, g, b] = rgb(c); assert.ok(r > g && b > r, c + " is a purple (red over green, blue on top)"); }
+  const lum = h => rgb(h).reduce((a, b) => a + b);
+  for (let i = 1; i < SEA_BANDS.length; i++) assert.ok(lum(SEA_BANDS[i]) < lum(SEA_BANDS[i - 1]), "darker toward us");
+  assert.ok(lum(SEA_BANDS[0]) < lum("#321a60"), "the sea is darker than the sky at the horizon");
+});
+
+test("a double-click that opened a splash does not close it: its second click (detail 2) is ignored; a single click then dismisses", async () => {
+  const s = new Splash({ reduced: true }).mount(document.body);
+  const p = s.show("select", { prompt: "COMING SOON" });
+  s.el.dispatchEvent(new d.win.MouseEvent("click", { bubbles: true, detail: 2 }));
+  assert.equal(s.el.hidden, false, "the double-click's second click lands on the splash and is ignored");
+  s.el.dispatchEvent(new d.win.MouseEvent("click", { bubbles: true, detail: 1 }));
+  assert.equal(await p, "select");
+  assert.equal(s.el.hidden, true);
+  s.unmount();
 });
