@@ -601,3 +601,23 @@ test("with motion: the card paints in, then the screen glides to the profile and
   b.select(null);
   assert.equal(b.run, null, "a new pick (or none) stops the old sequence");
 });
+
+test("the corner buttons are gone while a leaf turns, opening or closing, and back once it lands; no turn, no hiding (Andrew, 2026-09-27)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  b.setRoster([mk("Gon", ["enhancement"])]);
+  const el = os.wm.get("win-binder").el, flap = b.$(".flap");
+  const land = () => flap.dispatchEvent(new d.win.Event("transitionend"));
+  d.click(b.$(".cover"));
+  assert.ok(!el.classList.contains("turning"), "reduced motion: the book opens at once, nothing to hide");
+  d.click(b.$(".leaf .page .edge"));
+  os.env.reduced = false;
+  d.click(b.$(".cover"));
+  assert.ok(b.book.classList.contains("opening") && el.classList.contains("turning"), "opening: hidden from the first frame");
+  land();
+  assert.ok(b.book.classList.contains("open") && !el.classList.contains("turning"), "landed: back");
+  d.click(b.$(".leaf .page .edge"));
+  assert.ok(b.book.classList.contains("closing") && el.classList.contains("turning"), "closing: hidden");
+  land();
+  assert.ok(b.book.classList.contains("closed") && !el.classList.contains("turning"), "shut: back");
+});

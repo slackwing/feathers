@@ -596,6 +596,10 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   measure right; the suspect is Safari keeping the cards' `cqw` from the
   old zoom (a card's width in book pixels never changes). Precautionary,
   unconfirmed — if it recurs, add a debug overlay and measure on the iPad.
+  While a leaf turns (opening or closing) the window carries `.turning`
+  and the float buttons are hidden, fading back in when it lands
+  (`settle`; Andrew, 2026-09-27: they stayed put over the turning cover
+  and ruined the page turn).
   The book's margins drag the window, and so does the whole closed
   cover (Andrew, 2026-09-27): `WindowManager.drag` with an `allow`
   predicate (never a card or a control) and `threshold: DRAG_SLOP`

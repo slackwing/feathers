@@ -400,9 +400,12 @@ export class BinderApp extends App {
 
   settle(from, to, fn) {
     const flap = this.$(".flap"), book = this.book;
+    // the minimize / close buttons float above the book: hidden while a leaf turns, back when it lands (Andrew, 2026-09-27)
+    this.win.el.classList.add("turning");
     const done = () => {
       if (!book.classList.contains(from)) return;
       clearTimeout(this.turnTimer); flap.removeEventListener("transitionend", onEnd);
+      this.win.el.classList.remove("turning");
       fn(); book.classList.replace(from, to); this.os.wm.fit();
       for (const c of this.cards.values()) c.fit();
     };
@@ -428,6 +431,7 @@ export class BinderApp extends App {
     const page = this.$(".page"), back = this.$(".face.back");
     back.prepend(page);
     if (!this.animated() || !book.classList.contains("open")) {
+      clearTimeout(this.turnTimer); this.win.el.classList.remove("turning");   // a turn cut short must not leave the buttons hidden
       book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); this.os.wm.fit(); return;
     }
     book.classList.remove("open"); book.classList.add("closing", "start");

@@ -58,6 +58,11 @@
 .book.closing .shade { opacity: 1; transition: opacity .85s ease-in; }
 .book.closing.start .shade { opacity: 0; transition: none; }
 
+/* the window's minimize / close buttons float above the book, so a turning leaf would pass under them:
+   gone the moment a turn starts, faded back in once the page lands (binder.js settle) */
+.win.binder .fbtns { transition: opacity .25s ease-out; }
+.win.binder.turning .fbtns { opacity: 0; pointer-events: none; transition: none; }
+
 .cover {
   width: 100%; height: 100%; padding-left: 25px;
   position: relative; cursor: pointer;
