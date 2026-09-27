@@ -17,8 +17,9 @@
      select   a retro fighting game's PLAYER SELECT (Andrew, 2026-09-27:
               "like a retro street fighter game character selection
               screen using randomly selected character avatars"): the
-              title in chrome-gradient italic, a grid of the Binder's
-              characters as chunky pixel portraits, the 1P and 2P
+              title in chrome-gradient italic over Andrew's key-art
+              backdrop (img/select-bg.jpg, dimmed), a grid of the
+              Binder's characters' avatars, the 1P and 2P
               cursors hopping about as in attract mode, the big portraits
               and name plates they point at, and CREDIT 01. The roster is
               read at show time (/hxh/api/db/binder — the splash runs
@@ -77,7 +78,6 @@ function summons(el, { reduced, random }) {
 }
 
 /* ---------- select: a retro fighting game's PLAYER SELECT ---------- */
-const TILE_PX = 24, BIG_PX = 40;   // the portraits' own pixels: a tile is 24×24, a big portrait 40×40, both scaled up hard
 export const SELECT_TILES = 12;
 
 /** The Binder's characters that have an avatar, shuffled; [] when the roster cannot be read. */
@@ -92,16 +92,11 @@ export async function selectRoster(fetch, random = Math.random) {
   } catch { return []; }
 }
 
-/** Draw a picture into a tiny canvas (centre-cropped square): the pixel portrait. Falls back to the image itself where there is no canvas. */
-function pixelPortrait(doc, img, px) {
-  const c = doc.createElement("canvas");
-  c.width = px; c.height = px;
-  const g = c.getContext?.("2d");
-  if (!g) { const i = doc.createElement("img"); i.src = img.src; i.alt = ""; return i; }
-  const s = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 4;   // a little above centre: faces
-  g.imageSmoothingEnabled = true;
-  g.drawImage(img, sx, Math.max(0, sy), s, s, 0, 0, px, px);
-  return c;
+/** A fighter's portrait: the avatar itself, smooth (Andrew, 2026-09-27: "don't pixelate the avatars"), cropped to the square by CSS. */
+function portrait(doc, src) {
+  const i = doc.createElement("img");
+  i.alt = ""; i.draggable = false; i.src = src;
+  return i;
 }
 
 function select(el, { reduced, random, fetch }) {
@@ -128,7 +123,7 @@ function select(el, { reduced, random, fetch }) {
       const f = fighters[cur[who]], box = el.querySelector(`.sp-fighter.${who}`);
       box.querySelector(".sp-plate").textContent = f.name;
       const big = box.querySelector(".sp-big");
-      big.replaceChildren(f.img ? pixelPortrait(doc, f.img, BIG_PX) : h("div", { className: "sp-sil" }));
+      big.replaceChildren(f.img ? portrait(doc, f.img.src) : h("div", { className: "sp-sil" }));
     }
   };
   show();
@@ -140,7 +135,7 @@ function select(el, { reduced, random, fetch }) {
       img.onload = () => {
         if (stopped) return;
         fighters[i] = { name: f.name, img };
-        tiles[i].replaceChildren(pixelPortrait(doc, img, TILE_PX));
+        tiles[i].replaceChildren(portrait(doc, img.src));
         if (cur.p1 === i || cur.p2 === i) show();
       };
       img.src = f.src;

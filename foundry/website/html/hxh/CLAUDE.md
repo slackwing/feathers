@@ -165,8 +165,10 @@ the OS.
   logon. Three styles, one at random (`SPLASHES`): Summons (the first
   landing page, tag `hxh-pre-retro`, revived: Alfa Slab logotype,
   pulsing ✕, embers), Player Select (a retro fighting game's select
-  screen: chrome-gradient italic pixel type, 12 random Binder
-  characters with avatars as 24×24 pixel portraits read from
+  screen: chrome-gradient italic pixel type over Andrew's key-art
+  backdrop (`img/select-bg.jpg`, 1920×1080, under a navy veil that
+  darkens to the edges, plus scanlines), 12 random Binder characters'
+  avatars — smooth, NOT pixelated (Andrew, 2026-09-27) — read from
   /hxh/api/db/binder at show time, red 1P / blue 2P cursors hopping as
   in attract mode, the big portraits and name plates they point at —
   2P mirrored — and CREDIT 01; ??? silhouettes without a roster; it

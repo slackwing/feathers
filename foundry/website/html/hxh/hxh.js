@@ -3330,8 +3330,6 @@ var HxH = (() => {
     return () => {
     };
   }
-  var TILE_PX = 24;
-  var BIG_PX = 40;
   var SELECT_TILES = 12;
   async function selectRoster(fetch, random = Math.random) {
     if (!fetch) return [];
@@ -3348,21 +3346,12 @@ var HxH = (() => {
       return [];
     }
   }
-  function pixelPortrait(doc, img, px) {
-    const c = doc.createElement("canvas");
-    c.width = px;
-    c.height = px;
-    const g = c.getContext?.("2d");
-    if (!g) {
-      const i = doc.createElement("img");
-      i.src = img.src;
-      i.alt = "";
-      return i;
-    }
-    const s = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 4;
-    g.imageSmoothingEnabled = true;
-    g.drawImage(img, sx, Math.max(0, sy), s, s, 0, 0, px, px);
-    return c;
+  function portrait(doc, src) {
+    const i = doc.createElement("img");
+    i.alt = "";
+    i.draggable = false;
+    i.src = src;
+    return i;
   }
   function select(el, { reduced, random, fetch }) {
     el.innerHTML = `
@@ -3393,7 +3382,7 @@ var HxH = (() => {
         const f = fighters[cur[who]], box = el.querySelector(`.sp-fighter.${who}`);
         box.querySelector(".sp-plate").textContent = f.name;
         const big = box.querySelector(".sp-big");
-        big.replaceChildren(f.img ? pixelPortrait(doc, f.img, BIG_PX) : h("div", { className: "sp-sil" }));
+        big.replaceChildren(f.img ? portrait(doc, f.img.src) : h("div", { className: "sp-sil" }));
       }
     };
     show();
@@ -3405,7 +3394,7 @@ var HxH = (() => {
         img.onload = () => {
           if (stopped) return;
           fighters[i] = { name: f.name, img };
-          tiles[i].replaceChildren(pixelPortrait(doc, img, TILE_PX));
+          tiles[i].replaceChildren(portrait(doc, img.src));
           if (cur.p1 === i || cur.p2 === i) show();
         };
         img.src = f.src;
