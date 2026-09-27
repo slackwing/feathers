@@ -2622,7 +2622,8 @@ var HxH = (() => {
   var CLOTH_H = 28;
   var AMP = 2.5;
   var WAVE = 34;
-  var CORNER_IN = 2;
+  var CORNER_IN = 0;
+  var HOLD = 48;
   var LETTER_PX = 11;
   var CAP = 0.72;
   var FLYER_TOP = Math.round(STERN_Y - (CLOTH_TOP + CLOTH_H / 2));
@@ -2642,18 +2643,25 @@ var HxH = (() => {
     return `M ${pt([0, y0])} L ${pt(b)} C ${pt(c1)} ${pt(m)} ${pt(p)} L ${pt(q)}`;
   }
   var BRIDLE = [CLOTH_TOP + CORNER_IN, CLOTH_TOP + CLOTH_H - CORNER_IN];
-  function ripple(x0, x1, base, amp, phase, step = 8) {
+  function ripple(x0, x1, base, amp, phase, held = x0, step = 8) {
     const pts = [];
-    for (let x = x0; x <= x1; x += step) pts.push([x, base + amp * Math.sin(phase + (x - x0) / WAVE)]);
+    const xs = [];
+    for (let x = x0; x < x1; x += step) xs.push(x);
+    xs.push(x1);
+    for (const x of xs) {
+      const k = Math.min(1, Math.abs(x - held) / HOLD), ramp = k * k * (3 - 2 * k);
+      pts.push([x, base + amp * ramp * Math.sin(phase + (x - x0) / WAVE)]);
+    }
     return pts;
   }
   var poly = (pts, start2 = "M") => start2 + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L ");
   function bannerSVG(text = FLYER_TEXT, rope = "left") {
     const id = "bwave" + ++seq;
     const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
+    const held = rope === "left" ? x0 : x1;
     const phases = [0, 2.1, 4.2, 0];
-    const cloth = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP, AMP, p)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p).reverse(), "L") + " Z").join(";");
-    const line = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p))).join(";");
+    const cloth = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP, AMP, p, held)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p, held).reverse(), "L") + " Z").join(";");
+    const line = phases.map((p) => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p, held))).join(";");
     const dur = "1.5s";
     const ropes = BRIDLE.map((yq) => `<path class="rope" d="${ropePath(rope, yq)}" stroke-width="${ROPE_W}" filter="url(#${id}-soft)"/>`).join("\n  ");
     return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">

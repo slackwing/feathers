@@ -729,8 +729,11 @@ over the sky.
   cubic whose first two control points lie on the line (zero curvature
   leaving the drawing: "smooth derivatives from the image to the
   string") and whose last sits on its straight run's line, ending
-  straight at `BRIDLE` = the cloth's top / bottom leading corner
-  (`CORNER_IN` px inside the edges). Check joins with the zoomed
+  straight at `BRIDLE` = exactly the cloth's top / bottom leading
+  corner. The cloth's ripple is HELD at that edge (`ripple(..., held)`:
+  amplitude climbs from 0 over `HOLD` px on a smoothstep) so the corners
+  never leave the line ends — with a uniform ripple they slid ±2 px
+  past them and the lines read as not touching (Andrew, 2026-09-27). Check joins with the zoomed
   screenshot recipe (a DPR-4 clip at the ship's edge, column-by-column
   centre/thickness), not by eye at 1×.
   The wallpaper's frame loop must `clearRect` first: the hypergradient

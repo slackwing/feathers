@@ -35,7 +35,8 @@ export const ROPE_SOFT = 0.12;                              // Gaussian blur (px
 export const OVERLAP = 2;                                   // px of rope drawn over the art's own line (solid for ~3.4 px past the propeller at this scale)
 export const BANNER_W = 252, BANNER_H = 46, ROPE = 56;      // the bridle takes the first ROPE px of the banner box
 export const CLOTH_TOP = 9, CLOTH_H = 28, AMP = 2.5, WAVE = 34;   // the cloth's place in the box and its ripple (amplitude, wavelength/2π)
-export const CORNER_IN = 2;                                 // each line meets the cloth this far inside its top / bottom edge
+export const CORNER_IN = 0;                                 // each line ends ON the cloth's corner (Andrew, 2026-09-27: the ends didn't quite touch)
+export const HOLD = 48;                                     // px over which the ripple grows from nothing: the edge tied to the bridle is held still, so its corners never leave the rope ends
 export const LETTER_PX = 11, CAP = 0.72;                    // the lettering's size (= os.css .banner .lettering) and its cap height (a fraction of the em): capitals are centred by their caps
 export const FLYER_TOP = Math.round(STERN_Y - (CLOTH_TOP + CLOTH_H / 2));   // the flyer's margin-top, whole px: the stern line meets the cloth's midline, so the bridle is a symmetric triangle
 export const ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);    // where the bridle starts (and the art's line runs), in banner coordinates
@@ -74,10 +75,21 @@ export function ropePath(rope, yq, y0 = ROPE_Y) {
 /** The bridle's two corners on the cloth's leading edge: top, bottom. */
 export const BRIDLE = [CLOTH_TOP + CORNER_IN, CLOTH_TOP + CLOTH_H - CORNER_IN];
 
-/** Points of a rippling edge: y = base + A·sin(x/WAVE + phase), every `step` px from x0 to x1. */
-function ripple(x0, x1, base, amp, phase, step = 8) {
+/**
+ * Points of a rippling edge from x0 to x1 (every `step` px, both ends
+ * included): y = base + A·ramp·sin(x/WAVE + phase), where `ramp` climbs
+ * smoothly from 0 at the HELD end (`held` = x0 or x1, the edge tied to
+ * the bridle) to 1 over HOLD px — a towed banner is still where it is
+ * tied and flaps more toward its free end, and the bridle's corners stay
+ * put in every frame.
+ */
+export function ripple(x0, x1, base, amp, phase, held = x0, step = 8) {
   const pts = [];
-  for (let x = x0; x <= x1; x += step) pts.push([x, base + amp * Math.sin(phase + (x - x0) / WAVE)]);
+  const xs = []; for (let x = x0; x < x1; x += step) xs.push(x); xs.push(x1);
+  for (const x of xs) {
+    const k = Math.min(1, Math.abs(x - held) / HOLD), ramp = k * k * (3 - 2 * k);   // smoothstep: no kink where the flapping begins
+    pts.push([x, base + amp * ramp * Math.sin(phase + (x - x0) / WAVE)]);
+  }
   return pts;
 }
 const poly = (pts, start = "M") => start + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L ");
@@ -91,9 +103,10 @@ const poly = (pts, start = "M") => start + pts.map(([x, y]) => `${x.toFixed(1)} 
 export function bannerSVG(text = FLYER_TEXT, rope = "left") {
   const id = "bwave" + (++seq);
   const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
+  const held = rope === "left" ? x0 : x1;   // the edge on the bridle's side
   const phases = [0, 2.1, 4.2, 0];
-  const cloth = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP, AMP, p)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p).reverse(), "L") + " Z").join(";");
-  const line = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p))).join(";");   // the baseline rides the cloth's midline plus half a cap: the capitals sit centred (no dominant-baseline — Safari ignores it on a textPath)
+  const cloth = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP, AMP, p, held)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p, held).reverse(), "L") + " Z").join(";");
+  const line = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p, held))).join(";");   // the baseline rides the cloth's midline plus half a cap: the capitals sit centred (no dominant-baseline — Safari ignores it on a textPath)
   const dur = "1.5s";
   const ropes = BRIDLE.map(yq => `<path class="rope" d="${ropePath(rope, yq)}" stroke-width="${ROPE_W}" filter="url(#${id}-soft)"/>`).join("\n  ");
   return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">

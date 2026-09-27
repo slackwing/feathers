@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
 import { existsSync, readFileSync } from "node:fs";
-import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, BRIDLE, SHIP_SRC, SHIP_W, SHIP_H, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, FLIGHT_MS, ART_W, ART_H, ART_LINE_W, BANNER_W, CLOTH_TOP, CLOTH_H, CORNER_IN, LETTER_PX, CAP } from "../html/hxh/os/blimp.js";
+import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, BRIDLE, SHIP_SRC, SHIP_W, SHIP_H, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, FLIGHT_MS, ART_W, ART_H, ART_LINE_W, BANNER_W, CLOTH_TOP, CLOTH_H, CORNER_IN, HOLD, ripple, LETTER_PX, CAP } from "../html/hxh/os/blimp.js";
 
 const d = setupDom();
 
@@ -36,6 +36,25 @@ test("the banner ripples: cloth and lettering paths animate through phases; no h
   assert.equal(values[0], values[3], "the loop returns to its first phase");
   assert.notEqual(values[0], values[1]);
   assert.notEqual(bannerSVG().match(/id="(bwave\d+)"/)[1], left.match(/id="(bwave\d+)"/)[1], "each banner's wave path has its own id");
+});
+
+test("the bridle's corners hold still: in every ripple phase the cloth's leading corners sit exactly on the two line ends, both flight directions (Andrew, 2026-09-27: the ends didn't quite touch)", () => {
+  assert.equal(CORNER_IN, 0, "each line ends on its corner");
+  for (const [rope, lead] of [["left", ROPE], ["right", BANNER_W - ROPE]]) {
+    const svg = bannerSVG(FLYER_TEXT, rope);
+    const frames = svg.match(/class="cloth"[^>]*><animate attributeName="d" values="([^"]+)"/)[1].split(";");
+    const ends = [...svg.matchAll(/<path class="rope" d="([^"]+)"/g)].map(m => m[1].match(/-?[\d.]+/g).map(Number).slice(-2));
+    assert.deepEqual(ends.map(e => e[0]), [lead, lead], rope + ": both lines end on the leading edge");
+    for (const d of frames) {
+      const pts = d.match(/-?[\d.]+ -?[\d.]+/g).map(q => q.split(" ").map(Number));
+      const corners = rope === "left" ? [pts[0], pts.at(-1)] : [pts.find(q => q[0] === lead && q[1] < CLOTH_TOP + 1), pts.find(q => q[0] === lead && q[1] > CLOTH_TOP + CLOTH_H - 1)];
+      assert.deepEqual(corners, ends, `${rope}: the corners meet the line ends in this frame`);
+    }
+  }
+  const pts = ripple(0, 200, 10, 3, 1.3);
+  assert.equal(pts[0][1], 10, "no motion at the held end");
+  assert.ok(pts.some(([x, y]) => x > HOLD && Math.abs(y - 10) > 1), "full flapping past HOLD");
+  assert.deepEqual(ripple(0, 200, 10, 3, 1.3, 200).at(-1), [200, 10], "the held end can be either side");
 });
 
 test("the bridle: two lines from one point on the art's axis line, horizontal out of the stern, tangent-matched bends, straight runs to the cloth's top and bottom leading corners — a symmetric triangle", () => {
