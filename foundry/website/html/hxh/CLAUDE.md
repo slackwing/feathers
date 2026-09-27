@@ -570,6 +570,13 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   outfit hangs, below the face, so a sky that fills the edges loses).
   Tabs come from `groupCards` (one per group that has cards — one
   character, one tab; Andrew has "a better idea for the tabs" to come).
+  A change of SCALE (the Binder's zoom or the desktop's, e.g. an iPad
+  turning) rebuilds the current page's cards (`layout()` → `showPage(page,
+  sel)`): Abi's iPad once drew every card at about half size inside
+  full-size slots after a rotation (2026-09-27). Chrome and Firefox
+  measure right; the suspect is Safari keeping the cards' `cqw` from the
+  old zoom (a card's width in book pixels never changes). Precautionary,
+  unconfirmed — if it recurs, add a debug overlay and measure on the iPad.
   The book's margins drag the window, and so does the whole closed
   cover (Andrew, 2026-09-27): `WindowManager.drag` with an `allow`
   predicate (never a card or a control) and `threshold: DRAG_SLOP`

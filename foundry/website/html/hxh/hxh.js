@@ -4560,7 +4560,11 @@ var HxH = (() => {
       el.style.setProperty("--cardh", l.ch + "px");
       el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1e3) / 1e3));
       el.style.zoom = String(l.zoom);
-      for (const c of this.cards.values()) c.fit();
+      const scale = l.zoom + "|" + (os2.env.zoom?.() ?? 1);
+      const rescaled = this.scale != null && this.scale !== scale;
+      this.scale = scale;
+      if (rescaled && this.page != null && this.cards.size) this.showPage(this.page, this.sel);
+      else for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
     /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */

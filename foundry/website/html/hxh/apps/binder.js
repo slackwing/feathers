@@ -356,7 +356,16 @@ export class BinderApp extends App {
     el.style.setProperty("--cardh", l.ch + "px");
     el.style.setProperty("--u", String(Math.round(l.pw / DESIGN_PW * 1000) / 1000));   // the panel's controls scale with the page
     el.style.zoom = String(l.zoom);
-    for (const c of this.cards.values()) c.fit();
+    // A change of scale (the Binder's own zoom or the desktop's — an iPad turning) rebuilds the page's cards:
+    // Abi's iPad briefly drew every card at about half size inside full-size slots after a rotation (Andrew,
+    // 2026-09-27). Chrome and Firefox size them right; the likely culprit is Safari keeping the cards' container
+    // units (cqw) from the old zoom, since a card's width in book pixels never changes. Fresh elements are sized
+    // from scratch. Precautionary — Safari could not be run here to confirm.
+    const scale = l.zoom + "|" + (os.env.zoom?.() ?? 1);
+    const rescaled = this.scale != null && this.scale !== scale;
+    this.scale = scale;
+    if (rescaled && this.page != null && this.cards.size) this.showPage(this.page, this.sel);
+    else for (const c of this.cards.values()) c.fit();
     return { x: l.x, y: l.y };
   }
 

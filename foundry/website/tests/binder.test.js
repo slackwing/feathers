@@ -361,6 +361,35 @@ test("a live re-read keeps the selected card and does not retype the screen; an 
   assert.ok(!b.$('[data-act="heart"]').disabled);
 });
 
+test("an iPad turning — the Binder's or the desktop's zoom changes — rebuilds the page's cards, selection kept, screen not retyped; the same scale touches nothing (Andrew, 2026-09-27: cards drawn at half size in full-size slots on Abi's iPad)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })]);
+  b.showPage(1);
+  d.click(b.$('.cards .card[data-id="2"]'));
+  const scr = b.$(".screen").innerHTML, el = () => b.$('.cards .card[data-id="2"]'), first = el();
+  b.layout();   // a resize that changes nothing
+  assert.equal(el(), first, "same scale: the cards are left alone");
+  const env = os.env, keep = { width: env.width, height: env.height, zoom: env.zoom };
+  try {
+    env.width = 820; env.height = 1180;   // landscape → portrait: the Binder's zoom changes
+    const z0 = b.win.el.style.zoom;
+    b.layout();
+    assert.notEqual(b.win.el.style.zoom, z0);
+    const turned = el();
+    assert.notEqual(turned, first, "a new zoom: fresh card elements, sized from scratch");
+    assert.equal(b.selected.id, 2, "the selection survives");
+    assert.ok(turned.classList.contains("on"));
+    assert.equal(b.$(".screen").innerHTML, scr, "the screen is not retyped");
+    assert.equal(b.$(".cards").querySelectorAll(".card").length, 2);
+    env.zoom = () => 0.9;   // the desktop's own zoom (the whale rule) alone changes
+    b.layout();
+    assert.notEqual(el(), turned, "the desktop's zoom counts too");
+  } finally { Object.assign(env, keep); b.layout(); }
+});
+
 test("a heart: one per reader per card, toggled; the key lights while mine is on; every heart is stamped on the card at its saved spot and leans", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
