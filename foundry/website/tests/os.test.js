@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
 import { Blimp } from "../html/hxh/os/blimp.js";
+import { hasIconPair } from "../html/hxh/os/icons.js";
 import { App } from "../html/hxh/os/apps.js";
 import { Window } from "../html/hxh/os/window.js";
 import { WARM_KEY, Nav } from "../html/hxh/os/session.js";
@@ -66,24 +67,64 @@ test("a logged-in cold load: boots, builds the chrome, desktop, tray, autostarts
   assert.ok(events.includes("os:ready:andrew") && events.includes("app:launch:hello"));
 });
 
-test("Settings › Display › Fly the blimp launches one now, greys while a ship is up, and is absent under reduced motion — no Original / Pixelated any more (Andrew, 2026-09-27)", async () => {
+test("Settings › Other ▸ Fly the blimp: launches one now, greys while a ship is up; Other is left out under reduced motion (Andrew, 2026-09-27)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
   os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
-  const display = () => os.settingsItems()[0].items().map(i => i === "sep" ? "-" : i);
-  let items = display();
-  assert.deepEqual(items.map(i => i === "-" ? i : i.label), ["Theme", "Sky", "Scanlines", "-", "Fly the blimp"]);
-  assert.equal(items[4].items, undefined, "a plain item, not a submenu");
-  assert.equal(items[4].disabled, false);
-  items[4].onclick();
+  const tree = os.settingsItems();
+  assert.deepEqual(tree.map(i => i.label), ["Display", "Sounds", "Other", "Windows"]);
+  assert.ok(tree.every(i => i.icon && hasIconPair(i.icon)), "each submenu has a 16×16 icon: " + tree.map(i => i.icon));
+  assert.deepEqual(tree[0].items().map(i => i === "sep" ? "-" : i.label), ["Theme", "Sky", "Scanlines"], "the blimp left Display");
+  const other = () => os.settingsItems()[2].items();
+  assert.deepEqual(other().map(i => i.label), ["Fly the blimp"]);
+  assert.equal(other()[0].disabled, false);
+  other()[0].onclick();
   assert.equal(os.blimp.flying, true);
-  assert.equal(display()[4].disabled, true, "one is up: the item greys until it has crossed");
+  assert.equal(other()[0].disabled, true, "one is up: the item greys until it has crossed");
   os.blimp.el.querySelector(".blimp").dispatchEvent(new d.win.Event("animationend"));
-  assert.equal(display()[4].disabled, false);
+  assert.equal(other()[0].disabled, false);
   os.blimp.unmount();
   const quiet = make({ reduced: true }).os;
   await quiet.start({ apps: [Hello], start: true });
-  assert.deepEqual(quiet.settingsItems()[0].items().map(i => i.label), ["Theme", "Sky", "Scanlines"]);
+  assert.deepEqual(quiet.settingsItems().map(i => i.label), ["Display", "Sounds", "Windows"]);
+});
+
+test("Settings › Windows ▸ Show all / Hide all / Close all act on the desktop's app windows, each greyed when there is nothing to do (Andrew, 2026-09-27)", async () => {
+  const { os } = make({ reduced: false });
+  await os.start({ apps: [Hello, Sys], start: true });
+  const wm = os.wm;
+  const mk = (id, extra = {}) => { const w = new Window({ id, title: id, ...extra }); wm.add(w); return w; };
+  const a = mk("win-wa"), b = mk("win-wb"), c = mk("win-wc"), dlg = mk("win-dlg", { chrome: "static" });
+  for (const w of [a, b, c, dlg]) await wm.open(w.id);
+  const menu = () => Object.fromEntries(os.settingsItems().find(i => i.label === "Windows").items().map(i => [i.label, i]));
+  assert.deepEqual(Object.keys(menu()), ["Show all windows", "Hide all windows", "Close all windows"]);
+  const open = () => wm.appWindows().filter(w => w.state.open && !w.state.minimized).map(w => w.id).sort();
+  const before = open();
+  assert.ok(before.includes("win-wa") && before.includes("win-wc"));
+  assert.equal(menu()["Show all windows"].disabled, true, "nothing minimized yet");
+  // Hide all: every visible app window to the taskbar; the static dialog is not an app window
+  wm.focus("win-wb");
+  menu()["Hide all windows"].onclick();
+  assert.deepEqual(open(), []);
+  assert.ok([a, b, c].every(w => w.state.open && w.state.minimized && w.el.hidden));
+  assert.equal(dlg.state.minimized, false, "static dialogs are left alone");
+  assert.equal(menu()["Hide all windows"].disabled, true, "everything is already hidden");
+  // Show all: back where they were, the one on top still on top
+  const placeB = b.el.style.left + "," + b.el.style.top;
+  menu()["Show all windows"].onclick();
+  assert.deepEqual(open(), before);
+  assert.equal(b.el.style.left + "," + b.el.style.top, placeB, "restored in place");
+  assert.equal(wm.activeId, "win-wb", "the window that was on top comes back on top");
+  assert.equal(menu()["Show all windows"].disabled, true);
+  // Close all: minimized ones too, through the manager's close (onClose hooks run)
+  let closed = 0; a.props.onClose = () => closed++;
+  wm.minimize("win-wa");
+  menu()["Close all windows"].onclick();
+  assert.equal(closed, 1, "the minimized window's own close hook ran");
+  assert.deepEqual(wm.appWindows().filter(w => w.state.open).map(w => w.id), []);
+  assert.equal(dlg.state.open, true, "static dialogs are left alone");
+  const m = menu();
+  assert.ok(m["Show all windows"].disabled && m["Hide all windows"].disabled && m["Close all windows"].disabled, "nothing left to act on");
 });
 
 test("the Start menu lists apps, Settings ▸, system apps and Log out; the Settings tree is one source for Start, tray and windows", async () => {
@@ -93,7 +134,7 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   assert.deepEqual(items.map(i => i === "sep" ? "-" : i.label), ["Hello", "Adm", "-", "Settings", "Sys", "-", "Log out"]);
   const labels = list => list.map(i => i.label);
   const tree = items[3].items();
-  assert.deepEqual(labels(tree), ["Display", "Sounds"]);
+  assert.deepEqual(labels(tree), ["Display", "Sounds", "Windows"]);   // reduced motion here: no Other (its only item is the blimp)
   const display = tree[0].items(), sounds = tree[1].items();
   assert.deepEqual(labels(display), ["Theme", "Sky", "Scanlines"]);
   assert.deepEqual(labels(sounds), ["Sounds"]);
@@ -120,9 +161,9 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   assert.equal(os.sky, "noisy-gradual");
   assert.deepEqual(seen, ["theme:tropical", "sky:noisy-gradual"]);
   // the tray gear pops the same tree; window menus get it without icons
-  assert.deepEqual(labels(os.taskbar.tray.get("settings").props.menu()), ["Display", "Sounds"]);
+  assert.deepEqual(labels(os.taskbar.tray.get("settings").props.menu()), ["Display", "Sounds", "Windows"]);
   const bare = os.settingsItems({ icons: false });
-  assert.deepEqual(labels(bare), ["Display", "Sounds"]);
+  assert.deepEqual(labels(bare), ["Display", "Sounds", "Windows"]);
   assert.ok(bare.every(i => i.icon === undefined) && bare[0].items().every(i => i.icon === undefined));
   assert.ok(tree.every(i => i.icon));
   os.startMenu.open();

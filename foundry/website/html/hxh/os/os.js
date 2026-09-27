@@ -131,12 +131,24 @@ export class OS {
         { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: v => this.applyTheme(v) }) },
         { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: v => this.applySky(v) }) },
         { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-        // Andrew (2026-09-24): summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
-        ...(this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
       ] },
       { label: "Sounds", icon: "sound", items: () => [
         { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() },
       ] },
+      // Other ▸ Fly the blimp (Andrew, 2026-09-24 "would help with testing"; moved here 2026-09-27): greyed while one is up or launched and
+      // still at the edge. Under reduced motion no blimp ever flies, so Other would be empty and is left out.
+      ...(this.env.reduced ? [] : [{ label: "Other", icon: "other", items: () => [
+        { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() },
+      ] }]),
+      // Windows ▸ (Andrew, 2026-09-27): the desktop's app windows — each greyed when there is nothing for it to do
+      { label: "Windows", icon: "windows", items: () => {
+        const ws = this.wm.appWindows().filter(w => w.state.open), hidden = ws.filter(w => w.state.minimized).length;
+        return [
+          { label: "Show all windows", disabled: !hidden, onclick: () => this.wm.showAll() },
+          { label: "Hide all windows", disabled: hidden === ws.length, onclick: () => this.wm.hideAll() },
+          { label: "Close all windows", disabled: !ws.length, onclick: () => this.wm.closeAll() },
+        ];
+      } },
     ];
     const strip = list => list.map(it => (it === "sep" ? it : { ...it, icon: undefined, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : undefined }));
     return icons ? items : strip(items);

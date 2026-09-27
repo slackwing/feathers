@@ -134,6 +134,35 @@ export class WindowManager {
     this.bus.emit("window:minimize", { id });
   }
 
+  /** The desktop's own windows — the ones with a taskbar button (no static dialogs, no popups): what Settings › Windows acts on. */
+  appWindows() { return this.all().filter(w => w.hasTask); }
+  /** Settings › Windows › Show all windows: every minimized one back where it was, in stacking order (the top stays on top). Returns how many. */
+  showAll() {
+    const ws = this.appWindows().filter(w => w.state.open && w.state.minimized).sort((a, b) => (+a.el.style.zIndex || 0) - (+b.el.style.zIndex || 0));
+    for (const w of ws) this.open(w.id, null, { scroll: false });
+    return ws.length;
+  }
+  /**
+   * Settings › Windows › Hide all windows: every visible one to the
+   * taskbar (show-the-desktop), stacking order untouched. The active
+   * window is let go first: minimizing it one by one would focus — and
+   * lift — the next window each time, and Show all would then bring the
+   * wrong one back on top. Returns how many.
+   */
+  hideAll() {
+    const ws = this.appWindows().filter(w => w.state.open && !w.state.minimized);
+    if (ws.some(w => w.id === this.activeId)) this.activeId = null;
+    for (const w of ws) this.minimize(w.id);
+    this.focusTop();
+    return ws.length;
+  }
+  /** Settings › Windows › Close all windows: every open one, minimized too, through its own close (onClose hooks run). Returns how many. */
+  closeAll() {
+    const ws = this.appWindows().filter(w => w.state.open);
+    for (const w of ws) this.close(w.id);
+    return ws.length;
+  }
+
   focusTop() {
     let best = null;
     for (const w of this.wins.values()) {

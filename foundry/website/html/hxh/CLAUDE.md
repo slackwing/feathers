@@ -660,18 +660,26 @@ over the sky.
 
 - **One Settings tree** — `OS.settingsItems({icons})` — is rendered by
   the Start menu (Settings ▸), the tray gear (`icon: "gear"`, replaced
-  the scanlines icon) and any app window's Settings menu (Summons passes
-  `icons: false`): Display ▸ (Theme ▸, Sky ▸, Scanlines, ─, Fly the blimp) and
-  Sounds ▸ (Sounds). Andrew: "keep all our experiments in the UI as
-  settings people can toggle". Add a knob there, nowhere else.
-  Scanlines is OFF by default (`hxh.crt` in localStorage remembers an
-  override). Fly the blimp (Andrew, 2026-09-24, "would help with
-  testing") sits below a rule: launches one now, greyed while a ship is
-  up or launched and still off the edge (`Blimp.flying`, which purges
-  overdue flights first), absent under reduced motion. (A Blimp ▸
-  Original | Pixelated submenu existed 2026-09-24..27; the pixel sprite
-  was removed at Andrew's ask, and the stale `hxh.set.blimp` key in
-  browsers is simply ignored.)
+  the scanlines icon) and any app window's Settings menu (window menus pass
+  `icons: false`; the Summons has none — File › Exit alone): Display ▸ (Theme ▸, Sky ▸, Scanlines), Sounds ▸ (Sounds), Other ▸
+  (Fly the blimp) and Windows ▸ (Show all / Hide all / Close all
+  windows) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
+  the UI as settings people can toggle". Add a knob there, nowhere
+  else. Scanlines is OFF by default (`hxh.crt` in localStorage
+  remembers an override). Fly the blimp (2026-09-24, "would help with
+  testing") launches one now, greyed while a ship is up or launched
+  and still off the edge (`Blimp.flying`, which purges overdue flights
+  first); Other is left out entirely under reduced motion, where it
+  would be empty. Windows ▸ acts on `wm.appWindows()` — windows with a
+  taskbar button, never static dialogs or popups — via `wm.showAll()`
+  (minimized ones back in place, in stacking order), `wm.hideAll()`
+  (show-the-desktop; it lets go of the active window FIRST, because
+  minimizing one at a time refocuses and lifts the next window, and Show
+  all would bring the wrong one back on top) and `wm.closeAll()`
+  (minimized ones too, through `wm.close`, so onClose hooks run); each
+  item greys when there is nothing for it to do. (A Blimp ▸ Original |
+  Pixelated submenu existed 2026-09-24..27; the stale `hxh.set.blimp`
+  key in browsers is simply ignored.)
 - **Submenus** are a menu-item feature: `{ label, items }` cascades to
   the right (Windows style: hover or click, one sibling open at a
   time, ancestors stay open, a leaf pick closes the chain; up-menus

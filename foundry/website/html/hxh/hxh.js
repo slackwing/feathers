@@ -857,6 +857,44 @@ var HxH = (() => {
       "................"
     ],
     // Settings › Sounds: a speaker
+    // Settings › Windows: two overlapping windows, navy title bars
+    windows: [
+      "kkkkkkkkkkk.....",
+      "kNNNNNNNNNk.....",
+      "kkkkkkkkkkk.....",
+      "kwwwwwwwwwk.....",
+      "kwwwkkkkkkkkkkkk",
+      "kwwwkNNNNNNNNNNk",
+      "kwwwkkkkkkkkkkkk",
+      "kwwwkwwwwwwwwwwk",
+      "kkkkkwwwwwwwwwwk",
+      "....kwwwwwwwwwwk",
+      "....kwwwwwwwwwwk",
+      "....kwwwwwwwwwwk",
+      "....kwwwwwwwwwwk",
+      "....kwwwwwwwwwwk",
+      "....kkkkkkkkkkkk",
+      "................"
+    ],
+    // Settings › Other: an ellipsis
+    other: [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      ".kk....kk....kk.",
+      "kkkk..kkkk..kkkk",
+      "kkkk..kkkk..kkkk",
+      ".kk....kk....kk.",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],
     sound: [
       "................",
       "........k.......",
@@ -1433,6 +1471,36 @@ var HxH = (() => {
       }
       this.fit();
       this.bus.emit("window:minimize", { id });
+    }
+    /** The desktop's own windows — the ones with a taskbar button (no static dialogs, no popups): what Settings › Windows acts on. */
+    appWindows() {
+      return this.all().filter((w) => w.hasTask);
+    }
+    /** Settings › Windows › Show all windows: every minimized one back where it was, in stacking order (the top stays on top). Returns how many. */
+    showAll() {
+      const ws = this.appWindows().filter((w) => w.state.open && w.state.minimized).sort((a, b) => (+a.el.style.zIndex || 0) - (+b.el.style.zIndex || 0));
+      for (const w of ws) this.open(w.id, null, { scroll: false });
+      return ws.length;
+    }
+    /**
+     * Settings › Windows › Hide all windows: every visible one to the
+     * taskbar (show-the-desktop), stacking order untouched. The active
+     * window is let go first: minimizing it one by one would focus — and
+     * lift — the next window each time, and Show all would then bring the
+     * wrong one back on top. Returns how many.
+     */
+    hideAll() {
+      const ws = this.appWindows().filter((w) => w.state.open && !w.state.minimized);
+      if (ws.some((w) => w.id === this.activeId)) this.activeId = null;
+      for (const w of ws) this.minimize(w.id);
+      this.focusTop();
+      return ws.length;
+    }
+    /** Settings › Windows › Close all windows: every open one, minimized too, through its own close (onClose hooks run). Returns how many. */
+    closeAll() {
+      const ws = this.appWindows().filter((w) => w.state.open);
+      for (const w of ws) this.close(w.id);
+      return ws.length;
     }
     focusTop() {
       let best = null;
@@ -3327,13 +3395,25 @@ var HxH = (() => {
         { label: "Display", icon: "crt", items: () => [
           { label: "Theme", items: () => st.radio({ key: THEME_KEY, def: THEME_DEFAULT, options: THEME_OPTIONS, onChange: (v) => this.applyTheme(v) }) },
           { label: "Sky", items: () => st.radio({ key: SKY_KEY, def: SKY_DEFAULT, options: SKY_OPTIONS, onChange: (v) => this.applySky(v) }) },
-          { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() },
-          // Andrew (2026-09-24): summon the blimp for testing — greyed while one is up or launched and still at the edge; absent under reduced motion, where no blimp ever flies
-          ...this.env.reduced ? [] : ["sep", { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]
+          { label: "Scanlines", check: () => this.crt.on, onclick: () => this.crt.toggle() }
         ] },
         { label: "Sounds", icon: "sound", items: () => [
           { label: "Sounds", check: () => this.sounds.on, onclick: () => this.sounds.toggle() }
-        ] }
+        ] },
+        // Other ▸ Fly the blimp (Andrew, 2026-09-24 "would help with testing"; moved here 2026-09-27): greyed while one is up or launched and
+        // still at the edge. Under reduced motion no blimp ever flies, so Other would be empty and is left out.
+        ...this.env.reduced ? [] : [{ label: "Other", icon: "other", items: () => [
+          { label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }
+        ] }],
+        // Windows ▸ (Andrew, 2026-09-27): the desktop's app windows — each greyed when there is nothing for it to do
+        { label: "Windows", icon: "windows", items: () => {
+          const ws = this.wm.appWindows().filter((w) => w.state.open), hidden = ws.filter((w) => w.state.minimized).length;
+          return [
+            { label: "Show all windows", disabled: !hidden, onclick: () => this.wm.showAll() },
+            { label: "Hide all windows", disabled: hidden === ws.length, onclick: () => this.wm.hideAll() },
+            { label: "Close all windows", disabled: !ws.length, onclick: () => this.wm.closeAll() }
+          ];
+        } }
       ];
       const strip = (list) => list.map((it) => it === "sep" ? it : { ...it, icon: void 0, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : void 0 });
       return icons ? items : strip(items);
