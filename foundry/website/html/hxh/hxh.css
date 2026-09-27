@@ -3283,7 +3283,7 @@ body.stacked .pageno {
   top: -8px;
   right: -8px;
 }
-.room .m .pic img {
+.room .m .bd > .pic img {
   display: block;
   width: auto;
   height: auto;
