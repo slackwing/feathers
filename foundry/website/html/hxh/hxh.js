@@ -3544,13 +3544,9 @@ var HxH = (() => {
     static name = "Summons";
     static icon = "envelope";
     static order = 10;
+    /** File › Exit, and nothing else (Andrew, 2026-09-27): the notice is a poster, not a workbench. */
     menus(win) {
-      const os2 = this.os;
-      return os2.appMenus(win, {
-        file: () => [{ label: "Log out", onclick: () => os2.logout() }],
-        view: () => os2.appItems("apps", { except: this.id, long: true, icons: false }),
-        settings: () => os2.settingsItems({ icons: false })
-      });
+      return this.os.appMenus(win);
     }
     window() {
       if (this.win) return this.win;
@@ -3587,9 +3583,28 @@ var HxH = (() => {
       this.notice = type(this.text, NOTICE, { speed: 16, reduced: this.os.env.reduced, onDone: () => this.vn.classList.add("done") });
       return this.notice;
     }
-    async launch({ autostart = false } = {}) {
+    /**
+     * `autostart` is the boot arrival: wait for the fonts, measure the
+     * notice at its full height, then open with the jank and type it out.
+     * Otherwise (the desktop icon, the Start menu, or `restore: true` from
+     * the saved desktop) the window opens at once — but it must still be
+     * FILLED: a restored Summons used to come back with an empty notice and
+     * stay that way, since only the autostart path ever typed (Andrew,
+     * 2026-09-27: "the summons broke, i see no text… the text doesn't start
+     * typing"; his saved desktop restored the window on every load, so a
+     * hard reload never helped).
+     */
+    async launch({ autostart = false, restore = false } = {}) {
       const os2 = this.os, win = this.window();
-      if (!autostart) return os2.wm.open(win.id, win.state.placed ? null : this.position());
+      if (!autostart) {
+        const opened = await os2.wm.open(win.id, win.state.placed ? null : this.position());
+        if (!this.notice?.done) {
+          this.prepNotice();
+          this.typeNotice();
+        }
+        void restore;
+        return opened;
+      }
       try {
         await os2.doc.fonts?.ready;
       } catch {

@@ -38,34 +38,31 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
   assert.match(text, /Oct 31, 2026/);
   assert.equal(w.$("#vn-text b").textContent, NOTICE[1].t);
   assert.ok(w.$("#vn").classList.contains("done"));   // reduced motion: typed instantly
-  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File", "View", "Settings"]);   // no Help: About is gone
+  assert.deepEqual([...w.el.querySelectorAll(".mbar .menu > button")].map(b => b.textContent), ["File"]);   // File › Exit and nothing else (Andrew, 2026-09-27)
 });
 
-test("summons menus are derived from the registry", async () => {
+test("the summons menu is File › Exit alone — no View, no Settings (Andrew, 2026-09-27: the notice is a poster, not a workbench)", async () => {
   await os.start({ apps: [SummonsApp, BinderApp], autostart: ["summons"], boot: false });
   const w = os.wm.get("win-summons");
-  const [file, view, settings] = w.menuBar.menus;
-  view.open();
-  assert.deepEqual([...view.el.children].map(c => c.textContent), ["Binder"]);
-  settings.open();
-  assert.deepEqual([...settings.el.children].map(c => c.querySelector("button").firstChild.textContent), ["Display", "Sounds"]);   // the OS Settings tree, cascading
-  assert.equal(settings.el.querySelector("svg"), null);   // window menus carry no icons
-  d.click(settings.el.querySelector(".menu.sub > button"));   // Display ▸
-  const display = settings.subs[0];
-  assert.ok(display.isOpen && settings.isOpen, "the submenu opens and keeps its parent open");
-  assert.deepEqual([...display.el.querySelectorAll(":scope > button, :scope > .menu > button")].map(b => b.firstChild.textContent), ["Theme", "Sky", "Scanlines"]);   // reduced motion here: no "Fly the blimp"
-  d.click([...display.el.querySelectorAll("button")].find(b => b.textContent === "Scanlines"));
-  assert.equal(os.crt.on, true);
-  assert.ok(!settings.isOpen && !display.isOpen, "picking a leaf closes the chain");
-  os.crt.set(false);
+  assert.equal(w.menuBar.menus.length, 1);
+  const [file] = w.menuBar.menus;
+  assert.equal(file.props.label ?? "File", "File");
   file.open();
-  assert.deepEqual([...file.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Log out", "-", "Exit"]);
-  d.click(file.el.querySelectorAll("button")[1]);   // Exit closes the window
-  assert.equal(w.state.open, false);
-  await os.launch("summons");
-  view.open();
-  d.click(view.el.querySelector("button"));   // Binder
-  assert.equal(os.wm.get("win-binder").state.open, true);
+  assert.deepEqual([...file.el.children].map(c => c.tagName === "HR" ? "-" : c.textContent), ["Exit"]);   // no Log out, so no rule above it
+  assert.equal(file.el.querySelector("svg"), null);   // window menus carry no icons
+  d.click(file.el.querySelector("button"));
+  assert.equal(w.state.open, false, "Exit closes the window");
+});
+
+test("a restored Summons types its notice: the saved desktop reopens the window, which must not come back blank (Andrew, 2026-09-27)", async () => {
+  await os.start({ apps: [SummonsApp, BinderApp], boot: false });   // no autostart: this is the reopen path
+  const app = os.registry.get("summons");
+  assert.equal(await app.reopen("win-summons", null), true);
+  const w = os.wm.get("win-summons");
+  assert.equal(w.state.open, true);
+  assert.equal(w.$("#vn-text").textContent, NOTICE.map(r => typeof r === "string" ? r : r.t).join(""), "the notice is filled, not empty");
+  assert.ok(w.$("#vn").classList.contains("done"));
+  assert.equal(await app.reopen("win-other", null), false, "only its own window");
 });
 
 test("the summons CTA launches the Binder; clicking the notice skips typing; relaunch just reopens", async () => {

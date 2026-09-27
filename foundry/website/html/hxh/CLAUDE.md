@@ -170,6 +170,16 @@ the OS.
   to the desktop, then forgotten; `min` re-minimizes it). Apps: `owns(id)`
   (default: `win-<app>` and `win-<app>-…`), `key(win)` (a token to
   rebuild a sub-window: the chat's room, the roster's character id),
+  **and a `reopen` that brings the window back FULLY**: the base
+  `reopen` calls `launch({ restore: true })`, so anything an app only
+  does on the boot arrival (`autostart: true`) is skipped on a restore.
+  The Summons typed its notice only under `autostart`, so once Andrew
+  had a saved desktop the window came back with an empty notice on
+  every load and a hard reload never helped (2026-09-27, the text never
+  started typing). Reproduce this class of bug by seeding
+  `hxh.desk.<user>` in localStorage before the page loads — a fresh
+  account has no record and takes the autostart path instead, so it
+  looks fine. `launch()` now fills the notice on every path.
   `reopen(id, key)` (default: only the main window, via
   `launch({ restore: true })`; return false for dialogs and transient
   views — they are dropped from the record, as are windows of apps the
@@ -191,9 +201,10 @@ the OS.
 - `App` / `AppRegistry` (`apps.js`) — an app declares statics `id,
   name, icon, desktop, menuable, group ("apps" | "system"), order,
   longName`, implements `launch(opts)`, optionally `visible(user)` and
-  `tray()`. Desktop icons, the Start menu, the summons View / Help
-  menus and tray icons are all DERIVED from the registry — nothing
-  lists apps by hand. `os.launch(id)`, `os.appItems(group)`.
+  `tray()`. Desktop icons, the Start menu and tray icons are all
+  DERIVED from the registry — nothing lists apps by hand.
+  `os.launch(id)`, `os.appItems(group)`. (The Summons is the one
+  window with no derived menus: File > Exit alone, 2026-09-27.)
 - `Desktop` / `DesktopIcon` / `Backdrop` (`desktop.js`), `Toast`
   (`toast.js`, `os.toast.show(msg)`), `Boot` / `Badge` / `bootLines`
   (`boot.js`), `type()` (`typewriter.js`), `Session` / `Nav`
@@ -216,7 +227,8 @@ the OS.
   `wallpaper.js` (below), `os.js` (`OS`), `index.js` (the bundle entry
   and `HxH.*` exports), `os.css` (the chrome).
 - Apps (`apps/*.js`, each with its own `.css` if it has one): `Summons`
-  (window + registry-derived menus + typewriter notice + CTA),
+  (window + File > Exit alone + typewriter notice + CTA; EVERY path that
+  opens it must fill the notice — see the reopen note above),
   `Binder`, `Chat` (BeetleChat, `apps/chat/`; a buddy chat is 565 wide,
   the global room's window 705 with a 1.5× log and compose — `large`), `About` (group
   "system"), `SetPassword` (desktop/menuable false; its words come in
