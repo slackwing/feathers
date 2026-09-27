@@ -814,6 +814,28 @@ export const DESK = {
     ".....kkkbbbbkkk.....",
     "........kkkk........",
   ],
+  bug: [   // Report a Bug (another session's app, 2026-09-27): its 16-grid's design at 20
+    "....................",
+    ".....k........k.....",
+    "......k......k......",
+    ".......k....k.......",
+    ".......kkkkkk.......",
+    "......keeeeeek......",
+    "...k.kkkkkkkkkk.k...",
+    ".....kgggkkgggk.....",
+    "....kggggkkggggk....",
+    ".kkkkggggkkggggkkkk.",
+    "....kggggkkggggk....",
+    "....kggggkkggggk....",
+    ".kkkkggggkkggggkkkk.",
+    "....kggggkkggggk....",
+    "....kggggkkggggk....",
+    "..k.kggggkkggggk.k..",
+    ".k...kgggkkgggk...k.",
+    "......kggkkggk......",
+    ".......kkkkkk.......",
+    "....................",
+  ],
 };
 
 /** A desktop icon: the app's 20×20 grid at DESK_SCALE (60 px), else its 16-grid at the same scale. */

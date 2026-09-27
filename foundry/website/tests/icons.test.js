@@ -75,7 +75,16 @@ test("desktop icons: every desktop app has a 20×20 grid in DESK, palette letter
     assert.match(desktopIcon(name), /viewBox="0 0 20 20" width="60" height="60"/);
     assert.ok(ICONS[name], `${name} also has its 16-grid for the taskbar, tray and menus`);
   }
-  for (const name of ["envelope", "book", "beetle", "arena", "db"]) assert.ok(DESK[name], `the ${name} desktop app has a 20-grid`);
+  for (const name of ["envelope", "book", "beetle", "arena", "db", "bug"]) assert.ok(DESK[name], `the ${name} desktop app has a 20-grid`);
+  // every desktop app on the page has one: a 16-grid fallback draws 48 px among 60s and looks shrunken
+  const fs = await import("node:fs"), path = await import("node:path");
+  const appsDir = new URL("../html/hxh/apps/", import.meta.url).pathname;
+  const files = fs.readdirSync(appsDir, { recursive: true }).filter(f => f.endsWith(".js")).map(f => fs.readFileSync(path.join(appsDir, f), "utf8"));
+  for (const src of files) {
+    const icon = src.match(/static icon = "([^"]+)"/)?.[1];
+    if (!icon || /static desktop = false/.test(src)) continue;
+    assert.ok(DESK[icon], `the desktop app with icon "${icon}" needs a 20×20 grid in DESK`);
+  }
   assert.match(desktopIcon("door"), /width="48" height="48"/, "no 20-grid: its 16-grid at 3×");
   // the binder is a tall cover and the Beetle a tall egg, both at 20 and at 16
   const bbox = rows => { const ys = rows.map((r, y) => /[^.]/.test(r) ? y : -1).filter(y => y >= 0); const xs = rows.flatMap(r => [...r].map((c, x) => c !== "." ? x : -1)).filter(x => x >= 0); return { w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1 }; };
