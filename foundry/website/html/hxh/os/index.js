@@ -39,3 +39,4 @@ export function start(opts = {}) {
   os = new OS();
   return os.start(opts);
 }
+export { People, PEOPLE_URL } from "./people.js";

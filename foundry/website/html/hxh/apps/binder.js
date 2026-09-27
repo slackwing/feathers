@@ -330,6 +330,7 @@ export class BinderApp extends App {
       if (!r.ok) { let why = ""; try { why = (await r.json()).error || ""; } catch { /* no body */ } throw new Error(why || "HTTP " + r.status); }
       this.stamps = await this.get(this.stampsSrc);
     } catch (err) { os.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again."); return; }
+    if (kind === "claim") os.people?.load();   // a claim changes how you look everywhere (os/people.js): the Start menu, the chat
     if (kind === "bookmark") { this.setRoster(this.roster); if (this.sel !== c) this.select(c); }
     else for (const [id, card] of this.cards) { const cc = this.roster.find(x => x.id === id); if (cc) this.renderStamps(card, cc); }
     this.syncKeys();

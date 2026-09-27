@@ -19,6 +19,7 @@ import { Desktop, Backdrop } from "./desktop.js";
 import { WindowManager } from "./wm.js";
 import { Taskbar } from "./taskbar.js";
 import { StartMenu } from "./startmenu.js";
+import { People } from "./people.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
 import { LogonDialog } from "./logon.js";
@@ -64,6 +65,7 @@ export class OS {
     this.layout = new Layout({ os: this, storage: win.localStorage });
     this.registry = new AppRegistry(this);
     this.user = null;
+    this.people = new People({ fetch: this.fetch, bus: this.bus, user: () => this.user });   // every avatar and site name goes through here
     this.ready = false;
   }
 
@@ -90,7 +92,7 @@ export class OS {
       this.taskbar = new Taskbar({ bus: this.bus, wm: this.wm, start }).mount(body);
       this.taskbar.el.hidden = true;   // nothing else on screen while booting / logging on
       if (start) {
-        this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user }).mount(body);
+        this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user) }).mount(body);
         this.taskbar.on("start", () => this.startMenu.toggle());
         this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
         this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
@@ -210,6 +212,7 @@ export class OS {
 
   setUser(user) {
     this.user = user || null;
+    if (this.user) this.people.load();   // the site's overrides (a claim) — the Start menu reads them on open
     this.bus.emit("session:user", { user: this.user });
     this.desktop?.refreshIcons();
     this.syncTray();

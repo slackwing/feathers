@@ -1,7 +1,8 @@
 /* StartMenu — the Windows-style menu off the Start button: a user header
-   (initials avatar + name), the vertical band, and an item list rendered
-   by the shared menu renderer. Items come from the OS (the app registry
-   + system items), the user from the session. */
+   (avatar + name), the vertical band, and an item list rendered by the
+   shared menu renderer. Items come from the OS (the app registry + system
+   items); the user is the OS's `people.of(user)` — the site's view of you,
+   a claim included (os/people.js). */
 import { Component } from "./component.js";
 import { h, esc } from "./dom.js";
 import { avatar } from "./icons.js";

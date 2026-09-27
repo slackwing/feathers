@@ -157,6 +157,19 @@ the OS.
   a threshold > 0 keeps a short press a click and swallows the click
   that ends a real drag), `fit/relayout`, `handleEscape` (active
   popup). Every change is announced on the bus.
+- `People` (`people.js`, `os.people`) — THE place a member's look is
+  decided: the shared-auth profile with this site's overrides on top
+  (a claim: the character's short name and avatar picture; the colour
+  stays the member's). The overrides come from ONE server function,
+  `ClaimOverrides` (hobby-server `internal/hxh/rosterdb.go`), by two
+  roads: `GET /hxh/api/db/people` at sign-in and after your own claim
+  (Binder `stampSel`), and the chat's contacts frames, which the server
+  re-sends to everyone on any claim. Draw every avatar with
+  `os.people.avatar(who)` / `os.people.of(who)` — never
+  `icons.avatar()` on a raw profile: the Start menu did that and kept
+  showing Andrew's green AC after he claimed Chrollo (2026-09-27, "the
+  avatar determination should have been centralized"). The Start menu,
+  the buddy list's banner and every chat line go through it.
 - `Layout` (`layout.js`) — the desktop as you left it (Andrew,
   2026-09-22: "like they just woke up their desktop computer"). Records
   which app windows are open, where, in what stacking order, which is

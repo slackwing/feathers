@@ -16,8 +16,8 @@ export const STATE_LABEL = { online: "Online", away: "Away", offline: "Offline",
 export const present = state => state === "online" || state === "away";
 
 export class ContactsWindow extends Window {
-  /** props: me, menus (win => spec) */
-  constructor({ me, menus } = {}) {
+  /** props: me, menus (win => spec), avatarOf (username => avatar HTML: the OS's People store, os/people.js) */
+  constructor({ me, menus, avatarOf } = {}) {
     super({
       id: "win-chat-contacts", title: "BeetleChat", icon: "beetle", width: 300, cls: "chat contacts", menus,
       content: `
@@ -31,6 +31,7 @@ export class ContactsWindow extends Window {
         <div class="status"><span class="conn off">Offline</span><span class="count"></span></div>`,
     });
     this.me = me;
+    this.avatarOf = avatarOf || (u => avatar(u === me?.username ? me : { username: u }));
     this.contacts = new Map();
     this.tab = "online";
     this.collapsed = new Set();
@@ -104,7 +105,7 @@ export class ContactsWindow extends Window {
     if (!this.banner) return;
     const me = this.me;
     this.banner.innerHTML = me
-      ? `${avatar(this.contacts.get(me.username) ? { ...me, ...this.contacts.get(me.username) } : me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>`
+      ? `${this.avatarOf(me.username)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>`
       : "";
   }
 

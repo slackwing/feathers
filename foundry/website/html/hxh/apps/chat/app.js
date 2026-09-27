@@ -10,7 +10,6 @@
 import { App } from "../../os/apps.js";
 import { ChatClient, ChatAPI, wsURL } from "./client.js";
 import { ContactsWindow } from "./contacts.js";
-import { avatar } from "../../os/icons.js";
 import { ChatWindow, roomSlug } from "./window.js";
 import { ProfileWindow, ProfileEditor } from "./profile.js";
 import { AboutWindow } from "./about.js";
@@ -97,10 +96,7 @@ export class ChatApp extends App {
   /** In a chat a member who has claimed a character speaks as "Gon (Andrew C)" (Andrew, 2026-09-22); the contacts list keeps the plain name. */
   chatNameOf(user) { const ch = this.contacts.get(user)?.character; const n = this.nameOf(user); return ch ? `${ch} (${n})` : n; }
   /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
-  avatarOf(user) {
-    const c = this.contacts.get(user) || (user === this.me ? this.os.user : null) || { username: user, display_name: user, initial: (user || "?").slice(0, 2).toUpperCase(), color: "#9a9a9a" };
-    return avatar(c);
-  }
+  avatarOf(user) { return this.os.people.avatar(this.contacts.get(user) || user); }   // os/people.js: the one place a member's look is decided
   roomTitle(room) {
     if (room === ROOM_GLOBAL) return "Global chat";
     const other = room.slice(3).split(":").find(u => u !== this.me) || room;
@@ -113,7 +109,7 @@ export class ChatApp extends App {
     const os = this.os;
     const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.presenceFocus(), ...(this.options.client || {}) });
     c.on("hello", ({ contacts, unread }) => { this.setContacts(contacts); this.onUnread(unread || []); });
-    c.on("contacts", list => this.setContacts(list));
+    c.on("contacts", list => { this.os.people.setContacts(list); this.setContacts(list); });   // the People store first: everything that draws a member reads it
     c.on("msg", m => this.onMessage(m));
     c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
     c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
@@ -245,7 +241,7 @@ export class ChatApp extends App {
   openContacts() {
     const os = this.os;
     if (!this.contactsWin) {
-      const w = this.contactsWin = new ContactsWindow({ me: os.user, menus: win => this.contactsMenus(win) });
+      const w = this.contactsWin = new ContactsWindow({ me: os.user, menus: win => this.contactsMenus(win), avatarOf: u => this.avatarOf(u) });
       os.wm.add(w);
       w.on("chat", ({ user }) => this.openChat(user));
       w.on("profile", ({ user }) => (user === this.me ? this.editProfile() : this.viewProfile(user)));

@@ -50,6 +50,8 @@ var HxH = (() => {
     Nav: () => Nav,
     OS: () => OS,
     PAL: () => PAL,
+    PEOPLE_URL: () => PEOPLE_URL,
+    People: () => People,
     SOUND_KEY: () => SOUND_KEY,
     ScrollPane: () => ScrollPane,
     Session: () => Session,
@@ -3214,6 +3216,78 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/people.js
+  var PEOPLE_URL = "/hxh/api/db/people";
+  var People = class {
+    /** { fetch, bus, user: () => the signed-in account | null } */
+    constructor({ fetch, bus, user } = {}) {
+      this.fetch = fetch;
+      this.bus = bus;
+      this.user = user || (() => null);
+      this.profiles = /* @__PURE__ */ new Map();
+      this.overrides = /* @__PURE__ */ new Map();
+    }
+    /** A member as this site shows them: profile + override. `who` is a username or an account-shaped object. */
+    of(who) {
+      const username = typeof who === "string" ? who : who?.username;
+      const me = this.user();
+      const base = typeof who === "object" && who || this.profiles.get(username) || (me && me.username === username ? me : null) || { username, display_name: username, initial: (username || "?").slice(0, 2).toUpperCase(), color: "#9a9a9a" };
+      const o = username ? this.overrides.get(username) : null;
+      if (!o) return { ...base, character: void 0, avatar_url: void 0 };
+      return { ...base, character: o.character || void 0, avatar_url: o.avatar_url || void 0 };
+    }
+    /** The avatar HTML for a member (icons.avatar on `of(who)`). */
+    avatar(who, cls = "") {
+      return avatar(this.of(who), cls);
+    }
+    /** The chat's contacts: profiles and overrides for everyone, straight from the server's own merge. */
+    setContacts(list) {
+      let changed = false;
+      for (const c of list || []) {
+        if (!c?.username) continue;
+        const { character, avatar_url, ...profile } = c;
+        this.profiles.set(c.username, { ...this.profiles.get(c.username) || {}, ...profile });
+        changed = this.put(c.username, { character, avatar_url }) || changed;
+      }
+      if (changed) this.bus?.emit("people", {});
+      return changed;
+    }
+    /** Fetch the overrides (login, and after your own claim changes). Resolves true when anything changed; a failure keeps what we had. */
+    async load() {
+      if (!this.fetch) return false;
+      let data;
+      try {
+        const r = await this.fetch(PEOPLE_URL, { credentials: "same-origin" });
+        if (!r.ok) return false;
+        data = await r.json();
+      } catch {
+        return false;
+      }
+      let changed = false;
+      const next = new Map(Object.entries(data || {}));
+      for (const u of [...this.overrides.keys()]) if (!next.has(u)) {
+        this.overrides.delete(u);
+        changed = true;
+      }
+      for (const [u, o] of next) changed = this.put(u, o) || changed;
+      if (changed) this.bus?.emit("people", {});
+      return changed;
+    }
+    put(username, { character, avatar_url } = {}) {
+      const prev = this.overrides.get(username);
+      if (!character && !avatar_url) {
+        if (prev) {
+          this.overrides.delete(username);
+          return true;
+        }
+        return false;
+      }
+      if (prev && prev.character === character && prev.avatar_url === avatar_url) return false;
+      this.overrides.set(username, { character, avatar_url });
+      return true;
+    }
+  };
+
   // html/hxh/os/layout.js
   var DESK_PREFIX = "hxh.desk.";
   var SAVE_DELAY = 300;
@@ -3365,6 +3439,7 @@ var HxH = (() => {
       this.layout = new Layout({ os: this, storage: win.localStorage });
       this.registry = new AppRegistry(this);
       this.user = null;
+      this.people = new People({ fetch: this.fetch, bus: this.bus, user: () => this.user });
       this.ready = false;
     }
     /** Build the chrome. Idempotent. */
@@ -3387,7 +3462,7 @@ var HxH = (() => {
         this.taskbar = new Taskbar({ bus: this.bus, wm: this.wm, start: start2 }).mount(body);
         this.taskbar.el.hidden = true;
         if (start2) {
-          this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user }).mount(body);
+          this.startMenu = new StartMenu({ items: () => this.startItems(), user: () => this.user && this.people.of(this.user) }).mount(body);
           this.taskbar.on("start", () => this.startMenu.toggle());
           this.startMenu.on("open", () => this.taskbar.startButton.setPressed(true));
           this.startMenu.on("close", () => this.taskbar.startButton.setPressed(false));
@@ -3509,6 +3584,7 @@ var HxH = (() => {
     }
     setUser(user) {
       this.user = user || null;
+      if (this.user) this.people.load();
       this.bus.emit("session:user", { user: this.user });
       this.desktop?.refreshIcons();
       this.syncTray();
@@ -4451,6 +4527,7 @@ var HxH = (() => {
         os2.toast.show(/claimed by/.test(err.message) ? `Sorry, ${err.message}.` : "The stamp did not take. Try again.");
         return;
       }
+      if (kind === "claim") os2.people?.load();
       if (kind === "bookmark") {
         this.setRoster(this.roster);
         if (this.sel !== c) this.select(c);
@@ -4966,8 +5043,8 @@ var HxH = (() => {
   var STATE_LABEL = { online: "Online", away: "Away", offline: "Offline", nopass: "No password" };
   var present = (state) => state === "online" || state === "away";
   var ContactsWindow = class extends Window {
-    /** props: me, menus (win => spec) */
-    constructor({ me, menus } = {}) {
+    /** props: me, menus (win => spec), avatarOf (username => avatar HTML: the OS's People store, os/people.js) */
+    constructor({ me, menus, avatarOf } = {}) {
       super({
         id: "win-chat-contacts",
         title: "BeetleChat",
@@ -4986,6 +5063,7 @@ var HxH = (() => {
         <div class="status"><span class="conn off">Offline</span><span class="count"></span></div>`
       });
       this.me = me;
+      this.avatarOf = avatarOf || ((u) => avatar(u === me?.username ? me : { username: u }));
       this.contacts = /* @__PURE__ */ new Map();
       this.tab = "online";
       this.collapsed = /* @__PURE__ */ new Set();
@@ -5069,7 +5147,7 @@ var HxH = (() => {
     renderBanner() {
       if (!this.banner) return;
       const me = this.me;
-      this.banner.innerHTML = me ? `${avatar(this.contacts.get(me.username) ? { ...me, ...this.contacts.get(me.username) } : me)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>` : "";
+      this.banner.innerHTML = me ? `${this.avatarOf(me.username)}<span class="who"><b>${esc(me.display_name || me.username)}</b><span class="st">(${this.connected ? "Online" : "Offline"})</span></span>` : "";
     }
     setContacts(list) {
       this.contacts = /* @__PURE__ */ new Map();
@@ -6013,9 +6091,9 @@ var HxH = (() => {
     }
     /** The avatar for a chat line: the contact as this site sees it (a claim brings the character's picture), else the shared profile, else a grey initial. */
     avatarOf(user) {
-      const c = this.contacts.get(user) || (user === this.me ? this.os.user : null) || { username: user, display_name: user, initial: (user || "?").slice(0, 2).toUpperCase(), color: "#9a9a9a" };
-      return avatar(c);
+      return this.os.people.avatar(this.contacts.get(user) || user);
     }
+    // os/people.js: the one place a member's look is decided
     roomTitle(room) {
       if (room === ROOM_GLOBAL) return "Global chat";
       const other = room.slice(3).split(":").find((u) => u !== this.me) || room;
@@ -6030,7 +6108,10 @@ var HxH = (() => {
         this.setContacts(contacts);
         this.onUnread(unread || []);
       });
-      c.on("contacts", (list) => this.setContacts(list));
+      c.on("contacts", (list) => {
+        this.os.people.setContacts(list);
+        this.setContacts(list);
+      });
       c.on("msg", (m) => this.onMessage(m));
       c.on("read", ({ room, id }) => this.onReadElsewhere(room, id));
       c.on("typing", ({ room, user }) => this.windows.get(room)?.showTyping(this.nameOf(user)));
@@ -6164,7 +6245,7 @@ var HxH = (() => {
     openContacts() {
       const os2 = this.os;
       if (!this.contactsWin) {
-        const w = this.contactsWin = new ContactsWindow({ me: os2.user, menus: (win) => this.contactsMenus(win) });
+        const w = this.contactsWin = new ContactsWindow({ me: os2.user, menus: (win) => this.contactsMenus(win), avatarOf: (u) => this.avatarOf(u) });
         os2.wm.add(w);
         w.on("chat", ({ user }) => this.openChat(user));
         w.on("profile", ({ user }) => user === this.me ? this.editProfile() : this.viewProfile(user));
