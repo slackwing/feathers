@@ -1,6 +1,7 @@
 /* Heavens Arena — a placeholder (Andrew, 2026-09-27): opening it covers
    the whole screen with the Player Select splash (os/splash.js), which
-   says COMING SOON instead of Click to start; a click, tap, Enter, Space
+   says COMING SOON instead of Click to start (the splash's own prompt, so
+   Settings › Other › Splash screen shows the same); a click, tap, Enter, Space
    or Escape closes it, back to the desktop. No window of its own, so
    nothing for the saved desktop to bring back. */
 import { App } from "../os/apps.js";
@@ -11,7 +12,7 @@ export class HeavensArenaApp extends App {
   static icon = "arena";
   static order = 22;   // after the Binder
 
-  launch() { return this.os.showSplash("select", { prompt: "COMING SOON", chime: false }); }
+  launch() { return this.os.showSplash("select"); }   // COMING SOON and silence are the splash's own (SPLASH_DEFAULTS)
 
   reopen() { return Promise.resolve(false); }   // nothing to bring back
 }

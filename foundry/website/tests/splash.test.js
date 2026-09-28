@@ -18,7 +18,7 @@ test("three title screens, one picked at random (Andrew, 2026-09-27: try 3 style
   assert.equal(seen.size, 3);
 });
 
-test("every style says Click to start, carries the title, and never moves on by itself; a click, tap or Enter / Space / Escape dismisses it", async () => {
+test("every style says its own prompt (Click to start; Heavens Arena: COMING SOON), carries the title, and never moves on by itself; a click, tap or Enter / Space / Escape dismisses it", async () => {
   for (const id of SPLASH_IDS) {
     const played = [];
     const s = new Splash({ reduced: false, random: () => 0.3, sounds: { play: n => played.push(n) } }).mount(document.body);
@@ -28,7 +28,7 @@ test("every style says Click to start, carries the title, and never moves on by 
     assert.equal(el.hidden, false);
     assert.ok(el.classList.contains("sp-" + id));
     try {
-      assert.match(el.textContent, /click to start/i, id + ": says Click to start");
+      assert.match(el.textContent, id === "select" ? /COMING SOON/ : /click to start/i, id + ": says its prompt");
       const title = id === "select" ? /HEAVENS ARENA/ : /HUNTER\s*×\s*[\s\S]*HALLOWEEN/;   // the select screen is the Heavens Arena placeholder
       assert.match(el.textContent.toUpperCase(), title, id + ": carries its title");
     } catch (err) { el.click(); s.unmount(); throw err; }   // a failure must not leave the screen's timers running (the run would hang)
@@ -39,7 +39,7 @@ test("every style says Click to start, carries the title, and never moves on by 
     assert.equal(done, id);
     assert.equal(el.hidden, true);
     assert.equal(el.children.length, 0, "cleaned up");
-    assert.deepEqual(played, ["startup"], "the click plays the startup chime (Sounds decides whether it is heard)");
+    assert.deepEqual(played, id === "select" ? [] : ["startup"], "the click plays the startup chime (Sounds decides whether it is heard) — not the placeholder arena");
     s.unmount();
   }
   for (const key of ["Enter", " ", "Escape"]) {
@@ -102,13 +102,13 @@ test("Player Select reads the roster: up to 12 random characters that have an av
   assert.deepEqual(await selectRoster(null), []);
 });
 
-test("Player Select looks the part: PLAYER SELECT, the title, a 12-tile grid, 1P and 2P cursors on different tiles, two fighters with name plates, CREDIT 01, CLICK TO START", async () => {
+test("Player Select looks the part: PLAYER SELECT, the title, a 12-tile grid, 1P and 2P cursors on different tiles, two fighters with name plates, CREDIT 01, COMING SOON", async () => {
   const s = new Splash({ reduced: true, random: () => 0.3, fetch: binderFetch() }).mount(document.body);
   const p = s.show("select");
   const el = s.el;
   assert.match(el.textContent, /HEAVENS ARENA/);
   assert.doesNotMatch(el.textContent, /PLAYER SELECT|HALLOWEEN/, "the title alone, no subtitle (Andrew, 2026-09-27)");
-  assert.match(el.textContent, /CLICK TO START/);
+  assert.match(el.textContent, /COMING SOON/);
   assert.match(el.textContent, /CREDIT 01/);
   assert.equal(el.querySelectorAll(".sp-grid .sp-tile").length, 12);
   assert.equal(el.querySelectorAll(".sp-tile.p1").length, 1);

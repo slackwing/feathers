@@ -40,9 +40,12 @@ import "./splash.css";
 
 export const SPLASHES = [
   ["summons", "Summons"],
-  ["select", "Heavens Arena"],
+  ["select", "Heavens Arena", { prompt: "COMING SOON", chime: false }],   // the arena's placeholder, whoever opens it (Andrew, 2026-09-27)
   ["night", "Night"],
 ];
+/** What each splash IS, beyond its picture — its prompt and whether it chimes — so the app, Settings › Other › Splash
+    screen and anything else that shows it show the same thing. */
+export const SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
 export const SPLASH_IDS = SPLASHES.map(([id]) => id);
 /** The one the site opens with: the Summons is the site's anchor (Andrew, 2026-09-27). Player Select is the Heavens Arena
     placeholder (apps/arena.js); Night lives only in Settings › Other › Splash screen. */
@@ -328,12 +331,14 @@ export class Splash extends Component {
   /**
    * Show a style (default: one at random) until the viewer clicks, taps or
    * presses Enter / Space / Escape. Resolves with the style's id. Showing
-   * another while one is up replaces it. `prompt` replaces "Click to start"
-   * (Heavens Arena: COMING SOON); `chime: false` dismisses it silently.
+   * another while one is up replaces it. The prompt and chime are the
+   * style's own (SPLASH_DEFAULTS: Heavens Arena says COMING SOON and dismisses
+   * silently); `prompt` / `chime` override them.
    */
-  show(id = null, { prompt, chime = true } = {}) {
+  show(id = null, opts = {}) {
     const { reduced = false, random = Math.random } = this.props;
     if (!SPLASH_IDS.includes(id)) id = randomSplash(random);
+    const { prompt, chime = true } = { ...SPLASH_DEFAULTS[id], ...opts };
     this.finish?.(false);
     const el = this.el;
     el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;

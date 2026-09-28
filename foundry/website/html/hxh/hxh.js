@@ -3589,9 +3589,11 @@ var HxH = (() => {
   // html/hxh/os/splash.js
   var SPLASHES = [
     ["summons", "Summons"],
-    ["select", "Heavens Arena"],
+    ["select", "Heavens Arena", { prompt: "COMING SOON", chime: false }],
+    // the arena's placeholder, whoever opens it (Andrew, 2026-09-27)
     ["night", "Night"]
   ];
+  var SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
   var STARTUP_SPLASH = "summons";
   function randomSplash(random = Math.random) {
@@ -3905,12 +3907,14 @@ var HxH = (() => {
     /**
      * Show a style (default: one at random) until the viewer clicks, taps or
      * presses Enter / Space / Escape. Resolves with the style's id. Showing
-     * another while one is up replaces it. `prompt` replaces "Click to start"
-     * (Heavens Arena: COMING SOON); `chime: false` dismisses it silently.
+     * another while one is up replaces it. The prompt and chime are the
+     * style's own (SPLASH_DEFAULTS: Heavens Arena says COMING SOON and dismisses
+     * silently); `prompt` / `chime` override them.
      */
-    show(id = null, { prompt, chime = true } = {}) {
+    show(id = null, opts = {}) {
       const { reduced = false, random = Math.random } = this.props;
       if (!SPLASH_IDS.includes(id)) id = randomSplash(random);
+      const { prompt, chime = true } = { ...SPLASH_DEFAULTS[id], ...opts };
       this.finish?.(false);
       const el = this.el;
       el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
@@ -9208,8 +9212,9 @@ var HxH = (() => {
     static order = 22;
     // after the Binder
     launch() {
-      return this.os.showSplash("select", { prompt: "COMING SOON", chime: false });
+      return this.os.showSplash("select");
     }
+    // COMING SOON and silence are the splash's own (SPLASH_DEFAULTS)
     reopen() {
       return Promise.resolve(false);
     }

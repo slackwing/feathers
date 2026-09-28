@@ -129,6 +129,25 @@ test("Heavens Arena: a desktop icon and Start entry after the Binder; opening it
   assert.equal(await app.reopen("win-arena"), false, "nothing for the saved desktop to bring back");
 });
 
+test("Heavens Arena is one splash: Settings › Other › Splash screen › Heavens Arena says COMING SOON and closes silently too, just like the app (Andrew, 2026-09-27: \"they should be a unified asset\")", async () => {
+  const played = [];
+  const { os } = make({ reduced: false });
+  os.sounds.play = n => { played.push(n); return true; };
+  await os.start({ apps: [Hello, HeavensArenaApp], start: true });
+  const entry = os.settingsItems().find(i => i.label === "Other").items().find(i => i.label === "Splash screen").items().find(i => i.label === "Heavens Arena");
+  const shown = [];
+  for (const open of [() => entry.onclick(), () => os.launch("arena")]) {
+    const done = open();
+    const el = document.querySelector(".splashscreen");
+    shown.push([el.dataset.style, el.querySelector(".sp-start").textContent, el.getAttribute("aria-label")]);
+    el.click();
+    await done;
+  }
+  assert.deepEqual(shown[0], ["select", "COMING SOON", "COMING SOON"], "from the systray");
+  assert.deepEqual(shown[1], shown[0], "the same from the app");
+  assert.deepEqual(played, [], "neither chimes");
+});
+
 test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Player Select / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
@@ -148,9 +167,9 @@ test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons
   os.blimp.unmount();
   const splashes = other()[1].items();
   assert.deepEqual(splashes.map(i => i.label), ["Summons", "Heavens Arena", "Night"]);
-  splashes[1].onclick();   // Player Select, over the desktop
+  splashes[2].onclick();   // Night, over the desktop (Heavens Arena says COMING SOON: its own test below)
   const el = document.querySelector(".splashscreen");
-  assert.ok(el && !el.hidden && el.classList.contains("sp-select"));
+  assert.ok(el && !el.hidden && el.classList.contains("sp-night"));
   assert.match(el.textContent, /click to start/i);
   el.click();
   assert.equal(el.hidden, true, "a click returns to the desktop");
