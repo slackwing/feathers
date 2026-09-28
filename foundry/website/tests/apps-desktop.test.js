@@ -18,7 +18,7 @@ beforeEach(() => make());
 test("the index page's app set is exported under short names", () => {
   assert.equal(apps.Summons, SummonsApp);
   assert.equal(apps.Register, undefined);   // removed 2026-09-22: claiming a card replaced registration
-  assert.equal(apps.About, undefined);   // removed 2026-09-19
+  assert.equal(apps.About?.id, "about");   // removed 2026-09-19; back 2026-09-27 as the prompts' About (apps/about)
   assert.equal(apps.Binder, BinderApp);
   assert.ok(apps.SetPassword);
 });

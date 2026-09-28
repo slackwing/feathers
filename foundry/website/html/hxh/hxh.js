@@ -1150,6 +1150,29 @@ var HxH = (() => {
       ".....kkkbbbbkkk.....",
       "........kkkk........"
     ],
+    question: [
+      // About (2026-09-27): the 16's yellow block and question mark, at 20
+      "kkkkkkkkkkkkkkkkkkkk",
+      "kaaaaaaaaaaaaaaaaaGk",
+      "kayyyyyyyyyyyyyyyyGk",
+      "kayyyyyyyyyyyyyyyyGk",
+      "kayyyyykkkkkkyyyyyGk",
+      "kayyyykkyyyykkyyyyGk",
+      "kayyyykkyyyykkyyyyGk",
+      "kayyyyyyyyyykkyyyyGk",
+      "kayyyyyyyyykkyyyyyGk",
+      "kayyyyyyyykkyyyyyyGk",
+      "kayyyyyyykkyyyyyyyGk",
+      "kayyyyyyykkyyyyyyyGk",
+      "kayyyyyyyyyyyyyyyyGk",
+      "kayyyyyyykkyyyyyyyGk",
+      "kayyyyyyykkyyyyyyyGk",
+      "kayyyyyyyyyyyyyyyyGk",
+      "kayyyyyyyyyyyyyyyyGk",
+      "kaGGGGGGGGGGGGGGGGGk",
+      "kkkkkkkkkkkkkkkkkkkk",
+      "...................."
+    ],
     tools: [
       // Report a Bug: the hammer and wrench at 20 (the 16's design, drawn by the same rasterizer)
       "....kkk.............",
@@ -4305,6 +4328,7 @@ var HxH = (() => {
   // html/hxh/apps/index.js
   var apps_exports = {};
   __export(apps_exports, {
+    About: () => AboutApp,
     Binder: () => BinderApp,
     BugReport: () => BugReportApp,
     Chat: () => ChatApp,
@@ -9430,6 +9454,65 @@ var HxH = (() => {
         return true;
       }
       return false;
+    }
+  };
+
+  // html/hxh/apps/about/app.js
+  var PROMPTS_URL = "/hxh/about/prompts.json";
+  var INTRO = "Yes, this was AI. But it was also a lot of expertise, without which, it would not have been possible to converge to this result in ~18 hours. Here's the full set of prompts. Also, all images were cropped and placed manually by Abi.";
+  var AboutApp = class extends App {
+    static id = "about";
+    static name = "About";
+    static icon = "question";
+    static order = 95;
+    // last, after Report a Bug
+    constructor(os2, options = {}) {
+      super(os2, options);
+      this.fetch = options.fetch || ((...a) => os2.fetch(...a));
+    }
+    window() {
+      if (this.win) return this.win;
+      this.win = new Window({
+        id: "win-about",
+        title: "About",
+        icon: "question",
+        width: 680,
+        cls: "about",
+        menus: (w) => this.os.appMenus(w),
+        content: `<div class="ascroll sunken"><p class="aintro"></p><ol class="aprompts"></ol></div>`
+      });
+      this.os.wm.add(this.win);
+      this.win.$(".aintro").textContent = INTRO;
+      return this.win;
+    }
+    async launch() {
+      const win = this.window();
+      await this.os.wm.open(win.id);
+      if (!this.loaded) await this.load();
+      return win;
+    }
+    /** Fetch the prompts once and print them, verbatim, one list item each. */
+    async load() {
+      const list = this.win.$(".aprompts");
+      try {
+        const r = await this.fetch(PROMPTS_URL, { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const prompts = await r.json();
+        list.replaceChildren(...prompts.map((p) => h("li", { text: p })));
+        this.loaded = true;
+        return prompts.length;
+      } catch {
+        list.replaceChildren(h("li", { className: "aerr", text: "The prompts could not be loaded." }));
+        return 0;
+      }
+    }
+    owns(id) {
+      return id === "win-about";
+    }
+    async reopen(id) {
+      if (id !== "win-about") return false;
+      await this.launch();
+      return true;
     }
   };
 

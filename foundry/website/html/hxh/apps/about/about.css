@@ -1,0 +1,10 @@
+/* About: plain small Arial, not the pixel type — a long read (Andrew, 2026-09-27: "tiny arial font… but not too tiny") */
+.win.about .ascroll {
+  height: min(70vh, 640px); overflow: auto; padding: 12px 16px; background: var(--field-bg); color: var(--field-fg, var(--ink));
+  font: 12.5px/1.45 Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
+}
+.win.about .aintro { margin: 0 0 14px; font-weight: 700; font-size: 13px; }
+.win.about .aprompts { margin: 0; padding-left: 2.6em; }
+.win.about .aprompts li { margin: 0 0 9px; white-space: pre-wrap; overflow-wrap: anywhere; }   /* verbatim: line breaks and spacing as typed */
+.win.about .aprompts li::marker { color: var(--dim-fg); }
+.win.about .aerr { list-style: none; color: var(--dim-fg); font-style: italic; }
