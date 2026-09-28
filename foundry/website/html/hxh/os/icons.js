@@ -8,7 +8,7 @@ export const PAL = {
   o: "#ff7518", g: "#58e05c", y: "#ffd166", b: "#37d0ff", n: "#9a9a9a",
   v: "#c8a2ff", u: "#7c4dff", N: "#1d3557", G: "#d9a520",
   m: "#8e0b21", s: "#5a5652", t: "#7a4a1e", l: "#9ad9ff", e: "#2fb54a", a: "#ffe9a8", q: "#12213a",
-  H: "#2a4a78", E: "#2f8a3a", L: "#d8d4cc", M: "#5c0716", P: "#6e6a84", B: "#1c95c4", V: "#2457d6", J: "#1d9a3c", F: "#12592a", A: "#e6a100", Y: "#ffd21f",   // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow
+  H: "#2a4a78", E: "#2f8a3a", L: "#d8d4cc", M: "#5c0716", P: "#6e6a84", B: "#1c95c4", V: "#2457d6", J: "#1d9a3c", F: "#12592a", A: "#e6a100", Y: "#ffd21f", I: "#7d7871", D: "#3b3835",   // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow, the D-pad's lit top and shadowed underside
 };
 
 /* ICON SIZES — the OS's icon rule (Andrew, 2026-09-19): every icon is a
@@ -603,9 +603,9 @@ export const ICONS = {
     "................",
     "..kkkkkkkkkkkk..",
     ".kLLLLLLLLLLLLk.",
-    "kLLsLLLLLLLLVLLk",
+    "kLLILLLLLLLLVLLk",
     "kLsssLLLLLLJLrLk",
-    "kLLsLLPLLPLLALLk",
+    "kLLDLLPLLPLLALLk",
     "kLLLLLLLLLLLLLLk",
     ".kLLLLkkkkLLLLk.",
     "..kkkk....kkkk..",
@@ -796,12 +796,12 @@ export const DESK = {
     "....................",
     "..kkkkkkkkkkkkkkkk..",
     ".kLLLLLLLLLLLLLLLLk.",
-    "kLLLssLLLLLLLLlVLLLk",
+    "kLLLIILLLLLLLLlVLLLk",
     "kLLLssLLLLLLLLVNLLLk",
-    "kLssssssLLLLgJLLhrLk",
-    "kLssssssLLLLJFLLrmLk",
+    "kLIIssIILLLLgJLLhrLk",
+    "kLDDssDDLLLLJFLLrmLk",
     "kLLLssLLLLLLLLyALLLk",
-    "kLLLssLLPLLPLLAtLLLk",
+    "kLLLDDLLPLLPLLAtLLLk",
     ".kLLLLLLkkkkLLLLLLk.",
     "..kkkkkk....kkkkkk..",
     "....................",

@@ -348,8 +348,10 @@ var HxH = (() => {
     J: "#1d9a3c",
     F: "#12592a",
     A: "#e6a100",
-    Y: "#ffd21f"
-    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow
+    Y: "#ffd21f",
+    I: "#7d7871",
+    D: "#3b3835"
+    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow, the D-pad's lit top and shadowed underside
   };
   var ICONS = {
     // the Hunter × Halloween ×, after the show's logo: a bold red cross, ink-edged
@@ -940,9 +942,9 @@ var HxH = (() => {
       "................",
       "..kkkkkkkkkkkk..",
       ".kLLLLLLLLLLLLk.",
-      "kLLsLLLLLLLLVLLk",
+      "kLLILLLLLLLLVLLk",
       "kLsssLLLLLLJLrLk",
-      "kLLsLLPLLPLLALLk",
+      "kLLDLLPLLPLLALLk",
       "kLLLLLLLLLLLLLLk",
       ".kLLLLkkkkLLLLk.",
       "..kkkk....kkkk..",
@@ -1119,12 +1121,12 @@ var HxH = (() => {
       "....................",
       "..kkkkkkkkkkkkkkkk..",
       ".kLLLLLLLLLLLLLLLLk.",
-      "kLLLssLLLLLLLLlVLLLk",
+      "kLLLIILLLLLLLLlVLLLk",
       "kLLLssLLLLLLLLVNLLLk",
-      "kLssssssLLLLgJLLhrLk",
-      "kLssssssLLLLJFLLrmLk",
+      "kLIIssIILLLLgJLLhrLk",
+      "kLDDssDDLLLLJFLLrmLk",
       "kLLLssLLLLLLLLyALLLk",
-      "kLLLssLLPLLPLLAtLLLk",
+      "kLLLDDLLPLLPLLAtLLLk",
       ".kLLLLLLkkkkLLLLLLk.",
       "..kkkkkk....kkkkkk..",
       "....................",

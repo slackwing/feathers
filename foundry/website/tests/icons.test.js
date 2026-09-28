@@ -98,13 +98,18 @@ test("the Beetle and the game pad are mirror-symmetric in outline at both sizes 
     return sh.every(r => { for (let x = lo; x <= hi; x++) if (r[x] !== r[lo + hi - x]) return false; return true; }); };
   for (const [set, g] of [["DESK", DESK], ["ICONS", ICONS]]) for (const name of ["beetle", "arena"]) assert.ok(mirrored(g[name]), `${set}.${name} is lopsided`);
   // and the pad's controls sit symmetrically: the D-pad's arms are equal, the D-pad and the buttons equally far from the middle
-  const pad = DESK.arena, cells = ch => pad.flatMap((r, y) => [...r].map((c, x) => c === ch ? [x, y] : null)).filter(Boolean);
-  const d = cells("s"), xs = d.map(p => p[0]), ys = d.map(p => p[1]);
+  const pad = DESK.arena;
+  const d = pad.flatMap((r, y) => [...r].map((c, x) => x < 10 && !".kLP".includes(c) ? [x, y] : null)).filter(Boolean), xs = d.map(p => p[0]), ys = d.map(p => p[1]);
   const mid = v => (Math.min(...v) + Math.max(...v)) / 2;
   // the buttons: every coloured cell right of the middle (not the outline, the body or the grey pills)
   const btn = pad.flatMap((r, y) => [...r].map((c, x) => x >= 10 && !".kLP".includes(c) ? [x, y] : null)).filter(Boolean);
   assert.equal(mid(ys), mid(btn.map(p => p[1])), "D-pad and buttons share a middle row");
   assert.equal(mid(xs) + mid(btn.map(p => p[0])), 19, "D-pad and buttons mirror about the pad's middle");
+  // the D-pad is shaded like the buttons — three tones, lit along its top edges, dark along its undersides — and the shading
+  // is as symmetric as its outline (Andrew, 2026-09-28: "add shading to the direction pad too")
+  const tone = ([x, y]) => pad[y][x], cx = mid(xs);
+  assert.ok(new Set(d.map(tone)).size >= 3, "a shaded D-pad, not a flat one");
+  for (const [x, y] of d) assert.equal(pad[y][2 * cx - x], pad[y][x], `the D-pad's shading is lopsided at ${x},${y}`);
   // the four Super Famicom colours, one each — blue, green, red, gold — and every button edged dark enough to stand off the pale body
   // (Andrew, 2026-09-28: "why are there two green buttons" — X was a pale cyan beside the green — "give them better contrast")
   const { PAL } = await import("../html/hxh/os/icons.js");
