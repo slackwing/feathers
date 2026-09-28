@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { SetPasswordApp } from "../html/hxh/apps/setpw.js";
+import { SetPasswordApp, ACCOUNT_PAGE } from "../html/hxh/apps/setpw.js";
 import { Nav } from "../html/hxh/os/session.js";
 import { AccountDialog, LogonDialog } from "../html/hxh/os/logon.js";
 
@@ -13,7 +13,7 @@ function make(machinery) {
   const loc = { href: "" };
   const nav = new Nav({ storage: d.win.sessionStorage, location: loc });
   const os = new OS({ win: d.win, nav, fetch: async () => ({ ok: false, status: 401, json: async () => ({}) }), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
-  return { d, os, loc, start: (extra = { boot: false }) => os.start({ apps: [[SetPasswordApp, { ...WORDS, machinery }]], autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, ...extra }) };
+  return { d, os, loc, start: (extra = { boot: false }) => os.start({ apps: [[SetPasswordApp, { ...WORDS, machinery }]], ...ACCOUNT_PAGE, ...extra }) };
 }
 
 test("the logon's own frame (AccountDialog) on a centred bare desktop, wired to the machinery's hooks (Andrew, 2026-09-28: \"why is the invite page not using the default theming? it should have been DRY\")", async () => {
@@ -31,7 +31,10 @@ test("the logon's own frame (AccountDialog) on a centred bare desktop, wired to 
   assert.ok(w instanceof AccountDialog && w.el.classList.contains("logon"), "the logon's frame and styling");
   assert.match(w.$(".logo").textContent, /HUNTER×HALLOWEEN/, "the logotype");
   assert.ok(os.desktop.el.classList.contains("center"));
-  assert.ok(document.querySelector(".os-badge"));
+  assert.equal(document.querySelector(".os-badge"), null, "no purple-square badge on an account page (Andrew, 2026-09-28)");
+  const bg = document.querySelector(".splash-bg.sp-summons");
+  assert.ok(bg && bg.querySelector(".sp-embers") && !bg.querySelector(".sp-logo, .sp-start"), "the Summons' embers without its title, under the dialog");
+  assert.equal(bg.compareDocumentPosition(w.el) & d.win.Node.DOCUMENT_POSITION_FOLLOWING, d.win.Node.DOCUMENT_POSITION_FOLLOWING, "behind the windows");
   assert.equal(w.$(".dialog-h").textContent, "Choose a password");
   assert.equal(w.$('[data-pw="submit"]').textContent, "Accept summons");
   assert.equal(w.$('[data-pw="nocode"]').textContent, WORDS.nocode);
@@ -66,4 +69,14 @@ test("the account pages follow the site's pattern: boot, the Summons splash, and
   sp.click();
   await p;
   assert.ok(ready && os.wm.get("win-pw").state.open, "then choose a password");
+});
+
+test("_invite/ and _reset/ are one pattern: each page only calls HxH.accountPage with its words", async () => {
+  const fs = await import("node:fs");
+  const pages = ["_invite", "_reset"].map(p => fs.readFileSync(new URL(`../html/hxh/${p}/index.html`, import.meta.url), "utf8"));
+  for (const html of pages) {
+    assert.match(html, /HxH\.accountPage\(\{/);
+    assert.doesNotMatch(html, /HxH\.start\(|fonts\.googleapis|taskbar:|splash:/, "no page-level OS options or fonts");
+  }
+  assert.deepEqual(ACCOUNT_PAGE, { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" });
 });

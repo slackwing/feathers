@@ -54,6 +54,10 @@
 @keyframes sp-xpulse { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.12) rotate(-6deg); text-shadow: 0 0 5cqmin rgba(255,36,68,1); } }
 @keyframes sp-ember { 0% { transform: translate(0, 0); opacity: 0; } 12% { opacity: .9; } 100% { transform: translate(var(--drift), -106cqh); opacity: 0; } }
 
+/* the Summons as a page background (EmberBackdrop): the same ink and embers, under the windows, not clickable */
+.splash-bg { position: fixed; inset: 0; z-index: 0; container-type: size; overflow: hidden; pointer-events: none; }
+.splash-bg.still * { animation: none !important; }
+
 /* ---------- select: a retro fighting game's PLAYER SELECT ---------- */
 .sp-select {
   --gold: #ffd23f; --p1: #ff2a2a; --p2: #2a7bff;

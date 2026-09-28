@@ -1517,6 +1517,17 @@ html[data-theme=seapumpkin-pastel] {
     opacity: 0;
   }
 }
+.splash-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  container-type: size;
+  overflow: hidden;
+  pointer-events: none;
+}
+.splash-bg.still * {
+  animation: none !important;
+}
 .sp-select {
   --gold: #ffd23f;
   --p1: #ff2a2a;

@@ -23,6 +23,7 @@ var HxH = (() => {
   __export(index_exports, {
     $: () => $,
     $$: () => $$,
+    ACCOUNT_PAGE: () => ACCOUNT_PAGE,
     App: () => App,
     AppRegistry: () => AppRegistry,
     Backdrop: () => Backdrop,
@@ -39,6 +40,7 @@ var HxH = (() => {
     DESIGN_WIDTH: () => DESIGN_WIDTH,
     Desktop: () => Desktop,
     DesktopIcon: () => DesktopIcon,
+    EmberBackdrop: () => EmberBackdrop,
     Env: () => Env,
     EventBus: () => EventBus,
     FLYER_TEXT: () => FLYER_TEXT,
@@ -51,7 +53,9 @@ var HxH = (() => {
     OS: () => OS,
     PAL: () => PAL,
     PEOPLE_URL: () => PEOPLE_URL,
+    PROFILE_PREFIX: () => PROFILE_PREFIX,
     People: () => People,
+    Profile: () => Profile,
     SOUND_KEY: () => SOUND_KEY,
     SPLASHES: () => SPLASHES,
     SPLASH_IDS: () => SPLASH_IDS,
@@ -75,6 +79,7 @@ var HxH = (() => {
     Wallpaper: () => Wallpaper,
     Window: () => Window,
     WindowManager: () => WindowManager,
+    accountPage: () => accountPage,
     airshipHTML: () => airshipHTML,
     apps: () => apps_exports,
     avatar: () => avatar,
@@ -3674,21 +3679,31 @@ var HxH = (() => {
       <div class="sp-kana">\u30CF\u30F3\u30BF\u30FC\xD7\u30CF\u30ED\u30A6\u30A3\u30F3</div>
       <div class="sp-start">${esc(prompt)}</div>
     </div>`;
-    if (!reduced) {
-      const box = el.querySelector(".sp-embers");
-      for (let i = 0; i < 26; i++) {
-        const s = h("i");
-        s.style.left = (random() * 100).toFixed(1) + "%";
-        s.style.animationDelay = (-random() * 9).toFixed(2) + "s";
-        s.style.animationDuration = (6 + random() * 6).toFixed(2) + "s";
-        s.style.setProperty("--drift", ((random() - 0.5) * 12).toFixed(1) + "cqw");
-        s.style.setProperty("--size", (0.25 + random() * 0.45).toFixed(2) + "cqmin");
-        box.append(s);
-      }
-    }
+    if (!reduced) embers(el.querySelector(".sp-embers"), random);
     return () => {
     };
   }
+  function embers(box, random) {
+    for (let i = 0; i < 26; i++) {
+      const s = h("i");
+      s.style.left = (random() * 100).toFixed(1) + "%";
+      s.style.animationDelay = (-random() * 9).toFixed(2) + "s";
+      s.style.animationDuration = (6 + random() * 6).toFixed(2) + "s";
+      s.style.setProperty("--drift", ((random() - 0.5) * 12).toFixed(1) + "cqw");
+      s.style.setProperty("--size", (0.25 + random() * 0.45).toFixed(2) + "cqmin");
+      box.append(s);
+    }
+  }
+  var EmberBackdrop = class extends Component {
+    /** props: reduced, random */
+    render() {
+      const { reduced = false, random = Math.random } = this.props;
+      const el = h("div", { className: `splash-bg sp-summons${reduced ? " still" : ""}`, "aria-hidden": "true" });
+      el.innerHTML = `<div class="sp-grain"></div><div class="sp-embers"></div>`;
+      if (!reduced) embers(el.querySelector(".sp-embers"), random);
+      return el;
+    }
+  };
   var SELECT_TILES = 12;
   async function selectRoster(fetch, random = Math.random) {
     if (!fetch) return [];
@@ -4016,6 +4031,71 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/profile.js
+  var PROFILE_PREFIX = "hxh.u.";
+  var LEGACY_KEYS = ["hxh.set.", "hxh.crt", "hxh.sound"];
+  var Profile = class {
+    constructor({ storage = globalThis.localStorage } = {}) {
+      this.storage = storage;
+      this.user = null;
+      this.memory = /* @__PURE__ */ new Map();
+    }
+    key(k) {
+      return `${PROFILE_PREFIX}${this.user}:${k}`;
+    }
+    getItem(k) {
+      if (!this.user) return this.memory.has(k) ? this.memory.get(k) : null;
+      try {
+        return this.storage?.getItem(this.key(k)) ?? null;
+      } catch {
+        return null;
+      }
+    }
+    setItem(k, v) {
+      if (!this.user) {
+        this.memory.set(k, String(v));
+        return;
+      }
+      try {
+        this.storage?.setItem(this.key(k), String(v));
+      } catch {
+      }
+    }
+    removeItem(k) {
+      if (!this.user) {
+        this.memory.delete(k);
+        return;
+      }
+      try {
+        this.storage?.removeItem(this.key(k));
+      } catch {
+      }
+    }
+    /** Switch to a user's profile (null: signed out). Returns true when the user changed. */
+    setUser(username) {
+      const next = username || null;
+      if (next === this.user) return false;
+      this.user = next;
+      this.memory.clear();
+      if (next) this.adoptLegacy();
+      return true;
+    }
+    /** Move the old per-browser keys into this user's profile, once — only when the profile is still empty. */
+    adoptLegacy() {
+      const s = this.storage;
+      if (!s) return;
+      try {
+        const all = Array.from({ length: s.length }, (_, i) => s.key(i)).filter(Boolean);
+        const mine = `${PROFILE_PREFIX}${this.user}:`;
+        const legacy = all.filter((k) => LEGACY_KEYS.some((l) => l.endsWith(".") ? k.startsWith(l) : k === l));
+        if (!legacy.length) return;
+        if (!all.some((k) => k.startsWith(mine))) for (const k of legacy) s.setItem(mine + k, s.getItem(k));
+        for (const k of legacy) s.removeItem(k);
+      } catch {
+      }
+    }
+  };
+
   // html/hxh/os/layout.js
   var DESK_PREFIX = "hxh.desk.";
   var SAVE_DELAY = 300;
@@ -4174,9 +4254,10 @@ var HxH = (() => {
       this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
       this.session = session || new Session({ fetch: this.fetch });
       this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
-      this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
-      this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
-      this.settings = new Settings({ storage: win.localStorage });
+      this.profile = new Profile({ storage: win.localStorage });
+      this.crt = new CRT({ body: this.doc.body, storage: this.profile, bus: this.bus });
+      this.sounds = new Sounds({ storage: this.profile, AudioContext: win.AudioContext || win.webkitAudioContext });
+      this.settings = new Settings({ storage: this.profile });
       this.layout = new Layout({ os: this, storage: win.localStorage });
       this.registry = new AppRegistry(this);
       this.user = null;
@@ -4328,6 +4409,10 @@ var HxH = (() => {
     }
     setUser(user) {
       this.user = user || null;
+      if (this.profile.setUser(this.user?.username)) {
+        this.applyTheme();
+        this.crt.apply();
+      }
       if (this.user) this.people.load();
       this.bus.emit("session:user", { user: this.user });
       this.desktop?.refreshIcons();
@@ -4345,6 +4430,12 @@ var HxH = (() => {
     }
     isAdmin(site = "hxh") {
       return (this.user?.roles || []).some((r) => r.website === site && r.role === "admin");
+    }
+    /** The Summons splash's ink and rising embers, without its title, under the windows (os/splash.js EmberBackdrop). */
+    showEmbers() {
+      if (this.embers) return;
+      const body = this.doc.body;
+      this.embers = new EmberBackdrop({ reduced: !!this.env.reduced }).mount(body, { before: body.firstChild });
     }
     showBadge() {
       if (!this.badge) this.badge = new Badge().mount(this.doc.body);
@@ -4382,7 +4473,7 @@ var HxH = (() => {
      * as it was left (`Layout.restore`) or, on a first visit, launch the
      * autostart apps. Resolves with the OS once ready.
      */
-    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, icons = taskbar, bootLines: extra = [] } = {}) {
+    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, badge = true, backdrop = null, icons = taskbar, bootLines: extra = [] } = {}) {
       loadFonts(this.doc);
       for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
       this.setup({ start: start2, taskbar });
@@ -4391,7 +4482,8 @@ var HxH = (() => {
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
       if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
       let me = await pending;
-      if (!me && gate || !taskbar) this.showBadge();
+      if (backdrop === "embers") this.showEmbers();
+      if (badge && (!me && gate || !taskbar)) this.showBadge();
       if (!me && gate) me = await this.logon();
       if (taskbar) this.hideBadge();
       this.setUser(me);
@@ -7463,6 +7555,7 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/setpw.js
+  var ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" };
   var SetPasswordApp = class extends App {
     static id = "setpw";
     static name = "Set password";
@@ -9676,6 +9769,9 @@ var HxH = (() => {
   function start(opts = {}) {
     os = new OS();
     return os.start(opts);
+  }
+  function accountPage(words2 = {}) {
+    return start({ apps: [[SetPasswordApp, words2]], ...ACCOUNT_PAGE });
   }
   return __toCommonJS(index_exports);
 })();

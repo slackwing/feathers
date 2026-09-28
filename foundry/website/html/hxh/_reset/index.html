@@ -12,16 +12,12 @@
 <script src="/admin/assets/setpw.js?v=87"></script>
 <script src="../hxh.js?v=87"></script>
 <script>
-HxH.start({
-  apps: [[HxH.apps.SetPassword, {
-    heading: "Reset your password",
-    submit: "Reset password",
-    done: "Password reset, {name}. You're logged in.",
-    invalid: "This reset link is void or expired. Ask for a new one.",
-    nocode: "Open this page from the link in your password-reset email.",
-  }]],
-  autostart: ["setpw"],
-  taskbar: false, wallpaper: false, gate: false, splash: true,
+HxH.accountPage({
+  heading: "Reset your password",
+  submit: "Reset password",
+  done: "Password reset, {name}. You're logged in.",
+  invalid: "This reset link is void or expired. Ask for a new one.",
+  nocode: "Open this page from the link in your password-reset email.",
 });
 </script>
 </body>

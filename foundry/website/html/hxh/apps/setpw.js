@@ -14,6 +14,11 @@ import { App } from "../os/apps.js";
 import { AccountDialog } from "../os/logon.js";
 import { esc } from "../os/dom.js";
 
+/** How every account page (_invite/, _reset/) starts the OS — ONE place, so the two pages cannot drift: boot, the
+    Summons splash, then the dialog alone over the splash's embers; no taskbar, no wallpaper, no badge (Andrew,
+    2026-09-28). A page passes only its words: HxH.accountPage({ heading, submit, done, invalid, nocode }). */
+export const ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" };
+
 export class SetPasswordApp extends App {
   static id = "setpw";
   static name = "Set password";

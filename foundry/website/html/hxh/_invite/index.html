@@ -12,16 +12,12 @@
 <script src="/admin/assets/setpw.js?v=87"></script>
 <script src="../hxh.js?v=87"></script>
 <script>
-HxH.start({
-  apps: [[HxH.apps.SetPassword, {
-    heading: "Choose a password",
-    submit: "Accept summons",
-    done: "Welcome, {name}. Your license is in order.",
-    invalid: "This summons is void or expired. Ask for a new link.",
-    nocode: "Open this page from the link in your summons email.",
-  }]],
-  autostart: ["setpw"],
-  taskbar: false, wallpaper: false, gate: false, splash: true,
+HxH.accountPage({
+  heading: "Choose a password",
+  submit: "Accept summons",
+  done: "Welcome, {name}. Your license is in order.",
+  invalid: "This summons is void or expired. Ask for a new link.",
+  nocode: "Open this page from the link in your summons email.",
 });
 </script>
 </body>

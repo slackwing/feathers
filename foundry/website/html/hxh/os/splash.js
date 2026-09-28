@@ -69,19 +69,35 @@ function summons(el, { reduced, random, prompt = "Click to start" }) {
       <div class="sp-kana">ハンター×ハロウィン</div>
       <div class="sp-start">${esc(prompt)}</div>
     </div>`;
-  if (!reduced) {
-    const box = el.querySelector(".sp-embers");
-    for (let i = 0; i < 26; i++) {
-      const s = h("i");
-      s.style.left = (random() * 100).toFixed(1) + "%";
-      s.style.animationDelay = (-random() * 9).toFixed(2) + "s";
-      s.style.animationDuration = (6 + random() * 6).toFixed(2) + "s";
-      s.style.setProperty("--drift", ((random() - 0.5) * 12).toFixed(1) + "cqw");
-      s.style.setProperty("--size", (0.25 + random() * 0.45).toFixed(2) + "cqmin");
-      box.append(s);
-    }
-  }
+  if (!reduced) embers(el.querySelector(".sp-embers"), random);
   return () => {};
+}
+
+/** The Summons' rising embers, into `box`. */
+function embers(box, random) {
+  for (let i = 0; i < 26; i++) {
+    const s = h("i");
+    s.style.left = (random() * 100).toFixed(1) + "%";
+    s.style.animationDelay = (-random() * 9).toFixed(2) + "s";
+    s.style.animationDuration = (6 + random() * 6).toFixed(2) + "s";
+    s.style.setProperty("--drift", ((random() - 0.5) * 12).toFixed(1) + "cqw");
+    s.style.setProperty("--size", (0.25 + random() * 0.45).toFixed(2) + "cqmin");
+    box.append(s);
+  }
+}
+
+/** The Summons without its title — its ink, glow, grain and embers — as a page's background under the windows: the
+    account pages' dialog sits on it (Andrew, 2026-09-28: "lay it over the splash's floating ember/orange bits
+    background… remove the hero stuff and put the dialog there instead"). */
+export class EmberBackdrop extends Component {
+  /** props: reduced, random */
+  render() {
+    const { reduced = false, random = Math.random } = this.props;
+    const el = h("div", { className: `splash-bg sp-summons${reduced ? " still" : ""}`, "aria-hidden": "true" });
+    el.innerHTML = `<div class="sp-grain"></div><div class="sp-embers"></div>`;
+    if (!reduced) embers(el.querySelector(".sp-embers"), random);
+    return el;
+  }
 }
 
 /* ---------- select: a retro fighting game's PLAYER SELECT ---------- */

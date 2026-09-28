@@ -20,7 +20,7 @@ import { WindowManager } from "./wm.js";
 import { Taskbar } from "./taskbar.js";
 import { StartMenu } from "./startmenu.js";
 import { People } from "./people.js";
-import { Splash, SPLASHES, STARTUP_SPLASH } from "./splash.js";
+import { Splash, EmberBackdrop, SPLASHES, STARTUP_SPLASH } from "./splash.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
 import { LogonDialog } from "./logon.js";
@@ -28,6 +28,7 @@ import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
+import { Profile } from "./profile.js";
 import { WakeWatch } from "./wake.js";
 import { Blimp } from "./blimp.js";
 import { cqFix } from "./dom.js";
@@ -74,9 +75,10 @@ export class OS {
     this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
     this.session = session || new Session({ fetch: this.fetch });
     this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
-    this.crt = new CRT({ body: this.doc.body, storage: win.localStorage, bus: this.bus });
-    this.sounds = new Sounds({ storage: win.localStorage, AudioContext: win.AudioContext || win.webkitAudioContext });
-    this.settings = new Settings({ storage: win.localStorage });
+    this.profile = new Profile({ storage: win.localStorage });   // every preference, per user (os/profile.js)
+    this.crt = new CRT({ body: this.doc.body, storage: this.profile, bus: this.bus });
+    this.sounds = new Sounds({ storage: this.profile, AudioContext: win.AudioContext || win.webkitAudioContext });
+    this.settings = new Settings({ storage: this.profile });
     this.layout = new Layout({ os: this, storage: win.localStorage });
     this.registry = new AppRegistry(this);
     this.user = null;
@@ -230,6 +232,7 @@ export class OS {
 
   setUser(user) {
     this.user = user || null;
+    if (this.profile.setUser(this.user?.username)) { this.applyTheme(); this.crt.apply(); }   // their own picks, now that we know who
     if (this.user) this.people.load();   // the site's overrides (a claim) — the Start menu reads them on open
     this.bus.emit("session:user", { user: this.user });
     this.desktop?.refreshIcons();
@@ -249,6 +252,13 @@ export class OS {
 
   isAdmin(site = "hxh") {
     return (this.user?.roles || []).some(r => r.website === site && r.role === "admin");
+  }
+
+  /** The Summons splash's ink and rising embers, without its title, under the windows (os/splash.js EmberBackdrop). */
+  showEmbers() {
+    if (this.embers) return;
+    const body = this.doc.body;
+    this.embers = new EmberBackdrop({ reduced: !!this.env.reduced }).mount(body, { before: body.firstChild });
   }
 
   showBadge() { if (!this.badge) this.badge = new Badge().mount(this.doc.body); }
@@ -286,7 +296,7 @@ export class OS {
    * as it was left (`Layout.restore`) or, on a first visit, launch the
    * autostart apps. Resolves with the OS once ready.
    */
-  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
+  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, badge = true, backdrop = null, icons = taskbar, bootLines: extra = [] } = {}) {
     loadFonts(this.doc);
     for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
     this.setup({ start, taskbar });
@@ -299,7 +309,8 @@ export class OS {
     // password / etc. make this the general pattern for these special pages"). Always the Summons: the site's anchor.
     if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
     let me = await pending;
-    if ((!me && gate) || !taskbar) this.showBadge();   // account pages keep the badge
+    if (backdrop === "embers") this.showEmbers();       // the account pages: the dialog over the Summons' embers
+    if (badge && ((!me && gate) || !taskbar)) this.showBadge();
     if (!me && gate) me = await this.logon();
     if (taskbar) this.hideBadge();
     this.setUser(me);

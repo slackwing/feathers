@@ -125,8 +125,11 @@ A page is now three lines:
 Options: `apps, autostart, gate, taskbar, wallpaper, boot, start
 (Start button + menu), icons, bootLines`. index: `{wallpaper, start,
 gate}` + autostart summons; `_invite/` / `_reset/`: `{taskbar: false,
-wallpaper: false, gate: false, splash: true}` + autostart `setpw` — boot,
-the Summons splash, then the account dialog. Pages carry NO font links:
+wallpaper: false, gate: false, splash: true, badge: false, backdrop:
+"embers"}` + autostart `setpw` — ONE constant, `ACCOUNT_PAGE` in
+apps/setpw.js, via `HxH.accountPage(words)`; the two pages pass only their
+words. Boot, the Summons splash, then the account dialog over the
+Summons' embers (`EmberBackdrop`), no badge (Andrew, 2026-09-28). Pages carry NO font links:
 `start()` loads the one list (`FONTS_URL`, `loadFonts` in os.js). Plain admin pages (`_email/`) are outside
 the OS.
 
@@ -1228,3 +1231,14 @@ time (Andrew: the 2026-09-17 automated roster lost too much quality;
 Pictures are anime stills from the wiki (and Andrew's / Abi's own
 uploads), so the "no copyrighted art" line under Design direction no
 longer holds for character pictures; the site chrome stays original.
+
+## Preferences are per user (2026-09-28)
+
+Settings, Scanlines and Sounds all read and write through `os.profile`
+(`os/profile.js`), a Storage-shaped wrapper: keys land under
+`hxh.u.<username>:<key>` in localStorage, so users sharing a browser keep
+their own picks. Signed out there is no profile: defaults only, writes
+stay in memory. The first sign-in on a browser moves the old per-browser
+keys (`hxh.set.*`, `hxh.crt`, `hxh.sound`) into that user's profile and
+removes them. `setUser` re-applies the theme and scanlines. Never hand a
+new store `localStorage` directly — hand it `os.profile`.

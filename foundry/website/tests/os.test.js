@@ -260,7 +260,7 @@ test("the Start menu lists apps, Settings ▸, system apps and Log out; the Sett
   themes[1].onclick(); skies[2].onclick();
   assert.deepEqual(themes.map(t => t.check()), [false, true, false, false]);
   assert.equal(document.documentElement.dataset.theme, "tropical");
-  assert.equal(d.win.localStorage.getItem("hxh.set.theme"), "tropical");
+  assert.equal(d.win.localStorage.getItem("hxh.u.andrew:hxh.set.theme"), "tropical", "in andrew's profile");
   assert.equal(os.sky, "noisy-gradual");
   assert.deepEqual(seen, ["theme:tropical", "sky:noisy-gradual"]);
   // the tray gear pops the same tree; window menus get it without icons

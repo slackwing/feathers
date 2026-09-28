@@ -164,7 +164,7 @@ test("menus: BeetleChat File/Edit/Settings as specified, chats File(+View), no i
   assert.equal(settings.el.querySelector("svg"), null);
   d.click(items[1]);
   assert.equal(os.settings.get(SETTING_TRAY), false);
-  assert.equal(d.win.localStorage.getItem("hxh.set." + SETTING_TRAY), "0");
+  assert.equal(os.profile.getItem("hxh.set." + SETTING_TRAY), "0", "saved in the signed-in user's profile");
   d.click(edit.el.querySelector("button"));
   await tick();
   assert.equal(os.wm.get("win-chat-profile-edit").state.open, true);

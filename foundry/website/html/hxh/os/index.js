@@ -29,6 +29,8 @@ export { wallpaper, cloudSprite, Wallpaper, geometry } from "./wallpaper.js";
 export { OS } from "./os.js";
 import { OS } from "./os.js";
 import * as apps from "../apps/index.js";
+import { ACCOUNT_PAGE } from "../apps/setpw.js";
+export { ACCOUNT_PAGE };
 export { apps };
 
 /** Boot the OS on this page. Resolves with the OS once the desktop is up. */
@@ -39,5 +41,10 @@ export function start(opts = {}) {
   os = new OS();
   return os.start(opts);
 }
+/** Boot an account page (_invite/, _reset/): the SetPassword dialog with this page's words, the site's one pattern. */
+export function accountPage(words = {}) {
+  return start({ apps: [[apps.SetPassword, words]], ...ACCOUNT_PAGE });
+}
+export { Profile, PROFILE_PREFIX } from "./profile.js";
 export { People, PEOPLE_URL } from "./people.js";
-export { Splash, SPLASHES, SPLASH_IDS, STARTUP_SPLASH, randomSplash } from "./splash.js";
+export { Splash, EmberBackdrop, SPLASHES, SPLASH_IDS, STARTUP_SPLASH, randomSplash } from "./splash.js";
