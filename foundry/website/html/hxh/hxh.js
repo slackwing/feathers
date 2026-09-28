@@ -4840,8 +4840,12 @@ var HxH = (() => {
     const left = s.x + STAMP_W / 2 - PLATE.x, up = s.y + STAMP_W / 2 - PLATE.y;
     return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
   }
+  var PLATE_X = [84, 91];
+  var PLATE_Y = [78, 85];
+  var PLATE_ROT = 6;
   function randomPlate(rand = Math.random) {
-    return { x: Math.round((90 + rand() * 10) * 10) / 10, y: Math.round((94 + rand() * 8) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
+    const at = ([a, b]) => Math.round((a + rand() * (b - a)) * 10) / 10;
+    return { x: at(PLATE_X), y: at(PLATE_Y), rotation: Math.round((rand() * 2 - 1) * PLATE_ROT * 10) / 10 };
   }
   function randomStamp(rand = Math.random) {
     let spot;

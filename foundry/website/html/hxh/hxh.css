@@ -2362,7 +2362,11 @@ html[data-theme=seapumpkin-pastel] {
 .pageno {
   position: absolute;
   left: 20px;
-  bottom: 12px;
+  right: 20px;
+  top: calc(20px + 3 * var(--cardh, 210px) + 24px);
+  bottom: calc(-1 * var(--px));
+  display: flex;
+  align-items: center;
   font: 16px/1 var(--font-dot);
   color: rgba(255, 255, 255, .72);
   letter-spacing: .04em;
@@ -2965,6 +2969,8 @@ body.stacked .screen {
 }
 body.stacked .pageno {
   position: static;
+  height: auto;
+  display: block;
   text-align: right;
   margin-top: 8px;
 }
