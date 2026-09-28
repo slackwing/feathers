@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
-import { OS } from "../html/hxh/os/os.js";
+import { OS, FONTS_URL } from "../html/hxh/os/os.js";
 import { Blimp } from "../html/hxh/os/blimp.js";
 import { hasIconPair } from "../html/hxh/os/icons.js";
 import { HeavensArenaApp } from "../html/hxh/apps/arena.js";
@@ -88,23 +88,36 @@ test("a cold load with splash: after the boot screen the title screen holds ever
   assert.ok(!warm.splash || warm.splash.el.hidden);
 });
 
-test("logged out: the boot screen, then the logon — and the splash only once you have signed in, never in front of the logon (Andrew, 2026-09-27)", async () => {
+test("logged out: the boot screen, then the splash, and only on clicking to start the logon (Andrew, 2026-09-28: \"show the splash first, and on clicking to start, show the login\")", async () => {
   const { os } = make({ me: null });
   let ready = false;
   const p = os.start({ apps: [Hello], autostart: ["hello"], start: true, splash: true }).then(() => { ready = true; });
-  await tick();
-  const dlg = os.wm.get("win-logon");
-  assert.ok(dlg && dlg.state.open, "the logon comes first");
+  await new Promise(r => setTimeout(r, 40));
   const sp = () => document.querySelector(".splashscreen");
-  assert.ok(!sp() || sp().hidden, "no splash in front of the logon");
+  assert.ok(sp() && !sp().hidden, "the splash first");
+  assert.equal(os.wm.get("win-logon")?.state.open ?? false, false, "no logon behind it yet");
+  sp().click();
+  await new Promise(r => setTimeout(r, 40));
+  const dlg = os.wm.get("win-logon");
+  assert.ok(dlg && dlg.state.open, "clicking to start brings the logon");
+  assert.ok(sp().hidden);
   dlg.el.querySelector("#lg-u").value = "andrew"; dlg.el.querySelector("#lg-p").value = "x";
   d.fire(dlg.el.querySelector("#logon-form"), "submit");
-  await new Promise(r => setTimeout(r, 40));
-  assert.ok(sp() && !sp().hidden, "signed in: now the splash");
-  assert.equal(ready, false, "and the desktop waits for it");
-  sp().click();
   await p;
+  assert.equal(ready, true, "signed in: straight to the desktop, no second splash");
+  assert.ok(sp().hidden);
   assert.equal(os.wm.get("win-hello").state.open, true);
+});
+
+test("every page loads the OS's one font list: the account pages cannot fall behind the desktop's <head>", async () => {
+  const { os } = make();
+  await os.start({ apps: [Hello], boot: false });
+  const links = [...document.head.querySelectorAll("link[data-os-fonts]")];
+  assert.equal(links.length, 1);
+  assert.equal(links[0].getAttribute("href"), FONTS_URL);
+  for (const face of ["Press+Start+2P", "Alfa+Slab+One", "Special+Elite", "DotGothic16", "Pixelify+Sans"]) assert.ok(FONTS_URL.includes(face), face);
+  await make().os.start({ apps: [Hello], boot: false });
+  assert.equal(document.head.querySelectorAll("link[data-os-fonts]").length, 1, "once");
 });
 
 test("Heavens Arena: a desktop icon and Start entry after the Binder; opening it covers the screen with Player Select saying COMING SOON, and a click closes it — silently (Andrew, 2026-09-27)", async () => {

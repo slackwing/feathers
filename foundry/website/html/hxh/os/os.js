@@ -51,6 +51,19 @@ export const SKY_OPTIONS = [
   ["noisy-gradient", "Noisy Gradient"],
 ];
 
+/** Every face the OS and its apps draw with — ONE list, loaded by start() on every page (the desktop and the account
+    pages alike), so no page's <head> can fall behind (the invite page's did: no splash faces). */
+export const FONTS_URL = "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Alfa+Slab+One&family=Special+Elite&family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&family=Bodoni+Moda:wght@700;800&family=Crimson+Pro:wght@500;600&display=swap";
+
+/** Put the font links in <head> once. */
+export function loadFonts(doc) {
+  if (!doc?.head || doc.querySelector("link[data-os-fonts]")) return;
+  const link = (attrs) => { const l = doc.createElement("link"); for (const [k, v] of Object.entries(attrs)) l.setAttribute(k, v); doc.head.append(l); return l; };
+  link({ rel: "preconnect", href: "https://fonts.googleapis.com" });
+  link({ rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" });
+  link({ rel: "stylesheet", href: FONTS_URL, "data-os-fonts": "" });
+}
+
 export class OS {
   constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
     this.win = win;
@@ -274,18 +287,21 @@ export class OS {
    * autostart apps. Resolves with the OS once ready.
    */
   async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, icons = taskbar, bootLines: extra = [] } = {}) {
+    loadFonts(this.doc);
     for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
     this.setup({ start, taskbar });
     const warm = this.nav.consumeWarm();
     const pending = this.session.me();
     if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
+    // the title screen (os/splash.js) right after the boot screen, on EVERY page that asks for it — signed in or not,
+    // the desktop or an account page — and only then what the page is for: the logon, the choose-a-password dialog,
+    // the desktop (Andrew, 2026-09-28: "show the splash first, and on clicking to start, show the login / choose
+    // password / etc. make this the general pattern for these special pages"). Always the Summons: the site's anchor.
+    if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
     let me = await pending;
-    if ((!me && gate) || !taskbar) this.showBadge();   // splash screens keep the badge
+    if ((!me && gate) || !taskbar) this.showBadge();   // account pages keep the badge
     if (!me && gate) me = await this.logon();
     if (taskbar) this.hideBadge();
-    // the title screen (os/splash.js), a style at random, until the viewer clicks: after the boot screen when you are
-    // signed in, after the logon when you were not (Andrew, 2026-09-27) — never in front of the logon
-    if (me && splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);   // always the Summons: the site's anchor (Andrew, 2026-09-27)
     this.setUser(me);
     if (me && wallpaper) this.startWallpaper();       // Whale Island only once you're in
     if (this.taskbar) this.taskbar.el.hidden = false;

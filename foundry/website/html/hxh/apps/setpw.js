@@ -1,5 +1,6 @@
 /* SetPassword — the hxh skin for the shared set-password pages (_invite/
-   and _reset/): one static dialog on the bare desktop, wired to the
+   and _reset/): the OS's AccountDialog (os/logon.js — the logon's own
+   frame, logo and all) on the bare desktop, wired to the
    machinery in /admin/assets/setpw.js (global `SetPassword`), which owns
    the code lookup, the submit and the state switching; this app only
    supplies the look and the words (its options). Not on the desktop or
@@ -10,7 +11,7 @@
    chrome changes, and keep _email/_layout.html in step (see the note at
    the top of os/os.css). */
 import { App } from "../os/apps.js";
-import { Window } from "../os/window.js";
+import { AccountDialog } from "../os/logon.js";
 import { esc } from "../os/dom.js";
 
 export class SetPasswordApp extends App {
@@ -20,15 +21,15 @@ export class SetPasswordApp extends App {
   static desktop = false;
   static menuable = false;
 
-  /** options: title, heading, submit, done ("{name}" = the display name), nocode, invalid, machinery (SetPassword) */
+  /** options: heading (title bar and the line under the logo), submit, done ("{name}" = the display name), nocode, invalid, machinery (SetPassword) */
   window() {
     if (this.win) return this.win;
     const o = this.options;
-    this.win = new Window({
-      id: "win-pw", title: o.title, icon: "x", chrome: "static", closable: false, task: false, width: 525,
-      content: `
-        <h1 class="dialog-h">${esc(o.heading)}</h1>
-        <form data-pw="form">
+    this.win = new AccountDialog({
+      id: "win-pw", subtitle: o.heading,
+      lead: `<h2 class="dialog-h">${esc(o.heading)}</h2>`,
+      body: `
+        <form class="logon-form" data-pw="form">
           <div class="msg err" data-pw="nocode" hidden>${esc(o.nocode)}</div>
           <label class="lbl" for="u">Applicant</label>
           <input class="field" id="u" data-pw="username" autocomplete="username" readonly>

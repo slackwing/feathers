@@ -29,7 +29,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
 - **_invite/** and **_reset/** — the invite and password-reset pages at
   the standard cross-project paths, as hxh SKINS over the shared
   machinery `/admin/assets/setpw.js`: the `SetPassword` app
-  (`apps/setpw.js`) builds one Windows-logon-style dialog (title "Hunter × Halloween", heading
+  (`apps/setpw.js`) builds its dialog on the logon's own frame, `AccountDialog` in
+  `os/logon.js` (DRY, Andrew 2026-09-28 — title "Hunter × Halloween — <heading>", the logotype, heading
   "Choose a password" / "Reset your password", Applicant + Password,
   button "Accept summons" / "Reset password"; "password" never
   "passphrase"; no lede, no hints) on the bare desktop after the OS
@@ -124,8 +125,9 @@ A page is now three lines:
 Options: `apps, autostart, gate, taskbar, wallpaper, boot, start
 (Start button + menu), icons, bootLines`. index: `{wallpaper, start,
 gate}` + autostart summons; `_invite/` / `_reset/`: `{taskbar: false,
-wallpaper: false, gate: false}` + autostart `setpw` — the page is
-itself a logon-style splash. Plain admin pages (`_email/`) are outside
+wallpaper: false, gate: false, splash: true}` + autostart `setpw` — boot,
+the Summons splash, then the account dialog. Pages carry NO font links:
+`start()` loads the one list (`FONTS_URL`, `loadFonts` in os.js). Plain admin pages (`_email/`) are outside
 the OS.
 
 ### The pieces (one class each, `os/*.js`)
@@ -159,10 +161,12 @@ the OS.
   popup). Every change is announced on the bus.
 - `Splash` (`splash.js` + `splash.css`, `os.showSplash(id)`) — the
   title screen on a COLD load of a page that passes `splash: true`
-  (index only; a warm navigation skips it with the boot). ORDER (Andrew,
-  2026-09-27): signed in → boot, splash, desktop; signed out → boot,
-  logon, THEN the splash, desktop — never a splash in front of the
-  logon. The startup splash is ALWAYS the Summons (`STARTUP_SPLASH` —
+  (index, _invite/, _reset/; a warm navigation skips it with the boot).
+  ORDER — one pattern for every page (Andrew, 2026-09-28): boot, splash,
+  and only on clicking to start what the page is for: the desktop when
+  signed in; the logon when signed out (then straight to the desktop, no
+  second splash); the choose-a-password / reset dialog on the account
+  pages. The startup splash is ALWAYS the Summons (`STARTUP_SPLASH` —
   Andrew, 2026-09-27: the site's anchor); Player Select is the Heavens
   Arena placeholder (`apps/arena.js`: the app has no window, it shows
   Player Select with `prompt: "COMING SOON"`, `chime: false`, closed by a

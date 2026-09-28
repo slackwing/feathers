@@ -2570,19 +2570,35 @@ var HxH = (() => {
   };
 
   // html/hxh/os/logon.js
-  var LogonDialog = class extends Window {
-    constructor({ session } = {}) {
+  var SITE_TITLE = "Hunter \xD7 Halloween";
+  var LOGO = `<h1 class="logo">HUNTER<span class="x">\xD7</span><br><span class="hallow">HALLOWEEN</span></h1>`;
+  var AccountDialog = class extends Window {
+    /** { id, subtitle (title bar: SITE_TITLE — subtitle), lead (HTML under the logo), body (HTML: the form and the rest) } */
+    constructor({ id, subtitle, lead = "", body = "" } = {}) {
       super({
-        id: "win-logon",
-        title: "Hunter \xD7 Halloween \u2014 Log in",
+        id,
+        title: `${SITE_TITLE} \u2014 ${subtitle}`,
         icon: "card",
         chrome: "static",
         closable: false,
         task: false,
         width: 500,
-        content: `
-        <h1 class="logo">HUNTER<span class="x">\xD7</span><br><span class="hallow">HALLOWEEN</span></h1>
-        <p>Summoned applicants only. No summons? Reach out to the hosts.</p>
+        content: `${LOGO}${lead}${body}`
+      });
+    }
+    render() {
+      const el = super.render();
+      el.classList.add("logon");
+      return el;
+    }
+  };
+  var LogonDialog = class extends AccountDialog {
+    constructor({ session } = {}) {
+      super({
+        id: "win-logon",
+        subtitle: "Log in",
+        lead: `<p>${esc("Summoned applicants only. No summons? Reach out to the hosts.")}</p>`,
+        body: `
         <form id="logon-form" class="logon-form">
           <label class="lbl" for="lg-u">Applicant</label>
           <input class="field" id="lg-u" name="username" autocomplete="username" required>
@@ -2597,7 +2613,6 @@ var HxH = (() => {
     }
     render() {
       const el = super.render();
-      el.classList.add("logon");
       const form = el.querySelector("#logon-form"), msg = el.querySelector("#lg-msg");
       const u = el.querySelector("#lg-u"), p = el.querySelector("#lg-p");
       el.querySelector("#lg-forgot").addEventListener("click", async (e) => {
@@ -4136,6 +4151,19 @@ var HxH = (() => {
     ["gradient", "Gradient"],
     ["noisy-gradient", "Noisy Gradient"]
   ];
+  var FONTS_URL = "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Alfa+Slab+One&family=Special+Elite&family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&family=Bodoni+Moda:wght@700;800&family=Crimson+Pro:wght@500;600&display=swap";
+  function loadFonts(doc) {
+    if (!doc?.head || doc.querySelector("link[data-os-fonts]")) return;
+    const link = (attrs) => {
+      const l = doc.createElement("link");
+      for (const [k, v] of Object.entries(attrs)) l.setAttribute(k, v);
+      doc.head.append(l);
+      return l;
+    };
+    link({ rel: "preconnect", href: "https://fonts.googleapis.com" });
+    link({ rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" });
+    link({ rel: "stylesheet", href: FONTS_URL, "data-os-fonts": "" });
+  }
   var OS = class {
     constructor({ win = globalThis.window, fetch, session, env, nav } = {}) {
       this.win = win;
@@ -4355,16 +4383,17 @@ var HxH = (() => {
      * autostart apps. Resolves with the OS once ready.
      */
     async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, icons = taskbar, bootLines: extra = [] } = {}) {
+      loadFonts(this.doc);
       for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
       this.setup({ start: start2, taskbar });
       const warm = this.nav.consumeWarm();
       const pending = this.session.me();
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
+      if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
       let me = await pending;
       if (!me && gate || !taskbar) this.showBadge();
       if (!me && gate) me = await this.logon();
       if (taskbar) this.hideBadge();
-      if (me && splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
       this.setUser(me);
       if (me && wallpaper2) this.startWallpaper();
       if (this.taskbar) this.taskbar.el.hidden = false;
@@ -7440,21 +7469,16 @@ var HxH = (() => {
     static icon = "x";
     static desktop = false;
     static menuable = false;
-    /** options: title, heading, submit, done ("{name}" = the display name), nocode, invalid, machinery (SetPassword) */
+    /** options: heading (title bar and the line under the logo), submit, done ("{name}" = the display name), nocode, invalid, machinery (SetPassword) */
     window() {
       if (this.win) return this.win;
       const o = this.options;
-      this.win = new Window({
+      this.win = new AccountDialog({
         id: "win-pw",
-        title: o.title,
-        icon: "x",
-        chrome: "static",
-        closable: false,
-        task: false,
-        width: 525,
-        content: `
-        <h1 class="dialog-h">${esc(o.heading)}</h1>
-        <form data-pw="form">
+        subtitle: o.heading,
+        lead: `<h2 class="dialog-h">${esc(o.heading)}</h2>`,
+        body: `
+        <form class="logon-form" data-pw="form">
           <div class="msg err" data-pw="nocode" hidden>${esc(o.nocode)}</div>
           <label class="lbl" for="u">Applicant</label>
           <input class="field" id="u" data-pw="username" autocomplete="username" readonly>

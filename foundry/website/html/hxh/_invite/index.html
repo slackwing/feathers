@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Hunter × Halloween</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../hxh.css?v=86">
 </head>
 <body>
@@ -17,7 +14,6 @@
 <script>
 HxH.start({
   apps: [[HxH.apps.SetPassword, {
-    title: "Hunter × Halloween",
     heading: "Choose a password",
     submit: "Accept summons",
     done: "Welcome, {name}. Your license is in order.",
@@ -25,7 +21,7 @@ HxH.start({
     nocode: "Open this page from the link in your summons email.",
   }]],
   autostart: ["setpw"],
-  taskbar: false, wallpaper: false, gate: false,
+  taskbar: false, wallpaper: false, gate: false, splash: true,
 });
 </script>
 </body>
