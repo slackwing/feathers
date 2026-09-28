@@ -233,8 +233,11 @@
 /* the heart and bookmark keys: square, an icon in the middle; lit while the reader's own stamp is on the selected card */
 .key.ico { width: calc(30px * var(--u, 1)); min-width: 0; padding: 0; display: grid; place-items: center; }
 .key.ico svg { width: calc(16px * var(--u, 1)); height: calc(16px * var(--u, 1)); image-rendering: pixelated; }
-/* a key's icon shows its colour once a card is selected (the mint key), and the key turns gold with an outline when the reader's own stamp is on (Andrew, 2026-09-22) */
+/* the key turns gold with an outline when the reader's own stamp is on (Andrew, 2026-09-22) */
 .key:disabled svg { filter: grayscale(1) opacity(.45); }
+/* the heart and bookmark stay grey until pressed; their colour is the reader's own stamp (Andrew, 2026-09-27) */
+.key.ico:not(.lit):not(.info) svg { filter: grayscale(1) opacity(.7); }
+.key.ico:disabled:not(.info) svg { filter: grayscale(1) opacity(.45); }
 .key.ico.info { font: 700 12px/1 var(--font-px); padding-top: 2px; }
 .key.lit { background: linear-gradient(#fff6e0, var(--gold) 45%); box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #a67c00, 0 0 0 2px rgba(255,209,102,.55), 2px 2px 0 var(--teal-3); }   /* any key, CLAIM included */
 /* heart stamps: over the description box, at their saved spots, free to hang past its edge */

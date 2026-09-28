@@ -274,10 +274,10 @@ export class BinderApp extends App {
   }
 
   /**
-   * The cards, in the order the API gives them (by number). The book opens
-   * on the reader's bookmarks when they have some, else on page 1; a reload
-   * keeps the page the reader is on (an empty bookmark page they never
-   * chose is not a page they are on) AND the card they had selected — the
+   * The cards, in the order the API gives them (by number). The book always
+   * opens on page 1, never the bookmarks (Andrew, 2026-09-27); a reload
+   * keeps the page the reader is on (a bookmark page they never chose is
+   * not a page they are on) AND the card they had selected — the
    * live re-read every LIVE_MS used to rebuild the page and drop the
    * selection (Andrew, 2026-09-22). A re-read that changes nothing
    * touches nothing.
@@ -290,10 +290,10 @@ export class BinderApp extends App {
     this.roster = roster;
     this.pages = paginate(this.roster, this.stamps.bookmarks, (this.stamps.claims || []).map(c => c.char_id));
     this.renderTabs();
-    const bm = this.pages[0], last = this.pages.length - 1;
-    const auto = this.page == null || (!this.chose && this.page === 0 && !bm.cards.length);
+    const last = this.pages.length - 1, first = Math.max(0, this.pages.findIndex(p => p.kind !== "bookmark"));
+    const auto = this.page == null || (!this.chose && this.page < first);
     const keep = this.sel && this.roster.find(c => c.id === this.sel.id);
-    this.showPage(auto ? (bm.cards.length ? 0 : Math.min(1, last)) : Math.min(this.page, last), keep);
+    this.showPage(auto ? first : Math.min(this.page, last), keep);
   }
 
   /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */

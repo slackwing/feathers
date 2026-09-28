@@ -484,7 +484,7 @@ test("a bookmark: private, toggled; the card appears on the bookmark tab, and le
   assert.ok(!stampsDb.hearts.length, "a bookmark never draws a heart");
 });
 
-test("the book opens on the reader's bookmarks when they have some, else on page 1; a reload keeps the page they turned to", async () => {
+test("the book always opens on page 1, never the bookmarks (Andrew, 2026-09-27); a reload keeps the page they turned to", async () => {
   const b = os.registry.get("binder");
   await os.launch("binder");
   await tick();   // the launch-time load (an empty roster) settles first
@@ -497,7 +497,7 @@ test("the book opens on the reader's bookmarks when they have some, else on page
   assert.equal(b.page, 1, "a reload keeps page 1 even once a bookmark exists");
   b.page = null; b.chose = false; b.sig = null;   // as at a fresh open
   b.setRoster(roster);
-  assert.equal(b.page, 0, "a reader with bookmarks opens on them");
+  assert.equal(b.page, 1, "a reader with bookmarks still opens on page 1");
   d.click(b.$(".tabs .tab.bm"));
   b.stamps = { hearts: [], hearts_mine: [], bookmarks: [] };
   b.setRoster(roster);

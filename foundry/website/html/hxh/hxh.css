@@ -2635,6 +2635,12 @@ html[data-theme=seapumpkin-pastel] {
 .key:disabled svg {
   filter: grayscale(1) opacity(.45);
 }
+.key.ico:not(.lit):not(.info) svg {
+  filter: grayscale(1) opacity(.7);
+}
+.key.ico:disabled:not(.info) svg {
+  filter: grayscale(1) opacity(.45);
+}
 .key.ico.info {
   font: 700 12px/1 var(--font-px);
   padding-top: 2px;

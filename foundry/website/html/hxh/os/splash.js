@@ -173,11 +173,10 @@ export const NIGHT_ISLAND = {
   "#fff6e0": "#8a7fb4", "#f1e6cc": "#6f6598", "#dccb9f": "#554b7c", "#b8a071": "#3d3460",      // the rock spire, surf
   "#8b6d4b": "#241a33",                                                                        // the pier
 };
-/** The night sea: the sky's purples mirrored and darker, horizon first (lightest) to the foreground (darkest). */
 /** The night sea: the sky's purples mirrored and much darker, horizon first to the foreground, which is almost black
     (Andrew, 2026-09-27: "much darker shades, it's fine if it even almost seems black by the darkest"). */
-export const SEA_BANDS = ["#170c2e", "#0f0820", "#080413", "#030108"];
-export const SEA_HORIZON = "#221243";          // a faint lit line where sea meets sky
+export const SEA_BANDS = ["#0b0617", "#070410", "#040209", "#010003"];   // all but black, a purple breath at the top (Andrew, 2026-09-27: "even closer to black, all shades")
+export const SEA_HORIZON = "#170c2e";          // a faint lit line where sea meets sky
 export const ISLAND_SHADOW = "#040209";        // the island's dithered shadow on the water
 export const WINDOW_LIGHTS = ["#ffd35a", "#ffb347"];
 export const WINDOW_LIT = 0.8;   // "lights in most windows"
