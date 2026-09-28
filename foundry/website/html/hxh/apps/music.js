@@ -25,7 +25,7 @@ const MARGIN = 12;
 
 /** The embed: privacy-enhanced (no cookies until played), autoplaying, looping the one video, no suggestions from other channels at the end. */
 export function embedSrc(id = VIDEO) {
-  const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id });
+  const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1" });   // the JS API: the page hears the player's state and can say play
   return `https://www.youtube-nocookie.com/embed/${id}?${q}`;
 }
 
@@ -66,11 +66,38 @@ export class MusicApp extends App {
 
   play() {
     if (this.frame) return this.frame;
-    this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin" });
+    this.playing = false;
+    this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin",
+      onload: () => this.say({ event: "listening", id: "hxh-music" }) });   // ask the player to report its state
     this.win.$(".vid").append(this.frame);
+    this.nudge ||= this.watchGestures();
     return this.frame;
   }
 
+  /** Send the player a message (YouTube's iframe API speaks JSON over postMessage). */
+  say(msg) { try { this.frame?.contentWindow?.postMessage(JSON.stringify(msg), "*"); } catch {} }
+
+  /**
+   * A browser may refuse to autoplay with sound — Firefox on the page after
+   * an invite, whose click was on the page before (Andrew, 2026-09-28: "for
+   * my new test user the music didn't autoplay"). Then the first click or
+   * key anywhere on the page, a gesture the browser accepts, tells the
+   * player to play. The player's own reports (onStateChange / infoDelivery)
+   * say whether it already is, so a playing video is never touched.
+   */
+  watchGestures() {
+    const win = this.os.win, doc = this.os.doc;
+    win.addEventListener("message", e => {
+      if (!this.frame || e.source !== this.frame.contentWindow) return;
+      let d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
+      const state = d?.event === "onStateChange" ? d.info : d?.event === "infoDelivery" ? d.info?.playerState : undefined;
+      if (typeof state === "number") this.playing = state === 1 || state === 3;   // 1 playing, 3 buffering
+    });
+    const gesture = () => { if (this.frame && !this.playing) this.say({ event: "command", func: "playVideo", args: [] }); };
+    for (const t of ["pointerdown", "keydown"]) doc.addEventListener(t, gesture, true);
+    return true;
+  }
+
   /** The window closed: the iframe goes, and the sound with it. */
-  stop() { this.frame?.remove(); this.frame = null; }
+  stop() { this.frame?.remove(); this.frame = null; this.playing = false; }
 }

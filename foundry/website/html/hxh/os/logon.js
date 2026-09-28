@@ -38,7 +38,7 @@ export class LogonDialog extends AccountDialog {
       lead: `<p>${esc("Summoned applicants only. No summons? Reach out to the hosts.")}</p>`,
       body: `
         <form id="logon-form" class="logon-form">
-          <label class="lbl" for="lg-u">Applicant</label>
+          <label class="lbl" for="lg-u">Applicant name or email</label>
           <input class="field" id="lg-u" name="username" autocomplete="username" required>
           <label class="lbl" for="lg-p">Password</label>
           <input class="field" id="lg-p" name="password" type="password" autocomplete="current-password" required>
@@ -57,7 +57,7 @@ export class LogonDialog extends AccountDialog {
     el.querySelector("#lg-forgot").addEventListener("click", async e => {
       e.preventDefault();
       const name = u.value.trim();
-      if (!name) { msg.className = "msg err"; msg.textContent = "Type your applicant name first."; u.focus(); return; }
+      if (!name) { msg.className = "msg err"; msg.textContent = "Type your applicant name or email first."; u.focus(); return; }
       msg.textContent = "";
       await this.session.forgot(name);
       msg.className = "msg ok";

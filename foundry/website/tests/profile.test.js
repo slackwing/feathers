@@ -25,18 +25,16 @@ test("Profile: each user's preferences apart on one browser; signed out reads de
   assert.equal(store.getItem(PROFILE_PREFIX + "abi:hxh.set.theme"), "tropical");
 });
 
-test("Profile: the old per-browser keys move into the first user's profile, then leave the browser", () => {
+test("Profile: the old per-browser keys are dropped at the first sign-in, never handed to whoever signs in — a first-time user gets the defaults (Andrew, 2026-09-28)", () => {
   const store = mem();
   store.setItem("hxh.set.theme", "tropical"); store.setItem("hxh.crt", "1"); store.setItem("hxh.sound", "0"); store.setItem("hxh.desk.andrew", "{}");
   const p = new Profile({ storage: store });
-  p.setUser("andrew");
-  assert.equal(p.getItem("hxh.set.theme"), "tropical");
-  assert.equal(p.getItem("hxh.crt"), "1");
-  assert.equal(p.getItem("hxh.sound"), "0");
-  assert.equal(store.getItem("hxh.set.theme"), null, "gone from the browser");
+  const s = new Settings({ storage: p });
+  p.setUser("newbie");
+  assert.equal(s.getStr("theme", "seapumpkin"), "seapumpkin", "the default, not the browser's old pick");
+  assert.equal(p.getItem("hxh.crt"), null);
+  for (const k of ["hxh.set.theme", "hxh.crt", "hxh.sound"]) assert.equal(store.getItem(k), null, k + " gone");
   assert.equal(store.getItem("hxh.desk.andrew"), "{}", "the saved desktop is already per user: untouched");
-  p.setUser("abi");
-  assert.equal(p.getItem("hxh.set.theme"), null, "the next person starts clean");
 });
 
 test("the OS applies the signed-in user's theme once it knows who; the account pages show the default", async () => {

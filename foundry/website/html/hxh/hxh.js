@@ -2616,7 +2616,7 @@ var HxH = (() => {
         lead: `<p>${esc("Summoned applicants only. No summons? Reach out to the hosts.")}</p>`,
         body: `
         <form id="logon-form" class="logon-form">
-          <label class="lbl" for="lg-u">Applicant</label>
+          <label class="lbl" for="lg-u">Applicant name or email</label>
           <input class="field" id="lg-u" name="username" autocomplete="username" required>
           <label class="lbl" for="lg-p">Password</label>
           <input class="field" id="lg-p" name="password" type="password" autocomplete="current-password" required>
@@ -2636,7 +2636,7 @@ var HxH = (() => {
         const name = u.value.trim();
         if (!name) {
           msg.className = "msg err";
-          msg.textContent = "Type your applicant name first.";
+          msg.textContent = "Type your applicant name or email first.";
           u.focus();
           return;
         }
@@ -4090,20 +4090,16 @@ var HxH = (() => {
       if (next === this.user) return false;
       this.user = next;
       this.memory.clear();
-      if (next) this.adoptLegacy();
+      if (next) this.dropLegacy();
       return true;
     }
-    /** Move the old per-browser keys into this user's profile, once — only when the profile is still empty. */
-    adoptLegacy() {
+    /** Remove the old per-browser keys: they belong to no one in particular. */
+    dropLegacy() {
       const s = this.storage;
       if (!s) return;
       try {
         const all = Array.from({ length: s.length }, (_, i) => s.key(i)).filter(Boolean);
-        const mine = `${PROFILE_PREFIX}${this.user}:`;
-        const legacy = all.filter((k) => LEGACY_KEYS.some((l) => l.endsWith(".") ? k.startsWith(l) : k === l));
-        if (!legacy.length) return;
-        if (!all.some((k) => k.startsWith(mine))) for (const k of legacy) s.setItem(mine + k, s.getItem(k));
-        for (const k of legacy) s.removeItem(k);
+        for (const k of all) if (LEGACY_KEYS.some((l) => l.endsWith(".") ? k.startsWith(l) : k === l)) s.removeItem(k);
       } catch {
       }
     }
@@ -9441,7 +9437,7 @@ var HxH = (() => {
   var DROP = 72;
   var MARGIN = 12;
   function embedSrc(id = VIDEO) {
-    const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id });
+    const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1" });
     return `https://www.youtube-nocookie.com/embed/${id}?${q}`;
   }
   function besideSummons(width) {
@@ -9471,14 +9467,58 @@ var HxH = (() => {
     }
     play() {
       if (this.frame) return this.frame;
-      this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin" });
+      this.playing = false;
+      this.frame = h("iframe", {
+        src: embedSrc(),
+        title: TITLE,
+        allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
+        allowfullscreen: true,
+        referrerpolicy: "strict-origin-when-cross-origin",
+        onload: () => this.say({ event: "listening", id: "hxh-music" })
+      });
       this.win.$(".vid").append(this.frame);
+      this.nudge ||= this.watchGestures();
       return this.frame;
+    }
+    /** Send the player a message (YouTube's iframe API speaks JSON over postMessage). */
+    say(msg) {
+      try {
+        this.frame?.contentWindow?.postMessage(JSON.stringify(msg), "*");
+      } catch {
+      }
+    }
+    /**
+     * A browser may refuse to autoplay with sound — Firefox on the page after
+     * an invite, whose click was on the page before (Andrew, 2026-09-28: "for
+     * my new test user the music didn't autoplay"). Then the first click or
+     * key anywhere on the page, a gesture the browser accepts, tells the
+     * player to play. The player's own reports (onStateChange / infoDelivery)
+     * say whether it already is, so a playing video is never touched.
+     */
+    watchGestures() {
+      const win = this.os.win, doc = this.os.doc;
+      win.addEventListener("message", (e) => {
+        if (!this.frame || e.source !== this.frame.contentWindow) return;
+        let d;
+        try {
+          d = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        } catch {
+          return;
+        }
+        const state = d?.event === "onStateChange" ? d.info : d?.event === "infoDelivery" ? d.info?.playerState : void 0;
+        if (typeof state === "number") this.playing = state === 1 || state === 3;
+      });
+      const gesture = () => {
+        if (this.frame && !this.playing) this.say({ event: "command", func: "playVideo", args: [] });
+      };
+      for (const t of ["pointerdown", "keydown"]) doc.addEventListener(t, gesture, true);
+      return true;
     }
     /** The window closed: the iframe goes, and the sound with it. */
     stop() {
       this.frame?.remove();
       this.frame = null;
+      this.playing = false;
     }
   };
 

@@ -1238,9 +1238,10 @@ Settings, Scanlines and Sounds all read and write through `os.profile`
 (`os/profile.js`), a Storage-shaped wrapper: keys land under
 `hxh.u.<username>:<key>` in localStorage, so users sharing a browser keep
 their own picks. Signed out there is no profile: defaults only, writes
-stay in memory. The first sign-in on a browser moves the old per-browser
-keys (`hxh.set.*`, `hxh.crt`, `hxh.sound`) into that user's profile and
-removes them. `setUser` re-applies the theme and scanlines. Never hand a
+stay in memory. The old per-browser keys (`hxh.set.*`, `hxh.crt`,
+`hxh.sound`) are dropped at the first sign-in, never adopted: adopting
+them handed a new user someone else's Tropical theme — every first-time
+user starts on the defaults (Sea Pumpkin). `setUser` re-applies the theme and scanlines. Never hand a
 new store `localStorage` directly — hand it `os.profile`.
 
 ## Phones (2026-09-28)

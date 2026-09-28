@@ -9,9 +9,12 @@
    the account pages) there is no profile — reads get the defaults and
    writes stay in memory — so nobody's picks leak onto a shared screen.
 
-   The first time a user signs in on a browser that still holds the old
-   per-browser keys (hxh.set.*, hxh.crt, hxh.sound), they are moved into
-   that user's profile and removed, so the next person starts clean. */
+   The old per-browser keys (hxh.set.*, hxh.crt, hxh.sound) are simply
+   dropped at the first sign-in: nobody can say whose they were, and
+   handing them to whoever signed in first gave a brand-new user someone
+   else's Tropical theme (Andrew, 2026-09-28: "make sure the default theme
+   is sea pumpkin all first time users!!"). Everyone starts on the
+   defaults. */
 export const PROFILE_PREFIX = "hxh.u.";
 /** The per-browser keys from before profiles: exact names, or a prefix ending in "." */
 export const LEGACY_KEYS = ["hxh.set.", "hxh.crt", "hxh.sound"];
@@ -44,21 +47,17 @@ export class Profile {
     if (next === this.user) return false;
     this.user = next;
     this.memory.clear();
-    if (next) this.adoptLegacy();
+    if (next) this.dropLegacy();
     return true;
   }
 
-  /** Move the old per-browser keys into this user's profile, once — only when the profile is still empty. */
-  adoptLegacy() {
+  /** Remove the old per-browser keys: they belong to no one in particular. */
+  dropLegacy() {
     const s = this.storage;
     if (!s) return;
     try {
       const all = Array.from({ length: s.length }, (_, i) => s.key(i)).filter(Boolean);
-      const mine = `${PROFILE_PREFIX}${this.user}:`;
-      const legacy = all.filter(k => LEGACY_KEYS.some(l => (l.endsWith(".") ? k.startsWith(l) : k === l)));
-      if (!legacy.length) return;
-      if (!all.some(k => k.startsWith(mine))) for (const k of legacy) s.setItem(mine + k, s.getItem(k));
-      for (const k of legacy) s.removeItem(k);
+      for (const k of all) if (LEGACY_KEYS.some(l => (l.endsWith(".") ? k.startsWith(l) : k === l))) s.removeItem(k);
     } catch {}
   }
 }

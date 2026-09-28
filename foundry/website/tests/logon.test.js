@@ -50,7 +50,7 @@ test("forgot needs a username, then posts it and says a link is on its way", asy
   const msg = dlg.el.querySelector("#lg-msg");
   d.click(dlg.el.querySelector("#lg-forgot"));
   await tick();
-  assert.equal(msg.textContent, "Type your applicant name first.");
+  assert.equal(msg.textContent, "Type your applicant name or email first.");
   assert.equal(log.length, 0);
   dlg.el.querySelector("#lg-u").value = "abi";
   d.click(dlg.el.querySelector("#lg-forgot"));
@@ -58,5 +58,11 @@ test("forgot needs a username, then posts it and says a link is on its way", asy
   assert.equal(log[0].path, "/admin/api/forgot");
   assert.ok(msg.classList.contains("ok"));
   assert.match(msg.textContent, /reset link is on its way/);
+  dlg.unmount();
+});
+
+test("the applicant field takes a name or an email (Andrew, 2026-09-28): so its label says", () => {
+  const dlg = dialog({});
+  assert.equal(dlg.el.querySelector('label[for="lg-u"]').textContent, "Applicant name or email");
   dlg.unmount();
 });
