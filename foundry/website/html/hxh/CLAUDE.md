@@ -664,9 +664,14 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
   edge (`.page .edge`, the border plus PAD, cursor pointer, tooltip
   "Close" — the hinge side, where you would take hold of the leaf;
   2026-09-27); it is part of the draggable margin, so the same slop
-  applies. The page label ("1 / 10", "Bookmarks") is 16 px and sits
-  12 px off the page's bottom inside the PAGENO strip, clear of the
-  cards. A pick fills the screen in order (`play`, Andrew 2026-09-27:
+  applies. The page label ("1 / 10", "Bookmarks", "Claimed") is 16 px,
+  centred between the card slots' bottom and the binder's outer bottom
+  edge (2026-09-27: first too high, then too low). Claim plates land
+  with their bottom-right corner at x 84–91 %, y 78–85 % of the
+  description band, ±6° (`PLATE_X/PLATE_Y/PLATE_ROT`), so the whole
+  plate sits on the white description box; hxh changeset 020 moved the
+  plates stamped before that (they reached 100 × 102 % and lost their
+  bottom edge). A pick fills the screen in order (`play`, Andrew 2026-09-27:
   "start with the enlarged card first … then scroll down to do the
   typing"): the whole printed card first (`printed(c)`, the sleeve's
   GICard, stamps included), ABOVE the profile, at BIG_W of the screen's

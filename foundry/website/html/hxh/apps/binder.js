@@ -54,9 +54,16 @@ export function clearOfPlate(s) {
   return left <= up ? { ...s, x: Math.round((PLATE.x - STAMP_W / 2) * 10) / 10 } : { ...s, y: Math.round((PLATE.y - STAMP_W / 2) * 10) / 10 };
 }
 
-/** Where a claim's name plate lands: the plate hangs from its BOTTOM-RIGHT corner, which sits near the box's own corner (a little past it is fine), leaning at most ±8°; a long name grows leftward into the box. */
+/* Where a claim's name plate lands (% of the description band; the plate hangs from its BOTTOM-RIGHT
+   corner, a long name growing leftward). All of it on the white description box, which spans 4.3–95.7 %
+   across and 7.2–92.8 % down (Andrew, 2026-09-27: "shouldn't go too much into the edge where it can't be
+   seen"; it used to reach 100 × 102 and lose its bottom): at the range's limits a six-letter plate leaning
+   the full 6° still clears the box's bottom and right edges. hxh changeset 020 moved the plates already
+   stamped into this range by the same linear map. */
+export const PLATE_X = [84, 91], PLATE_Y = [78, 85], PLATE_ROT = 6;
 export function randomPlate(rand = Math.random) {
-  return { x: Math.round((90 + rand() * 10) * 10) / 10, y: Math.round((94 + rand() * 8) * 10) / 10, rotation: Math.round((rand() * 2 - 1) * 8 * 10) / 10 };
+  const at = ([a, b]) => Math.round((a + rand() * (b - a)) * 10) / 10;
+  return { x: at(PLATE_X), y: at(PLATE_Y), rotation: Math.round((rand() * 2 - 1) * PLATE_ROT * 10) / 10 };
 }
 
 /** Where a new heart lands on the description box: % of the box, allowed to hang over its edge, never on the plate; upright within ±STAMP_ROT. */

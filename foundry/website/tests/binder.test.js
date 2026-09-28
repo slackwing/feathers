@@ -333,7 +333,7 @@ test("a claim: the question with Claim / Not Yet / Bookmark Instead; a claim pri
   assert.ok(plate, "the name plate is on the card");
   assert.equal(plate.textContent, "READER A");
   const x = parseFloat(plate.style.left), y = parseFloat(plate.style.top);
-  assert.ok(x >= 90 && x <= 100 && y >= 94 && y <= 102, "its bottom-right corner sits at the box's corner: " + plate.style.left + " " + plate.style.top);
+  assert.ok(x >= 84 && x <= 91 && y >= 78 && y <= 85, "its bottom-right corner sits well inside the box's corner (2026-09-27): " + plate.style.left + " " + plate.style.top);
   assert.ok(/translate\(-100%, -100%\)/.test(plate.style.transform), "hung from its bottom-right corner, so a long name grows into the box");
   assert.ok(claim.classList.contains("lit") && !claim.disabled);
   assert.equal(claim.title, "This is you! Press again to release");
@@ -644,4 +644,18 @@ test("the corner buttons are gone while a leaf turns, opening or closing, and ba
   assert.ok(b.book.classList.contains("closing") && el.classList.contains("turning"), "closing: hidden");
   land();
   assert.ok(b.book.classList.contains("closed") && !el.classList.contains("turning"), "shut: back");
+});
+
+test("a claim plate lands on the white description box, not over its edge: corner at x 84–91, y 78–85, lean ±6° (Andrew, 2026-09-27)", async () => {
+  const { PLATE_X, PLATE_Y, PLATE_ROT } = await import("../html/hxh/apps/binder.js");
+  for (const r of [0, 0.5, 0.999]) {
+    const p = randomPlate(() => r);
+    assert.ok(p.x >= PLATE_X[0] && p.x <= PLATE_X[1] && p.y >= PLATE_Y[0] && p.y <= PLATE_Y[1] && Math.abs(p.rotation) <= PLATE_ROT, JSON.stringify(p));
+  }
+  // the worst case stays on the box (4.3–95.7 × 7.2–92.8 % of the band, a 94.6 × 56.65 cqw band): a six-letter plate
+  // (~37 cqw × 11.7 cqw) at the range's corner, leaning the full 6° either way
+  const W = 94.6, H = 56.65, w = 37, h = 11.7, s = Math.sin(PLATE_ROT * Math.PI / 180);
+  assert.ok(PLATE_Y[1] + (w * s) / H * 100 <= 92.8, "a leftward lean drops its left end no lower than the box's bottom");
+  assert.ok(PLATE_X[1] + (h * s) / W * 100 <= 95.7, "a rightward lean pushes its top no further than the box's right edge");
+  assert.ok(PLATE_X[0] - (w / W) * 100 >= 4.3, "a long name still starts inside the box");
 });

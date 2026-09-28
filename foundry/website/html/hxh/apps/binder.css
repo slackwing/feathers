@@ -139,7 +139,9 @@
 }
 .page .edge:hover { background: rgba(255, 255, 255, .06); }
 /* "Bookmarks" / "1 / 10": small, down in the strip PAGENO reserves, clear of the last row of cards */
-.pageno { position: absolute; left: 20px; bottom: 12px; font: 16px/1 var(--font-dot); color: rgba(255, 255, 255, .72); letter-spacing: .04em; pointer-events: none; }
+/* centred in the strip between the card slots' bottom (PAD + 3 rows + 2 GAPs down) and the binder's outer bottom edge
+   (Andrew, 2026-09-27: first too high, pressed against the cards; then too low, against the edge) */
+.pageno { position: absolute; left: 20px; right: 20px; top: calc(20px + 3 * var(--cardh, 210px) + 24px); bottom: calc(-1 * var(--px)); display: flex; align-items: center; font: 16px/1 var(--font-dot); color: rgba(255, 255, 255, .72); letter-spacing: .04em; pointer-events: none; }
 .tabs {   /* one tab per page; rows wrap UPWARD from the page's top edge */
   position: absolute; left: 20px; right: 20px; bottom: 100%;
   /* wrap-reverse flips the cross axis, so flex-START is the bottom: every tab's foot on the page edge, the open one just taller (Andrew, 2026-09-21) */
@@ -331,4 +333,4 @@ body.stacked /* colour only… */
   .tab.on {font-size: 10px; padding: 2px 8px 0; flex: 0 0 auto; }
 body.stacked /* …except the open page */
   .screen {flex: none; height: 300px; }
-body.stacked .pageno {position: static; text-align: right; margin-top: 8px; }
+body.stacked .pageno {position: static; height: auto; display: block; text-align: right; margin-top: 8px; }
