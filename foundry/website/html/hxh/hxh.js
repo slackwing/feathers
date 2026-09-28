@@ -991,6 +991,25 @@ var HxH = (() => {
       ".kkk........kkk.",
       "................"
     ],
+    music: [
+      // the Music player (Andrew, 2026-09-28): beamed eighth notes, pumpkin orange
+      "................",
+      ".....kkkkkkkkkk.",
+      ".....kaoooooook.",
+      ".....kooooooook.",
+      ".....kokkkkkkok.",
+      ".....kok....kok.",
+      ".....kok....kok.",
+      ".....kok....kok.",
+      ".....kok....kok.",
+      ".....kok....kok.",
+      "..kkkkok.kkkkok.",
+      ".kaooookkaooook.",
+      ".koooookkoooook.",
+      "..kkkkk..kkkkk..",
+      "................",
+      "................"
+    ],
     sound: [
       "................",
       "........k.......",
@@ -1201,6 +1220,29 @@ var HxH = (() => {
       "..kttk.......knnnnk.",
       "...kk.........knnk..",
       "...............kk...",
+      "...................."
+    ],
+    music: [
+      // the Music player's 20-grid (Andrew, 2026-09-28)
+      "....................",
+      "....................",
+      "......kkkkkkkkkkkk..",
+      "......kaaooooooook..",
+      "......kooooooooook..",
+      "......kokkkkkkkkok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "......kok......kok..",
+      "...kkkkok...kkkkok..",
+      "..kaaoook..kaaoook..",
+      ".kaoooook.kaoooook..",
+      ".kooooook.kooooook..",
+      ".koooook..koooook...",
+      "..kkkkk....kkkkk....",
       "...................."
     ]
   };
@@ -4359,6 +4401,7 @@ var HxH = (() => {
     BugReport: () => BugReportApp,
     Chat: () => ChatApp,
     HeavensArena: () => HeavensArenaApp,
+    Music: () => MusicApp,
     NOTICE: () => NOTICE,
     Roster: () => RosterApp,
     SetPassword: () => SetPasswordApp,
@@ -4366,6 +4409,8 @@ var HxH = (() => {
   });
 
   // html/hxh/apps/summons.js
+  var SUMMONS_AT = { x: 145, y: 24 };
+  var SUMMONS_W = 750;
   var NOTICE = [
     "By order of Chairman Netero, you are hereby summoned to the ",
     { t: "289th Hunter Exam \u2014 Halloween Phase", tag: "b" },
@@ -4401,7 +4446,7 @@ var HxH = (() => {
         id: "win-summons",
         title: "Hunter \xD7 Halloween",
         icon: "x",
-        width: 750,
+        width: SUMMONS_W,
         cls: "summons",
         menus: (w) => this.menus(w),
         content: CONTENT
@@ -4417,7 +4462,7 @@ var HxH = (() => {
       return this.win;
     }
     position() {
-      return this.os.env.floating() ? { x: 145, y: 24 } : null;
+      return this.os.env.floating() ? { ...SUMMONS_AT } : null;
     }
     /** Fill the notice instantly so the window is measured at its final height. */
     prepNotice() {
@@ -9229,6 +9274,56 @@ var HxH = (() => {
       return Promise.resolve(false);
     }
     // nothing to bring back
+  };
+
+  // html/hxh/apps/music.js
+  var VIDEO = "lMmoUqf4Ags";
+  var TITLE = "Hunter x Hunter Lofi Beats to Relax / Study To \u2014 Killua Tokyo Night Mix";
+  var WIDTH = 480;
+  var MIN_W = 360;
+  var OVERLAP2 = 38;
+  var DROP = 72;
+  var MARGIN = 12;
+  function embedSrc(id = VIDEO) {
+    const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id });
+    return `https://www.youtube-nocookie.com/embed/${id}?${q}`;
+  }
+  function besideSummons(width) {
+    const x = SUMMONS_AT.x + SUMMONS_W - OVERLAP2;
+    const w = Math.max(MIN_W, Math.min(WIDTH, width - x - MARGIN));
+    return { x: Math.max(0, Math.min(x, width - w - MARGIN)), y: SUMMONS_AT.y + DROP, w };
+  }
+  var MusicApp = class extends App {
+    static id = "music";
+    static name = "Music";
+    static icon = "music";
+    static order = 23;
+    // after Heavens Arena
+    window() {
+      if (this.win) return this.win;
+      this.win = new Window({ id: "win-music", title: "Music", icon: "music", width: WIDTH, cls: "music", content: `<div class="vid"></div>`, onClose: () => this.stop() });
+      this.os.wm.add(this.win);
+      return this.win;
+    }
+    /** Open (with the jank at boot, beside where the Summons will land) and play. Launching it again while it plays just brings it forward. */
+    async launch({ autostart = false } = {}) {
+      const win = this.window(), env = this.os.env;
+      const at = !win.state.placed && env.floating() ? besideSummons(env.width) : null;
+      await this.os.wm.open(win.id, at, { scroll: false, jank: autostart });
+      this.play();
+      return win;
+    }
+    play() {
+      if (this.frame) return this.frame;
+      this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin" });
+      this.win.$(".vid").append(this.frame);
+      return this.frame;
+    }
+    /** The window closed: the iframe goes, and the sound with it. */
+    stop() {
+      this.frame?.remove();
+      this.frame = null;
+    }
   };
 
   // html/hxh/apps/bugs/list.js

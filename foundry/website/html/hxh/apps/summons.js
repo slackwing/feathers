@@ -8,6 +8,9 @@ import { Window } from "../os/window.js";
 import { type } from "../os/typewriter.js";
 import "./summons.css";
 
+/** Where the Summons opens on the desktop, and how wide — the Music player lines itself up against it (apps/music.js). */
+export const SUMMONS_AT = { x: 145, y: 24 }, SUMMONS_W = 750;
+
 export const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
@@ -39,7 +42,7 @@ export class SummonsApp extends App {
     if (this.win) return this.win;
     const os = this.os;
     this.win = new Window({
-      id: "win-summons", title: "Hunter × Halloween", icon: "x", width: 750, cls: "summons",
+      id: "win-summons", title: "Hunter × Halloween", icon: "x", width: SUMMONS_W, cls: "summons",
       menus: w => this.menus(w), content: CONTENT,
     });
     os.wm.add(this.win);
@@ -53,7 +56,7 @@ export class SummonsApp extends App {
     return this.win;
   }
 
-  position() { return this.os.env.floating() ? { x: 145, y: 24 } : null; }
+  position() { return this.os.env.floating() ? { ...SUMMONS_AT } : null; }
 
   /** Fill the notice instantly so the window is measured at its final height. */
   prepNotice() {

@@ -710,6 +710,32 @@ pad with tick marks, a red D-pad. Andrew's spec (2026-09-17):
 - Pure and tested: `paginate`, `binderLayout`, `TYPES`, `ARCS`,
   `LIMIT`, `PER_PAGE` are exports; the window is built on first launch.
 
+## Music (`apps/music.js`, 2026-09-28)
+
+A player window holding the YouTube embed of one video (VIDEO
+`lMmoUqf4Ags`, Wilty's "Hunter x Hunter Lofi … Killua Tokyo Night Mix"),
+privacy-enhanced (youtube-nocookie), `autoplay=1`, looping (a single
+video loops only as its own `playlist`). A first visit autostarts it
+BEFORE the Summons (`autostart: ["music", "summons"]`): the player opens
+and plays, then the Summons lands on top, active, its right edge
+covering `OVERLAP` = 38 px of the player's left edge — the whole
+title-bar icon, none of "Music" — `DROP` px lower (`besideSummons(width)`
+lines it up with `SUMMONS_AT` / `SUMMONS_W`, exported by summons.js;
+narrower desktops narrow it to `MIN_W` before tucking more under).
+No menu bar (File › Exit only repeated the ×, and the overlap cut
+"File" to a stray "e"). Sound works because the title screen's click
+is a user gesture on the page and the iframe carries
+`allow="autoplay"` — verified in Chrome with its real policy
+(`--autoplay-policy=document-user-activation-required`): playing,
+unmuted. Safari is stricter with sound in embedded players and may show
+YouTube's play button instead (unverified: the Playwright WebKit build
+here cannot decode YouTube video). Closing the window removes the
+iframe (silence); minimizing keeps it playing; the saved desktop
+restores an open player, which plays again. YouTube refuses embeds that
+send no referrer, hence `referrerpolicy`. On a portrait phone the
+window cap (`max-width: 100vw - 40px`) narrows the Summons, so the two
+sit side by side instead of overlapping.
+
 ## The whale rule — one zoom for the whole site (2026-09-19)
 
 Andrew's final wording: "don't let the whale ever take any more than
