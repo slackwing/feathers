@@ -1,4 +1,5 @@
-/* About (Andrew, 2026-09-27) — how this site was made: a note from Andrew,
+/* About (Andrew, 2026-09-27) — how this site was made: a note from Andrew (named by People, so
+   "Chrollo (Andrew C)" once he has claimed),
    then every prompt he gave to build it, verbatim (typos, lowercase and
    all), numbered, in a long scroll. Small plain Arial rather than the pixel
    type, so more fits on the screen. The prompts live in about/prompts.json
@@ -10,7 +11,9 @@ import { h } from "../../os/dom.js";
 import "./about.css";
 
 export const PROMPTS_URL = "/hxh/about/prompts.json";
-export const INTRO = "Yes, this was AI. But it was also a lot of expertise, without which, it would not have been possible to converge to this result in ~18 hours. Here's the full set of prompts. Also, all images were cropped and placed manually by Abi.";
+export const AUTHOR = "andrew";
+/** Andrew's note, naming him the way the site does ("Chrollo (Andrew C)" once claimed) — People.label, never hardcoded. */
+export const intro = name => `Here were ${name}'s prompts to create this website. Plus all image selection and cropping done by Abi, because AI lacked taste.`;
 
 export class AboutApp extends App {
   static id = "about";
@@ -28,9 +31,13 @@ export class AboutApp extends App {
     this.win = new Window({ id: "win-about", title: "About", icon: "question", width: 680, cls: "about", menus: w => this.os.appMenus(w),
       content: `<div class="ascroll sunken"><p class="aintro"></p><ol class="aprompts"></ol></div>` });
     this.os.wm.add(this.win);
-    this.win.$(".aintro").textContent = INTRO;
+    this.renderIntro();
+    this.os.bus.on("people", () => this.renderIntro());
+    this.os.people.loadContacts();   // his profile + claim, even when the chat has never opened
     return this.win;
   }
+
+  renderIntro() { this.win.$(".aintro").textContent = intro(this.os.people.label(AUTHOR)); }
 
   async launch() {
     const win = this.window();

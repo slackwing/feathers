@@ -3495,6 +3495,7 @@ var HxH = (() => {
 
   // html/hxh/os/people.js
   var PEOPLE_URL = "/hxh/api/db/people";
+  var CONTACTS_URL = "/hxh/api/chat/contacts";
   var People = class {
     /** { fetch, bus, user: () => the signed-in account | null } */
     constructor({ fetch, bus, user } = {}) {
@@ -3555,6 +3556,18 @@ var HxH = (() => {
       for (const [u, o] of next) changed = this.put(u, o) || changed;
       if (changed) this.bus?.emit("people", {});
       return changed;
+    }
+    /** Everyone's profile + claim from the chat's contacts, without the chat open (e.g. About names Andrew). Resolves true when anything changed. */
+    async loadContacts() {
+      if (!this.fetch) return false;
+      try {
+        const r = await this.fetch(CONTACTS_URL, { credentials: "same-origin" });
+        if (!r.ok) return false;
+        const data = await r.json();
+        return this.setContacts(data?.contacts);
+      } catch {
+        return false;
+      }
     }
     put(username, { character, avatar_url } = {}) {
       const prev = this.overrides.get(username);
@@ -9459,7 +9472,8 @@ var HxH = (() => {
 
   // html/hxh/apps/about/app.js
   var PROMPTS_URL = "/hxh/about/prompts.json";
-  var INTRO = "Yes, this was AI. But it was also a lot of expertise, without which, it would not have been possible to converge to this result in ~18 hours. Here's the full set of prompts. Also, all images were cropped and placed manually by Abi.";
+  var AUTHOR = "andrew";
+  var intro = (name) => `Here were ${name}'s prompts to create this website. Plus all image selection and cropping done by Abi, because AI lacked taste.`;
   var AboutApp = class extends App {
     static id = "about";
     static name = "About";
@@ -9482,8 +9496,13 @@ var HxH = (() => {
         content: `<div class="ascroll sunken"><p class="aintro"></p><ol class="aprompts"></ol></div>`
       });
       this.os.wm.add(this.win);
-      this.win.$(".aintro").textContent = INTRO;
+      this.renderIntro();
+      this.os.bus.on("people", () => this.renderIntro());
+      this.os.people.loadContacts();
       return this.win;
+    }
+    renderIntro() {
+      this.win.$(".aintro").textContent = intro(this.os.people.label(AUTHOR));
     }
     async launch() {
       const win = this.window();
