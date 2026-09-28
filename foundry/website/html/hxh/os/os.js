@@ -326,7 +326,7 @@ export class OS {
 
   /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random; `opts` { prompt, chime }. Resolves when the viewer clicks it away. */
   showSplash(id = null, opts = {}) {
-    if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
+    if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch, small: () => !!this.env.small }).mount(this.doc.body);
     return this.splash.show(id, opts);
   }
 

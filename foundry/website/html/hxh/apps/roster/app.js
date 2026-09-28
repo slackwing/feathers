@@ -12,7 +12,10 @@ import { RosterAPI } from "./api.js";
 import { RosterWindow, FILTERS } from "./list.js";
 import { CharacterWindow, winId } from "./character.js";
 import { CropWindow, cropId } from "./crop.js";
-import { ConfirmDialog, PromptDialog, ReasonDialog, RequestDialog } from "./dialogs.js";
+import { ConfirmDialog, MessageDialog, PromptDialog, ReasonDialog, RequestDialog } from "./dialogs.js";
+
+/** What Roster DB says on a phone. */
+export const SMALL_MESSAGE = "Roster DB needs a tablet or desktop screen.";
 import { RequestsWindow, requestsId } from "./requests.js";
 
 export const LIVE_MS = 10000;   // the list re-reads itself this often while open
@@ -40,6 +43,8 @@ export class RosterApp extends App {
 
   /* ---------- the list ---------- */
   launch() {
+    // cropping and a wide table need room: on a phone it only says so (Andrew, 2026-09-28)
+    if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE }).ask(this.os).then(() => null);
     const win = this.list();
     this.os.wm.open(win.id, win.state.placed ? null : (this.os.env.floating() ? { x: 120, y: 40 } : null));
     this.refreshList();
@@ -109,7 +114,7 @@ export class RosterApp extends App {
      (by its character id); requests and crop windows are not worth waking up to. */
   key(win) { return win instanceof CharacterWindow ? win.charId : null; }
   async reopen(id, key) {
-    if (id === "win-roster") { this.launch(); return true; }
+    if (id === "win-roster") { if (this.os.env.small) return false; this.launch(); return true; }   // a phone does not bring it back
     if (key != null && id === winId(key)) { await this.openChar(key); return true; }
     return false;
   }

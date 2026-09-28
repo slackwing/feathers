@@ -720,3 +720,16 @@ test("a room window's body reads top to bottom: the log, the shared compose box,
   assert.deepEqual(sent, [{ body: "hi", image: null }], "the composer's send is the window's send");
   w.unmount();
 });
+
+test("the log keeps the newest line in view: a picture loading scrolls back down while the reader is at the bottom, not once they have scrolled up (Andrew, 2026-09-28)", () => {
+  const w = new ChatWindow({ room: "global", title: "Global chat", me: "andrew" });
+  os.wm.add(w); os.wm.open(w.id);
+  w.setMessages([{ id: 1, sender: "a", body: "hi" }, { id: 2, sender: "a", body: "", image: { id: 9, width: 800, height: 600 } }]);
+  let downs = 0; const real = w.scrollDown.bind(w); w.scrollDown = () => { downs++; real(); };
+  const img = w.$(".pic img");
+  img.dispatchEvent(new d.win.Event("load"));
+  assert.equal(downs, 1, "at the bottom: the picture's height is followed");
+  w.stuck = false;   // the reader scrolled up to read
+  img.dispatchEvent(new d.win.Event("load"));
+  assert.equal(downs, 1, "scrolled up: left where they are");
+});

@@ -265,6 +265,7 @@ var HxH = (() => {
 
   // html/hxh/os/env.js
   var DESIGN_WIDTH = 1366;
+  var SMALL_SCREEN = 600;
   var WHALE = { artW: 320, artH: 180, span: 152, center: 164, maxShare: 0.85, horizon: 0.62, scale: 5 };
   function whale(vw = 1366, vh = 900) {
     vw = Math.max(1, vw);
@@ -306,6 +307,12 @@ var HxH = (() => {
       } catch {
         return 1;
       }
+    }
+    /** A phone-size screen: its shorter side (CSS px, before the page zoom) under SMALL_SCREEN — a phone either way up,
+        never a tablet. Some apps need more room (Roster DB), and the splash suggests a bigger screen. */
+    get small() {
+      const w = this.win.innerWidth || DESIGN_WIDTH, hgt = this.win.innerHeight || 900;
+      return Math.min(w, hgt) < SMALL_SCREEN;
     }
     /** Viewport in layout pixels. */
     get width() {
@@ -1849,12 +1856,16 @@ var HxH = (() => {
       handle.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
         if (allow && !allow(e)) return;
+        const px = (v) => {
+          const n = parseFloat(v);
+          return Number.isFinite(n) ? n : null;
+        };
         pressed = true;
         moved = false;
         sx = e.clientX;
         sy = e.clientY;
-        ox = el.offsetLeft;
-        oy = el.offsetTop;
+        ox = px(el.style.left) ?? el.offsetLeft;
+        oy = px(el.style.top) ?? el.offsetTop;
         moving = threshold <= 0;
         if (moving) {
           grab(e.pointerId);
@@ -1870,7 +1881,7 @@ var HxH = (() => {
           grab(e.pointerId);
         }
         if (dx || dy) moved = true;
-        const snap = (v) => Math.round(v / 4) * 4, z = this.env.zoom();
+        const snap = (v) => Math.round(v / 4) * 4, z = this.env.zoom() * (parseFloat(el.style.zoom) || 1);
         const x = snap(ox + dx / z), y = snap(oy + dy / z);
         el.style.left = Math.min(this.desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
         el.style.top = Math.max(0, y) + "px";
@@ -3664,6 +3675,7 @@ var HxH = (() => {
   ];
   var SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
+  var BEST_VIEWED = "Best viewed on a tablet or computer";
   var STARTUP_SPLASH = "summons";
   function randomSplash(random = Math.random) {
     return SPLASH_IDS[Math.min(SPLASH_IDS.length - 1, Math.floor(random() * SPLASH_IDS.length))];
@@ -4000,6 +4012,7 @@ var HxH = (() => {
       el.dataset.style = id;
       el.hidden = false;
       const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...prompt ? { prompt } : {} });
+      if (this.props.small?.()) el.append(h("div", { className: "sp-best", text: BEST_VIEWED }));
       el.setAttribute("aria-label", prompt || "Click to start");
       el.focus?.({ preventScroll: true });
       return new Promise((resolve) => {
@@ -4498,7 +4511,7 @@ var HxH = (() => {
     }
     /** The title screen (os/splash.js): `id` one of SPLASHES, or a style at random; `opts` { prompt, chime }. Resolves when the viewer clicks it away. */
     showSplash(id = null, opts = {}) {
-      if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch }).mount(this.doc.body);
+      if (!this.splash) this.splash = new Splash({ reduced: !!this.env.reduced, sounds: this.sounds, fetch: this.fetch, small: () => !!this.env.small }).mount(this.doc.body);
       return this.splash.show(id, opts);
     }
     launch(id, opts = {}) {
@@ -4610,7 +4623,7 @@ var HxH = (() => {
       const os2 = this.os, win = this.window();
       if (!autostart) {
         const opened = await os2.wm.open(win.id, win.state.placed ? null : this.position());
-        if (!this.notice?.done) {
+        if (!this.notice || this.notice.done) {
           this.prepNotice();
           this.typeNotice();
         }
@@ -4901,6 +4914,11 @@ var HxH = (() => {
       if (!os2.env.floating()) return null;
       const w = this.props.width || 420;
       return { x: Math.max(16, (os2.env.width - w) / 2), y: Math.max(40, os2.env.height * 0.3) };
+    }
+  };
+  var MessageDialog = class extends Dialog {
+    constructor({ title = "Roster DB", message, icon: icon2 = "question" } = {}) {
+      super({ title, icon: icon2, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: "OK", primary: true }] });
     }
   };
   var ConfirmDialog = class extends Dialog {
@@ -6434,6 +6452,7 @@ var HxH = (() => {
   // html/hxh/apps/chat/window.js
   var roomSlug = (room) => room.replace(/[^a-z0-9]+/gi, "-");
   var MAX_LOG = 500;
+  var STICK_PX = 30;
   var GROUP_MS = 5 * 60 * 1e3;
   var dayKey = (iso) => {
     const d = iso ? new Date(iso) : /* @__PURE__ */ new Date();
@@ -6464,6 +6483,7 @@ var HxH = (() => {
       this.log = h("div", { className: "log", role: "log" });
       this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".status") });
       this.pane.el.classList.add("sunken", "logbox");
+      this.stickToBottom();
       this.typingEl = el.querySelector(".typing");
       this.composer = this.adopt(new Composer({ clipboard: this.props.clipboard, buttons: this.props.profile ? [{ act: "profile", label: "Profile" }] : [] }), el.querySelector(".body"), { before: el.querySelector(".status") });
       for (const ev of ["send", "image-file", "image-dialog", "clip-fail", "typing", "profile"]) this.composer.on(ev, (payload) => this.emit(ev, payload));
@@ -6555,7 +6575,7 @@ var HxH = (() => {
       const body = h("div", { className: "bd", title: cont ? this.time(m.created_at) : "" });
       if (m.body) body.append(h("span", { className: "txt", text: m.body }));
       if (m.image) {
-        body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+        body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.stuck ? this.scrollDown() : this.pane.update() })));
       }
       row.append(body);
       this.log.append(row);
@@ -6598,7 +6618,23 @@ var HxH = (() => {
     }
     scrollDown() {
       this.log.scrollTop = this.log.scrollHeight;
+      this.stuck = true;
       this.pane.update();
+    }
+    /** Keep the newest line in view (Andrew, 2026-09-28: a chat opened "at the top of the conversation"): while the
+        reader has not scrolled up, any change in the log's size — the window shown again, a picture loading, the
+        composer changing height — scrolls back to the bottom. */
+    stickToBottom() {
+      this.stuck = true;
+      this.log.addEventListener("scroll", () => {
+        this.stuck = this.log.scrollHeight - this.log.clientHeight - this.log.scrollTop < STICK_PX;
+      });
+      const RO = this.log.ownerDocument.defaultView?.ResizeObserver;
+      if (!RO) return;
+      this.resizes = new RO(() => {
+        if (this.stuck) this.scrollDown();
+      });
+      this.resizes.observe(this.log);
     }
     get messageCount() {
       return this.ids.size;
@@ -8993,6 +9029,7 @@ var HxH = (() => {
   }
 
   // html/hxh/apps/roster/app.js
+  var SMALL_MESSAGE = "Roster DB needs a tablet or desktop screen.";
   var LIVE_MS2 = 1e4;
   var WATCH = ["version", "review_status", "card_number", "open_requests", "avatar_image_id", "card_image_id", "accepted_version"];
   var RosterApp = class extends App {
@@ -9012,6 +9049,7 @@ var HxH = (() => {
     }
     /* ---------- the list ---------- */
     launch() {
+      if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE }).ask(this.os).then(() => null);
       const win = this.list();
       this.os.wm.open(win.id, win.state.placed ? null : this.os.env.floating() ? { x: 120, y: 40 } : null);
       this.refreshList();
@@ -9094,6 +9132,7 @@ var HxH = (() => {
     }
     async reopen(id, key) {
       if (id === "win-roster") {
+        if (this.os.env.small) return false;
         this.launch();
         return true;
       }

@@ -236,3 +236,17 @@ test("a slop drag (threshold): under it a press stays a click; past it the windo
   h.click();
   assert.equal(clicks, 3, "no click came, so the next real one is not eaten");
 });
+
+test("a window with its own zoom (the Binder) follows the pointer: the drag divides by both zooms and starts from its own left/top (Andrew, 2026-09-28: \"it moves a little bit then stops\")", async () => {
+  Object.defineProperty(desktop, "clientWidth", { value: 1366 });
+  const a = wm.add(new Window({ id: "z" }));
+  await wm.open("z", { x: 100, y: 100 });
+  a.el.style.zoom = "0.5";
+  // WebKit reports offsets scaled by the zoom; the drag must not start from them
+  for (const [k, v] of [["offsetLeft", 43], ["offsetTop", 43], ["offsetWidth", 700]]) Object.defineProperty(a.el, k, { value: v });
+  const bar = a.titleBar.el;
+  const ev = (t, x, y) => bar.dispatchEvent(Object.assign(new d.win.Event(t, { bubbles: true }), { button: 0, clientX: x, clientY: y, pointerId: 1 }));
+  ev("pointerdown", 100, 100); ev("pointermove", 160, 140); ev("pointerup", 160, 140);
+  assert.equal(a.el.style.left, "220px", "60 px of pointer = 120 of a half-zoomed window's own px, from its own 100");
+  assert.equal(a.el.style.top, "180px");
+});

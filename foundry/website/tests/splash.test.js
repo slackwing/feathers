@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch } from "./dom.js";
-import { Splash, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE, NIGHT_ISLAND, townWindows, litWindows, WINDOW_LIT, SEA_BANDS, SEA_HORIZON } from "../html/hxh/os/splash.js";
+import { Splash, BEST_VIEWED, SPLASHES, SPLASH_IDS, randomSplash, selectRoster, SELECT_TILES, moonRoad, GLINT_CYCLE, NIGHT_ISLAND, townWindows, litWindows, WINDOW_LIT, SEA_BANDS, SEA_HORIZON } from "../html/hxh/os/splash.js";
 import { CUES } from "../html/hxh/os/sound.js";
 import { readFileSync } from "node:fs";
 import { TOWN_X, house, ISLAND_H } from "../html/hxh/os/wallpaper.js";
@@ -198,4 +198,13 @@ test("a double-click that opened a splash does not close it: its second click (d
   assert.equal(await p, "select");
   assert.equal(s.el.hidden, true);
   s.unmount();
+});
+
+test("on a phone every splash adds the old web's courtesy line; elsewhere none (Andrew, 2026-09-28)", async () => {
+  for (const small of [true, false]) for (const id of SPLASH_IDS) {
+    const s = new Splash({ reduced: true, small: () => small }).mount(document.body);
+    const p = s.show(id);
+    assert.equal(s.el.querySelector(".sp-best")?.textContent ?? null, small ? BEST_VIEWED : null, `${id}, small=${small}`);
+    s.el.click(); await p; s.unmount();
+  }
 });

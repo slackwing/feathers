@@ -63,6 +63,13 @@ export class Dialog extends Window {
   }
 }
 
+/** A message and OK. */
+export class MessageDialog extends Dialog {
+  constructor({ title = "Roster DB", message, icon = "question" } = {}) {
+    super({ title, icon, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: "OK", primary: true }] });
+  }
+}
+
 export class ConfirmDialog extends Dialog {
   constructor({ title = "Roster DB", message, ok = "OK" } = {}) {
     super({ title, body: `<p class="q">${esc(message)}</p>`, buttons: [{ act: "ok", label: ok, primary: true }, { act: "cancel", label: "Cancel" }] });

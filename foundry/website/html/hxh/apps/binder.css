@@ -21,7 +21,8 @@
   color: var(--paper);
   user-select: none;
 }
-.book { position: relative; width: var(--bw); max-width: 100%; perspective: 1800px; perspective-origin: 50% 50%; }
+.book { position: relative; width: var(--bw); max-width: 100%; perspective: 1800px; perspective-origin: 50% 50%;
+  touch-action: none; }   /* the book is a drag handle, like a title bar: a finger drag moves the window instead of scrolling the page (Andrew, 2026-09-28: "it moves a little bit then stops") */
 
 /* ---------- the flap: front cover + its back, the card page ----------
    The cover is the front face of a leaf hinged at the CENTRE of the spine

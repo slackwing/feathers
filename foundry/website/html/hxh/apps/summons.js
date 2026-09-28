@@ -85,7 +85,7 @@ export class SummonsApp extends App {
     const os = this.os, win = this.window();
     if (!autostart) {
       const opened = await os.wm.open(win.id, win.state.placed ? null : this.position());
-      if (!this.notice?.done) { this.prepNotice(); this.typeNotice(); }   // never leave the notice blank
+      if (!this.notice || this.notice.done) { this.prepNotice(); this.typeNotice(); }   // every opening types it out again (Andrew, 2026-09-28); one still typing carries on
       void restore;
       return opened;
     }

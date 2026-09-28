@@ -61,3 +61,9 @@ test("a host without matchMedia is not reduced; zoom defaults to 1", () => {
   assert.equal(env.zoom(), 1);
   assert.equal(env.wantedZoom(), 1);
 });
+
+test("small: a phone either way up (shorter side under SMALL_SCREEN), never a tablet", () => {
+  for (const [w, h, small] of [[390, 844, true], [844, 390, true], [820, 1180, false], [1180, 820, false], [1366, 900, false]]) {
+    assert.equal(new Env(setupDom({ width: w, height: h }).win).small, small, `${w}×${h}`);
+  }
+});

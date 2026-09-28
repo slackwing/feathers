@@ -3,6 +3,8 @@
    promise-based wait. Takes the window object so tests can hand in jsdom. */
 /** The width (CSS px) the desktop was designed at. */
 export const DESIGN_WIDTH = 1366;
+/** Below this shorter side (CSS px) a screen is a phone (Env.small). */
+export const SMALL_SCREEN = 600;
 
 /* THE WHALE RULE (Andrew, 2026-09-19, third wording): the art is drawn
    at ONE fixed scale — 5 screen px per art px, what a 1366×900 screen
@@ -54,6 +56,13 @@ export class Env {
   zoom() {
     try { return parseFloat(this.win.getComputedStyle(this.win.document.body).zoom) || 1; }
     catch { return 1; }
+  }
+
+  /** A phone-size screen: its shorter side (CSS px, before the page zoom) under SMALL_SCREEN — a phone either way up,
+      never a tablet. Some apps need more room (Roster DB), and the splash suggests a bigger screen. */
+  get small() {
+    const w = this.win.innerWidth || DESIGN_WIDTH, hgt = this.win.innerHeight || 900;
+    return Math.min(w, hgt) < SMALL_SCREEN;
   }
 
   /** Viewport in layout pixels. */

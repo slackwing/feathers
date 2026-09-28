@@ -15,6 +15,8 @@ import { Composer } from "./composer.js";
 
 export const roomSlug = room => room.replace(/[^a-z0-9]+/gi, "-");
 export const MAX_LOG = 500;
+/** Within this many px of the bottom counts as reading the newest line. */
+export const STICK_PX = 30;
 export const GROUP_MS = 5 * 60 * 1000;   // messages from one sender this close together share an avatar and name line
 
 /** The day a message belongs to, in the reader's zone, and its date line. */
@@ -39,6 +41,7 @@ export class ChatWindow extends Window {
     this.log = h("div", { className: "log", role: "log" });
     this.pane = this.adopt(new ScrollPane({ content: this.log }), el.querySelector(".body"), { before: el.querySelector(".status") });   // the log, then the compose box, then the status line
     this.pane.el.classList.add("sunken", "logbox");
+    this.stickToBottom();
     this.typingEl = el.querySelector(".typing");
     // the compose box is the shared Composer (composer.js): its events are this window's events, as before
     this.composer = this.adopt(new Composer({ clipboard: this.props.clipboard, buttons: this.props.profile ? [{ act: "profile", label: "Profile" }] : [] }), el.querySelector(".body"), { before: el.querySelector(".status") });
@@ -103,7 +106,7 @@ export class ChatWindow extends Window {
     const body = h("div", { className: "bd", title: cont ? this.time(m.created_at) : "" });
     if (m.body) body.append(h("span", { className: "txt", text: m.body }));   // never hand null to DOM append(): it prints the word null
     if (m.image) {   // a picture is a block of its own under the text, scaled to fit the log
-      body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => this.pane.update() })));
+      body.append(h("div", { className: "pic" }, h("img", { src: p.imageURL?.(m.image.id) || "", width: m.image.width, height: m.image.height, loading: "lazy", alt: "", onload: () => (this.stuck ? this.scrollDown() : this.pane.update()) })));
     }
     row.append(body);
     this.log.append(row);
@@ -142,7 +145,19 @@ export class ChatWindow extends Window {
     return isNaN(d) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
-  scrollDown() { this.log.scrollTop = this.log.scrollHeight; this.pane.update(); }
+  scrollDown() { this.log.scrollTop = this.log.scrollHeight; this.stuck = true; this.pane.update(); }
+
+  /** Keep the newest line in view (Andrew, 2026-09-28: a chat opened "at the top of the conversation"): while the
+      reader has not scrolled up, any change in the log's size — the window shown again, a picture loading, the
+      composer changing height — scrolls back to the bottom. */
+  stickToBottom() {
+    this.stuck = true;
+    this.log.addEventListener("scroll", () => { this.stuck = this.log.scrollHeight - this.log.clientHeight - this.log.scrollTop < STICK_PX; });
+    const RO = this.log.ownerDocument.defaultView?.ResizeObserver;
+    if (!RO) return;
+    this.resizes = new RO(() => { if (this.stuck) this.scrollDown(); });
+    this.resizes.observe(this.log);
+  }
 
   get messageCount() { return this.ids.size; }
 }

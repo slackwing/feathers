@@ -79,3 +79,20 @@ test("the summons CTA launches the Binder; clicking the notice skips typing; rel
 });
 
 
+
+test("the Summons types its notice out again every time it is opened, not only the first (Andrew, 2026-09-28)", async () => {
+  d = setupDom({ width: 1366 });
+  os = new OS({ win: d.win, fetch: async () => ({ ok: true, json: async () => ME }), env: { reduced: false, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  await os.start({ apps: [SummonsApp, BinderApp], boot: false });
+  const app = os.registry.get("summons"), full = NOTICE.map(r => typeof r === "string" ? r : r.t).join("");
+  await os.launch("summons");
+  const w = os.wm.get("win-summons");
+  app.notice.skip();
+  assert.equal(w.$("#vn-text").textContent, full);
+  assert.ok(app.notice.done && w.$("#vn").classList.contains("done"), "typed out");
+  os.wm.close("win-summons");
+  await os.launch("summons");
+  assert.ok(!app.notice.done && !w.$("#vn").classList.contains("done"), "opening it again types it again");
+  assert.ok(w.$("#vn-text").textContent.length < full.length, "from the start");
+  app.notice.skip();
+});

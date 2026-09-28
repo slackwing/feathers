@@ -537,7 +537,7 @@ test("the book's margins drag the window; cards and controls do not", async () =
   await os.launch("binder");
   b.setRoster([mk("Gon", ["enhancement"])]);
   const w = os.wm.get("win-binder"), el = w.el;
-  el.style.left = "100px"; el.style.top = "80px";
+  el.style.left = "100px"; el.style.top = "80px"; el.style.zoom = "1";   // unscaled: wm.test covers a zoomed drag
   Object.defineProperty(el, "offsetLeft", { value: 100, configurable: true });
   Object.defineProperty(el, "offsetTop", { value: 80, configurable: true });
   Object.defineProperty(el, "offsetWidth", { value: 1000, configurable: true });
@@ -557,7 +557,7 @@ test("the closed cover drags the binder on a travelling press and opens on a sti
   await os.launch("binder");
   b.setRoster([mk("Gon", ["enhancement"])]);
   const w = os.wm.get("win-binder"), el = w.el, cover = b.$(".cover");
-  el.style.left = "100px"; el.style.top = "80px";
+  el.style.left = "100px"; el.style.top = "80px"; el.style.zoom = "1";   // unscaled: wm.test covers a zoomed drag
   Object.defineProperty(el, "offsetLeft", { value: 100, configurable: true });
   Object.defineProperty(el, "offsetTop", { value: 80, configurable: true });
   Object.defineProperty(el, "offsetWidth", { value: 1000, configurable: true });
@@ -686,4 +686,10 @@ test("a claim plate lands on the white description box, not over its edge: corne
   assert.ok(PLATE_Y[1] + (w * s) / H * 100 <= 92.8, "a leftward lean drops its left end no lower than the box's bottom");
   assert.ok(PLATE_X[1] + (h * s) / W * 100 <= 95.7, "a rightward lean pushes its top no further than the box's right edge");
   assert.ok(PLATE_X[0] - (w / W) * 100 >= 4.3, "a long name still starts inside the box");
+});
+
+test("the book is a touch drag handle: touch-action none, so a finger drag moves the window instead of scrolling the page (Andrew, 2026-09-28)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/apps/binder.css", import.meta.url), "utf8");
+  assert.match(css, /\.book \{[^}]*touch-action: none/);
 });

@@ -47,6 +47,8 @@ export const SPLASHES = [
     screen and anything else that shows it show the same thing. */
 export const SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
 export const SPLASH_IDS = SPLASHES.map(([id]) => id);
+/** Under every splash on a phone (Env.small). */
+export const BEST_VIEWED = "Best viewed on a tablet or computer";
 /** The one the site opens with: the Summons is the site's anchor (Andrew, 2026-09-27). Player Select is the Heavens Arena
     placeholder (apps/arena.js); Night lives only in Settings › Other › Splash screen. */
 export const STARTUP_SPLASH = "summons";
@@ -361,6 +363,8 @@ export class Splash extends Component {
     el.dataset.style = id;
     el.hidden = false;
     const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...(prompt ? { prompt } : {}) });
+    // on a phone, the old web's courtesy line (Andrew, 2026-09-28: "please view in a tablet or browser for the best experience")
+    if (this.props.small?.()) el.append(h("div", { className: "sp-best", text: BEST_VIEWED }));
     el.setAttribute("aria-label", prompt || "Click to start");
     el.focus?.({ preventScroll: true });
     return new Promise(resolve => {

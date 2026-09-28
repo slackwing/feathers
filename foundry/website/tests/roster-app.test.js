@@ -725,3 +725,16 @@ test("the saved desktop: the list and a character window come back (by character
   assert.equal(await a.reopen("win-roster-q-3", 3), false);
   assert.equal(await a.reopen(winId(3), 4), false, "a key that does not match the id is refused");
 });
+
+test("on a phone Roster DB only says it needs a tablet or desktop, and the saved desktop does not bring it back (Andrew, 2026-09-28)", async () => {
+  if (os.wm.has("win-roster")) os.wm.close("win-roster");
+  os.env.small = true;
+  const said = app().launch();
+  const dlg = [...document.querySelectorAll(".win.dlg")].at(-1);
+  assert.match(dlg.textContent, /needs a tablet or desktop screen/);
+  assert.equal(os.wm.get("win-roster")?.state.open ?? false, false, "no list");
+  d.click(dlg.querySelector('[data-act="ok"]'));
+  assert.equal(await said, null);
+  assert.equal(await app().reopen("win-roster"), false);
+  os.env.small = false;
+});

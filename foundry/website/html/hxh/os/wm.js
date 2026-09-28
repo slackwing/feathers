@@ -202,7 +202,9 @@ export class WindowManager {
     handle.addEventListener("pointerdown", e => {
       if (e.button !== 0 || e.target.closest?.(".tbtn") || !this.env.floating() || win.static) return;
       if (allow && !allow(e)) return;
-      pressed = true; moved = false; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
+      // start from the window's own left/top: WebKit scales offsetLeft/Top by the page zoom (Safari's drag went the wrong way)
+      const px = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
+      pressed = true; moved = false; sx = e.clientX; sy = e.clientY; ox = px(el.style.left) ?? el.offsetLeft; oy = px(el.style.top) ?? el.offsetTop;
       moving = threshold <= 0;
       // capturing now would retarget the click to the handle, so a slop press captures only once it becomes a drag
       if (moving) { grab(e.pointerId); e.preventDefault(); }
@@ -215,7 +217,9 @@ export class WindowManager {
         moving = true; grab(e.pointerId);
       }
       if (dx || dy) moved = true;
-      const snap = v => Math.round(v / 4) * 4, z = this.env.zoom();
+      // a window with its own zoom (the Binder scales itself to fit) moves `left` in ITS units: divide by both zooms,
+      // or it lags the pointer by its scale — 0.7 on a phone, where the finger ran off it (Andrew, 2026-09-28)
+      const snap = v => Math.round(v / 4) * 4, z = this.env.zoom() * (parseFloat(el.style.zoom) || 1);
       const x = snap(ox + dx / z), y = snap(oy + dy / z);
       el.style.left = Math.min(this.desktop.clientWidth - 80, Math.max(80 - el.offsetWidth, x)) + "px";
       el.style.top = Math.max(0, y) + "px";

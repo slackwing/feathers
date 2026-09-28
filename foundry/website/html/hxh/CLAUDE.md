@@ -1242,3 +1242,21 @@ stay in memory. The first sign-in on a browser moves the old per-browser
 keys (`hxh.set.*`, `hxh.crt`, `hxh.sound`) into that user's profile and
 removes them. `setUser` re-applies the theme and scanlines. Never hand a
 new store `localStorage` directly — hand it `os.profile`.
+
+## Phones (2026-09-28)
+
+- `Env.small`: the screen's shorter side under `SMALL_SCREEN` (600 CSS px)
+  — a phone either way up, never a tablet. Roster DB on a phone shows a
+  `MessageDialog` ("needs a tablet or desktop screen") instead of its list
+  and is not restored by the saved desktop; every splash adds
+  `BEST_VIEWED` ("Best viewed on a tablet or computer") at its foot.
+- Window drags (`wm.drag`) divide the pointer by the page zoom AND the
+  window's own `style.zoom` (the Binder scales itself), and start from the
+  window's own `style.left/top` — WebKit scales `offsetLeft/Top` by the
+  zoom. The Binder's `.book` is `touch-action: none` (a drag handle, like
+  a title bar) or the browser turns a finger drag into a page scroll.
+- The Summons types its notice again on every opening.
+- Chat logs stay pinned to the newest line (`stickToBottom`: a
+  ResizeObserver and picture loads rescroll unless the reader scrolled up).
+- Music on phones: browsers may refuse autoplay with sound; accepted
+  (Andrew: "it's okay if phones block music").
