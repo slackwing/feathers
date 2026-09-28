@@ -77,3 +77,14 @@ test("People.label: one rule for a member's name on this site — \"Chrollo (And
   assert.equal(m.el.querySelector(".user .name").textContent, "Chrollo (Andrew C)");
   m.close(); m.unmount();
 });
+
+test("People: a profile arriving after the claim still tells the bus (About named Andrew 'Chrollo (andrew)' on prod, 2026-09-27)", () => {
+  const heard = [];
+  const p = new People({ bus: { emit: e => heard.push(e) } });
+  p.put("andrew", { character: "Chrollo" });
+  assert.equal(p.label("andrew"), "Chrollo (andrew)");
+  assert.equal(p.setContacts([{ username: "andrew", display_name: "Andrew C", character: "Chrollo" }]), true, "the name is news");
+  assert.deepEqual(heard, ["people"]);
+  assert.equal(p.label("andrew"), "Chrollo (Andrew C)");
+  assert.equal(p.setContacts([{ username: "andrew", display_name: "Andrew C", character: "Chrollo" }]), false, "the same again is not");
+});

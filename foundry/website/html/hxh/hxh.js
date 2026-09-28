@@ -3530,7 +3530,9 @@ var HxH = (() => {
       for (const c of list || []) {
         if (!c?.username) continue;
         const { character, avatar_url, ...profile } = c;
-        this.profiles.set(c.username, { ...this.profiles.get(c.username) || {}, ...profile });
+        const prev = this.profiles.get(c.username) || {}, next = { ...prev, ...profile };
+        if (JSON.stringify(next) !== JSON.stringify(prev)) changed = true;
+        this.profiles.set(c.username, next);
         changed = this.put(c.username, { character, avatar_url }) || changed;
       }
       if (changed) this.bus?.emit("people", {});

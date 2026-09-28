@@ -59,7 +59,9 @@ export class People {
     for (const c of list || []) {
       if (!c?.username) continue;
       const { character, avatar_url, ...profile } = c;
-      this.profiles.set(c.username, { ...(this.profiles.get(c.username) || {}), ...profile });
+      const prev = this.profiles.get(c.username) || {}, next = { ...prev, ...profile };
+      if (JSON.stringify(next) !== JSON.stringify(prev)) changed = true;   // a name or colour is news too, not only a claim
+      this.profiles.set(c.username, next);
       changed = this.put(c.username, { character, avatar_url }) || changed;   // a released claim arrives without one: put() drops it
     }
     if (changed) this.bus?.emit("people", {});
