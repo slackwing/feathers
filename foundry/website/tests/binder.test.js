@@ -5,20 +5,23 @@ import { paginate, randomStamp, randomPlate, onPlate, clearOfPlate, STAMP_W, PLA
 import { OS } from "../html/hxh/os/os.js";
 
 let nextId = 1;
+// where the reader is: "claimed", "bookmark", or the page number; and the index of page 1 (the claimed and bookmark pages come first)
+const at = b => { const p = b.pages[b.page]; return p.kind === "cards" ? p.n : p.kind; };
+const page1 = b => b.pages.findIndex(p => p.kind === "cards");
 const mk = (name, nen = [], arcs = ["hunter-exam"], extra = {}) => ({ id: nextId++, name, first: name, rank: "C", nen_types: nen, arcs, arms: [], description: "First. Second.", card_description: "", ...extra });
 
-test("paginate: the claimed cards get their own pages at the end — card-number order, nine to a page, a second past nine claimants (Andrew, 2026-09-27)", () => {
+test("paginate: the claimed cards get their own pages at the FRONT — card-number order, nine to a page, a second past nine claimants (Andrew, 2026-09-27; first since 2026-09-28)", () => {
   const chars = Array.from({ length: 25 }, (_, i) => mk("c" + i, [], ["hunter-exam"], { no: i + 1 }));
   const claimed = chars.slice(0, 11).map(c => c.id).reverse();   // eleven claimants, in any order
   const pages = paginate(chars, [], claimed);
   const cl = pages.filter(p => p.kind === "claimed");
   assert.deepEqual(cl.map(p => [p.cards.length, p.n, p.of]), [[PER_PAGE, 1, 2], [2, 2, 2]]);
   assert.deepEqual(cl[0].cards.map(c => c.no).slice(0, 3), [1, 2, 3], "card-number order");
-  assert.deepEqual(pages.slice(-2).map(p => p.kind), ["claimed", "claimed"], "all the way on the right");
+  assert.deepEqual(pages.slice(0, 3).map(p => p.kind), ["claimed", "claimed", "bookmark"], "the first tabs, then the bookmarks");
   assert.deepEqual(paginate(chars, [], []).filter(p => p.kind === "claimed").map(p => p.cards.length), [0], "nobody has claimed yet: one empty claimed page");
 });
 
-test("the tabs: 31 book pixels each (was 40), so fourteen fit one row of the page's 474 — the claimed tab sits all the way right with a red checkmark (Andrew, 2026-09-27)", async () => {
+test("the tabs: 31 book pixels each (was 40), so fourteen fit one row of the page's 474 — the claimed tab leads the row, a yellow star (Andrew, 2026-09-28: no tab floating off to the right)", async () => {
   const fs = await import("node:fs");
   const css = fs.readFileSync(new URL("../html/hxh/apps/binder.css", import.meta.url), "utf8");
   const w = +css.match(/\.tab \{[^}]*?width: (\d+)px/)[1];
@@ -26,26 +29,26 @@ test("the tabs: 31 book pixels each (was 40), so fourteen fit one row of the pag
   const row = 3 * 150 + 2 * 12 + 2 * 20 - 2 * 20;   // the page's width less the strip's insets
   assert.equal(w, 31);
   assert.ok(14 * w + 13 * gap <= row, `fourteen tabs fit one row: ${14 * w + 13 * gap} of ${row}`);
-  assert.match(css, /\.tab\.claimed\.first \{[^}]*margin-left: auto/, "the first claimed tab is pushed to the right end");
+  assert.doesNotMatch(css, /margin-left: auto/, "no tab pushed off to the right");
   const { hasIconPair, ICONS } = await import("../html/hxh/os/icons.js");
-  assert.ok(hasIconPair("check") && ICONS.check.join("").includes("r"), "a 16×16 red checkmark");
+  assert.ok(hasIconPair("star") && ICONS.star.join("").includes("Y") && !ICONS.star.join("").includes("r"), "a 16×16 yellow star, no red");
 });
 
-test("paginate: a bookmark page always comes first (empty or not, one per PER_PAGE bookmarks), then PER_PAGE cards a page in card-number order (a duplicate number keeps id order)", () => {
+test("paginate: after the claimed page, a bookmark page always (empty or not, one per PER_PAGE bookmarks), then PER_PAGE cards a page in card-number order (a duplicate number keeps id order)", () => {
   const chars = Array.from({ length: PER_PAGE + 2 }, (_, i) => mk("c" + i, i % 2 ? ["enhancement"] : [], ["hunter-exam"], { no: PER_PAGE + 2 - i }));   // numbers run against ids
   const pages = paginate(chars);
   assert.equal(pages.length, 4);
-  assert.deepEqual(pages.map(p => p.kind), ["bookmark", "cards", "cards", "claimed"], "the claimed page comes last, always at least one");
-  assert.deepEqual([pages[0].cards.length, pages[0].n, pages[0].of], [0, 1, 1], "no bookmarks: one empty bookmark page");
-  assert.deepEqual([pages[1].n, pages[1].of, pages[2].n, pages[2].of], [1, 2, 2, 2], "card pages number from 1 on their own");
-  assert.deepEqual(pages[1].cards.map(c => c.no), Array.from({ length: PER_PAGE }, (_, i) => i + 1));
-  assert.deepEqual(pages[2].cards.map(c => c.no), [PER_PAGE + 1, PER_PAGE + 2]);
-  assert.deepEqual(paginate([]).map(p => p.kind), ["bookmark", "claimed"], "an empty binder still has its bookmark page and its claimed page");
+  assert.deepEqual(pages.map(p => p.kind), ["claimed", "bookmark", "cards", "cards"], "the claimed page comes first, always at least one");
+  assert.deepEqual([pages[1].cards.length, pages[1].n, pages[1].of], [0, 1, 1], "no bookmarks: one empty bookmark page");
+  assert.deepEqual([pages[2].n, pages[2].of, pages[3].n, pages[3].of], [1, 2, 2, 2], "card pages number from 1 on their own");
+  assert.deepEqual(pages[2].cards.map(c => c.no), Array.from({ length: PER_PAGE }, (_, i) => i + 1));
+  assert.deepEqual(pages[3].cards.map(c => c.no), [PER_PAGE + 1, PER_PAGE + 2]);
+  assert.deepEqual(paginate([]).map(p => p.kind), ["claimed", "bookmark"], "an empty binder still has its claimed page and its bookmark page");
   const marked = paginate(chars, chars.slice(0, PER_PAGE + 1).map(c => c.id));
-  assert.deepEqual(marked.slice(0, 2).map(p => [p.kind, p.cards.length, p.n, p.of]), [["bookmark", PER_PAGE, 1, 2], ["bookmark", 1, 2, 2]], "ten bookmarks: two bookmark pages");
-  assert.deepEqual(marked[0].cards.map(c => c.no).slice(0, 3), [2, 3, 4], "bookmarks keep card-number order (ids 1–10 carry numbers 11 down to 2)");
+  assert.deepEqual(marked.slice(1, 3).map(p => [p.kind, p.cards.length, p.n, p.of]), [["bookmark", PER_PAGE, 1, 2], ["bookmark", 1, 2, 2]], "ten bookmarks: two bookmark pages");
+  assert.deepEqual(marked[1].cards.map(c => c.no).slice(0, 3), [2, 3, 4], "bookmarks keep card-number order (ids 1–10 carry numbers 11 down to 2)");
   const dup = [mk("a", [], [], { no: 2 }), mk("b", [], [], { no: 2 }), mk("c", [], [], { no: 1 })];
-  assert.deepEqual(paginate(dup)[1].cards.map(c => c.name), ["c", "a", "b"]);
+  assert.deepEqual(paginate(dup)[2].cards.map(c => c.name), ["c", "a", "b"]);
   assert.equal(TYPES.length, 7);
 });
 
@@ -209,9 +212,11 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
     ...Array.from({ length: PER_PAGE - 2 }, (_, i) => mk("filler" + i, [], ["hunter-exam"], { card_number: 4 + i })),
   ]);
   assert.equal(b.pages.length, 4);
-  const tabs = b.$(".tabs").querySelectorAll(".tab");
-  assert.deepEqual([...tabs].map(t => t.classList.contains("bm") ? "bm" : t.classList.contains("claimed") ? "claimed" : t.textContent), ["bm", "1", "2", "claimed"]);
-  assert.deepEqual([...tabs].map(t => t.title), ["Bookmarks", "Page 1 of 2", "Page 2 of 2", "Claimed"]);
+  const all = b.$(".tabs").querySelectorAll(".tab");
+  assert.deepEqual([...all].map(t => t.classList.contains("bm") ? "bm" : t.classList.contains("claimed") ? "claimed" : t.textContent), ["claimed", "bm", "1", "2"]);
+  assert.deepEqual([...all].map(t => t.title), ["Claimed", "Bookmarks", "Page 1 of 2", "Page 2 of 2"]);
+  assert.ok(all[0].querySelector("svg"), "the claimed tab wears the star");
+  const tabs = [...all].slice(1);   // bookmarks, 1, 2: the indexes below
   assert.ok(tabs[0].querySelector("svg"), "the bookmark tab wears the icon");
   assert.ok(tabs[1].classList.contains("on"), "no bookmarks: the binder opens on page 1");
   d.click(tabs[0]);
@@ -243,7 +248,7 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   assert.match(scr.querySelector(".status").textContent, /残り 1枚/);
   assert.equal(scr.querySelector(".desc").textContent, "First. Second.");
   d.click(b.$('[data-dir="down"]'));   // the next card on the page
-  assert.equal(b.page, 1);
+  assert.equal(at(b), 1);
   assert.equal(b.selected.name, "Killua Zoldyck");
   const k = b.$(".cards .card.on .gicard");
   assert.equal(k.querySelector(".gi-panel.no .gi-txt").textContent, "002");
@@ -252,18 +257,18 @@ test("roster → tabs, pages, printed cards; selection drives the screen; D-pad 
   d.click(b.$('[data-dir="up"]'));
   assert.equal(b.selected.name, "Gon Freecss");
   d.click(b.$('[data-dir="right"]'));
-  assert.equal(b.page, 2);
+  assert.equal(at(b), 2);
   assert.equal(b.selected, null);     // selection cleared when its page leaves
   assert.equal(b.$(".cards").querySelectorAll(".card").length, 1);
   assert.equal(b.$(".cards").querySelectorAll(".slot").length, PER_PAGE - 1);
   assert.ok(b.$(".cards .card .gicard .gi-nopic"), "no picture at all: the hatched window");
   assert.ok(tabs[2].classList.contains("on") && !tabs[1].classList.contains("on"));
   d.click(b.$('[data-dir="left"]'));
-  assert.equal(b.page, 1);
+  assert.equal(at(b), 1);
   d.click(tabs[2]);
-  assert.equal(b.page, 2);
+  assert.equal(at(b), 2);
   d.click(tabs[1]);
-  assert.equal(b.page, 1);
+  assert.equal(at(b), 1);
 });
 
 const settle = () => new Promise(r => setTimeout(r, 30));
@@ -282,7 +287,7 @@ test("the panel keys: heart, bookmark, Claim and ? — Claim (off until registra
   assert.ok(!b.$('[data-act="become"]') && !b.$('[data-act="shut"]'));
   nextId = 1;
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 })]);
-  b.showPage(1);
+  b.showPage(page1(b));
   d.click(b.$(".cards .card"));
   assert.deepEqual(keys.map(k => k.disabled), [false, false, false, false]);
   d.click(keys[3]);
@@ -302,7 +307,7 @@ test("a claim: the question with Claim / Not Yet / Bookmark Instead; a claim pri
   nextId = 1;
   b.me = "a";
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 }), mk("Leorio", [], ["hunter-exam"], { card_number: 3 })]);
-  b.showPage(1);
+  b.showPage(page1(b));
   const card = id => b.$(`.cards .card[data-id="${id}"]`);
   const claim = b.$('[data-act="claim"]');
   d.click(card(1));
@@ -370,7 +375,7 @@ test("a live re-read keeps the selected card and does not retype the screen; an 
   nextId = 1;
   const roster = [mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })];
   b.setRoster(roster);
-  b.showPage(1);
+  b.showPage(page1(b));
   d.click(b.$('.cards .card[data-id="2"]'));
   assert.equal(b.selected.id, 2);
   const scr = b.$(".screen").innerHTML, el = b.$('.cards .card[data-id="2"]');
@@ -391,7 +396,7 @@ test("an iPad turning — the Binder's or the desktop's zoom changes — rebuild
   await tick();
   nextId = 1;
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })]);
-  b.showPage(1);
+  b.showPage(page1(b));
   d.click(b.$('.cards .card[data-id="2"]'));
   const scr = b.$(".screen").innerHTML, el = () => b.$('.cards .card[data-id="2"]'), first = el();
   b.layout();   // a resize that changes nothing
@@ -422,18 +427,18 @@ test("a heart: one per reader per card, toggled; the key lights while mine is on
   stampsDb.hearts = [{ char_id: 1, x: 60, y: 10, rotation: -12 }];   // someone else's heart, already there
   b.stamps = JSON.parse(JSON.stringify(stampsDb));
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })]);
-  b.showPage(1);
+  b.showPage(page1(b));
   const gon = () => b.$('.cards .card[data-id="1"]');
   const stamps = () => [...gon().querySelectorAll(".gi-band .gi-stamps .gi-stamp")];
   assert.equal(stamps().length, 1, "the other reader's heart shows");
   assert.deepEqual([stamps()[0].style.left, stamps()[0].style.top, stamps()[0].style.transform], ["60%", "10%", "rotate(-12deg)"]);
   stampsDb.hearts.push({ char_id: 1, x: 70, y: 70, rotation: 5 });   // a heart saved on the plate: drawn clear of it
   b.stamps = JSON.parse(JSON.stringify(stampsDb));
-  b.showPage(1);
+  b.showPage(page1(b));
   assert.deepEqual(stamps().map(s => [s.style.left, s.style.top]), [["60%", "10%"], ["70%", "49.5%"]]);
   stampsDb.hearts.pop();
   b.stamps = JSON.parse(JSON.stringify(stampsDb));
-  b.showPage(1);
+  b.showPage(page1(b));
   d.click(gon());
   const heart = b.$('[data-act="heart"]');
   assert.ok(!heart.classList.contains("lit"));
@@ -461,7 +466,7 @@ test("a bookmark: private, toggled; the card appears on the bookmark tab, and le
   await tick();   // the launch-time load (an empty roster) settles first
   nextId = 1;
   b.setRoster([mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })]);
-  b.showPage(1);
+  b.showPage(page1(b));
   d.click(b.$('.cards .card[data-id="2"]'));
   const bm = b.$('[data-act="bookmark"]');
   d.click(bm);
@@ -469,10 +474,10 @@ test("a bookmark: private, toggled; the card appears on the bookmark tab, and le
   assert.deepEqual(JSON.parse(fetched.filter(f => f.url === "/hxh/api/db/chars/2/stamp").at(-1).init.body), { kind: "bookmark", x: 0, y: 0, rotation: 0 });
   assert.ok(bm.classList.contains("lit"));
   assert.equal(b.selected.id, 2, "still selected after the re-page");
-  assert.equal(b.page, 1, "bookmarking does not turn the page");
-  assert.deepEqual(b.pages[0].cards.map(c => c.id), [2]);
+  assert.equal(at(b), 1, "bookmarking does not turn the page");
+  assert.deepEqual(b.pages.find(p => p.kind === "bookmark").cards.map(c => c.id), [2]);
   d.click(b.$(".tabs .tab.bm"));
-  assert.equal(b.page, 0);
+  assert.equal(at(b), "bookmark");
   assert.deepEqual([...b.$(".cards").querySelectorAll(".card")].map(c => c.dataset.id), ["2"]);
   assert.ok(!b.$(".cards .hint"));
   d.click(b.$('.cards .card[data-id="2"]'));
@@ -491,17 +496,40 @@ test("the book always opens on page 1, never the bookmarks (Andrew, 2026-09-27);
   nextId = 1;
   const roster = [mk("Gon", ["enhancement"], ["hunter-exam"], { card_number: 1 }), mk("Killua", [], ["hunter-exam"], { card_number: 2 })];
   b.setRoster(roster);
-  assert.equal(b.page, 1, "no bookmarks: page 1");
+  assert.equal(at(b), 1, "no bookmarks: page 1");
   b.stamps = { hearts: [], hearts_mine: [], bookmarks: [2] };
   b.setRoster(roster);
-  assert.equal(b.page, 1, "a reload keeps page 1 even once a bookmark exists");
+  assert.equal(at(b), 1, "a reload keeps page 1 even once a bookmark exists");
   b.page = null; b.chose = false; b.sig = null;   // as at a fresh open
   b.setRoster(roster);
-  assert.equal(b.page, 1, "a reader with bookmarks still opens on page 1");
+  assert.equal(at(b), 1, "a reader with bookmarks still opens on page 1");
   d.click(b.$(".tabs .tab.bm"));
   b.stamps = { hearts: [], hearts_mine: [], bookmarks: [] };
   b.setRoster(roster);
-  assert.equal(b.page, 0, "they turned to the bookmark tab themselves: an empty one still stays");
+  assert.equal(at(b), "bookmark", "they turned to the bookmark tab themselves: an empty one still stays");
+});
+
+test("a live re-read keeps the page by what it is, not its index: a tenth claim adds a claimed page in front and the reader stays on their page (2026-09-28)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  await tick();
+  nextId = 1;
+  const roster = Array.from({ length: 4 * PER_PAGE }, (_, i) => mk("c" + i, [], ["hunter-exam"], { card_number: i + 1 }));
+  const claims = n => roster.slice(0, n).map((c, i) => ({ char_id: c.id, username: "u" + i, x: 88, y: 82, rotation: 0 }));
+  b.stamps = { hearts: [], hearts_mine: [], bookmarks: [], claims: claims(PER_PAGE) };
+  b.setRoster(roster);
+  b.go(b.pages.findIndex(p => p.kind === "cards" && p.n === 3));
+  assert.equal(at(b), 3);
+  b.stamps = { ...b.stamps, claims: claims(PER_PAGE + 1) };
+  b.setRoster(roster);
+  assert.equal(b.pages.filter(p => p.kind === "claimed").length, 2, "a second claimed page, in front");
+  assert.equal(at(b), 3, "still page 3");
+  b.go(1);   // claimed 2 of 2
+  assert.equal(at(b), "claimed");
+  b.stamps = { ...b.stamps, claims: claims(PER_PAGE) };
+  b.setRoster(roster);
+  assert.equal(at(b), "claimed", "claimed 2 went away: the last claimed page");
+  assert.equal(b.pages.filter(p => p.kind === "claimed").length, 1);
 });
 
 test("the book's margins drag the window; cards and controls do not", async () => {

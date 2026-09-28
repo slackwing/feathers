@@ -91,14 +91,14 @@ export const firstSentence = s => (String(s || "").match(/^[^.!?]*[.!?]/) || [s 
 export const cardText = c => c.card_description || firstSentence(c.description);
 
 /**
- * The pages: the reader's bookmarks first (always at least one page, empty
- * or not — Andrew, 2026-09-21), then every card PER_PAGE to a page in
- * card-number order (a duplicate number keeps id order), then the CLAIMED
- * cards, PER_PAGE to a page, last (always at least one page — Andrew,
- * 2026-09-27: "all the way on the right… a thick red checkmark, to show
- * claimed cards", a second page past nine claimants). Each page is a tab;
- * bookmark pages wear the bookmark icon, claimed pages the checkmark, the
- * rest their number.
+ * The pages: the CLAIMED cards first (always at least one page — Andrew,
+ * 2026-09-27, a second page past nine claimants; 2026-09-28: moved from the
+ * far right to the front, "so there's no tab floating to the right anymore"),
+ * then the reader's bookmarks (always at least one page, empty or not —
+ * 2026-09-21), then every card PER_PAGE to a page in card-number order (a
+ * duplicate number keeps id order). Each page is a tab: claimed pages wear a
+ * yellow star, bookmark pages the bookmark, the rest their number. The book
+ * still opens on page 1 (setRoster).
  */
 export function paginate(chars, bookmarks = [], claimed = []) {
   const sorted = [...chars].sort((a, b) => (a.no ?? a.id) - (b.no ?? b.id) || a.id - b.id);
@@ -109,11 +109,11 @@ export function paginate(chars, bookmarks = [], claimed = []) {
     for (const p of out.slice(from)) p.of = out.length - from;
   };
   const marked = new Set(bookmarks), taken = new Set(claimed);
+  group("claimed", sorted.filter(c => taken.has(c.id)));
   group("bookmark", sorted.filter(c => marked.has(c.id)));
   const first = out.length;
   for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ kind: "cards", cards: sorted.slice(i, i + PER_PAGE), n: out.length - first + 1 });
   for (const p of out.slice(first)) p.of = out.length - first;
-  group("claimed", sorted.filter(c => taken.has(c.id)));
   return out;
 }
 
@@ -288,12 +288,17 @@ export class BinderApp extends App {
     if (sig === this.sig && this.page != null) return;
     this.sig = sig;
     this.roster = roster;
+    const was = this.page == null ? null : this.pages[this.page];
     this.pages = paginate(this.roster, this.stamps.bookmarks, (this.stamps.claims || []).map(c => c.char_id));
     this.renderTabs();
-    const last = this.pages.length - 1, first = Math.max(0, this.pages.findIndex(p => p.kind !== "bookmark"));
-    const auto = this.page == null || (!this.chose && this.page < first);
+    // the page is kept by what it IS (claimed 2, page 3), not its index: a tenth claim or a tenth bookmark adds a
+    // page in FRONT of the numbered ones and would otherwise slide the reader back a page on a live re-read
+    const first = Math.max(0, this.pages.findIndex(p => p.kind === "cards"));   // page 1, past the claimed and bookmark pages
+    const kind = was && this.pages.filter(p => p.kind === was.kind);
+    const same = kind?.length ? kind[Math.min(was.n, kind.length) - 1] : null;
+    const auto = !same || (!this.chose && was.kind !== "cards");
     const keep = this.sel && this.roster.find(c => c.id === this.sel.id);
-    this.showPage(auto ? first : Math.min(this.page, last), keep);
+    this.showPage(auto ? first : this.pages.indexOf(same), keep);
   }
 
   /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */
@@ -465,7 +470,7 @@ export class BinderApp extends App {
       tabs.append(p.kind === "bookmark"
         ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) })
         : p.kind === "claimed"
-          ? h("button", { type: "button", className: "tab claimed" + (p.n === 1 ? " first" : ""), html: icon("check", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) })
+          ? h("button", { type: "button", className: "tab claimed", html: icon("star", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) })
           : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
     });
   }

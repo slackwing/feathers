@@ -2724,14 +2724,11 @@ html[data-theme=seapumpkin-pastel] {
 .tab.claimed {
   padding: 4px 0 0;
 }
-.tab.claimed.first {
-  margin-left: auto;
-}
 .tab.claimed svg {
   width: 14px;
   height: 14px;
   image-rendering: pixelated;
-  opacity: .85;
+  opacity: .92;
 }
 .tab.claimed.on svg {
   opacity: 1;

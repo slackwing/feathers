@@ -264,8 +264,7 @@
 /* the empty bookmark page */
 .cards .hint { grid-column: 1 / -1; grid-row: 2; align-self: center; text-align: center; color: rgba(255,255,255,.55); font: 700 12px/1.6 "Zen Kaku Gothic New", "Helvetica Neue", Arial, sans-serif; letter-spacing: .06em; padding: 0 20px; }
 .tab.bm, .tab.claimed { padding: 4px 0 0; }
-.tab.claimed.first { margin-left: auto; }   /* the claimed pages sit all the way on the right */
-.tab.claimed svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .85; }
+.tab.claimed svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .92; }   /* a YELLOW star, so barely dimmed (Andrew, 2026-09-28) */
 .tab.claimed.on svg { opacity: 1; }
 .tab.bm svg { width: 14px; height: 14px; image-rendering: pixelated; opacity: .8; }
 .tab.bm.on svg { opacity: 1; }

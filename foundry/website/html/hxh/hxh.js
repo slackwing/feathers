@@ -343,8 +343,13 @@ var HxH = (() => {
     L: "#d8d4cc",
     M: "#5c0716",
     P: "#6e6a84",
-    B: "#1c95c4"
-    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side
+    B: "#1c95c4",
+    V: "#2457d6",
+    J: "#1d9a3c",
+    F: "#12592a",
+    A: "#e6a100",
+    Y: "#ffd21f"
+    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow
   };
   var ICONS = {
     // the Hunter × Halloween ×, after the show's logo: a bold red cross, ink-edged
@@ -935,9 +940,9 @@ var HxH = (() => {
       "................",
       "..kkkkkkkkkkkk..",
       ".kLLLLLLLLLLLLk.",
-      "kLLsLLLLLLLLbLLk",
-      "kLsssLLLLLLgLrLk",
-      "kLLsLLPLLPLLyLLk",
+      "kLLsLLLLLLLLVLLk",
+      "kLsssLLLLLLJLrLk",
+      "kLLsLLPLLPLLALLk",
       "kLLLLLLLLLLLLLLk",
       ".kLLLLkkkkLLLLk.",
       "..kkkk....kkkk..",
@@ -965,23 +970,23 @@ var HxH = (() => {
       "..kk........kk..",
       "................"
     ],
-    // the Binder's claimed pages: a thick red checkmark, ink-edged
-    check: [
-      "................",
-      "............kkkk",
-      "...........krrrk",
-      "..........krrrk.",
-      ".........krrrk..",
-      "........krrrk...",
-      ".kkk...krrrk....",
-      "krrrk.krrrk.....",
-      "krrrrkrrrk......",
-      ".krrrrrrrk......",
-      "..krrrrrk.......",
-      "...krrrk........",
-      "....kkk.........",
-      "................",
-      "................",
+    star: [
+      // the binder's Claimed tab (Andrew, 2026-09-28: a yellow star, not the red check)
+      ".......kk.......",
+      "......kaak......",
+      "......kaYk......",
+      ".....kaYYYk.....",
+      "kkkkkkaYYYYkkkkk",
+      "kaaYYYYYYYYYYYAk",
+      ".kaYYYYYYYYYYAk.",
+      "..kYYYYYYYYYAk..",
+      "...kYYYYYYYAk...",
+      "...kYYYYYYYAk...",
+      "..kYYYYkkYYYAk..",
+      "..kYYYk..kYYAk..",
+      ".kYYYk....kYAAk.",
+      ".kYYk......kAAk.",
+      ".kkk........kkk.",
       "................"
     ],
     sound: [
@@ -1114,12 +1119,12 @@ var HxH = (() => {
       "....................",
       "..kkkkkkkkkkkkkkkk..",
       ".kLLLLLLLLLLLLLLLLk.",
-      "kLLLssLLLLLLLLbbLLLk",
-      "kLLLssLLLLLLLLbbLLLk",
-      "kLssssssLLLLggLLrrLk",
-      "kLssssssLLLLggLLrrLk",
-      "kLLLssLLLLLLLLyyLLLk",
-      "kLLLssLLPLLPLLyyLLLk",
+      "kLLLssLLLLLLLLlVLLLk",
+      "kLLLssLLLLLLLLVNLLLk",
+      "kLssssssLLLLgJLLhrLk",
+      "kLssssssLLLLJFLLrmLk",
+      "kLLLssLLLLLLLLyALLLk",
+      "kLLLssLLPLLPLLAtLLLk",
       ".kLLLLLLkkkkLLLLLLk.",
       "..kkkkkk....kkkkkk..",
       "....................",
@@ -4918,11 +4923,11 @@ var HxH = (() => {
       for (const p of out.slice(from)) p.of = out.length - from;
     };
     const marked = new Set(bookmarks), taken = new Set(claimed);
+    group("claimed", sorted.filter((c) => taken.has(c.id)));
     group("bookmark", sorted.filter((c) => marked.has(c.id)));
     const first = out.length;
     for (let i = 0; i < sorted.length; i += PER_PAGE) out.push({ kind: "cards", cards: sorted.slice(i, i + PER_PAGE), n: out.length - first + 1 });
     for (const p of out.slice(first)) p.of = out.length - first;
-    group("claimed", sorted.filter((c) => taken.has(c.id)));
     return out;
   }
   var CARD_W = 150;
@@ -5129,12 +5134,15 @@ var HxH = (() => {
       if (sig === this.sig && this.page != null) return;
       this.sig = sig;
       this.roster = roster;
+      const was = this.page == null ? null : this.pages[this.page];
       this.pages = paginate(this.roster, this.stamps.bookmarks, (this.stamps.claims || []).map((c) => c.char_id));
       this.renderTabs();
-      const last = this.pages.length - 1, first = Math.max(0, this.pages.findIndex((p) => p.kind !== "bookmark"));
-      const auto = this.page == null || !this.chose && this.page < first;
+      const first = Math.max(0, this.pages.findIndex((p) => p.kind === "cards"));
+      const kind = was && this.pages.filter((p) => p.kind === was.kind);
+      const same = kind?.length ? kind[Math.min(was.n, kind.length) - 1] : null;
+      const auto = !same || !this.chose && was.kind !== "cards";
       const keep = this.sel && this.roster.find((c) => c.id === this.sel.id);
-      this.showPage(auto ? first : Math.min(this.page, last), keep);
+      this.showPage(auto ? first : this.pages.indexOf(same), keep);
     }
     /** The reader turns to a page (a tab, the D-pad): from now on reloads keep their place. */
     go(i) {
@@ -5353,7 +5361,7 @@ var HxH = (() => {
       const tabs = this.$(".tabs");
       tabs.replaceChildren();
       this.pages.forEach((p, i) => {
-        tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : p.kind === "claimed" ? h("button", { type: "button", className: "tab claimed" + (p.n === 1 ? " first" : ""), html: icon("check", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
+        tabs.append(p.kind === "bookmark" ? h("button", { type: "button", className: "tab bm", html: icon("bookmark", 16), title: "Bookmarks" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : p.kind === "claimed" ? h("button", { type: "button", className: "tab claimed", html: icon("star", 16), title: "Claimed" + (p.of > 1 ? ` ${p.n} of ${p.of}` : ""), onclick: () => this.go(i) }) : h("button", { type: "button", className: "tab", text: String(p.n), title: `Page ${p.n} of ${p.of}`, onclick: () => this.go(i) }));
       });
     }
     showPage(i, keep = null) {

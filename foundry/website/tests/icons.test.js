@@ -101,9 +101,26 @@ test("the Beetle and the game pad are mirror-symmetric in outline at both sizes 
   const pad = DESK.arena, cells = ch => pad.flatMap((r, y) => [...r].map((c, x) => c === ch ? [x, y] : null)).filter(Boolean);
   const d = cells("s"), xs = d.map(p => p[0]), ys = d.map(p => p[1]);
   const mid = v => (Math.min(...v) + Math.max(...v)) / 2;
-  assert.equal(mid(ys), (Math.min(...cells("b").map(p => p[1])) + Math.max(...cells("y").map(p => p[1]))) / 2, "D-pad and buttons share a middle row");
-  const btn = ["b", "g", "r", "y"].flatMap(cells).map(p => p[0]);
-  assert.equal(mid(xs) + mid(btn), 19, "D-pad and buttons mirror about the pad's middle");
+  // the buttons: every coloured cell right of the middle (not the outline, the body or the grey pills)
+  const btn = pad.flatMap((r, y) => [...r].map((c, x) => x >= 10 && !".kLP".includes(c) ? [x, y] : null)).filter(Boolean);
+  assert.equal(mid(ys), mid(btn.map(p => p[1])), "D-pad and buttons share a middle row");
+  assert.equal(mid(xs) + mid(btn.map(p => p[0])), 19, "D-pad and buttons mirror about the pad's middle");
+  // the four Super Famicom colours, one each — blue, green, red, gold — and every button edged dark enough to stand off the pale body
+  // (Andrew, 2026-09-28: "why are there two green buttons" — X was a pale cyan beside the green — "give them better contrast")
+  const { PAL } = await import("../html/hxh/os/icons.js");
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const hue = hex => { const [r, g, b] = rgb(hex), mx = Math.max(r, g, b), d = mx - Math.min(r, g, b);
+    return 60 * (mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4); };
+  const lum = hex => { const [r, g, b] = rgb(hex).map(c => c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4); return .2126 * r + .7152 * g + .0722 * b; };
+  const ratio = (a, b) => { const [lo, hi] = [lum(a), lum(b)].sort((x, y) => x - y); return (hi + .05) / (lo + .05); };
+  const want = { X: [200, 250], Y: [100, 160], A: [335, 375], B: [35, 60] };   // blue, green, red (wrapping past 360), gold
+  for (const [name, [x, y]] of Object.entries({ X: [14, 7], Y: [12, 9], A: [16, 9], B: [14, 11] })) {
+    const four = [pad[y][x], pad[y][x + 1], pad[y + 1][x], pad[y + 1][x + 1]].map(c => PAL[c]);   // a 2×2: light, main, main, shadow
+    const hh = hue(four[1]), h2 = hh < 90 && want[name][1] > 360 ? hh + 360 : hh;
+    assert.ok(h2 >= want[name][0] && h2 <= want[name][1], `${name} (${four[1]}) is off its colour: hue ${hh.toFixed(0)}`);
+    assert.ok(ratio(four[3], PAL.L) >= 3, `${name}'s shadow ${four[3]} is too faint on the body`);
+    assert.ok(ratio(four[1], PAL.L) >= 1.5, `${name}'s face ${four[1]} is too faint on the body`);
+  }
 });
 
 test("the Binder's desktop icon is 2 px shorter at the bottom, its lower gold tab up with it; the tools icon replaces the bug at both sizes (Andrew, 2026-09-27)", async () => {
