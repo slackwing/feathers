@@ -137,7 +137,21 @@ test("the Binder's desktop icon is 2 px shorter at the bottom, its lower gold ta
   const gold = rows.filter(([r]) => r.includes("G")).map(([, i]) => i);
   assert.deepEqual(gold, [3, 4, 5, 12, 13, 14], "the lower tab up by 2");
   assert.ok(!DESK.bug && !ICONS.bug, "no bug icon left");
-  for (const g of [ICONS.tools, DESK.tools]) assert.ok(g && g.every(r => r.length === g.length) && /t/.test(g.join("")) && /n/.test(g.join("")), "a wooden handle and steel");
+  // Andrew's reference (2026-09-28): an orange wrench on top of a screwdriver with a blue handle and a red shaft — the three colours at both sizes,
+  // the wrench's ring keeping a see-through hole, and no fill left one diagonal wide (a lone diagonal checkerboards against the ink)
+  for (const g of [ICONS.tools, DESK.tools]) {
+    assert.ok(g && g.every(r => r.length === g.length), "square");
+    for (const c of "ORU") assert.ok(g.join("").includes(c), `the reference's ${c} is there`);
+    const n = g.length, at = (x, y) => (x < 0 || y < 0 || x >= n || y >= n ? "." : g[y][x]);
+    // an enclosed see-through region in the bottom-right quarter: flood the transparent cells from there; one that never reaches the border is the hole
+    const enclosed = (x0, y0) => { const seen = new Set([x0 + "," + y0]), todo = [[x0, y0]];
+      while (todo.length) { const [x, y] = todo.pop(); if (x === 0 || y === 0 || x === n - 1 || y === n - 1) return false;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = x + dx + "," + (y + dy); if (!seen.has(k) && at(x + dx, y + dy) === ".") { seen.add(k); todo.push([x + dx, y + dy]); } } }
+      return true; };
+    let hole = false;
+    for (let y = n >> 1; y < n; y++) for (let x = n >> 1; x < n; x++) if (at(x, y) === "." && enclosed(x, y)) hole = true;
+    assert.ok(hole, "the ring's hole shows the desktop through it");
+  }
 });
 
 test("desktop icons fill a column down to just above the taskbar, then wrap into the next; resizing reflows them (Andrew, 2026-09-27)", async () => {

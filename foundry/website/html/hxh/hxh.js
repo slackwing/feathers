@@ -362,8 +362,11 @@ var HxH = (() => {
     A: "#e6a100",
     Y: "#ffd21f",
     I: "#7d7871",
-    D: "#3b3835"
-    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow, the D-pad's lit top and shadowed underside
+    D: "#3b3835",
+    O: "#f7941d",
+    R: "#ff5023",
+    U: "#006df0"
+    // binder board edge, emblem ring, Beetle antenna / controller body, Beetle seam, controller pills, the DB drum's shaded side, the pad's blue button, its deeper green and amber (contrast on the pale body — Andrew, 2026-09-28), the Claimed star's sunny yellow, the D-pad's lit top and shadowed underside, the tools' wrench / screwdriver shaft / handle (Andrew's reference, 2026-09-28)
   };
   var ICONS = {
     // the Hunter × Halloween ×, after the show's logo: a bold red cross, ink-edged
@@ -965,24 +968,25 @@ var HxH = (() => {
       "................",
       "................"
     ],
-    // Report a Bug: a hammer and a wrench crossed, like Windows' maintenance tools (Andrew, 2026-09-27: the bug was too like BeetleChat's beetle)
+    // Report a Bug: a wrench over a screwdriver, after Andrew's reference (2026-09-28) — orange open-jaw wrench with a
+    // hex-hole ring on top, a blue-handled screwdriver with a red shaft and flat blade under it; ink outlines, flat fills
     tools: [
-      "....kk...k......",
-      "...kwwk.knk.....",
-      "....knwknsnk....",
-      ".k..knnksssnk...",
-      "kwkkwnnkksssnk..",
-      "knwwnnnkktsssnk.",
-      ".knnnnnwottsssnk",
-      "..kkkkntttkkssk.",
-      ".....ktttnk.kk..",
-      "....kottnnwk....",
-      "...kottkknnwk...",
-      "..kottk..knnwk..",
-      ".kottk....knnwk.",
-      ".kttk......knnk.",
-      "..kk........kk..",
-      "................"
+      "..kkkk..........",
+      "...kOOk.....kk..",
+      "k...kOOk...kRRk.",
+      "kk..kOOk...kRRk.",
+      "kOkkOOOk..kRRRk.",
+      "kOOOOOOk.kRRkk..",
+      ".kOOOOOOkRRk....",
+      "..kkkkOOOkk.....",
+      "......kOOOkkkk..",
+      ".....kRkOOOOOOk.",
+      "...kkRRkkOOkkOOk",
+      "..kUUUk.kOk..kOk",
+      ".kUUUUk.kOk..kOk",
+      "kUUUUk..kOOkkOOk",
+      "kUUUk....kOOOOk.",
+      ".kkk......kkkk.."
     ],
     star: [
       // the binder's Claimed tab (Andrew, 2026-09-28: a yellow star, not the red check)
@@ -1211,28 +1215,28 @@ var HxH = (() => {
       "kkkkkkkkkkkkkkkkkkkk",
       "...................."
     ],
+    // Report a Bug at 20: the same wrench over screwdriver, built on 45° bands (every fill at least two diagonals wide, so none checkerboards)
     tools: [
-      // Report a Bug: the hammer and wrench at 20 (the 16's design, drawn by the same rasterizer)
-      "....kkk.............",
-      "...kwwwk...kk.......",
-      "....knnwk.knnk......",
-      ".k...knnwknssnk.....",
-      "kwk.kwknnkksssnk....",
-      "knwkwnwnnk.ksssnk...",
-      "knnwknnnnk.ktsssnk..",
-      ".knnwnnnnkkottsssnk.",
-      "..knnnnnnwottkksssk.",
-      "...kkkkkntttk..ksk..",
-      ".......ktttnk...k...",
-      "......kottnnwk......",
-      ".....kottkknnwk.....",
-      "....kottk..knnwkk...",
-      "...kottk....knnwwk..",
-      "..kottk......knnnwk.",
-      "..kttk.......knnnnk.",
-      "...kk.........knnk..",
-      "...............kk...",
-      "...................."
+      "..kkkkkk............",
+      "...kOOOOk.......kk..",
+      "k...kOOOOk.....kRRk.",
+      "kk...kOOOk....kRRRk.",
+      "kOk...kOOk....kRRRk.",
+      "kOOk.kOOOk...kRRRk..",
+      "kOOOkOOOOk..kRRkk...",
+      "kOOOOOOOOk.kRRk.....",
+      ".kOOOOOOOOkRRk......",
+      "..kkkkkkOOOkk.......",
+      "........kOOOk.......",
+      ".......kRkOOOk......",
+      "......kRRkkOOOkkkk..",
+      "...kkkURk..kOOOOOOk.",
+      "..kUUUUk....kOOkkOOk",
+      ".kUUUUUk....kOk..kOk",
+      "kUUUUUUk....kOk..kOk",
+      "kUUUUUk.....kOOkkOOk",
+      "kUUUUk.......kOOOOk.",
+      ".kkkk.........kkkk.."
     ],
     music: [
       // the Music player's 20-grid (Andrew, 2026-09-28)
