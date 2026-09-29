@@ -1,14 +1,18 @@
 /* HunterNet (Andrew, 2026-09-29) — a web browser inside the site, so the
-   site can be opened in the site. Admins only while it is polished.
+   site can be opened in the site. Everyone signed in, anonymous too.
 
    A page shows in an <iframe>. Many sites refuse to be framed
    (X-Frame-Options / CSP frame-ancestors) — Fandom, Google, DuckDuckGo,
    YouTube… — and a page cannot tell from outside that a frame was
    refused, so the well-known refusers get HunterNet's own "can't be shown
    here" page with an Open in new window button instead of a blank frame.
-   Home is Wikipedia's Hunter × Hunter article (Hunterpedia, the Fandom
-   wiki Andrew asked for, is one of the refusers). Words that are not an
-   address search Wikipedia.
+   Fandom wikis refuse frames too, but their API is open to browsers
+   (CORS), so a fandom.com/wiki/ page is shown in READER VIEW: HunterNet
+   fetches the parsed article and draws it itself in a frame sandboxed
+   WITHOUT scripts (nothing of Fandom's runs), cleaned of scripts, embeds
+   and forms; wiki links stay in HunterNet (and its history), others open
+   a new window. That is how Home is Hunterpedia (Andrew, 2026-09-29).
+   Words that are not an address search Wikipedia.
 
    History is HunterNet's own (a framed site's history is not ours to
    read): the addresses it opened, plus — for pages of this site, which it
@@ -22,7 +26,7 @@ import { Window } from "../os/window.js";
 import { h } from "../os/dom.js";
 import "./browser.css";
 
-export const HOME = "https://en.wikipedia.org/wiki/Hunter_%C3%97_Hunter";
+export const HOME = "https://hunterxhunter.fandom.com/wiki/Hunterpedia";
 export const SEARCH = "https://en.wikipedia.org/w/index.php?search=";
 /** Sites known to refuse being framed (a host or any subdomain of it). */
 export const REFUSERS = ["fandom.com", "google.com", "youtube.com", "duckduckgo.com", "bing.com", "github.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "reddit.com", "amazon.com", "linkedin.com"];
@@ -50,6 +54,51 @@ export function refuses(url) {
 
 const hostOf = url => { try { return new URL(url).hostname; } catch { return url; } };
 
+/** A Fandom wiki article HunterNet can show in reader view: { host, page }, else null. */
+export function readerPage(url) {
+  try {
+    const u = new URL(url);
+    if (!/(^|\.)fandom\.com$/.test(u.hostname)) return null;
+    const m = u.pathname.match(/^\/wiki\/(.+)$/);
+    return m ? { host: u.hostname, page: decodeURIComponent(m[1]).replace(/_/g, " ") } : null;
+  } catch { return null; }
+}
+
+/** The MediaWiki API call for a reader page (anonymous CORS: origin=*). */
+export function readerAPI({ host, page }) {
+  const q = new URLSearchParams({ action: "parse", page, format: "json", origin: "*", prop: "text|displaytitle", formatversion: "2", redirects: "1" });
+  return `https://${host}/api.php?${q}`;
+}
+
+/** Reader view's own look: plain, readable, images kept in bounds. */
+const READER_CSS = `
+  body { margin: 0; padding: 18px 22px 40px; font: 15px/1.55 Georgia, "Times New Roman", serif; color: #1b1b1b; background: #fff; }
+  h1 { font: 700 26px/1.2 Georgia, serif; margin: 0 0 14px; border-bottom: 1px solid #ccc; padding-bottom: 6px; }
+  a { color: #1f5fbf; } img { max-width: 100%; height: auto; } table { border-collapse: collapse; max-width: 100%; }
+  td, th { vertical-align: top; } .portable-infobox, aside { float: right; width: 270px; margin: 0 0 12px 16px; padding: 8px; border: 1px solid #ddd; background: #fafafa; font-size: 13px; }
+  .mw-editsection, .navbox, .toc, .wds-tabs__wrapper { display: none; }
+  .fandom-slider__controls { display: none; } svg.wds-icon, .wds-icon { width: 1em; height: 1em; }   /* Fandom's sprite icons have no sprite here: empty 300×150 boxes */
+  .ad-slot, .gpt-ad, .top-ads-container, [id^="gpt-"], [class*="advertisement"], [data-ad] { display: none !important; }`;
+
+/** The parsed article as a standalone, script-free document for the reader frame (sandboxed without scripts as well). */
+export function readerDoc(parse, host, doc = globalThis.document) {
+  const box = doc.createElement("div");
+  box.innerHTML = String(parse?.text || "");   // parsed in an inert document fragment: nothing here runs
+  for (const el of box.querySelectorAll("script, style, link, meta, iframe, object, embed, form, noscript, base")) el.remove();
+  for (const img of box.querySelectorAll("img")) {   // Fandom lazy-loads: the real picture waits in data-src
+    img.setAttribute("referrerpolicy", "no-referrer");   // Fandom's image server answers a foreign referrer with a 404 placeholder (hotlink protection)
+    const real = img.getAttribute("data-src");
+    if (real) { img.setAttribute("src", real); img.removeAttribute("srcset"); }
+    // Fandom serves thumbnails scaled down to a width: ask for the width the page shows, not a 300 px one stretched
+    const w = parseInt(img.getAttribute("width"), 10), src = img.getAttribute("src") || "";
+    if (w > 0 && /\/scale-to-width-down\/\d+/.test(src)) img.setAttribute("src", src.replace(/\/scale-to-width-down\/\d+/, `/scale-to-width-down/${Math.min(1200, w * 2)}`));
+  }
+  for (const el of box.querySelectorAll("*")) for (const a of [...el.attributes]) if (/^on/i.test(a.name)) el.removeAttribute(a.name);
+  const title = doc.createElement("h1");
+  title.textContent = (parse?.displaytitle || parse?.title || "").replace(/<[^>]*>/g, "");
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><base href="https://${host}/wiki/"><style>${READER_CSS}</style></head><body>${title.outerHTML}${box.innerHTML}</body></html>`;
+}
+
 const CONTENT = `
   <div class="navbar">
     <button class="btn nav" type="button" data-act="back" title="Back">←</button>
@@ -73,7 +122,7 @@ export class BrowserApp extends App {
     this.index = -1;
   }
 
-  visible(user) { return !!user && (user.roles || []).some(r => r.website === "hxh" && r.role === "admin"); }   // admins, while it is polished
+  visible(user) { return !!user; }   // everyone signed in, the anonymous viewer included (Andrew, 2026-09-29)
 
   window() {
     if (this.win) return this.win;
@@ -128,6 +177,9 @@ export class BrowserApp extends App {
     this.win.$('[data-act="forward"]').disabled = this.index >= this.entries.length - 1;
     this.frame?.remove();
     this.frame = null;
+    this.first = true;   // this entry's first load: a redirect REPLACES the entry, it is not a new page (the forward bug)
+    const reader = readerPage(url);
+    if (reader) return this.showReader(url, reader);
     if (refuses(url)) {
       this.nope.hidden = false;
       this.nope.querySelector(".why").textContent = `${hostOf(url)} can't be shown inside HunterNet.`;
@@ -144,12 +196,51 @@ export class BrowserApp extends App {
     this.status(`Opening ${hostOf(url)}…`);
   }
 
-  /** A page finished loading. One of this site's pages can be read: a link followed inside it becomes a history entry. */
+  /** Reader view: fetch the article from the wiki's API and draw it in a script-less frame; its links stay in HunterNet. */
+  async showReader(url, reader) {
+    this.nope.hidden = true;
+    const frame = this.frame = h("iframe", { title: "HunterNet", sandbox: "allow-same-origin allow-popups allow-popups-to-escape-sandbox" });   // no allow-scripts: nothing of the page runs
+    frame.srcdoc = `<!DOCTYPE html><body style="font:14px Georgia,serif;padding:18px;color:#666">Opening ${reader.page.replace(/[<&]/g, "")}…</body>`;
+    this.view.append(frame);
+    this.status(`Opening ${reader.host}…`);
+    let parse = null;
+    try {
+      const r = await (this.options.fetch || ((...a) => this.os.win.fetch(...a)))(readerAPI(reader), { credentials: "omit" });
+      parse = r.ok ? (await r.json()).parse : null;
+    } catch {}
+    if (this.frame !== frame) return;   // navigated away meanwhile
+    if (!parse) { frame.remove(); this.frame = null; this.nope.hidden = false; this.nope.querySelector(".why").textContent = `${reader.host} didn't answer.`; this.status("Done"); return; }
+    frame.addEventListener("load", () => this.readerLoaded(frame, reader.host), { once: true });
+    frame.srcdoc = readerDoc(parse, reader.host, this.os.doc);
+  }
+
+  /** The article is up: route its clicks — a wiki link opens in HunterNet (a history entry), anything else in a new window. */
+  readerLoaded(frame, host) {
+    this.status("Done");
+    let doc = null;
+    try { doc = frame.contentDocument; } catch {}
+    doc?.addEventListener("click", e => {
+      const a = e.target.closest?.("a[href]");
+      if (!a) return;
+      e.preventDefault();
+      const href = a.href;   // resolved against the article's <base>
+      if (href.startsWith("about:srcdoc#") || /^#/.test(a.getAttribute("href"))) { doc.getElementById(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView(); return; }
+      if (readerPage(href)) this.go(href);
+      else if (normalize(href)) this.os.win?.open?.(href, "_blank", "noopener");
+    });
+    void host;
+  }
+
+  /** A page finished loading. One of this site's pages can be read: a link followed inside it becomes a history entry —
+      but the entry's FIRST load only corrects its address (a redirect such as /hxh → /hxh/), keeping the forward pages. */
   loaded() {
     this.status("Done");
+    const first = this.first;
+    this.first = false;
     let href = null;
     try { href = this.frame?.contentWindow?.location?.href; } catch { return; }   // another site's page: not ours to read
     if (!href || href === "about:blank" || href === this.current) return;
+    if (first) { this.entries[this.index] = href; this.addr.value = href; return; }
     this.entries = this.entries.slice(0, this.index + 1);
     this.entries.push(href);
     this.index = this.entries.length - 1;

@@ -1305,8 +1305,14 @@ new store `localStorage` directly — hand it `os.profile`.
   page sets the Start button's pumpkin as its favicon (`loadFavicon`).
   All client-side state is per user: prefs `hxh.u.<user>:…` (Profile),
   the desktop `hxh.desk.<user>` (Layout); only `hxh.warm` (session) is not.
-- HunterNet (apps/browser.js, 2026-09-29): a browser in an iframe, admins
-  only while it is polished (name: Andrew's; the show's "Hunter Website"
+- HunterNet (apps/browser.js, 2026-09-29): a browser in an iframe, for
+  everyone signed in (anonymous too). Fandom wiki pages (Home =
+  Hunterpedia) show in READER VIEW: the parse API (CORS origin=*) from the
+  visitor's browser, cleaned (`readerDoc`), drawn in a srcdoc frame
+  sandboxed WITHOUT scripts, its <img>s referrerpolicy=no-referrer
+  (Fandom's CDN 404s a foreign referrer), wiki links routed back into
+  HunterNet. An entry's first load only corrects its address (a redirect)
+  — it used to push a page and wipe the forward history (name: Andrew's; the show's "Hunter Website"
   is what hunters browse). Many sites refuse framing (X-Frame-Options /
   frame-ancestors) and a page cannot detect a refused frame, so known
   refusers (`REFUSERS`: Fandom — so Hunterpedia —, Google, YouTube except
