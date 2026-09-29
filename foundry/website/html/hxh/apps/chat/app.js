@@ -203,11 +203,12 @@ export class ChatApp extends App {
    */
   launch({ autostart = false } = {}) {
     if (this.os.anonymous) return this.openContacts();   // an empty buddy list, no global chat (Andrew, 2026-09-28)
-    this.launching = true;
+    // opened BY the user, the first hello focuses Global chat; at a first visit's autostart (Andrew, 2026-09-29) only the
+    // buddy list opens, behind — the Summons, launched after it, must stay on top and active (news still surfaces)
+    this.launching = autostart ? "quiet" : true;
     this.connect();
     const contacts = this.openContacts();
-    this.openRoom(ROOM_GLOBAL, { focus: false });
-    void autostart;
+    if (!autostart) this.openRoom(ROOM_GLOBAL, { focus: false });   // a first visit starts with the buddy list alone, like AIM; Global chat is one click away
     return contacts;
   }
 
@@ -217,7 +218,10 @@ export class ChatApp extends App {
     for (const u of list) if (u.last_id) this.lastIds.set(u.room, Math.max(u.last_id, this.lastIds.get(u.room) || 0));
     for (const room of rooms) if (room !== ROOM_GLOBAL) this.surface(room);
     const global = rooms.includes(ROOM_GLOBAL);
-    if (this.launching) {
+    if (this.launching === "quiet") {
+      this.launching = false;
+      if (global) this.surface(ROOM_GLOBAL);
+    } else if (this.launching) {
       this.launching = false;
       if (global && !this.unread.includes(ROOM_GLOBAL)) this.unread.push(ROOM_GLOBAL);
       this.openRoom(ROOM_GLOBAL, { focus: true });   // focus → read, if this tab is the one being looked at

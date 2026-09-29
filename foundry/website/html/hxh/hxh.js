@@ -7471,11 +7471,10 @@ var HxH = (() => {
      */
     launch({ autostart = false } = {}) {
       if (this.os.anonymous) return this.openContacts();
-      this.launching = true;
+      this.launching = autostart ? "quiet" : true;
       this.connect();
       const contacts = this.openContacts();
-      this.openRoom(ROOM_GLOBAL, { focus: false });
-      void autostart;
+      if (!autostart) this.openRoom(ROOM_GLOBAL, { focus: false });
       return contacts;
     }
     /** hello.unread (every connect): surface the rooms with news. */
@@ -7484,7 +7483,10 @@ var HxH = (() => {
       for (const u of list) if (u.last_id) this.lastIds.set(u.room, Math.max(u.last_id, this.lastIds.get(u.room) || 0));
       for (const room of rooms) if (room !== ROOM_GLOBAL) this.surface(room);
       const global = rooms.includes(ROOM_GLOBAL);
-      if (this.launching) {
+      if (this.launching === "quiet") {
+        this.launching = false;
+        if (global) this.surface(ROOM_GLOBAL);
+      } else if (this.launching) {
         this.launching = false;
         if (global && !this.unread.includes(ROOM_GLOBAL)) this.unread.push(ROOM_GLOBAL);
         this.openRoom(ROOM_GLOBAL, { focus: true });

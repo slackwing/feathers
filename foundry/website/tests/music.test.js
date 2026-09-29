@@ -85,10 +85,10 @@ test("a first visit: the player opens and plays first, then the Summons lands on
   assert.equal(parseInt(s.el.style.left) + parseInt(s.el.style.width) - parseInt(m.el.style.left), OVERLAP, "the Summons covers only a strip of the player");
 });
 
-test("the index page autostarts the player, then the Summons", async () => {
+test("the index page autostarts BeetleChat, the player, then the Summons (Andrew, 2026-09-29)", async () => {
   const fs = await import("node:fs");
   const html = fs.readFileSync(new URL("../html/hxh/index.html", import.meta.url), "utf8");
-  assert.match(html, /autostart: \["music", "summons"\]/);
+  assert.match(html, /autostart: \["chat", "music", "summons"\]/);
   assert.match(html, /HxH\.apps\.Music\b/);
 });
 
