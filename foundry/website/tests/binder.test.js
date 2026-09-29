@@ -700,3 +700,28 @@ test("closed, only the cover and the window buttons take the pointer: the open b
   assert.match(css, /\.win\.binder:has\(\.book\.closed\) \{ pointer-events: none; \}/);
   assert.match(css, /\.win\.binder:has\(\.book\.closed\) :is\(\.flap, \.fbtns\) \{ pointer-events: auto; \}/);
 });
+
+test("the anonymous viewer sees the stamps but its heart, bookmark and claim keys stay off (Andrew, 2026-09-28)", async () => {
+  const b = os.registry.get("binder");
+  await os.launch("binder");
+  b.setRoster([mk("Gon", ["enhancement"])]);
+  b.select(b.pages.flatMap(p => p.cards)[0]);
+  const keys = () => ["heart", "bookmark", "claim"].map(a => b.$(`[data-act="${a}"]`).disabled);
+  assert.deepEqual(keys(), [false, false, false], "a member: on");
+  const real = os.user; os.user = { ...real, roles: [{ website: "hxh", role: "anonymous" }] };
+  b.syncKeys();
+  assert.deepEqual(keys(), [true, true, true], "anonymous: off");
+  os.user = real; b.syncKeys();
+});
+
+test("on a phone the Binder only says it needs a bigger screen, and a saved desktop does not bring it back (Andrew, 2026-09-28)", async () => {
+  os.env.small = true;
+  const said = os.registry.get("binder").launch();
+  const dlg = [...document.querySelectorAll(".win.dlg")].at(-1);
+  assert.match(dlg.textContent, /The Binder needs a bigger screen\. Please open it on a tablet or computer\./);
+  d.click(dlg.querySelector('[data-act="ok"]'));
+  assert.equal(await said, null);
+  assert.equal(await os.registry.get("binder").reopen("win-binder"), true, "reopen answers for its window…");
+  assert.equal(os.wm.get("win-binder")?.state.open ?? false, false, "…but on a phone nothing opens");
+  os.env.small = false;
+});

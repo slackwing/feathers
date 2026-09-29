@@ -402,3 +402,33 @@ test("signed in with no role on hxh: \"No role assigned. Contact system administ
   assert.equal(out, 1);
   assert.equal(os.member({ roles: [{ website: "hxh", role: "guest" }] }), true, "any hxh role is enough");
 });
+
+test("View site anonymously: the logon's blue link, a warning to confirm, then in as the shared anonymous account — no Summons, no Report a Bug (Andrew, 2026-09-28)", async () => {
+  const { SummonsApp } = await import("../html/hxh/apps/summons.js");
+  const { BugReportApp } = await import("../html/hxh/apps/bugs/app.js");
+  const ANON = { username: "anonymous", display_name: "Anonymous", initial: "?", color: "#8a8a8a", roles: [{ website: "hxh", role: "anonymous" }] };
+  const log = [];
+  const fetch = fakeFetch({ "GET /admin/api/me": [401, {}], "POST /admin/api/login": init => JSON.parse(init.body).username === "anonymous" ? [200, ANON] : [401, {}] }, log);
+  const os = new OS({ win: d.win, fetch, nav: new Nav({ storage: d.win.sessionStorage, location: { href: "" } }), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  const started = os.start({ apps: [Hello, SummonsApp, BugReportApp], autostart: ["summons"], start: true });
+  await tick();
+  const logon = os.wm.get("win-logon");
+  const link = logon.el.querySelector("#lg-anon");
+  assert.equal(link.textContent, "View site anonymously");
+  d.click(link);
+  await tick();
+  const warn = os.wm.get("win-anon");
+  assert.ok(warn?.state.open && !logon.state.open, "the warning replaces the logon");
+  assert.match(warn.el.textContent, /You will not be able to interact with other users in this mode\./);
+  d.click(warn.el.querySelector('[data-act="back"]'));
+  await tick();
+  assert.ok(logon.state.open && !os.wm.has("win-anon"), "Back returns to the logon");
+  d.click(link); await tick();
+  d.click(os.wm.get("win-anon").el.querySelector('[data-act="enter"]'));
+  await started;
+  assert.deepEqual(log.find(l => l.path === "/admin/api/login").body, { username: "anonymous", password: "anonymous" });
+  assert.equal(os.anonymous, true);
+  assert.equal(os.wm.get("win-summons")?.state.open ?? false, false, "no Summons, not even at autostart");
+  const icons = [...document.querySelectorAll(".icons [data-act]")].map(i => i.dataset.act);
+  assert.ok(icons.includes("hello") && !icons.includes("summons") && !icons.includes("bugs"), icons.join());
+});

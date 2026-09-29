@@ -12,6 +12,7 @@
    every report sent from this page. Claude reads and resolves them with
    hxh-roster/roster.py (bugs, bug-resolve). */
 import { App } from "../../os/apps.js";
+import { anonymous } from "../../os/roles.js";
 import { Window } from "../../os/window.js";
 import { ChatAPI } from "../chat/client.js";
 import { Composer } from "../chat/composer.js";
@@ -54,6 +55,8 @@ export class BugReportApp extends App {
   }
 
   get admin() { return !!this.os.isAdmin?.(); }
+
+  visible(user) { return !anonymous(user); }   // the anonymous viewer does not act; the server refuses its reports too
 
   /* ---------- reporting ---------- */
   window() {

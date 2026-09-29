@@ -2295,6 +2295,7 @@ var HxH = (() => {
     launch(id, opts = {}) {
       const app = this.apps.get(id);
       if (!app) throw new Error(`no app "${id}"`);
+      if (this.os.user && !app.visible(this.os.user)) return null;
       this.os.bus?.emit("app:launch", { id, opts });
       return app.launch(opts);
     }
@@ -2623,7 +2624,8 @@ var HxH = (() => {
           <div class="actions"><button class="btn primary wide" type="submit">Log in</button></div>
           <div class="msg err" id="lg-msg"></div>
         </form>
-        <p class="forgot"><a href="#" id="lg-forgot">Forgot password?</a></p>`
+        <p class="forgot"><a href="#" id="lg-forgot">Forgot password?</a></p>
+        <p class="anon"><a href="#" id="lg-anon">View site anonymously</a></p>`
       });
       this.session = session;
     }
@@ -2645,6 +2647,10 @@ var HxH = (() => {
         msg.className = "msg ok";
         msg.textContent = "If that account has an email on file, a reset link is on its way.";
       });
+      el.querySelector("#lg-anon").addEventListener("click", (e) => {
+        e.preventDefault();
+        this.emit("anonymous");
+      });
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         msg.className = "msg err";
@@ -2660,6 +2666,37 @@ var HxH = (() => {
     }
     focusUser() {
       this.el?.querySelector("#lg-u")?.focus();
+    }
+  };
+  var ANON_WARNING = "You will not be able to interact with other users in this mode.";
+  var AnonymousDialog = class extends AccountDialog {
+    constructor() {
+      super({
+        id: "win-anon",
+        subtitle: "View anonymously",
+        lead: `<p>${esc(ANON_WARNING)}</p>`,
+        body: `<div class="actions"><button class="btn primary wide" type="button" data-act="enter">Enter</button></div>
+        <p class="forgot"><a href="#" data-act="back">Back</a></p>
+        <div class="msg err" data-act="msg"></div>`
+      });
+    }
+    render() {
+      const el = super.render();
+      el.addEventListener("click", (e) => {
+        const act = e.target.closest("[data-act]")?.dataset.act;
+        if (act === "enter" || act === "back") {
+          e.preventDefault();
+          this.emit(act);
+        }
+      });
+      return el;
+    }
+    focusEnter() {
+      this.el?.querySelector('[data-act="enter"]')?.focus();
+    }
+    fail(text) {
+      const m = this.el?.querySelector('[data-act="msg"]');
+      if (m) m.textContent = text;
     }
   };
 
@@ -3675,7 +3712,7 @@ var HxH = (() => {
   ];
   var SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
   var SPLASH_IDS = SPLASHES.map(([id]) => id);
-  var BEST_VIEWED = "Best viewed on a tablet or computer";
+  var BEST_VIEWED = "For the best experience, visit on a tablet or computer.";
   var STARTUP_SPLASH = "summons";
   function randomSplash(random = Math.random) {
     return SPLASH_IDS[Math.min(SPLASH_IDS.length - 1, Math.floor(random() * SPLASH_IDS.length))];
@@ -4108,6 +4145,14 @@ var HxH = (() => {
     }
   };
 
+  // html/hxh/os/roles.js
+  var SITE = "hxh";
+  var ANONYMOUS = { username: "anonymous", password: "anonymous" };
+  function anonymous(user) {
+    const roles = (user?.roles || []).filter((r) => r.website === SITE);
+    return roles.length > 0 && roles.every((r) => r.role === "anonymous");
+  }
+
   // html/hxh/os/layout.js
   var DESK_PREFIX = "hxh.desk.";
   var SAVE_DELAY = 300;
@@ -4225,7 +4270,6 @@ var HxH = (() => {
   };
 
   // html/hxh/os/os.js
-  var SITE = "hxh";
   var NO_ROLE = "No role assigned. Contact system administrator.";
   var THEME_KEY = "theme";
   var THEME_DEFAULT = "seapumpkin";
@@ -4442,6 +4486,10 @@ var HxH = (() => {
         else if (!spec && has) this.bus.emit("tray:remove", { id: app.id });
       }
     }
+    /** The signed-in account is the anonymous viewer. */
+    get anonymous() {
+      return anonymous(this.user);
+    }
     /** Any role on the site: a member. */
     member(user = this.user, site = SITE) {
       return (user?.roles || []).some((r) => r.website === site);
@@ -4490,11 +4538,29 @@ var HxH = (() => {
         this.doc.body.classList.add("logon");
         const dlg = new LogonDialog({ session: this.session });
         this.wm.add(dlg);
-        dlg.on("login", (me) => {
-          this.wm.remove(dlg.id);
+        const done = (me) => {
+          for (const id of [dlg.id, "win-anon"]) if (this.wm.has(id)) this.wm.remove(id);
           this.desktop.center(false);
           this.doc.body.classList.remove("logon");
           res(me);
+        };
+        dlg.on("login", done);
+        dlg.on("anonymous", () => {
+          const anon = new AnonymousDialog();
+          this.wm.add(anon);
+          this.wm.close(dlg.id);
+          anon.on("back", () => {
+            this.wm.remove(anon.id);
+            this.wm.open(dlg.id, null, { scroll: false }).then(() => dlg.focusUser());
+          });
+          anon.on("enter", async () => {
+            try {
+              done(await this.session.login(ANONYMOUS.username, ANONYMOUS.password));
+            } catch (err) {
+              anon.fail(err.message);
+            }
+          });
+          this.wm.open(anon.id, null, { scroll: false }).then(() => anon.focusEnter());
         });
         this.wm.open(dlg.id, null, { scroll: false, jank: true }).then(() => dlg.focusUser());
       });
@@ -4590,6 +4656,10 @@ var HxH = (() => {
     static name = "Summons";
     static icon = "envelope";
     static order = 10;
+    visible(user) {
+      return !anonymous(user);
+    }
+    // the invitation is for invitees: not shown to an anonymous viewer (Andrew, 2026-09-28)
     /** File › Exit, and nothing else (Andrew, 2026-09-27): the notice is a poster, not a workbench. */
     menus(win) {
       return this.os.appMenus(win);
@@ -5070,6 +5140,7 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/binder.js
+  var SMALL_MESSAGE = "The Binder needs a bigger screen. Please open it on a tablet or computer.";
   var TYPES = [
     { slug: "enhancement", code: "EN", name: "Enhancer", ja: "\u5F37\u5316\u7CFB", hue: "var(--enhancer)", hex: "#ff5a36" },
     { slug: "transmutation", code: "TR", name: "Transmuter", ja: "\u5909\u5316\u7CFB", hue: "var(--transmuter)", hex: "#37d0ff" },
@@ -5402,7 +5473,7 @@ var HxH = (() => {
       const c = this.sel, cl = c && this.claimOn(c.id), mine = !!(cl && this.me && cl.username === this.me);
       for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)], ["claim", mine]]) {
         const b = this.$(`[data-act="${act}"]`);
-        b.disabled = !c || act === "claim" && !!cl && !mine;
+        b.disabled = !c || this.os.anonymous || act === "claim" && !!cl && !mine;
         b.classList.toggle("lit", !!on);
       }
       const claim = this.$('[data-act="claim"]');
@@ -5494,7 +5565,8 @@ var HxH = (() => {
       return { x: l.x, y: l.y };
     }
     /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
-    launch() {
+    launch({ restore = false } = {}) {
+      if (this.os.env.small) return restore ? Promise.resolve(null) : new MessageDialog({ title: "Binder", message: SMALL_MESSAGE }).ask(this.os).then(() => null);
       const win = this.window();
       this.load();
       const p = this.os.wm.open(win.id, this.layout());
@@ -6161,9 +6233,18 @@ var HxH = (() => {
       this.renderBanner();
       this.renderTree();
     }
+    /** The anonymous viewer: the list stays empty, the toolbar is off, the status says why. */
+    setAnonymous() {
+      this.anonymous = true;
+      for (const b of this.el.querySelectorAll(".tools .tool")) b.disabled = true;
+      if (this.connEl) {
+        this.connEl.textContent = "Anonymous";
+        this.connEl.classList.add("off");
+      }
+    }
     setConnected(on) {
       this.connected = !!on;
-      if (this.connEl) {
+      if (this.connEl && !this.anonymous) {
         this.connEl.textContent = on ? "Connected" : "Offline";
         this.connEl.classList.toggle("off", !on);
       }
@@ -7128,8 +7209,8 @@ var HxH = (() => {
         on: () => this.connected,
         menu: () => [
           { label: "Contacts", icon: "beetle", onclick: () => this.openContacts() },
-          { label: "Global chat", icon: "comment", onclick: () => this.openRoom(ROOM_GLOBAL) },
-          { label: "My profile", icon: "card", onclick: () => this.editProfile() },
+          { label: "Global chat", icon: "comment", disabled: this.os.anonymous, onclick: () => this.openRoom(ROOM_GLOBAL) },
+          { label: "My profile", icon: "card", disabled: this.os.anonymous, onclick: () => this.editProfile() },
           "sep",
           { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() },
           "sep",
@@ -7189,6 +7270,7 @@ var HxH = (() => {
     /* ---------- connection ---------- */
     connect() {
       if (this.client) return this.client;
+      if (this.os.anonymous) return null;
       const os2 = this.os;
       const c = this.client = new ChatClient({ url: this.options.url || wsURL(os2.win.location), WebSocket: this.options.WebSocket || os2.win.WebSocket, focus: () => this.presenceFocus(), ...this.options.client || {} });
       c.on("hello", ({ contacts, unread }) => {
@@ -7272,7 +7354,7 @@ var HxH = (() => {
     contactsMenus(win) {
       return this.os.appMenus(win, {
         file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],
-        edit: () => [{ label: "Profile\u2026", onclick: () => this.editProfile() }],
+        edit: () => [{ label: "Profile\u2026", disabled: this.os.anonymous, onclick: () => this.editProfile() }],
         settings: () => this.settingsItems()
       });
     }
@@ -7295,6 +7377,7 @@ var HxH = (() => {
      * to flash the least.
      */
     launch({ autostart = false } = {}) {
+      if (this.os.anonymous) return this.openContacts();
       this.launching = true;
       this.connect();
       const contacts = this.openContacts();
@@ -7339,6 +7422,7 @@ var HxH = (() => {
         w.on("global", () => this.openRoom(ROOM_GLOBAL));
         w.setContacts([...this.contacts.values()]);
         w.setConnected(this.connected);
+        if (os2.anonymous) w.setAnonymous();
       }
       const at = this.contactsWin.state.placed ? null : os2.env.floating() ? { x: Math.max(16, os2.env.width - 300 - 30), y: 24 } : null;
       os2.wm.open(this.contactsWin.id, at);
@@ -7350,6 +7434,7 @@ var HxH = (() => {
     /** The window for a room, created on demand; focus=false keeps the current window active (an incoming message). */
     openRoom(room, { focus = true } = {}) {
       const os2 = this.os;
+      if (os2.anonymous) return null;
       let w = this.windows.get(room);
       if (!w) {
         const other = this.otherOf(room);
@@ -7582,6 +7667,7 @@ var HxH = (() => {
       return w;
     }
     async editProfile() {
+      if (this.os.anonymous) return null;
       const os2 = this.os;
       let w = os2.wm.get("win-chat-profile-edit");
       if (!w) {
@@ -9050,7 +9136,7 @@ var HxH = (() => {
   }
 
   // html/hxh/apps/roster/app.js
-  var SMALL_MESSAGE = "Roster DB needs a tablet or desktop screen.";
+  var SMALL_MESSAGE2 = "Roster DB needs a tablet or desktop screen.";
   var LIVE_MS2 = 1e4;
   var WATCH = ["version", "review_status", "card_number", "open_requests", "avatar_image_id", "card_image_id", "accepted_version"];
   var RosterApp = class extends App {
@@ -9070,7 +9156,7 @@ var HxH = (() => {
     }
     /* ---------- the list ---------- */
     launch() {
-      if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE }).ask(this.os).then(() => null);
+      if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE2 }).ask(this.os).then(() => null);
       const win = this.list();
       this.os.wm.open(win.id, win.state.placed ? null : this.os.env.floating() ? { x: 120, y: 40 } : null);
       this.refreshList();
@@ -9664,6 +9750,10 @@ var HxH = (() => {
     get admin() {
       return !!this.os.isAdmin?.();
     }
+    visible(user) {
+      return !anonymous(user);
+    }
+    // the anonymous viewer does not act; the server refuses its reports too
     /* ---------- reporting ---------- */
     window() {
       if (this.win) return this.win;

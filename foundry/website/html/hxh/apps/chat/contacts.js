@@ -95,9 +95,15 @@ export class ContactsWindow extends Window {
   }
 
   setMe(acct) { this.me = acct; this.renderBanner(); this.renderTree(); }
+  /** The anonymous viewer: the list stays empty, the toolbar is off, the status says why. */
+  setAnonymous() {
+    this.anonymous = true;
+    for (const b of this.el.querySelectorAll(".tools .tool")) b.disabled = true;
+    if (this.connEl) { this.connEl.textContent = "Anonymous"; this.connEl.classList.add("off"); }
+  }
   setConnected(on) {
     this.connected = !!on;
-    if (this.connEl) { this.connEl.textContent = on ? "Connected" : "Offline"; this.connEl.classList.toggle("off", !on); }
+    if (this.connEl && !this.anonymous) { this.connEl.textContent = on ? "Connected" : "Offline"; this.connEl.classList.toggle("off", !on); }
     this.renderBanner();
   }
 

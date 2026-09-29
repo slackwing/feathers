@@ -57,7 +57,7 @@
 /* the phone courtesy line, just under each style's prompt, in the splash's own ink — steady, never blinking */
 .splashscreen .sp-best {
   margin-top: max(14px, 3cqmin); padding: 0 16px; text-align: center; pointer-events: none;
-  font: 15px/1.35 "Special Elite", "Courier New", monospace; letter-spacing: .04em; color: rgba(232,220,195,.85);
+  font: 19px/1.35 "Special Elite", "Courier New", monospace; letter-spacing: .02em; color: rgba(232,220,195,.9);
   text-shadow: 0 1px 2px rgba(0,0,0,.8); animation: none;
 }
 /* every item in a named row: the courtesy line shares the prompt's, and nothing is left to auto-placement */

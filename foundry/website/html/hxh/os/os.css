@@ -178,7 +178,7 @@ body.crt::after {
 @media (prefers-reduced-motion: reduce) { .blimp { display: none; } }
 
 /* while the OS logon dialog is up, a page's own windows and icons wait */
-body.logon .desktop > .win:not(#win-logon):not(#win-norole), body.logon .icons { display: none !important; }
+body.logon .desktop > .win:not(#win-logon):not(#win-norole):not(#win-anon), body.logon .icons { display: none !important; }
 
 /* ---------- desktop ---------- */
 .desktop {
@@ -393,6 +393,8 @@ body.logon .desktop > .win:not(#win-logon):not(#win-norole), body.logon .icons {
 .win.logon .logon-form { text-align: left; }
 .forgot { margin: 10px 0 0; text-align: center; }
 .forgot a { color: var(--ink-4); }
+.anon { margin: 6px 0 0; text-align: center; }
+.anon a { color: #1f5fbf; text-decoration: underline; }   /* a plain blue link: "View site anonymously" */
 
 /* ---------- taskbar ---------- */
 .taskbar {

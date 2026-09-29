@@ -15,7 +15,10 @@ import { h, esc, cqFix } from "../os/dom.js";
 import { icon } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
 import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
-import { ClaimDialog, ClaimInfoDialog } from "./roster/dialogs.js";
+import { ClaimDialog, ClaimInfoDialog, MessageDialog } from "./roster/dialogs.js";
+
+/** What the Binder says on a phone (Andrew, 2026-09-28): the book needs a bigger screen. */
+export const SMALL_MESSAGE = "The Binder needs a bigger screen. Please open it on a tablet or computer.";
 import "./binder.css";
 
 export const TYPES = [
@@ -337,7 +340,7 @@ export class BinderApp extends App {
     const c = this.sel, cl = c && this.claimOn(c.id), mine = !!(cl && this.me && cl.username === this.me);
     for (const [act, on] of [["heart", c && this.hearted(c.id)], ["bookmark", c && this.bookmarked(c.id)], ["claim", mine]]) {
       const b = this.$(`[data-act="${act}"]`);
-      b.disabled = !c || (act === "claim" && !!cl && !mine);
+      b.disabled = !c || this.os.anonymous || (act === "claim" && !!cl && !mine);   // the anonymous viewer sees every stamp but adds none
       b.classList.toggle("lit", !!on);
     }
     const claim = this.$('[data-act="claim"]');
@@ -407,7 +410,8 @@ export class BinderApp extends App {
   }
 
   /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
-  launch() {
+  launch({ restore = false } = {}) {
+    if (this.os.env.small) return restore ? Promise.resolve(null) : new MessageDialog({ title: "Binder", message: SMALL_MESSAGE }).ask(this.os).then(() => null);   // a phone: say so; a saved desktop does not bring it back
     const win = this.window();
     this.load();
     const p = this.os.wm.open(win.id, this.layout());

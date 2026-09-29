@@ -4,6 +4,7 @@
    system ones. Autostarted on the desktop: bare desktop first, then the
    window paints in jankily and the notice types. */
 import { App } from "../os/apps.js";
+import { anonymous } from "../os/roles.js";
 import { Window } from "../os/window.js";
 import { type } from "../os/typewriter.js";
 import "./summons.css";
@@ -32,6 +33,8 @@ export class SummonsApp extends App {
   static name = "Summons";
   static icon = "envelope";
   static order = 10;
+
+  visible(user) { return !anonymous(user); }   // the invitation is for invitees: not shown to an anonymous viewer (Andrew, 2026-09-28)
 
   /** File › Exit, and nothing else (Andrew, 2026-09-27): the notice is a poster, not a workbench. */
   menus(win) {

@@ -94,6 +94,7 @@ export class AppRegistry {
   launch(id, opts = {}) {
     const app = this.apps.get(id);
     if (!app) throw new Error(`no app "${id}"`);
+    if (this.os.user && !app.visible(this.os.user)) return null;   // hidden for this user (an autostart, a stray call): never opened
     this.os.bus?.emit("app:launch", { id, opts });
     return app.launch(opts);
   }

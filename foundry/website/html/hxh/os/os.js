@@ -23,20 +23,20 @@ import { People } from "./people.js";
 import { Splash, EmberBackdrop, SPLASHES, STARTUP_SPLASH } from "./splash.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
-import { LogonDialog, AccountDialog } from "./logon.js";
+import { LogonDialog, AccountDialog, AnonymousDialog } from "./logon.js";
 import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { Profile } from "./profile.js";
+import { SITE, ANONYMOUS, anonymous } from "./roles.js";
+export { SITE, ANONYMOUS, anonymous };
 import { WakeWatch } from "./wake.js";
 import { Blimp } from "./blimp.js";
 import { cqFix } from "./dom.js";
 import { Layout } from "./layout.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
-/** The website this OS is: a signed-in account needs a role here to get past the gate. */
-export const SITE = "hxh";
 /** What an account with no role on SITE is told (Andrew, 2026-09-28). */
 export const NO_ROLE = "No role assigned. Contact system administrator.";
 export const THEME_KEY = "theme", THEME_DEFAULT = "seapumpkin";   // Andrew, 2026-09-21
@@ -254,6 +254,9 @@ export class OS {
     }
   }
 
+  /** The signed-in account is the anonymous viewer. */
+  get anonymous() { return anonymous(this.user); }
+
   /** Any role on the site: a member. */
   member(user = this.user, site = SITE) { return (user?.roles || []).some(r => r.website === site); }
 
@@ -298,11 +301,24 @@ export class OS {
       this.doc.body.classList.add("logon");
       const dlg = new LogonDialog({ session: this.session });
       this.wm.add(dlg);
-      dlg.on("login", me => {
-        this.wm.remove(dlg.id);
+      const done = me => {
+        for (const id of [dlg.id, "win-anon"]) if (this.wm.has(id)) this.wm.remove(id);
         this.desktop.center(false);
         this.doc.body.classList.remove("logon");
         res(me);
+      };
+      dlg.on("login", done);
+      // "View site anonymously": a warning to confirm, then in as the shared anonymous account (os/roles.js)
+      dlg.on("anonymous", () => {
+        const anon = new AnonymousDialog();
+        this.wm.add(anon);
+        this.wm.close(dlg.id);
+        anon.on("back", () => { this.wm.remove(anon.id); this.wm.open(dlg.id, null, { scroll: false }).then(() => dlg.focusUser()); });
+        anon.on("enter", async () => {
+          try { done(await this.session.login(ANONYMOUS.username, ANONYMOUS.password)); }
+          catch (err) { anon.fail(err.message); }
+        });
+        this.wm.open(anon.id, null, { scroll: false }).then(() => anon.focusEnter());
       });
       this.wm.open(dlg.id, null, { scroll: false, jank: true }).then(() => dlg.focusUser());
     });

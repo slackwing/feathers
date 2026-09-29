@@ -61,8 +61,8 @@ export class ChatApp extends App {
       title: "BeetleChat", on: () => this.connected,
       menu: () => [
         { label: "Contacts", icon: "beetle", onclick: () => this.openContacts() },
-        { label: "Global chat", icon: "comment", onclick: () => this.openRoom(ROOM_GLOBAL) },
-        { label: "My profile", icon: "card", onclick: () => this.editProfile() },
+        { label: "Global chat", icon: "comment", disabled: this.os.anonymous, onclick: () => this.openRoom(ROOM_GLOBAL) },
+        { label: "My profile", icon: "card", disabled: this.os.anonymous, onclick: () => this.editProfile() },
         "sep",
         { label: "Sounds", icon: "comment", check: () => this.os.sounds.on, onclick: () => this.os.sounds.toggle() },
         "sep",
@@ -106,6 +106,7 @@ export class ChatApp extends App {
   /* ---------- connection ---------- */
   connect() {
     if (this.client) return this.client;
+    if (this.os.anonymous) return null;   // the anonymous viewer: the UI to look at, no socket — no presence, no messages
     const os = this.os;
     const c = this.client = new ChatClient({ url: this.options.url || wsURL(os.win.location), WebSocket: this.options.WebSocket || os.win.WebSocket, focus: () => this.presenceFocus(), ...(this.options.client || {}) });
     c.on("hello", ({ contacts, unread }) => { this.setContacts(contacts); this.onUnread(unread || []); });
@@ -177,7 +178,7 @@ export class ChatApp extends App {
   contactsMenus(win) {
     return this.os.appMenus(win, {
       file: () => [{ label: "About", onclick: () => this.about() }, { label: "Update", disabled: true }],
-      edit: () => [{ label: "Profile…", onclick: () => this.editProfile() }],
+      edit: () => [{ label: "Profile…", disabled: this.os.anonymous, onclick: () => this.editProfile() }],
       settings: () => this.settingsItems(),
     });
   }
@@ -201,6 +202,7 @@ export class ChatApp extends App {
    * to flash the least.
    */
   launch({ autostart = false } = {}) {
+    if (this.os.anonymous) return this.openContacts();   // an empty buddy list, no global chat (Andrew, 2026-09-28)
     this.launching = true;
     this.connect();
     const contacts = this.openContacts();
@@ -248,6 +250,7 @@ export class ChatApp extends App {
       w.on("global", () => this.openRoom(ROOM_GLOBAL));
       w.setContacts([...this.contacts.values()]);
       w.setConnected(this.connected);
+      if (os.anonymous) w.setAnonymous();
     }
     const at = this.contactsWin.state.placed ? null : (os.env.floating() ? { x: Math.max(16, os.env.width - 300 - 30), y: 24 } : null);
     os.wm.open(this.contactsWin.id, at);
@@ -259,6 +262,7 @@ export class ChatApp extends App {
   /** The window for a room, created on demand; focus=false keeps the current window active (an incoming message). */
   openRoom(room, { focus = true } = {}) {
     const os = this.os;
+    if (os.anonymous) return null;   // no rooms for the anonymous viewer
     let w = this.windows.get(room);
     if (!w) {
       const other = this.otherOf(room);
@@ -469,6 +473,7 @@ export class ChatApp extends App {
   }
 
   async editProfile() {
+    if (this.os.anonymous) return null;
     const os = this.os;
     let w = os.wm.get("win-chat-profile-edit");
     if (!w) {

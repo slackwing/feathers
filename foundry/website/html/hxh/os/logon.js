@@ -45,7 +45,8 @@ export class LogonDialog extends AccountDialog {
           <div class="actions"><button class="btn primary wide" type="submit">Log in</button></div>
           <div class="msg err" id="lg-msg"></div>
         </form>
-        <p class="forgot"><a href="#" id="lg-forgot">Forgot password?</a></p>`,
+        <p class="forgot"><a href="#" id="lg-forgot">Forgot password?</a></p>
+        <p class="anon"><a href="#" id="lg-anon">View site anonymously</a></p>`,
     });
     this.session = session;
   }
@@ -63,6 +64,7 @@ export class LogonDialog extends AccountDialog {
       msg.className = "msg ok";
       msg.textContent = "If that account has an email on file, a reset link is on its way.";
     });
+    el.querySelector("#lg-anon").addEventListener("click", e => { e.preventDefault(); this.emit("anonymous"); });
     form.addEventListener("submit", async e => {
       e.preventDefault();
       msg.className = "msg err"; msg.textContent = "";
@@ -77,4 +79,30 @@ export class LogonDialog extends AccountDialog {
   }
 
   focusUser() { this.el?.querySelector("#lg-u")?.focus(); }
+}
+
+/** What the anonymous viewer is told before going in (Andrew, 2026-09-28). */
+export const ANON_WARNING = "You will not be able to interact with other users in this mode.";
+
+/** "View site anonymously", confirmed: the same frame, the warning, Enter / Back. Emits "enter" or "back". */
+export class AnonymousDialog extends AccountDialog {
+  constructor() {
+    super({
+      id: "win-anon", subtitle: "View anonymously",
+      lead: `<p>${esc(ANON_WARNING)}</p>`,
+      body: `<div class="actions"><button class="btn primary wide" type="button" data-act="enter">Enter</button></div>
+        <p class="forgot"><a href="#" data-act="back">Back</a></p>
+        <div class="msg err" data-act="msg"></div>`,
+    });
+  }
+  render() {
+    const el = super.render();
+    el.addEventListener("click", e => {
+      const act = e.target.closest("[data-act]")?.dataset.act;
+      if (act === "enter" || act === "back") { e.preventDefault(); this.emit(act); }
+    });
+    return el;
+  }
+  focusEnter() { this.el?.querySelector('[data-act="enter"]')?.focus(); }
+  fail(text) { const m = this.el?.querySelector('[data-act="msg"]'); if (m) m.textContent = text; }
 }

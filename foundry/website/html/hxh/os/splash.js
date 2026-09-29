@@ -48,7 +48,7 @@ export const SPLASHES = [
 export const SPLASH_DEFAULTS = Object.fromEntries(SPLASHES.map(([id, , d]) => [id, d || {}]));
 export const SPLASH_IDS = SPLASHES.map(([id]) => id);
 /** Under every splash on a phone (Env.small). */
-export const BEST_VIEWED = "Best viewed on a tablet or computer";
+export const BEST_VIEWED = "For the best experience, visit on a tablet or computer.";   // Andrew, 2026-09-28: "best experienced… for best experience"
 /** The one the site opens with: the Summons is the site's anchor (Andrew, 2026-09-27). Player Select is the Heavens Arena
     placeholder (apps/arena.js); Night lives only in Settings › Other › Splash screen. */
 export const STARTUP_SPLASH = "summons";

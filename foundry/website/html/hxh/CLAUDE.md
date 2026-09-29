@@ -1270,3 +1270,15 @@ new store `localStorage` directly — hand it `os.profile`.
   `.sp-start` in the DOM: in flow under Summons' prompt, pinned under
   Night's, and in the prompt's own grid cell on Player Select (whose
   items are all given explicit rows/columns so nothing auto-places).
+- Anonymous viewing (2026-09-28): the logon's blue "View site anonymously"
+  link → `AnonymousDialog` (the warning `ANON_WARNING`, Enter / Back) →
+  signs in as the shared account `ANONYMOUS` (anonymous/anonymous, a
+  public password; hobby-server changeset 008). `anonymous(user)` in
+  `os/roles.js` (every hxh role is "anonymous") / `os.anonymous`: the
+  Summons and Report a Bug are hidden (hidden apps never launch —
+  `AppRegistry.launch`), the Binder's heart/bookmark/claim keys stay off
+  (stamps still show), BeetleChat opens an empty "Anonymous" buddy list
+  with no socket, no rooms, no profile. The server refuses all of those
+  actions itself (403); the UI only stops offering them.
+- On a phone (`Env.small`) the Binder, like Roster DB, only shows a
+  `MessageDialog` (`SMALL_MESSAGE`) and is not restored.
