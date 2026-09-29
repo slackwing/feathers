@@ -46,14 +46,14 @@ test("the logon's own frame (AccountDialog) on a centred bare desktop, wired to 
   void d;
 });
 
-test("'Enter the exam site' warms the next page instead of rebooting; no machinery → nocode", async () => {
+test("'Enter the exam site' skips the next page's boot but not its splash — whose click lets the music play in Firefox (Andrew, 2026-09-29); no machinery → nocode", async () => {
   const { d, os, loc, start } = make(null);
   await start();
   assert.equal(os.registry.get("setpw").state.state, "nocode");
   const w = os.wm.get("win-pw");
   d.click(w.$('[data-pw="enter"]'));
   assert.equal(loc.href, "/hxh/");
-  assert.equal(d.win.sessionStorage.getItem("hxh.warm"), "1");
+  assert.equal(d.win.sessionStorage.getItem("hxh.warm"), "splash");
   await tick();
 });
 
@@ -78,5 +78,26 @@ test("_invite/ and _reset/ are one pattern: each page only calls HxH.accountPage
     assert.match(html, /HxH\.accountPage\(\{/);
     assert.doesNotMatch(html, /HxH\.start\(|fonts\.googleapis|taskbar:|splash:/, "no page-level OS options or fonts");
   }
-  assert.deepEqual(ACCOUNT_PAGE, { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" });
+  assert.deepEqual(ACCOUNT_PAGE, { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers", signOut: true, restore: false });
+});
+
+test("an invite or reset link signs out whoever was signed in, and never touches their saved desktop (Andrew, 2026-09-29: the link led to a splash, then nothing)", async () => {
+  const d = setupDom();
+  d.win.localStorage.setItem("hxh.desk.andrew", JSON.stringify({ v: 1, active: null, windows: [{ id: "win-summons", app: "summons", x: 600, y: 300 }] }));
+  const before = d.win.localStorage.getItem("hxh.desk.andrew");
+  const calls = [];
+  let signedIn = true;
+  const fetch = async (url, init = {}) => {
+    calls.push(`${init.method || "GET"} ${url}`);
+    if (String(url).endsWith("/admin/api/logout")) { signedIn = false; return { ok: true, status: 204, json: async () => ({}) }; }
+    if (String(url).endsWith("/admin/api/me")) return signedIn ? { ok: true, status: 200, json: async () => ({ username: "andrew", roles: [{ website: "hxh", role: "admin" }] }) } : { ok: false, status: 401, json: async () => ({}) };
+    return { ok: false, status: 404, json: async () => ({}) };
+  };
+  const os = new OS({ win: d.win, nav: new Nav({ storage: d.win.sessionStorage, location: { href: "" } }), fetch, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  await os.start({ apps: [[SetPasswordApp, { ...WORDS, machinery: { mount: async () => ({ state: "ok" }) } }]], ...ACCOUNT_PAGE, boot: false });
+  assert.ok(calls.some(c => c.startsWith("POST") && c.endsWith("/admin/api/logout")), "signed out");
+  assert.equal(os.user, null);
+  assert.ok(os.wm.get("win-pw")?.state.open, "the password dialog, not a restored desktop");
+  os.layout.flush();
+  assert.equal(d.win.localStorage.getItem("hxh.desk.andrew"), before, "andrew's saved desktop untouched");
 });

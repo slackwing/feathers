@@ -2569,19 +2569,20 @@ var HxH = (() => {
       this.location = location;
       this.home = home;
     }
-    go(url) {
+    /** `splash: true` skips only the boot — the next page still shows its title screen (and gets that click). */
+    go(url, { splash = false } = {}) {
       try {
-        this.storage?.setItem(WARM_KEY, "1");
+        this.storage?.setItem(WARM_KEY, splash ? "splash" : "1");
       } catch {
       }
       this.location.href = url;
     }
-    /** Was this load started from inside the OS? Consumes the flag. */
+    /** Was this load started from inside the OS? Consumes the flag: false, true, or "splash" (skip the boot only). */
     consumeWarm() {
       try {
-        const warm = this.storage?.getItem(WARM_KEY) === "1";
+        const v = this.storage?.getItem(WARM_KEY);
         this.storage?.removeItem(WARM_KEY);
-        return warm;
+        return v === "splash" ? "splash" : v === "1";
       } catch {
         return false;
       }
@@ -4296,6 +4297,19 @@ var HxH = (() => {
     ["noisy-gradient", "Noisy Gradient"]
   ];
   var FONTS_URL = "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Alfa+Slab+One&family=Special+Elite&family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&family=Bodoni+Moda:wght@700;800&family=Crimson+Pro:wght@500;600&display=swap";
+  function faviconHref() {
+    const svg = icon("pumpkin", 64).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" ');
+    return "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+  function loadFavicon(doc) {
+    if (!doc?.head || doc.querySelector("link[data-os-icon]")) return;
+    const l = doc.createElement("link");
+    l.setAttribute("rel", "icon");
+    l.setAttribute("type", "image/svg+xml");
+    l.setAttribute("href", faviconHref());
+    l.setAttribute("data-os-icon", "");
+    doc.head.append(l);
+  }
   function loadFonts(doc) {
     if (!doc?.head || doc.querySelector("link[data-os-fonts]")) return;
     const link = (attrs) => {
@@ -4578,13 +4592,14 @@ var HxH = (() => {
      * as it was left (`Layout.restore`) or, on a first visit, launch the
      * autostart apps. Resolves with the OS once ready.
      */
-    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, badge = true, backdrop = null, icons = taskbar, bootLines: extra = [] } = {}) {
+    async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper: wallpaper2 = false, boot = true, splash = false, start: start2 = false, badge = true, backdrop = null, signOut = false, restore = true, icons = taskbar, bootLines: extra = [] } = {}) {
       loadFonts(this.doc);
+      loadFavicon(this.doc);
       for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
       this.setup({ start: start2, taskbar });
       const warm = this.nav.consumeWarm();
       const pending = this.session.me();
-      pending.then((me2) => {
+      if (!signOut) pending.then((me2) => {
         if (me2 && this.profile.setUser(me2.username)) {
           this.applyTheme();
           this.crt.apply();
@@ -4592,8 +4607,15 @@ var HxH = (() => {
       }, () => {
       });
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
-      if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
+      if (splash && boot && (!warm || warm === "splash")) await this.showSplash(STARTUP_SPLASH);
       let me = await pending;
+      if (signOut && me) {
+        try {
+          await this.session.logout();
+        } catch {
+        }
+        me = null;
+      }
       if (backdrop === "embers") this.showEmbers();
       if (badge && (!me && gate || !taskbar)) this.showBadge();
       if (!me && gate) me = await this.logon();
@@ -4605,7 +4627,7 @@ var HxH = (() => {
       if (icons) this.desktop.showIcons(true);
       this.ready = true;
       this.bus.emit("os:ready", { user: me });
-      const restored = await this.layout.restore();
+      const restored = restore ? await this.layout.restore() : false;
       if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
       return this;
     }
@@ -4618,8 +4640,8 @@ var HxH = (() => {
       return this.registry.launch(id, opts);
     }
     /** Navigate to another OS page without rebooting. */
-    go(url) {
-      this.nav.go(url);
+    go(url, opts) {
+      this.nav.go(url, opts);
     }
     async logout() {
       await this.session.logout();
@@ -7738,7 +7760,7 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/setpw.js
-  var ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" };
+  var ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers", signOut: true, restore: false };
   var SetPasswordApp = class extends App {
     static id = "setpw";
     static name = "Set password";
@@ -7780,7 +7802,7 @@ var HxH = (() => {
       this.state = st;
       win.$('[data-pw="enter"]').addEventListener("click", (e) => {
         e.preventDefault();
-        os2.go(e.currentTarget.getAttribute("href"));
+        os2.go(e.currentTarget.getAttribute("href"), { splash: true });
       });
       await os2.wm.open(win.id, null, { scroll: false, jank: true });
       if (st.state === "ok") win.$('[data-pw="password"]').focus();

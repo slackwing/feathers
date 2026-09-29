@@ -17,7 +17,7 @@ import { esc } from "../os/dom.js";
 /** How every account page (_invite/, _reset/) starts the OS — ONE place, so the two pages cannot drift: boot, the
     Summons splash, then the dialog alone over the splash's embers; no taskbar, no wallpaper, no badge (Andrew,
     2026-09-28). A page passes only its words: HxH.accountPage({ heading, submit, done, invalid, nocode }). */
-export const ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers" };
+export const ACCOUNT_PAGE = { autostart: ["setpw"], taskbar: false, wallpaper: false, gate: false, splash: true, badge: false, backdrop: "embers", signOut: true, restore: false };
 
 export class SetPasswordApp extends App {
   static id = "setpw";
@@ -62,7 +62,7 @@ export class SetPasswordApp extends App {
     const st = machinery ? await machinery.mount(win.el) : { state: "nocode" };
     this.state = st;
     // Into the site without rebooting — this page already booted.
-    win.$('[data-pw="enter"]').addEventListener("click", e => { e.preventDefault(); os.go(e.currentTarget.getAttribute("href")); });
+    win.$('[data-pw="enter"]').addEventListener("click", e => { e.preventDefault(); os.go(e.currentTarget.getAttribute("href"), { splash: true }); });   // no reboot, but the splash: its click lets the music play
     await os.wm.open(win.id, null, { scroll: false, jank: true });
     if (st.state === "ok") win.$('[data-pw="password"]').focus();
     return win;

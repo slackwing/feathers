@@ -1294,3 +1294,14 @@ new store `localStorage` directly — hand it `os.profile`.
   every 250 ms, `channel: "widget"`, `origin=` in the embed). Drags end
   on a release anywhere; preferences load as soon as `session.me()`
   answers.
+- Account pages sign out (2026-09-29): `ACCOUNT_PAGE` carries
+  `signOut: true` (an invite/reset link logs out whoever was signed in,
+  after the splash) and `restore: false` (never restores or saves a
+  saved desktop — a signed-in visitor's desktop used to take the page
+  over AND get overwritten with just the dialog). "Enter the exam site"
+  goes with `os.go(url, { splash: true })`: `Nav` warmth "splash" skips
+  the boot but shows the splash, whose click lets the music autoplay in
+  Firefox (which does not carry the invite page's click over). Every OS
+  page sets the Start button's pumpkin as its favicon (`loadFavicon`).
+  All client-side state is per user: prefs `hxh.u.<user>:…` (Profile),
+  the desktop `hxh.desk.<user>` (Layout); only `hxh.warm` (session) is not.

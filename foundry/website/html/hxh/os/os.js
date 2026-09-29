@@ -29,6 +29,7 @@ import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
 import { Settings } from "./settings.js";
 import { Profile } from "./profile.js";
+import { icon } from "./icons.js";
 import { SITE, ANONYMOUS, anonymous } from "./roles.js";
 export { SITE, ANONYMOUS, anonymous };
 import { WakeWatch } from "./wake.js";
@@ -59,6 +60,20 @@ export const SKY_OPTIONS = [
 /** Every face the OS and its apps draw with — ONE list, loaded by start() on every page (the desktop and the account
     pages alike), so no page's <head> can fall behind (the invite page's did: no splash faces). */
 export const FONTS_URL = "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Alfa+Slab+One&family=Special+Elite&family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&family=Bodoni+Moda:wght@700;800&family=Crimson+Pro:wght@500;600&display=swap";
+
+/** The tab's icon: the Start button's pumpkin (Andrew, 2026-09-29), drawn by the same sprite, set by every OS page. */
+export function faviconHref() {
+  const svg = icon("pumpkin", 64).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" ');
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+/** Put the favicon link in <head> once. */
+export function loadFavicon(doc) {
+  if (!doc?.head || doc.querySelector("link[data-os-icon]")) return;
+  const l = doc.createElement("link");
+  l.setAttribute("rel", "icon"); l.setAttribute("type", "image/svg+xml"); l.setAttribute("href", faviconHref()); l.setAttribute("data-os-icon", "");
+  doc.head.append(l);
+}
 
 /** Put the font links in <head> once. */
 export function loadFonts(doc) {
@@ -331,21 +346,28 @@ export class OS {
    * as it was left (`Layout.restore`) or, on a first visit, launch the
    * autostart apps. Resolves with the OS once ready.
    */
-  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, badge = true, backdrop = null, icons = taskbar, bootLines: extra = [] } = {}) {
+  async start({ apps = [], autostart = [], gate = true, taskbar = true, wallpaper = false, boot = true, splash = false, start = false, badge = true, backdrop = null, signOut = false, restore = true, icons = taskbar, bootLines: extra = [] } = {}) {
     loadFonts(this.doc);
+    loadFavicon(this.doc);
     for (const a of apps) Array.isArray(a) ? this.registry.register(a[0], a[1]) : this.registry.register(a);
     this.setup({ start, taskbar });
-    const warm = this.nav.consumeWarm();
+    const warm = this.nav.consumeWarm();   // false | true (skip boot and splash) | "splash" (skip the boot only)
     const pending = this.session.me();
     // the user's own preferences as soon as we know who it is — before the splash's chime asks whether Sounds are on
-    pending.then(me => { if (me && this.profile.setUser(me.username)) { this.applyTheme(); this.crt.apply(); } }, () => {});
+    // (not on a page that signs whoever it is out: an account page shows the defaults)
+    if (!signOut) pending.then(me => { if (me && this.profile.setUser(me.username)) { this.applyTheme(); this.crt.apply(); } }, () => {});
     if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
     // the title screen (os/splash.js) right after the boot screen, on EVERY page that asks for it — signed in or not,
     // the desktop or an account page — and only then what the page is for: the logon, the choose-a-password dialog,
     // the desktop (Andrew, 2026-09-28: "show the splash first, and on clicking to start, show the login / choose
     // password / etc. make this the general pattern for these special pages"). Always the Summons: the site's anchor.
-    if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
+    // "splash" warmth: arriving from an account page, whose click cannot carry over to this page in Firefox — the
+    // splash's click is what lets the music play (Andrew, 2026-09-29: "auto-play… not for a brand new test user")
+    if (splash && boot && (!warm || warm === "splash")) await this.showSplash(STARTUP_SPLASH);
     let me = await pending;
+    // an account page (an invite or reset link) signs out whoever was signed in: the link is for its own account, and a
+    // signed-in visitor's saved desktop took the page over (Andrew, 2026-09-29: "invite link invalidate current session")
+    if (signOut && me) { try { await this.session.logout(); } catch {} me = null; }
     if (backdrop === "embers") this.showEmbers();       // the account pages: the dialog over the Summons' embers
     if (badge && ((!me && gate) || !taskbar)) this.showBadge();
     if (!me && gate) me = await this.logon();
@@ -359,7 +381,7 @@ export class OS {
     if (icons) this.desktop.showIcons(true);
     this.ready = true;
     this.bus.emit("os:ready", { user: me });
-    const restored = await this.layout.restore();
+    const restored = restore ? await this.layout.restore() : false;   // an account page neither restores nor saves a desktop
     if (!restored) for (const id of autostart) await this.launch(id, { autostart: true });
     return this;
   }
@@ -373,7 +395,7 @@ export class OS {
   launch(id, opts = {}) { return this.registry.launch(id, opts); }
 
   /** Navigate to another OS page without rebooting. */
-  go(url) { this.nav.go(url); }
+  go(url, opts) { this.nav.go(url, opts); }
 
   async logout() {
     await this.session.logout();

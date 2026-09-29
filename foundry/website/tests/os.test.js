@@ -444,3 +444,27 @@ test("the user's saved preferences load as soon as the server says who it is: th
   await started;
   d.win.localStorage.removeItem("hxh.u.andrew:hxh.sound");
 });
+
+test("arriving from an account page (\"splash\" warmth) skips the boot but shows the splash; plain warmth skips both (Andrew, 2026-09-29)", async () => {
+  d.win.sessionStorage.setItem(WARM_KEY, "splash");
+  const { os } = make();
+  let booted = 0; os.setup(); os.boot.run = () => { booted++; return Promise.resolve(); };
+  const started = os.start({ apps: [Hello], start: true, splash: true });
+  await new Promise(r => setTimeout(r, 40));
+  assert.equal(booted, 0, "no boot");
+  const sp = document.querySelector(".splashscreen");
+  assert.ok(sp && !sp.hidden, "the splash");
+  sp.click(); await started;
+});
+
+test("every OS page gets the Start button's pumpkin as its favicon, once (Andrew, 2026-09-29)", async () => {
+  const { os } = make();
+  await os.start({ apps: [Hello], boot: false });
+  await make().os.start({ apps: [Hello], boot: false });
+  const links = document.head.querySelectorAll("link[data-os-icon]");
+  assert.equal(links.length, 1);
+  assert.equal(links[0].getAttribute("rel"), "icon");
+  const svg = decodeURIComponent(links[0].getAttribute("href").replace("data:image/svg+xml,", ""));
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.equal(svg.replace(/^<svg [^>]*>/, ""), (await import("../html/hxh/os/icons.js")).icon("pumpkin", 64).replace(/^<svg [^>]*>/, ""), "the Start button's own pumpkin");
+});

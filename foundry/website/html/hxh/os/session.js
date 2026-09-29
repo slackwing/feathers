@@ -48,16 +48,17 @@ export class Nav {
     this.location = location;
     this.home = home;
   }
-  go(url) {
-    try { this.storage?.setItem(WARM_KEY, "1"); } catch {}
+  /** `splash: true` skips only the boot — the next page still shows its title screen (and gets that click). */
+  go(url, { splash = false } = {}) {
+    try { this.storage?.setItem(WARM_KEY, splash ? "splash" : "1"); } catch {}
     this.location.href = url;
   }
-  /** Was this load started from inside the OS? Consumes the flag. */
+  /** Was this load started from inside the OS? Consumes the flag: false, true, or "splash" (skip the boot only). */
   consumeWarm() {
     try {
-      const warm = this.storage?.getItem(WARM_KEY) === "1";
+      const v = this.storage?.getItem(WARM_KEY);
       this.storage?.removeItem(WARM_KEY);
-      return warm;
+      return v === "splash" ? "splash" : v === "1";
     } catch { return false; }
   }
   /** A cold load of the home page (boots, then the logon screen). */

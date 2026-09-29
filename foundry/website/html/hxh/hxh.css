@@ -805,6 +805,7 @@ body.logon .icons {
 .anon a {
   color: #1f5fbf;
   text-decoration: underline;
+  font-weight: bold;
 }
 .taskbar {
   position: fixed;
