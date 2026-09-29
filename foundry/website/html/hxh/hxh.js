@@ -1007,6 +1007,25 @@ var HxH = (() => {
       ".kkk........kkk.",
       "................"
     ],
+    globe: [
+      // HunterNet, the browser (Andrew, 2026-09-29): a globe lit from the upper left
+      "................",
+      "....kkkkkkkk....",
+      "...kgglbbbbbk...",
+      "..kggggbbbbbbk..",
+      ".klggggbbbggBBk.",
+      ".klggggbbbgggBk.",
+      ".klgggggbbggBBk.",
+      ".kbbggggbBBgJJk.",
+      ".kbbggggBBBJJJk.",
+      ".kbbbbggBBBJJJk.",
+      ".kbbbbgggBBJVVk.",
+      ".kbbbBggJBJJJVk.",
+      "..kbBBBJJVVVVk..",
+      "...kBBBBVVVVk...",
+      "....kkkkkkkk....",
+      "................"
+    ],
     music: [
       // the Music player (Andrew, 2026-09-28): beamed eighth notes, violet (Andrew, 2026-09-28: purple, not orange)
       "................",
@@ -1237,6 +1256,29 @@ var HxH = (() => {
       "kUUUUUk.....kOOkkOOk",
       "kUUUUk.......kOOOOk.",
       ".kkkk.........kkkk.."
+    ],
+    globe: [
+      // HunterNet's 20-grid
+      "....................",
+      "......kkkkkkkk......",
+      "....kklllbbbbbkk....",
+      "...klgggbbbbbbbbk...",
+      "..klgggggbbbbbbbBk..",
+      "..kggggggbbbbggBBk..",
+      ".klggggggbbbggggBBk.",
+      ".kllgggggbbbbgggBBk.",
+      ".klbbgggggbbBBggBBk.",
+      ".kbbbgggggbBBggJJVk.",
+      ".kbbbbggggBBBgJJJJk.",
+      ".kbbbbggggBBBJJJJVk.",
+      ".kbbbbbggggBBBJJVVk.",
+      ".kbbbbbggggBBJJJVVk.",
+      "..kbbbBBggJBVJJJVk..",
+      "..kbbBBBBJJJVVVVVk..",
+      "...kBBBBBBJVVVVVk...",
+      "....kkBBBVVVVVkk....",
+      "......kkkkkkkk......",
+      "...................."
     ],
     music: [
       // the Music player's 20-grid (Andrew, 2026-09-28)
@@ -4198,7 +4240,7 @@ var HxH = (() => {
     }
     save() {
       const k = this.key;
-      if (!k) return null;
+      if (!k || this.os.framed) return null;
       const snap = this.snapshot();
       try {
         this.storage?.setItem(k, JSON.stringify(snap));
@@ -4319,6 +4361,13 @@ var HxH = (() => {
       this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
       this.session = session || new Session({ fetch: this.fetch });
       this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
+      this.framed = (() => {
+        try {
+          return win.top !== win;
+        } catch {
+          return true;
+        }
+      })();
       this.profile = new Profile({ storage: win.localStorage });
       this.crt = new CRT({ body: this.doc.body, storage: this.profile, bus: this.bus });
       this.sounds = new Sounds({ storage: this.profile, AudioContext: win.AudioContext || win.webkitAudioContext });
@@ -4641,6 +4690,7 @@ var HxH = (() => {
   __export(apps_exports, {
     About: () => AboutApp,
     Binder: () => BinderApp,
+    Browser: () => BrowserApp,
     BugReport: () => BugReportApp,
     Chat: () => ChatApp,
     HeavensArena: () => HeavensArenaApp,
@@ -9700,6 +9750,189 @@ var HxH = (() => {
       this.frame?.remove();
       this.frame = null;
       this.playing = this.started = false;
+    }
+  };
+
+  // html/hxh/apps/browser.js
+  var HOME = "https://en.wikipedia.org/wiki/Hunter_%C3%97_Hunter";
+  var SEARCH = "https://en.wikipedia.org/w/index.php?search=";
+  var REFUSERS = ["fandom.com", "google.com", "youtube.com", "duckduckgo.com", "bing.com", "github.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "reddit.com", "amazon.com", "linkedin.com"];
+  function normalize(input, base = globalThis.location?.href) {
+    const t = String(input ?? "").trim();
+    if (!t) return null;
+    const web = (u) => u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+    if (/^https?:\/\//i.test(t)) {
+      try {
+        return web(new URL(t));
+      } catch {
+        return null;
+      }
+    }
+    if (t.startsWith("/") && base) {
+      try {
+        return web(new URL(t, base));
+      } catch {
+        return null;
+      }
+    }
+    if (/^[a-z][a-z0-9+.-]*:(?!\d)/i.test(t)) return null;
+    if (!/\s/.test(t) && /^[\w-]+(\.[\w-]+)+(:\d+)?([/?#].*)?$/.test(t)) {
+      try {
+        return web(new URL("https://" + t));
+      } catch {
+        return null;
+      }
+    }
+    return SEARCH + encodeURIComponent(t);
+  }
+  function refuses(url) {
+    try {
+      const u = new URL(url);
+      if (/(^|\.)youtube(-nocookie)?\.com$/.test(u.hostname) && u.pathname.startsWith("/embed/")) return false;
+      return REFUSERS.some((d) => u.hostname === d || u.hostname.endsWith("." + d));
+    } catch {
+      return false;
+    }
+  }
+  var hostOf = (url) => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  };
+  var CONTENT2 = `
+  <div class="navbar">
+    <button class="btn nav" type="button" data-act="back" title="Back">\u2190</button>
+    <button class="btn nav" type="button" data-act="forward" title="Forward">\u2192</button>
+    <button class="btn nav" type="button" data-act="reload" title="Refresh">\u21BB</button>
+    <button class="btn nav" type="button" data-act="home" title="Home">\u2302</button>
+    <form class="addr"><input class="field" name="addr" spellcheck="false" autocomplete="off" aria-label="Address"><button class="btn" type="submit">Go</button></form>
+  </div>
+  <div class="view sunken"><div class="nope" hidden><p class="why"></p><button class="btn primary" type="button" data-act="open">Open in new window</button></div></div>
+  <div class="bstatus"></div>`;
+  var BrowserApp = class extends App {
+    static id = "browser";
+    static name = "HunterNet";
+    static icon = "globe";
+    static order = 24;
+    // after Music
+    constructor(os2, options = {}) {
+      super(os2, options);
+      this.entries = [];
+      this.index = -1;
+    }
+    visible(user) {
+      return !!user && (user.roles || []).some((r) => r.website === "hxh" && r.role === "admin");
+    }
+    // admins, while it is polished
+    window() {
+      if (this.win) return this.win;
+      this.win = new Window({ id: "win-browser", title: "HunterNet", icon: "globe", width: 900, cls: "browser", menus: (w2) => this.os.appMenus(w2), content: CONTENT2 });
+      this.os.wm.add(this.win);
+      const w = this.win;
+      this.addr = w.$(".addr input");
+      this.view = w.$(".view");
+      this.nope = w.$(".nope");
+      this.statusEl = w.$(".bstatus");
+      w.$(".addr").addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.go(this.addr.value);
+      });
+      w.$(".navbar").addEventListener("click", (e) => {
+        const act = e.target.closest("[data-act]")?.dataset.act;
+        if (act === "back") this.back();
+        else if (act === "forward") this.forward();
+        else if (act === "reload") this.reload();
+        else if (act === "home") this.go(HOME);
+      });
+      this.nope.querySelector('[data-act="open"]').addEventListener("click", () => this.os.win?.open?.(this.current, "_blank", "noopener"));
+      return w;
+    }
+    get current() {
+      return this.entries[this.index] || null;
+    }
+    async launch() {
+      const w = this.window();
+      await this.os.wm.open(w.id);
+      if (!this.current) this.go(HOME);
+      return w;
+    }
+    /** Open what was typed (or a link): a new history entry, the forward ones dropped. */
+    go(input) {
+      const url = normalize(input, this.os.win?.location?.href);
+      if (!url) {
+        this.status("Can't open that address.");
+        this.addr.value = this.current || "";
+        return false;
+      }
+      this.entries = this.entries.slice(0, this.index + 1);
+      this.entries.push(url);
+      this.index = this.entries.length - 1;
+      this.show();
+      return true;
+    }
+    back() {
+      if (this.index > 0) {
+        this.index--;
+        this.show();
+      }
+    }
+    forward() {
+      if (this.index < this.entries.length - 1) {
+        this.index++;
+        this.show();
+      }
+    }
+    reload() {
+      if (this.current) this.show();
+    }
+    /** Show the current entry: a fresh frame (a refresh reloads even a page whose address has not changed), or the refusal page. */
+    show() {
+      const url = this.current;
+      this.addr.value = url;
+      this.win.$('[data-act="back"]').disabled = this.index <= 0;
+      this.win.$('[data-act="forward"]').disabled = this.index >= this.entries.length - 1;
+      this.frame?.remove();
+      this.frame = null;
+      if (refuses(url)) {
+        this.nope.hidden = false;
+        this.nope.querySelector(".why").textContent = `${hostOf(url)} can't be shown inside HunterNet.`;
+        this.status("Done");
+        return;
+      }
+      this.nope.hidden = true;
+      this.frame = h("iframe", {
+        src: url,
+        title: "HunterNet",
+        referrerpolicy: "strict-origin-when-cross-origin",
+        allow: "autoplay; fullscreen",
+        sandbox: "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals",
+        // no allow-top-navigation: a page never takes the OS away
+        onload: () => this.loaded()
+      });
+      this.view.append(this.frame);
+      this.status(`Opening ${hostOf(url)}\u2026`);
+    }
+    /** A page finished loading. One of this site's pages can be read: a link followed inside it becomes a history entry. */
+    loaded() {
+      this.status("Done");
+      let href = null;
+      try {
+        href = this.frame?.contentWindow?.location?.href;
+      } catch {
+        return;
+      }
+      if (!href || href === "about:blank" || href === this.current) return;
+      this.entries = this.entries.slice(0, this.index + 1);
+      this.entries.push(href);
+      this.index = this.entries.length - 1;
+      this.addr.value = href;
+      this.win.$('[data-act="back"]').disabled = false;
+      this.win.$('[data-act="forward"]').disabled = true;
+    }
+    status(text) {
+      if (this.statusEl) this.statusEl.textContent = text;
     }
   };
 

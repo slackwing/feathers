@@ -1305,3 +1305,16 @@ new store `localStorage` directly — hand it `os.profile`.
   page sets the Start button's pumpkin as its favicon (`loadFavicon`).
   All client-side state is per user: prefs `hxh.u.<user>:…` (Profile),
   the desktop `hxh.desk.<user>` (Layout); only `hxh.warm` (session) is not.
+- HunterNet (apps/browser.js, 2026-09-29): a browser in an iframe, admins
+  only while it is polished (name: Andrew's; the show's "Hunter Website"
+  is what hunters browse). Many sites refuse framing (X-Frame-Options /
+  frame-ancestors) and a page cannot detect a refused frame, so known
+  refusers (`REFUSERS`: Fandom — so Hunterpedia —, Google, YouTube except
+  /embed/, DuckDuckGo, …) get a "can't be shown inside HunterNet" page
+  with Open in new window. Home = Wikipedia's Hunter × Hunter; words
+  search Wikipedia. Only http(s) reaches the frame (`normalize`: a
+  javascript: URL in an iframe runs as this site); the frame's sandbox
+  has no allow-top-navigation. Its own history (entries/index), plus
+  links followed inside this site's pages (same origin, readable). The
+  site opened inside itself runs a whole OS: `os.framed` stops it saving
+  a desktop over the real one (it shares this browser's storage).

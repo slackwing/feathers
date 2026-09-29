@@ -94,6 +94,8 @@ export class OS {
     this.fetch = fetch || win.fetch?.bind(win) || globalThis.fetch?.bind(globalThis);
     this.session = session || new Session({ fetch: this.fetch });
     this.nav = nav || new Nav({ storage: win.sessionStorage, location: win.location });
+    /** This OS is inside another page — the site opened in HunterNet (apps/browser.js). */
+    this.framed = (() => { try { return win.top !== win; } catch { return true; } })();
     this.profile = new Profile({ storage: win.localStorage });   // every preference, per user (os/profile.js)
     this.crt = new CRT({ body: this.doc.body, storage: this.profile, bus: this.bus });
     this.sounds = new Sounds({ storage: this.profile, AudioContext: win.AudioContext || win.webkitAudioContext });

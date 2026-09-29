@@ -60,7 +60,7 @@ export class Layout {
 
   save() {
     const k = this.key;
-    if (!k) return null;
+    if (!k || this.os.framed) return null;   // the site shown inside HunterNet shares this storage: never save over the real desktop
     const snap = this.snapshot();
     try { this.storage?.setItem(k, JSON.stringify(snap)); } catch {}
     return snap;

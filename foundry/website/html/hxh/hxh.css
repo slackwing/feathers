@@ -4660,6 +4660,80 @@ body.stacked .room .logbox {
   border: 0;
 }
 
+/* html/hxh/apps/browser.css */
+.win.browser .navbar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.win.browser .btn.nav {
+  min-width: 0;
+  width: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font:
+    700 17px/1 Arial,
+    "Segoe UI Symbol",
+    sans-serif;
+  color: var(--ink);
+}
+.win.browser .btn.nav:disabled {
+  opacity: .4;
+}
+.win.browser .addr {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  margin: 0 0 0 6px;
+}
+.win.browser .addr .field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.win.browser .addr .btn {
+  min-width: 0;
+  padding: 0 12px;
+}
+.win.browser .view {
+  position: relative;
+  height: min(64vh, 560px);
+  background: #fff;
+  overflow: hidden;
+}
+.win.browser .view iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+.win.browser .nope {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  background: var(--win-bg);
+}
+.win.browser .nope[hidden] {
+  display: none;
+}
+.win.browser .nope .why {
+  margin: 0;
+}
+.win.browser .bstatus {
+  margin: 4px 0 0;
+  min-height: 1.3em;
+  color: var(--dim-fg);
+  font-size: .9em;
+}
+
 /* html/hxh/apps/bugs/bugs.css */
 .win.bugs .compose {
   margin-top: 0;
