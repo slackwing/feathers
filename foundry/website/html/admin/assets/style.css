@@ -107,8 +107,8 @@ td.user { font-weight: 600; }
 td.dim, .dim { color: var(--dim); }
 td.nowrap { white-space: nowrap; }
 td select.site { min-width: 5.2rem; width: auto; }
-tfoot td { background: var(--panel-2); }
-tfoot input, tfoot select { font-size: 12px; padding: .3rem .45rem; }
+tbody.create td { background: var(--panel-2); }
+tbody.create input, tbody.create select { font-size: 12px; padding: .3rem .45rem; }
 
 /* click-to-edit text */
 .edit { cursor: text; border-bottom: 1px dashed transparent; }

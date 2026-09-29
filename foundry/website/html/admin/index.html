@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>admin</title>
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
 <main>
@@ -45,7 +45,7 @@
         </tr>
       </thead>
       <tbody id="users"></tbody>
-      <tfoot>
+      <tbody class="create">
         <tr id="create-row">
           <td><span class="avatar" id="new-avatar">?</span></td>
           <td><input id="cu" placeholder="username" autocomplete="off"></td>
@@ -55,7 +55,8 @@
           <td class="dim">roles are added after creating</td>
           <td colspan="2"><button class="primary" id="create" type="button" style="width:auto;margin:0">Create</button> <span class="msg err" id="create-msg" style="display:inline;margin:0 0 0 .5rem"></span></td>
         </tr>
-      </tfoot>
+      </tbody>
+      <tbody id="bot-users"></tbody>
     </table>
 
     <section id="bots-section" class="hidden">
@@ -189,16 +190,17 @@ async function refreshBots() {
 
 // ---- table ----
 function renderUsers() {
-  const tbody = $("users");
-  tbody.innerHTML = "";
+  // people, then the new-user row, then the bots (Andrew, 2026-09-29: the create row belongs under the humans)
+  const tbody = $("users"), botBody = $("bot-users");
+  tbody.innerHTML = ""; botBody.innerHTML = "";
   const people = users.filter(u => !u.is_bot), bots = users.filter(u => u.is_bot);
   for (const u of people) tbody.append(row(u));
   if (bots.length) {
     const div = document.createElement("tr");
     div.className = "divider";
     div.innerHTML = `<td colspan="8">Bots <span class="dim">— fake users driven by hobby-server's bot programs; passwords are provisioned by the service</span></td>`;
-    tbody.append(div);
-    for (const u of bots) tbody.append(row(u));
+    botBody.append(div);
+    for (const u of bots) botBody.append(row(u));
   }
 }
 
@@ -270,11 +272,16 @@ function row(u) {
   tr.querySelector(".avatar").addEventListener("click", e => { e.stopPropagation(); avatarPop(e.currentTarget, u); });
 
   // invite / reset matrix
-  tr.querySelectorAll(".ib").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); if (b.classList.contains("off")) return; matrix(b, u, b.dataset.kind, b.dataset.do); }));
+  // only the matrix's own buttons (they carry a kind) — the ⋯ is an .ib too, and used to open a reset-email popover over its own menu (since 2026-09-18)
+  tr.querySelectorAll(".ib[data-kind]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); if (b.classList.contains("off")) return; matrix(b, u, b.dataset.kind, b.dataset.do); }));
 
   tr.querySelector(".kebab")?.addEventListener("click", e => {
     e.stopPropagation();
-    const p = popover(e.currentTarget, `<div class="menu"><button type="button" class="danger" id="k-del">Delete user…</button></div>`);
+    const p = popover(e.currentTarget, `<div class="menu">${u.username === "anonymous" ? "" : `<button type="button" id="k-bot">${u.is_bot ? "Mark as person" : "Mark as bot"}</button>`}<button type="button" class="danger" id="k-del">Delete user…</button></div>`);
+    p.querySelector("#k-bot")?.addEventListener("click", () => {
+      closePop();
+      act(async () => { await patch(u, { is_bot: !u.is_bot }); await refresh(); flash(`${u.username}: ${u.is_bot ? "a person" : "a bot"}`); });
+    });
     p.querySelector("#k-del").addEventListener("click", () => {
       closePop();
       if (!confirm(`Delete ${u.username}? Roles, sessions and pending links go with it. This cannot be undone.`)) return;
