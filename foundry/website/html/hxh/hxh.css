@@ -4781,9 +4781,15 @@ body.stacked .room .logbox {
     sans-serif;
 }
 .win.about .aintro {
-  margin: 0 0 14px;
-  font-weight: 700;
-  font-size: 13px;
+  margin: 2px 0 18px;
+  padding: 0 0 16px;
+  border-bottom: 1px dashed var(--dim-fg);
+  font:
+    400 14.5px/1.65 "Special Elite",
+    "Courier New",
+    monospace;
+  letter-spacing: .01em;
+  text-wrap: pretty;
 }
 .win.about .aprompts {
   margin: 0;

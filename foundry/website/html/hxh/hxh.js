@@ -3619,7 +3619,6 @@ var HxH = (() => {
 
   // html/hxh/os/people.js
   var PEOPLE_URL = "/hxh/api/db/people";
-  var CONTACTS_URL = "/hxh/api/chat/contacts";
   var People = class {
     /** { fetch, bus, user: () => the signed-in account | null } */
     constructor({ fetch, bus, user } = {}) {
@@ -3682,18 +3681,6 @@ var HxH = (() => {
       for (const [u, o] of next) changed = this.put(u, o) || changed;
       if (changed) this.bus?.emit("people", {});
       return changed;
-    }
-    /** Everyone's profile + claim from the chat's contacts, without the chat open (e.g. About names Andrew). Resolves true when anything changed. */
-    async loadContacts() {
-      if (!this.fetch) return false;
-      try {
-        const r = await this.fetch(CONTACTS_URL, { credentials: "same-origin" });
-        if (!r.ok) return false;
-        const data = await r.json();
-        return this.setContacts(data?.contacts);
-      } catch {
-        return false;
-      }
     }
     put(username, { character, avatar_url } = {}) {
       const prev = this.overrides.get(username);
@@ -9978,8 +9965,7 @@ var HxH = (() => {
 
   // html/hxh/apps/about/app.js
   var PROMPTS_URL = "/hxh/about/prompts.json";
-  var AUTHOR = "andrew";
-  var intro = (name) => `Here were ${name}'s prompts to create this website. Plus all image selection and cropping done by Abi, because AI lacked taste.`;
+  var INTRO = "Hey y'all, this site was created with Claude Fable and Opus 5.5. AI makes things look easy, but when you try full-blown projects for real, you find it's not as easy as it seems. Hundreds or even thousands of decisions need to be made. And to converge to a nice-looking result without being overwhelmed by those tiny decisions and inconsistencies cropping up everywhere, you have to be extremely decisive at nipping everything in the bud, including knowing how to refactor code and implement tests to prevent those mistakes from coming back. Otherwise you just end up in a loop of chasing bugs and completion plateaus at 90% done, forever. I saved every prompt that went into making this website in case people were curious to see an unfiltered and unabridged view into what it's like, including me getting mad at Claude and cussing it out. Also, AI had poor taste in cropping images for avatars and cards; so I had Claude scrape the web for 6-8 images per character, but then built an admin app (in this website) for Abi to manually select and crop photos for all avatars and cards. Thank you Abi!";
   var AboutApp = class extends App {
     static id = "about";
     static name = "About";
@@ -10002,13 +9988,8 @@ var HxH = (() => {
         content: `<div class="ascroll sunken"><p class="aintro"></p><ol class="aprompts"></ol></div>`
       });
       this.os.wm.add(this.win);
-      this.renderIntro();
-      this.os.bus.on("people", () => this.renderIntro());
-      this.os.people.loadContacts();
+      this.win.$(".aintro").textContent = INTRO;
       return this.win;
-    }
-    renderIntro() {
-      this.win.$(".aintro").textContent = intro(this.os.people.label(AUTHOR));
     }
     async launch() {
       const win = this.window();

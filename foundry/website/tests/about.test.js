@@ -2,14 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, fakeFetch, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { AboutApp, intro, PROMPTS_URL } from "../html/hxh/apps/about/app.js";
+import { AboutApp, INTRO, PROMPTS_URL } from "../html/hxh/apps/about/app.js";
 import { hasIconPair, DESK } from "../html/hxh/os/icons.js";
 
 const d = setupDom();
 const ME = { username: "abi", display_name: "Abi", initial: "AB", color: "#349db2", roles: [{ website: "hxh", role: "guest" }] };
-const ANDREW = { username: "andrew", display_name: "Andrew C", initial: "AC", color: "#2e6b30", character: "Chrollo" };
 const make = prompts => {
-  const fetch = fakeFetch({ "GET /admin/api/me": [200, ME], "GET /hxh/api/chat/contacts": [200, { me: "abi", contacts: [ANDREW] }], [`GET ${PROMPTS_URL}`]: prompts ? [200, prompts] : [500, {}] });
+  const fetch = fakeFetch({ "GET /admin/api/me": [200, ME], [`GET ${PROMPTS_URL}`]: prompts ? [200, prompts] : [500, {}] });
   const os = new OS({ win: d.win, fetch, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   return { os, options: { fetch } };
 };
@@ -23,8 +22,8 @@ test("About: a question-mark app for everyone; the window opens on Andrew's note
   await os.launch("about");
   const w = os.wm.get("win-about");
   await tick(0);
-  assert.equal(w.$(".aintro").textContent, "Here were Chrollo (Andrew C)'s prompts to create this website. Plus all image selection and cropping done by Abi, because AI lacked taste.", "named by People, from the contacts");
-  assert.equal(intro(os.people.label("andrew")), w.$(".aintro").textContent);
+  assert.equal(w.$(".aintro").textContent, INTRO, "Andrew's note, verbatim");
+  assert.match(INTRO, /^Hey y'all, this site was created with Claude Fable and Opus 5\.5\. .* Thank you Abi!$/);
   const items = [...w.$(".aprompts").children];
   assert.equal(w.$(".aprompts").tagName, "OL", "a numbered list");
   assert.deepEqual(items.map(li => li.textContent), prompts, "verbatim");

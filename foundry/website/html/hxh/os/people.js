@@ -20,7 +20,6 @@
 import { avatar as avatarHTML } from "./icons.js";
 
 export const PEOPLE_URL = "/hxh/api/db/people";
-export const CONTACTS_URL = "/hxh/api/chat/contacts";
 
 export class People {
   /** { fetch, bus, user: () => the signed-in account | null } */
@@ -83,17 +82,6 @@ export class People {
     for (const [u, o] of next) changed = this.put(u, o) || changed;
     if (changed) this.bus?.emit("people", {});
     return changed;
-  }
-
-  /** Everyone's profile + claim from the chat's contacts, without the chat open (e.g. About names Andrew). Resolves true when anything changed. */
-  async loadContacts() {
-    if (!this.fetch) return false;
-    try {
-      const r = await this.fetch(CONTACTS_URL, { credentials: "same-origin" });
-      if (!r.ok) return false;
-      const data = await r.json();
-      return this.setContacts(data?.contacts);
-    } catch { return false; }
   }
 
   put(username, { character, avatar_url } = {}) {

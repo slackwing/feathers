@@ -1,6 +1,5 @@
-/* About (Andrew, 2026-09-27) — how this site was made: a note from Andrew (named by People, so
-   "Chrollo (Andrew C)" once he has claimed),
-   then every prompt he gave to build it, verbatim (typos, lowercase and
+/* About (Andrew, 2026-09-27) — how this site was made: a note from Andrew,
+   set like a typed letter, then every prompt he gave to build it, verbatim (typos, lowercase and
    all), numbered, in a long scroll. Small plain Arial rather than the pixel
    type, so more fits on the screen. The prompts live in about/prompts.json
    (a list of strings, in order) and are fetched when the window first
@@ -11,9 +10,8 @@ import { h } from "../../os/dom.js";
 import "./about.css";
 
 export const PROMPTS_URL = "/hxh/about/prompts.json";
-export const AUTHOR = "andrew";
-/** Andrew's note, naming him the way the site does ("Chrollo (Andrew C)" once claimed) — People.label, never hardcoded. */
-export const intro = name => `Here were ${name}'s prompts to create this website. Plus all image selection and cropping done by Abi, because AI lacked taste.`;
+/** Andrew's note, verbatim (2026-09-29). */
+export const INTRO = "Hey y'all, this site was created with Claude Fable and Opus 5.5. AI makes things look easy, but when you try full-blown projects for real, you find it's not as easy as it seems. Hundreds or even thousands of decisions need to be made. And to converge to a nice-looking result without being overwhelmed by those tiny decisions and inconsistencies cropping up everywhere, you have to be extremely decisive at nipping everything in the bud, including knowing how to refactor code and implement tests to prevent those mistakes from coming back. Otherwise you just end up in a loop of chasing bugs and completion plateaus at 90% done, forever. I saved every prompt that went into making this website in case people were curious to see an unfiltered and unabridged view into what it's like, including me getting mad at Claude and cussing it out. Also, AI had poor taste in cropping images for avatars and cards; so I had Claude scrape the web for 6-8 images per character, but then built an admin app (in this website) for Abi to manually select and crop photos for all avatars and cards. Thank you Abi!";
 
 export class AboutApp extends App {
   static id = "about";
@@ -31,13 +29,9 @@ export class AboutApp extends App {
     this.win = new Window({ id: "win-about", title: "About", icon: "question", width: 680, cls: "about", menus: w => this.os.appMenus(w),
       content: `<div class="ascroll sunken"><p class="aintro"></p><ol class="aprompts"></ol></div>` });
     this.os.wm.add(this.win);
-    this.renderIntro();
-    this.os.bus.on("people", () => this.renderIntro());
-    this.os.people.loadContacts();   // his profile + claim, even when the chat has never opened
+    this.win.$(".aintro").textContent = INTRO;
     return this.win;
   }
-
-  renderIntro() { this.win.$(".aintro").textContent = intro(this.os.people.label(AUTHOR)); }
 
   async launch() {
     const win = this.window();
