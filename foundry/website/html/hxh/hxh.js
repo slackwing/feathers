@@ -9492,7 +9492,7 @@ var HxH = (() => {
     }
     play() {
       if (this.frame) return this.frame;
-      this.playing = false;
+      this.playing = this.started = false;
       this.frame = h("iframe", {
         src: embedSrc(),
         title: TITLE,
@@ -9531,10 +9531,12 @@ var HxH = (() => {
           return;
         }
         const state = d?.event === "onStateChange" ? d.info : d?.event === "infoDelivery" ? d.info?.playerState : void 0;
-        if (typeof state === "number") this.playing = state === 1 || state === 3;
+        if (typeof state !== "number") return;
+        this.playing = state === 1 || state === 3;
+        if (this.playing) this.started = true;
       });
       const gesture = () => {
-        if (this.frame && !this.playing) this.say({ event: "command", func: "playVideo", args: [] });
+        if (this.frame && !this.started) this.say({ event: "command", func: "playVideo", args: [] });
       };
       for (const t of ["pointerdown", "keydown"]) doc.addEventListener(t, gesture, true);
       return true;
@@ -9543,7 +9545,7 @@ var HxH = (() => {
     stop() {
       this.frame?.remove();
       this.frame = null;
-      this.playing = false;
+      this.playing = this.started = false;
     }
   };
 
