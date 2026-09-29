@@ -693,3 +693,10 @@ test("the book is a touch drag handle: touch-action none, so a finger drag moves
   const css = fs.readFileSync(new URL("../html/hxh/apps/binder.css", import.meta.url), "utf8");
   assert.match(css, /\.book \{[^}]*touch-action: none/);
 });
+
+test("closed, only the cover and the window buttons take the pointer: the open book's empty left half lets clicks through to the desktop icons (Andrew, 2026-09-28)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/apps/binder.css", import.meta.url), "utf8");
+  assert.match(css, /\.win\.binder:has\(\.book\.closed\) \{ pointer-events: none; \}/);
+  assert.match(css, /\.win\.binder:has\(\.book\.closed\) :is\(\.flap, \.fbtns\) \{ pointer-events: auto; \}/);
+});

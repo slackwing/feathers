@@ -2204,6 +2204,12 @@ html[data-theme=seapumpkin-pastel] {
 .win.binder .fbtns {
   transition: opacity .25s ease-out;
 }
+.win.binder:has(.book.closed) {
+  pointer-events: none;
+}
+.win.binder:has(.book.closed) :is(.flap, .fbtns) {
+  pointer-events: auto;
+}
 .win.binder.turning .fbtns {
   opacity: 0;
   pointer-events: none;

@@ -62,6 +62,11 @@
 /* the window's minimize / close buttons float above the book, so a turning leaf would pass under them:
    gone the moment a turn starts, faded back in once the page lands (binder.js settle) */
 .win.binder .fbtns { transition: opacity .25s ease-out; }
+/* closed, the window is still as wide as the OPEN book, but only the cover shows: the empty left half must not catch
+   clicks meant for the desktop icons under it (Andrew, 2026-09-28: "the unopened left side of the binder area overlaps
+   the desktop icons! they become unclickable"). Only the cover and the window buttons take the pointer. */
+.win.binder:has(.book.closed) { pointer-events: none; }
+.win.binder:has(.book.closed) :is(.flap, .fbtns) { pointer-events: auto; }
 .win.binder.turning .fbtns { opacity: 0; pointer-events: none; transition: none; }
 
 .cover {
