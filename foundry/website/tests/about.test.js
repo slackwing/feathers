@@ -23,7 +23,7 @@ test("About: a question-mark app for everyone; the window opens on Andrew's note
   const w = os.wm.get("win-about");
   await tick(0);
   assert.equal(w.$(".aintro").textContent, INTRO, "Andrew's note, verbatim");
-  assert.match(INTRO, /^Hey y'all, welcome! This site was created with Claude Fable and Opus 5\.5\. .* Thank you Abi!$/);
+  assert.match(INTRO, /^Hey y'all, welcome! This site was created with Claude Fable and Opus 5\.5\. .* Thanks Abi for doing all that!$/);
   const items = [...w.$(".aprompts").children];
   assert.equal(w.$(".aprompts").tagName, "OL", "a numbered list");
   assert.deepEqual(items.map(li => li.textContent), prompts, "verbatim");
