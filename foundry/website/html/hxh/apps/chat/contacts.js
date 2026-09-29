@@ -160,12 +160,12 @@ export class ContactsWindow extends Window {
   }
 
   row(c, { flat = false } = {}) {
-    const state = c.state || "offline";
-    const row = h("div", { className: `contact ${state}${c.username === this.selected ? " sel" : ""}`, dataset: { user: c.username }, role: "treeitem", tabindex: "0",
-      title: state === "nopass" ? "Hasn't set a password yet" : "" });
+    // someone who hasn't set a password yet looks like any other offline buddy — the list never says so (Andrew, 2026-09-29, live)
+    const state = !c.state || c.state === "nopass" ? "offline" : c.state;
+    const row = h("div", { className: `contact ${state}${c.username === this.selected ? " sel" : ""}`, dataset: { user: c.username }, role: "treeitem", tabindex: "0" });
     row.style.setProperty("--c", c.color || "#9a9a9a");
     row.append(h("i", { className: "dot " + state }), h("span", { className: "nm", text: c.display_name || c.username }));
-    if (state === "away" || state === "nopass" || (flat && state !== "online")) row.append(h("span", { className: "st", text: `(${STATE_LABEL[state]})` }));
+    if (state === "away" || (flat && state !== "online")) row.append(h("span", { className: "st", text: `(${STATE_LABEL[state]})` }));
     return row;
   }
 

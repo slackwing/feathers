@@ -102,7 +102,9 @@ test("buddy list: banner, tabs, two groups (bots are just buddies), dots, click 
   assert.deepEqual(rows, ["abi", "alyosha", "gon", "killua", "leorio"]);
   assert.equal(w.el.querySelector('[data-user="gon"] .st').textContent, "(Away)");
   assert.ok(w.el.querySelector('[data-user="gon"] .dot').classList.contains("away"));
-  assert.ok(w.el.querySelector('[data-user="leorio"] .dot').classList.contains("nopass"));
+  assert.ok(w.el.querySelector('[data-user="leorio"] .dot').classList.contains("offline"), "no password yet: shown as plain offline (Andrew, 2026-09-29)");
+  assert.doesNotMatch(w.el.querySelector('[data-user="leorio"]').textContent, /password/i);
+  assert.equal(w.el.querySelector('[data-user="leorio"]').getAttribute("title") || "", "");
   assert.equal(w.el.querySelector(".fig"), null);   // dots, not figures
   assert.equal(w.el.querySelector('[data-user="alyosha"]').title, "");   // nothing marks a bot
   assert.equal(w.countEl.textContent, "2 of 5 online");
