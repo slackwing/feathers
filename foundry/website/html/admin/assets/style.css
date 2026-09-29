@@ -92,6 +92,7 @@ form button.primary { display: block; width: 100%; margin-top: 1rem; padding: .5
 }
 .ib svg { width: 15px; height: 15px; }
 .ib:hover { color: var(--accent); }
+.ib.off, .ib.off:hover { opacity: .35; color: inherit; cursor: not-allowed; }   /* an invite with no role on the active site */
 
 table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
 th {

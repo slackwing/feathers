@@ -4012,7 +4012,10 @@ var HxH = (() => {
       el.dataset.style = id;
       el.hidden = false;
       const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...prompt ? { prompt } : {} });
-      if (this.props.small?.()) el.append(h("div", { className: "sp-best", text: BEST_VIEWED }));
+      if (this.props.small?.()) {
+        const note = h("div", { className: "sp-best", text: BEST_VIEWED }), start2 = el.querySelector(".sp-start");
+        start2 ? start2.after(note) : el.append(note);
+      }
       el.setAttribute("aria-label", prompt || "Click to start");
       el.focus?.({ preventScroll: true });
       return new Promise((resolve) => {
@@ -4222,6 +4225,8 @@ var HxH = (() => {
   };
 
   // html/hxh/os/os.js
+  var SITE = "hxh";
+  var NO_ROLE = "No role assigned. Contact system administrator.";
   var THEME_KEY = "theme";
   var THEME_DEFAULT = "seapumpkin";
   var THEME_OPTIONS = [
@@ -4437,7 +4442,26 @@ var HxH = (() => {
         else if (!spec && has) this.bus.emit("tray:remove", { id: app.id });
       }
     }
-    isAdmin(site = "hxh") {
+    /** Any role on the site: a member. */
+    member(user = this.user, site = SITE) {
+      return (user?.roles || []).some((r) => r.website === site);
+    }
+    /** The gate for an account with no role here: a message in the logon's frame, and Log out. The desktop never comes up. */
+    noRole() {
+      this.desktop.center(true);
+      this.doc.body.classList.add("logon");
+      const dlg = new AccountDialog({
+        id: "win-norole",
+        subtitle: "No role",
+        lead: `<p>${NO_ROLE}</p>`,
+        body: `<div class="actions"><button class="btn primary wide" type="button" data-act="logout">Log out</button></div>`
+      });
+      this.wm.add(dlg);
+      dlg.el.querySelector('[data-act="logout"]').addEventListener("click", () => this.logout());
+      this.wm.open(dlg.id, null, { scroll: false, jank: true });
+      return this;
+    }
+    isAdmin(site = SITE) {
       return (this.user?.roles || []).some((r) => r.website === site && r.role === "admin");
     }
     /** The Summons splash's ink and rising embers, without its title, under the windows (os/splash.js EmberBackdrop). */
@@ -4494,6 +4518,7 @@ var HxH = (() => {
       if (backdrop === "embers") this.showEmbers();
       if (badge && (!me && gate || !taskbar)) this.showBadge();
       if (!me && gate) me = await this.logon();
+      if (me && gate && !this.member(me)) return this.noRole();
       if (taskbar) this.hideBadge();
       this.setUser(me);
       if (me && wallpaper2) this.startWallpaper();

@@ -388,3 +388,17 @@ test("an existing #desktop on the page is adopted", async () => {
   assert.equal(os.desktop.el, document.getElementById("desktop"));
   assert.equal(document.querySelectorAll("#desktop").length, 1);
 });
+
+test("signed in with no role on hxh: \"No role assigned. Contact system administrator.\" and Log out — never the desktop (Andrew, 2026-09-28)", async () => {
+  const { os } = make({ me: { username: "test", display_name: "Test User", roles: [{ website: "bap", role: "player" }] } });
+  await os.start({ apps: [Hello], autostart: ["hello"], start: true });
+  const dlg = os.wm.get("win-norole");
+  assert.ok(dlg && dlg.state.open);
+  assert.match(dlg.el.textContent, /No role assigned\. Contact system administrator\./);
+  assert.equal(os.wm.get("win-hello")?.state.open ?? false, false, "no autostart");
+  assert.equal(os.user, null, "never set as the user");
+  let out = 0; os.logout = () => { out++; };
+  d.click(dlg.el.querySelector('[data-act="logout"]'));
+  assert.equal(out, 1);
+  assert.equal(os.member({ roles: [{ website: "hxh", role: "guest" }] }), true, "any hxh role is enough");
+});

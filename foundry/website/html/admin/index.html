@@ -246,10 +246,21 @@ function row(u) {
     await refresh();
   })));
 
+  // invites need a role on the active site (the server refuses too) — Andrew, 2026-09-28
+  const syncInvite = () => {
+    const site = u.active_site, ok = !!site && u.roles.some(r => r.website === site);
+    tr.querySelectorAll('.ib[data-kind="invite"]').forEach(b => {
+      b.classList.toggle("off", !ok); b.setAttribute("aria-disabled", String(!ok));   // not `disabled`: Firefox hides a disabled button's tooltip
+      b.title = ok ? (b.dataset.do === "mail" ? "invite email" : "copy invite link") : site ? `no role on ${site}` : "no active site";
+    });
+  };
+  syncInvite();
+
   // active site
   tr.querySelector(".site").addEventListener("change", e => act(async () => {
     await patch(u, { active_site: e.target.value });
     u.active_site = e.target.value;
+    syncInvite();
   }));
 
   // click-to-edit name / email
@@ -259,7 +270,7 @@ function row(u) {
   tr.querySelector(".avatar").addEventListener("click", e => { e.stopPropagation(); avatarPop(e.currentTarget, u); });
 
   // invite / reset matrix
-  tr.querySelectorAll(".ib").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); matrix(b, u, b.dataset.kind, b.dataset.do); }));
+  tr.querySelectorAll(".ib").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); if (b.classList.contains("off")) return; matrix(b, u, b.dataset.kind, b.dataset.do); }));
 
   tr.querySelector(".kebab")?.addEventListener("click", e => {
     e.stopPropagation();

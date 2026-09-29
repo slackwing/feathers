@@ -23,7 +23,7 @@ import { People } from "./people.js";
 import { Splash, EmberBackdrop, SPLASHES, STARTUP_SPLASH } from "./splash.js";
 import { Toast } from "./toast.js";
 import { Boot, Badge, badgeHTML, bootLines } from "./boot.js";
-import { LogonDialog } from "./logon.js";
+import { LogonDialog, AccountDialog } from "./logon.js";
 import { Wallpaper } from "./wallpaper.js";
 import { Menus } from "./menu.js";
 import { Sounds } from "./sound.js";
@@ -35,6 +35,10 @@ import { cqFix } from "./dom.js";
 import { Layout } from "./layout.js";
 
 /* Settings › Display choices (the values are what localStorage keeps). */
+/** The website this OS is: a signed-in account needs a role here to get past the gate. */
+export const SITE = "hxh";
+/** What an account with no role on SITE is told (Andrew, 2026-09-28). */
+export const NO_ROLE = "No role assigned. Contact system administrator.";
 export const THEME_KEY = "theme", THEME_DEFAULT = "seapumpkin";   // Andrew, 2026-09-21
 export const THEME_OPTIONS = [
   ["win98", "Win98"],
@@ -250,7 +254,22 @@ export class OS {
     }
   }
 
-  isAdmin(site = "hxh") {
+  /** Any role on the site: a member. */
+  member(user = this.user, site = SITE) { return (user?.roles || []).some(r => r.website === site); }
+
+  /** The gate for an account with no role here: a message in the logon's frame, and Log out. The desktop never comes up. */
+  noRole() {
+    this.desktop.center(true);
+    this.doc.body.classList.add("logon");
+    const dlg = new AccountDialog({ id: "win-norole", subtitle: "No role", lead: `<p>${NO_ROLE}</p>`,
+      body: `<div class="actions"><button class="btn primary wide" type="button" data-act="logout">Log out</button></div>` });
+    this.wm.add(dlg);
+    dlg.el.querySelector('[data-act="logout"]').addEventListener("click", () => this.logout());
+    this.wm.open(dlg.id, null, { scroll: false, jank: true });
+    return this;
+  }
+
+  isAdmin(site = SITE) {
     return (this.user?.roles || []).some(r => r.website === site && r.role === "admin");
   }
 
@@ -312,6 +331,9 @@ export class OS {
     if (backdrop === "embers") this.showEmbers();       // the account pages: the dialog over the Summons' embers
     if (badge && ((!me && gate) || !taskbar)) this.showBadge();
     if (!me && gate) me = await this.logon();
+    // signed in is not enough: the account needs a role on this site. Without one it gets a message and Log out —
+    // login and invites are the shared system's, so an account with no hxh role could get this far (Andrew, 2026-09-28)
+    if (me && gate && !this.member(me)) return this.noRole();
     if (taskbar) this.hideBadge();
     this.setUser(me);
     if (me && wallpaper) this.startWallpaper();       // Whale Island only once you're in

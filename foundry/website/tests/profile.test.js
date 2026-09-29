@@ -41,7 +41,7 @@ test("the OS applies the signed-in user's theme once it knows who; the account p
   const d = setupDom();
   d.win.localStorage.clear();
   d.win.localStorage.setItem(PROFILE_PREFIX + "andrew:hxh.set." + THEME_KEY, "tropical");
-  const fetch = fakeFetch({ "GET /admin/api/me": [200, { username: "andrew", display_name: "Andrew", roles: [] }] });
+  const fetch = fakeFetch({ "GET /admin/api/me": [200, { username: "andrew", display_name: "Andrew", roles: [{ website: "hxh", role: "admin" }] }] });
   const os = new OS({ win: d.win, fetch, env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   os.setup();
   assert.equal(d.win.document.documentElement.dataset.theme, "seapumpkin", "before sign-in: the default");

@@ -364,7 +364,8 @@ export class Splash extends Component {
     el.hidden = false;
     const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...(prompt ? { prompt } : {}) });
     // on a phone, the old web's courtesy line (Andrew, 2026-09-28: "please view in a tablet or browser for the best experience")
-    if (this.props.small?.()) el.append(h("div", { className: "sp-best", text: BEST_VIEWED }));
+    // placed right under the prompt, wherever each style puts it (Andrew, 2026-09-28: "much bigger and closer to the CLICK TO START")
+    if (this.props.small?.()) { const note = h("div", { className: "sp-best", text: BEST_VIEWED }), start = el.querySelector(".sp-start"); start ? start.after(note) : el.append(note); }
     el.setAttribute("aria-label", prompt || "Click to start");
     el.focus?.({ preventScroll: true });
     return new Promise(resolve => {

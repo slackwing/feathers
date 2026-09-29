@@ -205,6 +205,7 @@ test("on a phone every splash adds the old web's courtesy line; elsewhere none (
     const s = new Splash({ reduced: true, small: () => small }).mount(document.body);
     const p = s.show(id);
     assert.equal(s.el.querySelector(".sp-best")?.textContent ?? null, small ? BEST_VIEWED : null, `${id}, small=${small}`);
+    if (small) assert.equal(s.el.querySelector(".sp-best").previousElementSibling, s.el.querySelector(".sp-start"), `${id}: right under its prompt`);
     s.el.click(); await p; s.unmount();
   }
 });

@@ -1261,3 +1261,12 @@ new store `localStorage` directly — hand it `os.profile`.
   ResizeObserver and picture loads rescroll unless the reader scrolled up).
 - Music on phones: browsers may refuse autoplay with sound; accepted
   (Andrew: "it's okay if phones block music").
+- Membership gate (2026-09-28): after sign-in, an account with no role on
+  `SITE` ("hxh") gets `noRole()` — an AccountDialog saying `NO_ROLE`
+  ("No role assigned. Contact system administrator.") with Log out; the
+  desktop, user and autostarts never come up. `os.member(user)` = any hxh
+  role. The server also refuses invites without a role (SHARED_AUTH.md).
+- The phone courtesy line (`.sp-best`) sits right after each splash's
+  `.sp-start` in the DOM: in flow under Summons' prompt, pinned under
+  Night's, and in the prompt's own grid cell on Player Select (whose
+  items are all given explicit rows/columns so nothing auto-places).
