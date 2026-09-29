@@ -736,16 +736,14 @@ test("the log keeps the newest line in view: a picture loading scrolls back down
   assert.equal(downs, 1, "scrolled up: left where they are");
 });
 
-test("a first visit's autostart opens only the buddy list, and its first hello never takes the focus from what launched after it (Andrew, 2026-09-29)", async () => {
+test("a first visit's autostart opens the buddy list and Global chat behind, and its first hello never takes the focus from what launched after it (Andrew, 2026-09-29)", async () => {
   const other = new (await import("../html/hxh/os/window.js")).Window({ id: "win-summons-stand-in", title: "Summons" });
   os.wm.add(other);
   await os.launch("chat", { autostart: true });
   await os.wm.open(other.id);   // the Summons, launched after BeetleChat
   assert.equal(os.wm.get("win-chat-contacts").state.open, true, "the buddy list");
-  assert.equal(os.wm.get("win-chat-global")?.state.open ?? false, false, "no Global chat yet");
+  assert.equal(os.wm.get("win-chat-global").state.open, true, "and Global chat (Andrew: \"open global chat too on arrival\")");
   sockets[0].open(); sockets[0].push({ t: "hello", me: "andrew", contacts: CONTACTS, unread: [] });
   await tick();
   assert.equal(os.wm.activeId, other.id, "the Summons stays active");
-  await os.launch("chat");   // opened by hand: Global chat comes too
-  assert.equal(os.wm.get("win-chat-global").state.open, true);
 });

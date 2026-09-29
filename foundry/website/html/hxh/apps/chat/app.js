@@ -203,12 +203,12 @@ export class ChatApp extends App {
    */
   launch({ autostart = false } = {}) {
     if (this.os.anonymous) return this.openContacts();   // an empty buddy list, no global chat (Andrew, 2026-09-28)
-    // opened BY the user, the first hello focuses Global chat; at a first visit's autostart (Andrew, 2026-09-29) only the
-    // buddy list opens, behind — the Summons, launched after it, must stay on top and active (news still surfaces)
+    // opened BY the user, the first hello focuses Global chat; at a first visit's autostart (Andrew, 2026-09-29) the buddy
+    // list and Global chat open behind — the Summons, launched after them, must stay on top and active (news still surfaces)
     this.launching = autostart ? "quiet" : true;
     this.connect();
     const contacts = this.openContacts();
-    if (!autostart) this.openRoom(ROOM_GLOBAL, { focus: false });   // a first visit starts with the buddy list alone, like AIM; Global chat is one click away
+    this.openRoom(ROOM_GLOBAL, { focus: false });   // a first visit too (Andrew, 2026-09-29: "open global chat too on arrival")
     return contacts;
   }
 

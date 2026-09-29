@@ -7474,7 +7474,7 @@ var HxH = (() => {
       this.launching = autostart ? "quiet" : true;
       this.connect();
       const contacts = this.openContacts();
-      if (!autostart) this.openRoom(ROOM_GLOBAL, { focus: false });
+      this.openRoom(ROOM_GLOBAL, { focus: false });
       return contacts;
     }
     /** hello.unread (every connect): surface the rooms with news. */
