@@ -1871,6 +1871,8 @@ var HxH = (() => {
         ox = px(el.style.left) ?? el.offsetLeft;
         oy = px(el.style.top) ?? el.offsetTop;
         moving = threshold <= 0;
+        doc?.addEventListener("pointerup", () => end(), { capture: true, once: true });
+        doc?.addEventListener("pointercancel", () => end(), { capture: true, once: true });
         if (moving) {
           grab(e.pointerId);
           e.preventDefault();
@@ -4582,6 +4584,13 @@ var HxH = (() => {
       this.setup({ start: start2, taskbar });
       const warm = this.nav.consumeWarm();
       const pending = this.session.me();
+      pending.then((me2) => {
+        if (me2 && this.profile.setUser(me2.username)) {
+          this.applyTheme();
+          this.crt.apply();
+        }
+      }, () => {
+      });
       if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
       if (splash && boot && !warm) await this.showSplash(STARTUP_SPLASH);
       let me = await pending;
@@ -4636,11 +4645,14 @@ var HxH = (() => {
   // html/hxh/apps/summons.js
   var SUMMONS_AT = { x: 145, y: 24 };
   var SUMMONS_W = 750;
+  var PRIVATE_URL = "/hxh/api/db/private";
+  var UNKNOWN = "\u2014";
   var NOTICE = [
     "By order of Chairman Netero, you are hereby summoned to the ",
     { t: "289th Hunter Exam \u2014 Halloween Phase", tag: "b" },
     ".\n\nSite: ",
-    { t: "618 Bushwick Ave", tag: "b" },
+    { key: "site", tag: "b" },
+    // from the server: the address
     "\nCommences: ",
     { t: "Oct 31, 2026", tag: "b" },
     "\nTime: ",
@@ -4649,6 +4661,9 @@ var HxH = (() => {
     // Andrew, 2026-09-27
     "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona."
   ];
+  function noticeFor(details = {}) {
+    return NOTICE.map((r) => r && typeof r === "object" && r.key ? { ...r, t: details[r.key] || UNKNOWN } : r);
+  }
   var CONTENT = `
   <div class="assoc">Hunter Association \xB7 Official Summons</div>
   <h1 class="logo">HUNTER<span class="x">\xD7</span><br><span class="hallow">HALLOWEEN</span></h1>
@@ -4662,6 +4677,26 @@ var HxH = (() => {
     static order = 10;
     visible(user) {
       return !anonymous(user);
+    }
+    /** The private details, fetched once (a slow or failed answer leaves "—" rather than holding the window). */
+    async loadDetails() {
+      if (this.details) return this.details;
+      const fetch = this.options.fetch || ((...a) => this.os.fetch(...a));
+      const ask = (async () => {
+        try {
+          const r = await fetch(PRIVATE_URL, { credentials: "same-origin" });
+          return r.ok ? await r.json() : null;
+        } catch {
+          return null;
+        }
+      })();
+      let timer;
+      const got = await Promise.race([ask, new Promise((res) => {
+        timer = setTimeout(res, 3e3, null);
+      })]);
+      clearTimeout(timer);
+      if (got && typeof got === "object") this.details = got;
+      return this.details || {};
     }
     // the invitation is for invitees: not shown to an anonymous viewer (Andrew, 2026-09-28)
     /** File › Exit, and nothing else (Andrew, 2026-09-27): the notice is a poster, not a workbench. */
@@ -4695,12 +4730,12 @@ var HxH = (() => {
     }
     /** Fill the notice instantly so the window is measured at its final height. */
     prepNotice() {
-      type(this.text, NOTICE, { instant: true });
+      type(this.text, noticeFor(this.details), { instant: true });
       this.vn.style.minHeight = this.vn.offsetHeight + "px";
     }
     typeNotice() {
       this.vn.classList.remove("done");
-      this.notice = type(this.text, NOTICE, { speed: 16, reduced: this.os.env.reduced, onDone: () => this.vn.classList.add("done") });
+      this.notice = type(this.text, noticeFor(this.details), { speed: 16, reduced: this.os.env.reduced, onDone: () => this.vn.classList.add("done") });
       return this.notice;
     }
     /**
@@ -4716,6 +4751,7 @@ var HxH = (() => {
      */
     async launch({ autostart = false, restore = false } = {}) {
       const os2 = this.os, win = this.window();
+      await this.loadDetails();
       if (!autostart) {
         const opened = await os2.wm.open(win.id, win.state.placed ? null : this.position());
         if (!this.notice || this.notice.done) {
@@ -9551,9 +9587,10 @@ var HxH = (() => {
   var OVERLAP2 = 38;
   var DROP = 72;
   var MARGIN = 12;
-  function embedSrc(id = VIDEO) {
-    const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1" });
-    return `https://www.youtube-nocookie.com/embed/${id}?${q}`;
+  var YT_ORIGIN = "https://www.youtube-nocookie.com";
+  function embedSrc(id = VIDEO, origin = globalThis.location?.origin) {
+    const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1", ...origin && origin !== "null" ? { origin } : {} });
+    return `${YT_ORIGIN}/embed/${id}?${q}`;
   }
   function besideSummons(width) {
     const x = SUMMONS_AT.x + SUMMONS_W - OVERLAP2;
@@ -9575,7 +9612,7 @@ var HxH = (() => {
     /** Open (with the jank at boot, beside where the Summons will land) and play. Launching it again while it plays just brings it forward. */
     async launch({ autostart = false } = {}) {
       const win = this.window(), env = this.os.env;
-      const at = !win.state.placed && env.floating() ? besideSummons(env.width) : null;
+      const at = !win.state.placed && env.floating() && !this.os.anonymous ? besideSummons(env.width) : null;
       await this.os.wm.open(win.id, at, { scroll: false, jank: autostart });
       this.play();
       return win;
@@ -9584,12 +9621,12 @@ var HxH = (() => {
       if (this.frame) return this.frame;
       this.playing = this.started = false;
       this.frame = h("iframe", {
-        src: embedSrc(),
+        src: embedSrc(VIDEO, this.os.win?.location?.origin),
         title: TITLE,
         allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
         allowfullscreen: true,
         referrerpolicy: "strict-origin-when-cross-origin",
-        onload: () => this.say({ event: "listening", id: "hxh-music" })
+        onload: () => this.listen()
       });
       this.win.$(".vid").append(this.frame);
       this.nudge ||= this.watchGestures();
@@ -9598,9 +9635,25 @@ var HxH = (() => {
     /** Send the player a message (YouTube's iframe API speaks JSON over postMessage). */
     say(msg) {
       try {
-        this.frame?.contentWindow?.postMessage(JSON.stringify(msg), "*");
+        this.frame?.contentWindow?.postMessage(JSON.stringify(msg), YT_ORIGIN);
       } catch {
       }
+    }
+    /** YouTube's handshake: "listening" every 250 ms until the player answers (it ignores one sent before it is ready), for up to 15 s. */
+    listen() {
+      clearInterval(this.listening);
+      this.heard = false;
+      let tries = 0;
+      const once = () => {
+        if (this.heard || !this.frame || ++tries > 60) {
+          clearInterval(this.listening);
+          return;
+        }
+        this.say({ event: "listening", id: "hxh-music", channel: "widget" });
+      };
+      once();
+      this.listening = setInterval(once, 250);
+      this.listening.unref?.();
     }
     /**
      * A browser may refuse to autoplay with sound — Firefox on the page after
@@ -9613,7 +9666,8 @@ var HxH = (() => {
     watchGestures() {
       const win = this.os.win, doc = this.os.doc;
       win.addEventListener("message", (e) => {
-        if (!this.frame || e.source !== this.frame.contentWindow) return;
+        if (!this.frame || e.source !== this.frame.contentWindow || e.origin !== YT_ORIGIN) return;
+        this.heard = true;
         let d;
         try {
           d = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
@@ -9633,6 +9687,7 @@ var HxH = (() => {
     }
     /** The window closed: the iframe goes, and the sound with it. */
     stop() {
+      clearInterval(this.listening);
       this.frame?.remove();
       this.frame = null;
       this.playing = this.started = false;

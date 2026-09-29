@@ -337,6 +337,8 @@ export class OS {
     this.setup({ start, taskbar });
     const warm = this.nav.consumeWarm();
     const pending = this.session.me();
+    // the user's own preferences as soon as we know who it is — before the splash's chime asks whether Sounds are on
+    pending.then(me => { if (me && this.profile.setUser(me.username)) { this.applyTheme(); this.crt.apply(); } }, () => {});
     if (boot && !warm) await this.boot.run({ badge: badgeHTML(), lines: bootLines(extra), speed: 9, tail: 420 });
     // the title screen (os/splash.js) right after the boot screen, on EVERY page that asks for it — signed in or not,
     // the desktop or an account page — and only then what the page is for: the logon, the choose-a-password dialog,

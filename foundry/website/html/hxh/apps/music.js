@@ -23,10 +23,14 @@ export const WIDTH = 480, MIN_W = 360;
 export const OVERLAP = 38, DROP = 72;   // 38: the Summons covers the player's title-bar icon whole (it ends 34 px in), never half of it, and none of "Music" (from 42)
 const MARGIN = 12;
 
-/** The embed: privacy-enhanced (no cookies until played), autoplaying, looping the one video, no suggestions from other channels at the end. */
-export function embedSrc(id = VIDEO) {
-  const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1" });   // the JS API: the page hears the player's state and can say play
-  return `https://www.youtube-nocookie.com/embed/${id}?${q}`;
+/** The player's origin: the only window our messages go to, and the only one we listen to. */
+export const YT_ORIGIN = "https://www.youtube-nocookie.com";
+
+/** The embed: privacy-enhanced (no cookies until played), autoplaying, looping the one video, no suggestions from other
+    channels at the end; the JS API on, told our origin (as YouTube's own widget API does), so it reports its state. */
+export function embedSrc(id = VIDEO, origin = globalThis.location?.origin) {
+  const q = new URLSearchParams({ autoplay: "1", playsinline: "1", rel: "0", loop: "1", playlist: id, enablejsapi: "1", ...(origin && origin !== "null" ? { origin } : {}) });
+  return `${YT_ORIGIN}/embed/${id}?${q}`;
 }
 
 /**
@@ -58,7 +62,7 @@ export class MusicApp extends App {
   /** Open (with the jank at boot, beside where the Summons will land) and play. Launching it again while it plays just brings it forward. */
   async launch({ autostart = false } = {}) {
     const win = this.window(), env = this.os.env;
-    const at = !win.state.placed && env.floating() ? besideSummons(env.width) : null;
+    const at = !win.state.placed && env.floating() && !this.os.anonymous ? besideSummons(env.width) : null;   // no Summons for an anonymous viewer: nothing to sit beside
     await this.os.wm.open(win.id, at, { scroll: false, jank: autostart });
     this.play();
     return win;
@@ -67,15 +71,26 @@ export class MusicApp extends App {
   play() {
     if (this.frame) return this.frame;
     this.playing = this.started = false;
-    this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin",
-      onload: () => this.say({ event: "listening", id: "hxh-music" }) });   // ask the player to report its state
+    this.frame = h("iframe", { src: embedSrc(VIDEO, this.os.win?.location?.origin), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin",
+      onload: () => this.listen() });
     this.win.$(".vid").append(this.frame);
     this.nudge ||= this.watchGestures();
     return this.frame;
   }
 
   /** Send the player a message (YouTube's iframe API speaks JSON over postMessage). */
-  say(msg) { try { this.frame?.contentWindow?.postMessage(JSON.stringify(msg), "*"); } catch {} }
+  say(msg) { try { this.frame?.contentWindow?.postMessage(JSON.stringify(msg), YT_ORIGIN); } catch {} }
+
+  /** YouTube's handshake: "listening" every 250 ms until the player answers (it ignores one sent before it is ready), for up to 15 s. */
+  listen() {
+    clearInterval(this.listening);
+    this.heard = false;
+    let tries = 0;
+    const once = () => { if (this.heard || !this.frame || ++tries > 60) { clearInterval(this.listening); return; } this.say({ event: "listening", id: "hxh-music", channel: "widget" }); };
+    once();
+    this.listening = setInterval(once, 250);
+    this.listening.unref?.();
+  }
 
   /**
    * A browser may refuse to autoplay with sound — Firefox on the page after
@@ -88,7 +103,8 @@ export class MusicApp extends App {
   watchGestures() {
     const win = this.os.win, doc = this.os.doc;
     win.addEventListener("message", e => {
-      if (!this.frame || e.source !== this.frame.contentWindow) return;
+      if (!this.frame || e.source !== this.frame.contentWindow || e.origin !== YT_ORIGIN) return;   // the player, and only the player
+      this.heard = true;
       let d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
       const state = d?.event === "onStateChange" ? d.info : d?.event === "infoDelivery" ? d.info?.playerState : undefined;
       if (typeof state !== "number") return;
@@ -103,5 +119,5 @@ export class MusicApp extends App {
   }
 
   /** The window closed: the iframe goes, and the sound with it. */
-  stop() { this.frame?.remove(); this.frame = null; this.playing = this.started = false; }
+  stop() { clearInterval(this.listening); this.frame?.remove(); this.frame = null; this.playing = this.started = false; }
 }

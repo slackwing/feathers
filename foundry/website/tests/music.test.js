@@ -2,7 +2,7 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { MusicApp, VIDEO, embedSrc, besideSummons, WIDTH, MIN_W, OVERLAP, DROP } from "../html/hxh/apps/music.js";
+import { MusicApp, VIDEO, YT_ORIGIN, embedSrc, besideSummons, WIDTH, MIN_W, OVERLAP, DROP } from "../html/hxh/apps/music.js";
 import { SummonsApp, SUMMONS_AT, SUMMONS_W } from "../html/hxh/apps/summons.js";
 import * as apps from "../html/hxh/apps/index.js";
 import { hasIconPair, DESK } from "../html/hxh/os/icons.js";
@@ -37,7 +37,8 @@ test("the player: the YouTube embed of the one video, autoplaying with sound all
   assert.equal(u.searchParams.get("playlist"), VIDEO, "a single video loops only as its own playlist");
   assert.match(f.getAttribute("allow"), /\bautoplay\b/, "the page's click on the title screen is passed on, so it may play with sound");
   assert.equal(f.getAttribute("referrerpolicy"), "strict-origin-when-cross-origin", "YouTube refuses embeds that send no referrer");
-  assert.equal(embedSrc(), f.getAttribute("src"));
+  assert.equal(embedSrc(VIDEO, d.win.location.origin), f.getAttribute("src"));
+  assert.equal(new URL(f.getAttribute("src")).searchParams.get("origin"), d.win.location.origin, "the player is told our origin, as YouTube's widget API does");
   assert.equal(w.el.querySelector(".mbar"), null, "no menu bar: a title bar and the video (File › Exit would only repeat the ×)");
 });
 
@@ -97,7 +98,7 @@ test("a refused autoplay starts on the first tap anywhere; once it has played, a
   const app = os.registry.get("music"), said = [];
   app.say = m => said.push(m.func || m.event);
   const player = app.frame.contentWindow;
-  const report = state => d.win.dispatchEvent(new d.win.MessageEvent("message", { source: player, data: JSON.stringify({ event: "onStateChange", info: state }) }));
+  const report = (state, origin = YT_ORIGIN) => d.win.dispatchEvent(new d.win.MessageEvent("message", { source: player, origin, data: JSON.stringify({ event: "onStateChange", info: state }) }));
   const tap = () => d.doc.body.dispatchEvent(new d.win.Event("pointerdown", { bubbles: true }));
   report(-1);   // unstarted: the browser refused
   tap();
@@ -105,4 +106,18 @@ test("a refused autoplay starts on the first tap anywhere; once it has played, a
   report(1); report(2);   // it played, then the listener paused it
   tap(); tap();
   assert.deepEqual(said, ["playVideo"], "paused by the listener: a tap elsewhere leaves it paused");
+});
+
+test("music talks only to YouTube: commands go to its origin alone, and a message from any other origin is ignored (review, 2026-09-28)", async () => {
+  await os.start({ apps: [MusicApp], boot: false });
+  await os.launch("music");
+  const app = os.registry.get("music"), player = app.frame.contentWindow, sent = [];
+  player.postMessage = (msg, target) => sent.push([JSON.parse(msg).event || JSON.parse(msg).func, target]);
+  app.listen();
+  assert.deepEqual(sent[0], ["listening", YT_ORIGIN], "the handshake, to YouTube only");
+  d.win.dispatchEvent(new d.win.MessageEvent("message", { source: player, origin: "https://evil.example", data: JSON.stringify({ event: "onStateChange", info: 1 }) }));
+  assert.equal(app.started, false, "another origin cannot say it is playing");
+  d.win.dispatchEvent(new d.win.MessageEvent("message", { source: player, origin: YT_ORIGIN, data: JSON.stringify({ event: "onStateChange", info: 1 }) }));
+  assert.ok(app.started && app.heard, "the player can");
+  os.wm.close("win-music");
 });

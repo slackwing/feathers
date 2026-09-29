@@ -206,6 +206,10 @@ export class WindowManager {
       const px = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
       pressed = true; moved = false; sx = e.clientX; sy = e.clientY; ox = px(el.style.left) ?? el.offsetLeft; oy = px(el.style.top) ?? el.offsetTop;
       moving = threshold <= 0;
+      // a release anywhere ends the press — not just over the handle: let go just off the binder's cover and it used
+      // to stay "pressed", then follow the mouse with no button held (review, 2026-09-28)
+      doc?.addEventListener("pointerup", () => end(), { capture: true, once: true });
+      doc?.addEventListener("pointercancel", () => end(), { capture: true, once: true });
       // capturing now would retarget the click to the handle, so a slop press captures only once it becomes a drag
       if (moving) { grab(e.pointerId); e.preventDefault(); }
     });

@@ -12,14 +12,25 @@ import "./summons.css";
 /** Where the Summons opens on the desktop, and how wide — the Music player lines itself up against it (apps/music.js). */
 export const SUMMONS_AT = { x: 145, y: 24 }, SUMMONS_W = 750;
 
+/** The private details (hxh_private, members only): the party's address is NEVER in this public bundle (security review, 2026-09-28). */
+export const PRIVATE_URL = "/hxh/api/db/private";
+/** What stands in for a detail the server did not give (offline, or not a member). */
+export const UNKNOWN = "—";
+
 export const NOTICE = [
   "By order of Chairman Netero, you are hereby summoned to the ",
   { t: "289th Hunter Exam — Halloween Phase", tag: "b" },
-  ".\n\nSite: ", { t: "618 Bushwick Ave", tag: "b" },
+  ".\n\nSite: ", { key: "site", tag: "b" },   // from the server: the address
+
   "\nCommences: ", { t: "Oct 31, 2026", tag: "b" },
   "\nTime: ", { t: "TBD", tag: "b" }, "\n\n",   // Andrew, 2026-09-27
   "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona.",
 ];
+
+/** The notice with the server's private details filled in. */
+export function noticeFor(details = {}) {
+  return NOTICE.map(r => (r && typeof r === "object" && r.key ? { ...r, t: details[r.key] || UNKNOWN } : r));
+}
 
 const CONTENT = `
   <div class="assoc">Hunter Association · Official Summons</div>
@@ -34,7 +45,21 @@ export class SummonsApp extends App {
   static icon = "envelope";
   static order = 10;
 
-  visible(user) { return !anonymous(user); }   // the invitation is for invitees: not shown to an anonymous viewer (Andrew, 2026-09-28)
+  visible(user) { return !anonymous(user); }
+
+  /** The private details, fetched once (a slow or failed answer leaves "—" rather than holding the window). */
+  async loadDetails() {
+    if (this.details) return this.details;
+    const fetch = this.options.fetch || ((...a) => this.os.fetch(...a));
+    const ask = (async () => {
+      try { const r = await fetch(PRIVATE_URL, { credentials: "same-origin" }); return r.ok ? await r.json() : null; } catch { return null; }
+    })();
+    let timer;
+    const got = await Promise.race([ask, new Promise(res => { timer = setTimeout(res, 3000, null); })]);
+    clearTimeout(timer);
+    if (got && typeof got === "object") this.details = got;
+    return this.details || {};
+  }   // the invitation is for invitees: not shown to an anonymous viewer (Andrew, 2026-09-28)
 
   /** File › Exit, and nothing else (Andrew, 2026-09-27): the notice is a poster, not a workbench. */
   menus(win) {
@@ -63,13 +88,13 @@ export class SummonsApp extends App {
 
   /** Fill the notice instantly so the window is measured at its final height. */
   prepNotice() {
-    type(this.text, NOTICE, { instant: true });
+    type(this.text, noticeFor(this.details), { instant: true });
     this.vn.style.minHeight = this.vn.offsetHeight + "px";
   }
 
   typeNotice() {
     this.vn.classList.remove("done");
-    this.notice = type(this.text, NOTICE, { speed: 16, reduced: this.os.env.reduced, onDone: () => this.vn.classList.add("done") });
+    this.notice = type(this.text, noticeFor(this.details), { speed: 16, reduced: this.os.env.reduced, onDone: () => this.vn.classList.add("done") });
     return this.notice;
   }
 
@@ -86,6 +111,7 @@ export class SummonsApp extends App {
    */
   async launch({ autostart = false, restore = false } = {}) {
     const os = this.os, win = this.window();
+    await this.loadDetails();
     if (!autostart) {
       const opened = await os.wm.open(win.id, win.state.placed ? null : this.position());
       if (!this.notice || this.notice.done) { this.prepNotice(); this.typeNotice(); }   // every opening types it out again (Andrew, 2026-09-28); one still typing carries on

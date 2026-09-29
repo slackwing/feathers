@@ -2,7 +2,7 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom, tick } from "./dom.js";
 import { OS } from "../html/hxh/os/os.js";
-import { SummonsApp, NOTICE } from "../html/hxh/apps/summons.js";
+import { SummonsApp, NOTICE, noticeFor, UNKNOWN } from "../html/hxh/apps/summons.js";
 import { BinderApp } from "../html/hxh/apps/binder.js";
 import * as apps from "../html/hxh/apps/index.js";
 
@@ -10,7 +10,7 @@ const ME = { username: "andrew", display_name: "Andrew", roles: [{ website: "hxh
 let d, os;
 function make({ width = 1366 } = {}) {
   d = setupDom({ width });
-  os = new OS({ win: d.win, fetch: async () => ({ ok: true, json: async () => ME }), env: { reduced: true, floating: () => true, zoom: () => 1, width, height: 900, wait: () => Promise.resolve() } });
+  os = new OS({ win: d.win, fetch: async url => ({ ok: true, json: async () => (String(url).includes("/db/private") ? { site: "1 Test St" } : ME) }), env: { reduced: true, floating: () => true, zoom: () => 1, width, height: 900, wait: () => Promise.resolve() } });
   return os;
 }
 beforeEach(() => make());
@@ -34,7 +34,7 @@ test("summons autostart: bare desktop, then the window at 145,24 with the notice
   assert.ok(w.el.classList.contains("summons"));
   const text = w.$("#vn-text").textContent;
   assert.match(text, /289th Hunter Exam — Halloween Phase/);
-  assert.match(text, /618 Bushwick Ave/);
+  assert.match(text, /Site: 1 Test St\n/, "the address comes from the server (hxh_private), never the bundle");
   assert.match(text, /Oct 31, 2026/);
   assert.match(text, /Commences: Oct 31, 2026\nTime: TBD\n/);
   assert.equal(w.$("#vn-text b").textContent, NOTICE[1].t);
@@ -61,7 +61,7 @@ test("a restored Summons types its notice: the saved desktop reopens the window,
   assert.equal(await app.reopen("win-summons", null), true);
   const w = os.wm.get("win-summons");
   assert.equal(w.state.open, true);
-  assert.equal(w.$("#vn-text").textContent, NOTICE.map(r => typeof r === "string" ? r : r.t).join(""), "the notice is filled, not empty");
+  assert.equal(w.$("#vn-text").textContent, noticeFor({ site: "1 Test St" }).map(r => typeof r === "string" ? r : r.t).join(""), "the notice is filled, not empty");
   assert.ok(w.$("#vn").classList.contains("done"));
   assert.equal(await app.reopen("win-other", null), false, "only its own window");
 });
@@ -84,7 +84,7 @@ test("the Summons types its notice out again every time it is opened, not only t
   d = setupDom({ width: 1366 });
   os = new OS({ win: d.win, fetch: async () => ({ ok: true, json: async () => ME }), env: { reduced: false, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
   await os.start({ apps: [SummonsApp, BinderApp], boot: false });
-  const app = os.registry.get("summons"), full = NOTICE.map(r => typeof r === "string" ? r : r.t).join("");
+  const app = os.registry.get("summons"), full = noticeFor({}).map(r => typeof r === "string" ? r : r.t).join("");   // this OS's fetch has no private details: "—"
   await os.launch("summons");
   const w = os.wm.get("win-summons");
   app.notice.skip();
@@ -95,4 +95,12 @@ test("the Summons types its notice out again every time it is opened, not only t
   assert.ok(!app.notice.done && !w.$("#vn").classList.contains("done"), "opening it again types it again");
   assert.ok(w.$("#vn-text").textContent.length < full.length, "from the start");
   app.notice.skip();
+});
+
+test("the Summons never ships the address: it comes from the members-only details, and without them the line says — (security review, 2026-09-28)", async () => {
+  assert.ok(NOTICE.some(r => r && r.key === "site" && !("t" in r)), "no address in the bundle");
+  d = setupDom({ width: 1366 });
+  os = new OS({ win: d.win, fetch: async url => (String(url).includes("/db/private") ? { ok: false, status: 403, json: async () => ({}) } : { ok: true, json: async () => ME }), env: { reduced: true, floating: () => true, zoom: () => 1, width: 1366, height: 900, wait: () => Promise.resolve() } });
+  await os.start({ apps: [SummonsApp, BinderApp], autostart: ["summons"], boot: false });
+  assert.match(os.wm.get("win-summons").$("#vn-text").textContent, new RegExp("Site: " + UNKNOWN + "\\n"));
 });

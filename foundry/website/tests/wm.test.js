@@ -250,3 +250,17 @@ test("a window with its own zoom (the Binder) follows the pointer: the drag divi
   assert.equal(a.el.style.left, "220px", "60 px of pointer = 120 of a half-zoomed window's own px, from its own 100");
   assert.equal(a.el.style.top, "180px");
 });
+
+test("a slop press released anywhere ends: let go just off the handle and the window never sticks to the mouse (review, 2026-09-28)", async () => {
+  Object.defineProperty(desktop, "clientWidth", { value: 1366 });
+  const a = wm.add(new Window({ id: "s" }));
+  await wm.open("s", { x: 100, y: 100 });
+  const bar = a.titleBar.el;
+  wm.drag(a, bar, { threshold: 5 });
+  const ev = (t, x, y, target = bar) => target.dispatchEvent(Object.assign(new d.win.Event(t, { bubbles: true }), { button: 0, clientX: x, clientY: y, pointerId: 1 }));
+  ev("pointerdown", 100, 100);
+  ev("pointerup", 103, 101, d.doc.body);   // released off the handle, under the slop
+  ev("pointermove", 300, 300);              // later the mouse (no button) passes over the handle
+  assert.equal(a.el.style.left, "100px", "not dragged");
+  assert.equal(a.el.style.top, "100px");
+});

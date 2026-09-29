@@ -22,7 +22,8 @@ license-only site from the show — rendered as a late-90s OS desktop.
   notice in a visual-novel box, CTA), the Binder (see below), and
   Registration ("OPENS SOON" stamp + stuck progress bar) — plus desktop
   icons, an About window, and a taskbar. Every logged-in load boots (see Boot below).
-  Notice: Site 618 Bushwick Ave, Commences Oct 31, 2026 (no time), no
+  Notice: Site (the address — from the server's hxh_private, never in
+  the bundle or this repo), Commences Oct 31, 2026 (no time), no
   "failure to commit" line (Andrew, 2026-09-17). Window title
   "Hunter × Halloween" (the special ×); login dialog likewise.
   The gate is client-side UX only; static HTML remains fetchable.
@@ -1119,7 +1120,7 @@ system). Tables carry the `hxh_` prefix (AGENTS.md N7 standard).
 
 ## Open questions (ask Andrew before building)
 
-- **Party time** — the notice gives 618 Bushwick Ave and Oct 31; no time
+- **Party time** — the notice gives the address (hxh_private) and Oct 31; no time
   yet, by Andrew's choice.
 - **Email sending** needs the `email:` block in the VM's hobby-server
   config (Gmail app password); until then the console's Send buttons
@@ -1282,3 +1283,14 @@ new store `localStorage` directly — hand it `os.profile`.
   actions itself (403); the UI only stops offering them.
 - On a phone (`Env.small`) the Binder, like Roster DB, only shows a
   `MessageDialog` (`SMALL_MESSAGE`) and is not restored.
+- Security review fixes (2026-09-28): the party's address lives ONLY in
+  the server's `hxh_private` table (GET /hxh/api/db/private, members and
+  not anonymous) — the Summons fills `{ key: "site" }` from it
+  (`noticeFor`, "—" without it); never put it in this public repo or
+  bundle. About's prompts have the address and Andrew's email redacted.
+  CLAUDE.md / AGENTS.md are excluded from the web sync
+  (`~/.config/my/website_sync_excludes`). Music talks to `YT_ORIGIN`
+  only (target and `e.origin`), with YouTube's handshake (`listening`
+  every 250 ms, `channel: "widget"`, `origin=` in the embed). Drags end
+  on a release anywhere; preferences load as soon as `session.me()`
+  answers.

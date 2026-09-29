@@ -432,3 +432,15 @@ test("View site anonymously: the logon's blue link, a warning to confirm, then i
   const icons = [...document.querySelectorAll(".icons [data-act]")].map(i => i.dataset.act);
   assert.ok(icons.includes("hello") && !icons.includes("summons") && !icons.includes("bugs"), icons.join());
 });
+
+test("the user's saved preferences load as soon as the server says who it is: the splash chime already knows Sounds are off (review, 2026-09-28)", async () => {
+  d.win.localStorage.setItem("hxh.u.andrew:hxh.sound", "0");
+  const { os } = make();
+  const started = os.start({ apps: [Hello], start: true, splash: true });
+  await new Promise(r => setTimeout(r, 40));
+  assert.ok(document.querySelector(".splashscreen:not([hidden])"), "the splash is up");
+  assert.equal(os.sounds.on, false, "andrew's Sounds off, before the click");
+  document.querySelector(".splashscreen").click();
+  await started;
+  d.win.localStorage.removeItem("hxh.u.andrew:hxh.sound");
+});
