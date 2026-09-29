@@ -90,3 +90,19 @@ test("the index page autostarts the player, then the Summons", async () => {
   assert.match(html, /autostart: \["music", "summons"\]/);
   assert.match(html, /HxH\.apps\.Music\b/);
 });
+
+test("a refused autoplay starts on the first tap anywhere; once it has played, a pause is the listener's — taps elsewhere never restart it (Andrew, 2026-09-28)", async () => {
+  await os.start({ apps: [MusicApp], boot: false });
+  await os.launch("music");
+  const app = os.registry.get("music"), said = [];
+  app.say = m => said.push(m.func || m.event);
+  const player = app.frame.contentWindow;
+  const report = state => d.win.dispatchEvent(new d.win.MessageEvent("message", { source: player, data: JSON.stringify({ event: "onStateChange", info: state }) }));
+  const tap = () => d.doc.body.dispatchEvent(new d.win.Event("pointerdown", { bubbles: true }));
+  report(-1);   // unstarted: the browser refused
+  tap();
+  assert.deepEqual(said, ["playVideo"], "the first tap starts it");
+  report(1); report(2);   // it played, then the listener paused it
+  tap(); tap();
+  assert.deepEqual(said, ["playVideo"], "paused by the listener: a tap elsewhere leaves it paused");
+});

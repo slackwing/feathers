@@ -66,7 +66,7 @@ export class MusicApp extends App {
 
   play() {
     if (this.frame) return this.frame;
-    this.playing = false;
+    this.playing = this.started = false;
     this.frame = h("iframe", { src: embedSrc(), title: TITLE, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true, referrerpolicy: "strict-origin-when-cross-origin",
       onload: () => this.say({ event: "listening", id: "hxh-music" }) });   // ask the player to report its state
     this.win.$(".vid").append(this.frame);
@@ -91,13 +91,17 @@ export class MusicApp extends App {
       if (!this.frame || e.source !== this.frame.contentWindow) return;
       let d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
       const state = d?.event === "onStateChange" ? d.info : d?.event === "infoDelivery" ? d.info?.playerState : undefined;
-      if (typeof state === "number") this.playing = state === 1 || state === 3;   // 1 playing, 3 buffering
+      if (typeof state !== "number") return;
+      this.playing = state === 1 || state === 3;   // 1 playing, 3 buffering
+      if (this.playing) this.started = true;
     });
-    const gesture = () => { if (this.frame && !this.playing) this.say({ event: "command", func: "playVideo", args: [] }); };
+    // only ever to get it STARTED: once it has played, a pause is the listener's — a tap elsewhere (Heavens Arena)
+    // must not start it again (Andrew, 2026-09-28: "clicking heavens arena actually plays and unplays the music")
+    const gesture = () => { if (this.frame && !this.started) this.say({ event: "command", func: "playVideo", args: [] }); };
     for (const t of ["pointerdown", "keydown"]) doc.addEventListener(t, gesture, true);
     return true;
   }
 
   /** The window closed: the iframe goes, and the sound with it. */
-  stop() { this.frame?.remove(); this.frame = null; this.playing = false; }
+  stop() { this.frame?.remove(); this.frame = null; this.playing = this.started = false; }
 }
