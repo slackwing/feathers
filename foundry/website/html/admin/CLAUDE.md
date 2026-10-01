@@ -5,8 +5,8 @@ Subdirectory of the source-controlled website, published to
 system** (one account works on every site; per-website roles), plus
 the shared machinery every site's invite / reset pages run on.
 
-- **index.html** — the console (light, small, informational — Andrew's
-  spec 2026-09-18). Login → one table of users: avatar (click → change
+- **index.html** — mounts assets/console.js for every site (below). The
+  console (light, small, informational — Andrew's spec 2026-09-18). Login → one table of users: avatar (click → change
   initial, max 2 chars, and colour), username, display name and email
   (click to edit in place), active site (dropdown; the site invites,
   resets and emails act on), roles as chips labelled `site` / `role`
@@ -17,6 +17,21 @@ the shared machinery every site's invite / reset pages run on.
   created from the table's last row (default active site hxh, random
   colour, initials from the name). Access requires role `admin` on
   website `admin`.
+- **assets/console.js** (2026-10-01) — THE users console, one
+  implementation for `/admin/` (`Console.mount({ site: null })`, role
+  admin/admin) and every site's `/<site>/_admin/` (`Console.mount({ site
+  })`, the site's admins; API `/admin/api/site/{site}/…`, server-side
+  scope: hobby-server `internal/shared/siteadmin.go`). Pages hold only
+  `<main id="console">`, the stylesheet and the mount call. Layout: the
+  people table; apart below it the add-user form (Name — "first name,
+  capitalized", placeholder Judy — → username derived from it
+  (`usernameFor`: "Kimmy T" → kimmyt), read-only → Email; all required);
+  in /admin/ only, the bots' own table and the bot programs. The ONE
+  branch: a site console's form creates → adds the site's default role
+  → sends the invite (steps shown, a spinner on the running one);
+  /admin/'s only creates. In a site console people reaching beyond the
+  site come back `editable: false` and are drawn read-only (no email /
+  reset takeover by a site admin); no deletes, bots, active site there.
 - **assets/setpw.js** — the set-password machinery behind every site's
   `_invite/` and `_reset/` page (reads `?code=`, `token-info`,
   `set-password`, state switching via `data-pw` hooks). Sites skin it;

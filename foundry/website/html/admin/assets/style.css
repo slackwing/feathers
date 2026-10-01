@@ -186,3 +186,25 @@ tr.divider .dim { font-weight: 400; }
 table.bots { margin-top: .5rem; }
 .switch { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
 .switch input { width: auto; margin: 0; }
+
+/* ---- the console's add-user form (assets/console.js): apart from the table, Name → username → Email ---- */
+form.adduser { padding: .9rem 1rem; }
+form.adduser .fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem 1rem; }
+form.adduser .fields > .avatar { align-self: flex-end; margin-bottom: .2rem; cursor: default; }
+form.adduser .fields > .avatar:hover { box-shadow: none; }
+form.adduser label { margin: 0; flex: 1 1 12rem; }
+form.adduser label .hint { text-transform: none; letter-spacing: 0; color: var(--dim); font-size: 11px; margin-left: .35rem; }
+form.adduser label input { margin-top: .25rem; }
+form.adduser button.primary { display: inline-block; width: auto; margin: 0; padding: .45rem 1rem; }
+form.adduser.busy { opacity: .85; }
+form.adduser .steps { list-style: none; margin: .8rem 0 0; padding: 0; font-size: 13px; }
+form.adduser .steps li { padding: .15rem 0 .15rem 1.5rem; position: relative; }
+form.adduser .steps li::before { position: absolute; left: 0; width: 1rem; text-align: center; }
+form.adduser .steps li.doing::before { content: ""; top: .3rem; left: .15rem; width: .7rem; height: .7rem; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+form.adduser .steps li.done::before { content: "✓"; color: #1a7f37; }
+form.adduser .steps li.failed::before { content: "✕"; color: var(--danger); }
+form.adduser .msg { margin: .6rem 0 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* someone a site admin may not change (they reach beyond the site): drawn read-only */
+tr.ro td { color: var(--dim); }
+section[data-bots-users], section[data-bots] { margin-top: 1.5rem; }
