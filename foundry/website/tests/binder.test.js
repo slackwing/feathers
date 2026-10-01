@@ -714,14 +714,22 @@ test("the anonymous viewer sees the stamps but its heart, bookmark and claim key
   os.user = real; b.syncKeys();
 });
 
-test("on a phone the Binder only says it needs a bigger screen, and a saved desktop does not bring it back (Andrew, 2026-09-28)", async () => {
-  os.env.small = true;
-  const said = os.registry.get("binder").launch();
-  const dlg = [...document.querySelectorAll(".win.dlg")].at(-1);
-  assert.match(dlg.textContent, /The Binder needs a bigger screen\. Please open it on a tablet or computer\./);
-  d.click(dlg.querySelector('[data-act="ok"]'));
-  assert.equal(await said, null);
-  assert.equal(await os.registry.get("binder").reopen("win-binder"), true, "reopen answers for its window…");
-  assert.equal(os.wm.get("win-binder")?.state.open ?? false, false, "…but on a phone nothing opens");
-  os.env.small = false;
+test("on a phone the Binder opens — sideways while the phone is upright, upright once it turns; decided by the screen's shape NOW, so it never rotates twice (Andrew, 2026-10-01)", async () => {
+  const { sidewaysFor, binderLayout, PHONE_FILL } = await import("../html/hxh/apps/binder.js");
+  assert.equal(sidewaysFor({ small: true, width: 390, height: 844 }), true, "a phone held upright");
+  assert.equal(sidewaysFor({ small: true, width: 844, height: 390 }), false, "the same phone turned: upright again, no second rotation");
+  assert.equal(sidewaysFor({ small: false, width: 820, height: 1180 }), false, "a tablet keeps the upright book");
+  const up = binderLayout(390, 844, { fill: PHONE_FILL }), side = binderLayout(390, 844, { fill: PHONE_FILL, sideways: true });
+  assert.ok(side.zoom > up.zoom * 1.3, `sideways uses the phone's length: ${side.zoom} vs ${up.zoom}`);
+  os.env.small = true; os.env.width = 390; os.env.height = 844;
+  await os.registry.get("binder").launch();
+  const w = os.wm.get("win-binder");
+  assert.ok(w.state.open, "it opens");
+  assert.ok(w.el.classList.contains("sideways"));
+  os.env.width = 844; os.env.height = 390;
+  os.bus.emit("resize", {});
+  assert.equal(w.el.classList.contains("sideways"), false, "turned: upright");
+  os.env.small = false; os.env.width = 1366; os.env.height = 900;
+  os.bus.emit("resize", {});
+  assert.equal(w.el.classList.contains("sideways"), false);
 });

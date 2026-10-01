@@ -4460,7 +4460,9 @@ var HxH = (() => {
         // desktop, until clicked.
         { label: "Other", icon: "other", items: () => [
           ...this.env.reduced ? [] : [{ label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }],
-          { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) }
+          { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) },
+          ...this.registry.has("about") ? [{ label: "About", onclick: () => this.launch("about") }] : []
+          // its only door (Andrew, 2026-10-01)
         ] }
       ];
       const strip = (list) => list.map((it) => it === "sep" ? it : { ...it, icon: void 0, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : void 0 });
@@ -5239,7 +5241,6 @@ var HxH = (() => {
   };
 
   // html/hxh/apps/binder.js
-  var SMALL_MESSAGE = "The Binder needs a bigger screen. Please open it on a tablet or computer.";
   var TYPES = [
     { slug: "enhancement", code: "EN", name: "Enhancer", ja: "\u5F37\u5316\u7CFB", hue: "var(--enhancer)", hex: "#ff5a36" },
     { slug: "transmutation", code: "TR", name: "Transmuter", ja: "\u5909\u5316\u7CFB", hue: "var(--transmuter)", hex: "#37d0ff" },
@@ -5310,6 +5311,8 @@ var HxH = (() => {
   var CARD_W = 150;
   var CARD_RATIO = 2072 / 1475;
   var FILL = 0.85;
+  var PHONE_FILL = 0.96;
+  var sidewaysFor = (env) => !!env?.small && (env.height || 0) > (env.width || 0);
   var GAP = 12;
   var PAD = 20;
   var PAGENO = 30;
@@ -5317,10 +5320,10 @@ var HxH = (() => {
   var TASKBAR = 45;
   var TABS = 46;
   var DESIGN_PW = 514;
-  function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
+  function binderLayout(vw, vh, { card = CARD_W, fill = FILL, sideways = false } = {}) {
     const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
     const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
-    const zoom = Math.round(Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS)) * 1e3) / 1e3;
+    const zoom = Math.round((sideways ? Math.min(fill * (vh - TASKBAR) / bw, fill * vw / (bh + TABS)) : Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS))) * 1e3) / 1e3;
     const r = (o) => Math.round(o * 100) / 100;
     return {
       cw,
@@ -5466,6 +5469,7 @@ var HxH = (() => {
         if (this.win.state.open) {
           const at = this.layout();
           if (at) os2.wm.place(this.win.id, at);
+          this.centreOnPhone();
           os2.wm.fit();
         }
       });
@@ -5646,8 +5650,11 @@ var HxH = (() => {
     layout() {
       const os2 = this.os;
       if (!this.win || !os2.env.floating()) return null;
-      const l = binderLayout(os2.env.width, os2.env.height);
+      const sideways = sidewaysFor(os2.env), small = !!os2.env.small;
+      const l = binderLayout(os2.env.width, os2.env.height, { sideways, fill: small ? PHONE_FILL : FILL });
       const el = this.win.el;
+      el.classList.toggle("sideways", sideways);
+      this.sideways = sideways;
       el.style.setProperty("--bw", l.bw + "px");
       el.style.setProperty("--bh", l.bh + "px");
       el.style.setProperty("--pw", l.pw + "px");
@@ -5663,14 +5670,35 @@ var HxH = (() => {
       else for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
+    /** On a phone the book is centred by MEASURING where it landed (rotation, its own zoom and the page's — and Safari's
+        scaled offsets — make computing a left/top fragile): its box and its tabs, nudged to the middle of the screen
+        above the taskbar, upright or sideways. One style px moves k screen px; k is measured too. */
+    centreOnPhone() {
+      const el = this.win?.el, w = this.os.win;
+      if (!el || !this.os.env.small || !w?.innerWidth) return;
+      const box = () => {
+        const rs = [el.getBoundingClientRect(), el.querySelector(".tabs")?.getBoundingClientRect()].filter((r2) => r2 && r2.width);
+        const l = Math.min(...rs.map((r2) => r2.left)), t = Math.min(...rs.map((r2) => r2.top)), r = Math.max(...rs.map((r2) => r2.right)), b = Math.max(...rs.map((r2) => r2.bottom));
+        return { cx: (l + r) / 2, cy: (t + b) / 2 };
+      };
+      const left = parseFloat(el.style.left) || 0, top = parseFloat(el.style.top) || 0;
+      const before = box();
+      el.style.left = left + 100 + "px";
+      const k = (box().cx - before.cx) / 100 || 1;
+      const bar = this.os.taskbar?.el?.getBoundingClientRect().height || 0;
+      el.style.left = left + (w.innerWidth / 2 - before.cx) / k + "px";
+      el.style.top = top + ((w.innerHeight - bar) / 2 - before.cy) / k + "px";
+    }
     /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
-    launch({ restore = false } = {}) {
-      if (this.os.env.small) return restore ? Promise.resolve(null) : new MessageDialog({ title: "Binder", message: SMALL_MESSAGE }).ask(this.os).then(() => null);
+    launch() {
       const win = this.window();
       this.load();
       const p = this.os.wm.open(win.id, this.layout());
       for (const c of this.cards.values()) c.fit();
-      return p;
+      return Promise.resolve(p).then((r) => {
+        this.centreOnPhone();
+        return r;
+      });
     }
     /* The page turn: the cover (front face) swings -180° on the spine hinge
        and its back face, the card page, lands on the left. On finish the
@@ -9231,7 +9259,7 @@ var HxH = (() => {
   }
 
   // html/hxh/apps/roster/app.js
-  var SMALL_MESSAGE2 = "Roster DB needs a tablet or desktop screen.";
+  var SMALL_MESSAGE = "Roster DB needs a tablet or desktop screen.";
   var LIVE_MS2 = 1e4;
   var WATCH = ["version", "review_status", "card_number", "open_requests", "avatar_image_id", "card_image_id", "accepted_version"];
   var RosterApp = class extends App {
@@ -9251,7 +9279,7 @@ var HxH = (() => {
     }
     /* ---------- the list ---------- */
     launch() {
-      if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE2 }).ask(this.os).then(() => null);
+      if (this.os.env.small) return new MessageDialog({ message: SMALL_MESSAGE }).ask(this.os).then(() => null);
       const win = this.list();
       this.os.wm.open(win.id, win.state.placed ? null : this.os.env.floating() ? { x: 120, y: 40 } : null);
       this.refreshList();
@@ -10300,6 +10328,9 @@ var HxH = (() => {
     static icon = "question";
     static order = 95;
     // last, after Report a Bug
+    // not on the desktop or in Start's app list: Settings › Other › About only (Andrew, 2026-10-01)
+    static desktop = false;
+    static menuable = false;
     constructor(os2, options = {}) {
       super(os2, options);
       this.fetch = options.fetch || ((...a) => os2.fetch(...a));

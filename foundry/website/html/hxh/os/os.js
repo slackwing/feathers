@@ -191,6 +191,7 @@ export class OS {
       { label: "Other", icon: "other", items: () => [
         ...(this.env.reduced ? [] : [{ label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
         { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) },
+        ...(this.registry.has("about") ? [{ label: "About", onclick: () => this.launch("about") }] : []),   // its only door (Andrew, 2026-10-01)
       ] },
     ];
     const strip = list => list.map(it => (it === "sep" ? it : { ...it, icon: undefined, items: it.items ? () => strip(typeof it.items === "function" ? it.items() : it.items) : undefined }));

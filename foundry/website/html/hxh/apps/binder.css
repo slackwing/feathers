@@ -62,6 +62,8 @@
 /* the window's minimize / close buttons float above the book, so a turning leaf would pass under them:
    gone the moment a turn starts, faded back in once the page lands (binder.js settle) */
 .win.binder .fbtns { transition: opacity .25s ease-out; }
+/* a phone held upright: the whole book turned a quarter, read by turning the phone (binder.js sidewaysFor) */
+.win.binder.sideways { rotate: 90deg; transform-origin: 50% 50%; }
 /* closed, the window is still as wide as the OPEN book, but only the cover shows: the empty left half must not catch
    clicks meant for the desktop icons under it (Andrew, 2026-09-28: "the unopened left side of the binder area overlaps
    the desktop icons! they become unclickable"). Only the cover and the window buttons take the pointer. */

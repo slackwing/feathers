@@ -1281,8 +1281,17 @@ new store `localStorage` directly — hand it `os.profile`.
   (stamps still show), BeetleChat opens an empty "Anonymous" buddy list
   with no socket, no rooms, no profile. The server refuses all of those
   actions itself (403); the UI only stops offering them.
-- On a phone (`Env.small`) the Binder, like Roster DB, only shows a
-  `MessageDialog` (`SMALL_MESSAGE`) and is not restored.
+- The Binder on phones (2026-10-01, replacing the "needs a bigger
+  screen" message): `sidewaysFor(env)` — a phone (`Env.small`) held
+  upright draws the book a quarter-turn sideways (`.win.binder.sideways`,
+  CSS `rotate: 90deg`), sized by `binderLayout(…, { sideways })` to the
+  phone's length; turned to landscape it is upright again. Decided by the
+  CURRENT shape on every resize, never remembered, so turning the phone
+  never rotates it twice. `PHONE_FILL` 0.96; `centreOnPhone()` centres it
+  by measuring (rotation, both zooms and Safari's offsets make computed
+  positions fragile).
+- About lives only under Settings › Other › About (2026-10-01): not on
+  the desktop or in Start's app list (`desktop`/`menuable` false).
 - Security review fixes (2026-09-28): the party's address lives ONLY in
   the server's `hxh_private` table (GET /hxh/api/db/private, members and
   not anonymous) — the Summons fills `{ key: "site" }` from it

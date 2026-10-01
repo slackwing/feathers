@@ -18,6 +18,9 @@ export class AboutApp extends App {
   static name = "About";
   static icon = "question";
   static order = 95;   // last, after Report a Bug
+  // not on the desktop or in Start's app list: Settings › Other › About only (Andrew, 2026-10-01)
+  static desktop = false;
+  static menuable = false;
 
   constructor(os, options = {}) {
     super(os, options);

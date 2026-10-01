@@ -17,9 +17,13 @@ test("About: a question-mark app for everyone; the window opens on Andrew's note
   const prompts = ["make a site\nfor hunter x halloween", "the binder is tiny!  make it fill like 85% of the screen", "<b>not html</b> & stuff"];
   const { os, options } = make(prompts);
   await os.start({ apps: [[AboutApp, options]], start: true });
-  assert.ok(hasIconPair("question") && DESK.question && DESK.question.every(r => r.length === 20));
-  assert.ok(os.startItems().some(i => i.label === "About"));
-  await os.launch("about");
+  assert.ok(hasIconPair("question"));
+  assert.equal(os.startItems().some(i => i.label === "About"), false, "not in Start's app list");
+  assert.equal(document.querySelector('.icons [data-act="about"]'), null, "nor on the desktop (Andrew, 2026-10-01)");
+  const entry = os.settingsItems().find(i => i.label === "Other").items().find(i => i.label === "About");
+  assert.ok(entry, "Settings › Other › About is its door");
+  entry.onclick();
+  await new Promise(r => setTimeout(r, 0));
   const w = os.wm.get("win-about");
   await tick(0);
   assert.equal(w.$(".aintro").textContent, INTRO, "Andrew's note, verbatim");

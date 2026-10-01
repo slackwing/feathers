@@ -15,10 +15,7 @@ import { h, esc, cqFix } from "../os/dom.js";
 import { icon } from "../os/icons.js";
 import { type } from "../os/typewriter.js";
 import { GICard, LIMIT, cardNo as cardNoOf, rankLimit } from "./card.js";
-import { ClaimDialog, ClaimInfoDialog, MessageDialog } from "./roster/dialogs.js";
-
-/** What the Binder says on a phone (Andrew, 2026-09-28): the book needs a bigger screen. */
-export const SMALL_MESSAGE = "The Binder needs a bigger screen. Please open it on a tablet or computer.";
+import { ClaimDialog, ClaimInfoDialog } from "./roster/dialogs.js";
 import "./binder.css";
 
 export const TYPES = [
@@ -132,12 +129,19 @@ export function paginate(chars, bookmarks = [], claimed = []) {
 export const CARD_W = 150;                 // a card's width in book pixels
 export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
 export const FILL = 0.85;                   // of the desktop above the taskbar
+export const PHONE_FILL = 0.96;             // a phone: as large as the screen allows (Andrew, 2026-10-01)
+
+/** A phone held upright draws the Binder sideways — the reader turns the phone to read it. Decided by the screen's
+    CURRENT shape, never remembered: once the phone turns and the page goes landscape, the book is upright again, so
+    it never rotates twice (Andrew, 2026-10-01: "make sure … we don't have some kind of double correction"). */
+export const sidewaysFor = env => !!env?.small && (env.height || 0) > (env.width || 0);
 export const GAP = 12, PAD = 20, PAGENO = 30, SPINE = 50, TASKBAR = 45, TABS = 46;
 export const DESIGN_PW = 514;               // the page width the panel's controls were drawn for (binder.css --u)
-export function binderLayout(vw, vh, { card = CARD_W, fill = FILL } = {}) {
+export function binderLayout(vw, vh, { card = CARD_W, fill = FILL, sideways = false } = {}) {
   const cw = card, ch = cw * CARD_RATIO, pw = 3 * cw + 2 * GAP + 2 * PAD;
   const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
-  const zoom = Math.round(Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS)) * 1000) / 1000;
+  // sideways (a phone held upright): the book's width runs down the screen and its height (tabs too) across it
+  const zoom = Math.round((sideways ? Math.min(fill * (vh - TASKBAR) / bw, fill * vw / (bh + TABS)) : Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS))) * 1000) / 1000;
   const r = o => Math.round(o * 100) / 100;
   return { cw, ch: r(ch), pw, bw, bh: r(bh), zoom,
     x: Math.max(16, Math.round((vw - bw * zoom) / 2)), y: Math.max(Math.round(TABS * zoom), Math.round((vh - TASKBAR - bh * zoom) / 2)) };
@@ -254,7 +258,7 @@ export class BinderApp extends App {
     os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS), threshold: DRAG_SLOP });
     this.me = os.user?.username || null;
     os.bus.on("session:user", ({ user }) => { this.me = user?.username || null; if (this.win.el) this.syncKeys(); });
-    os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });
+    os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); this.centreOnPhone(); os.wm.fit(); } });   // a phone turning: upright ⇄ sideways, re-centred
     os.bus.on("window:open", ({ id }) => { if (id === this.win.id) { cqFix(this.win.el); for (const c of this.cards.values()) c.fit(); } });   // shown (launched or restored): measure with it laid out
     // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
     os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
@@ -386,8 +390,11 @@ export class BinderApp extends App {
   layout() {
     const os = this.os;
     if (!this.win || !os.env.floating()) return null;
-    const l = binderLayout(os.env.width, os.env.height);
+    const sideways = sidewaysFor(os.env), small = !!os.env.small;
+    const l = binderLayout(os.env.width, os.env.height, { sideways, fill: small ? PHONE_FILL : FILL });
     const el = this.win.el;
+    el.classList.toggle("sideways", sideways);
+    this.sideways = sideways;
     el.style.setProperty("--bw", l.bw + "px");
     el.style.setProperty("--bh", l.bh + "px");
     el.style.setProperty("--pw", l.pw + "px");
@@ -409,14 +416,33 @@ export class BinderApp extends App {
     return { x: l.x, y: l.y };
   }
 
+  /** On a phone the book is centred by MEASURING where it landed (rotation, its own zoom and the page's — and Safari's
+      scaled offsets — make computing a left/top fragile): its box and its tabs, nudged to the middle of the screen
+      above the taskbar, upright or sideways. One style px moves k screen px; k is measured too. */
+  centreOnPhone() {
+    const el = this.win?.el, w = this.os.win;
+    if (!el || !this.os.env.small || !w?.innerWidth) return;
+    const box = () => {
+      const rs = [el.getBoundingClientRect(), el.querySelector(".tabs")?.getBoundingClientRect()].filter(r => r && r.width);
+      const l = Math.min(...rs.map(r => r.left)), t = Math.min(...rs.map(r => r.top)), r = Math.max(...rs.map(r => r.right)), b = Math.max(...rs.map(r => r.bottom));
+      return { cx: (l + r) / 2, cy: (t + b) / 2 };
+    };
+    const left = parseFloat(el.style.left) || 0, top = parseFloat(el.style.top) || 0;
+    const before = box();
+    el.style.left = left + 100 + "px";
+    const k = (box().cx - before.cx) / 100 || 1;
+    const bar = this.os.taskbar?.el?.getBoundingClientRect().height || 0;
+    el.style.left = left + (w.innerWidth / 2 - before.cx) / k + "px";
+    el.style.top = top + ((w.innerHeight - bar) / 2 - before.cy) / k + "px";
+  }
+
   /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
-  launch({ restore = false } = {}) {
-    if (this.os.env.small) return restore ? Promise.resolve(null) : new MessageDialog({ title: "Binder", message: SMALL_MESSAGE }).ask(this.os).then(() => null);   // a phone: say so; a saved desktop does not bring it back
+  launch() {
     const win = this.window();
     this.load();
     const p = this.os.wm.open(win.id, this.layout());
     for (const c of this.cards.values()) c.fit();
-    return p;
+    return Promise.resolve(p).then(r => { this.centreOnPhone(); return r; });
   }
 
   /* The page turn: the cover (front face) swings -180° on the spine hinge
