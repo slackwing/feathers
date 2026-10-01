@@ -129,7 +129,7 @@ export function paginate(chars, bookmarks = [], claimed = []) {
 export const CARD_W = 150;                 // a card's width in book pixels
 export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
 export const FILL = 0.85;                   // of the desktop above the taskbar
-export const PHONE_FILL = 0.96;             // a phone: as large as the screen allows (Andrew, 2026-10-01)
+export const PHONE_FILL = 1;               // a phone: edge to edge in whichever direction binds — the book keeps its shape, so the other direction keeps a margin (Andrew, 2026-10-01: "didn't quite fill")
 
 /** A phone held upright draws the Binder sideways — the reader turns the phone to read it. Decided by the screen's
     CURRENT shape, never remembered: once the phone turns and the page goes landscape, the book is upright again, so
@@ -461,6 +461,7 @@ export class BinderApp extends App {
       this.win.el.classList.remove("turning");
       fn(); book.classList.replace(from, to); this.os.wm.fit();
       for (const c of this.cards.values()) c.fit();
+      this.centreOnPhone();   // the tabs come and go with the card page: re-centre the book as it now stands
     };
     const onEnd = e => { if (e.target === flap) done(); };
     flap.addEventListener("transitionend", onEnd);
@@ -473,7 +474,7 @@ export class BinderApp extends App {
     const book = this.book;
     if (!book.classList.contains("closed")) return;
     const page = this.$(".page"), leaf = this.$(".leaf");
-    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); for (const c of this.cards.values()) c.fit(); return; }
+    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); for (const c of this.cards.values()) c.fit(); this.centreOnPhone(); return; }
     book.classList.replace("closed", "opening");
     this.settle("opening", "open", () => leaf.append(page));
   }
@@ -485,7 +486,7 @@ export class BinderApp extends App {
     back.prepend(page);
     if (!this.animated() || !book.classList.contains("open")) {
       clearTimeout(this.turnTimer); this.win.el.classList.remove("turning");   // a turn cut short must not leave the buttons hidden
-      book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); this.os.wm.fit(); return;
+      book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); this.os.wm.fit(); this.centreOnPhone(); return;
     }
     book.classList.remove("open"); book.classList.add("closing", "start");
     void this.$(".flap").offsetWidth;   // commit the -180° start before transitioning home

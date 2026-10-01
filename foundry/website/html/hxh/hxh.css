@@ -2214,7 +2214,7 @@ html[data-theme=seapumpkin-pastel] {
   transition: opacity .25s ease-out;
 }
 .win.binder.sideways {
-  rotate: 90deg;
+  rotate: -90deg;
   transform-origin: 50% 50%;
 }
 .win.binder:has(.book.closed) {

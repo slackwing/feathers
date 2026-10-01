@@ -1284,10 +1284,10 @@ new store `localStorage` directly — hand it `os.profile`.
 - The Binder on phones (2026-10-01, replacing the "needs a bigger
   screen" message): `sidewaysFor(env)` — a phone (`Env.small`) held
   upright draws the book a quarter-turn sideways (`.win.binder.sideways`,
-  CSS `rotate: 90deg`), sized by `binderLayout(…, { sideways })` to the
+  CSS `rotate: -90deg`, top to the left), sized by `binderLayout(…, { sideways })` to the
   phone's length; turned to landscape it is upright again. Decided by the
   CURRENT shape on every resize, never remembered, so turning the phone
-  never rotates it twice. `PHONE_FILL` 0.96; `centreOnPhone()` centres it
+  never rotates it twice. `PHONE_FILL` 1 (edge to edge in the binding direction); `centreOnPhone()` centres it
   by measuring (rotation, both zooms and Safari's offsets make computed
   positions fragile).
 - About lives only under Settings › Other › About (2026-10-01): not on

@@ -5311,7 +5311,7 @@ var HxH = (() => {
   var CARD_W = 150;
   var CARD_RATIO = 2072 / 1475;
   var FILL = 0.85;
-  var PHONE_FILL = 0.96;
+  var PHONE_FILL = 1;
   var sidewaysFor = (env) => !!env?.small && (env.height || 0) > (env.width || 0);
   var GAP = 12;
   var PAD = 20;
@@ -5719,6 +5719,7 @@ var HxH = (() => {
         book.classList.replace(from, to);
         this.os.wm.fit();
         for (const c of this.cards.values()) c.fit();
+        this.centreOnPhone();
       };
       const onEnd = (e) => {
         if (e.target === flap) done();
@@ -5738,6 +5739,7 @@ var HxH = (() => {
         book.classList.replace("closed", "open");
         this.os.wm.fit();
         for (const c of this.cards.values()) c.fit();
+        this.centreOnPhone();
         return;
       }
       book.classList.replace("closed", "opening");
@@ -5754,6 +5756,7 @@ var HxH = (() => {
         book.classList.remove("open", "opening", "closing", "start");
         book.classList.add("closed");
         this.os.wm.fit();
+        this.centreOnPhone();
         return;
       }
       book.classList.remove("open");
