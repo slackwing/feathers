@@ -52,6 +52,7 @@
 .book.closing .flap { transform: rotateY(0deg); transition: transform .85s cubic-bezier(.55, .05, .25, 1); pointer-events: none; }
 .book.closing.start .flap { transform: rotateY(-180deg); transition: none; }
 .book.closed .spine { visibility: hidden; }
+.book.closed .face.back { visibility: hidden; }   /* closed, the card page is never seen — not left to backface-visibility, which Safari loses inside a turned book */
 .leaf { flex: 0 0 var(--pw); width: var(--pw); }
 .shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 1; pointer-events: none; z-index: 2; }
 .book.open .shade { display: none; }
@@ -62,8 +63,17 @@
 /* the window's minimize / close buttons float above the book, so a turning leaf would pass under them:
    gone the moment a turn starts, faded back in once the page lands (binder.js settle) */
 .win.binder .fbtns { transition: opacity .25s ease-out; }
-/* a phone held upright: the whole book turned a quarter, read by turning the phone (binder.js sidewaysFor) */
-.win.binder.sideways { rotate: -90deg; transform-origin: 50% 50%; }   /* the book's top to the left: read by turning the phone clockwise (Andrew, 2026-10-01: "rotate the other way") */
+/* a phone held upright: the BOOK turns a quarter (its top to the left — read by turning the phone clockwise), inside a
+   window whose own box is the turned book's footprint (tabs + book height across, book width down). Turning the whole
+   window left its upright box 1.5× wider than the phone: mobile browsers widened the page to fit it (a sudden zoom-out)
+   and the window manager's edge clamping fought the centring (Andrew, 2026-10-01: "hugging the right side"). */
+.win.binder.sideways { width: calc(var(--bh) + 46px) !important; height: var(--bw); }
+.win.binder.sideways > .body { position: relative; width: 100%; height: 100%; }
+.win.binder.sideways .book { position: absolute; left: calc(46px + var(--bh) / 2); top: calc(var(--bw) / 2); max-width: none;
+  translate: -50% -50%; rotate: -90deg; }
+/* the minimize / close keys ride the book's turned top-right corner (the screen's top-left), turned with it: close on top */
+.win.binder.sideways .fbtns { right: auto; left: calc(46px + 2px); top: 2px; flex-direction: column-reverse; }
+.win.binder.sideways .fbtns .tbtn { rotate: -90deg; }
 /* closed, the window is still as wide as the OPEN book, but only the cover shows: the empty left half must not catch
    clicks meant for the desktop icons under it (Andrew, 2026-09-28: "the unopened left side of the binder area overlaps
    the desktop icons! they become unclickable"). Only the cover and the window buttons take the pointer. */

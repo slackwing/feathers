@@ -129,7 +129,7 @@ export function paginate(chars, bookmarks = [], claimed = []) {
 export const CARD_W = 150;                 // a card's width in book pixels
 export const CARD_RATIO = 2072 / 1475;      // a card's height / width (docs/GI_CARD.md)
 export const FILL = 0.85;                   // of the desktop above the taskbar
-export const PHONE_FILL = 1;               // a phone: edge to edge in whichever direction binds — the book keeps its shape, so the other direction keeps a margin (Andrew, 2026-10-01: "didn't quite fill")
+export const PHONE_FILL = 0.94;            // a phone: nearly edge to edge in whichever direction binds, a little margin either side (Andrew, 2026-10-01); the book keeps its shape, so the other direction keeps more
 
 /** A phone held upright draws the Binder sideways — the reader turns the phone to read it. Decided by the screen's
     CURRENT shape, never remembered: once the phone turns and the page goes landscape, the book is upright again, so
@@ -143,8 +143,12 @@ export function binderLayout(vw, vh, { card = CARD_W, fill = FILL, sideways = fa
   // sideways (a phone held upright): the book's width runs down the screen and its height (tabs too) across it
   const zoom = Math.round((sideways ? Math.min(fill * (vh - TASKBAR) / bw, fill * vw / (bh + TABS)) : Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS))) * 1000) / 1000;
   const r = o => Math.round(o * 100) / 100;
-  return { cw, ch: r(ch), pw, bw, bh: r(bh), zoom,
-    x: Math.max(16, Math.round((vw - bw * zoom) / 2)), y: Math.max(Math.round(TABS * zoom), Math.round((vh - TASKBAR - bh * zoom) / 2)) };
+  // the window's footprint on the desktop (layout px), tabs included — sideways the window box IS the turned book's
+  // footprint; upright the tabs stand above the window's top — centred in the space above the taskbar
+  const fw = sideways ? (bh + TABS) * zoom : bw * zoom, fh = sideways ? bw * zoom : (bh + TABS) * zoom;
+  const left = Math.max(0, (vw - fw) / 2), top = Math.max(0, (vh - TASKBAR - fh) / 2) + (sideways ? 0 : TABS * zoom);
+  // the window's own zoom scales its left/top as well (see wm.drag): hand the window manager its own px
+  return { cw, ch: r(ch), pw, bw, bh: r(bh), zoom, x: Math.round(left / zoom), y: Math.round(top / zoom) };
 }
 
 const BOOK = `
@@ -258,7 +262,7 @@ export class BinderApp extends App {
     os.wm.drag(this.win, this.book, { allow: e => !e.target.closest?.(CONTROLS), threshold: DRAG_SLOP });
     this.me = os.user?.username || null;
     os.bus.on("session:user", ({ user }) => { this.me = user?.username || null; if (this.win.el) this.syncKeys(); });
-    os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); this.centreOnPhone(); os.wm.fit(); } });   // a phone turning: upright ⇄ sideways, re-centred
+    os.bus.on("resize", () => { if (this.win.state.open) { const at = this.layout(); if (at) os.wm.place(this.win.id, at); os.wm.fit(); } });   // a phone turning: upright ⇄ sideways, re-placed
     os.bus.on("window:open", ({ id }) => { if (id === this.win.id) { cqFix(this.win.el); for (const c of this.cards.values()) c.fit(); } });   // shown (launched or restored): measure with it laid out
     // the Roster DB changed under an open binder (a verdict, a card picture): re-read it
     os.bus.on("roster:changed", () => { if (this.win.state.open) this.load(); });
@@ -416,25 +420,7 @@ export class BinderApp extends App {
     return { x: l.x, y: l.y };
   }
 
-  /** On a phone the book is centred by MEASURING where it landed (rotation, its own zoom and the page's — and Safari's
-      scaled offsets — make computing a left/top fragile): its box and its tabs, nudged to the middle of the screen
-      above the taskbar, upright or sideways. One style px moves k screen px; k is measured too. */
-  centreOnPhone() {
-    const el = this.win?.el, w = this.os.win;
-    if (!el || !this.os.env.small || !w?.innerWidth) return;
-    const box = () => {
-      const rs = [el.getBoundingClientRect(), el.querySelector(".tabs")?.getBoundingClientRect()].filter(r => r && r.width);
-      const l = Math.min(...rs.map(r => r.left)), t = Math.min(...rs.map(r => r.top)), r = Math.max(...rs.map(r => r.right)), b = Math.max(...rs.map(r => r.bottom));
-      return { cx: (l + r) / 2, cy: (t + b) / 2 };
-    };
-    const left = parseFloat(el.style.left) || 0, top = parseFloat(el.style.top) || 0;
-    const before = box();
-    el.style.left = left + 100 + "px";
-    const k = (box().cx - before.cx) / 100 || 1;
-    const bar = this.os.taskbar?.el?.getBoundingClientRect().height || 0;
-    el.style.left = left + (w.innerWidth / 2 - before.cx) / k + "px";
-    el.style.top = top + ((w.innerHeight - bar) / 2 - before.cy) / k + "px";
-  }
+
 
   /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
   launch() {
@@ -442,14 +428,14 @@ export class BinderApp extends App {
     this.load();
     const p = this.os.wm.open(win.id, this.layout());
     for (const c of this.cards.values()) c.fit();
-    return Promise.resolve(p).then(r => { this.centreOnPhone(); return r; });
+    return Promise.resolve(p).then(r => { return r; });
   }
 
   /* The page turn: the cover (front face) swings -180° on the spine hinge
      and its back face, the card page, lands on the left. On finish the
      page moves into .leaf (plain flow); shut() puts it back on the leaf
      and swings it home. No 3D on phones or with reduced motion. */
-  animated() { return this.os.env.floating() && !this.os.env.reduced; }
+  animated() { return this.os.env.floating() && !this.os.env.reduced && !this.sideways; }   // no 3D page turn in a turned book: it simply opens
 
   settle(from, to, fn) {
     const flap = this.$(".flap"), book = this.book;
@@ -461,7 +447,7 @@ export class BinderApp extends App {
       this.win.el.classList.remove("turning");
       fn(); book.classList.replace(from, to); this.os.wm.fit();
       for (const c of this.cards.values()) c.fit();
-      this.centreOnPhone();   // the tabs come and go with the card page: re-centre the book as it now stands
+        // the tabs come and go with the card page: re-centre the book as it now stands
     };
     const onEnd = e => { if (e.target === flap) done(); };
     flap.addEventListener("transitionend", onEnd);
@@ -474,7 +460,7 @@ export class BinderApp extends App {
     const book = this.book;
     if (!book.classList.contains("closed")) return;
     const page = this.$(".page"), leaf = this.$(".leaf");
-    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); for (const c of this.cards.values()) c.fit(); this.centreOnPhone(); return; }
+    if (!this.animated()) { leaf.append(page); book.classList.replace("closed", "open"); this.os.wm.fit(); for (const c of this.cards.values()) c.fit(); return; }
     book.classList.replace("closed", "opening");
     this.settle("opening", "open", () => leaf.append(page));
   }
@@ -486,7 +472,7 @@ export class BinderApp extends App {
     back.prepend(page);
     if (!this.animated() || !book.classList.contains("open")) {
       clearTimeout(this.turnTimer); this.win.el.classList.remove("turning");   // a turn cut short must not leave the buttons hidden
-      book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); this.os.wm.fit(); this.centreOnPhone(); return;
+      book.classList.remove("open", "opening", "closing", "start"); book.classList.add("closed"); this.os.wm.fit(); return;
     }
     book.classList.remove("open"); book.classList.add("closing", "start");
     void this.$(".flap").offsetWidth;   // commit the -180° start before transitioning home

@@ -5311,7 +5311,7 @@ var HxH = (() => {
   var CARD_W = 150;
   var CARD_RATIO = 2072 / 1475;
   var FILL = 0.85;
-  var PHONE_FILL = 1;
+  var PHONE_FILL = 0.94;
   var sidewaysFor = (env) => !!env?.small && (env.height || 0) > (env.width || 0);
   var GAP = 12;
   var PAD = 20;
@@ -5325,16 +5325,9 @@ var HxH = (() => {
     const bw = 2 * pw + SPINE, bh = 3 * ch + 2 * GAP + 2 * PAD + PAGENO;
     const zoom = Math.round((sideways ? Math.min(fill * (vh - TASKBAR) / bw, fill * vw / (bh + TABS)) : Math.min(fill * vw / bw, fill * (vh - TASKBAR) / (bh + TABS))) * 1e3) / 1e3;
     const r = (o) => Math.round(o * 100) / 100;
-    return {
-      cw,
-      ch: r(ch),
-      pw,
-      bw,
-      bh: r(bh),
-      zoom,
-      x: Math.max(16, Math.round((vw - bw * zoom) / 2)),
-      y: Math.max(Math.round(TABS * zoom), Math.round((vh - TASKBAR - bh * zoom) / 2))
-    };
+    const fw = sideways ? (bh + TABS) * zoom : bw * zoom, fh = sideways ? bw * zoom : (bh + TABS) * zoom;
+    const left = Math.max(0, (vw - fw) / 2), top = Math.max(0, (vh - TASKBAR - fh) / 2) + (sideways ? 0 : TABS * zoom);
+    return { cw, ch: r(ch), pw, bw, bh: r(bh), zoom, x: Math.round(left / zoom), y: Math.round(top / zoom) };
   }
   var BOOK = `
   <div class="book closed">
@@ -5469,7 +5462,6 @@ var HxH = (() => {
         if (this.win.state.open) {
           const at = this.layout();
           if (at) os2.wm.place(this.win.id, at);
-          this.centreOnPhone();
           os2.wm.fit();
         }
       });
@@ -5670,25 +5662,6 @@ var HxH = (() => {
       else for (const c of this.cards.values()) c.fit();
       return { x: l.x, y: l.y };
     }
-    /** On a phone the book is centred by MEASURING where it landed (rotation, its own zoom and the page's — and Safari's
-        scaled offsets — make computing a left/top fragile): its box and its tabs, nudged to the middle of the screen
-        above the taskbar, upright or sideways. One style px moves k screen px; k is measured too. */
-    centreOnPhone() {
-      const el = this.win?.el, w = this.os.win;
-      if (!el || !this.os.env.small || !w?.innerWidth) return;
-      const box = () => {
-        const rs = [el.getBoundingClientRect(), el.querySelector(".tabs")?.getBoundingClientRect()].filter((r2) => r2 && r2.width);
-        const l = Math.min(...rs.map((r2) => r2.left)), t = Math.min(...rs.map((r2) => r2.top)), r = Math.max(...rs.map((r2) => r2.right)), b = Math.max(...rs.map((r2) => r2.bottom));
-        return { cx: (l + r) / 2, cy: (t + b) / 2 };
-      };
-      const left = parseFloat(el.style.left) || 0, top = parseFloat(el.style.top) || 0;
-      const before = box();
-      el.style.left = left + 100 + "px";
-      const k = (box().cx - before.cx) / 100 || 1;
-      const bar = this.os.taskbar?.el?.getBoundingClientRect().height || 0;
-      el.style.left = left + (w.innerWidth / 2 - before.cx) / k + "px";
-      el.style.top = top + ((w.innerHeight - bar) / 2 - before.cy) / k + "px";
-    }
     /** Every open re-reads the roster: the binder was built once at boot and went stale when a character was accepted later (Abi, 2026-09-21). */
     launch() {
       const win = this.window();
@@ -5696,7 +5669,6 @@ var HxH = (() => {
       const p = this.os.wm.open(win.id, this.layout());
       for (const c of this.cards.values()) c.fit();
       return Promise.resolve(p).then((r) => {
-        this.centreOnPhone();
         return r;
       });
     }
@@ -5705,8 +5677,9 @@ var HxH = (() => {
        page moves into .leaf (plain flow); shut() puts it back on the leaf
        and swings it home. No 3D on phones or with reduced motion. */
     animated() {
-      return this.os.env.floating() && !this.os.env.reduced;
+      return this.os.env.floating() && !this.os.env.reduced && !this.sideways;
     }
+    // no 3D page turn in a turned book: it simply opens
     settle(from, to, fn) {
       const flap = this.$(".flap"), book = this.book;
       this.win.el.classList.add("turning");
@@ -5719,7 +5692,6 @@ var HxH = (() => {
         book.classList.replace(from, to);
         this.os.wm.fit();
         for (const c of this.cards.values()) c.fit();
-        this.centreOnPhone();
       };
       const onEnd = (e) => {
         if (e.target === flap) done();
@@ -5739,7 +5711,6 @@ var HxH = (() => {
         book.classList.replace("closed", "open");
         this.os.wm.fit();
         for (const c of this.cards.values()) c.fit();
-        this.centreOnPhone();
         return;
       }
       book.classList.replace("closed", "opening");
@@ -5756,7 +5727,6 @@ var HxH = (() => {
         book.classList.remove("open", "opening", "closing", "start");
         book.classList.add("closed");
         this.os.wm.fit();
-        this.centreOnPhone();
         return;
       }
       book.classList.remove("open");

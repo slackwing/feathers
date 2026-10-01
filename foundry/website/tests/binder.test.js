@@ -116,8 +116,8 @@ test("layout maths: the card is the anchor in book pixels — a page is exactly 
   assert.equal(l.zoom, Math.round(Math.min(byH, byW) * 1000) / 1000);
   assert.ok(l.zoom > 1.4, "a 1440-tall desktop shows the book at about 1.5×: " + l.zoom);
   assert.ok(Math.abs((l.bh + TABS) * l.zoom - FILL * (1440 - TASKBAR)) < 2, "height-bound: the book plus its tabs is 85% of the desktop above the taskbar");
-  assert.equal(l.x, Math.round((2560 - l.bw * l.zoom) / 2));
-  assert.equal(l.y, Math.max(Math.round(TABS * l.zoom), Math.round((1440 - TASKBAR - l.bh * l.zoom) / 2)));
+  assert.equal(l.x, Math.round((2560 - l.bw * l.zoom) / 2 / l.zoom), "centred, in the window's own (zoomed) px");
+  assert.equal(l.y, Math.round(((1440 - TASKBAR - (l.bh + TABS) * l.zoom) / 2 + TABS * l.zoom) / l.zoom), "book and tabs centred above the taskbar");
   const small = binderLayout(1366, 900);
   assert.ok(small.zoom < 1 && small.zoom > 0.9, "a 900-tall desktop shrinks the book a little: " + small.zoom);
   assert.equal(small.cw, CARD_W);   // the book's own pixels never change, only the zoom

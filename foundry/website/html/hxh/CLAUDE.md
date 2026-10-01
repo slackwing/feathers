@@ -1281,15 +1281,27 @@ new store `localStorage` directly — hand it `os.profile`.
   (stamps still show), BeetleChat opens an empty "Anonymous" buddy list
   with no socket, no rooms, no profile. The server refuses all of those
   actions itself (403); the UI only stops offering them.
-- The Binder on phones (2026-10-01, replacing the "needs a bigger
-  screen" message): `sidewaysFor(env)` — a phone (`Env.small`) held
-  upright draws the book a quarter-turn sideways (`.win.binder.sideways`,
-  CSS `rotate: -90deg`, top to the left), sized by `binderLayout(…, { sideways })` to the
-  phone's length; turned to landscape it is upright again. Decided by the
-  CURRENT shape on every resize, never remembered, so turning the phone
-  never rotates it twice. `PHONE_FILL` 1 (edge to edge in the binding direction); `centreOnPhone()` centres it
-  by measuring (rotation, both zooms and Safari's offsets make computed
-  positions fragile).
+- The Binder on phones (2026-10-01): `sidewaysFor(env)` — a phone
+  (`Env.small`) held upright shows the book a quarter-turn sideways (top
+  to the left, read by turning the phone clockwise); turned to landscape
+  it is upright again. Decided by the CURRENT shape on every resize,
+  never remembered, so it never rotates twice. Only the BOOK turns
+  (`.win.binder.sideways .book { rotate: -90deg }`), inside a window
+  whose own box is the turned footprint (tabs + book height across, book
+  width down): turning the whole window left an upright box 1.5× wider
+  than the phone, so Android Chrome widened the page (a sudden zoom-out)
+  and edge clamping pushed the book to one side. No 3D page turn while
+  sideways (`animated()`), and a closed book hides its card page
+  outright (`.book.closed .face.back`) — Safari loses backface-
+  visibility inside a turned book. Positions are COMPUTED
+  (`binderLayout` returns left/top in the window's own zoomed px — the
+  window's zoom scales them, as for wm.drag); on a phone a saved
+  desktop's position is ignored. `PHONE_FILL` 0.94. The page's viewport
+  tag has `minimum-scale=1` (index, _invite, _reset): Chrome on Android
+  otherwise widens the page whenever anything pokes past the edge, even
+  for a moment while turning. Checked with Playwright's `devices["Pixel
+  7"]` (Chromium) and `devices["iPhone 13"]` (WebKit) — isMobile
+  matters; touch emulation alone missed all of this.
 - About lives only under Settings › Other › About (2026-10-01): not on
   the desktop or in Start's app list (`desktop`/`menuable` false).
 - Security review fixes (2026-09-28): the party's address lives ONLY in
