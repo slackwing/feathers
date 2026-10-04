@@ -40,7 +40,6 @@ export class Composer extends Component {
       </div>` });
     this.input = el.querySelector("textarea");
     this.attachEl = el.querySelector(".attach");
-    this.placeholder = p.placeholder || "";
     el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
     for (const b of p.buttons || []) el.querySelector(`[data-act="${b.act}"]`).addEventListener("click", () => this.emit(b.act));
     el.querySelector('[data-act="detach"]').addEventListener("click", () => { this.clearAttachment(); this.focusInput(); });
@@ -104,7 +103,7 @@ export class Composer extends Component {
 
   submit() {
     const body = this.input.value.trim();
-    if ((!body && !this.image) || this.canSend === false) return false;
+    if (!body && !this.image) return false;
     this.emit("send", { body, image: this.image || null });
     this.input.value = "";
     this.clearAttachment();
@@ -112,12 +111,4 @@ export class Composer extends Component {
   }
 
   focusInput() { this.input?.focus(); }
-
-  /** Compose on or off — off, the field greys out and says why in italics. */
-  setCanSend(on, note = "") {
-    this.canSend = !!on;
-    this.input.disabled = !on;
-    this.input.placeholder = on ? this.placeholder : note;
-    this.el.querySelector('[data-act="send"]').disabled = !on;
-  }
 }

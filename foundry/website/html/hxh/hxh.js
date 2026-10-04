@@ -6310,11 +6310,11 @@ var HxH = (() => {
       el.querySelector(".tools").addEventListener("click", (e) => {
         const act = e.target.closest("[data-act]")?.dataset.act;
         if (act === "global") this.emit("global");
-        else if (act === "im" && this.selected && this.canMessage(this.selected)) this.emit("chat", { user: this.selected });
+        else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
         else if (act === "profile") this.emit("profile", { user: this.selected || this.me?.username });
       });
       this.menu = this.adopt(new Menu({ items: () => this.selected ? [
-        { label: "Send Message", disabled: !this.canMessage(this.selected), onclick: () => this.emit("chat", { user: this.selected }) },
+        { label: "Send Message", onclick: () => this.emit("chat", { user: this.selected }) },
         { label: "Profile", onclick: () => this.emit("profile", { user: this.selected }) }
       ] : [] }), el.querySelector(".body"));
       this.menu.el.classList.add("ctx");
@@ -6379,13 +6379,10 @@ var HxH = (() => {
       for (const r of this.tree.querySelectorAll("[data-user]")) r.classList.toggle("sel", r.dataset.user === user);
       this.syncTools();
     }
-    /** IM only reaches the online and the away (Andrew, 2026-09-19: not the offline). */
-    canMessage(user) {
-      return present(this.contacts.get(user)?.state);
-    }
+    /** IM reaches anyone, the offline too — it waits as unread (Andrew, 2026-10-04). */
     syncTools() {
       const im = this.el?.querySelector('[data-act="im"]');
-      if (im) im.disabled = !this.selected || !this.canMessage(this.selected);
+      if (im) im.disabled = !this.selected;
     }
     /** Everyone but me: the present under Buddies, the rest under Offline. */
     groups() {
@@ -6543,7 +6540,6 @@ var HxH = (() => {
       </div>` });
       this.input = el.querySelector("textarea");
       this.attachEl = el.querySelector(".attach");
-      this.placeholder = p.placeholder || "";
       el.querySelector('[data-act="send"]').addEventListener("click", () => this.submit());
       for (const b of p.buttons || []) el.querySelector(`[data-act="${b.act}"]`).addEventListener("click", () => this.emit(b.act));
       el.querySelector('[data-act="detach"]').addEventListener("click", () => {
@@ -6627,7 +6623,7 @@ var HxH = (() => {
     }
     submit() {
       const body = this.input.value.trim();
-      if (!body && !this.image || this.canSend === false) return false;
+      if (!body && !this.image) return false;
       this.emit("send", { body, image: this.image || null });
       this.input.value = "";
       this.clearAttachment();
@@ -6635,13 +6631,6 @@ var HxH = (() => {
     }
     focusInput() {
       this.input?.focus();
-    }
-    /** Compose on or off — off, the field greys out and says why in italics. */
-    setCanSend(on, note = "") {
-      this.canSend = !!on;
-      this.input.disabled = !on;
-      this.input.placeholder = on ? this.placeholder : note;
-      this.el.querySelector('[data-act="send"]').disabled = !on;
     }
   };
 
@@ -6698,9 +6687,6 @@ var HxH = (() => {
     get image() {
       return this.composer?.image;
     }
-    get canSend() {
-      return this.composer?.canSend;
-    }
     pasteFromClipboard() {
       return this.composer.pasteFromClipboard();
     }
@@ -6722,10 +6708,6 @@ var HxH = (() => {
     /** The newest message shown (what a read marker points at). */
     get lastId() {
       return this.messages.length ? this.messages[this.messages.length - 1].id : 0;
-    }
-    /** Compose on or off — off, the field greys out and says why in italics (a buddy who is offline cannot be messaged). */
-    setCanSend(on, note = "") {
-      this.composer.setCanSend(on, note);
     }
     setMessages(list) {
       this.log.replaceChildren();
@@ -7283,11 +7265,6 @@ var HxH = (() => {
         return !!(d?.hasFocus ? d.hasFocus() : true) && d?.visibilityState !== "hidden";
       });
     }
-    /** May this user be messaged? Online or away, not offline, not without a password. */
-    reachable(user) {
-      const s = this.contacts.get(user)?.state;
-      return s === "online" || s === "away";
-    }
     get me() {
       return this.os.user?.username || null;
     }
@@ -7387,7 +7364,6 @@ var HxH = (() => {
       this.stopWake = os2.bus.on("wake", ({ reason }) => this.onWake(reason));
       c.on("error", (e) => {
         if (e.code === "rate") os2.toast.show("Slow down.");
-        else if (e.code === "offline") os2.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
         else if (e.code === "image") os2.toast.show("That picture can't be sent.");
       });
       this.stopFocus = os2.bus.on("window:focus", ({ id }) => this.onFocus(id));
@@ -7405,14 +7381,7 @@ var HxH = (() => {
       for (const [room, w] of this.windows) {
         w.setTitle(this.roomTitle(room));
         w.refreshNames();
-        this.syncCanSend(room, w);
       }
-    }
-    /** A DM's compose follows the buddy's reachability. */
-    syncCanSend(room, w = this.windows.get(room)) {
-      const other = this.otherOf(room);
-      if (!w || !other) return;
-      w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline.`);
     }
     onPresence({ user, state, last_seen_at }) {
       const c = this.contacts.get(user);
@@ -7422,7 +7391,6 @@ var HxH = (() => {
         c.last_seen_at = last_seen_at;
       }
       this.contactsWin?.setPresence(user, state, last_seen_at);
-      if (this.me) this.syncCanSend(dmRoom(this.me, user));
       if (user !== this.me && prev && prev !== state) {
         if (state === "online") this.os.sounds.play("dooropen");
         else if (prev === "online") this.os.sounds.play("doorclose");
@@ -7558,7 +7526,6 @@ var HxH = (() => {
         w.on("close", () => {
           this.markRead(room);
         });
-        this.syncCanSend(room, w);
         this.loadHistory(room, w);
       }
       if (w.state.open && !w.state.minimized && !focus) return w;

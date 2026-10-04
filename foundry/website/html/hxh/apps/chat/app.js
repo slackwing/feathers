@@ -48,9 +48,6 @@ export class ChatApp extends App {
     });
   }
 
-  /** May this user be messaged? Online or away, not offline, not without a password. */
-  reachable(user) { const s = this.contacts.get(user)?.state; return s === "online" || s === "away"; }
-
   get me() { return this.os.user?.username || null; }
   get connected() { return !!this.client?.connected; }
 
@@ -120,7 +117,6 @@ export class ChatApp extends App {
     this.stopWake = os.bus.on("wake", ({ reason }) => this.onWake(reason));
     c.on("error", e => {
       if (e.code === "rate") os.toast.show("Slow down.");
-      else if (e.code === "offline") os.toast.show(`${this.nameOf(this.otherOf(e.room))} is offline.`);
       else if (e.code === "image") os.toast.show("That picture can't be sent.");
     });
     this.stopFocus = os.bus.on("window:focus", ({ id }) => this.onFocus(id));
@@ -139,14 +135,7 @@ export class ChatApp extends App {
   setContacts(list) {
     this.contacts = new Map((list || []).map(c => [c.username, { ...c }]));
     this.contactsWin?.setContacts(list);
-    for (const [room, w] of this.windows) { w.setTitle(this.roomTitle(room)); w.refreshNames(); this.syncCanSend(room, w); }
-  }
-
-  /** A DM's compose follows the buddy's reachability. */
-  syncCanSend(room, w = this.windows.get(room)) {
-    const other = this.otherOf(room);
-    if (!w || !other) return;
-    w.setCanSend(this.reachable(other), `${this.nameOf(other)} is offline.`);
+    for (const [room, w] of this.windows) { w.setTitle(this.roomTitle(room)); w.refreshNames(); }
   }
 
   onPresence({ user, state, last_seen_at }) {
@@ -154,7 +143,6 @@ export class ChatApp extends App {
     const prev = c?.state;
     if (c) { c.state = state; c.last_seen_at = last_seen_at; }
     this.contactsWin?.setPresence(user, state, last_seen_at);
-    if (this.me) this.syncCanSend(dmRoom(this.me, user));
     if (user !== this.me && prev && prev !== state) {
       if (state === "online") this.os.sounds.play("dooropen");
       else if (prev === "online") this.os.sounds.play("doorclose");
@@ -281,7 +269,6 @@ export class ChatApp extends App {
       w.on("typing", () => this.client?.typing(room));
       w.on("profile", () => other && this.viewProfile(other));
       w.on("close", () => { this.markRead(room); });
-      this.syncCanSend(room, w);
       this.loadHistory(room, w);
     }
     if (w.state.open && !w.state.minimized && !focus) return w;

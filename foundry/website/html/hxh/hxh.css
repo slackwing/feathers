@@ -3076,15 +3076,6 @@ body.stacked .pageno {
 }
 
 /* html/hxh/apps/chat/composer.css */
-.compose textarea:disabled {
-  background: var(--field-off-bg);
-  color: var(--dim-fg);
-}
-.compose textarea:disabled::placeholder {
-  font-style: italic;
-  color: var(--dim-fg);
-  opacity: 1;
-}
 .compose {
   display: flex;
   flex-direction: column;

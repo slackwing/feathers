@@ -26,7 +26,8 @@
 > Later that day: read markers on the server (`hxh_chat_read`) with
 > Andrew's "explicit focus" rule — only the focused tab's active window
 > reads; unread rooms open on launch (DMs flashing, global last and
-> focused); DMs only to the online and away, never the offline — see
+> focused); DMs only to the online and away, never the offline (lifted
+> 2026-10-04: anyone may be DMed; bots still only DM the present) — see
 > "Read = explicit focus" in `html/hxh/CLAUDE.md`. Item 14 below is
 > superseded accordingly. Also 2026-09-19: pictures (one per message,
 > stored in the DB and re-encoded by the server), a compose toolbar

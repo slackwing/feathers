@@ -74,11 +74,11 @@ export class ContactsWindow extends Window {
     el.querySelector(".tools").addEventListener("click", e => {
       const act = e.target.closest("[data-act]")?.dataset.act;
       if (act === "global") this.emit("global");
-      else if (act === "im" && this.selected && this.canMessage(this.selected)) this.emit("chat", { user: this.selected });
+      else if (act === "im" && this.selected) this.emit("chat", { user: this.selected });
       else if (act === "profile") this.emit("profile", { user: this.selected || this.me?.username });
     });
     this.menu = this.adopt(new Menu({ items: () => this.selected ? [
-      { label: "Send Message", disabled: !this.canMessage(this.selected), onclick: () => this.emit("chat", { user: this.selected }) },
+      { label: "Send Message", onclick: () => this.emit("chat", { user: this.selected }) },
       { label: "Profile", onclick: () => this.emit("profile", { user: this.selected }) },
     ] : [] }), el.querySelector(".body"));
     this.menu.el.classList.add("ctx");
@@ -141,11 +141,10 @@ export class ContactsWindow extends Window {
     this.syncTools();
   }
 
-  /** IM only reaches the online and the away (Andrew, 2026-09-19: not the offline). */
-  canMessage(user) { return present(this.contacts.get(user)?.state); }
+  /** IM reaches anyone, the offline too — it waits as unread (Andrew, 2026-10-04). */
   syncTools() {
     const im = this.el?.querySelector('[data-act="im"]');
-    if (im) im.disabled = !this.selected || !this.canMessage(this.selected);
+    if (im) im.disabled = !this.selected;
   }
 
   /** Everyone but me: the present under Buddies, the rest under Offline. */

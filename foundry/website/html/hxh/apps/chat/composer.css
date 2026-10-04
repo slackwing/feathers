@@ -1,6 +1,4 @@
 /* Composer (composer.js) — the compose box BeetleChat and the bug report share. Room-specific sizes stay in chat.css. */
-.compose textarea:disabled { background: var(--field-off-bg); color: var(--dim-fg); }
-.compose textarea:disabled::placeholder { font-style: italic; color: var(--dim-fg); opacity: 1; }
 .compose { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .ctools { display: flex; gap: 4px; }
 .ctools .menu { position: relative; }

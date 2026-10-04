@@ -54,7 +54,6 @@ export class ChatWindow extends Window {
   get attachEl() { return this.composer?.attachEl; }
   get emoji() { return this.composer?.emoji; }
   get image() { return this.composer?.image; }
-  get canSend() { return this.composer?.canSend; }
   pasteFromClipboard() { return this.composer.pasteFromClipboard(); }
   insertText(text) { return this.composer.insertText(text); }
   attachImage(ref) { return this.composer.attachImage(ref); }
@@ -64,9 +63,6 @@ export class ChatWindow extends Window {
 
   /** The newest message shown (what a read marker points at). */
   get lastId() { return this.messages.length ? this.messages[this.messages.length - 1].id : 0; }
-
-  /** Compose on or off — off, the field greys out and says why in italics (a buddy who is offline cannot be messaged). */
-  setCanSend(on, note = "") { this.composer.setCanSend(on, note); }
 
   setMessages(list) {
     this.log.replaceChildren();

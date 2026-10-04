@@ -412,31 +412,22 @@ test("tab focus is reported to presence at once: a focused ping when the tab com
   assert.equal(app().presenceFocus(), true);
 });
 
-test("you can message the online and the away, not the offline: IM button, compose, and the server's word", async () => {
+test("you can message anyone, the offline too (Andrew, 2026-10-04): IM button, context menu, compose", async () => {
   await os.launch("chat"); hello();
   const contacts = os.wm.get("win-chat-contacts");
   const im = contacts.el.querySelector('[data-act="im"]');
   assert.equal(im.disabled, true);   // nobody selected
-  d.click(contacts.el.querySelector('.contact[data-user="gon"]'));   // away: fine
-  assert.equal(im.disabled, false);
   d.click(contacts.el.querySelector(".ltab:nth-child(2)"));   // the List tab shows everyone
   d.click(contacts.el.querySelector('.contact[data-user="killua"]'));   // offline
-  assert.equal(im.disabled, true);
-  const dm = os.wm.get("win-chat-dm-andrew-killua");
-  assert.ok(dm.state.open);   // the window still opens (history is readable)
-  assert.equal(dm.input.disabled, true);
-  assert.equal(dm.el.querySelector('[data-act="send"]').disabled, true);
-  assert.equal(dm.input.placeholder, "Killua is offline.");   // said inside the greyed field, in italics (CSS)
-  dm.input.value = "hello?"; assert.equal(dm.submit(), false);
-  sockets[0].push({ t: "presence", user: "killua", state: "online", last_seen_at: null });
-  assert.equal(dm.input.disabled, false);
-  assert.equal(dm.input.placeholder, "");
   assert.equal(im.disabled, false);
-  sockets[0].push({ t: "presence", user: "killua", state: "offline", last_seen_at: null });
-  assert.equal(dm.input.disabled, true);
-  // the server has the last word
-  sockets[0].push({ t: "error", code: "offline", room: "dm:andrew:killua" });
-  assert.match(os.toast.el.textContent, /Killua is offline/);
+  assert.ok(!contacts.menu.itemsNow().find(i => i.label === "Send Message").disabled);
+  const dm = os.wm.get("win-chat-dm-andrew-killua");
+  assert.ok(dm.state.open);
+  assert.equal(dm.input.disabled, false);
+  assert.equal(dm.el.querySelector('[data-act="send"]').disabled, false);
+  assert.equal(dm.input.placeholder, "");
+  dm.input.value = "see you saturday"; assert.equal(dm.submit(), true);
+  assert.deepEqual(sockets[0].sent.at(-1), { t: "msg", room: "dm:andrew:killua", body: "see you saturday" });
 });
 
 test("pictures: a pasted picture uploads and rides the next message as a block; incoming pictures render scaled", async () => {

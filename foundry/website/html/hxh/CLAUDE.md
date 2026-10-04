@@ -502,14 +502,14 @@ component architecture (many windows, tray icons + menus, the bus).
   otherwise. The client's heartbeat carries `focus: true` only when
   `hasFocus()` (`ChatClient({focus})`); a tab focus/visibility change
   pings at once so the buddy list turns green without waiting.
-- **You can message the online and the away, not the offline** (nor
-  the password-less): the buddy list's IM button and context item are
-  disabled for them, a DM window still opens (history is readable) but
-  its compose is off with a status note ("Killua is offline";
-  `ChatWindow.setCanSend`), and the hub refuses anyway with error code
-  `offline` (toast). Bots follow the same rule (`reachable()` in
-  `internal/bots/chatbots.go`), so while you are logged out nobody DMs
-  you — global is where the news accumulates.
+- **You can message anyone, the offline too** (Andrew, 2026-10-04:
+  "allow offline messages actually" — from 2026-09-19 until then only
+  the online and the away could be messaged, with the compose greyed
+  for the rest). A DM to someone offline or without a password just
+  waits as unread for their next launch. Bots still only DM the online
+  and the away (`reachable()` in `internal/bots/chatbots.go`), so
+  while you are logged out no bot DMs you — global is where their news
+  accumulates.
 - **Pictures and emoji (2026-09-19)**: compose tools above the box —
   clipboard (pastes text at the caret or attaches a picture via the
   async Clipboard API; Ctrl+V with a picture attaches too), image (the
@@ -524,8 +524,6 @@ component architecture (many windows, tray icons + menus, the bus).
   encoding; `GET /chat/image/{id}` serves it only to its uploader or to
   someone who may read the room it hangs on; the `msg` frame carries
   `image_id`, refused unless it is yours and unsent (`error image`).
-  An offline buddy's compose is greyed and says "Abi is offline." in
-  italics inside the field.
 - **Attention, the Windows way**: a message into a window that is not
   active (or into an unfocused tab) calls `win.requestAttention()` →
   the taskbar button flashes until focused (`window:attention` →
