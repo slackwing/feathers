@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupDom } from "./dom.js";
 import { existsSync, readFileSync } from "node:fs";
-import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, BRIDLE, SHIP_SRC, SHIP_W, SHIP_H, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, FLIGHT_MS, ART_W, ART_H, ART_LINE_W, BANNER_W, CLOTH_TOP, CLOTH_H, CORNER_IN, HOLD, ripple, LETTER_PX, CAP } from "../html/hxh/os/blimp.js";
+import { Blimp, FLYER_TEXT, airshipHTML, bannerSVG, ropePath, BRIDLE, SHIP_SRC, SHIP_W, SHIP_H, STERN_Y, ROPE_Y, ROPE_W, ROPE, OVERLAP, FLYER_TOP, FLIGHT_MS, ART_W, ART_H, ART_LINE_Y, ART_LINE_W, BANNER_W, BANNER_H, CLOTH_TOP, CLOTH_H, CORNER_IN, HOLD, ripple, LETTER_PX, CAP, depthGeometry, DEPTH_MIN, DEPTH_MAX, TOP_MIN, TOP_MAX } from "../html/hxh/os/blimp.js";
 
 const d = setupDom();
 
@@ -84,7 +84,7 @@ test("the bridle: two lines from one point on the art's axis line, horizontal ou
 
 test("a flight is a ship and a banner, west or east, gone when its animation ends", () => {
   const b = new Blimp({ reduced: true, random: () => 0.9 }).mount(document.body);
-  const el = b.launch({ dir: -1, top: 10 });
+  const el = b.launch({ dir: -1, top: 10, depth: 1 });
   assert.ok(el.classList.contains("blimp") && el.classList.contains("west"));
   assert.equal(el.style.top, "10%");
   assert.ok(el.querySelector(".ship img.airship"));
@@ -92,7 +92,8 @@ test("a flight is a ship and a banner, west or east, gone when its animation end
   assert.equal(el.querySelector(".flyer").style.marginLeft, -OVERLAP + "px", "the banner tucks under the ship's box so the rope starts on the art's line");
   assert.equal(el.querySelector(".flyer svg.banner").dataset.rope, "left");
   assert.equal(el.querySelector(".flyer textPath").textContent, FLYER_TEXT);
-  const east = b.launch({ dir: 1 });
+  const east = b.launch({ dir: 1, depth: 1 });
+  assert.ok(el.isConnected, "a second launch is one more ship: the first flies on (Andrew, 2026-10-08)");
   assert.ok(east.classList.contains("east"));
   assert.equal(east.querySelector(".flyer svg.banner").dataset.rope, "right");
   assert.equal(east.querySelector(".flyer").style.marginRight, -OVERLAP + "px");
@@ -112,22 +113,47 @@ test("the flight crosses the sky's own width, whatever the page zoom: no vw in t
   }
 });
 
-test("flying: a ship is up from launch until its animation ends — or, for a hidden tab's stale flight, until it is purged", () => {
-  let now = 5_000_000;
-  const b = new Blimp({ reduced: true, random: () => 0.5, duration: 100000, now: () => now }).mount(document.body);
-  assert.equal(b.flying, false);
-  const el = b.launch({ dir: -1 });
-  assert.equal(b.flying, true, "launched and still at the edge counts as up");
-  el.dispatchEvent(new d.win.Event("animationend"));
-  assert.equal(b.flying, false);
-  b.launch({ dir: 1 });
-  now += 100001;   // the tab was hidden through the whole flight: the element never got its animationend
-  assert.equal(b.flying, false, "an overdue flight is purged, not counted");
-  assert.equal(b.el.querySelectorAll(".blimp").length, 0);
+test("depth: a nearer ship is bigger, in front, and faster across — parallax; the rope stays on the stern's line at every size", () => {
+  const g1 = depthGeometry(1);
+  assert.deepEqual([g1.shipW, g1.shipH, g1.flyerTop, g1.ropeY, g1.ropeW, g1.overlap], [SHIP_W, SHIP_H, FLYER_TOP, ROPE_Y, ROPE_W, OVERLAP], "depth 1 is the ship as it always was");
+  for (const depth of [DEPTH_MIN, 0.7, 1, 1.15, DEPTH_MAX]) {
+    const g = depthGeometry(depth);
+    assert.equal(g.shipW, Math.round(SHIP_W * depth));
+    assert.equal(g.shipH, Math.round(g.shipW * ART_H / ART_W), "the art's own aspect");
+    assert.equal(g.flyerTop, Math.round(g.flyerTop), "whole px");
+    const stern = ART_LINE_Y * g.shipH / ART_H;
+    assert.ok(Math.abs(g.flyerTop + g.ropeY * depth - stern) < 0.01, `depth ${depth}: the bridle starts on the art's axis line`);
+    assert.ok(Math.abs(g.ropeY - (CLOTH_TOP + CLOTH_H / 2)) < 1.2, `depth ${depth}: …and meets the cloth's midline within a unit`);
+    assert.ok(Math.abs(g.ropeW * depth - ART_LINE_W * g.shipH / ART_H) < 0.01, "the rope as thick as the drawn line");
+  }
+  const svg = bannerSVG(FLYER_TEXT, "left", depthGeometry(0.5));
+  assert.match(svg, new RegExp(`viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W / 2}" height="${BANNER_H / 2}"`), "drawn in its own units, shown at the depth");
+  let now = 1000;
+  const b = new Blimp({ reduced: true, random: () => 0.5, now: () => now }).mount(document.body);
+  const far = b.launch({ dir: -1, depth: 0.5 }), near = b.launch({ dir: -1, depth: 1.25 });
+  assert.equal(far.querySelector("img.airship").getAttribute("width"), "120");
+  assert.equal(near.querySelector("img.airship").getAttribute("width"), "300");
+  assert.ok(+near.style.zIndex > +far.style.zIndex, "nearer in front");
+  assert.equal(far.style.animationDuration, FLIGHT_MS * 2 + "ms");
+  assert.equal(near.style.animationDuration, FLIGHT_MS / 1.25 + "ms");
+  assert.equal(+far.dataset.until, now + FLIGHT_MS * 2, "purged only once its own crossing is overdue");
+  assert.equal(near.querySelector(".flyer").style.marginTop, depthGeometry(1.25).flyerTop + "px");
   b.unmount();
 });
 
-test("one flight at a time, none while the page is hidden, overdue flights purged on return (fifty blimps after a night, 2026-09-20)", () => {
+test("unless given, each ship picks its own height, heading and depth", () => {
+  for (const r of [0, 0.25, 0.75, 0.999]) {
+    const b = new Blimp({ reduced: true, random: () => r }).mount(document.body);
+    const el = b.launch();
+    const top = parseFloat(el.style.top), depth = +el.dataset.depth;
+    assert.ok(top >= TOP_MIN && top <= TOP_MAX, "height " + top);
+    assert.ok(depth >= DEPTH_MIN && depth <= DEPTH_MAX, "depth " + depth);
+    assert.ok(el.classList.contains(r < 0.5 ? "west" : "east"));
+    b.unmount();
+  }
+});
+
+test("any number at once, none while the page is hidden, overdue flights purged on return (fifty blimps after a night, 2026-09-20)", () => {
   const timers = [];
   const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
   let now = 1_000_000, hidden = false;
@@ -137,18 +163,18 @@ test("one flight at a time, none while the page is hidden, overdue flights purge
   timers[0].fn();
   assert.equal(flights(), 1);
   timers[1].fn();
-  assert.equal(flights(), 1, "a second launch lands the first");
-  assert.equal(b.flights, 2);
+  for (let i = 0; i < 5; i++) b.launch();   // Fly the blimp, five more times
+  assert.equal(flights(), 7, "every launch is one more ship");
+  assert.equal(b.flights, 7);
   // the tab goes to the background for a night: bookings keep coming, ships do not
   hidden = true;
   for (let i = 2; i < 40; i++) { now += 1000; timers[i].fn(); }
-  assert.equal(b.flights, 2);
-  assert.equal(flights(), 1);
+  assert.equal(b.flights, 7);
   assert.equal(timers.length, 41, "the next flight stays booked");
-  // the one left up is long overdue; looking at the page again clears it
-  now += 200000;
+  // the ones left up are long overdue; looking at the page again clears them
+  now += 300000;
   doc.listeners.visibilitychange();
-  assert.equal(flights(), 1, "still hidden: nothing purged yet");
+  assert.equal(flights(), 7, "still hidden: nothing purged yet");
   hidden = false;
   doc.listeners.visibilitychange();
   assert.equal(flights(), 0);

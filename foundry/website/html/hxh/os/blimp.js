@@ -11,15 +11,18 @@
    of the cloth. CSS animates the flight
    from one edge to the other, behind every window and icon, above the
    wallpaper. Spawns at a random interval (4–9 min by default), never
-   under reduced motion; `launch()` flies one now (Settings › Display ›
-   Blimp › Fly the blimp).
+   under reduced motion; `launch()` flies one now (Settings › Other ›
+   Fly the blimp).
 
-   ONE flight at a time, and none while the page is hidden (Andrew came
-   home to fifty of them, 2026-09-20: a background tab keeps its timers
-   but not its animations, so nothing ever ended and every booked flight
-   piled up at the edges). A new launch removes the previous ship; a
-   flight that should long have ended is purged when the page is looked
-   at again. */
+   As many at once as anyone launches (Andrew, 2026-10-08, after taylor's
+   "blimp only flys once per selection 😔": "don't disable Fly the blimp…
+   every time it starts a new instance"), each at its own height, heading
+   and DEPTH — a nearer ship is bigger, drawn in front, and crosses faster
+   (parallax: apparent speed ∝ apparent size). None while the page is
+   hidden (Andrew came home to fifty of them, 2026-09-20: a background tab
+   keeps its timers but not its animations, so nothing ever ended and
+   every booked flight piled up at the edges): a flight that should long
+   have ended is purged when the page is looked at again. */
 import { Component } from "./component.js";
 import { h } from "./dom.js";
 
@@ -40,13 +43,31 @@ export const HOLD = 48;                                     // px over which the
 export const LETTER_PX = 11, CAP = 0.72;                    // the lettering's size (= os.css .banner .lettering) and its cap height (a fraction of the em): capitals are centred by their caps
 export const FLYER_TOP = Math.round(STERN_Y - (CLOTH_TOP + CLOTH_H / 2));   // the flyer's margin-top, whole px: the stern line meets the cloth's midline, so the bridle is a symmetric triangle
 export const ROPE_Y = +(STERN_Y - FLYER_TOP).toFixed(2);    // where the bridle starts (and the art's line runs), in banner coordinates
-export const FLIGHT_MS = 50000;                             // one crossing: twice as fast as the first 100 s (Andrew, 2026-09-27: "increase the blimp speed")
+export const FLIGHT_MS = 50000;                             // one crossing at depth 1: twice as fast as the first 100 s (Andrew, 2026-09-27: "increase the blimp speed")
+export const DEPTH_MIN = 0.45, DEPTH_MAX = 1.3;             // a ship's scale: far and small … near and big (depth 1 = SHIP_W); its crossing takes FLIGHT_MS / depth
+export const TOP_MIN = 2, TOP_MAX = 30;                     // % down the sky: far ships stay clear of the island (horizon 62 %); only near ones may pass in front of it
 
 let seq = 0;
 
-/** The ship: Abi's drawing, nose to the LEFT (flying west), at SHIP_W × SHIP_H. CSS flips it to fly east. */
-export function airshipHTML() {
-  return `<img class="airship" src="${SHIP_SRC}" width="${SHIP_W}" height="${SHIP_H}" alt="" draggable="false" aria-hidden="true">`;
+/** The ship: Abi's drawing, nose to the LEFT (flying west), at SHIP_W × SHIP_H (or a depth's size). CSS flips it to fly east. */
+export function airshipHTML(w = SHIP_W, hgt = SHIP_H) {
+  return `<img class="airship" src="${SHIP_SRC}" width="${w}" height="${hgt}" alt="" draggable="false" aria-hidden="true">`;
+}
+
+/**
+ * A ship and its banner at `depth` (1 = the size above): the ship's
+ * whole-px box in the art's aspect, and — re-derived from the art's
+ * measurements for that box, exactly as FLYER_TOP / ROPE_Y / ROPE_W are
+ * for depth 1 — the flyer's whole-px margin-top, where the bridle starts
+ * and how thick it is, in the banner's own units (the banner is drawn at
+ * BANNER_W × BANNER_H and scaled by `depth`), so the rope still continues
+ * the stern's line and meets the cloth's midline at every size.
+ */
+export function depthGeometry(depth = 1) {
+  const shipW = Math.round(SHIP_W * depth), shipH = Math.round(shipW * ART_H / ART_W);
+  const k = shipH / ART_H, stern = ART_LINE_Y * k;
+  const flyerTop = Math.round(stern - (CLOTH_TOP + CLOTH_H / 2) * depth);
+  return { depth, shipW, shipH, flyerTop, ropeY: +((stern - flyerTop) / depth).toFixed(2), ropeW: +(ART_LINE_W * k / depth).toFixed(2), overlap: +(OVERLAP * depth).toFixed(2) };
 }
 
 /**
@@ -100,7 +121,7 @@ const poly = (pts, start = "M") => start + pts.map(([x, y]) => `${x.toFixed(1)} 
  * side the bridle is on — "left" trails behind a ship flying west,
  * "right" behind one flying east — so the letters never mirror.
  */
-export function bannerSVG(text = FLYER_TEXT, rope = "left") {
+export function bannerSVG(text = FLYER_TEXT, rope = "left", { depth = 1, ropeY = ROPE_Y, ropeW = ROPE_W } = {}) {
   const id = "bwave" + (++seq);
   const x0 = rope === "left" ? ROPE : 0, x1 = rope === "left" ? BANNER_W : BANNER_W - ROPE;
   const held = rope === "left" ? x0 : x1;   // the edge on the bridle's side
@@ -108,8 +129,9 @@ export function bannerSVG(text = FLYER_TEXT, rope = "left") {
   const cloth = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP, AMP, p, held)) + " " + poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H, AMP, p, held).reverse(), "L") + " Z").join(";");
   const line = phases.map(p => poly(ripple(x0, x1, CLOTH_TOP + CLOTH_H / 2 + LETTER_PX * CAP / 2, AMP, p, held))).join(";");   // the baseline rides the cloth's midline plus half a cap: the capitals sit centred (no dominant-baseline — Safari ignores it on a textPath)
   const dur = "1.5s";
-  const ropes = BRIDLE.map(yq => `<path class="rope" d="${ropePath(rope, yq)}" stroke-width="${ROPE_W}" filter="url(#${id}-soft)"/>`).join("\n  ");
-  return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${BANNER_W}" height="${BANNER_H}" data-rope="${rope}" aria-hidden="true">
+  const ropes = BRIDLE.map(yq => `<path class="rope" d="${ropePath(rope, yq, ropeY)}" stroke-width="${ropeW}" filter="url(#${id}-soft)"/>`).join("\n  ");
+  const px = n => +(n * depth).toFixed(2);   // drawn in the banner's own units, shown at the ship's depth
+  return `<svg class="banner" viewBox="0 0 ${BANNER_W} ${BANNER_H}" width="${px(BANNER_W)}" height="${px(BANNER_H)}" data-rope="${rope}" aria-hidden="true">
   <defs><filter id="${id}-soft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="${ROPE_SOFT}"/></filter></defs>
   ${ropes}
   <path class="cloth" d="${cloth.split(";")[0]}"><animate attributeName="d" values="${cloth}" dur="${dur}" repeatCount="indefinite"/></path>
@@ -153,22 +175,19 @@ export class Blimp extends Component {
     return n;
   }
 
-  /** Is a ship up — on screen or launched and still at the edge? Overdue flights (a hidden tab's) are purged first. */
-  get flying() {
-    this.purge();
-    return !!this.el.querySelector(".blimp");
-  }
-
-  /** Fly one across now — the previous one, if still up, lands. Returns the element. */
-  launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null } = {}) {
+  /** Fly one more across now, at a random height, heading and depth unless given; ships already up fly on. Returns the element. */
+  launch({ dir = (this.props.random || Math.random)() < 0.5 ? -1 : 1, top = null, depth = null } = {}) {
     const { random = Math.random, duration = FLIGHT_MS } = this.props;
-    for (const old of this.el.querySelectorAll(".blimp")) old.remove();
-    const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + duration) } });
-    el.style.top = (top ?? 2 + random() * 10) + "%";
-    el.style.animationDuration = duration + "ms";
+    top ??= TOP_MIN + random() * (TOP_MAX - TOP_MIN);
+    depth ??= DEPTH_MIN + random() * (DEPTH_MAX - DEPTH_MIN);
+    const g = depthGeometry(depth), ms = Math.round(duration / depth);   // parallax: the nearer, the faster across
+    const el = h("div", { className: "blimp " + (dir < 0 ? "west" : "east"), dataset: { until: String(this.now + ms), depth: String(depth) } });
+    el.style.top = +top.toFixed(2) + "%";
+    el.style.zIndex = String(Math.round(depth * 100));   // nearer in front
+    el.style.animationDuration = ms + "ms";
     el.append(
-      h("span", { className: "ship", html: airshipHTML() }),
-      h("span", { className: "flyer", style: { marginTop: FLYER_TOP + "px", [dir < 0 ? "marginLeft" : "marginRight"]: -OVERLAP + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right") }),   // the bridle starts on the art's own axis line, a few px inside the ship's box
+      h("span", { className: "ship", html: airshipHTML(g.shipW, g.shipH) }),
+      h("span", { className: "flyer", style: { marginTop: g.flyerTop + "px", [dir < 0 ? "marginLeft" : "marginRight"]: -g.overlap + "px" }, html: bannerSVG(FLYER_TEXT, dir < 0 ? "left" : "right", g) }),   // the bridle starts on the art's own axis line, a few px inside the ship's box
     );
     el.addEventListener("animationend", () => el.remove());
     this.el.append(el);

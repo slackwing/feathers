@@ -837,9 +837,9 @@ over the sky.
   the UI as settings people can toggle". Add a knob there, nowhere
   else. Scanlines is OFF by default (`hxh.crt` in localStorage
   remembers an override). Fly the blimp (2026-09-24, "would help with
-  testing") launches one now, greyed while a ship is up or launched
-  and still off the edge (`Blimp.flying`, which purges overdue flights
-  first) and absent under reduced motion; the splashes stay (they are
+  testing") launches one MORE ship every time — never greyed, as many
+  at once as anyone taps (Andrew, 2026-10-08, after bug #2) — and is
+  absent under reduced motion; the splashes stay (they are
   stills there). Windows ▸ acts on `wm.appWindows()` — windows with a
   taskbar button, never static dialogs or popups — via `wm.showAll()`
   (minimized ones back in place, in stacking order), `wm.hideAll()`
@@ -875,7 +875,16 @@ over the sky.
   (a shade per row), noisy gradient. All but the original follow
   t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
 - **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
-  HALLOWEEN banner, every 4–9 min, 50 s across (`FLIGHT_MS`; was 100 s
+  HALLOWEEN banner, every 4–9 min, any number up at once, each at its
+  own height (`TOP_MIN`–`TOP_MAX` % — far ships clear the island),
+  heading and DEPTH (`DEPTH_MIN`–`DEPTH_MAX`, Andrew 2026-10-08: "closer
+  or farther… with speed varying like the parallax effect"): a ship at
+  depth d is d × the size below (`depthGeometry(d)` re-derives the
+  whole-px box, flyer margin and bridle start from the art's
+  measurements, so the rope stays on the stern's line at every size;
+  the banner SVG is drawn in its own units and shown at d), z-index
+  d × 100 (nearer in front), and crosses in `FLIGHT_MS` / d. At depth
+  1: 50 s across (`FLIGHT_MS`; was 100 s
   until Andrew asked for more speed, 2026-09-27) — edge to edge by
   `left` 0↔100% plus `translateX(±100%)`, NEVER vw: a vw is zoomed with
   the page, so under the whale-rule zoom (phones) the flight stopped

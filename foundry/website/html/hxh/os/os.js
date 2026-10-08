@@ -185,11 +185,11 @@ export class OS {
           { label: "Close all windows", disabled: !ws.length, onclick: () => this.wm.closeAll() },
         ];
       } },
-      // Other ▸ — last (Andrew, 2026-09-27). Fly the blimp (2026-09-24, "would help with testing"): greyed while one is up or
-      // launched and still at the edge, absent under reduced motion. Splash screen ▸ any of the title screens again, over the
+      // Other ▸ — last (Andrew, 2026-09-27). Fly the blimp (2026-09-24, "would help with testing"): one more ship every time,
+      // never greyed (Andrew, 2026-10-08), absent under reduced motion. Splash screen ▸ any of the title screens again, over the
       // desktop, until clicked.
       { label: "Other", icon: "other", items: () => [
-        ...(this.env.reduced ? [] : [{ label: "Fly the blimp", disabled: !!this.blimp?.flying, onclick: () => this.blimp?.launch() }]),
+        ...(this.env.reduced ? [] : [{ label: "Fly the blimp", onclick: () => this.blimp?.launch() }]),
         { label: "Splash screen", items: () => SPLASHES.map(([id, label]) => ({ label, onclick: () => this.showSplash(id) })) },
         ...(this.registry.has("about") ? [{ label: "About", onclick: () => this.launch("about") }] : []),   // its only door (Andrew, 2026-10-01)
       ] },

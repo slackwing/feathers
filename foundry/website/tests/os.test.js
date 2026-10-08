@@ -161,7 +161,7 @@ test("Heavens Arena is one splash: Settings › Other › Splash screen › Heav
   assert.deepEqual(played, [], "neither chimes");
 });
 
-test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Player Select / Night — the blimp item greys while a ship is up and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
+test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons / Player Select / Night — the blimp item is never greyed — each pick is one more ship (Andrew, 2026-10-08) — and is absent under reduced motion; a splash covers the desktop until clicked (Andrew, 2026-09-27)", async () => {
   const { os } = make({ reduced: false });
   await os.start({ apps: [Hello], start: true });
   os.blimp = new Blimp({ reduced: true, random: () => 0.5, duration: 100000 }).mount(document.body);   // the blimp the wallpaper would have mounted (no schedule, no canvas here)
@@ -171,12 +171,10 @@ test("Settings › Other ▸ (last): Fly the blimp and Splash screen ▸ Summons
   assert.deepEqual(tree[0].items().map(i => i === "sep" ? "-" : i.label), ["Theme", "Sky", "Scanlines"], "the blimp left Display");
   const other = () => os.settingsItems()[3].items();
   assert.deepEqual(other().map(i => i.label), ["Fly the blimp", "Splash screen"]);
-  assert.equal(other()[0].disabled, false);
   other()[0].onclick();
-  assert.equal(os.blimp.flying, true);
-  assert.equal(other()[0].disabled, true, "one is up: the item greys until it has crossed");
-  os.blimp.el.querySelector(".blimp").dispatchEvent(new d.win.Event("animationend"));
-  assert.equal(other()[0].disabled, false);
+  assert.ok(!other()[0].disabled, "one is up, and the item stays live");
+  other()[0].onclick();
+  assert.equal(os.blimp.el.querySelectorAll(".blimp").length, 2);
   os.blimp.unmount();
   const splashes = other()[1].items();
   assert.deepEqual(splashes.map(i => i.label), ["Summons", "Heavens Arena", "Night"]);
