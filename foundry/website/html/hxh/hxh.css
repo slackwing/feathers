@@ -264,18 +264,22 @@ body.crt::after {
 }
 @keyframes blimp-west {
   from {
+    left: 100%;
     transform: translateX(0);
   }
   to {
-    transform: translateX(calc(-100vw - 100%));
+    left: 0;
+    transform: translateX(-100%);
   }
 }
 @keyframes blimp-east {
   from {
+    left: 0;
     transform: translateX(-100%);
   }
   to {
-    transform: translateX(100vw);
+    left: 100%;
+    transform: translateX(0);
   }
 }
 @media (prefers-reduced-motion: reduce) {

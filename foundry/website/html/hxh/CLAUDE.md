@@ -876,7 +876,11 @@ over the sky.
   t = (y/HZ)^1.6. The wallpaper repaints on the bus's `sky`.
 - **The blimp** (`os/blimp.js`): Netero's airship with a HUNTER ×
   HALLOWEEN banner, every 4–9 min, 50 s across (`FLIGHT_MS`; was 100 s
-  until Andrew asked for more speed, 2026-09-27),
+  until Andrew asked for more speed, 2026-09-27) — edge to edge by
+  `left` 0↔100% plus `translateX(±100%)`, NEVER vw: a vw is zoomed with
+  the page, so under the whale-rule zoom (phones) the flight stopped
+  short and the ship vanished on screen (bug #2, 2026-10-08; WebKit
+  mid-sky; `tests/blimp.test.js` forbids vw/vh in the keyframes),
   `HxH.os.blimp.launch()` on demand; z-order above the wallpaper, below
   icons and windows. The ship is ABI'S DRAWING — `img/blimp.png`, a
   1289×955 transparent PNG, side view flying WEST (shark nose, ✕✕

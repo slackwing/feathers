@@ -102,6 +102,16 @@ test("a flight is a ship and a banner, west or east, gone when its animation end
   b.unmount();
 });
 
+test("the flight crosses the sky's own width, whatever the page zoom: no vw in the blimp's keyframes (bug #2: on a phone the blimp vanished mid-sky)", () => {
+  const css = readFileSync(new URL("../html/hxh/os/os.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const dir of ["west", "east"]) {
+    const kf = css.match(new RegExp(`@keyframes blimp-${dir} \\{(.*)\\}`))?.[1];
+    assert.ok(kf, `blimp-${dir} keyframes`);
+    assert.doesNotMatch(kf, /v[wh]\b/, `blimp-${dir}: viewport units are zoomed with the page`);
+    assert.match(kf, /left/, `blimp-${dir} moves by the sky's width`);
+  }
+});
+
 test("flying: a ship is up from launch until its animation ends — or, for a hidden tab's stale flight, until it is purged", () => {
   let now = 5_000_000;
   const b = new Blimp({ reduced: true, random: () => 0.5, duration: 100000, now: () => now }).mount(document.body);
