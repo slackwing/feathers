@@ -1,0 +1,352 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --ink: #333;
+    --ink-2: #666;
+    --ink-3: #888;
+    --line: #ddd;
+    --surface: #fff;
+    --page: #f5f5f5;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--page);
+    color: var(--ink);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Chart cards */
+.chart-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1.5rem 2rem 1.25rem;
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.chart-card h2 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #222;
+}
+
+.chart {
+    height: 320px;
+    position: relative;
+}
+
+/* Legend doubles as the crosshair readout */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 1.1rem;
+    font-size: 0.8rem;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.legend-date {
+    color: var(--ink-3);
+    min-width: 4.5em;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.legend-item .key {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.legend-item .val {
+    color: var(--ink);
+    font-weight: 600;
+    min-width: 2.5em;
+}
+
+/* Range control: one row above the charts */
+.range-row {
+    display: flex;
+    margin-bottom: -1.25rem;
+}
+
+.range {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    background: #e5e7eb;
+    border-radius: 6px;
+}
+
+.range button {
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+}
+
+.range button:hover {
+    color: var(--ink);
+}
+
+.range button.active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+
+/* Stat cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card h3 {
+    font-size: 0.9rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-2);
+    margin-bottom: 1rem;
+}
+
+.stat-with-pie {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-section-label {
+    font-size: 0.65rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.stat-section-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Progress ring (was a Chart.js doughnut): --p = percent, --c = color */
+.ring {
+    --p: 0;
+    --c: #2563eb;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: conic-gradient(var(--c) calc(var(--p) * 1%), #e5e7eb 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #2563eb;
+    margin: 0;
+    display: inline-block;
+    line-height: 1;
+}
+
+.stat-label {
+    color: var(--ink-3);
+    font-size: 0.85rem;
+}
+
+/* Categories */
+.categories-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.categories-list {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.categories-list h3 {
+    font-size: 1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-2);
+    margin-bottom: 1rem;
+}
+
+.category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.category-tag {
+    display: inline-block;
+    background: #e5e7eb;
+    color: #374151;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    user-select: none;
+}
+
+.category-tag.matched {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+/* Instant custom tooltip for category chips */
+.tag-tooltip {
+    position: absolute;
+    display: none;
+    background: #fef3c7;
+    color: #78350f;
+    border: 1px solid #fcd34d;
+    padding: 0.45rem 0.7rem;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-width: 280px;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(120, 53, 15, 0.15);
+}
+
+.tag-tooltip.visible {
+    display: block;
+}
+
+footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 0.85rem;
+}
+
+footer a {
+    color: inherit;
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Error state */
+.error-message {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #c33;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    main {
+        gap: 1.25rem;
+    }
+
+    .chart-card {
+        padding: 1rem 0.75rem 0.75rem;
+    }
+
+    .chart-card h2 {
+        font-size: 1.2rem;
+    }
+
+    .chart {
+        height: 240px;
+    }
+
+    .range-row {
+        margin-bottom: -0.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .categories-section {
+        grid-template-columns: 1fr;
+    }
+}
