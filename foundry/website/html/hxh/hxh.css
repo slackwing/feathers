@@ -1381,6 +1381,9 @@ html[data-theme=seapumpkin-pastel] {
   outline: none;
   -webkit-tap-highlight-color: transparent;
 }
+body.splashing .win {
+  visibility: hidden;
+}
 .splashscreen .sp-start {
   letter-spacing: .2em;
   text-transform: uppercase;

@@ -18,6 +18,11 @@ test("three title screens, one picked at random (Andrew, 2026-09-27: try 3 style
   assert.equal(seen.size, 3);
 });
 
+test("while a splash is up every window is hidden — by a body class, not by minimizing, so nothing about them changes", () => {
+  const css = readFileSync(new URL("../html/hxh/os/splash.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(css, /body\.splashing \.win \{ visibility: hidden; \}/);
+});
+
 test("every style says its own prompt (Click to start; Heavens Arena: COMING SOON), carries the title, and never moves on by itself; a click, tap or Enter / Space / Escape dismisses it", async () => {
   for (const id of SPLASH_IDS) {
     const played = [];
@@ -27,6 +32,7 @@ test("every style says its own prompt (Click to start; Heavens Arena: COMING SOO
     const el = s.el;
     assert.equal(el.hidden, false);
     assert.ok(el.classList.contains("sp-" + id));
+    assert.ok(document.body.classList.contains("splashing"), id + ": the windows step aside while it is up (Andrew, 2026-10-09)");
     try {
       assert.match(el.textContent, id === "select" ? /COMING SOON/ : /click to start/i, id + ": says its prompt");
       const title = id === "select" ? /HEAVENS ARENA/ : /HUNTER\s*×\s*[\s\S]*HALLOWEEN/;   // the select screen is the Heavens Arena placeholder
@@ -38,6 +44,7 @@ test("every style says its own prompt (Click to start; Heavens Arena: COMING SOO
     await p;
     assert.equal(done, id);
     assert.equal(el.hidden, true);
+    assert.ok(!document.body.classList.contains("splashing"), id + ": …and come back when it is dismissed");
     assert.equal(el.children.length, 0, "cleaned up");
     assert.deepEqual(played, id === "select" ? [] : ["startup"], "the click plays the startup chime (Sounds decides whether it is heard) — not the placeholder arena");
     s.unmount();

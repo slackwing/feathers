@@ -7,6 +7,11 @@
    `hint(id, {x, y, min})` is how the saved desktop (os/layout.js) says
    where a window that is about to be opened belongs: the first open
    takes the hint over the app's own placement, then forgets it. */
+/* Window z-indexes live in Z_BASE+1 … Z_MAX (`.win` is Z_BASE in os.css): under the backdrop (40), the taskbar (50), the
+   Start menu (60), a splash (90) and the scanlines (100). They used to climb one per focus forever and, after ~80 focuses,
+   painted over all of those (Andrew saw windows on the Night splash, 2026-10-09). */
+export const Z_BASE = 10, Z_MAX = 39;
+
 export class WindowManager {
   constructor({ bus, env, desktop }) {
     this.bus = bus;
@@ -14,7 +19,7 @@ export class WindowManager {
     this.desktop = desktop;
     this.wins = new Map();
     this.hints = new Map();
-    this.zTop = 10;
+    this.zTop = Z_BASE;
     this.activeId = null;
   }
 
@@ -63,6 +68,16 @@ export class WindowManager {
     this.bus.emit("window:remove", { id });
   }
 
+  /** The next z on top; when it would pass Z_MAX, the stacked windows are renumbered from Z_BASE+1 in their present order. */
+  raise() {
+    if (this.zTop >= Z_MAX) {
+      const ws = [...this.wins.values()].filter(w => !w.static && w.el.style.zIndex).sort((a, b) => +a.el.style.zIndex - +b.el.style.zIndex);
+      this.zTop = Z_BASE;
+      for (const w of ws) w.el.style.zIndex = ++this.zTop;
+    }
+    return ++this.zTop;
+  }
+
   focus(id) {
     const w = this.wins.get(id);
     if (!w || w.el.hidden) return;
@@ -71,7 +86,7 @@ export class WindowManager {
       w.el.classList.remove("inactive");
       this.activeId = id;
     }
-    if (!w.static) w.el.style.zIndex = ++this.zTop;
+    if (!w.static) w.el.style.zIndex = this.raise();
     w.el.classList.remove("flash");
     this.bus.emit("window:focus", { id });
   }

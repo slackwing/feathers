@@ -362,6 +362,7 @@ export class Splash extends Component {
     el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
     el.dataset.style = id;
     el.hidden = false;
+    el.ownerDocument.body.classList.add("splashing");   // the windows step aside while it is up, and come back as they were (Andrew, 2026-10-09)
     const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...(prompt ? { prompt } : {}) });
     // on a phone, the old web's courtesy line (Andrew, 2026-09-28: "please view in a tablet or browser for the best experience")
     // placed right under the prompt, wherever each style puts it (Andrew, 2026-09-28: "much bigger and closer to the CLICK TO START")
@@ -379,6 +380,7 @@ export class Splash extends Component {
         this.finish = null;
         stop();
         el.hidden = true;
+        el.ownerDocument.body.classList.remove("splashing");
         el.replaceChildren();
         if (gesture && chime) this.props.sounds?.play?.("startup");
         resolve(id);

@@ -1693,6 +1693,8 @@ var HxH = (() => {
   };
 
   // html/hxh/os/wm.js
+  var Z_BASE = 10;
+  var Z_MAX = 39;
   var WindowManager = class {
     constructor({ bus, env, desktop }) {
       this.bus = bus;
@@ -1700,7 +1702,7 @@ var HxH = (() => {
       this.desktop = desktop;
       this.wins = /* @__PURE__ */ new Map();
       this.hints = /* @__PURE__ */ new Map();
-      this.zTop = 10;
+      this.zTop = Z_BASE;
       this.activeId = null;
     }
     /** Where a window not yet open should land (the saved desktop); consumed by its first open. */
@@ -1756,6 +1758,15 @@ var HxH = (() => {
       w.unmount();
       this.bus.emit("window:remove", { id });
     }
+    /** The next z on top; when it would pass Z_MAX, the stacked windows are renumbered from Z_BASE+1 in their present order. */
+    raise() {
+      if (this.zTop >= Z_MAX) {
+        const ws = [...this.wins.values()].filter((w) => !w.static && w.el.style.zIndex).sort((a, b) => +a.el.style.zIndex - +b.el.style.zIndex);
+        this.zTop = Z_BASE;
+        for (const w of ws) w.el.style.zIndex = ++this.zTop;
+      }
+      return ++this.zTop;
+    }
     focus(id) {
       const w = this.wins.get(id);
       if (!w || w.el.hidden) return;
@@ -1764,7 +1775,7 @@ var HxH = (() => {
         w.el.classList.remove("inactive");
         this.activeId = id;
       }
-      if (!w.static) w.el.style.zIndex = ++this.zTop;
+      if (!w.static) w.el.style.zIndex = this.raise();
       w.el.classList.remove("flash");
       this.bus.emit("window:focus", { id });
     }
@@ -4093,6 +4104,7 @@ var HxH = (() => {
       el.className = `splashscreen sp-${id}${reduced ? " still" : ""}`;
       el.dataset.style = id;
       el.hidden = false;
+      el.ownerDocument.body.classList.add("splashing");
       const stop = BUILD[id](el, { reduced, random, fetch: this.props.fetch, ...prompt ? { prompt } : {} });
       if (this.props.small?.()) {
         const note = h("div", { className: "sp-best", text: BEST_VIEWED }), start2 = el.querySelector(".sp-start");
@@ -4118,6 +4130,7 @@ var HxH = (() => {
           this.finish = null;
           stop();
           el.hidden = true;
+          el.ownerDocument.body.classList.remove("splashing");
           el.replaceChildren();
           if (gesture && chime) this.props.sounds?.play?.("startup");
           resolve(id);

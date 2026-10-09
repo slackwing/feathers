@@ -4,7 +4,7 @@ import { setupDom } from "./dom.js";
 import { EventBus } from "../html/hxh/os/bus.js";
 import { Env } from "../html/hxh/os/env.js";
 import { Window } from "../html/hxh/os/window.js";
-import { WindowManager } from "../html/hxh/os/wm.js";
+import { WindowManager, Z_BASE, Z_MAX } from "../html/hxh/os/wm.js";
 
 let d, bus, env, desktop, wm, events;
 function fresh(opts = {}) {
@@ -81,6 +81,26 @@ test("focus raises z-order and marks the others inactive", async () => {
   assert.equal(wm.active, a);
   wm.focus("nope");   // ignored
   assert.equal(wm.active, a);
+});
+
+test("z-order stays under the taskbar, menus and splash: past Z_MAX the windows are renumbered in their order (windows painted over the Night splash after ~80 focuses, 2026-10-09)", async () => {
+  const ws = ["a", "b", "c", "d"].map(id => wm.add(new Window({ id })));
+  for (const w of ws) await wm.open(w.id);
+  const order = () => [...ws].sort((x, y) => +x.el.style.zIndex - +y.el.style.zIndex).map(w => w.id).join("");
+  const seq = "abcdbadcbcadbbdacadbcbdac";
+  for (let i = 0; i < 200; i++) {
+    wm.focus(seq[i % seq.length]);
+    const zs = ws.map(w => +w.el.style.zIndex);
+    assert.ok(Math.max(...zs) <= Z_MAX && Math.min(...zs) > Z_BASE, `focus ${i}: ${zs}`);
+    assert.equal(new Set(zs).size, ws.length, "no ties");
+    assert.equal(wm.active.el.style.zIndex, String(Math.max(...zs)), "the focused one on top");
+  }
+  // the stacking is what the focus history says: most recent on top
+  const recent = [...seq.repeat(9).slice(0, 200)].reverse().filter((c, i, a) => a.indexOf(c) === i).reverse().join("");
+  assert.equal(order(), recent);
+  const css = (await import("node:fs")).readFileSync(new URL("../html/hxh/os/os.css", import.meta.url), "utf8");
+  assert.match(css, new RegExp(`\\.win \\{\\s*position: absolute; z-index: ${Z_BASE};`), "Z_BASE is the stylesheet's own window z");
+  for (const [sel, z] of [[".backdrop", 40], [".taskbar", 50]]) assert.ok(Z_MAX < z, `${sel} (${z}) stays above every window`);
 });
 
 test("chrome buttons drive the manager: minimize, close; focus clears an attention flash", async () => {

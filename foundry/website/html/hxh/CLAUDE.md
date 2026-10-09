@@ -833,7 +833,14 @@ over the sky.
   the scanlines icon) and any app window's Settings menu (window menus pass
   `icons: false`; the Summons has none — File › Exit alone): Display ▸ (Theme ▸, Sky ▸, Scanlines), Sounds ▸ (Sounds), Windows ▸
   (Show all / Hide all / Close all windows) and, last, Other ▸ (Fly the
-  blimp, Splash screen ▸ Summons / Player Select / Night) — Andrew, 2026-09-27. Andrew: "keep all our experiments in
+  blimp, Splash screen ▸ Summons / Player Select / Night) — Andrew, 2026-09-27.
+  While any splash is up the windows are hidden (`body.splashing .win
+  { visibility: hidden }`, set by `Splash.show`) and come back as they
+  were — not minimized, so the taskbar and the saved desktop never see
+  it (Andrew, 2026-10-09). Window z-indexes stay in 11…39 (`Z_BASE`,
+  `Z_MAX` in wm.js — `raise()` renumbers them in order when the top
+  would pass 39): they used to climb one per focus forever and, after
+  ~80 focuses, painted over the splash, taskbar, Start menu and scanlines. Andrew: "keep all our experiments in
   the UI as settings people can toggle". Add a knob there, nowhere
   else. Scanlines is OFF by default (`hxh.crt` in localStorage
   remembers an override). Fly the blimp (2026-09-24, "would help with

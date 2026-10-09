@@ -8,6 +8,8 @@
   cursor: pointer; user-select: none; -webkit-user-select: none; outline: none;
   -webkit-tap-highlight-color: transparent;
 }
+/* while a splash is up the windows are hidden — not minimized: nothing about them changes, so they come back as they were */
+body.splashing .win { visibility: hidden; }
 .splashscreen .sp-start { letter-spacing: .2em; text-transform: uppercase; animation: sp-blink 1.3s steps(2, jump-none) infinite; }
 .splashscreen.still *, .splashscreen.still *::before, .splashscreen.still *::after { animation: none !important; }
 @keyframes sp-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: .15; } }
