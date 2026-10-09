@@ -203,6 +203,112 @@ class ZonesPrimitive {
 }
 
 // ---------------------------------------------------------------------------
+// Smooth line: a series primitive that strokes a monotone cubic curve
+// (Fritsch–Carlson, as d3's curveMonotoneX / Chart.js "monotone") through the
+// series' points. The library's own Curved type is a Bézier with no
+// monotonicity guarantee, so dense data loops backwards in time; this one
+// is monotone in x by construction and never overshoots the data in y.
+// Runs break at absent days; an isolated point is drawn as a dot.
+
+class SmoothLinePrimitive {
+    constructor(color) {
+        this._color = color;
+        this._points = []; // calendar order: { index, value } or null (absent)
+        this._runs = [];   // pixel runs: [[{x, y}, ...], ...]
+        const self = this;
+        this._views = [{
+            zOrder: () => 'normal',
+            renderer: () => ({
+                draw: target => target.useMediaCoordinateSpace(({ context: ctx }) => self._draw(ctx))
+            })
+        }];
+    }
+
+    setPoints(points) {
+        this._points = points;
+    }
+
+    attached({ chart, series }) {
+        this._chart = chart;
+        this._series = series;
+    }
+
+    detached() {
+        this._chart = null;
+        this._series = null;
+    }
+
+    updateAllViews() {
+        if (!this._chart || !this._series) return;
+        const timeScale = this._chart.timeScale();
+        const runs = [];
+        let run = [];
+        for (const p of this._points) {
+            const x = p && timeScale.logicalToCoordinate(p.index);
+            const y = p && this._series.priceToCoordinate(p.value);
+            if (!p || x === null || y === null) {
+                if (run.length) runs.push(run);
+                run = [];
+                continue;
+            }
+            run.push({ x, y });
+        }
+        if (run.length) runs.push(run);
+        this._runs = runs;
+    }
+
+    paneViews() {
+        return this._views;
+    }
+
+    _draw(ctx) {
+        ctx.save();
+        ctx.strokeStyle = this._color;
+        ctx.fillStyle = this._color;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        for (const run of this._runs) {
+            if (run.length === 1) {
+                ctx.beginPath();
+                ctx.arc(run[0].x, run[0].y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                continue;
+            }
+            const m = monotoneTangents(run);
+            ctx.beginPath();
+            ctx.moveTo(run[0].x, run[0].y);
+            for (let i = 0; i < run.length - 1; i++) {
+                const a = run[i], b = run[i + 1], dx = (b.x - a.x) / 3;
+                ctx.bezierCurveTo(a.x + dx, a.y + dx * m[i], b.x - dx, b.y - dx * m[i + 1], b.x, b.y);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
+// Tangent (dy/dx) at each point of a run, Fritsch–Carlson style: zero at local
+// extrema, otherwise limited by the neighbouring secants so the curve never
+// overshoots; one-sided at the ends
+function monotoneTangents(pts) {
+    const n = pts.length;
+    const m = new Array(n);
+    const sign = v => (v > 0) - (v < 0);
+    const secant = i => (pts[i + 1].y - pts[i].y) / ((pts[i + 1].x - pts[i].x) || 1);
+    for (let i = 1; i < n - 1; i++) {
+        const h0 = pts[i].x - pts[i - 1].x, h1 = pts[i + 1].x - pts[i].x;
+        const s0 = secant(i - 1), s1 = secant(i);
+        const p = (s0 * h1 + s1 * h0) / (h0 + h1);
+        m[i] = (sign(s0) + sign(s1)) * Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) || 0;
+    }
+    const end = (i, j, t) => (3 * secant(Math.min(i, j)) - t) / 2;
+    m[0] = n > 2 ? end(0, 1, m[1]) : secant(0);
+    m[n - 1] = n > 2 ? end(n - 2, n - 1, m[n - 2]) : secant(n - 2);
+    return m;
+}
+
+// ---------------------------------------------------------------------------
 // Charts
 
 function createChart(el) {
@@ -261,7 +367,9 @@ function addLine(chart, item) {
     return chart.addSeries(LWC.LineSeries, {
         color,
         lineWidth: 2,
-        lineType: LWC.LineType.Curved,
+        // The line itself is drawn by SmoothLinePrimitive (monotone curve);
+        // the series still owns the data: crosshair markers, scale, hover
+        lineVisible: false,
         priceScaleId: scaleId,
         priceLineVisible: false,
         lastValueVisible: false,
@@ -297,6 +405,8 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
 
     for (const item of items) {
         item.series = addLine(chart, item);
+        item.curve = new SmoothLinePrimitive(item.color);
+        item.series.attachPrimitive(item.curve);
         item.lookup = new Map(); // date → legend string
 
         const el = document.createElement('span');
@@ -342,8 +452,8 @@ function buildCharts() {
         { name: 'Hobbies', color: COLORS.HOBBY, scaleId: 'right', range: SCALES.hobby, axisFormat: fmt.none, key: 'hobby_weighted', format: fmt.hours },
         { name: 'Work', color: COLORS.WORK, scaleId: 'right', range: SCALES.hobby, axisFormat: fmt.none, key: 'work_weighted', format: fmt.hours, transform: v => v * 2 },
         { name: 'Alcohol', color: COLORS.ALCOHOL, scaleId: 'alcohol', range: [0, 10], axisFormat: fmt.none, key: 'alc_7day_sum', format: fmt.alcohol },
-        { name: 'Mood', color: COLORS.MOOD, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', format: fmt.mood, transform: transformMood },
-        { name: 'Sleep', color: COLORS.SLEEP, scaleId: 'sleep', range: SCALES.sleep, axisFormat: fmt.none, key: 'sleep_7day_avg', format: fmt.sleep, transform: transformSleep }
+        { name: 'Mood', color: COLORS.MOOD, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', requires: 'dep_raw', format: fmt.mood, transform: transformMood },
+        { name: 'Sleep', color: COLORS.SLEEP, scaleId: 'sleep', range: SCALES.sleep, axisFormat: fmt.none, key: 'sleep_7day_avg', requires: 'sleep_raw', format: fmt.sleep, transform: transformSleep }
     ]);
 
     buildCard('hobbyChart', 'hobbyLegend', [
@@ -360,7 +470,7 @@ function buildCharts() {
         { name: 'Alcohol', color: COLORS.ALCOHOL, scaleId: 'right', range: [0, 10], axisFormat: fmt.alcoholAxis, key: 'alc_7day_sum', format: fmt.alcohol },
         { name: '15-day', color: COLORS.ALCOHOL_LIGHT, scaleId: 'right', range: [0, 10], axisFormat: fmt.alcoholAxis, key: 'alc_15day_avg', format: fmt.alcohol, light: true },
         { name: 'Mood', color: COLORS.MOOD, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_raw', format: fmt.mood, transform: transformMood },
-        { name: '7-day', color: COLORS.MOOD_LIGHT, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', format: fmt.mood, transform: transformMood, light: true }
+        { name: '7-day', color: COLORS.MOOD_LIGHT, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', requires: 'dep_raw', format: fmt.mood, transform: transformMood, light: true }
     ]);
     // Mood zero, dashed
     alcohol.items[2].series.createPriceLine({
@@ -369,7 +479,7 @@ function buildCharts() {
 
     buildCard('sleepChart', 'sleepLegend', [
         { name: 'Raw', color: COLORS.SLEEP, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_raw', format: fmt.sleep, transform: transformSleep },
-        { name: '7-day', color: COLORS.SLEEP_LIGHT, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_7day_avg', format: fmt.sleep, transform: transformSleep, light: true }
+        { name: '7-day', color: COLORS.SLEEP_LIGHT, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_7day_avg', requires: 'sleep_raw', format: fmt.sleep, transform: transformSleep, light: true }
     ]);
 
     linkCharts();
@@ -388,27 +498,44 @@ function alcoholMaxOf(data) {
     return Math.max(10, Math.ceil(max / 10) * 10);
 }
 
+// Every calendar day from the first to the last row across the datasets
+function calendarOf(data) {
+    const all = [data.category, data.alcohol, data.sleep].flatMap(d => d.data.map(r => r.date)).sort();
+    const out = [];
+    for (let d = new Date(all[0] + 'T00:00:00Z'), end = new Date(all[all.length - 1] + 'T00:00:00Z'); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+        out.push(d.toISOString().slice(0, 10));
+    }
+    return out;
+}
+
+// A day with no row, a null value, or (for a derived series) a null
+// underlying raw value is ABSENT: whitespace, so no line is drawn through it.
+// The API carries 7-day averages forward over days with no entry, which
+// would otherwise draw a line across the gap.
 function setData(data) {
-    dates = data.category.data.map(d => d.date);
+    dates = calendarOf(data);
     const alcoholRange = [0, alcoholMaxOf(data)];
     const spine = dates.map(d => ({ time: d, value: 0 }));
     for (const card of cards) {
         card.spine.setData(spine);
         for (const item of card.items) {
             if (item.key.startsWith('alc')) item.range = alcoholRange;
-            const rows = rowsFor(item.key, data);
+            const byDate = new Map(rowsFor(item.key, data).map(r => [r.date, r]));
             const plotted = v => (item.transform ? item.transform(v) : v);
             // Hours readouts follow what's plotted (work is ×2); mood/sleep
             // readouts show the raw value, not the axis-shaping transform
             const shown = /^(hobby|work)/.test(item.key) ? plotted : v => v;
             item.lookup.clear();
-            const points = rows.map(r => {
-                const v = r[item.key];
-                if (v === null || v === undefined) return { time: r.date }; // whitespace = gap
-                item.lookup.set(r.date, item.format(shown(v)));
-                return { time: r.date, value: plotted(v) };
+            const points = dates.map(date => {
+                const r = byDate.get(date);
+                const v = r ? r[item.key] : null;
+                const absent = v === null || v === undefined || (item.requires && r[item.requires] === null);
+                if (absent) return { time: date };
+                item.lookup.set(date, item.format(shown(v)));
+                return { time: date, value: plotted(v) };
             });
             item.series.setData(points);
+            item.curve.setPoints(points.map((p, index) => (p.value === undefined ? null : { index, value: p.value })));
         }
     }
     setHover(null);
