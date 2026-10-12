@@ -4,4 +4,8 @@
   aspect-ratio: 16 / 9; background: #000;
   border: var(--px) solid; border-color: var(--field-border);
 }
-.win.music .vid iframe { display: block; width: 100%; height: 100%; border: 0; }
+/* the player is laid out at its real on-screen size: the frame cancels the page zoom (the whale rule, < 1 on phones). Under
+   that zoom Safari gave YouTube a viewport of the unzoomed width but the player sized itself to the zoomed one — a small
+   video stuck in the top-left corner of a white frame (Andrew, on a friend's iPhone, 2026-10-11). Chrome was right
+   either way. */
+.win.music .vid iframe { display: block; width: 100%; height: 100%; border: 0; zoom: calc(1 / var(--zoom, 1)); }

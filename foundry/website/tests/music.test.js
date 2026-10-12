@@ -121,3 +121,11 @@ test("music talks only to YouTube: commands go to its origin alone, and a messag
   assert.ok(app.started && app.heard, "the player can");
   os.wm.close("win-music");
 });
+
+test("the player's frame cancels the page zoom, so the video is laid out at its real size — under the phone zoom Safari stuck a small player in the frame's corner (2026-10-11)", async () => {
+  const fs = await import("node:fs");
+  const css = fs.readFileSync(new URL("../html/hxh/apps/music.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(css, /\.win\.music \.vid iframe \{[^}]*zoom: calc\(1 \/ var\(--zoom, 1\)\);/);
+  const os = fs.readFileSync(new URL("../html/hxh/os/os.css", import.meta.url), "utf8");
+  assert.match(os, /zoom: var\(--zoom\);/, "the page zoom it cancels is --zoom");
+});

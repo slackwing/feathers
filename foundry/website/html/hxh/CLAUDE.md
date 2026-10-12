@@ -1076,7 +1076,11 @@ window whenever it is shown or re-laid out. EVERY container length is
 written `calc(N cqw * var(--cqk, 1))` — `tests/dom.test.js` fails on a
 bare one in card.css, binder.css or os.css. (`os/splash.css` still has
 bare ones: its layouts are off by the page zoom on narrow screens in
-Safari until they are wrapped too.) WebKit also scales `offsetTop` by
+Safari until they are wrapped too.) An IFRAME under the page zoom is laid out wrong in WebKit too (the
+YouTube player sized itself to the zoomed width inside an unzoomed
+viewport: a small video in a corner of a white frame, 2026-10-11), so the
+Music player's frame cancels it (`zoom: calc(1 / var(--zoom, 1))`) and
+is laid out at its real on-screen size in every engine. WebKit also scales `offsetTop` by
 the page zoom: use scroll metrics (`scrollHeight - clientHeight`) for
 scroll targets, not offsets.
 
