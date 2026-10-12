@@ -3255,11 +3255,21 @@ var HxH = (() => {
       const st = this.props.setTimeout || ((f, ms) => setTimeout(f, ms));
       const wait = minWait + random() * (maxWait - minWait);
       this.timer = st(() => {
-        if (!this.hidden) this.launch();
+        this.due();
         this.schedule();
       }, wait);
       this.timer?.unref?.();
       return wait;
+    }
+    /** A booked flight is due: it takes off on the next painted frame — never while hidden, and at most one waiting for a frame. */
+    due() {
+      if (this.hidden || this.waiting) return;
+      this.waiting = true;
+      const raf = this.props.requestAnimationFrame || this.doc?.defaultView?.requestAnimationFrame?.bind(this.doc.defaultView) || ((f) => f());
+      raf(() => {
+        this.waiting = false;
+        if (!this.hidden && this.el?.isConnected) this.launch();
+      });
     }
     /** Remove flights that should have ended by now (a hidden tab's animations stand still). */
     purge() {

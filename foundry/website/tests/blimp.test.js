@@ -183,10 +183,27 @@ test("any number at once, none while the page is hidden, overdue flights purged 
   b.unmount();
 });
 
+test("a screen that is off paints nothing: booked flights wait for a painted frame, one at most — two days in the dark wake up to ONE ship, not hundreds (Andrew, 2026-10-12)", () => {
+  const timers = [], frames = [];
+  const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
+  const doc = { hidden: false, addEventListener() {}, removeEventListener() {} };   // DPMS off: the tab still says visible
+  const b = new Blimp({ minWait: 1000, maxWait: 1000, random: () => 0.5, setTimeout: st, clearTimeout: () => {}, doc, requestAnimationFrame: f => frames.push(f) }).mount(document.body);
+  const flights = () => b.el.querySelectorAll(".blimp").length;
+  for (let i = 0; i < 440; i++) timers[i].fn();   // ~two days of 4–9 min bookings, nothing painting
+  assert.equal(flights(), 0, "no ship launched while nothing paints");
+  assert.equal(frames.length, 1, "one flight waits for a frame; the rest are dropped");
+  frames.shift()();   // the screen wakes
+  assert.equal(flights(), 1);
+  assert.equal(b.flights, 1);
+  timers.at(-1).fn(); frames.shift()();   // and the schedule carries on as before
+  assert.equal(b.flights, 2);
+  b.unmount();
+});
+
 test("flights are scheduled at random intervals; never under reduced motion", () => {
   const timers = [];
   const st = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
-  const b = new Blimp({ minWait: 1000, maxWait: 3000, random: () => 0.5, setTimeout: st, clearTimeout: () => {} }).mount(document.body);
+  const b = new Blimp({ minWait: 1000, maxWait: 3000, random: () => 0.5, setTimeout: st, clearTimeout: () => {}, requestAnimationFrame: f => f() }).mount(document.body);
   assert.equal(timers.length, 1);
   assert.equal(timers[0].ms, 2000);
   timers[0].fn();

@@ -22,7 +22,12 @@
    hidden (Andrew came home to fifty of them, 2026-09-20: a background tab
    keeps its timers but not its animations, so nothing ever ended and
    every booked flight piled up at the edges): a flight that should long
-   have ended is purged when the page is looked at again. */
+   have ended is purged when the page is looked at again. And a booked
+   flight leaves only on a frame the browser actually paints, one waiting
+   at most: with the screen off (DPMS) a tab still says it is visible and
+   its timers run, but nothing paints, so every ship launched then waited
+   unstarted — two days of them took off at once when the screen woke
+   (Andrew, 2026-10-12: "a bazillion blimps"). */
 import { Component } from "./component.js";
 import { h } from "./dom.js";
 
@@ -163,9 +168,17 @@ export class Blimp extends Component {
     const { minWait = 4 * 60000, maxWait = 9 * 60000, random = Math.random } = this.props;
     const st = this.props.setTimeout || ((f, ms) => setTimeout(f, ms));
     const wait = minWait + random() * (maxWait - minWait);
-    this.timer = st(() => { if (!this.hidden) this.launch(); this.schedule(); }, wait);   // a hidden page gets no ship, just the next booking
+    this.timer = st(() => { this.due(); this.schedule(); }, wait);
     this.timer?.unref?.();
     return wait;
+  }
+
+  /** A booked flight is due: it takes off on the next painted frame — never while hidden, and at most one waiting for a frame. */
+  due() {
+    if (this.hidden || this.waiting) return;
+    this.waiting = true;
+    const raf = this.props.requestAnimationFrame || this.doc?.defaultView?.requestAnimationFrame?.bind(this.doc.defaultView) || (f => f());
+    raf(() => { this.waiting = false; if (!this.hidden && this.el?.isConnected) this.launch(); });
   }
 
   /** Remove flights that should have ended by now (a hidden tab's animations stand still). */

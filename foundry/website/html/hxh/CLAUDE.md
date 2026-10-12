@@ -897,7 +897,11 @@ over the sky.
   the page, so under the whale-rule zoom (phones) the flight stopped
   short and the ship vanished on screen (bug #2, 2026-10-08; WebKit
   mid-sky; `tests/blimp.test.js` forbids vw/vh in the keyframes),
-  `HxH.os.blimp.launch()` on demand; z-order above the wallpaper, below
+  `HxH.os.blimp.launch()` on demand (the menu: unlimited); the TIMED
+  flights take off only on a painted frame, one waiting at most
+  (`Blimp.due`) — with the screen off (DPMS, Andrew's AC idle never
+  suspends) a tab says visible and runs timers but paints nothing, and
+  two days of unstarted ships all took off when it woke (2026-10-12); z-order above the wallpaper, below
   icons and windows. The ship is ABI'S DRAWING — `img/blimp.png`, a
   1289×955 transparent PNG, side view flying WEST (shark nose, ✕✕
   plate, propeller masts, lit cabin, engine pod, stern prop) — shown
