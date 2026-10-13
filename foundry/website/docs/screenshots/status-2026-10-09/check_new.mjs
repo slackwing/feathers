@@ -1,10 +1,10 @@
-// Drives /status/new/ on the local preview server: screenshots + interaction asserts.
-//   URL=http://127.0.0.1:8771/status/new/ node check_new.mjs <outdir>   (URL defaults to prod)
+// Drives /status/ (prod by default, or a local preview): screenshots + interaction asserts.
+//   URL=http://127.0.0.1:8771/status/ node check_new.mjs <outdir>   (URL defaults to prod)
 import { createRequire } from 'module';
 const require = createRequire('/home/slackwing/src/manuscript-studio/');
 const { chromium } = require('playwright-core');
 const out = process.argv[2];
-const URL = process.env.URL || 'https://andrewcheong.com/status/new/';
+const URL = process.env.URL || 'https://andrewcheong.com/status/';
 const browser = await chromium.launch({ executablePath: '/usr/sbin/google-chrome-stable', headless: true });
 const errors = [];
 const fail = m => { errors.push(m); console.log('FAIL', m); };
@@ -15,7 +15,7 @@ page.on('pageerror', e => fail('pageerror: ' + e.message + '\n' + e.stack));
 page.on('console', m => { if (m.type() === 'error' && !/404/.test(m.text())) fail('console: ' + m.text()); });
 page.on('response', r => { if (r.status() >= 400 && !/favicon/.test(r.url())) fail(`HTTP ${r.status()} ${r.url()}`); });
 await page.goto(URL, { waitUntil: 'networkidle' });
-await page.waitForFunction(() => window.__status && window.__status.dates.length > 0 && !document.querySelector('.container.loading'));
+await page.waitForFunction(() => window.__status && window.__status.dates.length > 0 && !document.querySelector('.chart.pending'));
 await page.waitForTimeout(500);
 
 const ranges = () => page.evaluate(() => window.__status.charts.map(c => { const r = c.timeScale().getVisibleLogicalRange(); return [r.from, r.to]; }));
@@ -33,6 +33,9 @@ if ((await page.$eval('#range button.active', b => b.textContent)) !== '1M') fai
 const legend = await page.$eval('#hobbyLegend', el => el.textContent.trim());
 ok('hobby legend: ' + legend);
 if (!/\dh/.test(legend)) fail('hobby legend has no hours value');
+const drcLegend = await page.$eval('#drcLegend', el => el.textContent.trim());
+ok('drc legend: ' + drcLegend);
+if (!/DRC\d/.test(drcLegend)) fail('drc legend has no value');
 
 // Full-page screenshot at a tall viewport (charts autosize to width only)
 const h = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -40,7 +43,7 @@ await page.setViewportSize({ width: 1400, height: h });
 await page.waitForTimeout(400);
 await page.screenshot({ path: `${out}/new-desktop-full.png` });
 const sections = await page.$$('main > section');
-const names = ['stats', 'summary', 'hobbies', 'work', 'categories', 'alcohol-mood', 'sleep'];
+const names = ['stats', 'summary', 'hobbies', 'work', 'categories', 'alcohol-mood', 'drc', 'sleep'];
 for (let i = 0; i < sections.length; i++) await sections[i].screenshot({ path: `${out}/new-${String(i + 1).padStart(2, '0')}-${names[i]}.png` });
 await page.setViewportSize({ width: 1400, height: 900 });
 
@@ -110,7 +113,7 @@ if (Math.abs((rs[0][1] - rs[0][0]) - 90) > 0.75) fail('3M did not show 90 days')
 const m = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 m.on('pageerror', e => fail('mobile pageerror: ' + e.message));
 await m.goto(URL, { waitUntil: 'networkidle' });
-await m.waitForFunction(() => window.__status && window.__status.dates.length > 0 && !document.querySelector('.container.loading'));
+await m.waitForFunction(() => window.__status && window.__status.dates.length > 0 && !document.querySelector('.chart.pending'));
 await m.waitForTimeout(500);
 const mh = await m.evaluate(() => document.documentElement.scrollHeight);
 await m.setViewportSize({ width: 390, height: mh });

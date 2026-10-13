@@ -22,4 +22,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { "content-type": TYPES[path.extname(file).toLowerCase()] || "application/octet-stream", "cache-control": "no-store" });
     res.end(fs.readFileSync(file));
   } catch { res.writeHead(404); res.end("not found"); }
-}).listen(PORT, "127.0.0.1", () => console.log(`http://127.0.0.1:${PORT}/status/new/`));
+}).listen(PORT, "127.0.0.1", () => console.log(`http://127.0.0.1:${PORT}/status/`));

@@ -1,4 +1,4 @@
-// Category lists + chip tooltips, shared by /status/ and /status/new/.
+// Category lists + chip tooltips for /status/.
 // Any sxiva code missing from HOBBY_CATEGORIES/WORK_CATEGORIES counts as "Other".
 const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'su', 'art', 'cbc'];
 const WORK_CATEGORIES = ['sp'];

@@ -1,7 +1,7 @@
-// /status/new/ — the status dashboard on TradingView Lightweight Charts.
+// /status/ — the status dashboard on TradingView Lightweight Charts.
 // The ENTIRE history is loaded once at page load (limit=5000); the charts
 // zoom (wheel / pinch) and pan (drag) over it, linked to one time axis.
-// Category lists + chip tooltips: ../js/config.js (shared with /status/).
+// Category lists + chip tooltips: js/config.js.
 const API_BASE_URL = '/status/api';
 const FETCH_LIMIT = 5000;
 const ROLLING_WINDOW_DAYS = 7;
@@ -37,6 +37,9 @@ const COLORS = {
     MOOD_LIGHT: 'rgba(59, 130, 246, 0.35)',
     SLEEP: '#8b5cf6',
     SLEEP_LIGHT: 'rgba(139, 92, 246, 0.35)',
+    DRC: '#374151',
+    DRC_GREEN: 'rgba(22, 163, 74, 0.35)',
+    DRC_RED: 'rgba(220, 38, 38, 0.35)',
 
     GRID: '#eef0f3',
     AXIS: '#d1d5db',
@@ -125,6 +128,7 @@ const fmt = {
     mood: v => (v > 0 ? '+' : '') + v.toFixed(2),
     sleep: v => Math.round(v).toString(),
     sleepAxis: v => Math.round(inverseSleep(v)).toString(),
+    plain: v => String(Number(v.toFixed(1))),
     none: () => ''
 };
 
@@ -156,6 +160,20 @@ function fetchAlcoholMoodData() {
 
 function fetchSleepData() {
     return fetchJSON('sleep-score', { limit: FETCH_LIMIT });
+}
+
+function fetchDRCData() {
+    return fetchJSON('drc', { limit: FETCH_LIMIT });
+}
+
+const FETCHES = { category: fetchCategoryData, alcohol: fetchAlcoholMoodData, sleep: fetchSleepData, drc: fetchDRCData };
+
+// Which response a series' field comes from
+function datasetFor(key) {
+    if (key.startsWith('alc') || key.startsWith('dep')) return 'alcohol';
+    if (key.startsWith('sleep')) return 'sleep';
+    if (key.startsWith('drc')) return 'drc';
+    return 'category';
 }
 
 // ---------------------------------------------------------------------------
@@ -275,16 +293,137 @@ class SmoothLinePrimitive {
                 ctx.fill();
                 continue;
             }
-            const m = monotoneTangents(run);
             ctx.beginPath();
-            ctx.moveTo(run[0].x, run[0].y);
-            for (let i = 0; i < run.length - 1; i++) {
-                const a = run[i], b = run[i + 1], dx = (b.x - a.x) / 3;
-                ctx.bezierCurveTo(a.x + dx, a.y + dx * m[i], b.x - dx, b.y - dx * m[i + 1], b.x, b.y);
-            }
+            traceCurve(ctx, run, monotoneTangents(run), false);
             ctx.stroke();
         }
         ctx.restore();
+    }
+}
+
+// One cubic segment from a to b with end tangents ma, mb (swap the
+// arguments to walk the same segment backwards)
+function bezier(ctx, a, ma, b, mb) {
+    const dx = (b.x - a.x) / 3;
+    ctx.bezierCurveTo(a.x + dx, a.y + dx * ma, b.x - dx, b.y - dx * mb, b.x, b.y);
+}
+
+// Append the monotone curve through pts to the current path: moveTo its
+// first point and walk forward, or lineTo its last point and walk back
+function traceCurve(ctx, pts, m, reverse) {
+    const n = pts.length;
+    if (!reverse) {
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 0; i < n - 1; i++) bezier(ctx, pts[i], m[i], pts[i + 1], m[i + 1]);
+    } else {
+        ctx.lineTo(pts[n - 1].x, pts[n - 1].y);
+        for (let i = n - 1; i > 0; i--) bezier(ctx, pts[i], m[i], pts[i - 1], m[i - 1]);
+    }
+}
+
+// DRC fill: under the DRC curve, green from the baseline up to the resisted
+// share of the day's height, red from there up to the curve. Both edges are
+// monotone curves through their points, like the line above them.
+class StackedFillPrimitive {
+    constructor(bottomColor, topColor) {
+        this._bottomColor = bottomColor;
+        this._topColor = topColor;
+        this._points = []; // { index, top, mid } for days with data
+        this._top = [];
+        this._mid = [];
+        this._base = 0;
+        const self = this;
+        this._views = [{
+            zOrder: () => 'bottom',
+            renderer: () => ({
+                draw: target => target.useMediaCoordinateSpace(({ context: ctx }) => self._draw(ctx))
+            })
+        }];
+    }
+
+    setPoints(points) {
+        this._points = points;
+    }
+
+    attached({ chart, series }) {
+        this._chart = chart;
+        this._series = series;
+    }
+
+    detached() {
+        this._chart = null;
+        this._series = null;
+    }
+
+    updateAllViews() {
+        if (!this._chart || !this._series) return;
+        const timeScale = this._chart.timeScale();
+        const top = [], mid = [];
+        for (const p of this._points) {
+            const x = timeScale.logicalToCoordinate(p.index);
+            const yTop = this._series.priceToCoordinate(p.top);
+            const yMid = this._series.priceToCoordinate(p.mid);
+            if (x === null || yTop === null || yMid === null) continue;
+            top.push({ x, y: yTop });
+            mid.push({ x, y: yMid });
+        }
+        this._top = top;
+        this._mid = mid;
+        this._base = this._series.priceToCoordinate(0) ?? 0;
+    }
+
+    paneViews() {
+        return this._views;
+    }
+
+    _draw(ctx) {
+        if (this._top.length < 2) return;
+        const mTop = monotoneTangents(this._top);
+        const mMid = monotoneTangents(this._mid);
+        ctx.save();
+        // Red: along the curve, back along the split
+        ctx.beginPath();
+        traceCurve(ctx, this._top, mTop, false);
+        traceCurve(ctx, this._mid, mMid, true);
+        ctx.closePath();
+        ctx.fillStyle = this._topColor;
+        ctx.fill();
+        // Green: along the split, back along the baseline
+        ctx.beginPath();
+        traceCurve(ctx, this._mid, mMid, false);
+        ctx.lineTo(this._mid[this._mid.length - 1].x, this._base);
+        ctx.lineTo(this._mid[0].x, this._base);
+        ctx.closePath();
+        ctx.fillStyle = this._bottomColor;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+// Plot border: the library only draws the axis edges (right, bottom); this
+// closes the box with the top and left edges in the same color
+class BorderPrimitive {
+    constructor() {
+        this._views = [{
+            zOrder: () => 'top',
+            renderer: () => ({
+                draw: target => target.useMediaCoordinateSpace(({ context: ctx, mediaSize }) => {
+                    ctx.save();
+                    ctx.strokeStyle = COLORS.AXIS;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0.5, mediaSize.height);
+                    ctx.lineTo(0.5, 0.5);
+                    ctx.lineTo(mediaSize.width, 0.5);
+                    ctx.stroke();
+                    ctx.restore();
+                })
+            })
+        }];
+    }
+
+    paneViews() {
+        return this._views;
     }
 }
 
@@ -388,15 +527,18 @@ function addLine(chart, item) {
 }
 
 // A card = one chart + its legend readout. items: [{ name, color, series,
-// key, format, transform }], where key picks the API field and format turns
-// the RAW value into the legend string (transform only shapes the plotted value).
+// key, format, transform, requires, interpolate, legendOnly }], where key
+// picks the API field and format turns the RAW value into the legend string
+// (transform only shapes the plotted value). A legendOnly item is a readout
+// without a series; an interpolate item skips absent days instead of gapping.
 const cards = [];
 let charts = [];
-let dates = [];        // all dates in the loaded history, ascending
+let dates = [];        // every calendar day of the loaded history, ascending
 let linking = false;   // re-entrancy guard for range/crosshair sync
 
 function buildCard(id, legendId, items, { zones = null } = {}) {
-    const chart = createChart(document.getElementById(id));
+    const el = document.getElementById(id);
+    const chart = createChart(el);
     const legend = document.getElementById(legendId);
 
     const dateEl = document.createElement('span');
@@ -404,23 +546,29 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
     legend.appendChild(dateEl);
 
     for (const item of items) {
-        item.series = addLine(chart, item);
-        item.curve = new SmoothLinePrimitive(item.color);
-        item.series.attachPrimitive(item.curve);
+        if (!item.legendOnly) {
+            item.series = addLine(chart, item);
+            item.curve = new SmoothLinePrimitive(item.color);
+            item.series.attachPrimitive(item.curve);
+        }
         item.lookup = new Map(); // date → legend string
 
-        const el = document.createElement('span');
-        el.className = 'legend-item';
+        const row = document.createElement('span');
+        row.className = 'legend-item';
         const key = document.createElement('i');
         key.className = 'key';
         key.style.background = item.color;
-        const name = document.createElement('span');
-        name.className = 'name';
-        name.textContent = item.name;
+        row.appendChild(key);
+        if (item.name) {
+            const name = document.createElement('span');
+            name.className = 'name';
+            name.textContent = item.name;
+            row.appendChild(name);
+        }
         const val = document.createElement('b');
         val.className = 'val';
-        el.append(key, name, val);
-        legend.appendChild(el);
+        row.appendChild(val);
+        legend.appendChild(row);
         item.valueEl = val;
     }
 
@@ -438,8 +586,12 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
         priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
         autoscaleInfoProvider: () => null
     });
+    spine.attachPrimitive(new BorderPrimitive());
 
-    const card = { chart, items, dateEl, spine };
+    const card = {
+        el, chart, items, dateEl, spine,
+        datasets: new Set(items.map(item => datasetFor(item.key)))
+    };
     cards.push(card);
     charts.push(chart);
     return card;
@@ -477,6 +629,15 @@ function buildCharts() {
         price: 0, color: '#999', lineWidth: 1, lineStyle: LWC.LineStyle.Dashed, axisLabelVisible: false, title: ''
     });
 
+    // DRC: a day's height split green (resisted) / red (indulged) in proportion
+    const drc = buildCard('drcChart', 'drcLegend', [
+        { name: 'DRC', color: COLORS.DRC, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_triggers', format: fmt.plain, interpolate: true },
+        { color: COLORS.GREEN, key: 'drc_resisted', format: fmt.plain, legendOnly: true },
+        { color: COLORS.RED, key: 'drc_indulged', format: fmt.plain, legendOnly: true }
+    ]);
+    drc.fill = new StackedFillPrimitive(COLORS.DRC_GREEN, COLORS.DRC_RED);
+    drc.items[0].series.attachPrimitive(drc.fill);
+
     buildCard('sleepChart', 'sleepLegend', [
         { name: 'Raw', color: COLORS.SLEEP, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_raw', format: fmt.sleep, transform: transformSleep },
         { name: '7-day', color: COLORS.SLEEP_LIGHT, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_7day_avg', requires: 'sleep_raw', format: fmt.sleep, transform: transformSleep, light: true }
@@ -485,60 +646,111 @@ function buildCharts() {
     linkCharts();
 }
 
-function rowsFor(key, data) {
-    if (key.startsWith('alc') || key.startsWith('dep')) return data.alcohol.data;
-    if (key.startsWith('sleep')) return data.sleep.data;
-    return data.category.data;
+// ---------------------------------------------------------------------------
+// Data: the four responses arrive independently (category-rolling-sum takes
+// seconds, the rest a fraction of one), and each card renders as soon as
+// everything it needs is in. `data` holds the latest response per dataset.
+
+const data = {};
+let rangeInitialized = false;
+
+// Axis max from the whole history, rounded up, so zooming never rescales it
+function rangeMax(values, step, floor) {
+    const max = Math.max(0, ...values.filter(v => v !== null && v !== undefined));
+    return Math.max(floor, Math.ceil(max / step) * step);
 }
 
-// Alcohol axis max from the whole history (rounded up to a 10), so zooming
-// never rescales it and the summary + alcohol charts agree
-function alcoholMaxOf(data) {
-    const max = Math.max(0, ...data.alcohol.data.flatMap(d => [d.alc_7day_sum ?? 0, d.alc_15day_avg ?? 0]));
-    return Math.max(10, Math.ceil(max / 10) * 10);
-}
-
-// Every calendar day from the first to the last row across the datasets
-function calendarOf(data) {
-    const all = [data.category, data.alcohol, data.sleep].flatMap(d => d.data.map(r => r.date)).sort();
+// Every calendar day from the first to the last row across the loaded
+// datasets; re-seeds the spines when it grows (a later response is wider)
+function setCalendar() {
+    const all = Object.values(data).flatMap(d => d.data.map(r => r.date)).sort();
+    if (!all.length) return;
     const out = [];
     for (let d = new Date(all[0] + 'T00:00:00Z'), end = new Date(all[all.length - 1] + 'T00:00:00Z'); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
         out.push(d.toISOString().slice(0, 10));
     }
-    return out;
+    if (out.length === dates.length && out[0] === dates[0]) return;
+    dates = out;
+    const spine = dates.map(d => ({ time: d, value: 0 }));
+    for (const card of cards) card.spine.setData(spine);
 }
 
 // A day with no row, a null value, or (for a derived series) a null
 // underlying raw value is ABSENT: whitespace, so no line is drawn through it.
 // The API carries 7-day averages forward over days with no entry, which
-// would otherwise draw a line across the gap.
-function setData(data) {
-    dates = calendarOf(data);
-    const alcoholRange = [0, alcoholMaxOf(data)];
-    const spine = dates.map(d => ({ time: d, value: 0 }));
-    for (const card of cards) {
-        card.spine.setData(spine);
-        for (const item of card.items) {
-            if (item.key.startsWith('alc')) item.range = alcoholRange;
-            const byDate = new Map(rowsFor(item.key, data).map(r => [r.date, r]));
-            const plotted = v => (item.transform ? item.transform(v) : v);
-            // Hours readouts follow what's plotted (work is ×2); mood/sleep
-            // readouts show the raw value, not the axis-shaping transform
-            const shown = /^(hobby|work)/.test(item.key) ? plotted : v => v;
-            item.lookup.clear();
-            const points = dates.map(date => {
-                const r = byDate.get(date);
-                const v = r ? r[item.key] : null;
-                const absent = v === null || v === undefined || (item.requires && r[item.requires] === null);
-                if (absent) return { time: date };
-                item.lookup.set(date, item.format(shown(v)));
-                return { time: date, value: plotted(v) };
-            });
-            item.series.setData(points);
-            item.curve.setPoints(points.map((p, index) => (p.value === undefined ? null : { index, value: p.value })));
+// would otherwise draw a line across the gap. An `interpolate` series
+// (DRC) instead skips absent days, so its curve runs on to the next day.
+function setCardData(card) {
+    const dateIndex = new Map(dates.map((d, i) => [d, i]));
+    for (const item of card.items) {
+        const rows = data[datasetFor(item.key)].data;
+        const byDate = new Map(rows.map(r => [r.date, r]));
+        const plotted = v => (item.transform ? item.transform(v) : v);
+        // Hours readouts follow what's plotted (work is ×2); mood/sleep
+        // readouts show the raw value, not the axis-shaping transform
+        const shown = /^(hobby|work)/.test(item.key) ? plotted : v => v;
+        item.lookup.clear();
+
+        if (item.legendOnly) {
+            for (const r of rows) if (r[item.key] !== null && r[item.key] !== undefined) item.lookup.set(r.date, item.format(r[item.key]));
+            continue;
         }
+        if (item.key.startsWith('alc')) item.range = [0, rangeMax(rows.flatMap(r => [r.alc_7day_sum, r.alc_15day_avg]), 10, 10)];
+        if (item.key === 'drc_triggers') item.range = [0, rangeMax(rows.map(r => r.drc_triggers), 5, 10)];
+
+        const points = [], curve = [];
+        dates.forEach((date, index) => {
+            const r = byDate.get(date);
+            const v = r ? r[item.key] : null;
+            const absent = v === null || v === undefined || (item.requires && r[item.requires] === null);
+            if (absent) {
+                if (!item.interpolate) { points.push({ time: date }); curve.push(null); }
+                return;
+            }
+            item.lookup.set(date, item.format(shown(v)));
+            points.push({ time: date, value: plotted(v) });
+            curve.push({ index, value: plotted(v) });
+        });
+        item.series.setData(points);
+        item.curve.setPoints(curve);
+    }
+
+    if (card.fill) {
+        const rows = data.drc.data.filter(r => r.drc_triggers !== null && dateIndex.has(r.date));
+        card.fill.setPoints(rows.map(r => {
+            const green = (r.drc_resisted ?? 0), red = (r.drc_indulged ?? 0);
+            const share = green + red > 0 ? green / (green + red) : 0;
+            return { index: dateIndex.get(r.date), top: r.drc_triggers, mid: r.drc_triggers * share };
+        }));
+    }
+}
+
+function cardReady(card) {
+    return [...card.datasets].every(name => data[name]);
+}
+
+function applyDataset(name, response) {
+    data[name] = response;
+    setCalendar();
+    for (const card of cards) {
+        if (!cardReady(card)) continue;
+        setCardData(card);
+        card.el.classList.remove('pending');
+    }
+    if (!rangeInitialized && cards.some(cardReady)) {
+        setRange(DEFAULT_DAYS);
+        rangeInitialized = true;
     }
     setHover(null);
+    if (name === 'category') {
+        updateStats(response);
+        updateCategories(response);
+    }
+    if (Object.keys(FETCHES).every(key => data[key])) updateTimestamp();
+}
+
+function load() {
+    return Promise.all(Object.entries(FETCHES).map(([name, fetch]) => fetch().then(response => applyDataset(name, response))));
 }
 
 // ---------------------------------------------------------------------------
@@ -577,14 +789,22 @@ function linkCharts() {
     }
 }
 
+// Hovering shows every card at the hovered date; at rest each card shows its
+// own latest day with data (DRC isn't logged every day)
 function setHover(date) {
-    const shown = date || dates[dates.length - 1] || null;
     for (const card of cards) {
+        const shown = date || latestOf(card);
         card.dateEl.textContent = shown ? formatDate(shown) : '';
         for (const item of card.items) {
             item.valueEl.textContent = shown ? (item.lookup.get(shown) ?? '–') : '';
         }
     }
+}
+
+function latestOf(card) {
+    let latest = null;
+    for (const d of card.items[0].lookup.keys()) if (!latest || d > latest) latest = d;
+    return latest;
 }
 
 // ---------------------------------------------------------------------------
@@ -746,44 +966,21 @@ function showError(message) {
 
 // ---------------------------------------------------------------------------
 
-async function fetchAll() {
-    const [category, alcohol, sleep] = await Promise.all([
-        fetchCategoryData(), fetchAlcoholMoodData(), fetchSleepData()
-    ]);
-    return { category, alcohol, sleep };
-}
-
-function applyData(data) {
-    setData(data);
-    updateStats(data.category);
-    updateCategories(data.category);
-    updateTimestamp();
-}
-
 async function init() {
-    const container = document.querySelector('.container');
+    buildCharts(); // before the fetches, so the charts are laid out by the time data lands
+    for (const card of cards) card.el.classList.add('pending');
     try {
-        container.classList.add('loading');
-        buildCharts(); // before the fetch, so they're laid out by the time data lands
-        applyData(await fetchAll());
-        setRange(DEFAULT_DAYS);
-        container.classList.remove('loading');
+        await load();
     } catch (error) {
         console.error('Failed to load dashboard:', error);
         showError(error.message);
-        container.classList.remove('loading');
+        for (const card of cards) card.el.classList.remove('pending');
     }
 
-    setInterval(async () => {
-        try {
-            applyData(await fetchAll());
-        } catch (error) {
-            console.error('Auto-refresh failed:', error);
-        }
-    }, REFRESH_MS);
+    setInterval(() => load().catch(error => console.error('Auto-refresh failed:', error)), REFRESH_MS);
 }
 
 document.addEventListener('DOMContentLoaded', init);
 
 // Test hook
-window.__status = { get charts() { return charts; }, get cards() { return cards; }, get dates() { return dates; }, setRange };
+window.__status = { get charts() { return charts; }, get cards() { return cards; }, get dates() { return dates; }, get data() { return data; }, setRange };
