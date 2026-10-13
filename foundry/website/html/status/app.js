@@ -129,6 +129,7 @@ const fmt = {
     sleep: v => Math.round(v).toString(),
     sleepAxis: v => Math.round(inverseSleep(v)).toString(),
     plain: v => String(Number(v.toFixed(1))),
+    percent: v => Math.round(v * 100) + '%',
     none: () => ''
 };
 
@@ -456,10 +457,13 @@ function addBars(chart, item) {
 }
 
 // A card = one chart + its legend readout. items: [{ name, color, series,
-// key, format, transform, plot, requires, bar, legendOnly }], where key
-// picks the API field and format turns the RAW value into the legend string
-// (transform / plot only shape the plotted value). A legendOnly item is a
-// readout without a series; a bar item is a histogram instead of a curve.
+// key, format, transform, plot, derive, requires, interpolate, bar,
+// legendOnly }], where key picks the API field and format turns the RAW
+// value into the legend string (transform / plot only shape the plotted
+// value; a derive item is computed from the whole dataset and reads out the
+// derived value). A legendOnly item is a readout without a series; a bar
+// item is a histogram instead of a curve; an interpolate item skips absent
+// days instead of gapping.
 const cards = [];
 let charts = [];
 let dates = [];        // every calendar day of the loaded history, ascending
@@ -567,7 +571,12 @@ function buildCharts() {
         { name: 'DRC', color: COLORS.DRC, barColor: COLORS.DRC_RED, bar: true, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_triggers', format: fmt.plain },
         { color: COLORS.DRC_GREEN, barColor: COLORS.DRC_GREEN, bar: true, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_resisted', format: fmt.plain,
           plot: r => { const g = r.drc_resisted ?? 0, b = r.drc_indulged ?? 0; return g + b > 0 ? r.drc_triggers * g / (g + b) : 0; } },
-        { color: COLORS.DRC_RED, key: 'drc_indulged', format: fmt.plain, legendOnly: true }
+        { color: COLORS.DRC_RED, key: 'drc_indulged', format: fmt.plain, legendOnly: true },
+        // Resisted share, trailing 30-day average of the daily green/(green+red),
+        // 0% at the bottom of the plot to 100% at the top; computed for every
+        // calendar day (continuous through unlogged days)
+        { color: COLORS.GREEN, scaleId: 'ratio', range: [0, 1], axisFormat: fmt.none, key: 'drc_resisted', format: fmt.percent, interpolate: true,
+          derive: (rows, days) => rollingMean(days, dailyRatio(rows), 30) }
     ]);
 
     buildCard('sleepChart', 'sleepLegend', [
@@ -626,25 +635,52 @@ function setCardData(card) {
             continue;
         }
         if (item.key.startsWith('alc')) item.range = [0, rangeMax(rows.flatMap(r => [r.alc_7day_sum, r.alc_15day_avg]), 10, 10)];
-        if (item.key.startsWith('drc')) item.range = [0, rangeMax(rows.map(r => r.drc_triggers), 5, 10)];
+        if (item.bar && item.key.startsWith('drc')) item.range = [0, rangeMax(rows.map(r => r.drc_triggers), 5, 10)];
 
+        // A derived series is computed from the whole dataset per calendar day
+        const derived = item.derive ? item.derive(rows, dates) : null;
         const points = [], curve = [];
         dates.forEach((date, index) => {
             const r = byDate.get(date);
             const v = r ? r[item.key] : null;
             const absent = v === null || v === undefined || (item.requires && r[item.requires] === null);
-            if (absent) {
-                points.push({ time: date });
-                curve.push(null);
+            const value = derived ? (derived.get(date) ?? null) : absent ? null : plotted(v, r);
+            if (value === null) {
+                if (!item.interpolate) { points.push({ time: date }); curve.push(null); }
                 return;
             }
-            item.lookup.set(date, item.format(shown(v, r)));
-            points.push({ time: date, value: plotted(v, r) });
-            curve.push({ index, value: plotted(v, r) });
+            item.lookup.set(date, item.format(derived ? value : shown(v, r)));
+            points.push({ time: date, value });
+            curve.push({ index, value });
         });
         item.series.setData(points);
         if (item.curve) item.curve.setPoints(curve);
     }
+}
+
+// date → green/(green+red) for the days that have either count
+function dailyRatio(rows) {
+    const out = new Map();
+    for (const r of rows) {
+        const g = r.drc_resisted ?? 0, b = r.drc_indulged ?? 0;
+        if (g + b > 0) out.set(r.date, g / (g + b));
+    }
+    return out;
+}
+
+// date → mean of the values in the trailing `window` calendar days
+// (inclusive), for every day whose window holds at least one value
+function rollingMean(days, values, window) {
+    const out = new Map();
+    days.forEach((date, i) => {
+        let sum = 0, n = 0;
+        for (let j = Math.max(0, i - window + 1); j <= i; j++) {
+            const v = values.get(days[j]);
+            if (v !== undefined) { sum += v; n++; }
+        }
+        if (n) out.set(date, sum / n);
+    });
+    return out;
 }
 
 function cardReady(card) {
