@@ -38,8 +38,8 @@ const COLORS = {
     SLEEP: '#8b5cf6',
     SLEEP_LIGHT: 'rgba(139, 92, 246, 0.35)',
     DRC: '#374151',
-    DRC_GREEN: 'rgba(22, 163, 74, 0.35)',
-    DRC_RED: 'rgba(220, 38, 38, 0.35)',
+    DRC_GREEN: '#4ade80',
+    DRC_RED: '#f87171',
 
     GRID: '#eef0f3',
     AXIS: '#d1d5db',
@@ -294,110 +294,23 @@ class SmoothLinePrimitive {
                 continue;
             }
             ctx.beginPath();
-            traceCurve(ctx, run, monotoneTangents(run), false);
+            traceCurve(ctx, run, monotoneTangents(run));
             ctx.stroke();
         }
         ctx.restore();
     }
 }
 
-// One cubic segment from a to b with end tangents ma, mb (swap the
-// arguments to walk the same segment backwards)
+// One cubic segment from a to b with end tangents ma, mb
 function bezier(ctx, a, ma, b, mb) {
     const dx = (b.x - a.x) / 3;
     ctx.bezierCurveTo(a.x + dx, a.y + dx * ma, b.x - dx, b.y - dx * mb, b.x, b.y);
 }
 
-// Append the monotone curve through pts to the current path: moveTo its
-// first point and walk forward, or lineTo its last point and walk back
-function traceCurve(ctx, pts, m, reverse) {
-    const n = pts.length;
-    if (!reverse) {
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (let i = 0; i < n - 1; i++) bezier(ctx, pts[i], m[i], pts[i + 1], m[i + 1]);
-    } else {
-        ctx.lineTo(pts[n - 1].x, pts[n - 1].y);
-        for (let i = n - 1; i > 0; i--) bezier(ctx, pts[i], m[i], pts[i - 1], m[i - 1]);
-    }
-}
-
-// DRC fill: under the DRC curve, green from the baseline up to the resisted
-// share of the day's height, red from there up to the curve. Both edges are
-// monotone curves through their points, like the line above them.
-class StackedFillPrimitive {
-    constructor(bottomColor, topColor) {
-        this._bottomColor = bottomColor;
-        this._topColor = topColor;
-        this._points = []; // { index, top, mid } for days with data
-        this._top = [];
-        this._mid = [];
-        this._base = 0;
-        const self = this;
-        this._views = [{
-            zOrder: () => 'bottom',
-            renderer: () => ({
-                draw: target => target.useMediaCoordinateSpace(({ context: ctx }) => self._draw(ctx))
-            })
-        }];
-    }
-
-    setPoints(points) {
-        this._points = points;
-    }
-
-    attached({ chart, series }) {
-        this._chart = chart;
-        this._series = series;
-    }
-
-    detached() {
-        this._chart = null;
-        this._series = null;
-    }
-
-    updateAllViews() {
-        if (!this._chart || !this._series) return;
-        const timeScale = this._chart.timeScale();
-        const top = [], mid = [];
-        for (const p of this._points) {
-            const x = timeScale.logicalToCoordinate(p.index);
-            const yTop = this._series.priceToCoordinate(p.top);
-            const yMid = this._series.priceToCoordinate(p.mid);
-            if (x === null || yTop === null || yMid === null) continue;
-            top.push({ x, y: yTop });
-            mid.push({ x, y: yMid });
-        }
-        this._top = top;
-        this._mid = mid;
-        this._base = this._series.priceToCoordinate(0) ?? 0;
-    }
-
-    paneViews() {
-        return this._views;
-    }
-
-    _draw(ctx) {
-        if (this._top.length < 2) return;
-        const mTop = monotoneTangents(this._top);
-        const mMid = monotoneTangents(this._mid);
-        ctx.save();
-        // Red: along the curve, back along the split
-        ctx.beginPath();
-        traceCurve(ctx, this._top, mTop, false);
-        traceCurve(ctx, this._mid, mMid, true);
-        ctx.closePath();
-        ctx.fillStyle = this._topColor;
-        ctx.fill();
-        // Green: along the split, back along the baseline
-        ctx.beginPath();
-        traceCurve(ctx, this._mid, mMid, false);
-        ctx.lineTo(this._mid[this._mid.length - 1].x, this._base);
-        ctx.lineTo(this._mid[0].x, this._base);
-        ctx.closePath();
-        ctx.fillStyle = this._bottomColor;
-        ctx.fill();
-        ctx.restore();
-    }
+// Append the monotone curve through pts to the current path
+function traceCurve(ctx, pts, m) {
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 0; i < pts.length - 1; i++) bezier(ctx, pts[i], m[i], pts[i + 1], m[i + 1]);
 }
 
 // Plot border: the library only draws the axis edges (right, bottom); this
@@ -526,11 +439,27 @@ function addLine(chart, item) {
     });
 }
 
+// Bars (DRC): one histogram series per item, drawn in item order
+function addBars(chart, item) {
+    return chart.addSeries(LWC.HistogramSeries, {
+        color: item.barColor,
+        base: 0,
+        priceScaleId: item.scaleId,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        priceFormat: { type: 'custom', formatter: item.axisFormat, minMove: 0.01 },
+        autoscaleInfoProvider: () => ({
+            priceRange: { minValue: item.range[0], maxValue: item.range[1] },
+            margins: { above: 0, below: 0 }
+        })
+    });
+}
+
 // A card = one chart + its legend readout. items: [{ name, color, series,
-// key, format, transform, requires, interpolate, legendOnly }], where key
+// key, format, transform, plot, requires, bar, legendOnly }], where key
 // picks the API field and format turns the RAW value into the legend string
-// (transform only shapes the plotted value). A legendOnly item is a readout
-// without a series; an interpolate item skips absent days instead of gapping.
+// (transform / plot only shape the plotted value). A legendOnly item is a
+// readout without a series; a bar item is a histogram instead of a curve.
 const cards = [];
 let charts = [];
 let dates = [];        // every calendar day of the loaded history, ascending
@@ -546,7 +475,9 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
     legend.appendChild(dateEl);
 
     for (const item of items) {
-        if (!item.legendOnly) {
+        if (item.bar) {
+            item.series = addBars(chart, item);
+        } else if (!item.legendOnly) {
             item.series = addLine(chart, item);
             item.curve = new SmoothLinePrimitive(item.color);
             item.series.attachPrimitive(item.curve);
@@ -629,14 +560,15 @@ function buildCharts() {
         price: 0, color: '#999', lineWidth: 1, lineStyle: LWC.LineStyle.Dashed, axisLabelVisible: false, title: ''
     });
 
-    // DRC: a day's height split green (resisted) / red (indulged) in proportion
-    const drc = buildCard('drcChart', 'drcLegend', [
-        { name: 'DRC', color: COLORS.DRC, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_triggers', format: fmt.plain, interpolate: true },
-        { color: COLORS.GREEN, key: 'drc_resisted', format: fmt.plain, legendOnly: true },
-        { color: COLORS.RED, key: 'drc_indulged', format: fmt.plain, legendOnly: true }
+    // DRC: one bar per logged day, its height split green (resisted) / red
+    // (indulged) in proportion — a red bar at the full height, then a green
+    // bar up to the resisted share drawn over it
+    buildCard('drcChart', 'drcLegend', [
+        { name: 'DRC', color: COLORS.DRC, barColor: COLORS.DRC_RED, bar: true, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_triggers', format: fmt.plain },
+        { color: COLORS.DRC_GREEN, barColor: COLORS.DRC_GREEN, bar: true, scaleId: 'right', range: [0, 10], axisFormat: fmt.plain, key: 'drc_resisted', format: fmt.plain,
+          plot: r => { const g = r.drc_resisted ?? 0, b = r.drc_indulged ?? 0; return g + b > 0 ? r.drc_triggers * g / (g + b) : 0; } },
+        { color: COLORS.DRC_RED, key: 'drc_indulged', format: fmt.plain, legendOnly: true }
     ]);
-    drc.fill = new StackedFillPrimitive(COLORS.DRC_GREEN, COLORS.DRC_RED);
-    drc.items[0].series.attachPrimitive(drc.fill);
 
     buildCard('sleepChart', 'sleepLegend', [
         { name: 'Raw', color: COLORS.SLEEP, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_raw', format: fmt.sleep, transform: transformSleep },
@@ -676,17 +608,15 @@ function setCalendar() {
 }
 
 // A day with no row, a null value, or (for a derived series) a null
-// underlying raw value is ABSENT: whitespace, so no line is drawn through it.
-// The API carries 7-day averages forward over days with no entry, which
-// would otherwise draw a line across the gap. An `interpolate` series
-// (DRC) instead skips absent days, so its curve runs on to the next day.
+// underlying raw value is ABSENT: whitespace, so no line (or bar) is drawn
+// there. The API carries 7-day averages forward over days with no entry,
+// which would otherwise draw a line across the gap.
 function setCardData(card) {
-    const dateIndex = new Map(dates.map((d, i) => [d, i]));
     for (const item of card.items) {
         const rows = data[datasetFor(item.key)].data;
         const byDate = new Map(rows.map(r => [r.date, r]));
-        const plotted = v => (item.transform ? item.transform(v) : v);
-        // Hours readouts follow what's plotted (work is ×2); mood/sleep
+        const plotted = (v, r) => (item.plot ? item.plot(r) : item.transform ? item.transform(v) : v);
+        // Hours readouts follow what's plotted (work is ×2); mood/sleep/DRC
         // readouts show the raw value, not the axis-shaping transform
         const shown = /^(hobby|work)/.test(item.key) ? plotted : v => v;
         item.lookup.clear();
@@ -696,7 +626,7 @@ function setCardData(card) {
             continue;
         }
         if (item.key.startsWith('alc')) item.range = [0, rangeMax(rows.flatMap(r => [r.alc_7day_sum, r.alc_15day_avg]), 10, 10)];
-        if (item.key === 'drc_triggers') item.range = [0, rangeMax(rows.map(r => r.drc_triggers), 5, 10)];
+        if (item.key.startsWith('drc')) item.range = [0, rangeMax(rows.map(r => r.drc_triggers), 5, 10)];
 
         const points = [], curve = [];
         dates.forEach((date, index) => {
@@ -704,24 +634,16 @@ function setCardData(card) {
             const v = r ? r[item.key] : null;
             const absent = v === null || v === undefined || (item.requires && r[item.requires] === null);
             if (absent) {
-                if (!item.interpolate) { points.push({ time: date }); curve.push(null); }
+                points.push({ time: date });
+                curve.push(null);
                 return;
             }
-            item.lookup.set(date, item.format(shown(v)));
-            points.push({ time: date, value: plotted(v) });
-            curve.push({ index, value: plotted(v) });
+            item.lookup.set(date, item.format(shown(v, r)));
+            points.push({ time: date, value: plotted(v, r) });
+            curve.push({ index, value: plotted(v, r) });
         });
         item.series.setData(points);
-        item.curve.setPoints(curve);
-    }
-
-    if (card.fill) {
-        const rows = data.drc.data.filter(r => r.drc_triggers !== null && dateIndex.has(r.date));
-        card.fill.setPoints(rows.map(r => {
-            const green = (r.drc_resisted ?? 0), red = (r.drc_indulged ?? 0);
-            const share = green + red > 0 ? green / (green + red) : 0;
-            return { index: dateIndex.get(r.date), top: r.drc_triggers, mid: r.drc_triggers * share };
-        }));
+        if (item.curve) item.curve.setPoints(curve);
     }
 }
 
