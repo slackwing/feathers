@@ -1,7 +1,7 @@
 # PLAN: "Sabbatical '27" squares grid on the status dashboard
 
-Status: drafted 2026-10-26, **not started**. §1 lists the open questions —
-answer them before Phase 3. Delete this file when Phase 4 has shipped.
+Status: drafted 2026-10-26; decisions in §1 answered the same day.
+Delete this file when Phase 4 has shipped.
 
 ## 0. What we're building
 
@@ -32,33 +32,25 @@ AGENTS.md §0 job loop (local server on :5002, push, `./remote-deploy.sh`,
 Telegram ping, full suite). Never print tokens or passwords (read config
 secrets on the VM with a python3 `yaml` one-liner into env vars).
 
-## 1. Open questions (proposed answer in brackets)
+## 1. Decisions (answered by Andrew, 2026-10-26)
 
-1. *(answered)* Health uses the `[exe]` attribute (half steps, stored as
-   `exe` NUMERIC(2,1)), not the `[fit]` time category: squares =
-   floor(exe / 0.5).
-2. **Unlogged `[alc]`:** a day whose `[alc]` is blank — 0 drinks (2 blue
-   squares) or no alcohol squares until it's filled in? [No squares until
-   logged; `[alc] 0` gives 2. Otherwise today shows 2 squares all day and
-   loses them in the evening.]
-3. **Schema wording** "abi, health, blue, yellow": read as abi = yellow,
-   health = blue (matches "6 minutes counts as 1 yellow square" and "every
-   0.5 [exe] is a blue square"), ranked abi above health. [Yes.]
-4. **Dates:** is **2027-01-24** the real height-change date (25 → 43)? When
-   should the card appear and disappear (`SHOW_FROM` / `SHOW_UNTIL`)? Should
-   squares count all history or only from a start date? [Show from now,
-   until a date you give; count all history.]
-5. **Study goals:** the Study chart and "Current Rate of Study" card need a
-   ring maximum and colored zones like Hobbies (zones at 7/14/21 h/week,
-   ring max 21 h). [Ring max 10 h; red < 3, yellow 3–7, green ≥ 7.]
-6. **Summary chart:** add a Study "feels like" line there too? [Yes, blue.]
-7. **`[abi]` minutes vs the `[abi]` attribute:** files also have an `[abi]`
-   *attribute* (e.g. `[abi] 1.0`). The plan uses the `[abi]` category
-   *minutes* (+ `[hxh]` + `[rv]`) per your 10-minute rule. [Minutes.]
-8. **White squares** (staff-engineer) need a hairline outline to show up
-   next to the light-gray empty cells. [Yes, a 1px inset outline.]
-9. **Size:** 43 rows of 10 px cells + 2 px gaps is ~516 px tall. [Keep
-   10/2; the component takes `cellSize`/`gap` if it feels too big.]
+1. **Health** uses the `[exe]` attribute (half steps, stored as `exe`
+   NUMERIC(2,1)), not the `[fit]` time category: squares = floor(exe / 0.5).
+2. **A blank `[alc]` is unknown** — no alcohol squares until it's filled in;
+   `[alc] 0` gives 2.
+3. **Colors:** abi = yellow, health = blue, abi ranked above health.
+4. **Height:** **23** for now. There is no change date yet — Andrew will ask
+   for one (to 43) later, which is a one-line `heightChanges` entry in the
+   plugin. The card shows from now on with no end date yet; squares count
+   all history.
+5. **Study goals:** ring max **7 h/week**; zones red < 2, yellow 2–4,
+   green ≥ 4 (chart shading and card colors alike).
+6. **Summary chart** gets a Study "feels like" line (blue).
+7. **abi** counts the `[abi]` / `[hxh]` / `[rv]` category *minutes*, not the
+   separate `[abi]` attribute (e.g. `[abi] 1.0`).
+8. **White squares** (staff-engineer) get a 1px inset outline so they show
+   next to the light-gray empty cells.
+9. **Size:** 10 px cells, 2 px gaps (the component takes `cellSize`/`gap`).
 
 Decisions already made (no need to answer):
 - Rounding is half-up everywhere (5 minutes → 1 square; 0.5 drink → 1).
@@ -347,7 +339,7 @@ and the 10-minute rule as constants at the top:
 | critical-reading | `[crit]` minutes | round(m / 10) |
 | editing | `[rk]` minutes | round(m / 10) |
 | abi | `[abi]` + `[hxh]` + `[rv]` minutes, summed first | round(sum / 10) |
-| health | `[exe]` and `[alc]` (Q2) | floor(exe / 0.5) + max(0, 2 − round(alc)) |
+| health | `[exe]` and `[alc]` (§1.2) | floor(exe / 0.5) + max(0, 2 − round(alc)); a blank `[alc]` adds nothing |
 
 `round` is half-up. Writing and sxiva days are matched by date string
 (both are local dates).
@@ -375,10 +367,10 @@ and the 10-minute rule as constants at the top:
   `staff` (staff engineer), `crit` (critical reading). `rk` stays in
   `HOBBY_CATEGORIES` (it already is); `abi`, `hxh`, `rv` stay "other".
 - `app.js`: send `study=`; a **Study** chart below Work (Actual + Feels
-  like, zones per Q5) in **blue** — the blue mood used to have; mood moves
-  to **pink**; a Study line on the Summary (Q6).
-- Cards: **Current Rate of Study** (REAL / FEELS LIKE rings) replaces
-  "Current Other".
+  like; zones red < 2, yellow 2–4, green ≥ 4 h/week) in **blue** — the blue mood used to have; mood moves
+  to **pink**; a Study line on the Summary.
+- Cards: **Current Rate of Study** (REAL / FEELS LIKE rings, max 7 h,
+  colored by the same zones) replaces "Current Other".
 - Category lists: four — Hobby, Work (no longer hidden), Study, Other.
 
 ### 5b. Vendor the component
@@ -390,13 +382,14 @@ into `html/status/vendor/` and writes a `TUFT_UPSTREAM` stamp.
 ### 5c. The plugin — `html/status/sabbatical-27.js`
 
 Self-contained; removing it = deleting the file and its `<script>` /
-`<link>` tags. Shows only between `SHOW_FROM` and `SHOW_UNTIL` (Q4).
+`<link>` tags. Shows from now on; a `SHOW_UNTIL` constant (unset for
+now) hides it after the sabbatical.
 Inserts a card at the very top of `main`, titled **Sabbatical '27**,
 mounts the grid, fetches `/status/api/sabbatical` once at load (and on the
 page's 5-minute refresh), `add()`s every count, renders.
 
-Settings: `bulldozeMode: 'proportional'`, `height: 25`,
-`heightChanges: [{from: '2027-01-24', height: 43}]` (Q4), `lookahead: 0.2`,
+Settings: `bulldozeMode: 'proportional'`, `height: 23`,
+`heightChanges: []` (a date → 43 comes later, §1.4), `lookahead: 0.2`,
 `legend: true`, `todayMarker: true`, every type `bulldoze: true`, ranks in
 your order (higher = lower in the stack):
 
