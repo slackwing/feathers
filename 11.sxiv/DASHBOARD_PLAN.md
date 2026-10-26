@@ -1,5 +1,7 @@
 # SXIVA Dashboard Project Plan
 
+> **Historical (superseded 2026-10-26):** the API and database described here now live in hobby-server's `sxiva` project; see `dashboard/README.md`.
+
 ## Executive Summary
 
 **Goal**: Build an online dashboard at `andrewcheong.com/status` that visualizes personal data collected through SXIVA time-tracking files.

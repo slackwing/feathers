@@ -41,50 +41,21 @@ SXIVA is a time-tracking notation language with:
 - **Grammar**: Tree-sitter grammar for parsing `.sxiva` files
 - **Calculator**: Python tool that computes point calculations based on timing, focus, and accumulation
 - **Neovim Plugin**: Syntax highlighting and file type detection
-- **Dashboard**: Flask API + web frontend for visualizing stats (in `dashboard/`)
+- **Dashboard**: the uploader in `tools/sxiva/sync.py`; the API and page live elsewhere (below)
 - **Examples**: Source `.sxiva` files used for testing and documentation
 
-## Dashboard Setup
+## Dashboard
 
-**Location**:
-- Backend API: `dashboard/server/app.py`
-- Frontend: `feathers/foundry/website/html/status/` (deployed to andrewcheong.com/status)
-
-**Starting Docker daemon** (AI assistants cannot use sudo, user must do this):
-```bash
-sudo systemctl start docker
-```
-
-**Starting containers** (AI assistants can run this):
-```bash
-cd dashboard/docker
-docker compose up -d
-```
-
-**Checking Docker status**:
-```bash
-docker ps --filter name=sxiva
-```
-
-**API Routes**: All dashboard endpoints use `/api` prefix to match Apache reverse proxy configuration
-
-### Testing Dashboard API
-
-**ALWAYS run tests after making changes to dashboard code:**
-
-```bash
-# Test local API (requires Docker running)
-pytest dashboard/server/tests/test_api.py -v
-
-# Test production API (note: base URL is /status, not /status/api)
-TEST_API_URL=https://andrewcheong.com/status pytest dashboard/server/tests/test_api.py -v
-```
-
-**Important notes about tests**:
-- Tests are designed to be stable and work regardless of when they're run
-- They test data integrity, mathematical consistency, and API behavior - not specific historical values
-- If tests fail, investigate whether the API is broken or if tests need updating
-- After fixing API issues, always verify tests pass for both local and production
+- **Page**: `feathers/foundry/website/html/status/` → andrewcheong.com/status
+- **API + database**: hobby-server's `sxiva` project (`~/src/hobby-server`,
+  `internal/sxiva/`, Cloud SQL database `sxiva`), public at
+  `andrewcheong.com/status/api/*`. Its tests: `go test ./internal/sxiva/`
+  there. (Until 2026-10-26 this was a Flask + TimescaleDB stack in
+  `dashboard/`; it lives on in git history.)
+- **Uploader**: `tools/sxiva/sync.py` (run by `sxiva` before opening a
+  file, and by `sxiva upload`). It POSTs each file modified since the
+  server's last sync. The bearer token comes from `$SXIVA_API_TOKEN` or
+  `~/.sxiva/token` — a secret, never commit it.
 
 ## Examples Structure
 
