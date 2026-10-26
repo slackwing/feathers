@@ -22,18 +22,32 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from tools.sxiva.parser_extractor import SxivaDataExtractor
 
 
-# Configuration
-API_BASE_URL = os.getenv('SXIVA_API_URL', 'https://andrewcheong.com/status')
-API_TOKEN = os.getenv('SXIVA_API_TOKEN', '70e76d8aa02a319a510b8c239e1e7cbe86dbc3c35fec7bf270564757af0c6a90')
+# Configuration. The API is hobby-server's `sxiva` project; the base URL is
+# the API root (endpoints /sync/daily and /status/last-sync under it).
+API_BASE_URL = os.getenv('SXIVA_API_URL', 'https://andrewcheong.com/status/api')
+# The upload token is a secret: never commit it. It lives in hobby-server's
+# config (projects[sxiva].sync_token) and, on this machine, in TOKEN_FILE.
+TOKEN_FILE = Path.home() / '.sxiva/token'
 DATA_DIR = Path.home() / 'src/minutes/data'
+
+
+def load_api_token() -> Optional[str]:
+    """The upload token: $SXIVA_API_TOKEN, else the contents of ~/.sxiva/token."""
+    token = os.getenv('SXIVA_API_TOKEN')
+    if not token:
+        try:
+            token = TOKEN_FILE.read_text().strip()
+        except OSError:
+            return None
+    return token or None
 
 
 class SxivaSyncClient:
     """Client for syncing .sxiva files to the dashboard API"""
 
-    def __init__(self, api_url: str = API_BASE_URL, api_token: str = API_TOKEN):
+    def __init__(self, api_url: str = API_BASE_URL, api_token: Optional[str] = None):
         self.api_url = api_url.rstrip('/')
-        self.api_token = api_token
+        self.api_token = api_token if api_token is not None else load_api_token()
         self.extractor = SxivaDataExtractor()
 
     def get_last_sync_timestamp(self) -> tuple[bool, Optional[datetime]]:
@@ -49,7 +63,7 @@ class SxivaSyncClient:
 
         try:
             response = requests.get(
-                f'{self.api_url}/api/status/last-sync',
+                f'{self.api_url}/status/last-sync',
                 headers={'Authorization': f'Bearer {self.api_token}'},
                 timeout=5
             )
@@ -90,7 +104,7 @@ class SxivaSyncClient:
 
         try:
             response = requests.post(
-                f'{self.api_url}/api/sync/daily',
+                f'{self.api_url}/sync/daily',
                 headers={
                     'Authorization': f'Bearer {self.api_token}',
                     'Content-Type': 'application/json'
@@ -209,6 +223,10 @@ def sync_now(data_dir: Optional[Path] = None, verbose: bool = True, api_url: Opt
             api_url = os.getenv('SXIVA_API_URL', API_BASE_URL)
 
         client = SxivaSyncClient(api_url=api_url)
+        if not client.api_token:
+            if verbose:
+                print(f"Sync skipped: no API token (set SXIVA_API_TOKEN or write it to {TOKEN_FILE})", file=sys.stderr)
+            return True
 
         # Get last sync timestamp from server
         reachable, last_sync_timestamp = client.get_last_sync_timestamp()

@@ -245,7 +245,7 @@ def recalculate_all_files():
 @click.option('-l', '--list', 'list_files', is_flag=True, help='List last 10 YYYYMMDD sxiva files in reverse chronological order')
 @click.option('-o', '--open', 'open_nth', metavar='N', type=int, help='Open the Nth file from the list (1-based index)')
 @click.option('-a', '--all', 'recalculate_all', is_flag=True, help='Recalculate all .sxiva files in current directory')
-@click.option('--local', 'sync_local', is_flag=True, help='Sync to local database (localhost:5000) instead of remote')
+@click.option('--local', 'sync_local', is_flag=True, help='Sync to a local hobby-server (127.0.0.1:5002) instead of remote')
 @click.pass_context
 def cli(ctx, date, yesterday, tomorrow, preserve, list_files, open_nth, recalculate_all, sync_local):
     """SXIVA CLI tools for parsing and calculating points.
@@ -510,7 +510,7 @@ def open_today(date_str=None, yesterday=False, preserve=None, sync_local=False, 
 
     # Sync to dashboard (unless SXIVA_NO_SYNC is set)
     if not os.environ.get('SXIVA_NO_SYNC'):
-        api_url = 'http://localhost:5000' if sync_local else None
+        api_url = 'http://127.0.0.1:5002/api/sxiva' if sync_local else None
         sync_now(data_path, api_url=api_url)
 
     # Open with editor
@@ -960,11 +960,11 @@ def repeat_entry(file_path):
 
 
 @cli.command()
-@click.option('--local', 'sync_local', is_flag=True, help='Sync to local database (localhost:5000) instead of remote')
+@click.option('--local', 'sync_local', is_flag=True, help='Sync to a local hobby-server (127.0.0.1:5002) instead of remote')
 def upload(sync_local):
     """Sync all .sxiva files modified since the last sync to the dashboard."""
     data_path = _get_data_path()
-    api_url = 'http://localhost:5000' if sync_local else None
+    api_url = 'http://127.0.0.1:5002/api/sxiva' if sync_local else None
     sync_now(data_path, api_url=api_url)
 
 
