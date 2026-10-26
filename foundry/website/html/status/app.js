@@ -33,8 +33,10 @@ const COLORS = {
     WORK_LIGHT: 'rgba(239, 68, 68, 0.3)',
     ALCOHOL: '#ca8a04',
     ALCOHOL_LIGHT: 'rgba(202, 138, 4, 0.35)',
-    MOOD: '#3b82f6',
-    MOOD_LIGHT: 'rgba(59, 130, 246, 0.35)',
+    STUDY: '#3b82f6',
+    STUDY_LIGHT: 'rgba(59, 130, 246, 0.3)',
+    MOOD: '#ec4899',
+    MOOD_LIGHT: 'rgba(236, 72, 153, 0.35)',
     SLEEP: '#8b5cf6',
     SLEEP_LIGHT: 'rgba(139, 92, 246, 0.35)',
     DRC: '#374151',
@@ -47,10 +49,11 @@ const COLORS = {
     CROSSHAIR_LABEL: '#374151'
 };
 
-// Fixed y-ranges (minutes for hobby/work), shared by the summary and the individual charts
+// Fixed y-ranges (minutes for hobby/work/study), shared by the summary and the individual charts
 const SCALES = {
     hobby: [0, 28 * 60],
     work: [7 * 60, 35 * 60],
+    study: [0, 10 * 60],
     mood: [-2, 2],
     sleep: [0, 100]
 };
@@ -68,6 +71,12 @@ const WORK_ZONES = [
     [21, 28, COLORS.ZONE_YELLOW],
     [28, 100, COLORS.ZONE_RED]
 ];
+const STUDY_ZONES = [
+    [0, 2, COLORS.ZONE_RED],
+    [2, 4, COLORS.ZONE_YELLOW],
+    [4, 100, COLORS.ZONE_GREEN]
+];
+const STUDY_RING_MAX = 7; // hours/week that fill the study ring
 
 // ---------------------------------------------------------------------------
 // Value transforms (same as /status/)
@@ -148,6 +157,7 @@ async function fetchJSON(path, params) {
 function fetchCategoryData() {
     return fetchJSON('category-rolling-sum', {
         hobby: HOBBY_CATEGORIES.join(','),
+        study: STUDY_CATEGORIES.join(','),
         work: WORK_CATEGORIES.join(','),
         days: ROLLING_WINDOW_DAYS,
         limit: FETCH_LIMIT,
@@ -514,12 +524,19 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
     //    it), so a chart whose data stops early (sleep) would otherwise clamp
     //    the linked range for everyone;
     // 2. the linked crosshair (setCrosshairPosition) needs the pane's default
-    //    scale to have a value in view, which sleep alone can't guarantee.
-    // Added last so it never owns the axis formatter; excluded from autoscale.
+    //    scale to have a value in view, which sleep alone can't guarantee;
+    // 3. it reports the right scale's fixed range, so the axis keeps its
+    //    labels when the chart's own data is out of view (sleep stopped
+    //    2026-08-20: without this its axis read "40" on every line).
+    // Added last so it never owns the axis formatter.
+    const rightItem = items.find((item) => item.series && item.scaleId === 'right');
     const spine = chart.addSeries(LWC.LineSeries, {
         color: 'rgba(0, 0, 0, 0)', lineWidth: 1, priceScaleId: 'right',
         priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
-        autoscaleInfoProvider: () => null
+        autoscaleInfoProvider: () => (rightItem ? {
+            priceRange: { minValue: rightItem.range[0], maxValue: rightItem.range[1] },
+            margins: { above: 0, below: 0 }
+        } : null)
     });
     spine.attachPrimitive(new BorderPrimitive());
 
@@ -538,6 +555,7 @@ function buildCharts() {
         // Hobbies + work share one hidden hours axis, as on /status/ (work is ×2)
         { name: 'Hobbies', color: COLORS.HOBBY, scaleId: 'right', range: SCALES.hobby, axisFormat: fmt.none, key: 'hobby_weighted', format: fmt.hours },
         { name: 'Work', color: COLORS.WORK, scaleId: 'right', range: SCALES.hobby, axisFormat: fmt.none, key: 'work_weighted', format: fmt.hours, transform: v => v * 2 },
+        { name: 'Study', color: COLORS.STUDY, scaleId: 'right', range: SCALES.hobby, axisFormat: fmt.none, key: 'study_weighted', format: fmt.hours },
         { name: 'Alcohol', color: COLORS.ALCOHOL, scaleId: 'alcohol', range: [0, 10], axisFormat: fmt.none, key: 'alc_7day_sum', format: fmt.alcohol },
         { name: 'Mood', color: COLORS.MOOD, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', requires: 'dep_raw', format: fmt.mood, transform: transformMood },
         { name: 'Sleep', color: COLORS.SLEEP, scaleId: 'sleep', range: SCALES.sleep, axisFormat: fmt.none, key: 'sleep_7day_avg', requires: 'sleep_raw', format: fmt.sleep, transform: transformSleep }
@@ -552,6 +570,11 @@ function buildCharts() {
         { name: 'Actual', color: COLORS.WORK, scaleId: 'right', range: SCALES.work, axisFormat: fmt.hoursAxis, key: 'work_raw', format: fmt.hours, transform: v => v * 2 },
         { name: 'Feels like', color: COLORS.WORK_LIGHT, scaleId: 'right', range: SCALES.work, axisFormat: fmt.hoursAxis, key: 'work_weighted', format: fmt.hours, transform: v => v * 2, light: true }
     ], { zones: WORK_ZONES });
+
+    buildCard('studyChart', 'studyLegend', [
+        { name: 'Actual', color: COLORS.STUDY, scaleId: 'right', range: SCALES.study, axisFormat: fmt.hoursAxis, key: 'study_raw', format: fmt.hours },
+        { name: 'Feels like', color: COLORS.STUDY_LIGHT, scaleId: 'right', range: SCALES.study, axisFormat: fmt.hoursAxis, key: 'study_weighted', format: fmt.hours, light: true }
+    ], { zones: STUDY_ZONES });
 
     const alcohol = buildCard('alcoholChart', 'alcoholLegend', [
         { name: 'Alcohol', color: COLORS.ALCOHOL, scaleId: 'right', range: [0, 10], axisFormat: fmt.alcoholAxis, key: 'alc_7day_sum', format: fmt.alcohol },
@@ -816,7 +839,13 @@ function getWorkColor(hours) {
     return COLORS.RED;
 }
 
-function setStat(kind, side, hours, color, opacity) {
+function getStudyColor(hours) {
+    if (hours < 2) return COLORS.RED;
+    if (hours < 4) return COLORS.YELLOW;
+    return COLORS.GREEN;
+}
+
+function setStat(kind, side, hours, color, opacity, ringMax = 21) {
     const value = document.getElementById(`${kind}Value${side}`);
     const label = document.getElementById(`${kind}Label${side}`);
     const ring = document.getElementById(`${kind}Ring${side}`);
@@ -825,7 +854,7 @@ function setStat(kind, side, hours, color, opacity) {
     value.style.opacity = opacity;
     label.style.color = color;
     label.style.opacity = opacity;
-    ring.style.setProperty('--p', Math.min(hours / 21, 1) * 100);
+    ring.style.setProperty('--p', Math.min(hours / ringMax, 1) * 100);
     ring.style.setProperty('--c', color);
     ring.style.opacity = opacity;
 }
@@ -843,7 +872,10 @@ function updateStats(data) {
     setStat('work', 'Left', workRaw, getWorkColor(workRaw), 1);
     setStat('work', 'Right', workWeighted, getWorkColor(workWeighted), 0.4);
 
-    document.getElementById('latestOther').textContent = Math.round(latest.other_raw / 60);
+    const studyRaw = Math.round(latest.study_raw / 60);
+    const studyWeighted = Math.round(latest.study_weighted / 60);
+    setStat('study', 'Left', studyRaw, getStudyColor(studyRaw), 1, STUDY_RING_MAX);
+    setStat('study', 'Right', studyWeighted, getStudyColor(studyWeighted), 0.4, STUDY_RING_MAX);
 }
 
 // ---------------------------------------------------------------------------
@@ -887,24 +919,22 @@ function attachTagTooltip(tag, cat) {
 }
 
 function updateCategories(data) {
-    const hobbyContainer = document.getElementById('hobbyCategories');
-    const otherContainer = document.getElementById('otherCategories');
-    hobbyContainer.innerHTML = '';
-    otherContainer.innerHTML = '';
-
-    for (const cat of data.hobby_categories) {
-        const tag = document.createElement('span');
-        tag.className = 'category-tag matched';
-        tag.textContent = cat;
-        attachTagTooltip(tag, cat);
-        hobbyContainer.appendChild(tag);
-    }
-    for (const cat of data.other_categories) {
-        const tag = document.createElement('span');
-        tag.className = 'category-tag';
-        tag.textContent = cat;
-        attachTagTooltip(tag, cat);
-        otherContainer.appendChild(tag);
+    const lists = [
+        ['hobbyCategories', data.hobby_categories, true],
+        ['workCategories', data.work_categories, true],
+        ['studyCategories', data.study_categories, true],
+        ['otherCategories', data.other_categories, false]
+    ];
+    for (const [id, cats, matched] of lists) {
+        const container = document.getElementById(id);
+        container.innerHTML = '';
+        for (const cat of cats || []) {
+            const tag = document.createElement('span');
+            tag.className = 'category-tag' + (matched ? ' matched' : '');
+            tag.textContent = cat;
+            attachTagTooltip(tag, cat);
+            container.appendChild(tag);
+        }
     }
 }
 

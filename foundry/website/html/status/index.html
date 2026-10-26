@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Status Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="vendor/grid-of-squares.css">
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
@@ -52,8 +53,23 @@
                     <p class="stat-label">hours per week</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Current Other</h3>
-                    <p class="stat-value" id="latestOther">--</p>
+                    <h3>Current Rate of Study</h3>
+                    <div class="stat-with-pie">
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="studyLabelLeft">REAL</p>
+                            <div class="stat-section-content">
+                                <span class="ring" id="studyRingLeft"></span>
+                                <p class="stat-value" id="studyValueLeft">--</p>
+                            </div>
+                        </div>
+                        <div class="stat-section">
+                            <p class="stat-section-label" id="studyLabelRight">FEELS LIKE</p>
+                            <div class="stat-section-content">
+                                <span class="ring" id="studyRingRight"></span>
+                                <p class="stat-value" id="studyValueRight">--</p>
+                            </div>
+                        </div>
+                    </div>
                     <p class="stat-label">hours per week</p>
                 </div>
             </section>
@@ -92,10 +108,26 @@
                 <div class="chart" id="workChart"></div>
             </section>
 
+            <section class="chart-card">
+                <header>
+                    <h2>Study</h2>
+                    <div class="legend" id="studyLegend"></div>
+                </header>
+                <div class="chart" id="studyChart"></div>
+            </section>
+
             <section class="categories-section">
                 <div class="categories-list">
                     <h3>Hobby Categories</h3>
                     <div id="hobbyCategories" class="category-tags"></div>
+                </div>
+                <div class="categories-list">
+                    <h3>Work Categories</h3>
+                    <div id="workCategories" class="category-tags"></div>
+                </div>
+                <div class="categories-list">
+                    <h3>Study Categories</h3>
+                    <div id="studyCategories" class="category-tags"></div>
                 </div>
                 <div class="categories-list">
                     <h3>Other Categories</h3>
@@ -135,5 +167,7 @@
 
     <script src="js/config.js"></script>
     <script src="app.js"></script>
+    <script src="vendor/grid-of-squares.js"></script>
+    <script src="sabbatical-27.js"></script>
 </body>
 </html>

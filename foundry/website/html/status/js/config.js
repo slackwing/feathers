@@ -1,11 +1,16 @@
 // Category lists + chip tooltips for /status/.
-// Any sxiva code missing from HOBBY_CATEGORIES/WORK_CATEGORIES counts as "Other".
+// Any sxiva code missing from HOBBY/WORK/STUDY_CATEGORIES counts as "Other".
 const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'su', 'art', 'cbc'];
 const WORK_CATEGORIES = ['sp'];
+const STUDY_CATEGORIES = ['nflx', 'crco', 'staff', 'crit'];
 
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
 const TAG_INFO = {
     abi: 'things for abi, e.g. halloween decoration',
+    crco: 'crucial conversations',
+    crit: 'critical reading',
+    nflx: 'netflix',
+    staff: 'staff engineer',
     act: 'activism: learning how best to help',
     art: 'painting, etc.',
     drc: 'dopamine resistance counter',

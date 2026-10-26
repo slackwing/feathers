@@ -37,13 +37,48 @@ const drcLegend = await page.$eval('#drcLegend', el => el.textContent.trim());
 ok('drc legend: ' + drcLegend);
 if (!/DRC\d/.test(drcLegend)) fail('drc legend has no value');
 
+// Study: chart, card, category lists
+const studyLegend = await page.$eval('#studyLegend', el => el.textContent.trim());
+ok('study legend: ' + studyLegend);
+if (!/Actual\d/.test(studyLegend)) fail('study legend has no value');
+const studyCard = await page.$eval('#studyValueLeft', el => el.textContent.trim());
+if (!/^\d+$/.test(studyCard)) fail('study card has no value: ' + studyCard); else ok('study card: ' + studyCard + 'h');
+const lists = await page.$$eval('.categories-list h3', hs => hs.map(h => h.textContent.trim()));
+if (lists.join('|') !== 'Hobby Categories|Work Categories|Study Categories|Other Categories') fail('category lists: ' + lists.join('|')); else ok('four category lists');
+if (await page.$('#latestOther')) fail('the Current Other card is still there'); else ok('Current Other card replaced by study');
+
+// Sabbatical '27 card: first in main, a full grid with today marked
+await page.waitForFunction(() => document.querySelector('.sabbatical-card .gos-cell.is-lit'), null, { timeout: 15000 }).catch(() => fail('sabbatical grid never filled'));
+const sab = await page.evaluate(() => {
+  const card = document.querySelector('main > section');
+  const grid = document.querySelector('.sabbatical-grid');
+  const cols = grid.querySelectorAll('.gos-col');
+  return {
+    first: card.classList.contains('sabbatical-card'),
+    title: card.querySelector('h2').textContent,
+    cols: cols.length,
+    fits: Math.max(10, Math.floor((grid.clientWidth + 2) / 12)),
+    today: grid.querySelectorAll('.gos-col.is-today').length,
+    marker: !!grid.querySelector('.gos-today'),
+    legend: [...grid.querySelectorAll('.gos-key')].map(k => k.textContent),
+    tallest: Math.max(...[...cols].map(c => c.children.length)),
+    bottoms: new Set([...cols].map(c => Math.round(c.getBoundingClientRect().bottom))).size,
+  };
+});
+console.log('sabbatical', JSON.stringify(sab));
+if (!sab.first || sab.title !== "Sabbatical '27") fail('sabbatical card is not first in main'); else ok("Sabbatical '27 card at the top");
+if (sab.cols !== sab.fits) fail(`sabbatical columns ${sab.cols} ≠ fit ${sab.fits}`); else ok(`sabbatical grid fills the width: ${sab.cols} columns`);
+if (sab.today !== 1 || !sab.marker) fail('sabbatical today column/marker missing'); else ok('today marked');
+if (sab.legend.length !== 8) fail('sabbatical legend: ' + sab.legend.join(', ')); else ok('legend: ' + sab.legend.join(', '));
+if (sab.tallest !== 23 || sab.bottoms !== 1) fail(`columns: tallest ${sab.tallest}, ${sab.bottoms} baselines`); else ok('23 tall, one shared baseline');
+
 // Full-page screenshot at a tall viewport (charts autosize to width only)
 const h = await page.evaluate(() => document.documentElement.scrollHeight);
 await page.setViewportSize({ width: 1400, height: h });
 await page.waitForTimeout(400);
 await page.screenshot({ path: `${out}/new-desktop-full.png` });
 const sections = await page.$$('main > section');
-const names = ['stats', 'summary', 'hobbies', 'work', 'categories', 'alcohol-mood', 'drc', 'sleep'];
+const names = ['sabbatical', 'stats', 'summary', 'hobbies', 'work', 'study', 'categories', 'alcohol-mood', 'drc', 'sleep'];
 for (let i = 0; i < sections.length; i++) await sections[i].screenshot({ path: `${out}/new-${String(i + 1).padStart(2, '0')}-${names[i]}.png` });
 await page.setViewportSize({ width: 1400, height: 900 });
 

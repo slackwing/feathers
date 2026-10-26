@@ -126,6 +126,11 @@ main {
     min-width: 2.5em;
 }
 
+/* Sabbatical '27 card (sabbatical-27.js) */
+.sabbatical-grid {
+    min-height: 40px;
+}
+
 /* Range control: one row above the charts */
 .range-row {
     display: flex;
