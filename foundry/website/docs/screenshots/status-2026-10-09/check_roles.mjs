@@ -79,7 +79,7 @@ async function asAdmin(page, log) {
   });
 }
 
-// Admin, desktop: 5 columns × 2 rows a page.
+// Admin, desktop: 4 columns × 3 rows a page.
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 2 });
 const calls = [];
 await asAdmin(page, calls);
@@ -108,36 +108,45 @@ const everyPage = async () => {
 
 let ts = await tiles();
 let pg = await pager();
-ok(ts.length === 10 && pg.shown && pg.text === '1/2' && !pg.prev && pg.next, `page 1: 10 tiles (5 × 2), pager 1/2 — got ${ts.length} tiles, ${JSON.stringify(pg)}`);
+const cols = await page.$eval('.nr-grid', (g) => getComputedStyle(g).gridTemplateColumns.split(' ').length);
+ok(ts.length === 12 && cols === 4 && pg.shown && pg.text === '1/2' && !pg.prev && pg.next, `page 1: 12 tiles (4 × 3, whole rows), pager 1/2 — got ${ts.length} tiles in ${cols} columns, ${JSON.stringify(pg)}`);
+ok(await page.$eval('.nr-card h2', (h) => h.textContent) === 'Netflix Roles', 'titled "Netflix Roles"');
+ok(ts[0].title.startsWith('SE5 – Model Development') && ts[0].cls.includes('is-favorite'), `starred first — got ${ts[0].title}`);
 const by = (t) => ts.find((r) => r.title.startsWith(t));
 ok(by('SE5 - iOS') && by('SE5 - iOS').cls.includes('is-new') && by('SE5 - iOS').age === 'today' && by('SE5 - iOS').marks.join() === 'N,in' && by('SE5 - iOS').pay === '$388–558K' && by('SE5 - iOS').where === '', 'iOS: today (its latest posting), highlighted, both source marks, salary, plain US left out');
 ok(by('SE6 - Compute Runtime') && by('SE6 - Compute Runtime').age === '1d' && by('SE6 - Compute Runtime').cls.includes('is-new'), '(L6) → SE6; yesterday highlighted');
-ok(by('SE5 - TV Product UI') && by('SE5 - TV Product UI').cls.includes('is-gone') && by('SE5 - TV Product UI').age === 'gone 2d', 'gone 2 days ago: red, "gone 2d"');
 ok(by('SE5 - Ads Agent') && by('SE5 - Ads Agent').where === 'New York, NY' && by('SE5 - Ads Agent').marks.join() === 'in' && by('SE5 - Ads Agent').pay === '', 'LinkedIn-only New York role: location, "in" mark, no salary');
 await page.screenshot({ path: `${out}/roles-default.png`, clip: await (await page.$('.nr-card')).boundingBox() });
 
 await page.click('.nr-next');
 ts = await tiles();
 pg = await pager();
-ok(ts.length === 8 && pg.text === '2/2' && pg.prev && !pg.next, `page 2: the other 8, pager 2/2 — got ${ts.length}, ${JSON.stringify(pg)}`);
+ok(ts.length === 6 && pg.text === '2/2' && pg.prev && !pg.next, `page 2: the other 6, pager 2/2 — got ${ts.length}, ${JSON.stringify(pg)}`);
 ok(by('Staff SE6 / TLM') && by('Staff SE6 / TLM').pay === '$600K–1.07M', 'staff role: "$600K–1.07M"');
-ok(by('SE5 – Model Development') && by('SE5 – Model Development').cls.includes('is-favorite'), 'favorite marked');
+const last = ts[ts.length - 1];
+ok(last.title.startsWith('SE5 - TV Product UI') && last.cls.includes('is-gone') && last.age === 'gone 2d', `gone (red, "gone 2d") last — got ${last.title} ${last.age}`);
 await page.screenshot({ path: `${out}/roles-page2.png`, clip: await (await page.$('.nr-card')).boundingBox() });
 await page.click('.nr-prev');
 
 let every = await everyPage();
 ok(!every.some((r) => r.title.startsWith('SE5 - Android') || r.title.startsWith('Security SE5')), 'gone > a week and hidden roles are not in the default view');
-ok(every.map((r) => r.full).join('|') === roles.filter((x) => !x.hidden && (!x.gone_at || x.role_id.startsWith('5'))).map((x) => x.title).join('|'), 'order kept across pages (newest first, from the API)');
-const status = await page.$eval('.nr-status', (s) => ({ cls: s.className, title: s.title, text: s.textContent }));
-ok(status.cls.includes('is-failing') && status.title.includes('Netflix: ok') && status.title.includes('LinkedIn: status 429') && status.text === '5m ago', 'status: last checked 5m ago, failing LinkedIn flagged in the tooltip');
+const want = (list) => [...list.filter((x) => x.favorite), ...list.filter((x) => !x.favorite && !x.gone_at), ...list.filter((x) => !x.favorite && x.gone_at)].map((x) => x.title).join('|');
+ok(every.map((r) => r.full).join('|') === want(roles.filter((x) => !x.hidden && (!x.gone_at || x.role_id.startsWith('5')))), 'across pages: starred, the rest, gone — newest first within each');
+const status = await page.$eval('.nr-status', (s) => ({ cls: s.className, title: s.title, text: s.textContent, inTitle: !!s.closest('h2') }));
+ok(status.cls.includes('is-failing') && status.inTitle && status.text === '' && status.title === 'LinkedIn: status 429 from https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search', 'no "checked ago" text; a failing source is a red dot by the title (tooltip)');
+ok(!(await page.$eval('.nr-tools', (t) => /ago/.test(t.textContent))), 'nothing "ago" beside the pager');
 
-// All: hidden and past roles too, from page 1.
+// Show hidden: hidden roles (gray) among the rest, by date; long-gone roles red at the end.
 await page.click('.nr-next');
-await page.click('.nr-all');
-ok((await pager()).text === '1/2', 'all: back to page 1');
+await page.click('.nr-show-hidden');
+ok((await pager()).text === '1/2' && (await page.$eval('.nr-show-hidden', (b) => b.textContent === 'show hidden' && b.classList.contains('is-on'))), 'show hidden: on, back to page 1');
 every = await everyPage();
-ok(every.length === roles.length && every.some((r) => r.title.startsWith('Security SE5') && r.cls.includes('is-hidden')) && every.some((r) => r.title.startsWith('SE5 - Android') && r.cls.includes('is-gone')), `all: every role (${every.length}/${roles.length}), hidden ones faded, old gone ones red`);
-await page.click('.nr-all');
+ok(every.length === roles.length && every.map((r) => r.full).join('|') === want(roles), `show hidden: every role (${every.length}/${roles.length}) in starred / rest / gone order`);
+const sec = every.find((r) => r.title.startsWith('Security SE5'));
+ok(sec && sec.cls.includes('is-hidden') && every.indexOf(sec) < every.findIndex((r) => r.cls.includes('is-gone')), 'the hidden role is gray, among the rest at its date (before the gone ones)');
+ok(await page.$$eval('.nr-role.is-hidden', (els) => els.every((e) => getComputedStyle(e).filter.includes('grayscale'))), 'hidden tiles are grayed');
+await page.screenshot({ path: `${out}/roles-show-hidden.png`, clip: await (await page.$('.nr-card')).boundingBox() });
+await page.click('.nr-show-hidden');
 
 // Favorite + hide from a tile (not opening it).
 await page.click('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"]) .nr-star');
@@ -199,7 +208,7 @@ await asAdmin(m, []);
 await m.goto(URL, { waitUntil: 'networkidle' });
 await m.waitForSelector('.nr-role');
 ok(!(await m.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), 'mobile: no horizontal overflow');
-ok((await m.$$('.nr-role')).length === 6 && (await m.$eval('.nr-page', (p) => p.textContent)) === '1/3', 'mobile: 6 tiles a page (2 × 3), 18 roles → 3 pages');
+ok((await m.$$('.nr-role')).length === 12 && (await m.$eval('.nr-page', (p) => p.textContent)) === '1/2' && (await m.$eval('.nr-grid', (g) => getComputedStyle(g).gridTemplateColumns.split(' ').length)) === 2, 'mobile: 12 tiles a page (2 columns), 18 roles → 2 pages');
 await m.screenshot({ path: `${out}/roles-mobile.png`, clip: await (await m.$('.nr-card')).boundingBox() });
 await m.tap('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"])');
 await m.waitForSelector('.nr-dialog[open] .nr-desc');

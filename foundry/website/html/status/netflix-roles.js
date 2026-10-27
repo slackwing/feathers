@@ -1,7 +1,8 @@
 // Netflix roles — an admin-only card under Sabbatical '27: open Software
 // Engineer 5/6 roles from Netflix's job site and LinkedIn, checked hourly
 // by hobby-server (internal/sxiva/jobs*.go). One tile per role, marked with
-// the source(s) posting it, a page of tiles at a time; a tile opens the
+// the source(s) posting it, 12 tiles a page — starred first, then the rest,
+// then the ones gone (red) — newest first within each; a tile opens the
 // role's descriptions and details (both sources', combined). Shown only to
 // a signed-in admin; logged out, the footer offers a sign-in link instead.
 (function () {
@@ -11,6 +12,7 @@
     const API = '/status/api/jobs';
     const GONE_DAYS = 7;      // a role that disappeared stays (in red) this long
     const REFRESH_MS = 5 * 60 * 1000;
+    const PER_PAGE = 12;
 
     const SOURCES = {
         netflix: { mark: 'N', title: 'Netflix' },
@@ -22,7 +24,7 @@
 
     let roles = [];
     let checks = [];
-    let showAll = false;
+    let showHidden = false;
     let page = 0;
     let card = null;
     let dialog = null;
@@ -219,10 +221,23 @@
 
     // ---- tiles --------------------------------------------------------------
 
+    // Hidden roles, and roles gone over a week, only with "show hidden".
     function visible(role) {
-        if (showAll) return true;
-        if (role.hidden) return false;
-        return !role.gone_at || daysSince(role.gone_at) < GONE_DAYS;
+        if (role.hidden && !showHidden) return false;
+        return showHidden || !role.gone_at || daysSince(role.gone_at) < GONE_DAYS;
+    }
+
+    // Starred, then the rest (hidden ones among them), then gone; the API's
+    // newest-first order within each.
+    function group(role) {
+        if (role.favorite) return 0;
+        return role.gone_at ? 2 : 1;
+    }
+
+    function ordered(list) {
+        return list.map((role, i) => [role, i])
+            .sort((a, b) => group(a[0]) - group(b[0]) || a[1] - b[1])
+            .map(([role]) => role);
     }
 
     function stateClasses(e, role) {
@@ -275,30 +290,26 @@
         return tile;
     }
 
-    // Tiles per page: whole rows of the grid as laid out (2 rows; 3 when
-    // narrow), so a page never ends mid-row.
-    function pageSize() {
+    // Columns: as many tiles as fit, rounded down to a divisor of 12, so
+    // every page is whole rows.
+    function layColumns() {
         const grid = card.querySelector('.nr-grid');
-        const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
-        return cols * (cols <= 2 ? 3 : 2);
-    }
-
-    function checkedLabel() {
-        const times = checks.filter((c) => c.checked_at).map((c) => Date.parse(c.checked_at));
-        if (!times.length) return '';
-        const mins = Math.round((Date.now() - Math.max(...times)) / 60000);
-        return mins < 60 ? `${mins}m ago` : `${Math.round(mins / 60)}h ago`;
+        const style = getComputedStyle(grid);
+        const min = parseFloat(style.getPropertyValue('--nr-min')) || 200;
+        const gap = parseFloat(style.columnGap) || 0;
+        const fit = Math.floor((grid.clientWidth + gap) / (min + gap));
+        const cols = [6, 4, 3, 2, 1].find((c) => c <= fit) || 1;
+        grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     }
 
     function render() {
         if (!card) return;
         const grid = card.querySelector('.nr-grid');
-        const shown = roles.filter(visible);
-        const size = pageSize();
-        const pages = Math.max(1, Math.ceil(shown.length / size));
+        const shown = ordered(roles.filter(visible));
+        const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE));
         page = Math.min(page, pages - 1);
         grid.innerHTML = '';
-        for (const role of shown.slice(page * size, (page + 1) * size)) grid.appendChild(tileFor(role));
+        for (const role of shown.slice(page * PER_PAGE, (page + 1) * PER_PAGE)) grid.appendChild(tileFor(role));
         if (!shown.length) grid.appendChild(el('div', 'nr-empty', '—'));
 
         const pager = card.querySelector('.nr-pager');
@@ -307,15 +318,13 @@
         pager.querySelector('.nr-prev').disabled = page === 0;
         pager.querySelector('.nr-next').disabled = page >= pages - 1;
 
+        // a red dot by the title only when a source's last check failed
         const status = card.querySelector('.nr-status');
-        status.textContent = checkedLabel();
         const failed = checks.filter((c) => c.checked_at && !c.ok);
         status.classList.toggle('is-failing', failed.length > 0);
-        status.title = checks.map((c) => `${(SOURCES[c.source] || {}).title || c.source}: ${c.ok ? 'ok' : (c.error || 'not checked yet')}`).join('\n');
+        status.title = failed.map((c) => `${(SOURCES[c.source] || {}).title || c.source}: ${c.error}`).join('\n');
 
-        const all = card.querySelector('.nr-all');
-        all.classList.toggle('is-on', showAll);
-        all.textContent = showAll ? 'all' : `all (${roles.length})`;
+        card.querySelector('.nr-show-hidden').classList.toggle('is-on', showHidden);
     }
 
     function turn(by) {
@@ -432,12 +441,12 @@
 
     function mount() {
         card = el('section', 'chart-card nr-card');
-        card.innerHTML = '<header><h2>Netflix</h2><div class="nr-tools"><span class="nr-status"></span>' +
+        card.innerHTML = '<header><h2>Netflix Roles<span class="nr-status"></span></h2><div class="nr-tools">' +
             '<span class="nr-pager" hidden><button type="button" class="nr-prev" title="Previous">‹</button>' +
             '<span class="nr-page"></span><button type="button" class="nr-next" title="Next">›</button></span>' +
-            '<button type="button" class="nr-all"></button></div></header><div class="nr-grid"></div>';
-        card.querySelector('.nr-all').addEventListener('click', () => {
-            showAll = !showAll;
+            '<button type="button" class="nr-show-hidden">show hidden</button></div></header><div class="nr-grid"></div>';
+        card.querySelector('.nr-show-hidden').addEventListener('click', () => {
+            showHidden = !showHidden;
             page = 0;
             render();
         });
@@ -447,17 +456,7 @@
         if (sabbatical) sabbatical.after(card);
         else document.querySelector('main').prepend(card);
 
-        // Re-page when the grid's column count changes.
-        let cols = 0;
-        new ResizeObserver(() => {
-            const now = pageSize();
-            if (now !== cols) {
-                const first = page * (cols || now);
-                cols = now;
-                page = Math.floor(first / now);
-                render();
-            }
-        }).observe(card.querySelector('.nr-grid'));
+        new ResizeObserver(layColumns).observe(card.querySelector('.nr-grid'));
 
         dialog = el('dialog', 'nr-dialog');
         dialog.innerHTML = '<div class="nr-dialog-head"></div><div class="nr-dialog-body"></div>';
