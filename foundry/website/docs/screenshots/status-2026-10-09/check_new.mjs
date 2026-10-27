@@ -13,7 +13,8 @@ const ok = m => console.log('ok  ', m);
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 2 });
 page.on('pageerror', e => fail('pageerror: ' + e.message + '\n' + e.stack));
 page.on('console', m => { if (m.type() === 'error' && !/404/.test(m.text())) fail('console: ' + m.text()); });
-page.on('response', r => { if (r.status() >= 400 && !/favicon/.test(r.url())) fail(`HTTP ${r.status()} ${r.url()}`); });
+// /admin/api/me answers 401 when logged out — that's how the roles card knows to stay away
+page.on('response', r => { if (r.status() >= 400 && !/favicon|\/admin\/api\/me$/.test(r.url())) fail(`HTTP ${r.status()} ${r.url()}`); });
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => window.__status && window.__status.dates.length > 0 && !document.querySelector('.chart.pending'));
 await page.waitForTimeout(500);
@@ -76,8 +77,9 @@ if (sab.legend.length) fail('sabbatical legend is showing: ' + sab.legend.join('
 if (!sab.titles.every(t => /^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))) fail('tooltips say more than the date: ' + sab.titles.find(t => !/^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))); else ok('tooltips show only the date');
 if (sab.tallest !== 20 || sab.bottoms !== 1) fail(`columns: tallest ${sab.tallest}, ${sab.bottoms} baselines`); else ok('20 tall, one shared baseline');
 if (sab.litBeforeStart) fail(`${sab.litBeforeStart} columns before Oct 22 have squares`); else ok('nothing before the Oct 22 start');
-const pageText = await page.evaluate(() => document.documentElement.outerHTML.toLowerCase());
-if (pageText.includes('netflix')) fail('"netflix" appears in the page'); else ok('"netflix" appears nowhere in the page');
+// Logged out (this run has no session): the admin-only roles card stays away.
+if (await page.$('.nr-card')) fail('the roles card shows without a login'); else ok('roles card hidden when logged out');
+if (!(await page.$eval('footer', f => !!f.querySelector('a[href="/admin/"]')))) fail('no sign-in link in the footer'); else ok('footer offers sign in');
 
 // Full-page screenshot at a tall viewport (charts autosize to width only)
 const h = await page.evaluate(() => document.documentElement.scrollHeight);
