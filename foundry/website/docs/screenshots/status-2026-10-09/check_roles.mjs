@@ -17,7 +17,9 @@ const R = (id, title, posted, extra) => {
 };
 const roles = [
   R('11111111-1111-5111-8111-111111111111', 'Software Engineer 5 - iOS', d(0), { locations: ['Remote, United States', 'United States'], postings: [P('netflix', 'https://explore.jobs.netflix.net/careers/job/790318041034', 'Remote, United States', d(10)), P('linkedin', 'https://www.linkedin.com/jobs/view/4454674339', 'United States', d(0), null, 'Software Engineer 4/5 – iOS')] }),
-  R('22222222-2222-5222-8222-222222222222', 'Software Engineer (L6) - Compute Runtime', d(1), { salary_min: 499000, salary_max: 900000 }),
+  R('99999999-9999-5999-8999-999999999999', 'Software Engineer 5 - Already Seen', d(0), { seen_at: new Date().toISOString() }),
+  // seen before its latest posting (a repost): new again
+  R('22222222-2222-5222-8222-222222222222', 'Software Engineer (L6) - Compute Runtime', d(1), { salary_min: 499000, salary_max: 900000, seen_at: d(2) }),
   R('55555555-5555-5555-8555-555555555555', 'Software Engineer 5 - TV Product UI', d(9), { gone_at: d(2), salary_min: 320000, salary_max: 500000 }),
   R('44444444-4444-5444-8444-444444444444', 'Software Engineering 5 - Ads Agent (Agentic Platform for Enterprise)', d(18), { salary_min: null, salary_max: null, locations: ['New York, NY'], postings: [P('linkedin', 'https://www.linkedin.com/jobs/view/4468375380', 'New York, NY', d(18))] }),
 ];
@@ -114,14 +116,15 @@ ok(await page.$eval('.nr-card h2', (h) => h.textContent) === 'Netflix Roles', 't
 ok(ts[0].title.startsWith('SE5 – Model Development') && ts[0].cls.includes('is-favorite'), `starred first — got ${ts[0].title}`);
 const by = (t) => ts.find((r) => r.title.startsWith(t));
 ok(by('SE5 - iOS') && by('SE5 - iOS').cls.includes('is-new') && by('SE5 - iOS').age === 'today' && by('SE5 - iOS').marks.join() === 'N,in' && by('SE5 - iOS').pay === '$388–558K' && by('SE5 - iOS').where === '', 'iOS: today (its latest posting), highlighted, both source marks, salary, plain US left out');
-ok(by('SE6 - Compute Runtime') && by('SE6 - Compute Runtime').age === '1d' && by('SE6 - Compute Runtime').cls.includes('is-new'), '(L6) → SE6; yesterday highlighted');
+ok(by('SE6 - Compute Runtime') && by('SE6 - Compute Runtime').age === '1d' && by('SE6 - Compute Runtime').cls.includes('is-new'), '(L6) → SE6; yesterday highlighted (seen before this posting)');
+ok(by('SE5 - Already Seen') && by('SE5 - Already Seen').age === 'today' && !by('SE5 - Already Seen').cls.includes('is-new'), 'posted today but already seen: no highlight');
 ok(by('SE5 - Ads Agent') && by('SE5 - Ads Agent').where === 'New York, NY' && by('SE5 - Ads Agent').marks.join() === 'in' && by('SE5 - Ads Agent').pay === '', 'LinkedIn-only New York role: location, "in" mark, no salary');
 await page.screenshot({ path: `${out}/roles-default.png`, clip: await (await page.$('.nr-card')).boundingBox() });
 
 await page.click('.nr-next');
 ts = await tiles();
 pg = await pager();
-ok(ts.length === 6 && pg.text === '2/2' && pg.prev && !pg.next, `page 2: the other 6, pager 2/2 — got ${ts.length}, ${JSON.stringify(pg)}`);
+ok(ts.length === 7 && pg.text === '2/2' && pg.prev && !pg.next, `page 2: the other 7, pager 2/2 — got ${ts.length}, ${JSON.stringify(pg)}`);
 ok(by('Staff SE6 / TLM') && by('Staff SE6 / TLM').pay === '$600K–1.07M', 'staff role: "$600K–1.07M"');
 const last = ts[ts.length - 1];
 ok(last.title.startsWith('SE5 - TV Product UI') && last.cls.includes('is-gone') && last.age === 'gone 2d', `gone (red, "gone 2d") last — got ${last.title} ${last.age}`);
@@ -155,9 +158,11 @@ await page.click('.nr-role:has-text("SE5 - Ads Agent") .nr-hide');
 await page.waitForTimeout(200);
 const patches = calls.filter((c) => c.method === 'PATCH');
 ok(patches.length === 2 && patches[0].url.endsWith(`/status/api/jobs/roles/${roles[0].role_id}`) && patches[0].body.favorite === true && patches[1].body.hidden === true, 'star and × send PATCH {favorite} / {hidden} for the role');
+ok(patches[0].body.seen === true && !('seen' in patches[1].body), `starring a new role also marks it seen; a not-new one sends no seen — ${JSON.stringify(patches.map((x) => x.body))}`);
 ok(!(await page.$eval('.nr-dialog', (dlg) => dlg.open)), 'star and × do not open the role');
 ts = await tiles();
 ok(by('SE5 - iOS').cls.includes('is-favorite') && !by('SE5 - Ads Agent'), 'the favorite shows, the hidden role leaves the default view');
+ok(!by('SE5 - iOS').cls.includes('is-new'), 'starred: no longer highlighted');
 
 // The dialog: the role in full.
 await page.click('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"])');
@@ -194,8 +199,13 @@ await page.mouse.click(10, 10); // the backdrop
 ok(!(await page.$eval('.nr-dialog', (dl) => dl.open)), 'a backdrop click closes the dialog');
 
 // A role with nothing read yet: details empty, still opens and closes.
+// Opening it (new) marks it seen.
+const before = calls.filter((c) => c.method === 'PATCH').length;
 await page.click('.nr-role:has(.nr-title[title="Software Engineer (L6) - Compute Runtime"])');
 await page.waitForSelector('.nr-dialog[open] .nr-empty');
+const opened = calls.filter((c) => c.method === 'PATCH').slice(before);
+ok(opened.length === 1 && JSON.stringify(opened[0].body) === '{"seen":true}' && opened[0].url.endsWith(roles.find((x) => x.title.includes('Compute Runtime')).role_id), `opening a new role sends PATCH {seen: true} — ${JSON.stringify(opened.map((x) => x.body))}`);
+ok(!(await page.$eval('.nr-role:has(.nr-title[title="Software Engineer (L6) - Compute Runtime"])', (t) => t.classList.contains('is-new'))), 'opened: its tile is no longer highlighted');
 await page.click('.nr-dialog .nr-text-btn');
 await page.waitForTimeout(150);
 ok(calls.filter((c) => c.method === 'PATCH').pop().body.hidden === true && (await page.$eval('.nr-dialog .nr-text-btn', (b) => b.textContent)) === 'Unhide', 'Hide in the dialog hides the role; the button turns to Unhide');
@@ -208,7 +218,7 @@ await asAdmin(m, []);
 await m.goto(URL, { waitUntil: 'networkidle' });
 await m.waitForSelector('.nr-role');
 ok(!(await m.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), 'mobile: no horizontal overflow');
-ok((await m.$$('.nr-role')).length === 12 && (await m.$eval('.nr-page', (p) => p.textContent)) === '1/2' && (await m.$eval('.nr-grid', (g) => getComputedStyle(g).gridTemplateColumns.split(' ').length)) === 2, 'mobile: 12 tiles a page (2 columns), 18 roles → 2 pages');
+ok((await m.$$('.nr-role')).length === 12 && (await m.$eval('.nr-page', (p) => p.textContent)) === '1/2' && (await m.$eval('.nr-grid', (g) => getComputedStyle(g).gridTemplateColumns.split(' ').length)) === 2, 'mobile: 12 tiles a page (2 columns), 19 roles → 2 pages');
 await m.screenshot({ path: `${out}/roles-mobile.png`, clip: await (await m.$('.nr-card')).boundingBox() });
 await m.tap('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"])');
 await m.waitForSelector('.nr-dialog[open] .nr-desc');

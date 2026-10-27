@@ -204,7 +204,11 @@
         return full;
     }
 
+    // Star / hide / open: acting on a new role also marks it seen, which
+    // ends its highlight.
     async function mark(role, change) {
+        if (isNew(role)) change = { ...change, seen: true };
+        if (!Object.keys(change).length) return;
         const r = await fetch(`${API}/roles/${role.role_id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -214,7 +218,9 @@
             console.error('jobs: mark failed', r.status);
             return;
         }
-        Object.assign(role, change);
+        const { seen, ...marks } = change;
+        Object.assign(role, marks);
+        if (seen) role.seen_at = new Date().toISOString();
         render();
         if (openRole === role) renderDialogHead(role);
     }
@@ -240,10 +246,17 @@
             .map(([role]) => role);
     }
 
-    function stateClasses(e, role) {
+    // New: posted today or yesterday, and not acted on since (a repost —
+    // a posting dated after seen_at — makes it new again).
+    function isNew(role) {
         const days = daysSince(role.posted_at);
+        if (role.gone_at || days === null || days > 1) return false;
+        return !role.seen_at || Date.parse(role.seen_at) < dayMs(role.posted_at);
+    }
+
+    function stateClasses(e, role) {
         e.classList.toggle('is-gone', !!role.gone_at);
-        e.classList.toggle('is-new', !role.gone_at && days !== null && days <= 1);
+        e.classList.toggle('is-new', isNew(role));
         e.classList.toggle('is-hidden', role.hidden);
         e.classList.toggle('is-favorite', role.favorite);
     }
@@ -412,6 +425,7 @@
 
     async function openDialog(role) {
         openRole = role;
+        mark(role, {}); // seen, if it was new
         renderDialogHead(role);
         const body = dialog.querySelector('.nr-dialog-body');
         body.innerHTML = '';
