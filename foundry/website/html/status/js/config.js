@@ -9,7 +9,6 @@ const TAG_INFO = {
     abi: 'things for abi, e.g. halloween decoration',
     crco: 'crucial conversations',
     crit: 'critical reading',
-    nflx: 'netflix',
     staff: 'staff engineer',
     act: 'activism: learning how best to help',
     art: 'painting, etc.',

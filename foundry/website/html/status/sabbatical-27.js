@@ -1,8 +1,9 @@
 // Sabbatical '27 — a temporary card at the top of the status page: one
-// column of squares per day, showing where the day's effort went.
-// Plan: foundry/website/docs/SABBATICAL_27_PLAN.md. Squares are counted by
-// hobby-server (GET /status/api/sabbatical); the grid is tuft's
+// column of squares per day. Squares are counted by hobby-server
+// (GET /status/api/sabbatical, keyed by color); the grid is tuft's
 // grid-of-squares (vendor/, re-vendor with scripts/vendor-tuft.sh).
+// What the colors mean is deliberately not on the page: no legend, and
+// tooltips show only the date.
 //
 // To remove after the sabbatical: delete this file and, in index.html, its
 // <script> plus the vendor/grid-of-squares <link> and <script>.
@@ -13,23 +14,27 @@
     const SHOW_UNTIL = null;
 
     const SETTINGS = {
-        // Higher rank sits lower in a day's column.
+        // Squares before the sabbatical don't count.
+        start: '2026-10-22',
+        // Higher rank sits lower in a day's column; max caps what a day
+        // earns, before bulldozing.
         schema: [
-            { type: 'writing', color: 'green', rank: 7, bulldoze: true },
-            { type: 'netflix', color: 'red', rank: 6, bulldoze: true },
-            { type: 'crucial-conversations', color: 'orange', rank: 5, bulldoze: true, label: 'crucial conversations' },
-            { type: 'staff-engineer', color: 'white', rank: 4, bulldoze: true, label: 'staff engineer' },
-            { type: 'abi', color: 'yellow', rank: 3, bulldoze: true },
-            { type: 'health', color: 'blue', rank: 2, bulldoze: true },
-            { type: 'editing', color: 'brown', rank: 1, bulldoze: true },
-            { type: 'critical-reading', color: 'purple', rank: 0, bulldoze: true, label: 'critical reading' }
+            { type: 'green', color: 'green', rank: 7, bulldoze: true, max: 6 },
+            { type: 'red', color: 'red', rank: 6, bulldoze: true },
+            { type: 'orange', color: 'orange', rank: 5, bulldoze: true },
+            { type: 'white', color: 'white', rank: 4, bulldoze: true },
+            { type: 'yellow', color: 'yellow', rank: 3, bulldoze: true, max: 3 },
+            { type: 'blue', color: 'blue', rank: 2, bulldoze: true },
+            { type: 'brown', color: 'brown', rank: 1, bulldoze: true },
+            { type: 'purple', color: 'purple', rank: 0, bulldoze: true }
         ],
-        height: 23,
+        height: 20,
         // e.g. { from: '2027-01-24', height: 43 } once the date is known
         heightChanges: [],
         bulldozeMode: 'proportional',
         lookahead: 0.2,
-        legend: true,
+        legend: false,
+        tooltip: 'date',
         todayMarker: true
     };
 

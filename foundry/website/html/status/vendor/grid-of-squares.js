@@ -48,9 +48,11 @@
     gap: 2,
     minColumns: 10,
     today: null,
+    start: null,
     emptyColor: 'empty',
     todayMarker: true,
     legend: false,
+    tooltip: 'counts',
   });
 
   const NORMALIZED = typeof Symbol === 'function' ? Symbol('gos-normalized') : '__gosNormalized';
@@ -152,6 +154,10 @@
     if (typeof s.gap !== 'number' || !(s.gap >= 0)) fail(`gap must be ≥ 0, got ${s.gap}`);
     if (!isPositiveInt(s.minColumns)) fail(`minColumns must be a positive integer, got ${s.minColumns}`);
     if (s.today !== null) dateToMs(s.today);
+    if (s.start !== null) dateToMs(s.start);
+    if (s.tooltip !== 'counts' && s.tooltip !== 'date' && s.tooltip !== 'none') {
+      fail(`tooltip must be 'counts', 'date' or 'none', got ${JSON.stringify(s.tooltip)}`);
+    }
     s.emptyColor = resolveColor(s.emptyColor);
 
     const byType = Object.create(null);
@@ -160,12 +166,15 @@
       if (byType[t.type]) fail(`duplicate type ${JSON.stringify(t.type)}`);
       const rank = t.rank === undefined ? 0 : t.rank;
       if (typeof rank !== 'number' || !Number.isFinite(rank)) fail(`schema ${t.type}: rank must be a number`);
+      const max = t.max === undefined || t.max === null ? null : t.max;
+      if (max !== null && !isPositiveInt(max)) fail(`schema ${t.type}: max must be a positive integer, got ${t.max}`);
       const color = resolveColor(t.color);
       const entry = {
         type: t.type,
         color,
         rank,
         bulldoze: t.bulldoze === true,
+        max,
         label: t.label === undefined ? t.type : String(t.label),
         light: isLight(color),
       };
@@ -271,17 +280,26 @@
     const windowStart = addDays(today, -todayIndex);
     const windowEnd = addDays(today, future);
 
-    // Every day's own squares, in add order.
+    // Every day's own squares, in add order. Squares before `start` don't
+    // exist; a type's squares past its daily `max` don't either (the cap is
+    // on what a day earns, before any bulldozing).
     const own = new Map();
+    const perDayType = new Map();
     let first = windowStart;
     (entries || []).forEach((e, i) => {
       dateToMs(e.date);
       if (!s.byType[e.type]) fail(`unknown type ${JSON.stringify(e.type)}`);
       if (!Number.isInteger(e.count) || e.count < 0) fail(`count must be a non-negative integer, got ${e.count}`);
-      if (e.count === 0) return;
+      if (s.start && e.date < s.start) return;
+      const key = e.date + '|' + e.type;
+      const already = perDayType.get(key) || 0;
+      const max = s.byType[e.type].max;
+      const count = max === null ? e.count : Math.min(e.count, Math.max(0, max - already));
+      if (count === 0) return;
+      perDayType.set(key, already + count);
       if (!own.has(e.date)) own.set(e.date, []);
       const seq = e.seq === undefined ? i : e.seq;
-      for (let k = 0; k < e.count; k++) own.get(e.date).push({ type: e.type, seq, sub: k, carried: false });
+      for (let k = 0; k < count; k++) own.get(e.date).push({ type: e.type, seq, sub: k, carried: false });
       if (e.date < first) first = e.date;
     });
 
@@ -373,7 +391,8 @@
     out.push(`<div class="gos-grid" style="height:${px(gridHeight)}">`);
     for (const col of vm.cols) {
       const cls = 'gos-col' + (col.isToday ? ' is-today' : '') + (col.isFuture ? ' is-future' : '');
-      out.push(`<div class="${cls}" data-date="${col.date}" title="${escapeHTML(columnTitle(col, s))}">`);
+      const title = s.tooltip === 'counts' ? columnTitle(col, s) : s.tooltip === 'date' ? shortDate(col.date) : null;
+      out.push(`<div class="${cls}" data-date="${col.date}"${title === null ? '' : ` title="${escapeHTML(title)}"`}>`);
       for (let row = 0; row < col.height; row++) {
         const cell = col.cells[row];
         if (!cell) {

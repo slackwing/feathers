@@ -63,14 +63,21 @@ const sab = await page.evaluate(() => {
     legend: [...grid.querySelectorAll('.gos-key')].map(k => k.textContent),
     tallest: Math.max(...[...cols].map(c => c.children.length)),
     bottoms: new Set([...cols].map(c => Math.round(c.getBoundingClientRect().bottom))).size,
+    titles: [...cols].map(c => c.getAttribute('title')),
+    litBeforeStart: [...cols].filter(c => c.dataset.date < '2026-10-22' && c.querySelector('.is-lit')).length,
+    tallestLit: Math.max(...[...cols].map(c => c.querySelectorAll('.is-lit').length)),
   };
 });
 console.log('sabbatical', JSON.stringify(sab));
 if (!sab.first || sab.title !== "Sabbatical '27") fail('sabbatical card is not first in main'); else ok("Sabbatical '27 card at the top");
 if (sab.cols !== sab.fits) fail(`sabbatical columns ${sab.cols} ≠ fit ${sab.fits}`); else ok(`sabbatical grid fills the width: ${sab.cols} columns`);
 if (sab.today !== 1 || !sab.marker) fail('sabbatical today column/marker missing'); else ok('today marked');
-if (sab.legend.length !== 8) fail('sabbatical legend: ' + sab.legend.join(', ')); else ok('legend: ' + sab.legend.join(', '));
-if (sab.tallest !== 23 || sab.bottoms !== 1) fail(`columns: tallest ${sab.tallest}, ${sab.bottoms} baselines`); else ok('23 tall, one shared baseline');
+if (sab.legend.length) fail('sabbatical legend is showing: ' + sab.legend.join(', ')); else ok('no legend (the colors stay private)');
+if (!sab.titles.every(t => /^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))) fail('tooltips say more than the date: ' + sab.titles.find(t => !/^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))); else ok('tooltips show only the date');
+if (sab.tallest !== 20 || sab.bottoms !== 1) fail(`columns: tallest ${sab.tallest}, ${sab.bottoms} baselines`); else ok('20 tall, one shared baseline');
+if (sab.litBeforeStart) fail(`${sab.litBeforeStart} columns before Oct 22 have squares`); else ok('nothing before the Oct 22 start');
+const pageText = await page.evaluate(() => document.documentElement.outerHTML.toLowerCase());
+if (pageText.includes('netflix')) fail('"netflix" appears in the page'); else ok('"netflix" appears nowhere in the page');
 
 // Full-page screenshot at a tall viewport (charts autosize to width only)
 const h = await page.evaluate(() => document.documentElement.scrollHeight);
