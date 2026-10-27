@@ -1,8 +1,9 @@
 // Netflix roles — an admin-only card under Sabbatical '27: open Software
-// Engineer 5/6 roles from the Netflix careers site and LinkedIn, checked
-// hourly by hobby-server (internal/sxiva/jobs*.go). One card per role,
-// marked with the source(s) posting it. Shown only to a signed-in admin;
-// logged out, the footer offers a sign-in link instead.
+// Engineer 5/6 roles from Netflix's job site and LinkedIn, checked hourly
+// by hobby-server (internal/sxiva/jobs*.go). One tile per role, marked with
+// the source(s) posting it, a page of tiles at a time; a tile opens the
+// role's descriptions and details (both sources', combined). Shown only to
+// a signed-in admin; logged out, the footer offers a sign-in link instead.
 (function () {
     'use strict';
 
@@ -12,14 +13,21 @@
     const REFRESH_MS = 5 * 60 * 1000;
 
     const SOURCES = {
-        careers: { mark: 'N', title: 'Netflix careers' },
+        netflix: { mark: 'N', title: 'Netflix' },
         linkedin: { mark: 'in', title: 'LinkedIn' }
     };
+
+    // Detail labels that name the same thing on both sources.
+    const SAME_LABEL = { locations: 'Location', teams: 'Team' };
 
     let roles = [];
     let checks = [];
     let showAll = false;
+    let page = 0;
     let card = null;
+    let dialog = null;
+    let openRole = null;      // the role the dialog shows
+    const details = new Map(); // role_id → the role in full (descriptions, details)
 
     // ---- helpers ----------------------------------------------------------
 
@@ -30,17 +38,30 @@
         return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
     }
 
+    function dayMs(iso) {
+        return Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+    }
+
     // Whole days from a posting's (UTC) date to the viewer's today.
     function daysSince(iso) {
         if (!iso) return null;
-        const day = Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
-        return Math.round((localTodayMs() - day) / DAY);
+        return Math.round((localTodayMs() - dayMs(iso)) / DAY);
     }
 
     function ageLabel(days) {
         if (days === null) return '';
         if (days <= 0) return 'today';
         return `${days}d`;
+    }
+
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // "Oct 16", or "Jan 9, 2025" outside this year.
+    function dateLabel(iso) {
+        if (!iso) return '';
+        const d = new Date(dayMs(iso));
+        const label = `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+        return d.getUTCFullYear() === new Date().getFullYear() ? label : `${label}, ${d.getUTCFullYear()}`;
     }
 
     // "Software Engineer 5 - iOS" → "SE5 - iOS"; "Senior Software Engineer (L5)" → "Senior SE5".
@@ -78,6 +99,77 @@
         return e;
     }
 
+    function button(cls, text, title, onClick) {
+        const b = el('button', cls, text);
+        b.type = 'button';
+        if (title) b.title = title;
+        b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onClick();
+        });
+        return b;
+    }
+
+    function sourceMark(p, withDate) {
+        const src = SOURCES[p.source] || { mark: '?', title: p.source };
+        const a = el('a', `nr-mark nr-${p.source}${p.gone_at ? ' is-gone' : ''}`);
+        a.append(el('b', '', src.mark));
+        if (withDate) a.append(el('span', 'nr-mark-date', dateLabel(p.posted_at)));
+        a.href = p.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.title = `${src.title}${p.posted_at ? ' · ' + p.posted_at.slice(0, 10) : ''}${p.gone_at ? ' · gone' : ''}`;
+        a.addEventListener('click', (e) => e.stopPropagation());
+        return a;
+    }
+
+    // A source's description HTML, rebuilt from a small allowlist: text,
+    // structure and plain links survive; nothing else (no attributes, no
+    // scripts, no styles) is ever inserted.
+    const KEEP = new Set(['P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'B', 'STRONG', 'I', 'EM', 'U', 'A']);
+    const DROP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH',
+        'HEAD', 'TITLE', 'BUTTON', 'FORM', 'INPUT', 'SELECT', 'TEXTAREA', 'IMG', 'VIDEO', 'AUDIO']);
+
+    function sanitize(html) {
+        const src = new DOMParser().parseFromString(html, 'text/html').body;
+        const out = document.createDocumentFragment();
+        (function copy(from, to) {
+            for (const n of from.childNodes) {
+                if (n.nodeType === Node.TEXT_NODE) {
+                    to.appendChild(document.createTextNode(n.textContent));
+                    continue;
+                }
+                if (n.nodeType !== Node.ELEMENT_NODE || DROP.has(n.tagName)) continue;
+                let e = null;
+                if (/^H[1-6]$/.test(n.tagName)) e = document.createElement('h4');
+                else if (KEEP.has(n.tagName)) e = document.createElement(n.tagName.toLowerCase());
+                if (!e) {
+                    copy(n, to); // unknown wrapper: keep its contents
+                    continue;
+                }
+                if (n.tagName === 'A') {
+                    const href = n.getAttribute('href') || '';
+                    if (/^https?:\/\//i.test(href)) {
+                        e.href = href;
+                        e.target = '_blank';
+                        e.rel = 'noopener noreferrer';
+                    }
+                }
+                copy(n, e);
+                to.appendChild(e);
+            }
+        })(src, out);
+        // spacer paragraphs (<p>&nbsp;</p>) — the margins already space them
+        for (const e of out.querySelectorAll('p, div')) {
+            if (!e.textContent.trim() && !e.querySelector('br, a')) e.remove();
+        }
+        return out;
+    }
+
+    function plain(html) {
+        return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+    }
+
     // ---- data ---------------------------------------------------------------
 
     async function isAdmin() {
@@ -101,6 +193,15 @@
         render();
     }
 
+    async function loadDetail(role) {
+        if (details.has(role.role_id)) return details.get(role.role_id);
+        const r = await fetch(`${API}/roles/${role.role_id}`);
+        if (!r.ok) throw new Error(`jobs: role ${r.status}`);
+        const full = await r.json();
+        details.set(role.role_id, full);
+        return full;
+    }
+
     async function mark(role, change) {
         const r = await fetch(`${API}/roles/${role.role_id}`, {
             method: 'PATCH',
@@ -113,9 +214,10 @@
         }
         Object.assign(role, change);
         render();
+        if (openRole === role) renderDialogHead(role);
     }
 
-    // ---- view ---------------------------------------------------------------
+    // ---- tiles --------------------------------------------------------------
 
     function visible(role) {
         if (showAll) return true;
@@ -123,50 +225,62 @@
         return !role.gone_at || daysSince(role.gone_at) < GONE_DAYS;
     }
 
-    function rowFor(role) {
+    function stateClasses(e, role) {
         const days = daysSince(role.posted_at);
-        const row = el('li', 'nr-role');
-        if (role.gone_at) row.classList.add('is-gone');
-        if (!role.gone_at && days !== null && days <= 1) row.classList.add('is-new');
-        if (role.hidden) row.classList.add('is-hidden');
-        if (role.favorite) row.classList.add('is-favorite');
+        e.classList.toggle('is-gone', !!role.gone_at);
+        e.classList.toggle('is-new', !role.gone_at && days !== null && days <= 1);
+        e.classList.toggle('is-hidden', role.hidden);
+        e.classList.toggle('is-favorite', role.favorite);
+    }
 
-        const star = el('button', 'nr-star', role.favorite ? '★' : '☆');
-        star.type = 'button';
-        star.title = role.favorite ? 'Unfavorite' : 'Favorite';
-        star.addEventListener('click', () => mark(role, { favorite: !role.favorite }));
+    function ageText(role) {
+        return role.gone_at ? `gone ${ageLabel(daysSince(role.gone_at))}` : ageLabel(daysSince(role.posted_at));
+    }
 
-        const live = role.postings.filter((p) => !p.gone_at);
-        const main = (live.find((p) => p.source === 'careers') || live[0] || role.postings[0]) || {};
-        const name = el('a', 'nr-title', shortTitle(role.title));
-        name.href = main.url || '#';
-        name.target = '_blank';
-        name.rel = 'noopener';
+    function tileFor(role) {
+        const tile = el('article', 'nr-role');
+        tile.tabIndex = 0;
+        tile.setAttribute('role', 'button');
+        stateClasses(tile, role);
+
+        const top = el('div', 'nr-top');
+        const marks = el('span', 'nr-marks');
+        for (const p of role.postings) marks.appendChild(sourceMark(p, false));
+        top.append(
+            marks,
+            button('nr-star', role.favorite ? '★' : '☆', role.favorite ? 'Unfavorite' : 'Favorite', () => mark(role, { favorite: !role.favorite })),
+            button('nr-hide', role.hidden ? '↺' : '×', role.hidden ? 'Unhide' : 'Hide', () => mark(role, { hidden: !role.hidden }))
+        );
+
+        const name = el('h3', 'nr-title', shortTitle(role.title));
         name.title = role.title;
 
-        const marks = el('span', 'nr-marks');
-        for (const p of role.postings) {
-            const src = SOURCES[p.source] || { mark: '?', title: p.source };
-            const m = el('a', `nr-mark nr-${p.source}${p.gone_at ? ' is-gone' : ''}`, src.mark);
-            m.href = p.url;
-            m.target = '_blank';
-            m.rel = 'noopener';
-            m.title = src.title + (p.gone_at ? ' (gone)' : '');
-            marks.appendChild(m);
-        }
-
-        const age = el('span', 'nr-age', role.gone_at ? `gone ${ageLabel(daysSince(role.gone_at))}` : ageLabel(days));
+        const foot = el('div', 'nr-foot');
+        const age = el('span', 'nr-age', ageText(role));
         age.title = role.posted_at ? `posted ${role.posted_at.slice(0, 10)}` : '';
-        const pay = el('span', 'nr-pay', salary(role));
-        const where = el('span', 'nr-where', place(role));
+        foot.append(age, el('span', 'nr-pay', salary(role)));
 
-        const hide = el('button', 'nr-hide', role.hidden ? '↺' : '×');
-        hide.type = 'button';
-        hide.title = role.hidden ? 'Unhide' : 'Hide';
-        hide.addEventListener('click', () => mark(role, { hidden: !role.hidden }));
+        tile.append(top, name);
+        const where = place(role);
+        if (where) tile.append(el('div', 'nr-where', where));
+        tile.append(foot);
 
-        row.append(star, name, marks, age, pay, where, hide);
-        return row;
+        tile.addEventListener('click', () => openDialog(role));
+        tile.addEventListener('keydown', (e) => {
+            if (e.target === tile && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                openDialog(role);
+            }
+        });
+        return tile;
+    }
+
+    // Tiles per page: whole rows of the grid as laid out (2 rows; 3 when
+    // narrow), so a page never ends mid-row.
+    function pageSize() {
+        const grid = card.querySelector('.nr-grid');
+        const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
+        return cols * (cols <= 2 ? 3 : 2);
     }
 
     function checkedLabel() {
@@ -178,11 +292,20 @@
 
     function render() {
         if (!card) return;
-        const list = card.querySelector('.nr-list');
-        list.innerHTML = '';
+        const grid = card.querySelector('.nr-grid');
         const shown = roles.filter(visible);
-        for (const role of shown) list.appendChild(rowFor(role));
-        if (!shown.length) list.appendChild(el('li', 'nr-empty', '—'));
+        const size = pageSize();
+        const pages = Math.max(1, Math.ceil(shown.length / size));
+        page = Math.min(page, pages - 1);
+        grid.innerHTML = '';
+        for (const role of shown.slice(page * size, (page + 1) * size)) grid.appendChild(tileFor(role));
+        if (!shown.length) grid.appendChild(el('div', 'nr-empty', '—'));
+
+        const pager = card.querySelector('.nr-pager');
+        pager.hidden = pages < 2;
+        pager.querySelector('.nr-page').textContent = `${page + 1}/${pages}`;
+        pager.querySelector('.nr-prev').disabled = page === 0;
+        pager.querySelector('.nr-next').disabled = page >= pages - 1;
 
         const status = card.querySelector('.nr-status');
         status.textContent = checkedLabel();
@@ -195,16 +318,156 @@
         all.textContent = showAll ? 'all' : `all (${roles.length})`;
     }
 
+    function turn(by) {
+        page = Math.max(0, page + by);
+        render();
+    }
+
+    // ---- dialog -------------------------------------------------------------
+
+    function renderDialogHead(role) {
+        const head = dialog.querySelector('.nr-dialog-head');
+        stateClasses(dialog, role);
+        head.innerHTML = '';
+        const title = el('h3', 'nr-dialog-title', role.title);
+        const tools = el('div', 'nr-dialog-tools');
+        tools.append(
+            button('nr-star', role.favorite ? '★' : '☆', role.favorite ? 'Unfavorite' : 'Favorite', () => mark(role, { favorite: !role.favorite })),
+            button('nr-text-btn', role.hidden ? 'Unhide' : 'Hide', '', () => mark(role, { hidden: !role.hidden })),
+            button('nr-close', '✕', 'Close', closeDialog)
+        );
+        const facts = el('div', 'nr-facts');
+        for (const text of [salary(role), place(role), ageText(role)]) {
+            if (text) facts.append(el('span', '', text));
+        }
+        const postings = el('div', 'nr-postings');
+        for (const p of role.postings) postings.appendChild(sourceMark(p, true));
+        head.append(title, tools, facts, postings);
+    }
+
+    // Details from every posting, one row per label; where sources differ,
+    // each source's value with its mark.
+    function detailRows(full) {
+        const rows = new Map();
+        const add = (label, source, value) => {
+            const key = (SAME_LABEL[label.toLowerCase()] || label);
+            if (!rows.has(key)) rows.set(key, []);
+            const vals = rows.get(key);
+            if (!vals.some((v) => v.source === source && v.value === value)) vals.push({ source, value });
+        };
+        // titles only when a source words the role differently ("4/5")
+        const norm = (t) => t.toLowerCase().replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
+        if (full.postings.some((p) => norm(p.title) !== norm(full.title))) {
+            for (const p of full.postings) add('Title', p.source, p.title);
+        }
+        for (const p of full.postings) {
+            for (const m of p.meta || []) add(m.label, p.source, m.value);
+        }
+        const dl = el('dl', 'nr-details');
+        for (const [label, vals] of rows) {
+            dl.append(el('dt', '', label));
+            const dd = el('dd');
+            const agree = vals.every((v) => v.value === vals[0].value);
+            for (const v of agree ? [vals[0]] : vals) {
+                const line = el('div', 'nr-detail');
+                if (!agree) line.append(el('b', `nr-chip nr-${v.source}`, (SOURCES[v.source] || {}).mark || '?'));
+                line.append(document.createTextNode(v.value));
+                dd.append(line);
+            }
+            dl.append(dd);
+        }
+        return dl;
+    }
+
+    // Descriptions: one when the sources say the same thing, else each.
+    function descriptions(full) {
+        const wrap = el('div', 'nr-descs');
+        const seen = [];
+        for (const p of full.postings) {
+            if (!p.description) continue;
+            const text = plain(p.description);
+            if (seen.includes(text)) continue;
+            seen.push(text);
+            const sec = el('section', 'nr-desc');
+            sec.dataset.source = p.source;
+            sec.append(sanitize(p.description));
+            wrap.append(sec);
+        }
+        if (seen.length > 1) {
+            for (const sec of wrap.children) {
+                sec.prepend(el('h4', 'nr-desc-source', (SOURCES[sec.dataset.source] || {}).title || sec.dataset.source));
+            }
+        }
+        return wrap;
+    }
+
+    async function openDialog(role) {
+        openRole = role;
+        renderDialogHead(role);
+        const body = dialog.querySelector('.nr-dialog-body');
+        body.innerHTML = '';
+        body.append(el('div', 'nr-loading'));
+        body.scrollTop = 0;
+        if (!dialog.open) dialog.showModal();
+        try {
+            const full = await loadDetail(role);
+            if (openRole !== role) return;
+            body.innerHTML = '';
+            body.append(detailRows(full), descriptions(full));
+            if (!body.querySelector('.nr-desc')) body.append(el('p', 'nr-empty', '—'));
+        } catch (e) {
+            console.error(e);
+            if (openRole === role) {
+                body.innerHTML = '';
+                body.append(el('p', 'nr-empty', '—'));
+            }
+        }
+    }
+
+    function closeDialog() {
+        if (dialog.open) dialog.close();
+    }
+
+    // ---- mount ----------------------------------------------------------------
+
     function mount() {
         card = el('section', 'chart-card nr-card');
-        card.innerHTML = '<header><h2>Netflix</h2><div class="nr-tools"><span class="nr-status"></span><button type="button" class="nr-all"></button></div></header><ul class="nr-list"></ul>';
+        card.innerHTML = '<header><h2>Netflix</h2><div class="nr-tools"><span class="nr-status"></span>' +
+            '<span class="nr-pager" hidden><button type="button" class="nr-prev" title="Previous">‹</button>' +
+            '<span class="nr-page"></span><button type="button" class="nr-next" title="Next">›</button></span>' +
+            '<button type="button" class="nr-all"></button></div></header><div class="nr-grid"></div>';
         card.querySelector('.nr-all').addEventListener('click', () => {
             showAll = !showAll;
+            page = 0;
             render();
         });
+        card.querySelector('.nr-prev').addEventListener('click', () => turn(-1));
+        card.querySelector('.nr-next').addEventListener('click', () => turn(1));
         const sabbatical = document.querySelector('.sabbatical-card');
         if (sabbatical) sabbatical.after(card);
         else document.querySelector('main').prepend(card);
+
+        // Re-page when the grid's column count changes.
+        let cols = 0;
+        new ResizeObserver(() => {
+            const now = pageSize();
+            if (now !== cols) {
+                const first = page * (cols || now);
+                cols = now;
+                page = Math.floor(first / now);
+                render();
+            }
+        }).observe(card.querySelector('.nr-grid'));
+
+        dialog = el('dialog', 'nr-dialog');
+        dialog.innerHTML = '<div class="nr-dialog-head"></div><div class="nr-dialog-body"></div>';
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) closeDialog(); // the backdrop
+        });
+        dialog.addEventListener('close', () => {
+            openRole = null;
+        });
+        document.body.append(dialog);
     }
 
     function offerSignIn() {
@@ -230,5 +493,5 @@
     })();
 
     // Test hook
-    window.__netflixRoles = { shortTitle, salary, daysSince, get roles() { return roles; } };
+    window.__netflixRoles = { shortTitle, salary, daysSince, sanitize, get roles() { return roles; } };
 })();
