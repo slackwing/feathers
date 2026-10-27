@@ -146,6 +146,14 @@ ok((await pager()).text === '1/2' && (await page.$eval('.nr-show-hidden', (b) =>
 every = await everyPage();
 ok(every.length === roles.length && every.map((r) => r.full).join('|') === want(roles), `show hidden: every role (${every.length}/${roles.length}) in starred / rest / gone order`);
 const sec = every.find((r) => r.title.startsWith('Security SE5'));
+const hiddenEyes = [];
+for (;;) {
+  hiddenEyes.push(...await page.$$eval('.nr-role.is-hidden .nr-hide', (bs) => bs.map((b) => b.title === 'Unhide' && !!b.querySelector('svg line'))));
+  if (!(await pager()).next) break;
+  await page.click('.nr-next');
+}
+while ((await pager()).prev) await page.click('.nr-prev');
+ok(hiddenEyes.length === 1 && hiddenEyes.every(Boolean), `hidden tiles carry the slashed eye (Unhide) — ${hiddenEyes.length} found`);
 ok(sec && sec.cls.includes('is-hidden') && every.indexOf(sec) < every.findIndex((r) => r.cls.includes('is-gone')), 'the hidden role is gray, among the rest at its date (before the gone ones)');
 ok(await page.$$eval('.nr-role.is-hidden', (els) => els.every((e) => getComputedStyle(e).filter.includes('grayscale'))), 'hidden tiles are grayed');
 await page.screenshot({ path: `${out}/roles-show-hidden.png`, clip: await (await page.$('.nr-card')).boundingBox() });
@@ -154,6 +162,8 @@ await page.click('.nr-show-hidden');
 // Favorite + hide from a tile (not opening it).
 await page.click('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"]) .nr-star');
 await page.hover('.nr-role:has-text("SE5 - Ads Agent")');
+const eyes = await page.$$eval('.nr-role .nr-hide', (bs) => bs.map((b) => ({ text: b.textContent.trim(), title: b.title, open: !!b.querySelector('svg circle'), slashed: !!b.querySelector('svg line') })));
+ok(eyes.length > 0 && eyes.every((e) => e.text === '' && e.title === 'Hide' && e.open && !e.slashed), 'tiles hide with an open-eye icon (no ×)');
 await page.click('.nr-role:has-text("SE5 - Ads Agent") .nr-hide');
 await page.waitForTimeout(200);
 const patches = calls.filter((c) => c.method === 'PATCH');
@@ -206,9 +216,10 @@ await page.waitForSelector('.nr-dialog[open] .nr-empty');
 const opened = calls.filter((c) => c.method === 'PATCH').slice(before);
 ok(opened.length === 1 && JSON.stringify(opened[0].body) === '{"seen":true}' && opened[0].url.endsWith(roles.find((x) => x.title.includes('Compute Runtime')).role_id), `opening a new role sends PATCH {seen: true} — ${JSON.stringify(opened.map((x) => x.body))}`);
 ok(!(await page.$eval('.nr-role:has(.nr-title[title="Software Engineer (L6) - Compute Runtime"])', (t) => t.classList.contains('is-new'))), 'opened: its tile is no longer highlighted');
-await page.click('.nr-dialog .nr-text-btn');
+ok(await page.$eval('.nr-dialog .nr-hide', (b) => b.title === 'Hide' && !!b.querySelector('svg circle') && !b.textContent.trim() && getComputedStyle(b).opacity === '1'), 'the dialog hides with the same eye, always shown');
+await page.click('.nr-dialog .nr-hide');
 await page.waitForTimeout(150);
-ok(calls.filter((c) => c.method === 'PATCH').pop().body.hidden === true && (await page.$eval('.nr-dialog .nr-text-btn', (b) => b.textContent)) === 'Unhide', 'Hide in the dialog hides the role; the button turns to Unhide');
+ok(calls.filter((c) => c.method === 'PATCH').pop().body.hidden === true && (await page.$eval('.nr-dialog .nr-hide', (b) => b.title === 'Unhide' && !!b.querySelector('svg line'))), 'the eye in the dialog hides the role; it turns slashed (Unhide)');
 await page.click('.nr-dialog .nr-close');
 ok(!(await page.$eval('.nr-dialog', (dl) => dl.open)), '✕ closes the dialog');
 

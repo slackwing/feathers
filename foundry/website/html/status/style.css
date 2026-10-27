@@ -154,8 +154,7 @@ main {
 }
 
 .nr-show-hidden,
-.nr-pager button,
-.nr-text-btn {
+.nr-pager button {
     font: inherit;
     font-size: 0.75rem;
     font-weight: 600;
@@ -241,7 +240,20 @@ main {
 
 .nr-star { font-size: 1.05rem; }
 .is-favorite .nr-star { color: #f0c419; }
-.nr-hide { font-size: 1.1rem; opacity: 0; }
+.nr-hide { display: inline-flex; opacity: 0; }
+
+.nr-hide svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.nr-dialog .nr-hide { opacity: 1; }
+.nr-dialog .nr-hide svg { width: 18px; height: 18px; }
 .nr-role:hover .nr-hide,
 .nr-role:focus-within .nr-hide,
 .nr-role.is-hidden .nr-hide { opacity: 1; }
