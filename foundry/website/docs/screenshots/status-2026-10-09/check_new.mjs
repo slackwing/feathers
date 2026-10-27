@@ -12,7 +12,7 @@ const ok = m => console.log('ok  ', m);
 
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 2 });
 page.on('pageerror', e => fail('pageerror: ' + e.message + '\n' + e.stack));
-page.on('console', m => { if (m.type() === 'error' && !/404/.test(m.text())) fail('console: ' + m.text()); });
+page.on('console', m => { if (m.type() === 'error' && !/404|status of 401/.test(m.text())) fail('console: ' + m.text()); }); // 401: logged-out /admin/api/me
 // /admin/api/me answers 401 when logged out — that's how the roles card knows to stay away
 page.on('response', r => { if (r.status() >= 400 && !/favicon|\/admin\/api\/me$/.test(r.url())) fail(`HTTP ${r.status()} ${r.url()}`); });
 await page.goto(URL, { waitUntil: 'networkidle' });

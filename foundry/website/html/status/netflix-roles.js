@@ -83,8 +83,9 @@
     async function isAdmin() {
         try {
             const r = await fetch(ME);
+            const body = await r.text(); // always drain it — an unread 401 keeps the request open
             if (!r.ok) return false;
-            const me = await r.json();
+            const me = JSON.parse(body);
             return (me.roles || []).some((x) => x.website === 'admin' && x.role === 'admin');
         } catch (e) {
             return false;
