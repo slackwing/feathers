@@ -19,7 +19,7 @@
         // Higher rank sits lower in a day's column; max caps what a day
         // earns, before bulldozing.
         schema: [
-            { type: 'green', color: 'green', rank: 7, bulldoze: true, max: 6 },
+            { type: 'green', color: 'green', rank: 7, bulldoze: true, max: 8 },
             { type: 'red', color: 'red', rank: 6, bulldoze: true },
             { type: 'orange', color: 'orange', rank: 5, bulldoze: true },
             { type: 'white', color: 'white', rank: 4, bulldoze: true },
