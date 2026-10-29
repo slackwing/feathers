@@ -3,12 +3,17 @@
 // by hobby-server (internal/sxiva/jobs*.go). One tile per role, marked with
 // the source(s) posting it, 12 tiles a page — starred first, then the rest,
 // then the ones gone (red) — newest first within each; a tile opens the
-// role's descriptions and details (both sources', combined). Shown only to
-// a signed-in admin; logged out, the footer offers a sign-in link instead.
+// role's descriptions and details (both sources', combined). The global
+// admin sees and edits it; anyone with a role on the shared-auth site
+// "status" (tampopo, a viewer) sees it read-only — no star, no eye, and
+// opening a role changes nothing (the server refuses their writes anyway).
+// Logged out, the footer offers a sign-in dialog.
 (function () {
     'use strict';
 
     const ME = '/admin/api/me';
+    const LOGIN = '/admin/api/login';
+    const SITE = 'status';
     const API = '/status/api/jobs';
     const GONE_DAYS = 7;      // a role that disappeared stays (in red) this long
     const REFRESH_MS = 5 * 60 * 1000;
@@ -25,6 +30,7 @@
     let roles = [];
     let checks = [];
     let showHidden = false;
+    let editable = false;   // the global admin; viewers only look
     let page = 0;
     let card = null;
     let dialog = null;
@@ -117,6 +123,14 @@
     const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 
+    // The star: a button for the admin; for a viewer just the mark, when set.
+    function starFor(role) {
+        if (editable) return button('nr-star', role.favorite ? '★' : '☆', role.favorite ? 'Unfavorite' : 'Favorite', () => mark(role, { favorite: !role.favorite }));
+        const star = el('span', 'nr-star is-static', role.favorite ? '★' : '');
+        if (role.favorite) star.title = 'Starred';
+        return star;
+    }
+
     function hideButton(role) {
         const b = button('nr-hide', undefined, role.hidden ? 'Unhide' : 'Hide', () => mark(role, { hidden: !role.hidden }));
         b.innerHTML = role.hidden ? EYE_OFF : EYE;
@@ -186,15 +200,23 @@
 
     // ---- data ---------------------------------------------------------------
 
-    async function isAdmin() {
+    // 'edit' (the global admin), 'view' (a role on the status site), 'none'
+    // (signed in, no access) or 'out' (signed out).
+    function accessOf(me) {
+        const roles = me.roles || [];
+        if (roles.some((x) => x.website === 'admin' && x.role === 'admin')) return 'edit';
+        if (roles.some((x) => x.website === SITE && x.role !== 'anonymous')) return 'view';
+        return 'none';
+    }
+
+    async function access() {
         try {
             const r = await fetch(ME);
             const body = await r.text(); // always drain it — an unread 401 keeps the request open
-            if (!r.ok) return false;
-            const me = JSON.parse(body);
-            return (me.roles || []).some((x) => x.website === 'admin' && x.role === 'admin');
+            if (r.status === 401) return 'out';
+            return r.ok ? accessOf(JSON.parse(body)) : 'none';
         } catch (e) {
-            return false;
+            return 'none';
         }
     }
 
@@ -219,6 +241,7 @@
     // Star / hide / open: acting on a new role also marks it seen, which
     // ends its highlight.
     async function mark(role, change) {
+        if (!editable) return;
         if (isNew(role)) change = { ...change, seen: true };
         if (!Object.keys(change).length) return;
         const r = await fetch(`${API}/roles/${role.role_id}`, {
@@ -286,11 +309,8 @@
         const top = el('div', 'nr-top');
         const marks = el('span', 'nr-marks');
         for (const p of role.postings) marks.appendChild(sourceMark(p, false));
-        top.append(
-            marks,
-            button('nr-star', role.favorite ? '★' : '☆', role.favorite ? 'Unfavorite' : 'Favorite', () => mark(role, { favorite: !role.favorite })),
-            hideButton(role)
-        );
+        top.append(marks, starFor(role));
+        if (editable) top.append(hideButton(role));
 
         const name = el('h3', 'nr-title', shortTitle(role.title));
         name.title = role.title;
@@ -365,11 +385,9 @@
         head.innerHTML = '';
         const title = el('h3', 'nr-dialog-title', role.title);
         const tools = el('div', 'nr-dialog-tools');
-        tools.append(
-            button('nr-star', role.favorite ? '★' : '☆', role.favorite ? 'Unfavorite' : 'Favorite', () => mark(role, { favorite: !role.favorite })),
-            hideButton(role),
-            button('nr-close', '✕', 'Close', closeDialog)
-        );
+        tools.append(starFor(role));
+        if (editable) tools.append(hideButton(role));
+        tools.append(button('nr-close', '✕', 'Close', closeDialog));
         const facts = el('div', 'nr-facts');
         for (const text of [salary(role), place(role), ageText(role)]) {
             if (text) facts.append(el('span', '', text));
@@ -466,7 +484,7 @@
     // ---- mount ----------------------------------------------------------------
 
     function mount() {
-        card = el('section', 'chart-card nr-card');
+        card = el('section', `chart-card nr-card${editable ? '' : ' is-readonly'}`);
         card.innerHTML = '<header><h2>Netflix Roles<span class="nr-status"></span></h2><div class="nr-tools">' +
             '<span class="nr-pager" hidden><button type="button" class="nr-prev" title="Previous">‹</button>' +
             '<span class="nr-page"></span><button type="button" class="nr-next" title="Next">›</button></span>' +
@@ -495,19 +513,70 @@
         document.body.append(dialog);
     }
 
+    // Logged out: "sign in" in the footer opens a small sign-in dialog (the
+    // shared login — one session for every site); /admin/ without script.
     function offerSignIn() {
         const footer = document.querySelector('footer p');
         if (!footer || footer.querySelector('.nr-signin')) return;
+        const wrap = el('span', 'nr-signin-wrap');
         const link = el('a', 'nr-signin', 'sign in');
         link.href = '/admin/';
-        footer.append(' | ', link);
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            signInDialog().showModal();
+        });
+        wrap.append(' | ', link);
+        footer.append(wrap);
     }
 
-    (async function start() {
-        if (!(await isAdmin())) {
-            offerSignIn();
-            return;
-        }
+    function signInDialog() {
+        let d = document.querySelector('.nr-signin-dialog');
+        if (d) return d;
+        d = el('dialog', 'nr-signin-dialog');
+        d.innerHTML = '<form><input name="username" autocomplete="username" placeholder="name or email" required>' +
+            '<input name="password" type="password" autocomplete="current-password" placeholder="password" required>' +
+            '<p class="nr-signin-error" hidden></p><button type="submit">Sign in</button></form>';
+        const form = d.querySelector('form');
+        const error = form.querySelector('.nr-signin-error');
+        const fail = (text) => {
+            error.textContent = text;
+            error.hidden = false;
+        };
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            error.hidden = true;
+            const go = form.querySelector('button');
+            go.disabled = true;
+            try {
+                const r = await fetch(LOGIN, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: form.username.value.trim(), password: form.password.value })
+                });
+                const body = await r.text();
+                if (!r.ok) return fail(r.status === 401 ? 'Wrong name or password' : (body.trim() || `Error ${r.status}`));
+                const level = accessOf(JSON.parse(body));
+                if (level === 'none') return fail('No access');
+                d.close();
+                document.querySelector('.nr-signin-wrap')?.remove();
+                begin(level);
+            } catch (err) {
+                fail('Try again');
+            } finally {
+                go.disabled = false;
+            }
+        });
+        d.addEventListener('click', (e) => {
+            if (e.target === d) d.close(); // the backdrop
+        });
+        document.body.append(d);
+        return d;
+    }
+
+    async function begin(level) {
+        if (level === 'out') return offerSignIn();
+        if (level !== 'edit' && level !== 'view') return;
+        editable = level === 'edit';
         mount();
         try {
             await load();
@@ -515,6 +584,10 @@
             console.error(e);
         }
         setInterval(() => load().catch((e) => console.error(e)), REFRESH_MS);
+    }
+
+    (async function start() {
+        begin(await access());
     })();
 
     // Test hook

@@ -70,6 +70,74 @@ const browser = await chromium.launch({ executablePath: '/usr/sbin/google-chrome
   await page.close();
 }
 
+const TAMPOPO = { username: 'tampopo', roles: [{ website: 'bap', role: 'player' }, { website: 'status', role: 'viewer' }] };
+async function routeJobs(page, log) {
+  await page.route('**/status/api/jobs', (r) => r.fulfill({ json: { roles, checks } }));
+  await page.route('**/status/api/jobs/roles/*', (r) => {
+    const req = r.request();
+    log.push({ url: req.url(), method: req.method() });
+    if (req.method() === 'GET') r.fulfill({ json: req.url().endsWith(roles[0].role_id) ? iosFull : { ...roles[1], postings: roles[1].postings.map((p) => ({ ...p, description: '', meta: [] })) } });
+    else r.fulfill({ status: 403, body: 'Forbidden' });
+  });
+}
+
+// A viewer on the status site (tampopo): the card, read-only.
+{
+  const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+  const log = [];
+  page.on('pageerror', (e) => { console.log('pageerror', e.message); failed++; });
+  await page.route('**/admin/api/me', (r) => r.fulfill({ json: TAMPOPO }));
+  await routeJobs(page, log);
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.nr-role');
+  ok(await page.$('.nr-card.is-readonly') && (await page.$$('.nr-role')).length === 12, 'viewer: the card, read-only, a full page of roles');
+  ok(!(await page.$('button.nr-star')) && !(await page.$('.nr-hide')), 'viewer: no star or eye buttons on the tiles');
+  ok(await page.$eval('.nr-role:has(.nr-title[title^="Software Engineer 5 – Model Development"]) .nr-star', (st) => st.tagName === 'SPAN' && st.textContent === '★'), "viewer: Andrew's star shows, as a mark");
+  ok(!(await page.$('.nr-signin')), 'viewer: signed in — no sign-in link');
+  await page.click('.nr-role:has(.nr-title[title="Software Engineer 5 - iOS"])');
+  await page.waitForSelector('.nr-dialog[open] .nr-desc');
+  ok(!(await page.$('.nr-dialog button.nr-star')) && !(await page.$('.nr-dialog .nr-hide')) && await page.$('.nr-dialog .nr-close'), 'viewer dialog: no star or eye, just close');
+  await page.screenshot({ path: `${out}/roles-viewer-dialog.png` });
+  await page.keyboard.press('Escape');
+  await page.click('.nr-show-hidden');
+  ok((await page.$$('.nr-role')).length === 12 && (await page.$eval('.nr-page', (p) => p.textContent)) === '1/2', 'viewer: show hidden works (a view, not a write)');
+  ok(log.filter((c) => c.method !== 'GET').length === 0 && log.length === 1, `viewer: opening a role only reads it — ${log.map((c) => c.method).join(',')}`);
+  await page.screenshot({ path: `${out}/roles-viewer.png`, clip: await (await page.$('.nr-card')).boundingBox() });
+  await page.close();
+}
+
+// Logged out → the footer's sign-in dialog → in as a viewer, in place.
+{
+  const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+  let me = null;
+  const logins = [];
+  page.on('pageerror', (e) => { console.log('pageerror', e.message); failed++; });
+  await page.route('**/admin/api/me', (r) => (me ? r.fulfill({ json: me }) : r.fulfill({ status: 401, body: 'Unauthorized' })));
+  await page.route('**/admin/api/login', (r) => {
+    const body = r.request().postDataJSON();
+    logins.push(body);
+    if (body.password !== 'right') return r.fulfill({ status: 401, body: 'invalid username or password' });
+    me = TAMPOPO;
+    r.fulfill({ json: me });
+  });
+  await routeJobs(page, []);
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  await page.click('.nr-signin');
+  ok(await page.$eval('.nr-signin-dialog', (d) => d.open), 'sign in: the footer link opens a dialog (stays on the page)');
+  await page.fill('.nr-signin-dialog [name=username]', 'tampopo');
+  await page.fill('.nr-signin-dialog [name=password]', 'wrong');
+  await page.click('.nr-signin-dialog button[type=submit]');
+  await page.waitForSelector('.nr-signin-error:not([hidden])');
+  ok((await page.$eval('.nr-signin-error', (e) => e.textContent)) === 'Wrong name or password' && await page.$eval('.nr-signin-dialog', (d) => d.open) && !(await page.$('.nr-card')), 'wrong password: says so, dialog stays, no card');
+  await page.screenshot({ path: `${out}/signin.png` });
+  await page.fill('.nr-signin-dialog [name=password]', 'right');
+  await page.click('.nr-signin-dialog button[type=submit]');
+  await page.waitForSelector('.nr-role');
+  ok(!(await page.$eval('.nr-signin-dialog', (d) => d.open)) && await page.$('.nr-card.is-readonly') && !(await page.$('.nr-signin')), 'right password: dialog closes, the card appears read-only, the link goes');
+  ok(logins.length === 2 && logins[1].username === 'tampopo', 'login posted the name and password');
+  await page.close();
+}
+
 async function asAdmin(page, log) {
   await page.route('**/admin/api/me', (r) => r.fulfill({ json: { username: 'andrew', roles: [{ website: 'admin', role: 'admin' }] } }));
   await page.route('**/status/api/jobs', (r) => r.fulfill({ json: { roles, checks } }));

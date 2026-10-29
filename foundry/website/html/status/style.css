@@ -327,6 +327,45 @@ main {
 
 .nr-empty { color: var(--ink-3); padding: 0.35rem 0; }
 
+.nr-star.is-static { cursor: default; color: #f0c419; }
+
+/* Sign-in dialog (logged out; the footer's "sign in") */
+.nr-signin-dialog {
+    margin: auto;
+    padding: 1.25rem;
+    width: min(320px, calc(100vw - 2rem));
+    border: 0;
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
+.nr-signin-dialog::backdrop { background: rgba(17, 24, 39, 0.45); }
+.nr-signin-dialog form { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.nr-signin-dialog input {
+    font: inherit;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.nr-signin-dialog button {
+    font: inherit;
+    font-weight: 600;
+    padding: 0.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--ink);
+    color: #fff;
+    cursor: pointer;
+}
+
+.nr-signin-dialog button:disabled { opacity: 0.6; cursor: default; }
+.nr-signin-error { color: #dc2626; font-size: 0.85rem; }
+
 /* Role dialog */
 .nr-dialog {
     margin: auto;
