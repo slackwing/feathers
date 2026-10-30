@@ -4749,9 +4749,9 @@ var HxH = (() => {
     "\nCommences: ",
     { t: "Oct 31, 2026", tag: "b" },
     "\nTime: ",
-    { t: "TBD", tag: "b" },
+    { t: "4pm+", tag: "b" },
     "\n\n",
-    // Andrew, 2026-09-27
+    // Andrew, 2026-09-27 (TBD); 4pm+ 2026-10-30
     "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona."
   ];
   function noticeFor(details = {}) {

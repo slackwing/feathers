@@ -23,7 +23,7 @@ license-only site from the show — rendered as a late-90s OS desktop.
   Registration ("OPENS SOON" stamp + stuck progress bar) — plus desktop
   icons, an About window, and a taskbar. Every logged-in load boots (see Boot below).
   Notice: Site (the address — from the server's hxh_private, never in
-  the bundle or this repo), Commences Oct 31, 2026 (no time), no
+  the bundle or this repo), Commences Oct 31, 2026, Time 4pm+ (TBD until 2026-10-30), no
   "failure to commit" line (Andrew, 2026-09-17). Window title
   "Hunter × Halloween" (the special ×); login dialog likewise.
   The gate is client-side UX only; static HTML remains fetchable.
@@ -45,7 +45,17 @@ license-only site from the show — rendered as a late-90s OS desktop.
   link), `_layout.html` (THE frame: crimson title bar, kicker,
   heading, footer "HUNTER × HALLOWEEN · year" — change it once for every
   email), and body fragments `invite.html`, `account-created.html`,
-  `reset.html` (table-based, inline-styled, Courier). Wording per
+  `reset.html`, plus the broadcast `drinks.html` (2026-10-30: the
+  party's drinks menu — Ponzu's Bee Bar mead spritzes 4–7 PM in a
+  pumpkin panel, the self-service open bar 6 PM+ in a crimson panel,
+  the hosts' note, the site button; no per-user variables but
+  `site_url`; the console only sends invite/reset per user, so a
+  broadcast goes out by hand — Andrew test-sends to himself first).
+  All table-based, inline-styled, Courier. GOTCHA: substitution is
+  text-wide, including HTML comments, so never write a slot as a
+  literal double-brace token in `_layout.html`'s comment (it was, and
+  every body was silently duplicated inside the comment; a body with
+  its own `-->` then rendered twice — fixed 2026-10-30). Wording per
   Andrew (2026-09-18): no avatar / applicant / ID block; invite says
   "choose your own secure password*" with a "VIEW SUMMONS" button and
   a footnote describing the real hashing (HTTPS → Argon2id 19 MiB / 2

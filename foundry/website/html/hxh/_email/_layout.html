@@ -8,8 +8,11 @@
 <!-- The one frame every hxh email shares: a retro "window" in the site
      palette (email-safe: tables + inline styles, Courier since web fonts
      don't survive mail clients). Slots come from templates.json —
-     {{title}} (title bar), {{kicker}}, {{heading}} — and {{body}} is the
-     template's own file. Change the frame here, once.
+     title (title bar), kicker, heading — and body is the template's own
+     file. Change the frame here, once. Never spell a slot as a literal
+     double-brace token in this comment: substitution is text-wide, so it
+     would be filled in here too, and a body containing "-->" would then
+     end the comment early and render twice (2026-10-30).
 
      THEME: these inline colours mirror os/os.css by hand (#0b0a08 ink,
      #e8dcc3 cream, #fff6e0 cream-hi, #c4b48f cream-lo, #c8102e crimson,

@@ -23,7 +23,7 @@ export const NOTICE = [
   ".\n\nSite: ", { key: "site", tag: "b" },   // from the server: the address
 
   "\nCommences: ", { t: "Oct 31, 2026", tag: "b" },
-  "\nTime: ", { t: "TBD", tag: "b" }, "\n\n",   // Andrew, 2026-09-27
+  "\nTime: ", { t: "4pm+", tag: "b" }, "\n\n",   // Andrew, 2026-09-27 (TBD); 4pm+ 2026-10-30
   "Applicants must arrive in the guise of a licensed Hunter, a Spider, a Chimera Ant, or any registered persona.",
 ];
 
