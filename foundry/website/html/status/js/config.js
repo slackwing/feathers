@@ -2,7 +2,7 @@
 // Any sxiva code missing from HOBBY/WORK/STUDY_CATEGORIES counts as "Other".
 const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', 'hg', 'hu', 'math', 'mus', 'phy', 'prg', 'read', 'vip', 'ws', 'qt', 'life', 'cs', 'act', 'rk', 'ky', 'agi', 'wapp', 'fesh', 'wrs', 'wre', 'wrf', 'wri', 'wrj', 'wro', 'wrr', 'wrt', 'drc', 'wdfr', 'ms', 'su', 'art', 'cbc'];
 const WORK_CATEGORIES = ['sp'];
-const STUDY_CATEGORIES = ['nflx', 'crco', 'staff', 'crit'];
+const STUDY_CATEGORIES = ['nflx', 'crco', 'staff', 'crit', 'leet'];
 
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
 const TAG_INFO = {
