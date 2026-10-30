@@ -31,6 +31,14 @@
         height: 20,
         // e.g. { from: '2027-01-24', height: 43 } once the date is known
         heightChanges: [],
+        // Days off: unearned squares up to fill × height show as rainbow
+        // squares on top of the real ones (they never bulldoze).
+        holidays: [
+            { date: '2026-10-31', fill: 1 },
+            { date: '2026-11-01', fill: 0.5 },
+            { date: '2026-11-02', fill: 0.5 },
+            { from: '2026-11-03', to: '2026-11-08', fill: 1 }
+        ],
         bulldozeMode: 'proportional',
         lookahead: 0.2,
         legend: false,

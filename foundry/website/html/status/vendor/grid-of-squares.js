@@ -7,6 +7,11 @@
  * either hidden or, for bulldozing types, shoved into the next day's
  * column — cascading as far as needed, even into the future.
  *
+ * HOLIDAYS forgive a day: up to a share of its height, the squares it
+ * didn't earn show as holiday squares (a rainbow each), on top of the real
+ * ones. They're drawn after the overflow simulation, so they never push
+ * anything out or carry on.
+ *
  * Three layers (tuft lib/ui rules):
  *   - core       normalizeSettings / createModel / layout — pure
  *   - renderer   renderHTML — pure, view model → HTML string
@@ -53,6 +58,7 @@
     todayMarker: true,
     legend: false,
     tooltip: 'counts',
+    holidays: [],
   });
 
   const NORMALIZED = typeof Symbol === 'function' ? Symbol('gos-normalized') : '__gosNormalized';
@@ -159,6 +165,28 @@
       fail(`tooltip must be 'counts', 'date' or 'none', got ${JSON.stringify(s.tooltip)}`);
     }
     s.emptyColor = resolveColor(s.emptyColor);
+
+    // holidays: [{date, fill}] or [{from, to, fill}] (inclusive), fill in
+    // (0, 1], default 1 → s.holidayFill: date → fill.
+    if (!Array.isArray(s.holidays)) fail('holidays must be an array');
+    s.holidayFill = new Map();
+    s.holidays = s.holidays.map((h) => {
+      if (!h || typeof h !== 'object' || (h.date === undefined && h.from === undefined)) {
+        fail('holidays entries are {date, fill} or {from, to, fill}');
+      }
+      const from = h.date !== undefined ? h.date : h.from;
+      const to = h.date !== undefined ? h.date : (h.to === undefined ? h.from : h.to);
+      dateToMs(from);
+      dateToMs(to);
+      if (to < from) fail(`holiday to ${to} is before from ${from}`);
+      const fill = h.fill === undefined ? 1 : h.fill;
+      if (typeof fill !== 'number' || !(fill > 0 && fill <= 1)) fail(`holiday ${from}: fill must be in (0, 1], got ${h.fill}`);
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        if (s.holidayFill.has(d)) fail(`two holidays on ${d}`);
+        s.holidayFill.set(d, fill);
+      }
+      return h.date !== undefined ? { date: from, fill } : { from, to, fill };
+    });
 
     const byType = Object.create(null);
     s.schema = s.schema.map((t, i) => {
@@ -347,13 +375,19 @@
       const stack = shown.get(date) || [];
       const counts = {};
       for (const sq of stack) counts[sq.type] = (counts[sq.type] || 0) + 1;
+      // a holiday tops the column up to its share of the height
+      const fill = s.holidayFill.get(date);
+      const holiday = fill && !(s.start && date < s.start) ? Math.max(0, Math.round(fill * height) - stack.length) : 0;
+      const cells = stack.map((sq) => ({ type: sq.type, color: s.byType[sq.type].color, carried: sq.carried }));
+      for (let k = 0; k < holiday; k++) cells.push({ type: null, color: null, carried: false, holiday: true });
       cols.push({
         date,
         height,
         isToday: date === today,
         isFuture: date > today,
         counts,
-        cells: stack.map((sq) => ({ type: sq.type, color: s.byType[sq.type].color, carried: sq.carried })),
+        holiday,
+        cells,
       });
     }
     return { today, columns, future, todayIndex, windowStart, windowEnd, maxHeight, cols };
@@ -378,6 +412,7 @@
       .sort((a, b) => b.rank - a.rank)
       .filter((t) => col.counts[t.type])
       .map((t) => `${t.label} ${col.counts[t.type]}`);
+    if (col.holiday) parts.push(`holiday ${col.holiday}`);
     return shortDate(col.date) + (parts.length ? ' — ' + parts.join(' · ') : '');
   }
 
@@ -399,6 +434,10 @@
           out.push('<div class="gos-cell"></div>');
           continue;
         }
+        if (cell.holiday) {
+          out.push('<div class="gos-cell is-holiday"></div>');
+          continue;
+        }
         const t = s.byType[cell.type];
         const ccls = 'gos-cell is-lit' + (cell.carried ? ' is-carried' : '') + (t.light ? ' is-light' : '');
         out.push(`<div class="${ccls}" data-type="${escapeHTML(cell.type)}" style="background:${cell.color}"></div>`);
@@ -416,6 +455,7 @@
       for (const t of s.schema.slice().sort((a, b) => b.rank - a.rank)) {
         out.push(`<span class="gos-key"><i class="gos-swatch${t.light ? ' is-light' : ''}" style="background:${t.color}"></i>${escapeHTML(t.label)}</span>`);
       }
+      if (s.holidays.length) out.push('<span class="gos-key"><i class="gos-swatch is-holiday"></i>holiday</span>');
       out.push('</div>');
     }
     out.push('</div>');
