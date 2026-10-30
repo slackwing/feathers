@@ -13,7 +13,7 @@
   .meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; align-items: baseline; color: var(--dim); margin-bottom: .6rem; }
   .meta b { color: var(--text); font-weight: 500; }
   .frame { border: 1px solid var(--line); background: #0b0a08; }
-  .frame iframe { display: block; width: 100%; height: 760px; border: 0; pointer-events: none; }
+  .frame iframe { display: block; width: 100%; height: 760px; border: 0; pointer-events: none; }  /* height follows the email (fit) */
   .actions { display: flex; gap: .6rem; align-items: center; margin-top: .8rem; }
   .hidden { display: none !important; }
 </style>
@@ -34,7 +34,7 @@
       <span>subject <b id="subject"></b></span>
       <span>to <b id="to"></b></span>
     </div>
-    <div class="frame"><iframe id="frame" title="Email preview" sandbox=""></iframe></div>
+    <div class="frame"><iframe id="frame" title="Email preview" sandbox="allow-same-origin"></iframe></div>
     <div class="actions">
       <button id="send" hidden>Send test to me</button>
       <span class="msg" id="msg" style="margin:0"></span>
@@ -101,6 +101,20 @@ async function preview(t) {
   $("send").hidden = who.username !== me.username;
   $("send").disabled = !me.email;
 }
+
+// The frame is inert (no pointer events, so nothing inside scrolls or
+// clicks); it grows to the email's height instead, and the page scrolls.
+// allow-same-origin only lets us read that height — scripts stay off.
+function fit() {
+  const f = $("frame");
+  try {
+    const d = f.contentDocument; if (!d) return;
+    f.style.height = "0px";   // measure the content, not the old viewport
+    f.style.height = Math.max(400, d.documentElement.scrollHeight) + "px";
+  } catch {}
+}
+$("frame").addEventListener("load", () => { fit(); requestAnimationFrame(fit); });
+window.addEventListener("resize", fit);
 
 $("send").addEventListener("click", async () => {
   if (!current) return;
