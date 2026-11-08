@@ -25,8 +25,9 @@ const COLORS = {
     ZONE_YELLOW: 'rgba(202, 138, 4, 0.15)',
     ZONE_GREEN: 'rgba(22, 163, 74, 0.15)',
     ZONE_GREEN_LIGHT: 'rgba(100, 200, 100, 0.08)',
-    ZONE_DATES: 'rgba(99, 102, 241, 0.11)', // HOLIDAY_ZONES (config.js)
-    ZONE_DATES_LABEL: 'rgba(67, 56, 202, 0.75)',
+    ZONE_DATES: 'rgba(34, 197, 94, 0.16)', // HOLIDAY_ZONES (config.js)
+    ZONE_LAG: 'rgba(34, 197, 94, 0.07)',   // …the days whose averages still include one
+    ZONE_DATES_LABEL: 'rgba(21, 128, 61, 0.85)',
 
     // Lines: solid for "Actual", light for "Feels Like" / long averages
     HOBBY: '#10b981',
@@ -238,7 +239,10 @@ class ZonesPrimitive {
 // every chart, placed by calendar index (the spine has a point on every day,
 // so a day's logical index is its distance from the first) — that also
 // places zones past the data's last day. A label, when set, sits in the
-// band's top-left if it fits.
+// band's top-left if it fits. After each zone, its LAG — the days whose
+// trailing averages still include zone days: window − 1 of them, the window
+// being the chart's longest average (7 days; alcohol's 15-day, DRC's
+// 30-day) — gets a lighter shade. Zone days win over another zone's lag.
 
 const DAY_MS = 86400000;
 
@@ -254,8 +258,9 @@ function zoneOn(dateStr) {
 }
 
 class DateZonesPrimitive {
-    constructor(zones) {
+    constructor(zones, window) {
         this._zones = zones;
+        this._window = window;
         this._bands = [];
         const self = this;
         this._views = [{
@@ -294,16 +299,41 @@ class DateZonesPrimitive {
             this._bands = [];
             return;
         }
+        // each day: its zone, or 'lag'; zone days first so they win
+        const kind = new Map();
+        for (const z of this._zones) {
+            for (let i = dayIndex(z.from); i <= dayIndex(z.to); i++) kind.set(i, z);
+        }
+        for (const z of this._zones) {
+            const end = dayIndex(z.to);
+            for (let i = end + 1; i < end + this._window; i++) if (!kind.has(i)) kind.set(i, 'lag');
+        }
+        // runs of consecutive days of one kind → bands
+        const runs = [];
+        for (const i of [...kind.keys()].sort((a, b) => a - b)) {
+            const last = runs[runs.length - 1];
+            if (last && last.kind === kind.get(i) && i === last.to + 1) last.to = i;
+            else runs.push({ kind: kind.get(i), from: i, to: i });
+        }
         // whole days: centre ± half a day's spacing (logicalToCoordinate takes
         // integer indexes only — a fractional one comes back as 0)
         const ts = this._chart.timeScale();
         const at = i => ts.logicalToCoordinate(i);
-        this._bands = this._zones.map(z => {
-            const a = dayIndex(z.from), b = dayIndex(z.to);
-            const xa = at(a), xb = at(b), next = at(b + 1);
-            if (xa === null || xb === null || next === null) return null;
-            const half = (next - xb) / 2;
-            return { x1: xa - half, x2: xb + half, color: z.color || COLORS.ZONE_DATES, label: z.label || '' };
+        const a0 = at(0), a1 = at(1);
+        if (a0 === null || a1 === null) {
+            this._bands = [];
+            return;
+        }
+        const half = (a1 - a0) / 2;
+        this._bands = runs.map(r => {
+            const xa = at(r.from), xb = at(r.to);
+            if (xa === null || xb === null) return null;
+            const lag = r.kind === 'lag';
+            return {
+                x1: xa - half, x2: xb + half,
+                color: lag ? COLORS.ZONE_LAG : (r.kind.color || COLORS.ZONE_DATES),
+                label: lag ? '' : (r.kind.label || '')
+            };
         }).filter(Boolean);
     }
 
@@ -560,7 +590,7 @@ let charts = [];
 let dates = [];        // every calendar day of the loaded history, ascending
 let linking = false;   // re-entrancy guard for range/crosshair sync
 
-function buildCard(id, legendId, items, { zones = null } = {}) {
+function buildCard(id, legendId, items, { zones = null, window = ROLLING_WINDOW_DAYS } = {}) {
     const el = document.getElementById(id);
     const chart = createChart(el);
     const legend = document.getElementById(legendId);
@@ -620,7 +650,7 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
         } : null)
     });
     spine.attachPrimitive(new BorderPrimitive());
-    if (HOLIDAY_ZONES.length) spine.attachPrimitive(new DateZonesPrimitive(HOLIDAY_ZONES));
+    if (HOLIDAY_ZONES.length) spine.attachPrimitive(new DateZonesPrimitive(HOLIDAY_ZONES, window));
 
     const card = {
         el, chart, items, dateEl, spine,
@@ -663,7 +693,7 @@ function buildCharts() {
         { name: '15-day', color: COLORS.ALCOHOL_LIGHT, scaleId: 'right', range: [0, 10], axisFormat: fmt.alcoholAxis, key: 'alc_15day_avg', format: fmt.alcohol, light: true },
         { name: 'Mood', color: COLORS.MOOD, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_raw', format: fmt.mood, transform: transformMood },
         { name: '7-day', color: COLORS.MOOD_LIGHT, scaleId: 'mood', range: SCALES.mood, axisFormat: fmt.none, key: 'dep_7day_avg', requires: 'dep_raw', format: fmt.mood, transform: transformMood, light: true }
-    ]);
+    ], { window: 15 }); // the 15-day line
     // Mood zero, dashed
     alcohol.items[2].series.createPriceLine({
         price: 0, color: '#999', lineWidth: 1, lineStyle: LWC.LineStyle.Dashed, axisLabelVisible: false, title: ''
@@ -682,7 +712,7 @@ function buildCharts() {
         // calendar day (continuous through unlogged days)
         { color: COLORS.GREEN, scaleId: 'ratio', range: [0, 1], axisFormat: fmt.none, key: 'drc_resisted', format: fmt.percent, interpolate: true,
           derive: (rows, days) => rollingMean(days, dailyRatio(rows), 30) }
-    ]);
+    ], { window: 30 }); // the 30-day curve
 
     buildCard('sleepChart', 'sleepLegend', [
         { name: 'Raw', color: COLORS.SLEEP, scaleId: 'right', range: SCALES.sleep, axisFormat: fmt.sleepAxis, key: 'sleep_raw', format: fmt.sleep, transform: transformSleep },

@@ -5,10 +5,14 @@ const WORK_CATEGORIES = ['sp'];
 const STUDY_CATEGORIES = ['nflx', 'crco', 'staff', 'crit', 'leet'];
 
 // Date zones shaded behind every chart (both days inclusive), to compare
-// stretches — trips, holidays — against the rest:
+// stretches — trips, holidays — against the rest. The days after a zone
+// whose moving averages still include it get a lighter shade (app.js).
 // [{ from: 'YYYY-MM-DD', to: 'YYYY-MM-DD', label?, color? }]
 const HOLIDAY_ZONES = [
-    { from: '2026-10-31', to: '2026-11-08' }
+    { from: '2026-04-26', to: '2026-05-08', label: 'Singapore' },
+    { from: '2026-05-31', to: '2026-06-08', label: 'Stockholm/Oslo' },
+    { from: '2026-10-30', to: '2026-10-31', label: 'Halloween' },
+    { from: '2026-11-02', to: '2026-11-08', label: 'Berlin' }
 ];
 
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
