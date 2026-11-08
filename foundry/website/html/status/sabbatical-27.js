@@ -31,8 +31,8 @@
         // e.g. { from: '2027-01-24', height: 43 } once the date is known
         heightChanges: [],
         // Days off: unearned squares up to fill × height show as darker
-        // grey squares on top of the real ones (they never bulldoze); the
-        // real squares that day are drawn as rainbows — a bonus.
+        // grey squares on top of the real ones (they never bulldoze); on a
+        // full day off the real squares are drawn as rainbows — a bonus.
         holidays: [
             { date: '2026-10-31', fill: 1 },
             { date: '2026-11-01', fill: 0.5 },

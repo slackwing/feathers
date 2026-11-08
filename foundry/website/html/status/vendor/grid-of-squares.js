@@ -9,8 +9,8 @@
  *
  * HOLIDAYS forgive a day: up to a share of its height, the squares it
  * didn't earn show as holiday squares (a darker grey), on top of the real
- * ones — and the real squares it did earn are a bonus, each drawn as a
- * rainbow. Holiday squares are drawn after the overflow simulation, so
+ * ones — and on a full holiday the real squares it did earn are a bonus,
+ * each drawn as a rainbow. Holiday squares are drawn after the overflow simulation, so
  * they never push anything out or carry on.
  *
  * Three layers (tuft lib/ui rules):
@@ -167,10 +167,11 @@
     }
     s.emptyColor = resolveColor(s.emptyColor);
 
-    // holidays: [{date, fill}] or [{from, to, fill}] (inclusive), fill in
-    // (0, 1], default 1 → s.holidayFill: date → fill.
+    // holidays: [{date, fill, bonus}] or [{from, to, fill, bonus}]
+    // (inclusive), fill in (0, 1], default 1; bonus (real squares drawn as
+    // rainbows) defaults to a full holiday → s.holidayOn: date → {fill, bonus}.
     if (!Array.isArray(s.holidays)) fail('holidays must be an array');
-    s.holidayFill = new Map();
+    s.holidayOn = new Map();
     s.holidays = s.holidays.map((h) => {
       if (!h || typeof h !== 'object' || (h.date === undefined && h.from === undefined)) {
         fail('holidays entries are {date, fill} or {from, to, fill}');
@@ -182,11 +183,13 @@
       if (to < from) fail(`holiday to ${to} is before from ${from}`);
       const fill = h.fill === undefined ? 1 : h.fill;
       if (typeof fill !== 'number' || !(fill > 0 && fill <= 1)) fail(`holiday ${from}: fill must be in (0, 1], got ${h.fill}`);
+      const bonus = h.bonus === undefined ? fill === 1 : h.bonus;
+      if (typeof bonus !== 'boolean') fail(`holiday ${from}: bonus must be true or false, got ${JSON.stringify(h.bonus)}`);
       for (let d = from; d <= to; d = addDays(d, 1)) {
-        if (s.holidayFill.has(d)) fail(`two holidays on ${d}`);
-        s.holidayFill.set(d, fill);
+        if (s.holidayOn.has(d)) fail(`two holidays on ${d}`);
+        s.holidayOn.set(d, { fill, bonus });
       }
-      return h.date !== undefined ? { date: from, fill } : { from, to, fill };
+      return h.date !== undefined ? { date: from, fill, bonus } : { from, to, fill, bonus };
     });
 
     const byType = Object.create(null);
@@ -377,13 +380,13 @@
       const counts = {};
       for (const sq of stack) counts[sq.type] = (counts[sq.type] || 0) + 1;
       // a holiday tops the column up to its share of the height
-      // and its real squares are bonus squares
-      const fill = s.holidayFill.get(date);
-      const isHoliday = !!fill && !(s.start && date < s.start);
-      const holiday = isHoliday ? Math.max(0, Math.round(fill * height) - stack.length) : 0;
+      // and (a full one, by default) its real squares are bonus squares
+      const on = s.holidayOn.get(date);
+      const isHoliday = !!on && !(s.start && date < s.start);
+      const holiday = isHoliday ? Math.max(0, Math.round(on.fill * height) - stack.length) : 0;
       const cells = stack.map((sq) => {
         const cell = { type: sq.type, color: s.byType[sq.type].color, carried: sq.carried };
-        if (isHoliday) cell.bonus = true;
+        if (isHoliday && on.bonus) cell.bonus = true;
         return cell;
       });
       for (let k = 0; k < holiday; k++) cells.push({ type: null, color: null, carried: false, holiday: true });
