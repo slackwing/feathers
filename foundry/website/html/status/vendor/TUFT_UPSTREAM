@@ -1,5 +1,5 @@
 source: github.com/slackwing/tuft
 ref:    origin/main
-sha:    8edaa99
-at:     2026-10-30T22:59:46Z
+sha:    f93cdfe
+at:     2026-11-08T01:44:12Z
 files:  grid-of-squares.js grid-of-squares.css 

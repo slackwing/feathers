@@ -25,6 +25,8 @@ const COLORS = {
     ZONE_YELLOW: 'rgba(202, 138, 4, 0.15)',
     ZONE_GREEN: 'rgba(22, 163, 74, 0.15)',
     ZONE_GREEN_LIGHT: 'rgba(100, 200, 100, 0.08)',
+    ZONE_DATES: 'rgba(99, 102, 241, 0.11)', // HOLIDAY_ZONES (config.js)
+    ZONE_DATES_LABEL: 'rgba(67, 56, 202, 0.75)',
 
     // Lines: solid for "Actual", light for "Feels Like" / long averages
     HOBBY: '#10b981',
@@ -223,6 +225,85 @@ class ZonesPrimitive {
             const bottom = this._series.priceToCoordinate(minHours * 60);
             const top = this._series.priceToCoordinate(maxHours * 60);
             return bottom === null || top === null ? null : { top, bottom, color };
+        }).filter(Boolean);
+    }
+
+    paneViews() {
+        return this._views;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Date zones (HOLIDAY_ZONES): whole days from..to shaded behind the series on
+// every chart, placed by calendar index (the spine has a point on every day,
+// so a day's logical index is its distance from the first) — that also
+// places zones past the data's last day. A label, when set, sits in the
+// band's top-left if it fits.
+
+const DAY_MS = 86400000;
+
+function dayIndex(dateStr) {
+    if (!dates.length) return null;
+    const t = d => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10));
+    return Math.round((t(dateStr) - t(dates[0])) / DAY_MS);
+}
+
+// The zone a date falls in, if any
+function zoneOn(dateStr) {
+    return HOLIDAY_ZONES.find(z => z.from <= dateStr && dateStr <= z.to) || null;
+}
+
+class DateZonesPrimitive {
+    constructor(zones) {
+        this._zones = zones;
+        this._bands = [];
+        const self = this;
+        this._views = [{
+            zOrder: () => 'bottom',
+            renderer: () => ({
+                draw: target => target.useMediaCoordinateSpace(({ context: ctx, mediaSize }) => {
+                    ctx.save();
+                    ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textBaseline = 'top';
+                    for (const band of self._bands) {
+                        const x1 = Math.max(0, band.x1), x2 = Math.min(mediaSize.width, band.x2);
+                        if (x2 <= x1) continue;
+                        ctx.fillStyle = band.color;
+                        ctx.fillRect(x1, 0, x2 - x1, mediaSize.height);
+                        if (band.label && ctx.measureText(band.label).width + 8 <= x2 - x1) {
+                            ctx.fillStyle = COLORS.ZONE_DATES_LABEL;
+                            ctx.fillText(band.label, x1 + 4, 4);
+                        }
+                    }
+                    ctx.restore();
+                })
+            })
+        }];
+    }
+
+    attached({ chart }) {
+        this._chart = chart;
+    }
+
+    detached() {
+        this._chart = null;
+    }
+
+    updateAllViews() {
+        if (!this._chart || !dates.length) {
+            this._bands = [];
+            return;
+        }
+        // whole days: centre ± half a day's spacing (logicalToCoordinate takes
+        // integer indexes only — a fractional one comes back as 0)
+        const ts = this._chart.timeScale();
+        const at = i => ts.logicalToCoordinate(i);
+        this._bands = this._zones.map(z => {
+            const a = dayIndex(z.from), b = dayIndex(z.to);
+            const xa = at(a), xb = at(b), next = at(b + 1);
+            if (xa === null || xb === null || next === null) return null;
+            const half = (next - xb) / 2;
+            return { x1: xa - half, x2: xb + half, color: z.color || COLORS.ZONE_DATES, label: z.label || '' };
         }).filter(Boolean);
     }
 
@@ -539,6 +620,7 @@ function buildCard(id, legendId, items, { zones = null } = {}) {
         } : null)
     });
     spine.attachPrimitive(new BorderPrimitive());
+    if (HOLIDAY_ZONES.length) spine.attachPrimitive(new DateZonesPrimitive(HOLIDAY_ZONES));
 
     const card = {
         el, chart, items, dateEl, spine,
@@ -775,7 +857,8 @@ function linkCharts() {
 function setHover(date) {
     for (const card of cards) {
         const shown = date || latestOf(card);
-        card.dateEl.textContent = shown ? formatDate(shown) : '';
+        const zone = shown ? zoneOn(shown) : null;
+        card.dateEl.textContent = shown ? formatDate(shown) + (zone && zone.label ? ` · ${zone.label}` : '') : '';
         for (const item of card.items) {
             item.valueEl.textContent = shown ? (item.lookup.get(shown) ?? '–') : '';
         }

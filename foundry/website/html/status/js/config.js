@@ -4,6 +4,13 @@ const HOBBY_CATEGORIES = ['wf', 'wr', 'bkc', 'arch', 'ean', 'ff', 'fw', 'gtr', '
 const WORK_CATEGORIES = ['sp'];
 const STUDY_CATEGORIES = ['nflx', 'crco', 'staff', 'crit', 'leet'];
 
+// Date zones shaded behind every chart (both days inclusive), to compare
+// stretches — trips, holidays — against the rest:
+// [{ from: 'YYYY-MM-DD', to: 'YYYY-MM-DD', label?, color? }]
+const HOLIDAY_ZONES = [
+    { from: '2026-10-31', to: '2026-11-08' }
+];
+
 // Tag descriptions shown in the category chip tooltips (kept lowercase)
 const TAG_INFO = {
     abi: 'things for abi, e.g. halloween decoration',

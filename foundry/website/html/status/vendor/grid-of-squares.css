@@ -8,8 +8,10 @@
   --gos-light-edge: rgba(0, 0, 0, 0.2);
   --gos-ink: #1a1a1a;
   --gos-muted: #666;
-  /* a holiday square: the whole spectrum in each square (the palette's hues) */
-  --gos-holiday: linear-gradient(135deg, #e05d5d 0%, #f0913a 20%, #f0c419 40%, #74b355 60%, #5aa9e0 80%, #a77bca 100%);
+  /* holidays: the forgiven squares a darker grey than empty ones; the real
+     squares earned that day a bonus — the whole spectrum in each square */
+  --gos-holiday: rgba(87, 80, 63, 0.34);
+  --gos-bonus: linear-gradient(135deg, #e05d5d 0%, #f0913a 20%, #f0c419 40%, #74b355 60%, #5aa9e0 80%, #a77bca 100%);
 }
 
 .gos-grid {
@@ -36,6 +38,10 @@
 .gos-cell.is-holiday,
 .gos-swatch.is-holiday {
   background: var(--gos-holiday);
+}
+
+.gos-cell.is-bonus {
+  background: var(--gos-bonus);
 }
 
 .gos-cell.is-light,

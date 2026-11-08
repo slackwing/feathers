@@ -73,8 +73,13 @@ console.log('sabbatical', JSON.stringify(sab));
 if (!sab.first || sab.title !== "Sabbatical '27") fail('sabbatical card is not first in main'); else ok("Sabbatical '27 card at the top");
 if (sab.cols !== sab.fits) fail(`sabbatical columns ${sab.cols} ≠ fit ${sab.fits}`); else ok(`sabbatical grid fills the width: ${sab.cols} columns`);
 if (sab.today !== 1 || !sab.marker) fail('sabbatical today column/marker missing'); else ok('today marked');
-if (sab.legend.length) fail('sabbatical legend is showing: ' + sab.legend.join(', ')); else ok('no legend (the colors stay private)');
-if (!sab.titles.every(t => /^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))) fail('tooltips say more than the date: ' + sab.titles.find(t => !/^[A-Z][a-z]{2} \d{1,2}$/.test(t || ''))); else ok('tooltips show only the date');
+if (sab.legend.length) fail('sabbatical legend is showing: ' + sab.legend.join(', ')); else ok('no legend');
+// tooltips: the date, then the day's squares by type name (since 2026-11-07: the names are public)
+const TIP = /^[A-Z][a-z]{2} \d{1,2}( — (writing|netflix|crucial conversations|staff engineer|abi|health|editing|critical reading|holiday) \d+( · (writing|netflix|crucial conversations|staff engineer|abi|health|editing|critical reading|holiday) \d+)*)?$/;
+const badTip = sab.titles.find(t => !TIP.test(t || ''));
+if (badTip !== undefined) fail('tooltip not "date — type N · …": ' + badTip);
+else if (!sab.titles.some(t => / — writing \d+/.test(t))) fail('no tooltip names a type');
+else ok('tooltips: date + squares by type — e.g. ' + sab.titles.filter(t => t.includes(' — ')).pop());
 if (sab.tallest !== 20 || sab.bottoms !== 1) fail(`columns: tallest ${sab.tallest}, ${sab.bottoms} baselines`); else ok('20 tall, one shared baseline');
 if (sab.litBeforeStart) fail(`${sab.litBeforeStart} columns before Oct 22 have squares`); else ok('nothing before the Oct 22 start');
 // Logged out (this run has no session): the admin-only roles card stays away.

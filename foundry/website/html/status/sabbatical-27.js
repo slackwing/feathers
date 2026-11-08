@@ -1,9 +1,8 @@
 // Sabbatical '27 — a temporary card at the top of the status page: one
 // column of squares per day. Squares are counted by hobby-server
-// (GET /status/api/sabbatical, keyed by color); the grid is tuft's
+// (GET /status/api/sabbatical, keyed by type); the grid is tuft's
 // grid-of-squares (vendor/, re-vendor with scripts/vendor-tuft.sh).
-// What the colors mean is deliberately not on the page: no legend, and
-// tooltips show only the date.
+// No legend; each column's tooltip lists its date and squares by type.
 //
 // To remove after the sabbatical: delete this file and, in index.html, its
 // <script> plus the vendor/grid-of-squares <link> and <script>.
@@ -19,20 +18,21 @@
         // Higher rank sits lower in a day's column; max caps what a day
         // earns, before bulldozing.
         schema: [
-            { type: 'green', color: 'green', rank: 7, bulldoze: true, max: 8 },
-            { type: 'red', color: 'red', rank: 6, bulldoze: true },
-            { type: 'orange', color: 'orange', rank: 5, bulldoze: true },
-            { type: 'white', color: 'white', rank: 4, bulldoze: true },
-            { type: 'yellow', color: 'yellow', rank: 3, bulldoze: true, max: 3 },
-            { type: 'blue', color: 'blue', rank: 2, bulldoze: true },
-            { type: 'brown', color: 'brown', rank: 1, bulldoze: true },
-            { type: 'purple', color: 'purple', rank: 0, bulldoze: true }
+            { type: 'writing', color: 'green', rank: 7, bulldoze: true, max: 8 },
+            { type: 'netflix', color: 'red', rank: 6, bulldoze: true },
+            { type: 'crucial-conversations', color: 'orange', rank: 5, bulldoze: true, label: 'crucial conversations' },
+            { type: 'staff-engineer', color: 'white', rank: 4, bulldoze: true, label: 'staff engineer' },
+            { type: 'abi', color: 'yellow', rank: 3, bulldoze: true, max: 3 },
+            { type: 'health', color: 'blue', rank: 2, bulldoze: true },
+            { type: 'editing', color: 'brown', rank: 1, bulldoze: true },
+            { type: 'critical-reading', color: 'purple', rank: 0, bulldoze: true, label: 'critical reading' }
         ],
         height: 20,
         // e.g. { from: '2027-01-24', height: 43 } once the date is known
         heightChanges: [],
-        // Days off: unearned squares up to fill × height show as rainbow
-        // squares on top of the real ones (they never bulldoze).
+        // Days off: unearned squares up to fill × height show as darker
+        // grey squares on top of the real ones (they never bulldoze); the
+        // real squares that day are drawn as rainbows — a bonus.
         holidays: [
             { date: '2026-10-31', fill: 1 },
             { date: '2026-11-01', fill: 0.5 },
@@ -42,7 +42,7 @@
         bulldozeMode: 'proportional',
         lookahead: 0.2,
         legend: false,
-        tooltip: 'date',
+        tooltip: 'counts',
         todayMarker: true
     };
 

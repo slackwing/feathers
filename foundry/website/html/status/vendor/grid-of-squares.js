@@ -8,9 +8,10 @@
  * column — cascading as far as needed, even into the future.
  *
  * HOLIDAYS forgive a day: up to a share of its height, the squares it
- * didn't earn show as holiday squares (a rainbow each), on top of the real
- * ones. They're drawn after the overflow simulation, so they never push
- * anything out or carry on.
+ * didn't earn show as holiday squares (a darker grey), on top of the real
+ * ones — and the real squares it did earn are a bonus, each drawn as a
+ * rainbow. Holiday squares are drawn after the overflow simulation, so
+ * they never push anything out or carry on.
  *
  * Three layers (tuft lib/ui rules):
  *   - core       normalizeSettings / createModel / layout — pure
@@ -376,15 +377,22 @@
       const counts = {};
       for (const sq of stack) counts[sq.type] = (counts[sq.type] || 0) + 1;
       // a holiday tops the column up to its share of the height
+      // and its real squares are bonus squares
       const fill = s.holidayFill.get(date);
-      const holiday = fill && !(s.start && date < s.start) ? Math.max(0, Math.round(fill * height) - stack.length) : 0;
-      const cells = stack.map((sq) => ({ type: sq.type, color: s.byType[sq.type].color, carried: sq.carried }));
+      const isHoliday = !!fill && !(s.start && date < s.start);
+      const holiday = isHoliday ? Math.max(0, Math.round(fill * height) - stack.length) : 0;
+      const cells = stack.map((sq) => {
+        const cell = { type: sq.type, color: s.byType[sq.type].color, carried: sq.carried };
+        if (isHoliday) cell.bonus = true;
+        return cell;
+      });
       for (let k = 0; k < holiday; k++) cells.push({ type: null, color: null, carried: false, holiday: true });
       cols.push({
         date,
         height,
         isToday: date === today,
         isFuture: date > today,
+        isHoliday,
         counts,
         holiday,
         cells,
@@ -439,6 +447,10 @@
           continue;
         }
         const t = s.byType[cell.type];
+        if (cell.bonus) { // the stylesheet paints it (--gos-bonus)
+          out.push(`<div class="gos-cell is-lit is-bonus${cell.carried ? ' is-carried' : ''}" data-type="${escapeHTML(cell.type)}"></div>`);
+          continue;
+        }
         const ccls = 'gos-cell is-lit' + (cell.carried ? ' is-carried' : '') + (t.light ? ' is-light' : '');
         out.push(`<div class="${ccls}" data-type="${escapeHTML(cell.type)}" style="background:${cell.color}"></div>`);
       }
