@@ -551,28 +551,6 @@
         FILE "media/transitions/v2/gap08-T1.wav"
       >
     >
-    <ITEM
-      POSITION 2790.290000
-      SNAPOFFS 0
-      LENGTH 13.351479
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {7618F2E4-7FFA-408C-A5E5-731AF3E512EF}
-      IID 1
-      NAME "SLAKIN loop · DEA 144bpm D minor (YouTube short rg3CacVCwTs)"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {019E4A32-A5CB-4224-890A-175B3802BC26}
-      <SOURCE WAVE
-        FILE "media/clips/slakin-dea-loop-144bpm-dmin.wav"
-      >
-    >
   >
   <TRACK {E20BD3D5-C064-4335-BAC8-A8247769B56B}
     NAME "Transitions 2"
@@ -598,6 +576,28 @@
     PERF 0
     MIDIOUT -1 -1
     MAINSEND 1 0
+    <ITEM
+      POSITION 226.812521
+      SNAPOFFS 0
+      LENGTH 13.351479
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {B7C571F9-35E0-43B2-81FA-D666BFDF4CB4}
+      IID 1
+      NAME "SLAKIN loop · DEA 144bpm D minor (YouTube short rg3CacVCwTs)"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {177FF49A-CEFE-4E8A-806E-E34F53CC13E9}
+      <SOURCE WAVE
+        FILE "media/clips/slakin-dea-loop-144bpm-dmin.wav"
+      >
+    >
   >
   <TRACK {466EFC11-D179-49FC-B33A-AB9B0C2FB945}
     NAME "Transitions 3"
