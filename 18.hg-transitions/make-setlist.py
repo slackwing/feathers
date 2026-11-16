@@ -8,7 +8,8 @@
 Track 1 "Songs": every song back to back with GAP seconds of silence between
 them. Then EXTRA empty tracks for the transitions. A marker at each song start.
 Names match case-insensitively against media/<release>/NN - <title>.wav
-(alternates/ only when the name contains a '/').
+(alternates/ only when the name contains a '/'). A name that matches nothing
+becomes an empty PLACEHOLDER-second item carrying the name.
 """
 import argparse, os, re, sys, time, uuid, wave
 
@@ -40,7 +41,7 @@ def find(name, cat):
     if len(exact) == 1: return exact[0]
     sub = [c for c in pool if q in key(c)]
     if len(sub) == 1: return sub[0]
-    if not sub: sys.exit(f"no match for {name!r}")
+    if not sub: return None
     sys.exit(f"ambiguous {name!r}: " + ", ".join(c[1] for c in sub))
 
 def main():
@@ -49,6 +50,7 @@ def main():
     ap.add_argument("-g", "--gap", type=float, default=30.0, help="seconds between songs (30)")
     ap.add_argument("-o", "--out", default=os.path.join(HERE, "setlist.RPP"))
     ap.add_argument("-x", "--extra", type=int, default=2, help="empty transition tracks (2)")
+    ap.add_argument("-p", "--placeholder", type=float, default=240.0, help="seconds for a song we don't have (240)")
     a = ap.parse_args()
     names = a.songs
     if len(names) == 1 and os.path.isfile(names[0]):
@@ -61,9 +63,16 @@ def main():
 
     items, markers, pos = [], [], 0.0
     for i, name in enumerate(names, 1):
-        title, rel, path = find(name, cat)
-        dur = duration(path)
-        file = os.path.relpath(path, outdir)
+        hit = find(name, cat)
+        if hit:
+            title, rel, path = hit
+            dur = duration(path)
+            file = os.path.relpath(path, outdir)
+            if file.startswith(".."): file = path
+            src = f'<SOURCE WAVE\n        FILE "{file}"\n      >'
+        else:
+            title, rel, dur = name.strip().title(), "(not in media/ — empty placeholder)", a.placeholder
+            src = "<SOURCE EMPTY\n      >"
         markers.append(f'  MARKER {i} {pos:.6f} "{title}" 0 0 1 R {guid()} 0')
         items.append(f'''    <ITEM
       POSITION {pos:.6f}
@@ -83,9 +92,7 @@ def main():
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
       GUID {guid()}
-      <SOURCE WAVE
-        FILE "{file}"
-      >
+      {src}
     >''')
         print(f"{i:2d}. {pos/60:6.2f} min  {title}  ({dur:.0f}s)  <- {rel}")
         pos += dur + a.gap
