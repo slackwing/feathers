@@ -55,3 +55,35 @@ that pulls into the next song (its 5th). Land = the next song's root.
 | Rumination | B minor | weak | G major possible |
 | Quincunx | E minor | moderate | starts G, ends B minor |
 | Nee Heavy | D minor | moderate | |
+
+## Transition options (2026-11-15)
+
+Two options per gap, on tracks "Transitions 1" and "Transitions 2", each
+40 s: it starts 10 s before the previous song ends (swelling under its tail)
+and lands on the next song's downbeat. Files: `media/transitions/gapNN-T<slot>-<style>.wav`.
+Rebuild bases with `.venv/bin/python gen/build.py bases`; AI layers with `gen/stage2.py`
+(resumable; delete `media/transitions/.done/<slot>` to redo one).
+
+| Gap | Transitions 1 | Transitions 2 |
+|---|---|---|
+| 1 Phantom → Talking to Trees | A pad + AI texture | C pulse @ 91 |
+| 2 Talking to Trees → Enantiodromia | B AI continuation of the tail | D riser |
+| 3 Enantiodromia → Looking Glass | E AI guitar swells (follows the drone) | C pulse @ 92 |
+| 4 Looking Glass → Horrors | A pad + organ texture | F AI feedback wall |
+| 5 Horrors → Beacon | B AI continuation | C pulse @ 91 |
+| 6 Beacon → Falling | v3 (kept) | D riser |
+| 7 Falling → Can't You See | D riser | B AI continuation |
+| 8 Can't You See → Helena | A pad + cold shimmer | C pulse @ 125 |
+| 9 Helena → Ghost of You | E AI guitar swells | D riser |
+| 10 Ghost of You → Disordered Hearts | C pulse @ 65 (half of 131) | F AI feedback wall |
+
+Styles: A = tuned drone + two MusicGen textures; B = quiet drone + MusicGen
+continuing the previous song's last 8 s; C = plucked arpeggio locked to the
+next song's tempo, hold chord then lead chord; D = band-passed noise sweep +
+sub hit at 29 s over the lead-in chord; E/F = drone + MusicGen-melody output
+conditioned on the drone (so it modulates with it), guitar-swell / feedback prompts.
+
+Estimated BPM (gen/tempo.py, rough): Phantom 128, Talking to Trees 91,
+Enantiodromia 95, Looking Glass 92, Horrors 165 (or 83), Beacon 91,
+Falling 120, Can't You See 120, Disordered Hearts 131. Covers: Helena 125,
+Ghost of You 145 (published).
