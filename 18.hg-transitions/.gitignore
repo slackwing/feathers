@@ -4,3 +4,4 @@ media/
 *.RPP-PROX
 *.reapeaks
 .venv/
+Backups/

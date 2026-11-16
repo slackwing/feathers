@@ -2,16 +2,24 @@
 import os, re, uuid, wave
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RPP = os.path.join(HERE, "setlist.RPP")
+_crlf = {"v": False}
 def _g(): return "{" + str(uuid.uuid4()).upper() + "}"
-def _lines(): return open(RPP).read().split("\n")
-def _save(L): open(RPP, "w").write("\n".join(L))
+def _lines():
+    s = open(RPP, newline="").read(); _crlf["v"] = "\r\n" in s        # Reaper saves CRLF; keep whatever the file uses
+    return s.replace("\r\n", "\n").split("\n")
+def _save(L): open(RPP, "w", newline="").write(("\r\n" if _crlf["v"] else "\n").join(L))
+def _name(line):
+    """value of a NAME line, quoted or not (Reaper quotes only when needed); None otherwise."""
+    st = line.strip()
+    if not st.startswith("NAME "): return None
+    v = st[5:].strip(); return v[1:-1] if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'`" else v
 def _tracks(L):
     """-> list of (name, start, end) for each top-level <TRACK block."""
     out = []; i = 0
     while i < len(L):
         if L[i].startswith("  <TRACK"):
             j = next(k for k in range(i, len(L)) if L[k] == "  >")
-            name = next((l.strip()[6:-1] for l in L[i:j] if l.strip().startswith('NAME "')), "")
+            name = next((_name(l) for l in L[i:j] if _name(l) is not None), "")
             out.append((name, i, j)); i = j
         i += 1
     return out
@@ -30,7 +38,7 @@ def rename_track(old, new):
     for name, s, e in _tracks(L):
         if name == old:
             for i in range(s, e):
-                if L[i].strip() == f'NAME "{old}"': L[i] = f'    NAME "{new}"'
+                if _name(L[i]) == old: L[i] = f'    NAME "{new}"'
     _save(L)
 def ensure_track(name, muted=False):
     L = _lines()
@@ -71,7 +79,7 @@ def put_item(track, name, path, pos):
     with wave.open(os.path.join(HERE, path)) as w: length = w.getnframes()/w.getframerate()
     L = _lines(); tname, s, e = next(t for t in _tracks(L) if t[0] == track)
     for i in range(s, e):
-        if L[i].strip() == f'NAME "{name}"':
+        if _name(L[i]) == name and any(L[k].strip() == "<ITEM" for k in range(s, i)):
             a = max(k for k in range(s, i) if L[k].strip() == "<ITEM"); b = next(k for k in range(i, e) if L[k] == "    >")
             for k in range(a, b):
                 st = L[k].strip()
@@ -108,7 +116,7 @@ def remove_items(track, name_prefix, keep=()):
     while i < e:
         if L[i].strip() == "<ITEM":
             j = next(k for k in range(i, e) if L[k] == "    >")
-            name = next((l.strip()[6:-1] for l in L[i:j] if l.strip().startswith('NAME "')), "")
+            name = next((_name(l) for l in L[i:j] if _name(l) is not None), "")
             if name.startswith(name_prefix) and name not in keep:
                 del L[i:j+1]; e -= (j + 1 - i); removed += 1; continue
         i += 1

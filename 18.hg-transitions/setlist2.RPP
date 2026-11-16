@@ -1,0 +1,693 @@
+<REAPER_PROJECT 0.1 "7.86/linux-x86_64" 1794848528 0
+  RIPPLE 0 0
+  GROUPOVERRIDE 0 0 0 0
+  AUTOXFADE 129
+  ENVATTACH 3
+  POOLEDENVATTACH 0
+  TCPUIFLAGS 0
+  MIXERUIFLAGS 11 48 0
+  PEAKGAIN 1
+  FEEDBACK 0
+  PANLAW 1
+  PROJOFFS 0 0 0
+  MAXPROJLEN 0 600
+  GRID 3199 8 1 8 1 0 0 0
+  TIMEMODE 0 5 -1 30 0 0 -1 0
+  VIDEO_CONFIG 0 0 256
+  PANMODE 3
+  CURSOR 2000
+  ZOOM 1 707 0
+  VZOOMEX 6 0
+  USE_REC_CFG 0
+  RECMODE 1
+  SMPTESYNC 0 30 100 40 1000 300 0 0 1 0 0
+  LOOP 0
+  LOOPGRAN 0 4
+  RECORD_PATH "" ""
+  <RECORD_CFG
+  >
+  <APPLYFX_CFG
+  >
+  RENDER_FILE ""
+  RENDER_PATTERN ""
+  RENDER_FMT 0 2 0
+  RENDER_1X 0 0
+  RENDER_RANGE 1 0 0 18 1000
+  RENDER_RESAMPLE 3 0 1
+  RENDER_ADDTOPROJ 0
+  RENDER_STEMS 0
+  RENDER_DITHER 0
+  RENDER_TRIM 0.000001 0.000001 0 0
+  TIMELOCKMODE 1
+  TEMPOENVLOCKMODE 1
+  ITEMMIX 1
+  DEFPITCHMODE 589824 0
+  TAKELANE 1
+  SAMPLERATE 48000 0 0
+  <RENDER_CFG
+  >
+  LOCK 1
+  <METRONOME 6 2
+    VOL 0.25 0.125
+    BEATLEN 4
+    FREQ 800 1600 1
+    SAMPLES "" "" "" ""
+    SPLIGNORE 0 0
+    SPLDEF 2 660 "" 0 ""
+    SPLDEF 3 440 "" 0 ""
+    PATTERN 0 169
+    PATTERNSTR ABBB
+    MULT 1
+  >
+  GLOBAL_AUTO -1
+  TEMPO 120 4 4 0
+  PLAYRATE 1 0 0.25 4
+  SELECTION 0 0
+  SELECTION2 0 0
+  MASTERAUTOMODE 0
+  MASTERTRACKHEIGHT 0 0
+  MASTERPEAKCOL 16576
+  MASTERMUTESOLO 0
+  MASTERTRACKVIEW 0 0.6667 0.5 0.5 0 0 0 0 0 0 0 0 0 0 0
+  MASTERHWOUT 0 0 1 0 0 0 0 -1
+  MASTER_NCH 2 2
+  MASTER_VOLUME 1 0 -1 -1 1
+  MASTER_PANMODE 3
+  MASTER_FX 1
+  MASTER_TRACKID {E8991753-86BB-DA8F-15AE-F7592F810D31}
+  MASTER_SEL 0
+  <MASTERPLAYSPEEDENV
+    EGUID {F7E9604D-BA9A-AB17-B168-98C6C314A866}
+    ACT 0 -1
+    VIS 0 1 1
+    LANEHEIGHT 0 0
+    ARM 0
+    DEFSHAPE 0 -1 -1
+  >
+  <TEMPOENVEX
+    EGUID {25A7EC14-0173-5AC1-E67E-DCAE4EC84CAA}
+    ACT 1 -1
+    VIS 1 0 1
+    LANEHEIGHT 0 0
+    ARM 0
+    DEFSHAPE 1 -1 -1
+  >
+  RULERHEIGHT 86 86
+  RULERLANE 1 4 "" 0 -1 0
+  RULERLANE 2 8 "" 0 -1 0
+  MARKER 1 0 "Phantom (E minor)" 0 0 1 B {1050EB8A-524C-4715-A7CB-F4A9C3A01980} 0 2
+  MARKER 2 256.812521 "Talking to Trees (F# minor)" 0 0 1 B {F4463372-91E3-405C-BDBB-C45F058FA683} 0 2
+  MARKER 3 476.562521 "Enantiodromia (E minor)" 0 0 1 B {8E2FEC9B-2F06-4C1F-A628-B868DE46E051} 0 2
+  MARKER 4 716.24675 "Looking Glass (D minor)" 0 0 1 B {6D5B4E6F-1066-440B-9EA5-401324275805} 0 2
+  MARKER 5 959.361521 "Horrors of your love (B minor)" 0 0 1 B {805015E4-98D4-42EF-8C11-E67F7142E129} 0 2
+  MARKER 6 1189.481292 "The Beacon of Emerald (C# minor)" 0 0 1 B {987D3122-E93E-4711-9154-9682C06B7784} 0 2
+  MARKER 7 1477.92575 "Falling (G major)" 0 0 1 B {3E21D9C8-9B71-48E1-891F-3F5DCA76F87C} 0 2
+  MARKER 8 1795.307521 "Can't You See (F minor)" 0 0 1 B {DA928E8E-10E7-469E-AC23-858457F4221D} 0 2
+  MARKER 9 2035.557521 "Helena (C# minor, original)" 0 0 1 B {87613A81-2C82-4BCC-BFAA-0FD4FB3D63B5} 0 2
+  MARKER 10 2305.557521 "Ghost Of You (B minor, original)" 0 0 1 B {0AC002D4-BC24-4869-BD5D-4151BA9AFF96} 0 2
+  MARKER 11 2575.557521 "Disordered Hearts (F# minor)" 0 0 1 B {868D66BB-E7D9-4258-9157-6209DC16019F} 0 2
+  <PROJBAY
+  >
+  <TRACK {CF2B2C5D-9763-46E7-B292-8631B8352B79}
+    NAME Songs
+    PEAKCOL 16576
+    BEAT -1
+    AUTOMODE 0
+    VOLPAN 1 0 -1 -1 1
+    MUTESOLO 0 0 0
+    IPHASE 0
+    PLAYOFFS 0 1
+    ISBUS 0 0
+    BUSCOMP 0 0 0 0 0
+    SHOWINMIX 1 0.6667 0.5 1 0.5 0 0 0 0
+    LANEREC -1 -1 -1 0
+    SEL 0
+    REC 0 0 1 0 0 0 0 0
+    VU 2
+    TRACKHEIGHT 0 0 0 0 0 0 0
+    INQ 0 0 0 0.5 100 0 0 100
+    NCHAN 2
+    FX 1
+    TRACKID {CF2B2C5D-9763-46E7-B292-8631B8352B79}
+    PERF 0
+    MIDIOUT -1 -1
+    MAINSEND 1 0
+    <ITEM
+      POSITION 0
+      SNAPOFFS 0
+      LENGTH 226.812521
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E63F0908-A082-4037-8F41-31331A2E880F}
+      IID 1
+      NAME Phantom
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {2391B174-AFB4-4CFF-A2AE-E086FD39A5F3}
+      <SOURCE WAVE
+        FILE "media/Shadow Work/05 - Phantom.wav"
+      >
+    >
+    <ITEM
+      POSITION 256.812521
+      SNAPOFFS 0
+      LENGTH 189.75
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {9C4096AA-F764-455A-80D9-4A4516655670}
+      IID 2
+      NAME "Talking to Trees"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {C72028B5-016D-40EB-B532-D6B7D0D7A8F5}
+      <SOURCE WAVE
+        FILE "media/Quincunx/01 - Talking to Trees.wav"
+      >
+    >
+    <ITEM
+      POSITION 476.562521
+      SNAPOFFS 0
+      LENGTH 209.684229
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {85142DA4-7BC8-4831-B28A-5746B5F2B745}
+      IID 3
+      NAME Enantiodromia
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {4E57C35F-863D-41D8-B1A8-5058149029D9}
+      <SOURCE WAVE
+        FILE "media/Quincunx/02 - Enantiodromia.wav"
+      >
+    >
+    <ITEM
+      POSITION 716.24675
+      SNAPOFFS 0
+      LENGTH 213.114771
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {96BA7654-34A1-4F8D-9045-B02478E06089}
+      IID 4
+      NAME "Looking Glass"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {D82410A1-8495-440C-B4E3-AEC16C678FA2}
+      <SOURCE WAVE
+        FILE "media/Quincunx/03 - Looking Glass.wav"
+      >
+    >
+    <ITEM
+      POSITION 959.361521
+      SNAPOFFS 0
+      LENGTH 200.119771
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {50C0FFB5-6502-48B9-ADFD-8C4B11C150DB}
+      IID 5
+      NAME "Horrors of your love"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {D46F97B4-358E-4F5A-867D-291886033C25}
+      <SOURCE WAVE
+        FILE "media/The Trickster/02 - Horrors of your love.wav"
+      >
+    >
+    <ITEM
+      POSITION 1189.481292
+      SNAPOFFS 0
+      LENGTH 258.444458
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {9E1295BC-B172-4436-B5E7-DBB3BE04DA62}
+      IID 6
+      NAME "The Beacon of Emerald"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {555DCADC-041A-4DAA-AD76-9342112E54A0}
+      <SOURCE WAVE
+        FILE "media/Shadow Work/10 - The Beacon of Emerald.wav"
+      >
+    >
+    <ITEM
+      POSITION 1477.92575
+      SNAPOFFS 0
+      LENGTH 287.381771
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {545245F0-4477-4DCC-B871-B84933462AEA}
+      IID 7
+      NAME Falling
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {2453875A-98E5-44E5-817C-83E238CDDBAA}
+      <SOURCE WAVE
+        FILE "media/Shadow Work/02 - Falling.wav"
+      >
+    >
+    <ITEM
+      POSITION 1795.307521
+      SNAPOFFS 0
+      LENGTH 210.25
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {2255990B-608F-4978-B5D0-043BFB3106C4}
+      IID 8
+      NAME "Can't You See"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {8EA23732-343F-47EB-846C-C379D31C190F}
+      <SOURCE WAVE
+        FILE "media/Shadow Work/06 - Can't You See.wav"
+      >
+    >
+    <ITEM
+      POSITION 2035.557521
+      SNAPOFFS 0
+      LENGTH 240
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {C00C5F10-A244-4725-91D7-5517BB0F2B74}
+      IID 9
+      NAME Helena
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {7F6A5751-7DED-4924-8F1C-B5E745078E8F}
+      <SOURCE EMPTY
+      >
+    >
+    <ITEM
+      POSITION 2305.557521
+      SNAPOFFS 0
+      LENGTH 240
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {43022F21-638F-4A81-BDC2-1FB469146A65}
+      IID 10
+      NAME "Ghost Of You"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {A9593123-BB23-4E8E-AFDC-101F23219B3E}
+      <SOURCE EMPTY
+      >
+    >
+    <ITEM
+      POSITION 2575.557521
+      SNAPOFFS 0
+      LENGTH 209.728021
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {7DF5CAA5-7A5B-4096-B96E-DE504EA54497}
+      IID 11
+      NAME "Disordered Hearts"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {1C90815D-869C-42EA-B4BC-B0C1952293EA}
+      <SOURCE WAVE
+        FILE "media/Shadow Work/11 - Disordered Hearts.wav"
+      >
+    >
+  >
+  <TRACK {E5D46D5C-045D-4A44-A800-FDF3460D27B4}
+    NAME "Transitions 1"
+    PEAKCOL 16576
+    BEAT -1
+    AUTOMODE 0
+    VOLPAN 1 0 -1 -1 1
+    MUTESOLO 0 0 0
+    IPHASE 0
+    PLAYOFFS 0 1
+    ISBUS 0 0
+    BUSCOMP 0 0 0 0 0
+    SHOWINMIX 1 0.6667 0.5 1 0.5 0 0 0 0
+    LANEREC -1 -1 -1 0
+    SEL 0
+    REC 0 0 1 0 0 0 0 0
+    VU 2
+    TRACKHEIGHT 0 0 0 0 0 0 0
+    INQ 0 0 0 0.5 100 0 0 100
+    NCHAN 2
+    FX 1
+    TRACKID {E5D46D5C-045D-4A44-A800-FDF3460D27B4}
+    PERF 0
+    MIDIOUT -1 -1
+    MAINSEND 1 0
+    <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E5DEB9B4-5B0F-4544-AB81-7F06D7BCFBD2}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · chimes + strings + wind"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {6127B152-BAE3-40C2-82E8-CDBD5784D48C}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap02-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 676.24675
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {B90CFD28-A830-49D7-AB96-166437DDE0E2}
+      IID 1
+      NAME "03 Enantiodromia → Looking Glass · guitar swells + bells"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {0C3464BD-37DB-4878-B5AC-535FE1765AB6}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap03-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 919.361521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {CCC3E133-C995-4068-86AA-79C71EDA933D}
+      IID 1
+      NAME "04 Looking Glass → Horrors of your love · stretch + strings + feedback"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {19976E4F-82A1-45C7-9F80-9F242B96046F}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap04-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 1149.481292
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {015E5B59-1566-40E4-83F7-DCA904B67E31}
+      IID 1
+      NAME "05 Horrors of your love → The Beacon of Emerald · choir + tubular bells + wind"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {DA02E4F0-64CD-45D3-AA4B-7ED35D9092B5}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap05-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 1437.92575
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {98FE1C1B-6D2D-45A6-803D-7150D4B74794}
+      IID 1
+      NAME "Beacon → Falling: two MusicGen layers + E→D drone (v3, slow in, starts 10 s early)"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {351B4899-85ED-4DE4-BF52-B49ACBDF4011}
+      <SOURCE WAVE
+        FILE "media/transitions/beacon-to-falling.v3-slow-in.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E4A7A5E3-0179-4FC5-8686-195FF72D65E3}
+      IID 1
+      NAME "07 Falling → Can't You See · stretch + dark strings + rain"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {C2C9BF47-07F9-430A-A601-7C575450A16D}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap07-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {8E99C392-E838-431D-8B08-D7937AAD6BFD}
+      IID 1
+      NAME "08 Can't You See → Helena · church bell + strings + wind"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {93E54740-6382-47A9-9496-8AE6F76D567B}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap08-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 2790.290000
+      SNAPOFFS 0
+      LENGTH 13.351479
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {7618F2E4-7FFA-408C-A5E5-731AF3E512EF}
+      IID 1
+      NAME "SLAKIN loop · DEA 144bpm D minor (YouTube short rg3CacVCwTs)"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {019E4A32-A5CB-4224-890A-175B3802BC26}
+      <SOURCE WAVE
+        FILE "media/clips/slakin-dea-loop-144bpm-dmin.wav"
+      >
+    >
+  >
+  <TRACK {E20BD3D5-C064-4335-BAC8-A8247769B56B}
+    NAME "Transitions 2"
+    PEAKCOL 16576
+    BEAT -1
+    AUTOMODE 0
+    VOLPAN 1 0 -1 -1 1
+    MUTESOLO 0 0 0
+    IPHASE 0
+    PLAYOFFS 0 1
+    ISBUS 0 0
+    BUSCOMP 0 0 0 0 0
+    SHOWINMIX 1 0.6667 0.5 1 0.5 0 0 0 0
+    LANEREC -1 -1 -1 0
+    SEL 0
+    REC 0 0 1 0 0 0 0 0
+    VU 2
+    TRACKHEIGHT 0 0 0 0 0 0 0
+    INQ 0 0 0 0.5 100 0 0 100
+    NCHAN 2
+    FX 1
+    TRACKID {E20BD3D5-C064-4335-BAC8-A8247769B56B}
+    PERF 0
+    MIDIOUT -1 -1
+    MAINSEND 1 0
+  >
+  <TRACK {466EFC11-D179-49FC-B33A-AB9B0C2FB945}
+    NAME "Transitions 3"
+    PEAKCOL 16576
+    BEAT -1
+    AUTOMODE 0
+    VOLPAN 1 0 -1 -1 1
+    MUTESOLO 0 0 0
+    IPHASE 0
+    PLAYOFFS 0 1
+    ISBUS 0 0
+    BUSCOMP 0 0 0 0 0
+    SHOWINMIX 1 0.6667 0.5 1 0.5 0 0 0 0
+    LANEREC -1 -1 -1 0
+    SEL 0
+    REC 0 0 1 0 0 0 0 0
+    VU 2
+    TRACKHEIGHT 0 0 0 0 0 0 0
+    INQ 0 0 0 0.5 100 0 0 100
+    NCHAN 2
+    FX 1
+    TRACKID {466EFC11-D179-49FC-B33A-AB9B0C2FB945}
+    PERF 0
+    MIDIOUT -1 -1
+    MAINSEND 1 0
+    <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {D75A3B5E-0E6E-4100-A849-C7087EF9FA62}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · stretch + rain + thunder + heartbeat"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {3E360541-DE21-4504-9886-5B97789D9AF5}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap02-T3.wav"
+      >
+    >
+    <ITEM
+      POSITION 676.24675
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {BE6694E7-D915-4FD5-B7BF-7FADB9069E18}
+      IID 1
+      NAME "03 Enantiodromia → Looking Glass · church organ + wind + reverse cymbals"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {9220A93D-C6F4-4D4E-93EF-C36C94BA820D}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap03-T3.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      FADEOUT 1 0.01 0 1 0 0 0 1 0 0 1 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {A6348713-441B-4E3E-AE2A-2B946D7405A6}
+      IID 1
+      NAME "08 Can't You See → Helena · stretch + chimes + heartbeat"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {FB587441-9432-4B24-B4D7-26A1DF79151A}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap08-T3.wav"
+      >
+    >
+  >
+>
