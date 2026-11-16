@@ -1,1 +1,5 @@
 media/
+*.RPP-bak
+*.RPP-UNDO
+*.RPP-PROX
+*.reapeaks
