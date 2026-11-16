@@ -12,8 +12,7 @@ pl() { "${Y[@]}" -o "$1/%(playlist_index)02d - %(title)s.%(ext)s" "https://www.y
 pl "Shadow Work"  OLAK5uy_l77c0Fh2iy2XhgYXB03rut8K-rfnVH2ss   # 15-track album
 pl "Quincunx"     OLAK5uy_l31UW_KWs3qhAi0JDRKiFblhpTH8064qA   # EP; supersets the other singles/EPs
 pl "The Trickster" OLAK5uy_ljwfD3gL04W1hYQx__zTpPOW8BZur4K8I  # Nee Heavy, Horrors of your love
-# Second uploads of three songs (the release playlists point at the other upload).
+# Disordered Hearts has a second upload (Dec 2024) with a different, 4 s longer edit.
+# (Falling and Phantom also have second uploads, but their audio is identical to the album's.)
 "${Y[@]}" -o "alternates/%(title)s (%(upload_date)s, %(id)s).%(ext)s" \
-  https://www.youtube.com/watch?v=8PeORnIcowc \
-  https://www.youtube.com/watch?v=g-I8747f5KA \
   https://www.youtube.com/watch?v=iF6dLdDsZLM
