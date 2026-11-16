@@ -35,9 +35,11 @@ the shatter later.
   card — both drawn in the table plane (`PLANE` matrix: x along the far
   edge, y toward the viewer, foreshortened like the floor), the bar's
   top face being the underside raised 7px; one strip of duct tape
-  (`chocTape`, sampled in the bar's frame and lifted over the top) holds
-  it down. Clicking the bar opens `#card`, a greeting-card modal
+  (`chocTape`, sampled in the bar's frame and lifted over the top, long
+  enough to stick to the table past the card at both ends) holds it
+  down. Clicking the bar opens `#card`, a greeting-card modal
   (click/Esc closes; Space doesn't bap while it's open): the card
+  (`.fold`, same 164:128 proportions as the card on the table)
   carries the same flat bar with a candle (`drawCardArt`), and behind
   its lower-right corner lies `.pack`, a large readable replica of the
   real sleeve (static SVG 300×550 + `drawPackSprig`; Great Vibes /
