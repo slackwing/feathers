@@ -390,6 +390,204 @@
         FILE "media/transitions/beacon-to-falling.v3-slow-in.wav"
       >
     >
+    <ITEM
+      POSITION 216.812521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {C1B56EB2-C002-4748-9811-EDFBCF2253A7}
+      IID 1
+      NAME "01 Phantom → Talking to Trees · pad + texture"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {1EFDF4E1-8B34-4F5E-B06E-BEC33D87B5CD}
+      <SOURCE WAVE
+        FILE "media/transitions/gap01-T1-A.wav"
+      >
+    >
+    <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {41C6878A-AB09-4F29-8F54-F10BE2CB4C26}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · continuation"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {DCD828CA-EFE7-4171-A392-D3E166482C2B}
+      <SOURCE WAVE
+        FILE "media/transitions/gap02-T1-B.wav"
+      >
+    >
+    <ITEM
+      POSITION 676.246750
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {DB6C9E83-EC59-4ACD-BCC7-3D6F6CFBD72E}
+      IID 1
+      NAME "03 Enantiodromia → Looking Glass · guitar swells"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {0A2D4D98-6B1D-4295-BA3F-0AEF7D2956D4}
+      <SOURCE WAVE
+        FILE "media/transitions/gap03-T1-E.wav"
+      >
+    >
+    <ITEM
+      POSITION 919.361521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {9A24476D-4B3D-4275-8481-3EA3B4EC6E68}
+      IID 1
+      NAME "04 Looking Glass → Horrors of your love · pad + texture"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {EE88F755-C848-4CA3-8FCB-3CBB5C04E0D8}
+      <SOURCE WAVE
+        FILE "media/transitions/gap04-T1-A.wav"
+      >
+    >
+    <ITEM
+      POSITION 1149.481292
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {0C34BC33-988A-4D47-B894-CEA140855399}
+      IID 1
+      NAME "05 Horrors of your love → The Beacon of Emerald · continuation"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {2CEDF76E-4521-421B-8E1A-7C808162E0EB}
+      <SOURCE WAVE
+        FILE "media/transitions/gap05-T1-B.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {BDE1667C-DA8B-4D20-9707-CC5DDFFD1EA7}
+      IID 1
+      NAME "07 Falling → Can't You See · riser"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {5F26BC14-EF8B-46B3-A1FC-E2DF6EA80DB9}
+      <SOURCE WAVE
+        FILE "media/transitions/gap07-T1-D.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {85D9D763-51B8-4FE9-9FA1-D38EEE800FBE}
+      IID 1
+      NAME "08 Can't You See → Helena · pad + texture"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {70C3DF59-09AC-4BC8-882A-09AD6AB9B8CA}
+      <SOURCE WAVE
+        FILE "media/transitions/gap08-T1-A.wav"
+      >
+    >
+    <ITEM
+      POSITION 2265.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {66855786-90CD-4FCA-9542-E76861F8DDEE}
+      IID 1
+      NAME "09 Helena → The Ghost of You · guitar swells"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {59A7733D-F940-45DC-A391-1F22CB0B3255}
+      <SOURCE WAVE
+        FILE "media/transitions/gap09-T1-E.wav"
+      >
+    >
+    <ITEM
+      POSITION 2535.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E83D907D-FB4D-4ADC-A37A-FF2249E4F823}
+      IID 1
+      NAME "10 The Ghost of You → Disordered Hearts · pulse"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {D6775022-A3AB-432D-A1B0-78ABEE3379AB}
+      <SOURCE WAVE
+        FILE "media/transitions/gap10-T1-C.wav"
+      >
+    >
   >
   <TRACK {3265B0C9-8385-4FA0-816C-6634B10E2517}
     NAME "Transitions 2"
@@ -415,5 +613,225 @@
     MIDIOUT -1
     MAINSEND 1 0
 
+    <ITEM
+      POSITION 216.812521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E43FFB77-89E7-46B4-B529-2490868AF023}
+      IID 1
+      NAME "01 Phantom → Talking to Trees · pulse"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {CEA6A6E4-7C9B-48E4-B938-4D53FC3D670C}
+      <SOURCE WAVE
+        FILE "media/transitions/gap01-T2-C.wav"
+      >
+    >
+    <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {9165AA34-3B1E-4B10-BF65-CAB90496C908}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · riser"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {18599385-24F6-4C68-B87F-49A5AEF6C31B}
+      <SOURCE WAVE
+        FILE "media/transitions/gap02-T2-D.wav"
+      >
+    >
+    <ITEM
+      POSITION 676.246750
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {B7DF4BE9-9F8D-4D2E-9CE2-1341200FC889}
+      IID 1
+      NAME "03 Enantiodromia → Looking Glass · pulse"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {54C5D1ED-BEAE-4AC6-9B34-853596628863}
+      <SOURCE WAVE
+        FILE "media/transitions/gap03-T2-C.wav"
+      >
+    >
+    <ITEM
+      POSITION 919.361521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {11B92499-6DEF-4771-95A8-D10D6D2698DF}
+      IID 1
+      NAME "04 Looking Glass → Horrors of your love · feedback"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {657B7EE1-FD5A-435B-873A-036AA3BBFCEF}
+      <SOURCE WAVE
+        FILE "media/transitions/gap04-T2-F.wav"
+      >
+    >
+    <ITEM
+      POSITION 1149.481292
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {EE0D014E-FD0A-48E5-A41D-4B3AED965C8D}
+      IID 1
+      NAME "05 Horrors of your love → The Beacon of Emerald · pulse"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {8AB304EB-2ACF-44B1-AEB2-8D10F39109EE}
+      <SOURCE WAVE
+        FILE "media/transitions/gap05-T2-C.wav"
+      >
+    >
+    <ITEM
+      POSITION 1437.925750
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {B2EA80B4-E93A-4396-BA16-A5129618B31B}
+      IID 1
+      NAME "06 The Beacon of Emerald → Falling · riser"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {E1380B58-5F3A-4ACC-8755-D3F480989393}
+      <SOURCE WAVE
+        FILE "media/transitions/gap06-T2-D.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {7218AFAD-0A05-4EF4-AE54-2927BBFC01ED}
+      IID 1
+      NAME "07 Falling → Can't You See · continuation"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {76AD623E-7146-4E4F-98FB-A4E726D38328}
+      <SOURCE WAVE
+        FILE "media/transitions/gap07-T2-B.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {F3352EFB-CD48-423B-AC4E-5424D61C417F}
+      IID 1
+      NAME "08 Can't You See → Helena · pulse"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {9E596FAF-8EB6-4F15-AFF1-AD91E51062BE}
+      <SOURCE WAVE
+        FILE "media/transitions/gap08-T2-C.wav"
+      >
+    >
+    <ITEM
+      POSITION 2265.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {1B563661-CF3C-4376-A49F-B56F53265793}
+      IID 1
+      NAME "09 Helena → The Ghost of You · riser"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {658FCAC4-9F23-438B-B041-96132CC92426}
+      <SOURCE WAVE
+        FILE "media/transitions/gap09-T2-D.wav"
+      >
+    >
+    <ITEM
+      POSITION 2535.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {A464FE57-7637-434F-AC40-89286A7DD66B}
+      IID 1
+      NAME "10 The Ghost of You → Disordered Hearts · feedback"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {5AD8E6B8-9368-431F-90EC-5859DAF17B94}
+      <SOURCE WAVE
+        FILE "media/transitions/gap10-T2-F.wav"
+      >
+    >
   >
 >
