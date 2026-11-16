@@ -3,3 +3,4 @@ media/
 *.RPP-UNDO
 *.RPP-PROX
 *.reapeaks
+.venv/
