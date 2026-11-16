@@ -30,9 +30,18 @@ the shatter later.
   foreground, stands an apology: a glass vase of red roses with a
   "sorry" card, duct-taped to the table (an X of torn strips over the
   foot). It buzzes in place on a bap and the stems whip on a spring,
-  but it never drifts or falls. `VASE_OPTS` in index.html picks what
-  stands there (`vase`, `sorry`); the card has been off since
-  2026-09-22. `?test=flowers` forces both without touching the flags.
+  but it never drifts or falls. Right of the cup's track, toward the
+  corner, a Dolfin "Poivre rose" chocolate bar lies flat on a birthday
+  card — both drawn in the table plane (`PLANE` matrix: x along the far
+  edge, y toward the viewer, foreshortened like the floor), the bar's
+  thickness being its own face dropped 7px. Clicking the bar opens
+  `#card`, a greeting-card modal (click/Esc closes; Space doesn't bap
+  while it's open). `TABLE_OPTS` in index.html picks what stands on the
+  table (`vase`, `sorry`, `choc`); the sorry card has been off since
+  2026-09-22, `choc` is off until published. `?test=flowers` forces the
+  vase + sorry card, `?test=choc` the chocolate, without touching the
+  flags; those two hooks still load cup state (the cup-owning hooks
+  don't).
   Physics: near-real gravity
   (1px ~ 1mm), baps only move a grounded cup, but a bap can resonantly
   catch a cup that's just about to land. Scene space is 1800×1000,
@@ -41,6 +50,6 @@ the shatter later.
   or logout; just cat/table/cup plus the login overlay when logged out.
   A broken cup resets to home on refresh (shatters still counts).
 - Visual test hooks: `?test=down`, `?test=mid`, `?test=broken`,
-  `?test=hearts`, `?test=picks`, `?test=flowers`; `?cup=blue|green|pink`
+  `?test=hearts`, `?test=picks`, `?test=flowers`, `?test=choc`; `?cup=blue|green|pink`
   picks the cup.
   Sounds are WebAudio-synthesized; no audio assets.

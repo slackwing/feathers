@@ -89,6 +89,27 @@
   }
   #login button:hover { transform: scale(1.05) rotate(1.5deg); }
   #login .msg { color: var(--red); font-size: 20px; min-height: 1.4em; margin-top: 12px; }
+  /* ---- the birthday card (opened by clicking the chocolate) ---- */
+  #card {
+    position: fixed; inset: 0; z-index: 9;
+    background: rgba(255,255,255,.86);
+    display: flex; align-items: center; justify-content: center;
+    cursor: default;
+  }
+  #card .fold {
+    width: min(400px, 86vw);
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 18px 225px 18px 255px / 225px 18px 255px 18px;
+    padding: 26px 26px 34px;
+    text-align: center;
+    transform: rotate(-1.2deg);
+    animation: cardIn .26s ease-out;
+  }
+  @keyframes cardIn { from { transform: rotate(-1.2deg) scale(.86); opacity: 0; } }
+  #card svg { width: 120px; height: 120px; display: block; margin: 0 auto 4px; }
+  #card p { font-size: clamp(28px, 8vw, 38px); line-height: 1.15; }
+  #card p + p { margin-top: 10px; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -131,6 +152,7 @@
         <path d="M -33 6 Q -34 -23 -11 -27 Q 0 -28 11 -27 Q 34 -23 33 6 Q 23 20 0 22 Q -23 20 -33 6 Z"
               fill="#fff" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
       </g>
+      <g id="chocG"></g>
       <g id="cupG"></g>
       <g id="vaseG"></g>
       <g id="fxG"></g>
@@ -141,6 +163,25 @@
       <div class="layer" id="pawL"></div>
       <div class="layer" id="pawR"></div>
     </div>
+  </div>
+</div>
+
+<div id="card" class="hidden">
+  <div class="fold">
+    <svg viewBox="0 0 120 120" fill="none" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
+      <!-- a square of dark chocolate with one lit candle -->
+      <path d="M 62 2 C 70 12, 74 18, 69 25 C 65 31, 55 31, 51 25 C 46 18, 52 12, 62 2 Z" fill="#f7b733" stroke="#e0533d" stroke-width="3"/>
+      <ellipse cx="60" cy="22" rx="3.5" ry="5" fill="#fff6c2" stroke="none"/>
+      <path d="M 60 31 L 60 38" stroke-width="3"/>
+      <rect x="53" y="38" width="14" height="36" rx="2" fill="#fff" stroke-width="3.5"/>
+      <path d="M 54 46 L 66 41 M 54 56 L 66 51 M 54 66 L 66 61" stroke="#e6397d" stroke-width="3"/>
+      <path d="M 20 78 L 100 78 L 100 104 L 20 104 Z" fill="#5a3a2a" stroke-width="3.5"/>
+      <path d="M 20 78 L 28 70 L 108 70 L 100 78 M 100 104 L 108 96 L 108 70" fill="#7a5240" stroke-width="3.5"/>
+      <path d="M 47 78 L 47 104 M 73 78 L 73 104 M 20 91 L 100 91" stroke-opacity=".55" stroke-width="3"/>
+    </svg>
+    <p>happy belated.</p>
+    <p>you deserve better.</p>
+    <p>but i love you.</p>
   </div>
 </div>
 
@@ -268,11 +309,12 @@ renderCup();
    An apology bouquet, duct-taped to the table so the cat can't do to
    it what it does to cups. It's part of the table: it buzzes when the
    table is bapped (the stems sway) but it never drifts.
-   VASE_OPTS is what stands on the table for everyone:
+   TABLE_OPTS is what stands on the table for everyone:
      vase  — the glass vase of roses, duct-taped down
      sorry — the "sorry" card leaning against it (off since 2026-09-22)
-   ?test=flowers forces the whole thing, card included. */
-const VASE_OPTS = { vase: true, sorry: false };
+     choc  — the chocolate bar on a birthday card (see drawChoc)
+   ?test=flowers forces the vase, card included; ?test=choc the chocolate. */
+const TABLE_OPTS = { vase: true, sorry: false, choc: false };
 const VASE_AT = { x: 255, y: 770 };   // base center, scene coords
 const vase = { on: false, vib: 0, sway: 0, vSway: 0 };
 const vaseG = $("vaseG");
@@ -320,7 +362,7 @@ function tapeStrip(parent, p0, c0, c1, p1, w) {
     "stroke-linecap": "round", fill: "none" }, g);
   return g;
 }
-function drawVase(outer, opts = VASE_OPTS) {
+function drawVase(outer, opts = TABLE_OPTS) {
   outer.innerHTML = "";
   const root = el("g", {}, outer);
   const ROSE = "#e0533d", ROSE_DK = "#8f2a1a", STEM = "#3f7a35", LEAF = "#5aa04b", LEAF_DK = "#2d5a26";
@@ -399,6 +441,80 @@ function renderVase() {
   vaseG.setAttribute("transform", `translate(${VASE_AT.x + jx} ${VASE_AT.y + jy})`);
   if (bouquetG) bouquetG.setAttribute("transform", `rotate(${vase.sway} 0 -170)`);
 }
+
+/* ================= chocolate on a birthday card =================
+   A Dolfin "Poivre rose" bar (pale pink sleeve, hot-pink band along one
+   long edge, a sprig of pink peppercorns) lying flat on the table, on
+   top of a birthday card. Both are drawn in the TABLE PLANE: local x
+   runs along the far edge, local y toward the viewer, foreshortened
+   like the floor disc; the bar's thickness is the same face dropped a
+   few screen px. The print is far too small to read — it's a texture.
+   Clicking it opens the card (#card). TABLE_OPTS.choc / ?test=choc. */
+const CHOC_AT = { x: 700, y: 430 };
+const PLANE = "matrix(0.98 0.196 -0.35 0.355 0 0)";
+const chocG = $("chocG");
+function drawChoc(outer) {
+  outer.innerHTML = "";
+  const root = el("g", { transform: `translate(${CHOC_AT.x} ${CHOC_AT.y})`,
+    "pointer-events": "all", cursor: "pointer" }, outer);
+  const PINK = "#e6397d", SLEEVE = "#f7e1e8", INK = "var(--ink)";
+  // the card, under everything, turned a little the other way
+  const card = el("g", { transform: `${PLANE} translate(-8 16) rotate(7)` }, root);
+  el("rect", { x: -82, y: -64, width: 164, height: 128, rx: 3, fill: "#fff",
+    stroke: INK, "stroke-width": "4", "stroke-linejoin": "round" }, card);
+  el("rect", { x: -72, y: -54, width: 144, height: 108, rx: 2, fill: "none",
+    stroke: PINK, "stroke-width": "2", "stroke-opacity": ".75" }, card);
+  const hb = el("text", { x: 34, y: 52, "text-anchor": "middle", "font-size": "19",
+    "font-family": "Gochi Hand, cursive", fill: PINK }, card);
+  hb.textContent = "happy birthday";
+  // the bar: thickness first (the top face dropped straight down), then the face
+  const W = 186, H = 104, ROT = -21;
+  const slab = el("g", { transform: `translate(0 7) ${PLANE} rotate(${ROT})` }, root);
+  el("rect", { x: -W / 2, y: -H / 2, width: W, height: H, rx: 2, fill: "#d9aebd",
+    stroke: INK, "stroke-width": "4", "stroke-linejoin": "round" }, slab);
+  const top = el("g", { transform: `${PLANE} rotate(${ROT})` }, root);
+  el("rect", { x: -W / 2, y: -H / 2, width: W, height: H, rx: 2, fill: SLEEVE,
+    stroke: INK, "stroke-width": "4", "stroke-linejoin": "round" }, top);
+  // hot-pink band along the far long edge (the flap)
+  el("rect", { x: -W / 2 + 2, y: -H / 2 + 2, width: W - 4, height: 10, fill: PINK }, top);
+  // the print, left to right as on the sleeve: net weight, four lines of
+  // description, "Poivre rose" with the sprig over it, CHOCOLAT NOIR with
+  // the gold pod, the Dolfin script, the little round seal
+  const serif = "Georgia, 'Times New Roman', serif";
+  el("path", { d: "M -80 -14 L -80 18", stroke: "#9a9a9a", "stroke-width": "1.4" }, top);
+  [-64, -58, -52, -46].forEach((x, i) => el("path", { d: `M ${x} -30 L ${x} ${30 - i * 3}`,
+    stroke: "#555", "stroke-width": "1.6", "stroke-linecap": "round" }, top));
+  const pr = el("text", { transform: "translate(-28 0) rotate(90)", "text-anchor": "middle",
+    "font-size": "16", "font-family": serif, fill: "#161616" }, top);
+  pr.textContent = "Poivre rose";
+  const sprig = el("g", { stroke: "#d6538d", fill: "none", "stroke-linecap": "round" }, top);
+  el("path", { d: "M -8 -38 C -18 -22, -30 -6, -42 22", "stroke-width": "2.2" }, sprig);
+  el("path", { d: "M -22 -18 C -14 -24, -8 -22, -4 -14 M -30 -4 C -38 -8, -44 -4, -46 4",
+    "stroke-width": "1.8" }, sprig);
+  [[-26, -12], [-36, 8], [-18, -26], [-40, 22]].forEach(([bx, by]) => {
+    for (let k = 0; k < 7; k++) {
+      const a = k / 7 * Math.PI * 2, r = k ? 4.2 + (k % 2) * 2 : 0;
+      el("circle", { cx: bx + Math.cos(a) * r, cy: by + Math.sin(a) * r, r: 2.4,
+        fill: "#e2558e", stroke: "#b8356a", "stroke-width": ".8" }, sprig);
+    }
+  });
+  el("path", { d: "M 14 -34 L 14 8", stroke: "#222", "stroke-width": "2.2", "stroke-linecap": "round" }, top);
+  el("path", { d: "M 22 -30 L 22 4", stroke: PINK, "stroke-width": "1.8", "stroke-linecap": "round" }, top);
+  el("ellipse", { cx: 18, cy: 26, rx: 8, ry: 4.5, transform: "rotate(90 18 26)",
+    stroke: "#c9a23c", "stroke-width": "1.4", fill: "none" }, top);
+  const dl = el("text", { transform: "translate(50 -6) rotate(90)", "text-anchor": "middle",
+    "font-size": "14", "font-style": "italic", "font-family": serif, fill: "#161616" }, top);
+  dl.textContent = "Dolfin";
+  el("circle", { cx: 74, cy: 36, r: 7, stroke: PINK, "stroke-width": "1.2", fill: "none" }, top);
+  el("circle", { cx: 74, cy: 36, r: 2, fill: PINK }, top);
+  // a generous hit area around the bar (it's small on a phone)
+  el("rect", { x: -W / 2 - 24, y: -H / 2 - 30, width: W + 48, height: H + 60, fill: "none" }, top);
+  root.addEventListener("pointerdown", e => { e.stopPropagation(); openCard(); });
+}
+const cardEl = $("card");
+function openCard() { cardEl.classList.remove("hidden"); }
+function closeCard() { cardEl.classList.add("hidden"); }
+cardEl.addEventListener("pointerdown", closeCard);
 
 /* ================= physics loop ================= */
 let last = performance.now();
@@ -659,7 +775,8 @@ function bap() {
 
 $("stage").addEventListener("pointerdown", () => bap());
 addEventListener("keydown", e => {
-  if (e.code === "Space" && !$("login").offsetParent) { e.preventDefault(); bap(); }
+  if (e.key === "Escape") closeCard();
+  if (e.code === "Space" && !$("login").offsetParent && !cardEl.offsetParent) { e.preventDefault(); bap(); }
 });
 
 /* ================= sound (synthesized) ================= */
@@ -770,7 +887,9 @@ function showLogin() {
 async function enter(me) {
   user = me;
   $("login").classList.add("hidden");
-  if (TEST) { reveal(); return; } // test hooks own the scene; don't clear/redraw over them
+  // cup-owning test hooks own the scene; don't clear/redraw over them
+  // (table dressing like ?test=flowers / ?test=choc still loads state)
+  if (TEST && !DRESS_TESTS.includes(TEST)) { reveal(); return; }
   const res = await fetch(`${API}/state`).catch(() => null);
   if (res && res.ok) {
     const st = await res.json();
@@ -807,6 +926,7 @@ $("loginForm").addEventListener("submit", async e => {
 });
 // visual test hooks (harmless in prod; synchronous so screenshots are deterministic)
 const TEST = new URLSearchParams(location.search).get("test");
+const DRESS_TESTS = ["flowers", "choc"];
 function applyTest() {
   if (TEST === "down") {
     $("pawL").classList.add("down"); $("pawR").classList.add("down"); $("mouth").classList.add("down");
@@ -816,8 +936,10 @@ function applyTest() {
   if (TEST === "broken") { cup.mode = "broken"; drawWreck(780, FLOOR_Y, false); }
   if (TEST === "hearts") { cup.mode = "broken"; burstHearts(780, FLOOR_Y, false); }
   if (TEST === "picks") { cup.mode = "broken"; burstPicks(780, FLOOR_Y, false); }
-  const vopts = TEST === "flowers" ? { vase: true, sorry: true } : VASE_OPTS;
-  if (vopts.vase) { vase.on = true; drawVase(vaseG, vopts); }
+  const topts = TEST === "flowers" ? { ...TABLE_OPTS, vase: true, sorry: true }
+              : TEST === "choc"    ? { ...TABLE_OPTS, choc: true } : TABLE_OPTS;
+  if (topts.vase) { vase.on = true; drawVase(vaseG, topts); }
+  if (topts.choc) drawChoc(chocG);
   if (TEST) renderCup();
 }
 applyTest();
