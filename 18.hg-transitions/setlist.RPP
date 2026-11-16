@@ -369,9 +369,9 @@
     MAINSEND 1 0
 
     <ITEM
-      POSITION 1447.925750
+      POSITION 1437.925750
       SNAPOFFS 0
-      LENGTH 29.940000
+      LENGTH 40.000000
       LOOP 0
       ALLTAKES 0
       FADEIN 1 0.01 0 1 0 0 0
@@ -380,14 +380,14 @@
       SEL 0
       IGUID {98FE1C1B-6D2D-45A6-803D-7150D4B74794}
       IID 1
-      NAME "Beacon → Falling: two MusicGen layers + E→D drone (v2)"
+      NAME "Beacon → Falling: two MusicGen layers + E→D drone (v3, slow in, starts 10 s early)"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
       GUID {351B4899-85ED-4DE4-BF52-B49ACBDF4011}
       <SOURCE WAVE
-        FILE "media/transitions/beacon-to-falling.v2-two-layer.wav"
+        FILE "media/transitions/beacon-to-falling.v3-slow-in.wav"
       >
     >
   >
