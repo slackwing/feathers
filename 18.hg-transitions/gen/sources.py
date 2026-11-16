@@ -146,7 +146,7 @@ def wind_chimes(notes, density_env, seed=5, amp=0.5):
         f = 440*2**((rng.choice(keys) - 69)/12); m = int(2.5*SR); tt = np.arange(m)/SR; y = np.zeros(m)
         for r, a, dec in [(1, 1, 1.6), (2.76, 0.5, 0.9), (5.4, 0.25, 0.5), (8.9, 0.1, 0.3)]:
             y += a*np.sin(2*np.pi*f*r*tt)*np.exp(-tt/dec)
-        y *= rng.uniform(0.3, 1)*(1 - np.exp(-tt/0.002)); pan = rng.uniform(0.2, 0.8)
+        y *= rng.uniform(0.3, 1)*(1 - np.exp(-tt/0.005)); pan = rng.uniform(0.2, 0.8)   # 5 ms attack: ring, don't tick
         out += place(np.stack([y*(1-pan), y*pan], 1), t)
     return out/max(np.abs(out).max(), 1e-9)*amp
 def machine_hum(freq, am_hz=4.0, amp=0.5, seed=6):

@@ -391,50 +391,6 @@
       >
     >
     <ITEM
-      POSITION 1755.307521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {BDE1667C-DA8B-4D20-9707-CC5DDFFD1EA7}
-      IID 1
-      NAME "07 Falling → Can't You See · riser"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {5F26BC14-EF8B-46B3-A1FC-E2DF6EA80DB9}
-      <SOURCE WAVE
-        FILE "media/transitions/gap07-T1-D.wav"
-      >
-    >
-    <ITEM
-      POSITION 1995.557521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {85D9D763-51B8-4FE9-9FA1-D38EEE800FBE}
-      IID 1
-      NAME "08 Can't You See → Helena · pad + texture"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {70C3DF59-09AC-4BC8-882A-09AD6AB9B8CA}
-      <SOURCE WAVE
-        FILE "media/transitions/gap08-T1-A.wav"
-      >
-    >
-    <ITEM
       POSITION 216.812521
       SNAPOFFS 0
       LENGTH 40.000000
@@ -454,28 +410,6 @@
       GUID {192F8B32-F3C9-4887-B2DE-5AE5940272A9}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap01-T1.wav"
-      >
-    >
-    <ITEM
-      POSITION 436.562521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {CE2516AC-0399-4F87-B02F-7F580B97EF6A}
-      IID 1
-      NAME "02 Talking to Trees → Enantiodromia · chimes + strings + wind"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {F22A257F-5B7E-44E6-B3C8-A897BE65888D}
-      <SOURCE WAVE
-        FILE "media/transitions/v2/gap02-T1.wav"
       >
     >
     <ITEM
@@ -523,6 +457,28 @@
       >
     >
     <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E5DEB9B4-5B0F-4544-AB81-7F06D7BCFBD2}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · chimes + strings + wind"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {6127B152-BAE3-40C2-82E8-CDBD5784D48C}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap02-T1.wav"
+      >
+    >
+    <ITEM
       POSITION 919.361521
       SNAPOFFS 0
       LENGTH 40.000000
@@ -532,16 +488,60 @@
       FADEOUT 1 0.01 0 1 0 0 0
       MUTE 0 0
       SEL 0
-      IGUID {C8F1A4E1-F1DD-4AE4-A7C3-2BE430D64141}
+      IGUID {CCC3E133-C995-4068-86AA-79C71EDA933D}
       IID 1
       NAME "04 Looking Glass → Horrors of your love · stretch + strings + feedback"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
-      GUID {8FD2F8CA-11EB-4403-8795-5B440004A829}
+      GUID {19976E4F-82A1-45C7-9F80-9F242B96046F}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap04-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {E4A7A5E3-0179-4FC5-8686-195FF72D65E3}
+      IID 1
+      NAME "07 Falling → Can't You See · stretch + dark strings + rain"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {C2C9BF47-07F9-430A-A601-7C575450A16D}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap07-T1.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {8E99C392-E838-431D-8B08-D7937AAD6BFD}
+      IID 1
+      NAME "08 Can't You See → Helena · church bell + strings + wind"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {93E54740-6382-47A9-9496-8AE6F76D567B}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap08-T1.wav"
       >
     >
   >
@@ -570,50 +570,6 @@
     MAINSEND 1 0
 
     <ITEM
-      POSITION 1755.307521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {7218AFAD-0A05-4EF4-AE54-2927BBFC01ED}
-      IID 1
-      NAME "07 Falling → Can't You See · continuation"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {76AD623E-7146-4E4F-98FB-A4E726D38328}
-      <SOURCE WAVE
-        FILE "media/transitions/gap07-T2-B.wav"
-      >
-    >
-    <ITEM
-      POSITION 1995.557521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {F3352EFB-CD48-423B-AC4E-5424D61C417F}
-      IID 1
-      NAME "08 Can't You See → Helena · pulse"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {9E596FAF-8EB6-4F15-AFF1-AD91E51062BE}
-      <SOURCE WAVE
-        FILE "media/transitions/gap08-T2-C.wav"
-      >
-    >
-    <ITEM
       POSITION 216.812521
       SNAPOFFS 0
       LENGTH 40.000000
@@ -633,28 +589,6 @@
       GUID {673DB33E-3AFD-4A69-97C6-701F186FAB20}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap01-T2.wav"
-      >
-    >
-    <ITEM
-      POSITION 436.562521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {2DF6CE02-3A72-42F0-A63C-F9E6C8D3EE16}
-      IID 1
-      NAME "02 Talking to Trees → Enantiodromia · music box + vinyl + choir"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {8EF5006D-25B8-46A2-961A-D2B1C8751B25}
-      <SOURCE WAVE
-        FILE "media/transitions/v2/gap02-T2.wav"
       >
     >
     <ITEM
@@ -702,6 +636,28 @@
       >
     >
     <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {83605582-2EF8-4CC8-A654-A1F7E290A73C}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · music box + vinyl + choir"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {06BB0B56-EB42-45B9-8046-C21C32C751F7}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap02-T2.wav"
+      >
+    >
+    <ITEM
       POSITION 919.361521
       SNAPOFFS 0
       LENGTH 40.000000
@@ -711,14 +667,14 @@
       FADEOUT 1 0.01 0 1 0 0 0
       MUTE 0 0
       SEL 0
-      IGUID {64195ADE-FBF3-4F65-9F32-9038F6FC34B0}
+      IGUID {F8171565-47F4-4F4D-94C5-773E44631C02}
       IID 1
       NAME "04 Looking Glass → Horrors of your love · shoegaze 83 + tremolo guitar + chimes"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
-      GUID {F6D2067A-B2EA-4D38-91A5-5AD6701624D6}
+      GUID {35448EDC-6F1A-4803-B992-FC4978F16806}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap04-T2.wav"
       >
@@ -733,16 +689,60 @@
       FADEOUT 1 0.01 0 1 0 0 0
       MUTE 0 0
       SEL 0
-      IGUID {6EC048EE-CD1E-4DA7-A248-AC0A4EC94B72}
+      IGUID {C5F2439F-D251-44AC-BA5E-E4341061D0D7}
       IID 1
       NAME "06 The Beacon of Emerald → Falling · shoegaze 4/4 120 + feedback"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
-      GUID {65424305-4D06-45D2-864A-99CA5AE97AD3}
+      GUID {AC126496-A358-4184-9E56-68FD0C836565}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap06-T2.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {1F0C7F79-BB5E-4E23-A876-A1712D35F353}
+      IID 1
+      NAME "07 Falling → Can't You See · industrial 4/4 120 + organ stab"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {99B62A82-BFFA-413F-9C4A-C570968D574E}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap07-T2.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {7901D530-BBF3-4315-B4EA-9AE7A6D7C66A}
+      IID 1
+      NAME "08 Can't You See → Helena · shoegaze 4/4 125 + feedback"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {B0915842-E7B8-41A4-BD91-9CA15BBBA1A5}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap08-T2.wav"
       >
     >
   >
@@ -792,28 +792,6 @@
       >
     >
     <ITEM
-      POSITION 436.562521
-      SNAPOFFS 0
-      LENGTH 40.000000
-      LOOP 0
-      ALLTAKES 0
-      FADEIN 1 0.01 0 1 0 0 0
-      FADEOUT 1 0.01 0 1 0 0 0
-      MUTE 0 0
-      SEL 0
-      IGUID {CBB2242B-C5CB-4E9A-9380-CED7BEF69CD8}
-      IID 1
-      NAME "02 Talking to Trees → Enantiodromia · stretch + rain + thunder + heartbeat"
-      VOLPAN 1 0 1 -1
-      SOFFS 0
-      PLAYRATE 1 1 0 -1 0 0.0025
-      CHANMODE 0
-      GUID {1A757B41-F1A3-48B6-A771-23005DA12359}
-      <SOURCE WAVE
-        FILE "media/transitions/v2/gap02-T3.wav"
-      >
-    >
-    <ITEM
       POSITION 676.246750
       SNAPOFFS 0
       LENGTH 40.000000
@@ -858,6 +836,28 @@
       >
     >
     <ITEM
+      POSITION 436.562521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {D75A3B5E-0E6E-4100-A849-C7087EF9FA62}
+      IID 1
+      NAME "02 Talking to Trees → Enantiodromia · stretch + rain + thunder + heartbeat"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {3E360541-DE21-4504-9886-5B97789D9AF5}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap02-T3.wav"
+      >
+    >
+    <ITEM
       POSITION 919.361521
       SNAPOFFS 0
       LENGTH 40.000000
@@ -867,14 +867,14 @@
       FADEOUT 1 0.01 0 1 0 0 0
       MUTE 0 0
       SEL 0
-      IGUID {3A9A4476-18F9-40B3-A1BF-54F27EB15289}
+      IGUID {D21E8F79-3E9A-4D3A-8D5F-B11B30DE60A7}
       IID 1
       NAME "04 Looking Glass → Horrors of your love · piano + rain + thunder"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
-      GUID {A74FF156-8CCD-4ABB-AA68-B8984F2802B3}
+      GUID {9383A7E4-413C-4E5C-BD01-AF481AA9D434}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap04-T3.wav"
       >
@@ -889,16 +889,60 @@
       FADEOUT 1 0.01 0 1 0 0 0
       MUTE 0 0
       SEL 0
-      IGUID {16A1155E-12BC-4066-A6C9-4266B584AA4C}
+      IGUID {97309FC3-31EC-4F7A-AFD2-48B5401E8C08}
       IID 1
       NAME "06 The Beacon of Emerald → Falling · chimes + bowed glass + thunder"
       VOLPAN 1 0 1 -1
       SOFFS 0
       PLAYRATE 1 1 0 -1 0 0.0025
       CHANMODE 0
-      GUID {B6C28E5B-2E1E-4795-AA05-87A217C46BE6}
+      GUID {9950C222-24D4-4C11-9715-2FD828FF3E1C}
       <SOURCE WAVE
         FILE "media/transitions/v2/gap06-T3.wav"
+      >
+    >
+    <ITEM
+      POSITION 1755.307521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {5A8E3484-3A0F-4F10-BB0E-5886EA8E1F88}
+      IID 1
+      NAME "07 Falling → Can't You See · celesta + vinyl + choir"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {9FA07A2D-60DB-43A5-B3EC-DE424904A5F8}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap07-T3.wav"
+      >
+    >
+    <ITEM
+      POSITION 1995.557521
+      SNAPOFFS 0
+      LENGTH 40.000000
+      LOOP 0
+      ALLTAKES 0
+      FADEIN 1 0.01 0 1 0 0 0
+      FADEOUT 1 0.01 0 1 0 0 0
+      MUTE 0 0
+      SEL 0
+      IGUID {A6348713-441B-4E3E-AE2A-2B946D7405A6}
+      IID 1
+      NAME "08 Can't You See → Helena · stretch + chimes + heartbeat"
+      VOLPAN 1 0 1 -1
+      SOFFS 0
+      PLAYRATE 1 1 0 -1 0 0.0025
+      CHANMODE 0
+      GUID {FB587441-9432-4B24-B4D7-26A1DF79151A}
+      <SOURCE WAVE
+        FILE "media/transitions/v2/gap08-T3.wav"
       >
     >
   >
