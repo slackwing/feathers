@@ -34,9 +34,15 @@ the shatter later.
   corner, a Dolfin "Poivre rose" chocolate bar lies flat on a birthday
   card — both drawn in the table plane (`PLANE` matrix: x along the far
   edge, y toward the viewer, foreshortened like the floor), the bar's
-  thickness being its own face dropped 7px. Clicking the bar opens
-  `#card`, a greeting-card modal (click/Esc closes; Space doesn't bap
-  while it's open). `TABLE_OPTS` in index.html picks what stands on the
+  top face being the underside raised 7px; one strip of duct tape
+  (`chocTape`, sampled in the bar's frame and lifted over the top) holds
+  it down. Clicking the bar opens `#card`, a greeting-card modal
+  (click/Esc closes; Space doesn't bap while it's open): the card
+  carries the same flat bar with a candle (`drawCardArt`), and behind
+  its lower-right corner lies `.pack`, a large readable replica of the
+  real sleeve (static SVG 300×550 + `drawPackSprig`; Great Vibes /
+  Playfair Display / Cormorant Garamond / Montserrat from Google Fonts,
+  large text real, fine text small but real, seal ring = dashes). `TABLE_OPTS` in index.html picks what stands on the
   table (`vase`, `sorry`, `choc`); the sorry card has been off since
   2026-09-22, `choc` is off until published. `?test=flowers` forces the
   vase + sorry card, `?test=choc` the chocolate, without touching the
