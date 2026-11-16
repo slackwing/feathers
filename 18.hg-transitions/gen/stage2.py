@@ -94,7 +94,10 @@ def blend(drone, drone_level, layers, out_path):
         f = np.sin(0.5*np.pi*np.interp(tt, [0, fin, DUR-2.5, DUR], [0, 1, 1, 0]))**2
         m = m + a*f[:, None]
     m *= min(1.0, 0.95/np.abs(m).max())
-    tmp = out_path + ".pre.wav"; sf.write(tmp, m, SR, subtype="PCM_24"); build.loudnorm(tmp, out_path); os.remove(tmp)
+    tmp = out_path + ".pre.wav"; lim = out_path + ".lim.wav"; sf.write(tmp, m, SR, subtype="PCM_24")
+    # tame isolated peaks (model clicks) so loudnorm's linear gain can reach the target
+    run("ffmpeg","-y","-v","error","-i",tmp,"-af","alimiter=limit=0.5:attack=3:release=80:level=false","-c:a","pcm_s24le",lim)
+    build.loudnorm(lim, out_path); os.remove(tmp); os.remove(lim)
 def slot(g, s, style): return os.path.join(HERE, build.slot_path(g, s, style))
 def mark(name): open(os.path.join(DONE, name), "w").write(time.ctime())
 def done(name): return os.path.exists(os.path.join(DONE, name))
