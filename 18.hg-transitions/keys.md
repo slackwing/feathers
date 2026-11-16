@@ -56,7 +56,35 @@ that pulls into the next song (its 5th). Land = the next song's root.
 | Quincunx | E minor | moderate | starts G, ends B minor |
 | Nee Heavy | D minor | moderate | |
 
-## Transition options (2026-11-15)
+## Transition options v2 (2026-11-16)
+
+Three options per gap (1-8) on "Transitions 1/2/3"; gaps 9-10 dropped.
+Files: `media/transitions/v2/gapNN-T<slot>.wav`, 40 s each: starts 10 s under the
+previous song's tail, lands on the next downbeat. Shape (gap-relative seconds):
+**-10..13 hold** = how the previous song actually ends (often its last chord
+smeared with paulstretch); **13..17 turn** = a short pivot; **17..30 preview** =
+the chord the next song really opens on, swelling into the downbeat. Beats are
+4/4 at the next song's tempo, bar-aligned to the downbeat, never accelerating.
+Rebuild: `.venv/bin/python gen/recipes.py [gap ...]` (needs `media/sf2/MuseScore_General.sf2`,
+the melody-model guitar takes in `media/transitions/.tmp/`, see `gen/melody_for.py`).
+
+| Gap | Hold → Turn → Preview | T1 | T2 | T3 |
+|---|---|---|---|---|
+| 1 Phantom → Talking to Trees | Em → G# → C# | smeared ending + piano + wind | shoegaze half-time 91 + feedback | industrial hum + metal 8ths + organ |
+| 2 Talking to Trees → Enantiodromia | D → B → E | wind chimes + strings + wind | music box + vinyl + choir | smeared ending + rain + thunder + heartbeat |
+| 3 Enantiodromia → Looking Glass | B → E → A | guitar swells + tubular bells | industrial 4/4 92 + organ | church organ + wind + reverse cymbals |
+| 4 Looking Glass → Horrors | A → F# → Bm | smeared ending + strings + feedback | shoegaze 83 + tremolo guitar + chimes | piano + rain + thunder |
+| 5 Horrors → Beacon | B → G# → C#m | choir + tubular bells + wind | industrial drone 91 + organ | smeared ending + glockenspiel + halo pad |
+| 6 Beacon → Falling | C#m → D → G | v3 (kept) | shoegaze 4/4 120 + feedback | wind chimes + bowed glass + thunder |
+| 7 Falling → Can't You See | B → C(+Ab/Eb) → Fm | smeared ending + dark strings + rain | industrial 4/4 120 + organ stab | celesta + vinyl + choir |
+| 8 Can't You See → Helena | F → A → G# → C#m | church bell + strings + wind | shoegaze 4/4 125 + feedback | smeared ending + chimes + heartbeat |
+
+Measured (first 3 s / last 6 s of each song): Phantom opens E, ends Em; Talking to
+Trees opens C#, ends on D; Enantiodromia opens E, ends on B; Looking Glass opens A,
+ends on A; Horrors opens Bm, ends on B; Beacon opens and ends C#m; Falling opens G,
+ends on B; Can't You See opens Fm, ends on F.
+
+## Transition options v1 (2026-11-15, superseded)
 
 Two options per gap, on tracks "Transitions 1" and "Transitions 2", each
 40 s: it starts 10 s before the previous song ends (swelling under its tail)

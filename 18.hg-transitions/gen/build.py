@@ -19,6 +19,11 @@ def loudnorm(src, dst, target=TARGET):
     run("ffmpeg","-y","-v","error","-i",src,"-af",
         f"loudnorm=I={target}:TP=-1:LRA=11:measured_I={j['input_i']}:measured_TP={j['input_tp']}:measured_LRA={j['input_lra']}:measured_thresh={j['input_thresh']}:offset={j['target_offset']}:linear=true",
         "-ar","48000","-c:a","pcm_s24le",dst)
+    # true-peak safety: inter-sample overs survive sample-peak limiting; trim the whole file if needed
+    chk = run("ffmpeg","-v","info","-i",dst,"-af","loudnorm=print_format=json","-f","null","-").stderr
+    tp = float(json.loads(chk[chk.rfind("{"):chk.rfind("}")+1])["input_tp"])
+    if tp > -0.9:
+        run("ffmpeg","-y","-v","error","-i",dst,"-af",f"volume={-(tp+1.0):.2f}dB","-c:a","pcm_s24le",dst+".tp.wav"); os.replace(dst+".tp.wav", dst)
 def write(path, stereo):  # stereo: (2, n) float
     tmp = path + ".tmp.wav"; sf.write(tmp, stereo.T, synth.SR, subtype="PCM_24"); loudnorm(tmp, path); os.remove(tmp)
 

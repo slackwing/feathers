@@ -12,6 +12,14 @@ Backing tracks for transitions between songs at Haunting Ghosts live shows.
   (markers carry the song keys; two transition options per gap live on
   "Transitions 1"/"Transitions 2"). `make-setlist.py` only builds a fresh
   one and would drop all of that. Keys, BPMs, option layout: `keys.md`.
-- Generation: `gen/build.py bases` (deterministic layers, fast) then
-  `gen/stage2.py A B EF` (MusicGen layers, CPU, ~1-2 h, resumable via
-  `media/transitions/.done/`). `.venv` holds CPU torch + transformers.
+- Generation v2: `gen/recipes.py [gap ...]` renders three distinct pieces
+  per gap from `gen/sources.py` ingredients (soundfont via tinysoundfont +
+  `media/sf2/MuseScore_General.sf2`, paulstretch of the song's own ending,
+  synth drums/wind/chimes/bells, reverbs, ffmpeg FX) and updates the project
+  items in place. Guitar takes come from `gen/melody_for.py GAP E|F`
+  (musicgen-stereo-melody, ~9 min each on CPU). v1 scripts (`build.py`,
+  `stage2.py`) are superseded. `.venv` holds CPU torch + transformers.
+- Andrew's rules for transitions: rhythms stay steady (no speed-ups),
+  pieces must differ a lot from each other, 4/4 beats with heavy
+  reverb/industrial feel are welcome, end on a preview of the next song's
+  opening chord.

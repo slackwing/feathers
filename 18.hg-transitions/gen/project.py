@@ -102,3 +102,14 @@ def put_item(track, name, path, pos):
       >
     >'''.split("\n")
     L[e:e] = item; _save(L); return "added"
+def remove_items(track, name_prefix, keep=()):
+    """Delete items on `track` whose NAME starts with name_prefix (except names in keep)."""
+    L = _lines(); tname, s, e = next(t for t in _tracks(L) if t[0] == track); i = s; removed = 0
+    while i < e:
+        if L[i].strip() == "<ITEM":
+            j = next(k for k in range(i, e) if L[k] == "    >")
+            name = next((l.strip()[6:-1] for l in L[i:j] if l.strip().startswith('NAME "')), "")
+            if name.startswith(name_prefix) and name not in keep:
+                del L[i:j+1]; e -= (j + 1 - i); removed += 1; continue
+        i += 1
+    _save(L); return removed
