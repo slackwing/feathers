@@ -8,3 +8,6 @@ Backing tracks for transitions between songs at Haunting Ghosts live shows.
   as 48 kHz WAV: `media/Shadow Work/`, `media/Quincunx/`,
   `media/The Trickster/`, `media/alternates/`. Run it sequentially —
   parallel yt-dlp runs get 403s.
+- `setlist.RPP` is the live project; edit it in place (markers carry the
+  song keys). `make-setlist.py` only builds a fresh one and would drop them.
+  Keys and transition notes: `keys.md`.
