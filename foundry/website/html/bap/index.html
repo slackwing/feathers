@@ -103,11 +103,17 @@
     display: flex; flex-direction: column; justify-content: center;
     background: #fff;
     border: 3px solid var(--ink);
-    border-radius: 18px 225px 18px 255px / 225px 18px 255px 18px;
+    border-radius: 4px;          /* it's a card: straight edges */
     padding: 22px 26px 26px;
     text-align: center;
     transform: rotate(-1.2deg);
     animation: cardIn .26s ease-out;
+  }
+  /* the thin pink frame inset from the edges, as on the card's back */
+  #card .fold::before {
+    content: ""; position: absolute; inset: 20px;
+    border: 2px solid rgba(230, 57, 125, .75); border-radius: 2px;
+    pointer-events: none;
   }
   @keyframes cardIn { from { transform: rotate(-1.2deg) scale(.86); opacity: 0; } }
   #card .fold svg { width: 42%; height: auto; display: block; margin: 0 auto 6px; }
