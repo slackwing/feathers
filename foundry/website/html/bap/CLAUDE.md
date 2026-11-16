@@ -46,7 +46,7 @@ the shatter later.
   Playfair Display / Cormorant Garamond / Montserrat from Google Fonts,
   large text real, fine text small but real, seal ring = dashes). `TABLE_OPTS` in index.html picks what stands on the
   table (`vase`, `sorry`, `choc`); the sorry card has been off since
-  2026-09-22, `choc` is off until published. `?test=flowers` forces the
+  2026-09-22, `choc` has been on since 2026-11-16. `?test=flowers` forces the
   vase + sorry card, `?test=choc` the chocolate, without touching the
   flags; those two hooks still load cup state (the cup-owning hooks
   don't).
